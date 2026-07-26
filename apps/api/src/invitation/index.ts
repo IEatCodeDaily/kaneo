@@ -28,8 +28,8 @@ const invitation = new Hono<{
                   v.object({
                     id: v.string(),
                     email: v.string(),
-                    workspaceId: v.string(),
-                    workspaceName: v.string(),
+                    organizationId: v.string(),
+                    organizationName: v.string(),
                     inviterName: v.string(),
                     expiresAt: v.string(),
                     createdAt: v.string(),
@@ -71,7 +71,7 @@ const invitation = new Hono<{
                     v.object({
                       id: v.string(),
                       email: v.string(),
-                      workspaceName: v.string(),
+                      organizationName: v.string(),
                       inviterName: v.string(),
                       expiresAt: v.string(),
                       status: v.string(),

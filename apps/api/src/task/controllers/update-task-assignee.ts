@@ -53,7 +53,7 @@ async function updateTaskAssignee({
   if (!userId) {
     await publishEvent("task.unassigned", {
       taskId: updatedTask.id,
-      projectId: updatedTask.projectId,
+      boardId: updatedTask.boardId,
       userId: currentUserId,
       title: updatedTask.title,
       type: "unassigned",
@@ -64,7 +64,7 @@ async function updateTaskAssignee({
 
   await publishEvent("task.assignee_changed", {
     taskId: updatedTask.id,
-    projectId: updatedTask.projectId,
+    boardId: updatedTask.boardId,
     userId: currentUserId,
     oldAssignee: existingTask.userId,
     newAssignee: newAssigneeName,

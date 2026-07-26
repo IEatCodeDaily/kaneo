@@ -4,12 +4,12 @@ import { isRedisConfigured } from "../redis";
 import type {
   BroadcastAdapter,
   BroadcastMessage,
-  ProjectBroadcastMessage,
+  BoardBroadcastMessage,
 } from "./broadcast-adapter";
 import { InMemoryBroadcastAdapter } from "./in-memory-broadcast-adapter";
 import { RedisBroadcastAdapter } from "./redis-broadcast-adapter";
 
-type ProjectConnection = {
+type BoardConnection = {
   ws: WSContext;
   userId: string;
   initiatorId: string;
@@ -67,17 +67,17 @@ export function broadcastToUser(
 /**
  * Local connections — Each instance tracks only its own WebSocket connections.
  */
-const projectConnections = new Map<string, Set<ProjectConnection>>();
+const boardConnections = new Map<string, Set<BoardConnection>>();
 
 /**
  * Batching queues and timers local per-instance.
  * They accumulate messages before flushing to the broadcast adapter.
  */
-const projectBroadcastQueues = new Map<
+const boardBroadcastQueues = new Map<
   string,
-  Map<string, { message: ProjectBroadcastMessage; excludeInitiatorId?: string }>
+  Map<string, { message: BoardBroadcastMessage; excludeInitiatorId?: string }>
 >();
-const projectBroadcastTimeouts = new Map<
+const boardBroadcastTimeouts = new Map<
   string,
   ReturnType<typeof setTimeout>
 >();
@@ -95,7 +95,7 @@ export async function initializeWebSocketAdapter() {
   try {
     await nextAdapter.subscribe((msg: BroadcastMessage) => {
       deliverToLocalConnections(
-        msg.projectId,
+        msg.boardId,
         msg.message,
         msg.excludeInitiatorId,
       );
@@ -110,20 +110,20 @@ export async function initializeWebSocketAdapter() {
 }
 
 export async function shutdownWebSocketAdapter() {
-  const pendingQueues = [...projectBroadcastQueues.entries()];
+  const pendingQueues = [...boardBroadcastQueues.entries()];
 
-  for (const timeout of projectBroadcastTimeouts.values()) {
+  for (const timeout of boardBroadcastTimeouts.values()) {
     clearTimeout(timeout);
   }
-  projectBroadcastTimeouts.clear();
-  projectBroadcastQueues.clear();
+  boardBroadcastTimeouts.clear();
+  boardBroadcastQueues.clear();
 
   const currentAdapter = adapter;
   if (currentAdapter) {
     await Promise.allSettled(
-      pendingQueues.flatMap(([projectId, queue]) =>
+      pendingQueues.flatMap(([boardId, queue]) =>
         [...queue.values()].map(({ message, excludeInitiatorId }) =>
-          currentAdapter.publish({ projectId, message, excludeInitiatorId }),
+          currentAdapter.publish({ boardId, message, excludeInitiatorId }),
         ),
       ),
     );
@@ -134,11 +134,11 @@ export async function shutdownWebSocketAdapter() {
 }
 
 function deliverToLocalConnections(
-  projectId: string,
-  message: ProjectBroadcastMessage,
+  boardId: string,
+  message: BoardBroadcastMessage,
   excludeInitiatorId?: string,
 ) {
-  const connections = projectConnections.get(projectId);
+  const connections = boardConnections.get(boardId);
   if (!connections) return;
 
   const payload = JSON.stringify(message);
@@ -151,61 +151,61 @@ function deliverToLocalConnections(
     }
   }
   if (connections.size === 0) {
-    projectConnections.delete(projectId);
+    boardConnections.delete(boardId);
   }
 }
 
 export function addConnection(
-  projectId: string,
+  boardId: string,
   ws: WSContext,
   userId: string,
   initiatorId: string,
 ) {
-  if (!projectConnections.has(projectId)) {
-    projectConnections.set(projectId, new Set());
+  if (!boardConnections.has(boardId)) {
+    boardConnections.set(boardId, new Set());
   }
-  const conn: ProjectConnection = { ws, userId, initiatorId };
-  projectConnections.get(projectId)?.add(conn);
+  const conn: BoardConnection = { ws, userId, initiatorId };
+  boardConnections.get(boardId)?.add(conn);
   return conn;
 }
 
-export function removeConnection(projectId: string, conn: ProjectConnection) {
-  const connections = projectConnections.get(projectId);
+export function removeConnection(boardId: string, conn: BoardConnection) {
+  const connections = boardConnections.get(boardId);
   if (connections) {
     connections.delete(conn);
     if (connections.size === 0) {
-      projectConnections.delete(projectId);
+      boardConnections.delete(boardId);
     }
   }
 }
 
-export function broadcastToProject(
-  projectId: string,
-  message: ProjectBroadcastMessage,
+export function broadcastToBoard(
+  boardId: string,
+  message: BoardBroadcastMessage,
   excludeInitiatorId?: string,
 ) {
   if (!adapter) {
-    console.warn("broadcastToProject called before adapter initialization");
+    console.warn("broadcastToBoard called before adapter initialization");
     return;
   }
 
-  if (!projectBroadcastQueues.has(projectId)) {
-    projectBroadcastQueues.set(projectId, new Map());
+  if (!boardBroadcastQueues.has(boardId)) {
+    boardBroadcastQueues.set(boardId, new Map());
   }
 
   const messageKey = `${message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}`;
-  projectBroadcastQueues
-    .get(projectId)
+  boardBroadcastQueues
+    .get(boardId)
     ?.set(messageKey, { message, excludeInitiatorId });
 
-  if (projectBroadcastTimeouts.has(projectId)) {
+  if (boardBroadcastTimeouts.has(boardId)) {
     return;
   }
 
   const timeout = setTimeout(() => {
-    projectBroadcastTimeouts.delete(projectId);
-    const queue = projectBroadcastQueues.get(projectId);
-    projectBroadcastQueues.delete(projectId);
+    boardBroadcastTimeouts.delete(boardId);
+    const queue = boardBroadcastQueues.get(boardId);
+    boardBroadcastQueues.delete(boardId);
 
     if (!queue || !adapter) return;
 
@@ -213,25 +213,25 @@ export function broadcastToProject(
     for (const { message: msg, excludeInitiatorId: exId } of queue.values()) {
       void adapter
         .publish({
-          projectId,
+          boardId,
           message: msg,
           excludeInitiatorId: exId,
         })
         .catch((err) => {
           console.error(
-            `Failed to publish broadcast for project ${projectId}:`,
+            `Failed to publish broadcast for board ${boardId}:`,
             err,
           );
         });
     }
   }, 100);
 
-  projectBroadcastTimeouts.set(projectId, timeout);
+  boardBroadcastTimeouts.set(boardId, timeout);
 }
 
 type TaskEvent = {
   id: string | undefined;
-  projectId: string;
+  boardId: string;
   userId: string;
   initiatorId?: string;
   taskId: string;
@@ -267,40 +267,40 @@ subscribeToEvent<{
   initiatorId?: string;
   type: string;
   content: string;
-  fromProjectId: string;
-  fromProjectName: string;
-  toProjectId: string;
-  toProjectName: string;
+  fromBoardId: string;
+  fromBoardName: string;
+  toBoardId: string;
+  toBoardName: string;
   oldStatus: string;
   newStatus: string;
 }>("task.moved", async (data) => {
-  const { fromProjectId, initiatorId, toProjectId, taskId } = data;
+  const { fromBoardId, initiatorId, toBoardId, taskId } = data;
 
-  broadcastToProject(
-    toProjectId,
-    { type: "TASK_MOVED", projectId: toProjectId, taskId },
+  broadcastToBoard(
+    toBoardId,
+    { type: "TASK_MOVED", boardId: toBoardId, taskId },
     initiatorId,
   );
-  broadcastToProject(
-    fromProjectId,
-    { type: "TASK_MOVED", projectId: fromProjectId, taskId },
+  broadcastToBoard(
+    fromBoardId,
+    { type: "TASK_MOVED", boardId: fromBoardId, taskId },
     initiatorId,
   );
 });
 
 subscribeToEvent<{
-  projectId: string;
+  boardId: string;
   userId: string;
   initiatorId?: string;
 }>("task-relation.refresh", async (data) => {
-  const { projectId, initiatorId } = data;
-  if (!projectId) return;
+  const { boardId, initiatorId } = data;
+  if (!boardId) return;
 
-  broadcastToProject(
-    projectId,
+  broadcastToBoard(
+    boardId,
     {
       type: "TASK_RELATION_UPDATED",
-      projectId,
+      boardId,
       taskId: "",
       sourceTaskId: undefined,
       targetTaskId: undefined,
@@ -320,10 +320,10 @@ subscribeToEvent<{ notificationId: string; userId: string }>(
 
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
-    const { projectId, initiatorId } = data;
+    const { boardId, initiatorId } = data;
     const taskId = data.taskId;
 
-    if (!projectId || !taskId) return;
+    if (!boardId || !taskId) return;
     let type: string;
     switch (eventName) {
       case "task.created":
@@ -351,11 +351,11 @@ for (const eventName of taskUpdateEvents) {
         type = "TASK_UPDATED";
     }
 
-    broadcastToProject(
-      projectId,
+    broadcastToBoard(
+      boardId,
       {
         type,
-        projectId,
+        boardId,
         taskId: taskId,
         sourceTaskId: data.sourceTaskId,
         targetTaskId: data.targetTaskId,

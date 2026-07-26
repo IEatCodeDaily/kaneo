@@ -2,11 +2,11 @@ import { eq } from "drizzle-orm";
 import db from "../../database";
 import { labelTable } from "../../database/schema";
 
-function getLabelsByWorkspaceId(workspaceId: string) {
+function getLabelsByOrganizationId(organizationId: string) {
   return db
     .select()
     .from(labelTable)
-    .where(eq(labelTable.workspaceId, workspaceId));
+    .where(eq(labelTable.organizationId, organizationId));
 }
 
-export default getLabelsByWorkspaceId;
+export default getLabelsByOrganizationId;

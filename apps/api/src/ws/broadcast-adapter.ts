@@ -1,19 +1,19 @@
-export type ProjectBroadcastMessage = {
+export type BoardBroadcastMessage = {
   type: string;
-  projectId: string;
+  boardId: string;
   taskId?: string;
   sourceTaskId?: string;
   targetTaskId?: string;
 };
 
 export type BroadcastMessage = {
-  projectId: string;
-  message: ProjectBroadcastMessage;
+  boardId: string;
+  message: BoardBroadcastMessage;
   excludeInitiatorId?: string;
 };
 
 export type BroadcastAdapter = {
-  /** Publish a message to all instances watching this project */
+  /** Publish a message to all instances watching this board */
   publish(msg: BroadcastMessage): Promise<void>;
 
   /** Subscribe to messages for delivery to local connections */

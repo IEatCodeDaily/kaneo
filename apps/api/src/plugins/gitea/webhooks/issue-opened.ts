@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../../database";
-import { columnTable, projectTable, taskTable } from "../../../database/schema";
+import { columnTable, boardTable, taskTable } from "../../../database/schema";
 import { publishEvent } from "../../../events";
 import getNextTaskNumber from "../../../task/controllers/get-next-task-number";
 import {
@@ -73,7 +73,7 @@ export async function handleGiteaIssueOpened(
       });
       continue;
     }
-    const projectId = integration.projectId;
+    const boardId = integration.boardId;
 
     const priority = extractIssuePriority(issue.labels);
     const status = extractIssueStatus(issue.labels);
@@ -88,23 +88,23 @@ export async function handleGiteaIssueOpened(
       continue;
     }
 
-    const nextTaskNumber = await getNextTaskNumber(projectId);
+    const nextTaskNumber = await getNextTaskNumber(boardId);
 
     const resolvedStatus = await resolveTargetStatus(
-      projectId,
+      boardId,
       "issue_opened",
       status || "to-do",
     );
 
     const targetColumn = await db.query.columnTable.findFirst({
       where: and(
-        eq(columnTable.projectId, projectId),
+        eq(columnTable.boardId, boardId),
         eq(columnTable.slug, resolvedStatus),
       ),
     });
 
     const taskValues: typeof taskTable.$inferInsert = {
-      projectId,
+      boardId,
       userId: null,
       title: issue.title,
       description: formatTaskDescriptionFromIssue(issue.body),
@@ -151,17 +151,17 @@ export async function handleGiteaIssueOpened(
       },
     });
 
-    const project = await db.query.projectTable.findFirst({
-      where: eq(projectTable.id, projectId),
+    const board = await db.query.boardTable.findFirst({
+      where: eq(boardTable.id, boardId),
     });
 
-    if (!project) {
+    if (!board) {
       continue;
     }
 
     const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-    const taskUrl = `${clientUrl}/dashboard/workspace/${project.workspaceId}/project/${projectId}/task/${createdTask.id}`;
-    const taskIdentifier = `${project.slug.toUpperCase()}-${createdTask.number}`;
+    const taskUrl = `${clientUrl}/dashboard/organization/${board.organizationId}/board/${boardId}/task/${createdTask.id}`;
+    const taskIdentifier = `${board.slug.toUpperCase()}-${createdTask.number}`;
 
     try {
       const client = createGiteaClient(config);

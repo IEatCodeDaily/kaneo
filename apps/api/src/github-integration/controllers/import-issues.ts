@@ -5,7 +5,7 @@ import {
   activityTable,
   integrationTable,
   labelTable,
-  projectTable,
+  boardTable,
   taskTable,
 } from "../../database/schema";
 import type { GitHubConfig } from "../../plugins/github/config";
@@ -59,23 +59,23 @@ type GitHubPullRequest = {
   user: { login: string; avatar_url: string } | null;
 };
 
-export async function importIssues(projectId: string): Promise<ImportResult> {
+export async function importIssues(boardId: string): Promise<ImportResult> {
   const errors: string[] = [];
   let imported = 0;
   let updated = 0;
   let skipped = 0;
 
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
-    throw new HTTPException(404, { message: "Project not found" });
+  if (!board) {
+    throw new HTTPException(404, { message: "Board not found" });
   }
 
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "github"),
     ),
   });
@@ -129,8 +129,8 @@ export async function importIssues(projectId: string): Promise<ImportResult> {
       const result = await importSingleIssue(
         issue,
         integration.id,
-        projectId,
-        project.workspaceId,
+        boardId,
+        board.organizationId,
         config,
         octokit,
       );
@@ -174,8 +174,8 @@ export async function importIssues(projectId: string): Promise<ImportResult> {
       await linkPullRequestToTask(
         pr,
         integration.id,
-        projectId,
-        project.slug,
+        boardId,
+        board.slug,
         config,
       );
     } catch (error) {
@@ -196,8 +196,8 @@ export async function importIssues(projectId: string): Promise<ImportResult> {
 async function importSingleIssue(
   issue: GitHubIssue,
   integrationId: string,
-  projectId: string,
-  workspaceId: string,
+  boardId: string,
+  organizationId: string,
   config: GitHubConfig,
   octokit: Awaited<ReturnType<typeof getInstallationOctokit>>,
 ): Promise<"imported" | "updated" | "skipped"> {
@@ -224,7 +224,7 @@ async function importSingleIssue(
       .set(updateData)
       .where(eq(taskTable.id, existingLink.taskId));
 
-    await importLabelsForTask(issue.labels, existingLink.taskId, workspaceId);
+    await importLabelsForTask(issue.labels, existingLink.taskId, organizationId);
 
     await importCommentsForTask(
       issue.number,
@@ -236,10 +236,10 @@ async function importSingleIssue(
     return "updated";
   }
 
-  const nextTaskNumber = await getNextTaskNumber(projectId);
+  const nextTaskNumber = await getNextTaskNumber(boardId);
 
   const taskValues: typeof taskTable.$inferInsert = {
-    projectId,
+    boardId,
     userId: null,
     title: issue.title,
     description: formatTaskDescriptionFromIssue(issue.body),
@@ -271,7 +271,7 @@ async function importSingleIssue(
     },
   });
 
-  await importLabelsForTask(issue.labels, createdTask.id, workspaceId);
+  await importLabelsForTask(issue.labels, createdTask.id, organizationId);
 
   await importCommentsForTask(issue.number, createdTask.id, config, octokit);
 
@@ -281,7 +281,7 @@ async function importSingleIssue(
 async function importLabelsForTask(
   issueLabels: GitHubIssue["labels"],
   taskId: string,
-  workspaceId: string,
+  organizationId: string,
 ): Promise<void> {
   const nonSystemLabels = issueLabels
     .map((label) => {
@@ -312,14 +312,14 @@ async function importLabelsForTask(
       continue;
     }
 
-    const existingWorkspaceLabel = await db.query.labelTable.findFirst({
+    const existingOrganizationLabel = await db.query.labelTable.findFirst({
       where: and(
-        eq(labelTable.workspaceId, workspaceId),
+        eq(labelTable.organizationId, organizationId),
         eq(labelTable.name, labelData.name),
       ),
     });
 
-    const colorToUse = existingWorkspaceLabel?.color || labelData.color;
+    const colorToUse = existingOrganizationLabel?.color || labelData.color;
 
     await db
       .insert(labelTable)
@@ -327,7 +327,7 @@ async function importLabelsForTask(
         name: labelData.name,
         color: colorToUse,
         taskId,
-        workspaceId,
+        organizationId,
       })
       .onConflictDoNothing({
         target: [labelTable.taskId, labelTable.name],
@@ -407,8 +407,8 @@ async function importCommentsForTask(
 async function linkPullRequestToTask(
   pr: GitHubPullRequest,
   integrationId: string,
-  projectId: string,
-  projectSlug: string,
+  boardId: string,
+  boardSlug: string,
   config: GitHubConfig,
 ): Promise<void> {
   const taskNumber = extractTaskNumber(
@@ -416,14 +416,14 @@ async function linkPullRequestToTask(
     pr.title,
     pr.body ?? undefined,
     config,
-    projectSlug,
+    boardSlug,
   );
 
   if (!taskNumber) {
     return;
   }
 
-  const task = await findTaskByNumber(projectId, taskNumber);
+  const task = await findTaskByNumber(boardId, taskNumber);
 
   if (!task) {
     return;

@@ -4,10 +4,10 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { projectTable, taskRelationTable, taskTable } from "../database/schema";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { validateWorkspaceAccess } from "../utils/validate-workspace-access";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { boardTable, taskRelationTable, taskTable } from "../database/schema";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { validateOrganizationAccess } from "../utils/validate-organization-access";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import createTaskRelation from "./controllers/create-task-relation";
 import deleteTaskRelation from "./controllers/delete-task-relation";
 import getTaskRelations from "./controllers/get-task-relations";
@@ -23,7 +23,7 @@ const taskRelationSchema = v.object({
 const taskRelation = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
   };
 }>()
   .get(
@@ -42,10 +42,10 @@ const taskRelation = new Hono<{
       },
     }),
     validator("param", v.object({ taskId: v.string() })),
-    workspaceAccess.fromTaskId("taskId"),
+    organizationAccess.fromTaskId("taskId"),
     async (c) => {
       const { taskId } = c.req.valid("param");
-      const relations = await getTaskRelations(taskId, c.get("workspaceId"));
+      const relations = await getTaskRelations(taskId, c.get("organizationId"));
       return c.json(relations);
     },
   )
@@ -79,19 +79,19 @@ const taskRelation = new Hono<{
       }
       const { sourceTaskId } = c.req.valid("json");
       const [task] = await db
-        .select({ workspaceId: projectTable.workspaceId })
+        .select({ organizationId: boardTable.organizationId })
         .from(taskTable)
-        .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+        .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
         .where(eq(taskTable.id, sourceTaskId))
         .limit(1);
       if (!task) {
         throw new HTTPException(404, { message: "Source task not found" });
       }
-      await validateWorkspaceAccess(userId, task.workspaceId);
-      c.set("workspaceId", task.workspaceId);
+      await validateOrganizationAccess(userId, task.organizationId);
+      c.set("organizationId", task.organizationId);
       return next();
     },
-    requireWorkspacePermission({ task: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const userId = c.get("userId");
       const { sourceTaskId, targetTaskId, relationType } = c.req.valid("json");
@@ -100,7 +100,7 @@ const taskRelation = new Hono<{
         targetTaskId,
         relationType,
         userId,
-        workspaceId: c.get("workspaceId"),
+        organizationId: c.get("organizationId"),
       });
       return c.json(relation);
     },
@@ -136,19 +136,19 @@ const taskRelation = new Hono<{
         throw new HTTPException(404, { message: "Task relation not found" });
       }
       const [task] = await db
-        .select({ workspaceId: projectTable.workspaceId })
+        .select({ organizationId: boardTable.organizationId })
         .from(taskTable)
-        .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+        .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
         .where(eq(taskTable.id, rel.sourceTaskId))
         .limit(1);
       if (!task) {
         throw new HTTPException(404, { message: "Task not found" });
       }
-      await validateWorkspaceAccess(userId, task.workspaceId);
-      c.set("workspaceId", task.workspaceId);
+      await validateOrganizationAccess(userId, task.organizationId);
+      c.set("organizationId", task.organizationId);
       return next();
     },
-    requireWorkspacePermission({ task: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const userId = c.get("userId");
       const { id } = c.req.valid("param");

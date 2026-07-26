@@ -3,10 +3,10 @@ import db from "../../database";
 import {
   columnTable,
   integrationTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
-  workspaceTable,
+  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -33,9 +33,9 @@ type GenericWebhookTaskData = {
   status: string | null;
   statusName: string | null;
   priority: string | null;
-  projectId: string;
-  projectName: string;
-  workspaceId: string;
+  boardId: string;
+  boardName: string;
+  organizationId: string;
   taskUrl: string;
 };
 
@@ -48,7 +48,7 @@ function isEnabled(
 
 async function getTaskData(
   taskId: string,
-  projectId: string,
+  boardId: string,
 ): Promise<GenericWebhookTaskData | null> {
   const [taskRow] = await db
     .select({
@@ -58,21 +58,21 @@ async function getTaskData(
       status: taskTable.status,
       priority: taskTable.priority,
       columnName: columnTable.name,
-      projectId: projectTable.id,
-      projectName: projectTable.name,
-      workspaceId: workspaceTable.id,
+      boardId: boardTable.id,
+      boardName: boardTable.name,
+      organizationId: organizationTable.id,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-    .innerJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
     .leftJoin(
       columnTable,
       and(
         eq(taskTable.columnId, columnTable.id),
-        eq(columnTable.projectId, projectTable.id),
+        eq(columnTable.boardId, boardTable.id),
       ),
     )
-    .where(and(eq(taskTable.id, taskId), eq(projectTable.id, projectId)))
+    .where(and(eq(taskTable.id, taskId), eq(boardTable.id, boardId)))
     .limit(1);
 
   if (!taskRow) {
@@ -85,7 +85,7 @@ async function getTaskData(
     ...taskRow,
     status: taskRow.status,
     statusName: taskRow.columnName ?? taskRow.status,
-    taskUrl: `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`,
+    taskUrl: `${clientUrl}/dashboard/organization/${taskRow.organizationId}/board/${taskRow.boardId}/task/${taskId}`,
   };
 }
 
@@ -113,13 +113,13 @@ async function getActor(userId: string | null): Promise<{
 }
 
 async function persistWebhookHealth(
-  projectId: string,
+  boardId: string,
   update: (config: GenericWebhookConfig) => GenericWebhookConfig,
 ): Promise<void> {
   try {
     const integration = await db.query.integrationTable.findFirst({
       where: and(
-        eq(integrationTable.projectId, projectId),
+        eq(integrationTable.boardId, boardId),
         eq(integrationTable.type, "generic-webhook"),
       ),
     });
@@ -142,7 +142,7 @@ async function persistWebhookHealth(
   } catch (error) {
     console.error("persistWebhookHealth failed", {
       error,
-      projectId,
+      boardId,
     });
   }
 }
@@ -151,20 +151,20 @@ async function deliverWebhookEvent(
   config: GenericWebhookConfig,
   eventName: string,
   taskId: string,
-  projectId: string,
+  boardId: string,
   payload: Record<string, unknown>,
 ): Promise<boolean> {
   const attempt = {
     eventName,
     taskId,
-    projectId,
+    boardId,
     webhookUrl: config.webhookUrl,
   };
 
   try {
     await postToGenericWebhook(config.webhookUrl, payload, config.secret);
 
-    void persistWebhookHealth(projectId, (currentConfig) => ({
+    void persistWebhookHealth(boardId, (currentConfig) => ({
       ...currentConfig,
       health: {
         ...currentConfig.health,
@@ -178,7 +178,7 @@ async function deliverWebhookEvent(
     const message =
       error instanceof Error ? (error.stack ?? error.message) : String(error);
 
-    void persistWebhookHealth(projectId, (currentConfig) => ({
+    void persistWebhookHealth(boardId, (currentConfig) => ({
       ...currentConfig,
       health: {
         ...currentConfig.health,
@@ -193,7 +193,7 @@ async function deliverWebhookEvent(
       error,
       eventName,
       taskId,
-      projectId,
+      boardId,
       webhookUrl: config.webhookUrl,
     });
     return false;
@@ -204,25 +204,25 @@ async function sendEvent(
   config: GenericWebhookConfig,
   eventName: string,
   taskId: string,
-  projectId: string,
+  boardId: string,
   userId: string | null,
   data: Record<string, unknown>,
 ): Promise<boolean> {
-  const task = await getTaskData(taskId, projectId);
+  const task = await getTaskData(taskId, boardId);
   if (!task) return false;
 
   const actor = await getActor(userId);
 
-  return deliverWebhookEvent(config, eventName, taskId, projectId, {
+  return deliverWebhookEvent(config, eventName, taskId, boardId, {
     event: eventName,
     timestamp: new Date().toISOString(),
     integration: {
       type: "generic-webhook",
     },
-    project: {
-      id: task.projectId,
-      name: task.projectName,
-      workspaceId: task.workspaceId,
+    board: {
+      id: task.boardId,
+      name: task.boardName,
+      organizationId: task.organizationId,
     },
     task: {
       id: task.id,
@@ -241,7 +241,7 @@ async function sendEvent(
 export async function sendDueDateReminder(
   config: GenericWebhookConfig,
   taskId: string,
-  projectId: string,
+  boardId: string,
   leadTimeMinutes: number,
   dueDate: Date,
 ): Promise<boolean> {
@@ -252,7 +252,7 @@ export async function sendDueDateReminder(
     normalizedConfig,
     "task.due_date_reminder",
     taskId,
-    projectId,
+    boardId,
     null,
     {
       dueDate: dueDate.toISOString(),
@@ -274,7 +274,7 @@ export async function handleTaskCreated(
     config,
     "task.created",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,
@@ -299,7 +299,7 @@ export async function handleTaskStatusChanged(
     config,
     "task.status_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,
@@ -322,7 +322,7 @@ export async function handleTaskPriorityChanged(
     config,
     "task.priority_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,
@@ -345,7 +345,7 @@ export async function handleTaskTitleChanged(
     config,
     "task.title_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       oldTitle: event.oldTitle,
@@ -367,7 +367,7 @@ export async function handleTaskDescriptionChanged(
     config,
     "task.description_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       oldDescription: event.oldDescription,
@@ -389,7 +389,7 @@ export async function handleTaskCommentCreated(
     config,
     "task.comment_created",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       comment: event.comment,
@@ -401,17 +401,17 @@ async function sendTaskDeletedEvent(
   config: GenericWebhookConfig,
   event: TaskDeletedEvent,
 ): Promise<boolean> {
-  const [project] = await db
+  const [board] = await db
     .select({
-      id: projectTable.id,
-      name: projectTable.name,
-      workspaceId: projectTable.workspaceId,
+      id: boardTable.id,
+      name: boardTable.name,
+      organizationId: boardTable.organizationId,
     })
-    .from(projectTable)
-    .where(eq(projectTable.id, event.projectId))
+    .from(boardTable)
+    .where(eq(boardTable.id, event.boardId))
     .limit(1);
 
-  if (!project) return false;
+  if (!board) return false;
 
   const actor = await getActor(event.userId);
 
@@ -419,17 +419,17 @@ async function sendTaskDeletedEvent(
     config,
     "task.deleted",
     event.taskId,
-    event.projectId,
+    event.boardId,
     {
       event: "task.deleted",
       timestamp: new Date().toISOString(),
       integration: {
         type: "generic-webhook",
       },
-      project: {
-        id: project.id,
-        name: project.name,
-        workspaceId: project.workspaceId,
+      board: {
+        id: board.id,
+        name: board.name,
+        organizationId: board.organizationId,
       },
       task: {
         id: event.taskId,
@@ -466,13 +466,13 @@ export async function handleTaskMoved(
     config,
     "task.moved",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
-      fromProjectId: event.fromProjectId,
-      fromProjectName: event.fromProjectName,
-      toProjectId: event.toProjectId,
-      toProjectName: event.toProjectName,
+      fromBoardId: event.fromBoardId,
+      fromBoardName: event.fromBoardName,
+      toBoardId: event.toBoardId,
+      toBoardName: event.toBoardName,
       oldStatus: event.oldStatus,
       newStatus: event.newStatus,
     },
@@ -492,7 +492,7 @@ export async function handleTaskDueDateChanged(
     config,
     "task.due_date_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,
@@ -515,7 +515,7 @@ export async function handleTaskAssigneeChanged(
     config,
     "task.assignee_changed",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,
@@ -539,7 +539,7 @@ export async function handleTaskUnassigned(
     config,
     "task.unassigned",
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
     {
       title: event.title,

@@ -15,7 +15,7 @@ import {
   columnTable,
   externalLinkTable,
   labelTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
 } from "../../database/schema";
@@ -68,18 +68,18 @@ function buildOrderBy(
   }
 }
 
-async function getTasks(projectId: string, options: GetTasksOptions = {}) {
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+async function getTasks(boardId: string, options: GetTasksOptions = {}) {
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
+  if (!board) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
-  const conditions = [eq(taskTable.projectId, projectId)];
+  const conditions = [eq(taskTable.boardId, boardId)];
 
   if (options.status) {
     conditions.push(eq(taskTable.status, options.status));
@@ -135,14 +135,14 @@ async function getTasks(projectId: string, options: GetTasksOptions = {}) {
     assigneeName: userTable.name,
     assigneeId: userTable.id,
     assigneeImage: userTable.image,
-    projectId: taskTable.projectId,
+    boardId: taskTable.boardId,
   };
 
   const query = db
     .select(taskSelection)
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
-    .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(whereClause)
     .orderBy(orderByClause);
 
@@ -215,13 +215,13 @@ async function getTasks(projectId: string, options: GetTasksOptions = {}) {
     });
   }
 
-  const projectColumns = await db
+  const boardColumns = await db
     .select()
     .from(columnTable)
-    .where(eq(columnTable.projectId, projectId))
+    .where(eq(columnTable.boardId, boardId))
     .orderBy(asc(columnTable.position));
 
-  const columns = projectColumns.map((column) => ({
+  const columns = boardColumns.map((column) => ({
     id: column.slug,
     slug: column.slug,
     name: column.name,
@@ -254,13 +254,13 @@ async function getTasks(projectId: string, options: GetTasksOptions = {}) {
 
   return {
     data: {
-      id: project.id,
-      name: project.name,
-      slug: project.slug,
-      icon: project.icon,
-      description: project.description,
-      isPublic: project.isPublic,
-      workspaceId: project.workspaceId,
+      id: board.id,
+      name: board.name,
+      slug: board.slug,
+      icon: board.icon,
+      description: board.description,
+      isPublic: board.isPublic,
+      organizationId: board.organizationId,
       columns,
       archivedTasks,
       plannedTasks,

@@ -3,5 +3,5 @@ export {
   sendNotificationEmail,
   sendOtpEmail,
   sendPasswordResetEmail,
-  sendWorkspaceInvitationEmail,
+  sendOrganizationInvitationEmail,
 } from "./send-email";

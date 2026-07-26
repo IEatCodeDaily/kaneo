@@ -15,12 +15,12 @@ import { REMINDER_WINDOW_MINUTES } from "./reminder-timing";
 
 const MINUTE_MS = 60 * 1000;
 
-export async function checkProjectWebhookReminders(): Promise<void> {
+export async function checkBoardWebhookReminders(): Promise<void> {
   const now = new Date();
   const integrations = await db
     .select({
       id: integrationTable.id,
-      projectId: integrationTable.projectId,
+      boardId: integrationTable.boardId,
       config: integrationTable.config,
     })
     .from(integrationTable)
@@ -57,7 +57,7 @@ export async function checkProjectWebhookReminders(): Promise<void> {
         )
         .where(
           and(
-            eq(taskTable.projectId, integration.projectId),
+            eq(taskTable.boardId, integration.boardId),
             isNotNull(taskTable.dueDate),
             between(taskTable.dueDate, windowStart, windowEnd),
             isNull(taskReminderSentTable.id),
@@ -83,7 +83,7 @@ export async function checkProjectWebhookReminders(): Promise<void> {
         const delivered = await sendDueDateReminder(
           config,
           task.id,
-          integration.projectId,
+          integration.boardId,
           leadTimeMinutes,
           task.dueDate,
         );
@@ -95,9 +95,9 @@ export async function checkProjectWebhookReminders(): Promise<void> {
         }
       }
     } catch (error) {
-      console.error("Failed to process project webhook reminder", {
+      console.error("Failed to process board webhook reminder", {
         integrationId: integration.id,
-        projectId: integration.projectId,
+        boardId: integration.boardId,
         error,
       });
     }

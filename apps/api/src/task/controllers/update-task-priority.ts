@@ -37,7 +37,7 @@ async function updateTaskPriority({
 
   await publishEvent("task.priority_changed", {
     taskId: updatedTask.id,
-    projectId: updatedTask.projectId,
+    boardId: updatedTask.boardId,
     userId: currentUserId,
     oldPriority: existingTask.priority,
     newPriority: priority,

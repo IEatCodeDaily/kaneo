@@ -4,16 +4,16 @@ import { EmailShell, styles } from "./shell";
 
 void React;
 
-export type WorkspaceInvitationEmailProps = {
-  workspaceName: string;
+export type OrganizationInvitationEmailProps = {
+  organizationName: string;
   inviterName: string;
   inviterEmail: string;
   invitationLink: string;
   to: string;
-  copy: WorkspaceInvitationEmailCopy;
+  copy: OrganizationInvitationEmailCopy;
 };
 
-export type WorkspaceInvitationEmailCopy = {
+export type OrganizationInvitationEmailCopy = {
   subject: string;
   preview: string;
   title: string;
@@ -30,15 +30,15 @@ function interpolate(template: string, values: Record<string, string>) {
   });
 }
 
-const WorkspaceInvitationEmail = ({
-  workspaceName,
+const OrganizationInvitationEmail = ({
+  organizationName,
   inviterName,
   inviterEmail,
   invitationLink,
   to,
   copy,
-}: WorkspaceInvitationEmailProps) => {
-  const values = { workspaceName, inviterName, inviterEmail };
+}: OrganizationInvitationEmailProps) => {
+  const values = { organizationName, inviterName, inviterEmail };
 
   return (
     <EmailShell
@@ -59,23 +59,23 @@ const WorkspaceInvitationEmail = ({
   );
 };
 
-WorkspaceInvitationEmail.PreviewProps = {
-  workspaceName: "Acme Inc",
+OrganizationInvitationEmail.PreviewProps = {
+  organizationName: "Acme Inc",
   inviterName: "John Doe",
   inviterEmail: "john@acme.com",
   invitationLink: "https://kaneo.app/invite/abc123",
   to: "invitee@example.com",
   copy: {
-    subject: "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-    preview: "You're invited to {{workspaceName}} on Kaneo",
-    title: "Join {{workspaceName}}",
+    subject: "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+    preview: "You're invited to {{organizationName}} on Kaneo",
+    title: "Join {{organizationName}}",
     subtitle:
       "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
     cta: "Accept invitation",
     sameEmail: "You can accept with the same email that received this message.",
     ignore: "If this wasn't expected, you can safely ignore this email.",
-    footer: "Kaneo workspace invitation",
+    footer: "Kaneo organization invitation",
   },
-} as WorkspaceInvitationEmailProps;
+} as OrganizationInvitationEmailProps;
 
-export default WorkspaceInvitationEmail;
+export default OrganizationInvitationEmail;

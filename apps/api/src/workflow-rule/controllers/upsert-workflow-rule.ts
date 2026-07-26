@@ -4,12 +4,12 @@ import db from "../../database";
 import { columnTable, workflowRuleTable } from "../../database/schema";
 
 async function upsertWorkflowRule({
-  projectId,
+  boardId,
   integrationType,
   eventType,
   columnId,
 }: {
-  projectId: string;
+  boardId: string;
   integrationType: string;
   eventType: string;
   columnId: string;
@@ -17,19 +17,19 @@ async function upsertWorkflowRule({
   const targetColumn = await db.query.columnTable.findFirst({
     where: and(
       eq(columnTable.id, columnId),
-      eq(columnTable.projectId, projectId),
+      eq(columnTable.boardId, boardId),
     ),
   });
 
   if (!targetColumn) {
     throw new HTTPException(400, {
-      message: "Column does not belong to the provided project",
+      message: "Column does not belong to the provided board",
     });
   }
 
   const existing = await db.query.workflowRuleTable.findFirst({
     where: and(
-      eq(workflowRuleTable.projectId, projectId),
+      eq(workflowRuleTable.boardId, boardId),
       eq(workflowRuleTable.integrationType, integrationType),
       eq(workflowRuleTable.eventType, eventType),
     ),
@@ -54,7 +54,7 @@ async function upsertWorkflowRule({
   const [created] = await db
     .insert(workflowRuleTable)
     .values({
-      projectId,
+      boardId,
       integrationType,
       eventType,
       columnId,

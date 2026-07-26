@@ -4,11 +4,11 @@ import { taskTable } from "../../database/schema";
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-async function getNextTaskNumber(projectId: string, dbOrTx: DbOrTx = db) {
+async function getNextTaskNumber(boardId: string, dbOrTx: DbOrTx = db) {
   const [result] = await dbOrTx
     .select({ maxNumber: max(taskTable.number) })
     .from(taskTable)
-    .where(eq(taskTable.projectId, projectId));
+    .where(eq(taskTable.boardId, boardId));
 
   return result?.maxNumber ?? 0;
 }

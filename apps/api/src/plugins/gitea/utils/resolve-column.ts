@@ -3,33 +3,33 @@ import db from "../../../database";
 import { columnTable, workflowRuleTable } from "../../../database/schema";
 
 export async function resolveTargetStatus(
-  projectId: string,
+  boardId: string,
   eventType: string,
   fallbackStatus: string,
 ): Promise<string> {
-  const projectColumns = await db
+  const boardColumns = await db
     .select({
       id: columnTable.id,
       slug: columnTable.slug,
     })
     .from(columnTable)
-    .where(eq(columnTable.projectId, projectId))
+    .where(eq(columnTable.boardId, boardId))
     .orderBy(asc(columnTable.position));
 
-  if (projectColumns.length === 0) {
+  if (boardColumns.length === 0) {
     return fallbackStatus;
   }
 
   const rule = await db.query.workflowRuleTable.findFirst({
     where: and(
-      eq(workflowRuleTable.projectId, projectId),
+      eq(workflowRuleTable.boardId, boardId),
       eq(workflowRuleTable.integrationType, "gitea"),
       eq(workflowRuleTable.eventType, eventType),
     ),
   });
 
   if (rule) {
-    const mappedColumn = projectColumns.find(
+    const mappedColumn = boardColumns.find(
       (column) => column.id === rule.columnId,
     );
     if (mappedColumn) {
@@ -37,12 +37,12 @@ export async function resolveTargetStatus(
     }
   }
 
-  const fallbackColumn = projectColumns.find(
+  const fallbackColumn = boardColumns.find(
     (column) => column.slug === fallbackStatus,
   );
   if (fallbackColumn) {
     return fallbackColumn.slug;
   }
 
-  return projectColumns[0]?.slug ?? fallbackStatus;
+  return boardColumns[0]?.slug ?? fallbackStatus;
 }

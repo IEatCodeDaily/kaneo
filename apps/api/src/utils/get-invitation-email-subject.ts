@@ -1,13 +1,13 @@
-import { getWorkspaceInvitationEmailCopy } from "./get-workspace-invitation-email-copy";
+import { getOrganizationInvitationEmailCopy } from "./get-organization-invitation-email-copy";
 
 export function getInvitationEmailSubject(
   locale: string | null,
   inviterName: string,
-  workspaceName: string,
+  organizationName: string,
 ) {
-  const values: Record<string, string> = { inviterName, workspaceName };
+  const values: Record<string, string> = { inviterName, organizationName };
 
-  return getWorkspaceInvitationEmailCopy(locale).subject.replace(
+  return getOrganizationInvitationEmailCopy(locale).subject.replace(
     /\{\{(\w+)\}\}/g,
     (_match, key: string) => values[key] ?? "",
   );

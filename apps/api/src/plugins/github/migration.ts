@@ -46,7 +46,7 @@ export async function migrateGitHubIntegration() {
     for (const old of oldIntegrations) {
       const existingIntegration = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, old.projectId),
+          eq(integrationTable.boardId, old.boardId),
           eq(integrationTable.type, "github"),
         ),
       });
@@ -56,7 +56,7 @@ export async function migrateGitHubIntegration() {
       }
 
       await db.insert(integrationTable).values({
-        projectId: old.projectId,
+        boardId: old.boardId,
         type: "github",
         config: JSON.stringify({
           repositoryOwner: old.repositoryOwner,
@@ -112,7 +112,7 @@ async function migrateTaskLinks() {
 
     const integration = await db.query.integrationTable.findFirst({
       where: and(
-        eq(integrationTable.projectId, task.projectId),
+        eq(integrationTable.boardId, task.boardId),
         eq(integrationTable.type, "github"),
       ),
     });

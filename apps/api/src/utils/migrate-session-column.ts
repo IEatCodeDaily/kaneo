@@ -3,13 +3,13 @@ import db from "../database";
 
 /**
  * Migration script to:
- * 1. Rename active_workspace_id to active_organization_id in session table
+ * 1. Rename active_organization_id to active_organization_id in session table
  * 2. Add created_at column to invitation table if it doesn't exist
  * This runs before Drizzle migrations to ensure the column names match the schema.
  */
 export async function migrateSessionColumn() {
   console.log(
-    "🔄 Checking session table for active_workspace_id to active_organization_id migration...",
+    "🔄 Checking session table for active_organization_id to active_organization_id migration...",
   );
 
   try {
@@ -26,12 +26,12 @@ export async function migrateSessionColumn() {
       sessionTableExists.rows[0]?.exists === true ||
       sessionTableExists.rows[0]?.exists === "t";
     if (sessionExists) {
-      // Check if active_workspace_id column exists
+      // Check if active_organization_id column exists
       const hasOldColumn = await db.execute(sql`
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'session'
-        AND column_name = 'active_workspace_id'
+        AND column_name = 'active_organization_id'
       `);
 
       // Check if active_organization_id column already exists
@@ -44,14 +44,14 @@ export async function migrateSessionColumn() {
 
       if (hasOldColumn.rows.length > 0 && hasNewColumn.rows.length === 0) {
         console.log(
-          "📝 Found active_workspace_id column, renaming to active_organization_id...",
+          "📝 Found active_organization_id column, renaming to active_organization_id...",
         );
         await db.execute(sql`
           ALTER TABLE "session" 
-          RENAME COLUMN "active_workspace_id" TO "active_organization_id";
+          RENAME COLUMN "active_organization_id" TO "active_organization_id";
         `);
         console.log(
-          "✅ Successfully renamed active_workspace_id to active_organization_id",
+          "✅ Successfully renamed active_organization_id to active_organization_id",
         );
       } else if (hasNewColumn.rows.length > 0) {
         console.log(
@@ -59,7 +59,7 @@ export async function migrateSessionColumn() {
         );
       } else if (hasOldColumn.rows.length === 0) {
         console.log(
-          "🛈 active_workspace_id column does not exist — skipping migration.",
+          "🛈 active_organization_id column does not exist — skipping migration.",
         );
       }
     } else {

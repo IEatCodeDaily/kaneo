@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { columnTable, projectTable, taskTable } from "../../database/schema";
+import { columnTable, boardTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {
   coercePriority,
@@ -21,22 +21,22 @@ export type ImportTask = {
 };
 
 async function importTasks(
-  projectId: string,
+  boardId: string,
   tasksToImport: ImportTask[],
   currentUserId?: string,
 ) {
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
+  if (!board) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
-  let taskNumber = await getNextTaskNumber(projectId);
-  const validStatuses = await getValidTaskStatuses(projectId);
+  let taskNumber = await getNextTaskNumber(boardId);
+  const validStatuses = await getValidTaskStatuses(boardId);
 
   const results = [];
 
@@ -53,7 +53,7 @@ async function importTasks(
 
       const column = await db.query.columnTable.findFirst({
         where: and(
-          eq(columnTable.projectId, projectId),
+          eq(columnTable.boardId, boardId),
           eq(columnTable.slug, status),
         ),
       });
@@ -61,7 +61,7 @@ async function importTasks(
       const [createdTask] = await db
         .insert(taskTable)
         .values({
-          projectId,
+          boardId,
           userId: taskData.userId || null,
           title: taskData.title,
           status,
@@ -110,10 +110,10 @@ async function importTasks(
 
   return {
     importedAt: new Date().toISOString(),
-    project: {
-      id: project.id,
-      name: project.name,
-      slug: project.slug,
+    board: {
+      id: board.id,
+      name: board.name,
+      slug: board.slug,
     },
     results: {
       total: tasksToImport.length,

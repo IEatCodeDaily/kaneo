@@ -7,10 +7,10 @@ const CHANNEL_SUFFIX = ":broadcast";
 const CHANNEL_PATTERN = `${CHANNEL_PREFIX}*${CHANNEL_SUFFIX}`;
 
 const broadcastMessageSchema = v.object({
-  projectId: v.string(),
+  boardId: v.string(),
   message: v.object({
     type: v.string(),
-    projectId: v.string(),
+    boardId: v.string(),
     taskId: v.optional(v.string()),
     sourceTaskId: v.optional(v.string()),
     targetTaskId: v.optional(v.string()),
@@ -26,7 +26,7 @@ export class RedisBroadcastAdapter implements BroadcastAdapter {
 
   async publish(msg: BroadcastMessage): Promise<void> {
     await getRedisPub().publish(
-      this.channelForProject(msg.projectId),
+      this.channelForBoard(msg.boardId),
       JSON.stringify(msg),
     );
   }
@@ -35,7 +35,7 @@ export class RedisBroadcastAdapter implements BroadcastAdapter {
     if (this.subscribed) return;
     this.subscribed = true;
 
-    // Pattern-subscribe to ALL project channels at once
+    // Pattern-subscribe to ALL board channels at once
     await getRedisSub().psubscribe(CHANNEL_PATTERN);
 
     // "pmessage" fires for pattern subscriptions (not "message")
@@ -63,13 +63,13 @@ export class RedisBroadcastAdapter implements BroadcastAdapter {
       getRedisSub().off("pmessage", this._pmessageHandler);
       this._pmessageHandler = null;
     }
-    // Unsubscribe from the pattern — covers all project channels
+    // Unsubscribe from the pattern — covers all board channels
     await getRedisSub().punsubscribe(CHANNEL_PATTERN);
     this.subscribed = false;
     await closeRedis();
   }
 
-  private channelForProject(projectId: string): string {
-    return `${CHANNEL_PREFIX}${projectId}${CHANNEL_SUFFIX}`;
+  private channelForBoard(boardId: string): string {
+    return `${CHANNEL_PREFIX}${boardId}${CHANNEL_SUFFIX}`;
   }
 }

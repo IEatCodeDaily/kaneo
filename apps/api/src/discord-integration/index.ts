@@ -12,13 +12,13 @@ import {
   validateDiscordConfig,
 } from "../plugins/discord/config";
 import { discordIntegrationSchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 
 const discordIntegration = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
     apiKey?: {
       id: string;
       userId: string;
@@ -42,7 +42,7 @@ function maskWebhookUrl(value: string): string {
 
 function toResponse(integration: {
   id: string;
-  projectId: string;
+  boardId: string;
   config: string;
   isActive: boolean | null;
   createdAt: Date;
@@ -54,7 +54,7 @@ function toResponse(integration: {
 
   return {
     id: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     channelName: config.channelName ?? null,
     webhookConfigured: Boolean(config.webhookUrl),
     maskedWebhookUrl: config.webhookUrl
@@ -70,10 +70,10 @@ function toResponse(integration: {
   };
 }
 
-async function getDiscordIntegration(projectId: string) {
+async function getDiscordIntegration(boardId: string) {
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "discord"),
     ),
   });
@@ -98,11 +98,11 @@ const nullableDiscordIntegrationSchema = v.nullable(discordIntegrationSchema);
 
 discordIntegration
   .get(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "getDiscordIntegration",
       tags: ["Discord"],
-      description: "Get Discord integration for a project",
+      description: "Get Discord integration for a board",
       responses: {
         200: {
           description: "Discord integration details",
@@ -114,20 +114,20 @@ discordIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const integration = await getDiscordIntegration(projectId);
+      const { boardId } = c.req.valid("param");
+      const integration = await getDiscordIntegration(boardId);
       return c.json(integration);
     },
   )
   .post(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "createDiscordIntegration",
       tags: ["Discord"],
-      description: "Create or replace a Discord integration for a project",
+      description: "Create or replace a Discord integration for a board",
       responses: {
         200: {
           description: "Discord integration created successfully",
@@ -139,7 +139,7 @@ discordIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -148,10 +148,10 @@ discordIntegration
         events: v.optional(discordEventsSchema),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const config = normalizeDiscordConfig({
@@ -170,13 +170,13 @@ discordIntegration
       await db
         .insert(integrationTable)
         .values({
-          projectId,
+          boardId,
           type: "discord",
           config: JSON.stringify(config),
           isActive: true,
         })
         .onConflictDoUpdate({
-          target: [integrationTable.projectId, integrationTable.type],
+          target: [integrationTable.boardId, integrationTable.type],
           set: {
             config: JSON.stringify(config),
             isActive: true,
@@ -184,12 +184,12 @@ discordIntegration
           },
         });
 
-      const integration = await getDiscordIntegration(projectId);
+      const integration = await getDiscordIntegration(boardId);
       return c.json(integration);
     },
   )
   .patch(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "updateDiscordIntegration",
       tags: ["Discord"],
@@ -203,7 +203,7 @@ discordIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -213,15 +213,15 @@ discordIntegration
         events: v.optional(discordEventsSchema),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "discord"),
         ),
       });
@@ -266,16 +266,16 @@ discordIntegration
         })
         .where(eq(integrationTable.id, existing.id));
 
-      const integration = await getDiscordIntegration(projectId);
+      const integration = await getDiscordIntegration(boardId);
       return c.json(integration);
     },
   )
   .delete(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "deleteDiscordIntegration",
       tags: ["Discord"],
-      description: "Delete Discord integration for a project",
+      description: "Delete Discord integration for a board",
       responses: {
         200: {
           description: "Discord integration deleted successfully",
@@ -287,15 +287,15 @@ discordIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "discord"),
         ),
       });

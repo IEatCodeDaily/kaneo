@@ -3,7 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   activityTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
 } from "../../database/schema";
@@ -36,23 +36,23 @@ async function createComment(taskId: string, userId: string, content: string) {
   const [task] = await db
     .select({
       assigneeId: taskTable.userId,
-      projectId: taskTable.projectId,
+      boardId: taskTable.boardId,
       title: taskTable.title,
-      workspaceId: projectTable.workspaceId,
+      organizationId: boardTable.organizationId,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(eq(taskTable.id, taskId));
 
   if (task) {
     await publishEvent("comment.created", {
       ...activity,
       comment: `**${user?.name}** commented:\n> ${content}`,
-      projectId: task.projectId,
+      boardId: task.boardId,
     });
   }
 
-  // Notify any workspace members @mentioned in the comment (not the author).
+  // Notify any organization members @mentioned in the comment (not the author).
   const mentionedIds = parseMentionIds(content).filter((id) => id !== userId);
   for (const mentionedId of mentionedIds) {
     await createNotification({
@@ -61,8 +61,8 @@ async function createComment(taskId: string, userId: string, content: string) {
       eventData: {
         taskTitle: task?.title ?? null,
         mentionerName: user?.name ?? null,
-        projectId: task?.projectId ?? null,
-        workspaceId: task?.workspaceId ?? null,
+        boardId: task?.boardId ?? null,
+        organizationId: task?.organizationId ?? null,
       },
       resourceId: taskId,
       resourceType: "task",
@@ -81,8 +81,8 @@ async function createComment(taskId: string, userId: string, content: string) {
         taskTitle: task.title,
         commenterName: user?.name ?? null,
         commentPreview: content.slice(0, 160),
-        projectId: task.projectId,
-        workspaceId: task.workspaceId,
+        boardId: task.boardId,
+        organizationId: task.organizationId,
       },
       resourceId: taskId,
       resourceType: "task",

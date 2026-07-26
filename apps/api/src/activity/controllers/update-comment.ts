@@ -47,7 +47,7 @@ async function updateComment(userId: string, id: string, content: string) {
   }
 
   const [task] = await db
-    .select({ projectId: taskTable.projectId })
+    .select({ boardId: taskTable.boardId })
     .from(taskTable)
     .where(eq(taskTable.id, updated.taskId))
     .limit(1);
@@ -55,7 +55,7 @@ async function updateComment(userId: string, id: string, content: string) {
   if (task) {
     await publishEvent("comment.updated", {
       ...updated,
-      projectId: task.projectId,
+      boardId: task.boardId,
       userId,
     });
   }

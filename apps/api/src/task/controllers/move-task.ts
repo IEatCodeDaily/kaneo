@@ -4,7 +4,7 @@ import db from "../../database";
 import {
   assetTable,
   columnTable,
-  projectTable,
+  boardTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
@@ -12,15 +12,15 @@ import getNextTaskNumber from "./get-next-task-number";
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-function isSameProjectMove(
-  sourceProjectId: string,
-  destinationProjectId: string,
+function isSameBoardMove(
+  sourceBoardId: string,
+  destinationBoardId: string,
 ) {
-  return sourceProjectId === destinationProjectId;
+  return sourceBoardId === destinationBoardId;
 }
 
 async function resolveDestinationStatus(
-  destinationProjectId: string,
+  destinationBoardId: string,
   currentStatus: string,
   requestedStatus?: string,
 ) {
@@ -31,12 +31,12 @@ async function resolveDestinationStatus(
       position: columnTable.position,
     })
     .from(columnTable)
-    .where(eq(columnTable.projectId, destinationProjectId))
+    .where(eq(columnTable.boardId, destinationBoardId))
     .orderBy(asc(columnTable.position));
 
   if (destinationColumns.length === 0) {
     throw new HTTPException(400, {
-      message: "Destination project does not have a workflow",
+      message: "Destination board does not have a workflow",
     });
   }
 
@@ -46,7 +46,7 @@ async function resolveDestinationStatus(
 
   if (requestedStatus && !requestedColumn) {
     throw new HTTPException(400, {
-      message: "Selected status is not valid for the destination project",
+      message: "Selected status is not valid for the destination board",
     });
   }
 
@@ -59,7 +59,7 @@ async function resolveDestinationStatus(
 
 async function getNextTaskPosition(
   dbOrTx: DbOrTx,
-  projectId: string,
+  boardId: string,
   status: string,
   columnId: string,
 ) {
@@ -68,7 +68,7 @@ async function getNextTaskPosition(
     .from(taskTable)
     .where(
       and(
-        eq(taskTable.projectId, projectId),
+        eq(taskTable.boardId, boardId),
         eq(taskTable.status, status),
         eq(taskTable.columnId, columnId),
       ),
@@ -79,12 +79,12 @@ async function getNextTaskPosition(
 
 async function moveTask({
   taskId,
-  destinationProjectId,
+  destinationBoardId,
   destinationStatus,
   currentUserId,
 }: {
   taskId: string;
-  destinationProjectId: string;
+  destinationBoardId: string;
   destinationStatus?: string;
   currentUserId: string;
 }) {
@@ -98,45 +98,45 @@ async function moveTask({
     });
   }
 
-  if (isSameProjectMove(existingTask.projectId, destinationProjectId)) {
+  if (isSameBoardMove(existingTask.boardId, destinationBoardId)) {
     throw new HTTPException(400, {
-      message: "Task is already in that project",
+      message: "Task is already in that board",
     });
   }
 
-  const [sourceProject, destinationProject] = await Promise.all([
-    db.query.projectTable.findFirst({
-      where: eq(projectTable.id, existingTask.projectId),
+  const [sourceBoard, destinationBoard] = await Promise.all([
+    db.query.boardTable.findFirst({
+      where: eq(boardTable.id, existingTask.boardId),
     }),
-    db.query.projectTable.findFirst({
-      where: eq(projectTable.id, destinationProjectId),
+    db.query.boardTable.findFirst({
+      where: eq(boardTable.id, destinationBoardId),
     }),
   ]);
 
-  if (!sourceProject || !destinationProject) {
+  if (!sourceBoard || !destinationBoard) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
-  if (sourceProject.workspaceId !== destinationProject.workspaceId) {
+  if (sourceBoard.organizationId !== destinationBoard.organizationId) {
     throw new HTTPException(400, {
-      message: "Tasks can only be moved within the same workspace",
+      message: "Tasks can only be moved within the same organization",
     });
   }
 
   const resolvedColumn = await resolveDestinationStatus(
-    destinationProjectId,
+    destinationBoardId,
     existingTask.status,
     destinationStatus,
   );
 
   const movedTask = await db.transaction(async (tx) => {
     const [nextTaskNumber, nextPosition] = await Promise.all([
-      getNextTaskNumber(destinationProjectId, tx),
+      getNextTaskNumber(destinationBoardId, tx),
       getNextTaskPosition(
         tx,
-        destinationProjectId,
+        destinationBoardId,
         resolvedColumn.slug,
         resolvedColumn.id,
       ),
@@ -145,7 +145,7 @@ async function moveTask({
     const [updatedTask] = await tx
       .update(taskTable)
       .set({
-        projectId: destinationProjectId,
+        boardId: destinationBoardId,
         status: resolvedColumn.slug,
         columnId: resolvedColumn.id,
         number: nextTaskNumber + 1,
@@ -162,7 +162,7 @@ async function moveTask({
 
     await tx
       .update(assetTable)
-      .set({ projectId: destinationProjectId })
+      .set({ boardId: destinationBoardId })
       .where(eq(assetTable.taskId, taskId));
 
     return updatedTask;
@@ -172,18 +172,18 @@ async function moveTask({
     taskId,
     type: "moved",
     userId: currentUserId,
-    fromProjectId: sourceProject.id,
-    fromProjectName: sourceProject.name,
-    toProjectId: destinationProject.id,
-    toProjectName: destinationProject.name,
+    fromBoardId: sourceBoard.id,
+    fromBoardName: sourceBoard.name,
+    toBoardId: destinationBoard.id,
+    toBoardName: destinationBoard.name,
     oldStatus: existingTask.status,
     newStatus: resolvedColumn.slug,
   });
 
   return {
     task: movedTask,
-    sourceProjectId: sourceProject.id,
-    destinationProjectId: destinationProject.id,
+    sourceBoardId: sourceBoard.id,
+    destinationBoardId: destinationBoard.id,
   };
 }
 

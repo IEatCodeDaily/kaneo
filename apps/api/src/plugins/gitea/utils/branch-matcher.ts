@@ -21,12 +21,12 @@ export {
 export function extractTaskNumberFromBranchGitea(
   branchName: string,
   config: GiteaConfig,
-  projectSlug: string,
+  boardSlug: string,
 ): number | null {
   return extractTaskNumberFromBranch(
     branchName,
     asBranchConfig(config),
-    projectSlug,
+    boardSlug,
   );
 }
 
@@ -35,13 +35,13 @@ export function extractTaskNumberGitea(
   prTitle: string | undefined,
   prBody: string | undefined,
   config: GiteaConfig,
-  projectSlug: string,
+  boardSlug: string,
 ): number | null {
   return extractTaskNumber(
     branchName,
     prTitle,
     prBody,
     asBranchConfig(config),
-    projectSlug,
+    boardSlug,
   );
 }

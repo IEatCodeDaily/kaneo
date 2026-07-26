@@ -1,12 +1,12 @@
 export type PluginContext = {
   integrationId: string;
-  projectId: string;
+  boardId: string;
   config: Record<string, unknown>;
 };
 
 export type TaskCreatedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string;
   title: string;
   description: string | null;
@@ -17,7 +17,7 @@ export type TaskCreatedEvent = {
 
 export type TaskStatusChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   oldStatus: string;
   newStatus: string;
@@ -26,7 +26,7 @@ export type TaskStatusChangedEvent = {
 
 export type TaskPriorityChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   oldPriority: string;
   newPriority: string;
@@ -35,7 +35,7 @@ export type TaskPriorityChangedEvent = {
 
 export type TaskTitleChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   oldTitle: string;
   newTitle: string;
@@ -43,7 +43,7 @@ export type TaskTitleChangedEvent = {
 
 export type TaskDescriptionChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   oldDescription: string | null;
   newDescription: string | null;
@@ -51,33 +51,33 @@ export type TaskDescriptionChangedEvent = {
 
 export type TaskCommentCreatedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string;
   comment: string;
 };
 
 export type TaskDeletedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   title: string;
 };
 
 export type TaskMovedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
-  fromProjectId: string;
-  fromProjectName: string;
-  toProjectId: string;
-  toProjectName: string;
+  fromBoardId: string;
+  fromBoardName: string;
+  toBoardId: string;
+  toBoardName: string;
   oldStatus: string;
   newStatus: string;
 };
 
 export type TaskDueDateChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   title: string;
   oldDueDate: Date | null;
@@ -86,7 +86,7 @@ export type TaskDueDateChangedEvent = {
 
 export type TaskAssigneeChangedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   title: string;
   oldAssignee: string | null;
@@ -96,7 +96,7 @@ export type TaskAssigneeChangedEvent = {
 
 export type TaskUnassignedEvent = {
   taskId: string;
-  projectId: string;
+  boardId: string;
   userId: string | null;
   title: string;
 };

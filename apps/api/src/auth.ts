@@ -2,7 +2,7 @@ import { apiKey } from "@better-auth/api-key";
 import {
   sendMagicLinkEmail,
   sendOtpEmail,
-  sendWorkspaceInvitationEmail,
+  sendOrganizationInvitationEmail,
 } from "@kaneo/email";
 import {
   ac,
@@ -37,11 +37,11 @@ import { count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
 import { checkRegistrationAllowed } from "./utils/check-registration-allowed";
-import { checkWorkspaceName } from "./utils/check-workspace-name";
+import { checkOrganizationName } from "./utils/check-organization-name";
 import { mapCustomOAuthProfileToUser } from "./utils/custom-oauth-profile";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getInvitationEmailSubject } from "./utils/get-invitation-email-subject";
-import { getWorkspaceInvitationEmailCopy } from "./utils/get-workspace-invitation-email-copy";
+import { getOrganizationInvitationEmailCopy } from "./utils/get-organization-invitation-email-copy";
 import { getGithubSsoOAuthCredentials } from "./utils/github-sso-env";
 import { isCloud } from "./utils/is-cloud";
 import { isDisposableEmail } from "./utils/is-disposable-email";
@@ -165,10 +165,10 @@ export const auth = betterAuth({
       account: schema.accountTable,
       session: schema.sessionTable,
       verification: schema.verificationTable,
-      workspace: schema.workspaceTable,
-      workspace_member: schema.workspaceUserTable,
+      organization: schema.organizationTable,
+      organization_member: schema.organizationMemberTable,
       invitation: schema.invitationTable,
-      workspace_role: schema.workspaceRoleTable,
+      organization_role: schema.organizationRoleTable,
       team: schema.teamTable,
       teamMember: schema.teamMemberTable,
       apikey: schema.apikeyTable,
@@ -266,17 +266,17 @@ export const auth = betterAuth({
           }),
         ]),
     organization({
-      // `ac` is created with a narrow `statement` shape (project/task/label/
-      // workspace + the default org statements), which makes its inferred
+      // `ac` is created with a narrow `statement` shape (board/task/label/
+      // organization + the default org statements), which makes its inferred
       // `newRole` generic incompatible with better-auth's looser
       // `AccessControl` type. Widen via an explicit cast so the plugin
       // accepts our custom statement.
       ac: ac as unknown as AccessControl,
       // Only `owner` stays static so its permissions can never be edited away
-      // from the workspace creator. `viewer`, `member`, and `admin` are
-      // seeded into `workspace_role` per workspace and resolved via
+      // from the organization creator. `viewer`, `member`, and `admin` are
+      // seeded into `organization_role` per organization and resolved via
       // dynamic access control, so admins can fully override (replace) their
-      // permissions per workspace. See `seedDefaultWorkspaceRoles` + the
+      // permissions per organization. See `seedDefaultOrganizationRoles` + the
       // afterCreateOrganization hook.
       roles: { owner },
       dynamicAccessControl: {
@@ -290,7 +290,7 @@ export const auth = betterAuth({
       },
       schema: {
         organization: {
-          modelName: "workspace",
+          modelName: "organization",
           additionalFields: {
             // in metadata
             description: {
@@ -301,28 +301,28 @@ export const auth = betterAuth({
           },
         },
         member: {
-          modelName: "workspace_member",
+          modelName: "organization_member",
           fields: {
-            organizationId: "workspaceId",
+            organizationId: "organizationId",
             createdAt: "joinedAt",
           },
         },
         invitation: {
           modelName: "invitation",
           fields: {
-            organizationId: "workspaceId",
+            organizationId: "organizationId",
           },
         },
         organizationRole: {
-          modelName: "workspace_role",
+          modelName: "organization_role",
           fields: {
-            organizationId: "workspaceId",
+            organizationId: "organizationId",
           },
         },
         team: {
           modelName: "team",
           fields: {
-            organizationId: "workspaceId",
+            organizationId: "organizationId",
           },
         },
       },
@@ -336,13 +336,13 @@ export const auth = betterAuth({
       requireEmailVerificationOnInvitation: false,
       organizationHooks: {
         beforeCreateOrganization: async ({ organization }) => {
-          const check = checkWorkspaceName(organization.name ?? "");
+          const check = checkOrganizationName(organization.name ?? "");
           if (!check.ok) {
             throw new APIError("BAD_REQUEST", { message: check.reason });
           }
         },
         afterCreateOrganization: async ({ organization, user }) => {
-          // Seed the editable default roles for this workspace. Each
+          // Seed the editable default roles for this organization. Each
           // role's permissions are derived from the compiled-in defaults
           // in `@kaneo/permissions`; admins can later replace them in the
           // Roles UI. We skip names that somehow already exist (this hook
@@ -350,36 +350,36 @@ export const auth = betterAuth({
           // belt-and-braces path).
           try {
             const existing = await db
-              .select({ role: schema.workspaceRoleTable.role })
-              .from(schema.workspaceRoleTable)
+              .select({ role: schema.organizationRoleTable.role })
+              .from(schema.organizationRoleTable)
               .where(
-                eq(schema.workspaceRoleTable.workspaceId, organization.id),
+                eq(schema.organizationRoleTable.organizationId, organization.id),
               );
             const taken = new Set(existing.map((r) => r.role));
             const now = new Date();
             const rows = DEFAULT_ROLE_NAMES.filter(
               (name) => !taken.has(name),
             ).map((name) => ({
-              workspaceId: organization.id,
+              organizationId: organization.id,
               role: name,
               permission: JSON.stringify(defaultRolePayloads[name]),
               createdAt: now,
               updatedAt: now,
             }));
             if (rows.length > 0) {
-              await db.insert(schema.workspaceRoleTable).values(rows);
+              await db.insert(schema.organizationRoleTable).values(rows);
             }
           } catch (error) {
             console.error(
-              "Failed to seed default workspace roles for workspace",
+              "Failed to seed default organization roles for organization",
               organization.id,
               error,
             );
           }
 
-          publishEvent("workspace.created", {
-            workspaceId: organization.id,
-            workspaceName: organization.name,
+          publishEvent("organization.created", {
+            organizationId: organization.id,
+            organizationName: organization.name,
             ownerEmail: user.name,
             ownerId: user.id,
           });
@@ -388,9 +388,9 @@ export const auth = betterAuth({
       async sendInvitationEmail(data) {
         const inviteLink = `${process.env.KANEO_CLIENT_URL}/invitation/accept/${data.id}`;
         const locale = await getUserLocale(data.email);
-        const copy = getWorkspaceInvitationEmailCopy(locale);
+        const copy = getOrganizationInvitationEmailCopy(locale);
 
-        const result = await sendWorkspaceInvitationEmail(
+        const result = await sendOrganizationInvitationEmail(
           data.email,
           getInvitationEmailSubject(
             locale,
@@ -401,7 +401,7 @@ export const auth = betterAuth({
             inviterEmail: data.inviter.user.email,
             inviterName: data.inviter.user.name,
             locale,
-            workspaceName: data.organization.name,
+            organizationName: data.organization.name,
             invitationLink: inviteLink,
             to: data.email,
             copy,
@@ -594,7 +594,7 @@ export const auth = betterAuth({
           | undefined;
         if (sessionUser?.isAnonymous) {
           throw new APIError("FORBIDDEN", {
-            message: "Guest accounts may not send workspace invitations.",
+            message: "Guest accounts may not send organization invitations.",
           });
         }
         const inviteeEmail = (ctx.body?.email as string | undefined) ?? "";
@@ -682,18 +682,18 @@ export const auth = betterAuth({
       if (ctx.path.startsWith("/sign-up") || ctx.path.startsWith("/sign-in")) {
         const newSession = ctx.context.newSession;
         if (newSession) {
-          const workspaceMember = await db
-            .select({ workspaceId: schema.workspaceUserTable.workspaceId })
-            .from(schema.workspaceUserTable)
-            .where(eq(schema.workspaceUserTable.userId, newSession.user.id))
+          const organizationMember = await db
+            .select({ organizationId: schema.organizationMemberTable.organizationId })
+            .from(schema.organizationMemberTable)
+            .where(eq(schema.organizationMemberTable.userId, newSession.user.id))
             .limit(1);
 
-          const activeWorkspaceId = workspaceMember[0]?.workspaceId || null;
+          const activeOrganizationId = organizationMember[0]?.organizationId || null;
 
-          if (activeWorkspaceId) {
+          if (activeOrganizationId) {
             await db
               .update(schema.sessionTable)
-              .set({ activeOrganizationId: activeWorkspaceId })
+              .set({ activeOrganizationId: activeOrganizationId })
               .where(eq(schema.sessionTable.id, newSession.session.id));
           }
         }

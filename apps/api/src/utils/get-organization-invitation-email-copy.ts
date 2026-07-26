@@ -8,7 +8,7 @@ const messages = {
   fr: frFR.invitations.email,
 } as const;
 
-export function getWorkspaceInvitationEmailCopy(locale?: string | null) {
+export function getOrganizationInvitationEmailCopy(locale?: string | null) {
   const normalizedLocale = locale?.toLowerCase();
 
   if (normalizedLocale?.startsWith("de")) return messages.de;

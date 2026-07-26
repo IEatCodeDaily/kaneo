@@ -2,10 +2,10 @@ import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
   columnTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
-  workspaceTable,
+  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -23,7 +23,7 @@ import { normalizeDiscordConfig } from "./config";
 type DiscordEventData = {
   taskTitle: string;
   taskNumber: number | null;
-  projectName: string;
+  boardName: string;
   taskUrl: string | null;
   actorName: string | null;
   statusSlug: string;
@@ -65,7 +65,7 @@ function redactWebhookUrl(value: string): string {
 
 async function getDiscordEventData(
   taskId: string,
-  projectId: string,
+  boardId: string,
   userId: string | null,
 ): Promise<DiscordEventData | null> {
   const taskPromise = db
@@ -75,21 +75,21 @@ async function getDiscordEventData(
       status: taskTable.status,
       priority: taskTable.priority,
       columnName: columnTable.name,
-      projectName: projectTable.name,
-      projectId: projectTable.id,
-      workspaceId: workspaceTable.id,
+      boardName: boardTable.name,
+      boardId: boardTable.id,
+      organizationId: organizationTable.id,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-    .innerJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
     .leftJoin(
       columnTable,
       and(
         eq(taskTable.columnId, columnTable.id),
-        eq(columnTable.projectId, projectTable.id),
+        eq(columnTable.boardId, boardTable.id),
       ),
     )
-    .where(and(eq(taskTable.id, taskId), eq(projectTable.id, projectId)))
+    .where(and(eq(taskTable.id, taskId), eq(boardTable.id, boardId)))
     .limit(1);
 
   const userPromise = userId
@@ -107,12 +107,12 @@ async function getDiscordEventData(
   }
 
   const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-  const taskUrl = `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`;
+  const taskUrl = `${clientUrl}/dashboard/organization/${taskRow.organizationId}/board/${taskRow.boardId}/task/${taskId}`;
 
   return {
     taskTitle: taskRow.title,
     taskNumber: taskRow.number,
-    projectName: taskRow.projectName,
+    boardName: taskRow.boardName,
     taskUrl,
     actorName: user?.name ?? null,
     statusSlug: taskRow.status,
@@ -133,7 +133,7 @@ async function sendDiscordMessage(
   const safeTitle = sanitizeDiscordContent(title);
   const safeBody = sanitizeDiscordContent(body);
   const safeTaskLabel = sanitizeDiscordContent(taskLabel);
-  const safeProjectName = sanitizeDiscordContent(data.projectName);
+  const safeBoardName = sanitizeDiscordContent(data.boardName);
   const safeStatus = sanitizeDiscordContent(
     data.columnName ?? toSentenceCase(data.statusSlug),
   );
@@ -160,8 +160,8 @@ async function sendDiscordMessage(
               inline: true,
             },
             {
-              name: "Project",
-              value: safeProjectName,
+              name: "Board",
+              value: safeBoardName,
               inline: true,
             },
             {
@@ -202,7 +202,7 @@ async function runDiscordHandler(
   context: PluginContext,
   event: {
     taskId: string;
-    projectId: string;
+    boardId: string;
     userId: string | null;
   },
   featureKey: DiscordEventKey,
@@ -213,7 +213,7 @@ async function runDiscordHandler(
 
   const data = await getDiscordEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;

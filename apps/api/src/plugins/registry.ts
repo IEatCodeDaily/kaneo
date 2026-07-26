@@ -42,11 +42,11 @@ export function initializeEventSubscriptions(): void {
     priority: string;
     status: string;
     number: number;
-    projectId: string;
+    boardId: string;
   }>("task.created", async (data) => {
     await broadcastTaskCreated({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       title: data.title,
       description: data.description,
@@ -62,11 +62,11 @@ export function initializeEventSubscriptions(): void {
     oldStatus: string;
     newStatus: string;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.status_changed", async (data) => {
     await broadcastTaskStatusChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       oldStatus: data.oldStatus,
       newStatus: data.newStatus,
@@ -80,11 +80,11 @@ export function initializeEventSubscriptions(): void {
     oldPriority: string;
     newPriority: string;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.priority_changed", async (data) => {
     await broadcastTaskPriorityChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       oldPriority: data.oldPriority,
       newPriority: data.newPriority,
@@ -97,11 +97,11 @@ export function initializeEventSubscriptions(): void {
     userId: string | null;
     oldTitle: string;
     newTitle: string;
-    projectId: string;
+    boardId: string;
   }>("task.title_changed", async (data) => {
     await broadcastTaskTitleChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       oldTitle: data.oldTitle,
       newTitle: data.newTitle,
@@ -113,11 +113,11 @@ export function initializeEventSubscriptions(): void {
     userId: string | null;
     oldDescription: string | null;
     newDescription: string | null;
-    projectId: string;
+    boardId: string;
   }>("task.description_changed", async (data) => {
     await broadcastTaskDescriptionChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       oldDescription: data.oldDescription,
       newDescription: data.newDescription,
@@ -128,11 +128,11 @@ export function initializeEventSubscriptions(): void {
     taskId: string;
     userId: string;
     comment: string;
-    projectId: string;
+    boardId: string;
   }>("comment.created", async (data) => {
     await broadcastTaskCommentCreated({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       comment: data.comment,
     });
@@ -142,11 +142,11 @@ export function initializeEventSubscriptions(): void {
     taskId: string;
     userId: string | null;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.deleted", async (data) => {
     await broadcastTaskDeleted({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       title: data.title,
     });
@@ -155,21 +155,21 @@ export function initializeEventSubscriptions(): void {
   subscribeToEvent<{
     taskId: string;
     userId: string | null;
-    fromProjectId: string;
-    fromProjectName: string;
-    toProjectId: string;
-    toProjectName: string;
+    fromBoardId: string;
+    fromBoardName: string;
+    toBoardId: string;
+    toBoardName: string;
     oldStatus: string;
     newStatus: string;
   }>("task.moved", async (data) => {
     await broadcastTaskMoved({
       taskId: data.taskId,
-      projectId: data.toProjectId,
+      boardId: data.toBoardId,
       userId: data.userId,
-      fromProjectId: data.fromProjectId,
-      fromProjectName: data.fromProjectName,
-      toProjectId: data.toProjectId,
-      toProjectName: data.toProjectName,
+      fromBoardId: data.fromBoardId,
+      fromBoardName: data.fromBoardName,
+      toBoardId: data.toBoardId,
+      toBoardName: data.toBoardName,
       oldStatus: data.oldStatus,
       newStatus: data.newStatus,
     });
@@ -181,11 +181,11 @@ export function initializeEventSubscriptions(): void {
     oldDueDate: Date | null;
     newDueDate: Date | null;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.due_date_changed", async (data) => {
     await broadcastTaskDueDateChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       title: data.title,
       oldDueDate: data.oldDueDate,
@@ -200,11 +200,11 @@ export function initializeEventSubscriptions(): void {
     newAssignee: string | undefined;
     newAssigneeId: string;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.assignee_changed", async (data) => {
     await broadcastTaskAssigneeChanged({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       title: data.title,
       oldAssignee: data.oldAssignee,
@@ -217,11 +217,11 @@ export function initializeEventSubscriptions(): void {
     taskId: string;
     userId: string | null;
     title: string;
-    projectId: string;
+    boardId: string;
   }>("task.unassigned", async (data) => {
     await broadcastTaskUnassigned({
       taskId: data.taskId,
-      projectId: data.projectId,
+      boardId: data.boardId,
       userId: data.userId,
       title: data.title,
     });
@@ -239,26 +239,26 @@ export function listPlugins(): IntegrationPlugin[] {
   return Array.from(plugins.values());
 }
 
-async function getActiveIntegrations(projectId: string) {
+async function getActiveIntegrations(boardId: string) {
   return db.query.integrationTable.findMany({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.isActive, true),
     ),
     with: {
-      project: true,
+      board: true,
     },
   });
 }
 
 function createContext(integration: {
   id: string;
-  projectId: string;
+  boardId: string;
   config: string;
 }): PluginContext {
   return {
     integrationId: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     config: JSON.parse(integration.config) as Record<string, unknown>,
   };
 }
@@ -266,7 +266,7 @@ function createContext(integration: {
 export async function broadcastTaskCreated(
   event: TaskCreatedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -285,7 +285,7 @@ export async function broadcastTaskCreated(
 export async function broadcastTaskStatusChanged(
   event: TaskStatusChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -307,7 +307,7 @@ export async function broadcastTaskStatusChanged(
 export async function broadcastTaskPriorityChanged(
   event: TaskPriorityChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -329,7 +329,7 @@ export async function broadcastTaskPriorityChanged(
 export async function broadcastTaskTitleChanged(
   event: TaskTitleChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -351,7 +351,7 @@ export async function broadcastTaskTitleChanged(
 export async function broadcastTaskDescriptionChanged(
   event: TaskDescriptionChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -373,7 +373,7 @@ export async function broadcastTaskDescriptionChanged(
 export async function broadcastTaskCommentCreated(
   event: TaskCommentCreatedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -392,7 +392,7 @@ export async function broadcastTaskCommentCreated(
 export async function broadcastTaskDeleted(
   event: TaskDeletedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -409,7 +409,7 @@ export async function broadcastTaskDeleted(
 }
 
 export async function broadcastTaskMoved(event: TaskMovedEvent): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -428,7 +428,7 @@ export async function broadcastTaskMoved(event: TaskMovedEvent): Promise<void> {
 export async function broadcastTaskDueDateChanged(
   event: TaskDueDateChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -450,7 +450,7 @@ export async function broadcastTaskDueDateChanged(
 export async function broadcastTaskAssigneeChanged(
   event: TaskAssigneeChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -472,7 +472,7 @@ export async function broadcastTaskAssigneeChanged(
 export async function broadcastTaskUnassigned(
   event: TaskUnassignedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.projectId);
+  const integrations = await getActiveIntegrations(event.boardId);
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);

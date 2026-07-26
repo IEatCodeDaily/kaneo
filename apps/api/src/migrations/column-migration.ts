@@ -3,7 +3,7 @@ import db from "../database";
 import {
   columnTable,
   integrationTable,
-  projectTable,
+  boardTable,
   taskTable,
   workflowRuleTable,
 } from "../database/schema";
@@ -24,30 +24,30 @@ const EVENT_MAPPING: Record<string, string> = {
 export async function migrateColumns() {
   console.log("🔄 Starting column migration...");
 
-  const projects = await db.select().from(projectTable);
+  const boards = await db.select().from(boardTable);
 
-  if (projects.length === 0) {
-    console.log("No projects found, skipping column migration");
+  if (boards.length === 0) {
+    console.log("No boards found, skipping column migration");
     return;
   }
 
-  for (const project of projects) {
-    const projectColumns = await db
+  for (const board of boards) {
+    const boardColumns = await db
       .select({
         id: columnTable.id,
         slug: columnTable.slug,
       })
       .from(columnTable)
-      .where(eq(columnTable.projectId, project.id));
+      .where(eq(columnTable.boardId, board.id));
 
     const columnMap = new Map<string, string>(
-      projectColumns.map((column) => [column.slug, column.id]),
+      boardColumns.map((column) => [column.slug, column.id]),
     );
 
-    // Only seed missing default slugs for legacy projects that have no columns yet.
-    // If the project already has columns, missing slugs are intentional (user removed them);
+    // Only seed missing default slugs for legacy boards that have no columns yet.
+    // If the board already has columns, missing slugs are intentional (user removed them);
     // re-inserting on every startup would undo deletions after each API restart.
-    if (projectColumns.length === 0) {
+    if (boardColumns.length === 0) {
       for (const defaultColumn of DEFAULT_COLUMNS) {
         if (columnMap.has(defaultColumn.slug)) {
           continue;
@@ -56,7 +56,7 @@ export async function migrateColumns() {
         const [inserted] = await db
           .insert(columnTable)
           .values({
-            projectId: project.id,
+            boardId: board.id,
             name: defaultColumn.name,
             slug: defaultColumn.slug,
             position: defaultColumn.position,
@@ -75,14 +75,14 @@ export async function migrateColumns() {
         .update(taskTable)
         .set({ columnId })
         .where(
-          sql`${taskTable.projectId} = ${project.id}
+          sql`${taskTable.boardId} = ${board.id}
               AND ${taskTable.status} = ${slug}
               AND ${taskTable.columnId} IS DISTINCT FROM ${columnId}`,
         );
     }
 
     const integrations = await db.query.integrationTable.findMany({
-      where: eq(integrationTable.projectId, project.id),
+      where: eq(integrationTable.boardId, board.id),
     });
 
     for (const integration of integrations) {
@@ -107,7 +107,7 @@ export async function migrateColumns() {
           if (!targetColumnId) continue;
 
           await ensureMigrationWorkflowRule(
-            project.id,
+            board.id,
             forgeType,
             eventType as string,
             targetColumnId,
@@ -120,7 +120,7 @@ export async function migrateColumns() {
 
         if (todoColumnId) {
           await ensureMigrationWorkflowRule(
-            project.id,
+            board.id,
             forgeType,
             "issue_opened",
             todoColumnId,
@@ -129,7 +129,7 @@ export async function migrateColumns() {
 
         if (doneColumnId) {
           await ensureMigrationWorkflowRule(
-            project.id,
+            board.id,
             forgeType,
             "issue_closed",
             doneColumnId,
@@ -144,19 +144,19 @@ export async function migrateColumns() {
   }
 
   console.log(
-    `✅ Column migration complete! Migrated ${projects.length} projects`,
+    `✅ Column migration complete! Migrated ${boards.length} boards`,
   );
 }
 
 async function ensureMigrationWorkflowRule(
-  projectId: string,
+  boardId: string,
   integrationType: "github" | "gitea",
   eventType: string,
   columnId: string,
 ) {
   const existing = await db.query.workflowRuleTable.findFirst({
     where: and(
-      eq(workflowRuleTable.projectId, projectId),
+      eq(workflowRuleTable.boardId, boardId),
       eq(workflowRuleTable.integrationType, integrationType),
       eq(workflowRuleTable.eventType, eventType),
     ),
@@ -167,7 +167,7 @@ async function ensureMigrationWorkflowRule(
   }
 
   await db.insert(workflowRuleTable).values({
-    projectId,
+    boardId,
     integrationType,
     eventType,
     columnId,

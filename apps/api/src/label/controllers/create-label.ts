@@ -1,7 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { labelTable, projectTable, taskTable } from "../../database/schema";
+import { labelTable, boardTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { syncLabelToGitea } from "../../plugins/gitea/utils/sync-label-to-gitea";
 import { syncLabelToGitHub } from "../../plugins/github/utils/sync-label-to-github";
@@ -10,18 +10,18 @@ async function createLabel(
   name: string,
   color: string,
   taskId: string | undefined,
-  workspaceId: string,
+  organizationId: string,
   userId: string,
 ) {
   if (taskId) {
     const [task] = await db
       .select({
         id: taskTable.id,
-        projectId: taskTable.projectId,
-        workspaceId: projectTable.workspaceId,
+        boardId: taskTable.boardId,
+        organizationId: boardTable.organizationId,
       })
       .from(taskTable)
-      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
       .where(eq(taskTable.id, taskId))
       .limit(1);
 
@@ -31,7 +31,7 @@ async function createLabel(
       });
     }
 
-    if (task.workspaceId !== workspaceId) {
+    if (task.organizationId !== organizationId) {
       throw new HTTPException(404, {
         message: "Task not found",
       });
@@ -39,7 +39,7 @@ async function createLabel(
 
     const [inserted] = await db
       .insert(labelTable)
-      .values({ name, color, taskId, workspaceId: task.workspaceId })
+      .values({ name, color, taskId, organizationId: task.organizationId })
       .onConflictDoNothing({
         target: [labelTable.taskId, labelTable.name],
       })
@@ -64,7 +64,7 @@ async function createLabel(
       });
 
       await publishEvent("task.label_created", {
-        projectId: task.projectId,
+        boardId: task.boardId,
         taskId: task.id,
         userId: userId,
         type: "label_created",
@@ -75,9 +75,9 @@ async function createLabel(
 
   const [inserted] = await db
     .insert(labelTable)
-    .values({ name, color, taskId: null, workspaceId })
+    .values({ name, color, taskId: null, organizationId })
     .onConflictDoNothing({
-      target: [labelTable.workspaceId, labelTable.name],
+      target: [labelTable.organizationId, labelTable.name],
       where: sql`${labelTable.taskId} is null`,
     })
     .returning();
@@ -86,7 +86,7 @@ async function createLabel(
     inserted ??
     (await db.query.labelTable.findFirst({
       where: and(
-        eq(labelTable.workspaceId, workspaceId),
+        eq(labelTable.organizationId, organizationId),
         eq(labelTable.name, name),
         isNull(labelTable.taskId),
       ),

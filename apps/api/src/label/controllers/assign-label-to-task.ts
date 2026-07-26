@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { labelTable, projectTable, taskTable } from "../../database/schema";
+import { labelTable, boardTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {
   removeLabelFromGitea,
@@ -26,11 +26,11 @@ async function assignLabelToTask(id: string, taskId: string, userId: string) {
   const [task] = await db
     .select({
       id: taskTable.id,
-      projectId: taskTable.projectId,
-      workspaceId: projectTable.workspaceId,
+      boardId: taskTable.boardId,
+      organizationId: boardTable.organizationId,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(eq(taskTable.id, taskId))
     .limit(1);
 
@@ -40,9 +40,9 @@ async function assignLabelToTask(id: string, taskId: string, userId: string) {
     });
   }
 
-  if (label.workspaceId && label.workspaceId !== task.workspaceId) {
+  if (label.organizationId && label.organizationId !== task.organizationId) {
     throw new HTTPException(400, {
-      message: "Label and task must belong to the same workspace",
+      message: "Label and task must belong to the same organization",
     });
   }
 
@@ -81,7 +81,7 @@ async function assignLabelToTask(id: string, taskId: string, userId: string) {
   await publishEvent("task.label_assigned", {
     label: updatedLabel,
     task,
-    projectId: task.projectId,
+    boardId: task.boardId,
     taskId: task.id,
     userId,
     type: "label_assigned",

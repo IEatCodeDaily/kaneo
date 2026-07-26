@@ -43,7 +43,7 @@ async function getTasksNeedingReminder(
       title: taskTable.title,
       userId: taskTable.userId,
       dueDate: taskTable.dueDate,
-      projectId: taskTable.projectId,
+      boardId: taskTable.boardId,
       leadTimeMinutes:
         userNotificationPreferenceTable.dueDateReminderLeadTimeMinutes,
     })
@@ -86,7 +86,7 @@ async function processReminder(
     title: string;
     userId: string | null;
     dueDate: Date | null;
-    projectId: string;
+    boardId: string;
     leadTimeMinutes: number | null;
   },
   reminderType: ReminderType,

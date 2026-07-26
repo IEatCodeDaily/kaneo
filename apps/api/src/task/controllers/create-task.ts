@@ -7,7 +7,7 @@ import { assertValidTaskStatus } from "../validate-task-fields";
 import getNextTaskNumber from "./get-next-task-number";
 
 async function createTask({
-  projectId,
+  boardId,
   currentUserId,
   userId,
   title,
@@ -17,7 +17,7 @@ async function createTask({
   description,
   priority,
 }: {
-  projectId: string;
+  boardId: string;
   currentUserId: string;
   userId?: string;
   title: string;
@@ -30,18 +30,18 @@ async function createTask({
   const resolvedStatus = status || "to-do";
   const resolvedPriority = priority || "no-priority";
 
-  await assertValidTaskStatus(resolvedStatus, projectId);
+  await assertValidTaskStatus(resolvedStatus, boardId);
 
   const [assignee] = await db
     .select({ name: userTable.name })
     .from(userTable)
     .where(eq(userTable.id, userId ?? ""));
 
-  const nextTaskNumber = await getNextTaskNumber(projectId);
+  const nextTaskNumber = await getNextTaskNumber(boardId);
 
   const column = await db.query.columnTable.findFirst({
     where: and(
-      eq(columnTable.projectId, projectId),
+      eq(columnTable.boardId, boardId),
       eq(columnTable.slug, resolvedStatus),
     ),
   });
@@ -51,7 +51,7 @@ async function createTask({
     .from(taskTable)
     .where(
       and(
-        eq(taskTable.projectId, projectId),
+        eq(taskTable.boardId, boardId),
         column?.id
           ? eq(taskTable.columnId, column.id)
           : eq(taskTable.status, resolvedStatus),
@@ -63,7 +63,7 @@ async function createTask({
   const [createdTask] = await db
     .insert(taskTable)
     .values({
-      projectId,
+      boardId,
       userId: userId || null,
       title: title || "",
       status: resolvedStatus,

@@ -45,12 +45,12 @@ export async function handleGiteaLabelCreated(
   );
 
   for (const integration of integrations) {
-    if (!integration.project) {
+    if (!integration.board) {
       continue;
     }
 
-    const workspaceId = integration.project.workspaceId;
-    if (!workspaceId) {
+    const organizationId = integration.board.organizationId;
+    if (!organizationId) {
       continue;
     }
 
@@ -61,10 +61,10 @@ export async function handleGiteaLabelCreated(
       .values({
         name: label.name,
         color,
-        workspaceId,
+        organizationId,
       })
       .onConflictDoNothing({
-        target: [labelTable.workspaceId, labelTable.name],
+        target: [labelTable.organizationId, labelTable.name],
         where: sql`${labelTable.taskId} is null`,
       });
   }

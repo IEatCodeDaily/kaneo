@@ -1,23 +1,23 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
-import getWorkspaceMembersCtrl from "./controllers/get-workspace-members";
+import { organizationAccess } from "../utils/organization-access-middleware";
+import getOrganizationMembersCtrl from "./controllers/get-organization-members";
 
-const workspace = new Hono<{
+const organization = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
   };
 }>().get(
-  "/:workspaceId/members",
+  "/:organizationId/members",
   describeRoute({
-    operationId: "getWorkspaceMembers",
-    tags: ["Workspaces"],
-    description: "Get all members of a workspace",
+    operationId: "getOrganizationMembers",
+    tags: ["Organizations"],
+    description: "Get all members of a organization",
     responses: {
       200: {
-        description: "List of workspace members",
+        description: "List of organization members",
         content: {
           "application/json": {
             schema: resolver(
@@ -36,13 +36,13 @@ const workspace = new Hono<{
       },
     },
   }),
-  validator("param", v.object({ workspaceId: v.string() })),
-  workspaceAccess.fromParam("workspaceId"),
+  validator("param", v.object({ organizationId: v.string() })),
+  organizationAccess.fromParam("organizationId"),
   async (c) => {
-    const workspaceId = c.get("workspaceId");
-    const members = await getWorkspaceMembersCtrl(workspaceId);
+    const organizationId = c.get("organizationId");
+    const members = await getOrganizationMembersCtrl(organizationId);
     return c.json(members);
   },
 );
 
-export default workspace;
+export default organization;

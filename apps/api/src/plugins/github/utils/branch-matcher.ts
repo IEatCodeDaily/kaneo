@@ -10,24 +10,24 @@ function slugify(text: string): string {
 
 export function generateBranchName(
   pattern: string,
-  projectSlug: string,
+  boardSlug: string,
   taskNumber: number,
   taskTitle: string,
 ): string {
   return pattern
-    .replace("{slug}", projectSlug.toLowerCase())
+    .replace("{slug}", boardSlug.toLowerCase())
     .replace("{number}", taskNumber.toString())
     .replace("{title}", slugify(taskTitle));
 }
 
 export function createBranchRegex(
   pattern: string,
-  projectSlug: string,
+  boardSlug: string,
 ): RegExp {
   const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const regexPattern = escapedPattern
-    .replace("\\{slug\\}", projectSlug.toLowerCase())
+    .replace("\\{slug\\}", boardSlug.toLowerCase())
     .replace("\\{number\\}", "(\\d+)")
     .replace("\\{title\\}", "([a-z0-9-]+)");
 
@@ -38,7 +38,7 @@ export function createBranchRegex(
 export function extractTaskNumberFromBranch(
   branchName: string,
   config: GitHubConfig,
-  projectSlug: string,
+  boardSlug: string,
 ): number | null {
   if (config.customBranchRegex) {
     try {
@@ -55,7 +55,7 @@ export function extractTaskNumberFromBranch(
   }
 
   const pattern = config.branchPattern || "{slug}-{number}";
-  const regex = createBranchRegex(pattern, projectSlug);
+  const regex = createBranchRegex(pattern, boardSlug);
   const match = branchName.match(regex);
 
   if (match?.[1]) {
@@ -110,12 +110,12 @@ export function extractTaskNumber(
   prTitle: string | undefined,
   prBody: string | undefined,
   config: GitHubConfig,
-  projectSlug: string,
+  boardSlug: string,
 ): number | null {
   const fromBranch = extractTaskNumberFromBranch(
     branchName,
     config,
-    projectSlug,
+    boardSlug,
   );
   if (fromBranch !== null) return fromBranch;
 

@@ -82,7 +82,7 @@ function sanitizeTelegramConfigForLog(rawConfig: string): string {
 
 type TelegramIntegrationRecord = {
   id: string;
-  projectId: string;
+  boardId: string;
   config: string;
   isActive: boolean | null;
   createdAt: Date;
@@ -90,7 +90,7 @@ type TelegramIntegrationRecord = {
 };
 
 export function parseTelegramIntegrationConfig(
-  integration: Pick<TelegramIntegrationRecord, "config" | "id" | "projectId">,
+  integration: Pick<TelegramIntegrationRecord, "config" | "id" | "boardId">,
 ): TelegramConfig {
   try {
     const parsed = v.parse(
@@ -102,7 +102,7 @@ export function parseTelegramIntegrationConfig(
     console.error("Failed to parse Telegram integration config", {
       error,
       integrationId: integration.id,
-      projectId: integration.projectId,
+      boardId: integration.boardId,
       sanitizedConfig: sanitizeTelegramConfigForLog(integration.config),
     });
     throw new HTTPException(500, {
@@ -116,7 +116,7 @@ export function toResponse(integration: TelegramIntegrationRecord) {
 
   return {
     id: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     chatId: config.chatId,
     threadId: config.threadId ?? null,
     chatLabel: config.chatLabel ?? null,
@@ -132,10 +132,10 @@ export function toResponse(integration: TelegramIntegrationRecord) {
   };
 }
 
-export async function getTelegramIntegration(projectId: string) {
+export async function getTelegramIntegration(boardId: string) {
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "telegram"),
     ),
   });

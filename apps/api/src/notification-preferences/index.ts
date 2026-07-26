@@ -3,22 +3,22 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { notificationPreferenceSchema } from "../schemas";
 import {
-  deleteWorkspaceRule,
+  deleteOrganizationRule,
   getNotificationPreferences,
   updateNotificationPreferences,
-  upsertWorkspaceRule,
+  upsertOrganizationRule,
 } from "./service";
 
 const httpErrorSchema = v.object({ message: v.string() });
 
-const workspaceRuleSchema = v.object({
+const organizationRuleSchema = v.object({
   isActive: v.boolean(),
   emailEnabled: v.boolean(),
   ntfyEnabled: v.boolean(),
   gotifyEnabled: v.boolean(),
   webhookEnabled: v.boolean(),
-  projectMode: v.picklist(["all", "selected"] as const),
-  selectedProjectIds: v.optional(v.array(v.string())),
+  boardMode: v.picklist(["all", "selected"] as const),
+  selectedBoardIds: v.optional(v.array(v.string())),
 });
 
 const notificationPreferences = new Hono<{
@@ -141,11 +141,11 @@ notificationPreferences
     },
   )
   .put(
-    "/workspaces/:workspaceId",
+    "/organizations/:organizationId",
     describeRoute({
-      operationId: "upsertNotificationPreferenceWorkspaceRule",
+      operationId: "upsertNotificationPreferenceOrganizationRule",
       tags: ["Notification Preferences"],
-      description: "Create or update a workspace notification rule",
+      description: "Create or update a organization notification rule",
       responses: {
         200: {
           description: "Updated notification preferences",
@@ -175,25 +175,25 @@ notificationPreferences
         },
       },
     }),
-    validator("param", v.object({ workspaceId: v.string() })),
-    validator("json", workspaceRuleSchema),
+    validator("param", v.object({ organizationId: v.string() })),
+    validator("json", organizationRuleSchema),
     async (c) => {
       const userId = c.get("userId");
       const userEmail = c.get("userEmail");
-      const { workspaceId } = c.req.valid("param");
+      const { organizationId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       return c.json(
-        await upsertWorkspaceRule(userId, workspaceId, userEmail || null, body),
+        await upsertOrganizationRule(userId, organizationId, userEmail || null, body),
       );
     },
   )
   .delete(
-    "/workspaces/:workspaceId",
+    "/organizations/:organizationId",
     describeRoute({
-      operationId: "deleteNotificationPreferenceWorkspaceRule",
+      operationId: "deleteNotificationPreferenceOrganizationRule",
       tags: ["Notification Preferences"],
-      description: "Delete a workspace notification rule",
+      description: "Delete a organization notification rule",
       responses: {
         200: {
           description: "Updated notification preferences",
@@ -222,21 +222,21 @@ notificationPreferences
           },
         },
         404: {
-          description: "Workspace rule not found",
+          description: "Organization rule not found",
           content: {
             "application/json": { schema: resolver(httpErrorSchema) },
           },
         },
       },
     }),
-    validator("param", v.object({ workspaceId: v.string() })),
+    validator("param", v.object({ organizationId: v.string() })),
     async (c) => {
       const userId = c.get("userId");
       const userEmail = c.get("userEmail");
-      const { workspaceId } = c.req.valid("param");
+      const { organizationId } = c.req.valid("param");
 
       return c.json(
-        await deleteWorkspaceRule(userId, workspaceId, userEmail || null),
+        await deleteOrganizationRule(userId, organizationId, userEmail || null),
       );
     },
   );

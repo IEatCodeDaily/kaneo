@@ -11,9 +11,9 @@ import OtpEmail from "./templates/otp";
 import PasswordResetEmail, {
   type PasswordResetEmailProps,
 } from "./templates/password-reset";
-import WorkspaceInvitationEmail, {
-  type WorkspaceInvitationEmailProps,
-} from "./templates/workspace-invitation";
+import OrganizationInvitationEmail, {
+  type OrganizationInvitationEmailProps,
+} from "./templates/organization-invitation";
 
 config();
 
@@ -88,10 +88,10 @@ export type EmailResult = {
   reason?: "SMTP_NOT_CONFIGURED";
 };
 
-export const sendWorkspaceInvitationEmail = async (
+export const sendOrganizationInvitationEmail = async (
   to: string,
   subject: string,
-  data: WorkspaceInvitationEmailProps,
+  data: OrganizationInvitationEmailProps,
 ): Promise<EmailResult> => {
   if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) {
     return { success: false, reason: "SMTP_NOT_CONFIGURED" };
@@ -99,7 +99,7 @@ export const sendWorkspaceInvitationEmail = async (
 
   try {
     const emailTemplate = await render(
-      WorkspaceInvitationEmail({ ...data, to }),
+      OrganizationInvitationEmail({ ...data, to }),
     );
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
@@ -109,7 +109,7 @@ export const sendWorkspaceInvitationEmail = async (
     });
     return { success: true };
   } catch (error) {
-    console.error("Error sending workspace invitation email", error);
+    console.error("Error sending organization invitation email", error);
     throw error;
   }
 };

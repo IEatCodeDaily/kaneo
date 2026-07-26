@@ -4,7 +4,7 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
 import { externalLinkTable } from "../database/schema";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { organizationAccess } from "../utils/organization-access-middleware";
 
 const externalLinkSchema = v.object({
   id: v.string(),
@@ -22,7 +22,7 @@ const externalLinkSchema = v.object({
 const externalLink = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
   };
 }>().get(
   "/task/:taskId",
@@ -42,7 +42,7 @@ const externalLink = new Hono<{
     },
   }),
   validator("param", v.object({ taskId: v.string() })),
-  workspaceAccess.fromTaskId("taskId"),
+  organizationAccess.fromTaskId("taskId"),
   async (c) => {
     const { taskId } = c.req.valid("param");
 

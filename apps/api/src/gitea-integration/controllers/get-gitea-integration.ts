@@ -15,12 +15,12 @@ function maskToken(token: string): string {
 }
 
 async function getGiteaIntegration(
-  projectId: string,
+  boardId: string,
   includeWebhookSecret = false,
 ) {
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "gitea"),
     ),
   });
@@ -37,7 +37,7 @@ async function getGiteaIntegration(
 
   return {
     id: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     baseUrl: config.baseUrl,
     repositoryOwner: config.repositoryOwner,
     repositoryName: config.repositoryName,

@@ -6,9 +6,9 @@ import * as v from "valibot";
 import db from "../database";
 import {
   assetTable,
-  projectTable,
+  boardTable,
   taskTable,
-  workspaceTable,
+  organizationTable,
 } from "../database/schema";
 import { taskSchema } from "../schemas";
 import {
@@ -18,8 +18,8 @@ import {
   validateTaskAssetUploadInput,
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";
@@ -43,21 +43,21 @@ const task = new Hono<{
   };
 }>()
   .get(
-    "/tasks/:projectId",
+    "/tasks/:boardId",
     describeRoute({
       operationId: "listTasks",
       tags: ["Tasks"],
-      description: "Get all tasks for a specific project",
+      description: "Get all tasks for a specific board",
       responses: {
         200: {
-          description: "Project with tasks organized by columns",
+          description: "Board with tasks organized by columns",
           content: {
             "application/json": { schema: resolver(v.any()) },
           },
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "query",
       v.optional(
@@ -83,12 +83,12 @@ const task = new Hono<{
         }),
       ),
     ),
-    workspaceAccess.fromProject("projectId"),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const filters = c.req.valid("query") || {};
 
-      const tasks = await getTasks(projectId, filters);
+      const tasks = await getTasks(boardId, filters);
 
       return c.json(tasks);
     },
@@ -160,11 +160,11 @@ const task = new Hono<{
     },
   )
   .post(
-    "/:projectId",
+    "/:boardId",
     describeRoute({
       operationId: "createTask",
       tags: ["Tasks"],
-      description: "Create a new task in a project",
+      description: "Create a new task in a board",
       responses: {
         200: {
           description: "Task created successfully",
@@ -186,10 +186,10 @@ const task = new Hono<{
         userId: v.optional(v.string()),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ task: ["create"] }),
     async (c) => {
-      const { projectId } = c.req.param();
+      const { boardId } = c.req.param();
       const {
         title,
         description,
@@ -201,7 +201,7 @@ const task = new Hono<{
       } = c.req.valid("json");
 
       const task = await createTask({
-        projectId,
+        boardId,
         currentUserId: c.get("userId"),
         userId: userId,
         title,
@@ -231,7 +231,7 @@ const task = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    workspaceAccess.fromTask(),
+    organizationAccess.fromTask(),
     async (c) => {
       const { id } = c.req.valid("param");
 
@@ -245,7 +245,7 @@ const task = new Hono<{
     describeRoute({
       operationId: "moveTask",
       tags: ["Tasks"],
-      description: "Move a task to another project",
+      description: "Move a task to another board",
       responses: {
         200: {
           description: "Task moved successfully",
@@ -254,8 +254,8 @@ const task = new Hono<{
               schema: resolver(
                 v.object({
                   task: taskSchema,
-                  sourceProjectId: v.string(),
-                  destinationProjectId: v.string(),
+                  sourceBoardId: v.string(),
+                  destinationBoardId: v.string(),
                 }),
               ),
             },
@@ -267,20 +267,20 @@ const task = new Hono<{
     validator(
       "json",
       v.object({
-        destinationProjectId: v.string(),
+        destinationBoardId: v.string(),
         destinationStatus: v.optional(v.string()),
       }),
     ),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { destinationProjectId, destinationStatus } = c.req.valid("json");
+      const { destinationBoardId, destinationStatus } = c.req.valid("json");
       const currentUserId = c.get("userId");
 
       const result = await moveTask({
         taskId: id,
-        destinationProjectId,
+        destinationBoardId,
         destinationStatus,
         currentUserId,
       });
@@ -313,13 +313,13 @@ const task = new Hono<{
         dueDate: v.optional(v.string()),
         priority: v.picklist(VALID_PRIORITIES),
         status: v.string(),
-        projectId: v.string(),
+        boardId: v.string(),
         position: v.number(),
         userId: v.optional(v.string()),
       }),
     ),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const {
@@ -329,7 +329,7 @@ const task = new Hono<{
         dueDate,
         priority,
         status,
-        projectId,
+        boardId,
         position,
         userId,
       } = c.req.valid("json");
@@ -342,7 +342,7 @@ const task = new Hono<{
         status,
         startDate ? new Date(startDate) : undefined,
         dueDate ? new Date(dueDate) : undefined,
-        projectId,
+        boardId,
         description,
         priority,
         position,
@@ -354,11 +354,11 @@ const task = new Hono<{
     },
   )
   .get(
-    "/export/:projectId",
+    "/export/:boardId",
     describeRoute({
       operationId: "exportTasks",
       tags: ["Tasks"],
-      description: "Export all tasks from a project",
+      description: "Export all tasks from a board",
       responses: {
         200: {
           description: "Exported tasks data",
@@ -368,22 +368,22 @@ const task = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
 
-      const exportData = await exportTasks(projectId);
+      const exportData = await exportTasks(boardId);
 
       return c.json(exportData);
     },
   )
   .post(
-    "/import/:projectId",
+    "/import/:boardId",
     describeRoute({
       operationId: "importTasks",
       tags: ["Tasks"],
-      description: "Import multiple tasks into a project",
+      description: "Import multiple tasks into a board",
       responses: {
         200: {
           description: "Tasks imported successfully",
@@ -393,7 +393,7 @@ const task = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -410,14 +410,14 @@ const task = new Hono<{
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ task: ["create"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const { tasks } = c.req.valid("json");
       const currentUserId = c.get("userId");
 
-      const result = await importTasks(projectId, tasks, currentUserId);
+      const result = await importTasks(boardId, tasks, currentUserId);
 
       return c.json(result);
     },
@@ -438,8 +438,8 @@ const task = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["delete"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["delete"] }),
     async (c) => {
       const { id } = c.req.valid("param");
 
@@ -466,8 +466,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ status: v.string() })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { status } = c.req.valid("json");
@@ -495,8 +495,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ priority: v.picklist(VALID_PRIORITIES) })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { priority } = c.req.valid("json");
@@ -524,8 +524,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ userId: v.nullable(v.string()) })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["assign"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["assign"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { userId } = c.req.valid("json");
@@ -553,8 +553,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ dueDate: v.optional(v.string()) })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { dueDate = null } = c.req.valid("json");
@@ -587,8 +587,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ title: v.string() })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { title } = c.req.valid("json");
@@ -626,8 +626,8 @@ const task = new Hono<{
         surface: v.picklist(["description", "comment"] as const),
       }),
     ),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { filename, contentType, size, surface } = c.req.valid("json");
@@ -646,14 +646,14 @@ const task = new Hono<{
       const [taskContext] = await db
         .select({
           taskId: taskTable.id,
-          projectId: taskTable.projectId,
-          workspaceId: workspaceTable.id,
+          boardId: taskTable.boardId,
+          organizationId: organizationTable.id,
         })
         .from(taskTable)
-        .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+        .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
         .innerJoin(
-          workspaceTable,
-          eq(projectTable.workspaceId, workspaceTable.id),
+          organizationTable,
+          eq(boardTable.organizationId, organizationTable.id),
         )
         .where(eq(taskTable.id, id))
         .limit(1);
@@ -664,8 +664,8 @@ const task = new Hono<{
 
       try {
         const upload = await createTaskImageUploadUrl({
-          workspaceId: taskContext.workspaceId,
-          projectId: taskContext.projectId,
+          organizationId: taskContext.organizationId,
+          boardId: taskContext.boardId,
           taskId: taskContext.taskId,
           surface,
           filename,
@@ -710,8 +710,8 @@ const task = new Hono<{
         surface: v.picklist(["description", "comment"] as const),
       }),
     ),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { key, filename, contentType, size, surface } = c.req.valid("json");
@@ -731,14 +731,14 @@ const task = new Hono<{
       const [taskContext] = await db
         .select({
           taskId: taskTable.id,
-          projectId: taskTable.projectId,
-          workspaceId: workspaceTable.id,
+          boardId: taskTable.boardId,
+          organizationId: organizationTable.id,
         })
         .from(taskTable)
-        .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+        .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
         .innerJoin(
-          workspaceTable,
-          eq(projectTable.workspaceId, workspaceTable.id),
+          organizationTable,
+          eq(boardTable.organizationId, organizationTable.id),
         )
         .where(eq(taskTable.id, id))
         .limit(1);
@@ -750,8 +750,8 @@ const task = new Hono<{
       const normalizedKey = key.trim();
       if (
         !assertTaskImageKeyMatchesContext(normalizedKey, {
-          workspaceId: taskContext.workspaceId,
-          projectId: taskContext.projectId,
+          organizationId: taskContext.organizationId,
+          boardId: taskContext.boardId,
           taskId: taskContext.taskId,
           surface,
         })
@@ -771,8 +771,8 @@ const task = new Hono<{
         ? await db
             .update(assetTable)
             .set({
-              workspaceId: taskContext.workspaceId,
-              projectId: taskContext.projectId,
+              organizationId: taskContext.organizationId,
+              boardId: taskContext.boardId,
               taskId: taskContext.taskId,
               filename,
               mimeType: contentType,
@@ -788,8 +788,8 @@ const task = new Hono<{
         : await db
             .insert(assetTable)
             .values({
-              workspaceId: taskContext.workspaceId,
-              projectId: taskContext.projectId,
+              organizationId: taskContext.organizationId,
+              boardId: taskContext.boardId,
               taskId: taskContext.taskId,
               objectKey: normalizedKey,
               filename,
@@ -829,8 +829,8 @@ const task = new Hono<{
     }),
     validator("param", v.object({ id: v.string() })),
     validator("json", v.object({ description: v.string() })),
-    workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { description } = c.req.valid("json");

@@ -41,8 +41,8 @@ import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
 import { initializePlugins } from "./plugins";
 import { migrateGitHubIntegration } from "./plugins/github/migration";
-import project from "./project";
-import { getPublicProject } from "./project/controllers/get-public-project";
+import board from "./board";
+import { getPublicBoard } from "./board/controllers/get-public-board";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
 import search from "./search";
 import slackIntegration from "./slack-integration";
@@ -59,7 +59,7 @@ import { getInvitationDetails } from "./utils/check-registration-allowed";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
 import { migrateSessionColumn } from "./utils/migrate-session-column";
-import { migrateWorkspaceUserEmail } from "./utils/migrate-workspace-user-email";
+import { migrateOrganizationUserEmail } from "./utils/migrate-organization-user-email";
 import {
   dedupeOperationIds,
   ensureOperationSummaries,
@@ -72,10 +72,10 @@ import {
   normalizeNullableSchemasForOpenApi30,
   normalizeOrganizationAuthOperations,
 } from "./utils/openapi-spec";
-import { seedDefaultWorkspaceRoles } from "./utils/seed-default-workspace-roles";
-import { validateWorkspaceAccess } from "./utils/validate-workspace-access";
+import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-roles";
+import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
-import workspace from "./workspace";
+import organization from "./organization";
 import {
   addConnection,
   addUserConnection,
@@ -213,11 +213,11 @@ export function createApp() {
     },
   );
 
-  const publicProjectApi = api.get("/public-project/:id", async (c) => {
+  const publicBoardApi = api.get("/public-board/:id", async (c) => {
     const { id } = c.req.param();
-    const project = await getPublicProject(id);
+    const board = await getPublicBoard(id);
 
-    return c.json(project);
+    return c.json(board);
   });
 
   api.post("/github-integration/webhook", handleGithubWebhookRoute);
@@ -280,13 +280,13 @@ export function createApp() {
           objectKey: schema.assetTable.objectKey,
           mimeType: schema.assetTable.mimeType,
           filename: schema.assetTable.filename,
-          workspaceId: schema.assetTable.workspaceId,
-          isPublic: schema.projectTable.isPublic,
+          organizationId: schema.assetTable.organizationId,
+          isPublic: schema.boardTable.isPublic,
         })
         .from(schema.assetTable)
         .innerJoin(
-          schema.projectTable,
-          eq(schema.assetTable.projectId, schema.projectTable.id),
+          schema.boardTable,
+          eq(schema.assetTable.boardId, schema.boardTable.id),
         )
         .where(eq(schema.assetTable.id, id))
         .limit(1);
@@ -298,7 +298,7 @@ export function createApp() {
       const { userId, apiKeyId } = await resolveAssetBearerOrCookie(c);
 
       if (userId) {
-        await validateWorkspaceAccess(userId, asset.workspaceId, apiKeyId);
+        await validateOrganizationAccess(userId, asset.organizationId, apiKeyId);
       } else if (!asset.isPublic) {
         throw new HTTPException(401, { message: "Unauthorized" });
       }
@@ -346,7 +346,7 @@ export function createApp() {
         title: "Kaneo API",
         version: "1.0.0",
         description:
-          "Kaneo Project Management API - Manage projects, tasks, labels, and more",
+          "Kaneo Board Management API - Manage boards, tasks, labels, and more",
       },
       servers: [
         {
@@ -529,7 +529,7 @@ export function createApp() {
 
   const oauthApi = api.route("/oauth", oauth);
 
-  const projectApi = api.route("/project", project);
+  const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
@@ -564,7 +564,7 @@ export function createApp() {
   const externalLinkApi = api.route("/external-link", externalLink);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
-  const workspaceApi = api.route("/workspace", workspace);
+  const organizationApi = api.route("/organization", organization);
 
   app.route(
     "/",
@@ -576,7 +576,7 @@ export function createApp() {
     ),
   );
 
-  // User-scoped WebSocket endpoint — MUST be registered before /ws/:projectId
+  // User-scoped WebSocket endpoint — MUST be registered before /ws/:boardId
   // so the literal path "user" isn't consumed by the param route.
   api.get(
     "/ws/user",
@@ -628,9 +628,9 @@ export function createApp() {
   );
 
   api.get(
-    "/ws/:projectId",
+    "/ws/:boardId",
     upgradeWebSocket(async (c) => {
-      const projectId = c.req.param("projectId");
+      const boardId = c.req.param("boardId");
 
       try {
         await authenticateApiRequest(c);
@@ -644,18 +644,18 @@ export function createApp() {
 
       const userId = c.get("userId");
 
-      if (projectId) {
-        const [project] = await db
-          .select({ workspaceId: schema.projectTable.workspaceId })
-          .from(schema.projectTable)
-          .where(eq(schema.projectTable.id, projectId))
+      if (boardId) {
+        const [board] = await db
+          .select({ organizationId: schema.boardTable.organizationId })
+          .from(schema.boardTable)
+          .where(eq(schema.boardTable.id, boardId))
           .limit(1);
 
-        if (!project) {
+        if (!board) {
           throw new HTTPException(401, { message: "Unauthorized" });
         }
 
-        await validateWorkspaceAccess(userId, project.workspaceId);
+        await validateOrganizationAccess(userId, board.organizationId);
       }
 
       const windowId = c.req.query("windowId");
@@ -664,8 +664,8 @@ export function createApp() {
 
       return {
         onOpen(_evt, ws) {
-          if (projectId) {
-            conn = addConnection(projectId, ws, userId, initiatorId);
+          if (boardId) {
+            conn = addConnection(boardId, ws, userId, initiatorId);
           }
         },
         onMessage(evt) {
@@ -690,8 +690,8 @@ export function createApp() {
           }
         },
         onClose() {
-          if (conn && projectId) {
-            removeConnection(projectId, conn);
+          if (conn && boardId) {
+            removeConnection(boardId, conn);
           }
         },
       };
@@ -718,8 +718,8 @@ export function createApp() {
     labelApi,
     notificationApi,
     notificationPreferencesApi,
-    projectApi,
-    publicProjectApi,
+    boardApi,
+    publicBoardApi,
     searchApi,
     slackIntegrationApi,
     taskApi,
@@ -727,7 +727,7 @@ export function createApp() {
     telegramIntegrationApi,
     timeEntryApi,
     workflowRuleApi,
-    workspaceApi,
+    organizationApi,
     oauthApi,
   };
 }
@@ -744,7 +744,7 @@ export async function runStartupTasks() {
       });
     },
     runStartupMigrations: async () => {
-      await migrateWorkspaceUserEmail();
+      await migrateOrganizationUserEmail();
       await migrateSessionColumn();
 
       console.log("🔄 Migrating database...");
@@ -762,7 +762,7 @@ export async function runStartupTasks() {
   await migrateNotificationPreferencesSchema();
   await migrateGitHubIntegration();
   await migrateColumns();
-  await seedDefaultWorkspaceRoles();
+  await seedDefaultOrganizationRoles();
 
   initializePlugins();
   initializeScheduler();
@@ -834,8 +834,8 @@ const {
   labelApi,
   notificationApi,
   notificationPreferencesApi,
-  projectApi,
-  publicProjectApi,
+  boardApi,
+  publicBoardApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -843,7 +843,7 @@ const {
   telegramIntegrationApi,
   timeEntryApi,
   workflowRuleApi,
-  workspaceApi,
+  organizationApi,
   oauthApi,
 } = createdApp;
 
@@ -857,7 +857,7 @@ if (isMainModule) {
 
 export type AppType =
   | typeof configApi
-  | typeof projectApi
+  | typeof boardApi
   | typeof taskApi
   | typeof columnApi
   | typeof activityApi
@@ -877,8 +877,8 @@ export type AppType =
   | typeof externalLinkApi
   | typeof workflowRuleApi
   | typeof invitationApi
-  | typeof workspaceApi
-  | typeof publicProjectApi
+  | typeof organizationApi
+  | typeof publicBoardApi
   | typeof invitationPublicApi
   | typeof oauthApi;
 

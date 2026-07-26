@@ -12,13 +12,13 @@ import {
   validateGenericWebhookConfig,
 } from "../plugins/generic-webhook/config";
 import { genericWebhookIntegrationSchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 
 const genericWebhookIntegration = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
     apiKey?: {
       id: string;
       userId: string;
@@ -34,7 +34,7 @@ function maskValue(value: string | undefined): string | null {
 
 function toResponse(integration: {
   id: string;
-  projectId: string;
+  boardId: string;
   config: string;
   isActive: boolean | null;
   createdAt: Date;
@@ -46,7 +46,7 @@ function toResponse(integration: {
 
   return {
     id: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     webhookConfigured: Boolean(config.webhookUrl),
     maskedWebhookUrl: maskValue(config.webhookUrl),
     secretConfigured: Boolean(config.secret),
@@ -63,10 +63,10 @@ function toResponse(integration: {
   };
 }
 
-async function getGenericWebhookIntegration(projectId: string) {
+async function getGenericWebhookIntegration(boardId: string) {
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "generic-webhook"),
     ),
   });
@@ -99,11 +99,11 @@ const nullableGenericWebhookIntegrationSchema = v.nullable(
 
 genericWebhookIntegration
   .get(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "getGenericWebhookIntegration",
       tags: ["Generic Webhook"],
-      description: "Get generic outgoing webhook integration for a project",
+      description: "Get generic outgoing webhook integration for a board",
       responses: {
         200: {
           description: "Generic webhook integration details",
@@ -115,15 +115,15 @@ genericWebhookIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      return c.json(await getGenericWebhookIntegration(projectId));
+      const { boardId } = c.req.valid("param");
+      return c.json(await getGenericWebhookIntegration(boardId));
     },
   )
   .post(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "createGenericWebhookIntegration",
       tags: ["Generic Webhook"],
@@ -139,7 +139,7 @@ genericWebhookIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -151,10 +151,10 @@ genericWebhookIntegration
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const config = normalizeGenericWebhookConfig({
@@ -173,7 +173,7 @@ genericWebhookIntegration
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "generic-webhook"),
         ),
       });
@@ -189,18 +189,18 @@ genericWebhookIntegration
           .where(eq(integrationTable.id, existing.id));
       } else {
         await db.insert(integrationTable).values({
-          projectId,
+          boardId,
           type: "generic-webhook",
           config: JSON.stringify(config),
           isActive: true,
         });
       }
 
-      return c.json(await getGenericWebhookIntegration(projectId));
+      return c.json(await getGenericWebhookIntegration(boardId));
     },
   )
   .patch(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "updateGenericWebhookIntegration",
       tags: ["Generic Webhook"],
@@ -216,7 +216,7 @@ genericWebhookIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -229,15 +229,15 @@ genericWebhookIntegration
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "generic-webhook"),
         ),
       });
@@ -285,15 +285,15 @@ genericWebhookIntegration
         })
         .where(eq(integrationTable.id, existing.id));
 
-      return c.json(await getGenericWebhookIntegration(projectId));
+      return c.json(await getGenericWebhookIntegration(boardId));
     },
   )
   .delete(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "deleteGenericWebhookIntegration",
       tags: ["Generic Webhook"],
-      description: "Delete generic outgoing webhook integration for a project",
+      description: "Delete generic outgoing webhook integration for a board",
       responses: {
         200: {
           description: "Generic webhook integration deleted successfully",
@@ -305,15 +305,15 @@ genericWebhookIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "generic-webhook"),
         ),
       });

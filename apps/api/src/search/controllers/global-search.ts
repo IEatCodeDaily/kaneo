@@ -2,11 +2,11 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   activityTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
-  workspaceTable,
-  workspaceUserTable,
+  organizationTable,
+  organizationMemberTable,
 } from "../../database/schema";
 
 type SearchParams = {
@@ -16,31 +16,31 @@ type SearchParams = {
   type?:
     | "all"
     | "tasks"
-    | "projects"
-    | "workspaces"
+    | "boards"
+    | "organizations"
     | "comments"
     | "activities";
-  workspaceId?: string;
-  projectId?: string;
+  organizationId?: string;
+  boardId?: string;
   limit?: number;
 };
 
 type SearchResult = {
   id: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity";
+  type: "task" | "board" | "organization" | "comment" | "activity";
   title: string;
   description?: string;
   content?: string;
-  projectId?: string;
-  projectName?: string;
-  workspaceId?: string;
-  workspaceName?: string;
+  boardId?: string;
+  boardName?: string;
+  organizationId?: string;
+  organizationName?: string;
   userId?: string;
   userName?: string;
   createdAt: Date;
   relevanceScore: number;
   taskNumber?: number;
-  projectSlug?: string;
+  boardSlug?: string;
   priority?: string;
   status?: string;
 };
@@ -104,8 +104,8 @@ async function globalSearch(params: SearchParams): Promise<{
     userId,
     userEmail,
     type = "all",
-    workspaceId,
-    projectId,
+    organizationId,
+    boardId,
     limit = 20,
   } = params;
 
@@ -126,25 +126,25 @@ async function globalSearch(params: SearchParams): Promise<{
     return { results: [], totalCount: 0, searchQuery: query };
   }
 
-  const userWorkspaces = await db
-    .select({ workspaceId: workspaceUserTable.workspaceId })
-    .from(workspaceUserTable)
-    .where(eq(workspaceUserTable.userId, resolvedUserId));
+  const userOrganizations = await db
+    .select({ organizationId: organizationMemberTable.organizationId })
+    .from(organizationMemberTable)
+    .where(eq(organizationMemberTable.userId, resolvedUserId));
 
-  const accessibleWorkspaceIds = userWorkspaces
-    .map((w) => w.workspaceId)
+  const accessibleOrganizationIds = userOrganizations
+    .map((w) => w.organizationId)
     .filter(Boolean);
 
-  if (accessibleWorkspaceIds.length === 0) {
+  if (accessibleOrganizationIds.length === 0) {
     return { results: [], totalCount: 0, searchQuery: query };
   }
 
   const results: SearchResult[] = [];
   const searchPattern = `%${query.toLowerCase()}%`;
 
-  const workspaceFilter = workspaceId
-    ? eq(projectTable.workspaceId, workspaceId)
-    : inArray(projectTable.workspaceId, accessibleWorkspaceIds);
+  const organizationFilter = organizationId
+    ? eq(boardTable.organizationId, organizationId)
+    : inArray(boardTable.organizationId, accessibleOrganizationIds);
 
   // Check if query matches short-id pattern (e.g. "DEP-23")
   const shortIdMatch = query.match(/^([A-Za-z][\w-]*)-(\d+)$/);
@@ -152,7 +152,7 @@ async function globalSearch(params: SearchParams): Promise<{
   if (type === "all" || type === "tasks") {
     const seenTaskIds = new Set<string>();
 
-    // If query matches short-id pattern, look up by project slug + task number first
+    // If query matches short-id pattern, look up by board slug + task number first
     if (shortIdMatch?.[1] && shortIdMatch[2]) {
       const slug = shortIdMatch[1];
       const numberStr = shortIdMatch[2];
@@ -163,11 +163,11 @@ async function globalSearch(params: SearchParams): Promise<{
           id: taskTable.id,
           title: taskTable.title,
           description: taskTable.description,
-          projectId: taskTable.projectId,
-          projectName: projectTable.name,
-          projectSlug: projectTable.slug,
-          workspaceId: projectTable.workspaceId,
-          workspaceName: workspaceTable.name,
+          boardId: taskTable.boardId,
+          boardName: boardTable.name,
+          boardSlug: boardTable.slug,
+          organizationId: boardTable.organizationId,
+          organizationName: organizationTable.name,
           userId: taskTable.userId,
           userName: userTable.name,
           createdAt: taskTable.createdAt,
@@ -176,17 +176,17 @@ async function globalSearch(params: SearchParams): Promise<{
           status: taskTable.status,
         })
         .from(taskTable)
-        .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+        .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
         .leftJoin(
-          workspaceTable,
-          eq(projectTable.workspaceId, workspaceTable.id),
+          organizationTable,
+          eq(boardTable.organizationId, organizationTable.id),
         )
         .leftJoin(userTable, eq(taskTable.userId, userTable.id))
         .where(
           and(
-            workspaceFilter,
-            projectId ? eq(taskTable.projectId, projectId) : undefined,
-            ilike(projectTable.slug, slug),
+            organizationFilter,
+            boardId ? eq(taskTable.boardId, boardId) : undefined,
+            ilike(boardTable.slug, slug),
             eq(taskTable.number, taskNumber),
           ),
         )
@@ -199,11 +199,11 @@ async function globalSearch(params: SearchParams): Promise<{
           type: "task",
           title: task.title,
           description: task.description || undefined,
-          projectId: task.projectId,
-          projectName: task.projectName || undefined,
-          projectSlug: task.projectSlug || undefined,
-          workspaceId: task.workspaceId || undefined,
-          workspaceName: task.workspaceName || undefined,
+          boardId: task.boardId,
+          boardName: task.boardName || undefined,
+          boardSlug: task.boardSlug || undefined,
+          organizationId: task.organizationId || undefined,
+          organizationName: task.organizationName || undefined,
           userId: task.userId || undefined,
           userName: task.userName || undefined,
           createdAt: task.createdAt,
@@ -229,11 +229,11 @@ async function globalSearch(params: SearchParams): Promise<{
         id: taskTable.id,
         title: taskTable.title,
         description: taskTable.description,
-        projectId: taskTable.projectId,
-        projectName: projectTable.name,
-        projectSlug: projectTable.slug,
-        workspaceId: projectTable.workspaceId,
-        workspaceName: workspaceTable.name,
+        boardId: taskTable.boardId,
+        boardName: boardTable.name,
+        boardSlug: boardTable.slug,
+        organizationId: boardTable.organizationId,
+        organizationName: organizationTable.name,
         userId: taskTable.userId,
         userName: userTable.name,
         createdAt: taskTable.createdAt,
@@ -243,13 +243,13 @@ async function globalSearch(params: SearchParams): Promise<{
         relevanceScore: taskRelevanceScore.as("relevanceScore"),
       })
       .from(taskTable)
-      .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-      .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+      .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
       .leftJoin(userTable, eq(taskTable.userId, userTable.id))
       .where(
         and(
-          workspaceFilter,
-          projectId ? eq(taskTable.projectId, projectId) : undefined,
+          organizationFilter,
+          boardId ? eq(taskTable.boardId, boardId) : undefined,
           or(
             ilike(taskTable.title, searchPattern),
             ilike(taskTable.description, searchPattern),
@@ -268,11 +268,11 @@ async function globalSearch(params: SearchParams): Promise<{
         type: "task",
         title: task.title,
         description: task.description || undefined,
-        projectId: task.projectId,
-        projectName: task.projectName || undefined,
-        projectSlug: task.projectSlug || undefined,
-        workspaceId: task.workspaceId || undefined,
-        workspaceName: task.workspaceName || undefined,
+        boardId: task.boardId,
+        boardName: task.boardName || undefined,
+        boardSlug: task.boardSlug || undefined,
+        organizationId: task.organizationId || undefined,
+        organizationName: task.organizationName || undefined,
         userId: task.userId || undefined,
         userName: task.userName || undefined,
         createdAt: task.createdAt,
@@ -284,104 +284,104 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "projects") {
-    const projectRelevanceScore = sql<number>`
+  if (type === "all" || type === "boards") {
+    const boardRelevanceScore = sql<number>`
       CASE
-        WHEN LOWER(${projectTable.name}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${projectTable.description}) LIKE ${searchPattern} THEN 2
+        WHEN LOWER(${boardTable.name}) LIKE ${searchPattern} THEN 3
+        WHEN LOWER(${boardTable.description}) LIKE ${searchPattern} THEN 2
         ELSE 1
       END
     `;
 
-    const projectQuery = db
+    const boardQuery = db
       .select({
-        id: projectTable.id,
-        name: projectTable.name,
-        description: projectTable.description,
-        slug: projectTable.slug,
-        workspaceId: projectTable.workspaceId,
-        workspaceName: workspaceTable.name,
-        createdAt: projectTable.createdAt,
-        relevanceScore: projectRelevanceScore.as("relevanceScore"),
+        id: boardTable.id,
+        name: boardTable.name,
+        description: boardTable.description,
+        slug: boardTable.slug,
+        organizationId: boardTable.organizationId,
+        organizationName: organizationTable.name,
+        createdAt: boardTable.createdAt,
+        relevanceScore: boardRelevanceScore.as("relevanceScore"),
       })
-      .from(projectTable)
-      .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+      .from(boardTable)
+      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
       .where(
         and(
-          workspaceFilter,
+          organizationFilter,
           or(
-            ilike(projectTable.name, searchPattern),
-            ilike(projectTable.description, searchPattern),
+            ilike(boardTable.name, searchPattern),
+            ilike(boardTable.description, searchPattern),
           ),
         ),
       )
-      .orderBy(desc(projectRelevanceScore), desc(projectTable.createdAt))
+      .orderBy(desc(boardRelevanceScore), desc(boardTable.createdAt))
       .limit(limit);
 
-    const projects = await projectQuery;
+    const boards = await boardQuery;
 
-    for (const project of projects) {
+    for (const board of boards) {
       results.push({
-        id: project.id,
-        type: "project",
-        title: project.name,
-        description: project.description || undefined,
-        projectId: project.id,
-        projectSlug: project.slug || undefined,
-        workspaceId: project.workspaceId,
-        workspaceName: project.workspaceName || undefined,
-        createdAt: project.createdAt,
-        relevanceScore: project.relevanceScore,
+        id: board.id,
+        type: "board",
+        title: board.name,
+        description: board.description || undefined,
+        boardId: board.id,
+        boardSlug: board.slug || undefined,
+        organizationId: board.organizationId,
+        organizationName: board.organizationName || undefined,
+        createdAt: board.createdAt,
+        relevanceScore: board.relevanceScore,
       });
     }
   }
 
-  if (type === "all" || type === "workspaces") {
-    const workspaceRelevanceScore = sql<number>`
+  if (type === "all" || type === "organizations") {
+    const organizationRelevanceScore = sql<number>`
       CASE
-        WHEN LOWER(${workspaceTable.name}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${workspaceTable.description}) LIKE ${searchPattern} THEN 2
+        WHEN LOWER(${organizationTable.name}) LIKE ${searchPattern} THEN 3
+        WHEN LOWER(${organizationTable.description}) LIKE ${searchPattern} THEN 2
         ELSE 1
       END
     `;
 
-    const workspaceQuery = db
+    const organizationQuery = db
       .select({
-        id: workspaceTable.id,
-        name: workspaceTable.name,
-        description: workspaceTable.description,
-        createdAt: workspaceTable.createdAt,
-        relevanceScore: workspaceRelevanceScore.as("relevanceScore"),
+        id: organizationTable.id,
+        name: organizationTable.name,
+        description: organizationTable.description,
+        createdAt: organizationTable.createdAt,
+        relevanceScore: organizationRelevanceScore.as("relevanceScore"),
       })
-      .from(workspaceTable)
+      .from(organizationTable)
       .leftJoin(
-        workspaceUserTable,
-        eq(workspaceTable.id, workspaceUserTable.workspaceId),
+        organizationMemberTable,
+        eq(organizationTable.id, organizationMemberTable.organizationId),
       )
       .where(
         and(
-          inArray(workspaceTable.id, accessibleWorkspaceIds),
+          inArray(organizationTable.id, accessibleOrganizationIds),
           or(
-            ilike(workspaceTable.name, searchPattern),
-            ilike(workspaceTable.description, searchPattern),
+            ilike(organizationTable.name, searchPattern),
+            ilike(organizationTable.description, searchPattern),
           ),
         ),
       )
-      .orderBy(desc(workspaceRelevanceScore), desc(workspaceTable.createdAt))
+      .orderBy(desc(organizationRelevanceScore), desc(organizationTable.createdAt))
       .limit(limit);
 
-    const workspaces = await workspaceQuery;
+    const organizations = await organizationQuery;
 
-    for (const workspace of workspaces) {
+    for (const organization of organizations) {
       results.push({
-        id: workspace.id,
-        type: "workspace",
-        title: workspace.name,
-        description: workspace.description || undefined,
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        createdAt: workspace.createdAt,
-        relevanceScore: workspace.relevanceScore,
+        id: organization.id,
+        type: "organization",
+        title: organization.name,
+        description: organization.description || undefined,
+        organizationId: organization.id,
+        organizationName: organization.name,
+        createdAt: organization.createdAt,
+        relevanceScore: organization.relevanceScore,
       });
     }
   }
@@ -405,11 +405,11 @@ async function globalSearch(params: SearchParams): Promise<{
         taskId: activityTable.taskId,
         taskTitle: taskTable.title,
         taskNumber: taskTable.number,
-        projectId: projectTable.id,
-        projectName: projectTable.name,
-        projectSlug: projectTable.slug,
-        workspaceId: projectTable.workspaceId,
-        workspaceName: workspaceTable.name,
+        boardId: boardTable.id,
+        boardName: boardTable.name,
+        boardSlug: boardTable.slug,
+        organizationId: boardTable.organizationId,
+        organizationName: organizationTable.name,
         userId: activityTable.userId,
         userName: userTable.name,
         createdAt: activityTable.createdAt,
@@ -417,13 +417,13 @@ async function globalSearch(params: SearchParams): Promise<{
       })
       .from(activityTable)
       .leftJoin(taskTable, eq(activityTable.taskId, taskTable.id))
-      .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-      .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+      .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
       .leftJoin(userTable, eq(activityTable.userId, userTable.id))
       .where(
         and(
-          workspaceFilter,
-          projectId ? eq(taskTable.projectId, projectId) : undefined,
+          organizationFilter,
+          boardId ? eq(taskTable.boardId, boardId) : undefined,
           or(
             ilike(searchableActivityText, searchPattern),
             ilike(taskTable.title, searchPattern),
@@ -450,11 +450,11 @@ async function globalSearch(params: SearchParams): Promise<{
           ? `Comment on ${activity.taskTitle || "task"}`
           : `${activity.type} on ${activity.taskTitle || "task"}`,
         content: activityContent,
-        projectId: activity.projectId || undefined,
-        projectName: activity.projectName || undefined,
-        projectSlug: activity.projectSlug || undefined,
-        workspaceId: activity.workspaceId || undefined,
-        workspaceName: activity.workspaceName || undefined,
+        boardId: activity.boardId || undefined,
+        boardName: activity.boardName || undefined,
+        boardSlug: activity.boardSlug || undefined,
+        organizationId: activity.organizationId || undefined,
+        organizationName: activity.organizationName || undefined,
         userId: activity.userId || undefined,
         userName: activity.userName || undefined,
         createdAt: activity.createdAt,

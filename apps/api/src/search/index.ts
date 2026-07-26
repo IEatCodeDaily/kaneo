@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
-import { activitySchema, projectSchema, taskSchema } from "../schemas";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { activitySchema, boardSchema, taskSchema } from "../schemas";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import globalSearch from "./controllers/global-search";
 
-const workspaceSchema = v.object({
+const organizationSchema = v.object({
   id: v.string(),
   name: v.string(),
   slug: v.string(),
@@ -17,8 +17,8 @@ const workspaceSchema = v.object({
 
 const searchResultSchema = v.object({
   tasks: v.optional(v.array(taskSchema)),
-  projects: v.optional(v.array(projectSchema)),
-  workspaces: v.optional(v.array(workspaceSchema)),
+  boards: v.optional(v.array(boardSchema)),
+  organizations: v.optional(v.array(organizationSchema)),
   comments: v.optional(v.array(activitySchema)),
   activities: v.optional(v.array(activitySchema)),
 });
@@ -33,7 +33,7 @@ const search = new Hono<{
     operationId: "globalSearch",
     tags: ["Search"],
     description:
-      "Search across tasks, projects, workspaces, comments, and activities",
+      "Search across tasks, boards, organizations, comments, and activities",
     responses: {
       200: {
         description: "Search results",
@@ -54,15 +54,15 @@ const search = new Hono<{
         v.picklist([
           "all",
           "tasks",
-          "projects",
-          "workspaces",
+          "boards",
+          "organizations",
           "comments",
           "activities",
         ]),
         "all",
       ),
-      workspaceId: v.optional(v.string()),
-      projectId: v.optional(v.string()),
+      organizationId: v.optional(v.string()),
+      boardId: v.optional(v.string()),
       limit: v.optional(
         v.pipe(
           v.string(),
@@ -77,9 +77,9 @@ const search = new Hono<{
       userEmail: v.optional(v.pipe(v.string(), v.email())),
     }),
   ),
-  workspaceAccess.fromQuery(),
+  organizationAccess.fromQuery(),
   async (c) => {
-    const { q, type, workspaceId, projectId, limit, userEmail } =
+    const { q, type, organizationId, boardId, limit, userEmail } =
       c.req.valid("query");
     const userId = c.get("userId");
 
@@ -88,8 +88,8 @@ const search = new Hono<{
       userId,
       userEmail,
       type,
-      workspaceId,
-      projectId,
+      organizationId,
+      boardId,
       limit,
     });
 

@@ -40,7 +40,7 @@ async function updateTaskDescription({
 
   await publishEvent("task.description_changed", {
     taskId: updatedTask.id,
-    projectId: updatedTask.projectId,
+    boardId: updatedTask.boardId,
     userId: currentUserId,
     oldDescription: existingTask.description,
     newDescription: description,

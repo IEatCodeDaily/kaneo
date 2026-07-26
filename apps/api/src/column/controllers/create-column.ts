@@ -16,13 +16,13 @@ export function toSlug(name: string): string {
 }
 
 async function createColumn({
-  projectId,
+  boardId,
   name,
   icon,
   color,
   isFinal,
 }: {
-  projectId: string;
+  boardId: string;
   name: string;
   icon?: string;
   color?: string;
@@ -46,12 +46,12 @@ async function createColumn({
     .select({ id: columnTable.id })
     .from(columnTable)
     .where(
-      sql`${columnTable.projectId} = ${projectId} AND ${columnTable.slug} = ${slug}`,
+      sql`${columnTable.boardId} = ${boardId} AND ${columnTable.slug} = ${slug}`,
     );
 
   if (existing.length > 0) {
     throw new HTTPException(409, {
-      message: `Column with slug "${slug}" already exists in this project`,
+      message: `Column with slug "${slug}" already exists in this board`,
     });
   }
 
@@ -60,14 +60,14 @@ async function createColumn({
       maxPosition: sql<number>`COALESCE(MAX(${columnTable.position}), -1)`,
     })
     .from(columnTable)
-    .where(eq(columnTable.projectId, projectId));
+    .where(eq(columnTable.boardId, boardId));
 
   const position = (maxPos?.maxPosition ?? -1) + 1;
 
   const [created] = await db
     .insert(columnTable)
     .values({
-      projectId,
+      boardId,
       name,
       slug,
       position,

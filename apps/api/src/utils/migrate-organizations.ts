@@ -5,22 +5,22 @@ import db, { schema } from "../database";
 async function migrateOrganizations() {
   console.log("Migrating organizations...");
 
-  const workspaces = await db.select().from(schema.workspaceTable);
+  const organizations = await db.select().from(schema.organizationTable);
 
-  for (const workspace of workspaces) {
+  for (const organization of organizations) {
     const members = await db
       .select()
-      .from(schema.workspaceUserTable)
-      .where(eq(schema.workspaceUserTable.workspaceId, workspace.id));
+      .from(schema.organizationMemberTable)
+      .where(eq(schema.organizationMemberTable.organizationId, organization.id));
 
     const owner = members.find((member) => member.role === "owner");
 
     const data = await auth.api.createOrganization({
       body: {
-        name: workspace.name,
-        description: workspace.description || undefined,
+        name: organization.name,
+        description: organization.description || undefined,
         slug:
-          workspace.slug || workspace.name.toLowerCase().replace(/\s+/g, "-"),
+          organization.slug || organization.name.toLowerCase().replace(/\s+/g, "-"),
         userId: owner?.userId,
       },
     });

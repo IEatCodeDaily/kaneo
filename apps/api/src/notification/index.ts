@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { projectTable, taskTable } from "../database/schema";
+import { boardTable, taskTable } from "../database/schema";
 import { subscribeToEvent } from "../events";
 import { notificationSchema } from "../schemas";
 import clearNotifications from "./controllers/clear-notifications";
@@ -164,13 +164,13 @@ subscribeToEvent<{
   userId: string;
   currentUserId?: string;
   title: string;
-  projectId: string;
+  boardId: string;
 }>("task.created", async (data) => {
   if (data.userId && data.userId !== data.currentUserId) {
-    const [project] = await db
-      .select({ workspaceId: projectTable.workspaceId })
-      .from(projectTable)
-      .where(eq(projectTable.id, data.projectId))
+    const [board] = await db
+      .select({ organizationId: boardTable.organizationId })
+      .from(boardTable)
+      .where(eq(boardTable.id, data.boardId))
       .limit(1);
 
     await createNotification({
@@ -178,8 +178,8 @@ subscribeToEvent<{
       type: "task_created",
       eventData: {
         taskTitle: data.title,
-        projectId: data.projectId,
-        workspaceId: project?.workspaceId ?? null,
+        boardId: data.boardId,
+        organizationId: board?.organizationId ?? null,
       },
       resourceId: data.taskId,
       resourceType: "task",
@@ -188,20 +188,20 @@ subscribeToEvent<{
 });
 
 subscribeToEvent<{
-  workspaceId: string;
-  workspaceName: string;
+  organizationId: string;
+  organizationName: string;
   ownerEmail: string;
   ownerId?: string;
-}>("workspace.created", async (data) => {
+}>("organization.created", async (data) => {
   if (data.ownerId) {
     await createNotification({
       userId: data.ownerId,
-      type: "workspace_created",
+      type: "organization_created",
       eventData: {
-        workspaceName: data.workspaceName,
+        organizationName: data.organizationName,
       },
-      resourceId: data.workspaceId,
-      resourceType: "workspace",
+      resourceId: data.organizationId,
+      resourceType: "organization",
     });
   }
 });
@@ -216,16 +216,16 @@ subscribeToEvent<{
 }>("task.status_changed", async (data) => {
   if (data.assigneeId && data.assigneeId !== data.userId) {
     const [task] = await db
-      .select({ projectId: taskTable.projectId })
+      .select({ boardId: taskTable.boardId })
       .from(taskTable)
       .where(eq(taskTable.id, data.taskId))
       .limit(1);
 
-    const [project] = task
+    const [board] = task
       ? await db
-          .select({ workspaceId: projectTable.workspaceId })
-          .from(projectTable)
-          .where(eq(projectTable.id, task.projectId))
+          .select({ organizationId: boardTable.organizationId })
+          .from(boardTable)
+          .where(eq(boardTable.id, task.boardId))
           .limit(1)
       : [];
 
@@ -236,8 +236,8 @@ subscribeToEvent<{
         taskTitle: data.title,
         oldStatus: data.oldStatus,
         newStatus: data.newStatus,
-        projectId: task?.projectId ?? null,
-        workspaceId: project?.workspaceId ?? null,
+        boardId: task?.boardId ?? null,
+        organizationId: board?.organizationId ?? null,
       },
       resourceId: data.taskId,
       resourceType: "task",
@@ -255,16 +255,16 @@ subscribeToEvent<{
 }>("task.assignee_changed", async (data) => {
   if (data.newAssigneeId) {
     const [task] = await db
-      .select({ projectId: taskTable.projectId })
+      .select({ boardId: taskTable.boardId })
       .from(taskTable)
       .where(eq(taskTable.id, data.taskId))
       .limit(1);
 
-    const [project] = task
+    const [board] = task
       ? await db
-          .select({ workspaceId: projectTable.workspaceId })
-          .from(projectTable)
-          .where(eq(projectTable.id, task.projectId))
+          .select({ organizationId: boardTable.organizationId })
+          .from(boardTable)
+          .where(eq(boardTable.id, task.boardId))
           .limit(1)
       : [];
 
@@ -273,8 +273,8 @@ subscribeToEvent<{
       type: "task_assignee_changed",
       eventData: {
         taskTitle: data.title,
-        projectId: task?.projectId ?? null,
-        workspaceId: project?.workspaceId ?? null,
+        boardId: task?.boardId ?? null,
+        organizationId: board?.organizationId ?? null,
       },
       resourceId: data.taskId,
       resourceType: "task",
@@ -291,16 +291,16 @@ subscribeToEvent<{
 }>("time-entry.created", async (data) => {
   if (data.taskOwnerId && data.taskOwnerId !== data.userId) {
     const [task] = await db
-      .select({ projectId: taskTable.projectId })
+      .select({ boardId: taskTable.boardId })
       .from(taskTable)
       .where(eq(taskTable.id, data.taskId))
       .limit(1);
 
-    const [project] = task
+    const [board] = task
       ? await db
-          .select({ workspaceId: projectTable.workspaceId })
-          .from(projectTable)
-          .where(eq(projectTable.id, task.projectId))
+          .select({ organizationId: boardTable.organizationId })
+          .from(boardTable)
+          .where(eq(boardTable.id, task.boardId))
           .limit(1)
       : [];
 
@@ -309,8 +309,8 @@ subscribeToEvent<{
       type: "time_entry_created",
       eventData: {
         taskTitle: data.taskTitle ?? null,
-        projectId: task?.projectId ?? null,
-        workspaceId: project?.workspaceId ?? null,
+        boardId: task?.boardId ?? null,
+        organizationId: board?.organizationId ?? null,
       },
       resourceId: data.taskId,
       resourceType: "task",

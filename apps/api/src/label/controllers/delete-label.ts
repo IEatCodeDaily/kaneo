@@ -1,7 +1,7 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { labelTable, projectTable, taskTable } from "../../database/schema";
+import { labelTable, boardTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { removeLabelFromGitea } from "../../plugins/gitea/utils/sync-label-to-gitea";
 import { removeLabelFromGitHub } from "../../plugins/github/utils/sync-label-to-github";
@@ -22,11 +22,11 @@ async function deleteLabel(id: string, userId: string) {
     const [task] = await db
       .select({
         id: taskTable.id,
-        projectId: taskTable.projectId,
-        workspaceId: projectTable.workspaceId,
+        boardId: taskTable.boardId,
+        organizationId: boardTable.organizationId,
       })
       .from(taskTable)
-      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
       .where(eq(taskTable.id, label.taskId))
       .limit(1);
 
@@ -58,7 +58,7 @@ async function deleteLabel(id: string, userId: string) {
     await publishEvent("task.label_deleted", {
       label: deletedLabel,
       task,
-      projectId: task.projectId,
+      boardId: task.boardId,
       taskId: task.id,
       userId,
       type: "label_deleted",
@@ -67,7 +67,7 @@ async function deleteLabel(id: string, userId: string) {
     return deletedLabel;
   }
 
-  // Workspace-level label: delete the label and cascade to all task-level copies
+  // Organization-level label: delete the label and cascade to all task-level copies
   const [deletedLabel] = await db
     .delete(labelTable)
     .where(eq(labelTable.id, id))
@@ -85,15 +85,15 @@ async function deleteLabel(id: string, userId: string) {
     .select({
       label: labelTable,
       taskId: taskTable.id,
-      projectId: projectTable.id,
-      workspaceId: projectTable.workspaceId,
+      boardId: boardTable.id,
+      organizationId: boardTable.organizationId,
     })
     .from(labelTable)
     .innerJoin(taskTable, eq(labelTable.taskId, taskTable.id))
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(
       and(
-        eq(labelTable.workspaceId, label.workspaceId),
+        eq(labelTable.organizationId, label.organizationId),
         eq(labelTable.name, label.name),
         isNotNull(labelTable.taskId),
       ),
@@ -104,14 +104,14 @@ async function deleteLabel(id: string, userId: string) {
     .delete(labelTable)
     .where(
       and(
-        eq(labelTable.workspaceId, label.workspaceId),
+        eq(labelTable.organizationId, label.organizationId),
         eq(labelTable.name, label.name),
         isNotNull(labelTable.taskId),
       ),
     );
 
   // Emit events and sync providers for each affected task
-  for (const { label: l, taskId, projectId } of affectedLabels) {
+  for (const { label: l, taskId, boardId } of affectedLabels) {
     if (l.taskId) {
       removeLabelFromGitHub(l.taskId, l.name).catch((error) => {
         console.error("Failed to remove label from GitHub:", error);
@@ -123,8 +123,8 @@ async function deleteLabel(id: string, userId: string) {
 
     await publishEvent("task.label_deleted", {
       label: l,
-      task: { id: taskId, projectId },
-      projectId,
+      task: { id: taskId, boardId },
+      boardId,
       taskId,
       userId,
       type: "label_deleted",

@@ -2,7 +2,7 @@ import { and, eq, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
-  projectTable,
+  boardTable,
   taskRelationTable,
   taskTable,
 } from "../../database/schema";
@@ -13,13 +13,13 @@ async function createTaskRelation({
   targetTaskId,
   relationType,
   userId,
-  workspaceId,
+  organizationId,
 }: {
   sourceTaskId: string;
   targetTaskId: string;
   relationType: string;
   userId: string;
-  workspaceId: string;
+  organizationId: string;
 }) {
   if (sourceTaskId === targetTaskId) {
     throw new HTTPException(400, {
@@ -30,15 +30,15 @@ async function createTaskRelation({
   const [sourceTask] = await db
     .select({
       id: taskTable.id,
-      projectId: taskTable.projectId,
-      workspaceId: projectTable.workspaceId,
+      boardId: taskTable.boardId,
+      organizationId: boardTable.organizationId,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(
       and(
         eq(taskTable.id, sourceTaskId),
-        eq(projectTable.workspaceId, workspaceId),
+        eq(boardTable.organizationId, organizationId),
       ),
     )
     .limit(1);
@@ -50,15 +50,15 @@ async function createTaskRelation({
   const [targetTask] = await db
     .select({
       id: taskTable.id,
-      projectId: taskTable.projectId,
-      workspaceId: projectTable.workspaceId,
+      boardId: taskTable.boardId,
+      organizationId: boardTable.organizationId,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(
       and(
         eq(taskTable.id, targetTaskId),
-        eq(projectTable.workspaceId, workspaceId),
+        eq(boardTable.organizationId, organizationId),
       ),
     )
     .limit(1);
@@ -111,7 +111,7 @@ async function createTaskRelation({
   await publishEvent("task-relation.created", {
     ...relation,
     taskId: sourceTaskId,
-    projectId: sourceTask.projectId,
+    boardId: sourceTask.boardId,
     userId,
   });
 
