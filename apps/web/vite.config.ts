@@ -23,6 +23,24 @@ export default defineConfig({
     host: true,
     hmr: true,
     port: 5173,
+    allowedHosts: ["kaneo.entelechia.cloud", "kaneo.k3s.home"],
+    // The Kubernetes ingress routes kaneo.entelechia.cloud to this Vite dev
+    // server. Proxy API traffic locally so browser requests remain same-origin
+    // while the API runs on the host's port 1337.
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+      "/.well-known/oauth-protected-resource/api/mcp": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+      "/.well-known/oauth-authorization-server/api": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+    },
   },
   optimizeDeps: {
     exclude: ["better-auth"],
