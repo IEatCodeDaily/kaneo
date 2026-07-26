@@ -12,7 +12,7 @@ import {
   invitationTable,
   labelTable,
   notificationTable,
-  projectTable,
+  boardTable,
   sessionTable,
   taskRelationTable,
   taskReminderSentTable,
@@ -21,22 +21,22 @@ import {
   teamTable,
   timeEntryTable,
   userNotificationPreferenceTable,
-  userNotificationWorkspaceProjectTable,
-  userNotificationWorkspaceRuleTable,
+  userNotificationOrgBoardTable,
+  userNotificationOrgRuleTable,
   userTable,
   verificationTable,
   workflowRuleTable,
-  workspaceRoleTable,
-  workspaceTable,
-  workspaceUserTable,
+  organizationRoleTable,
+  organizationTable,
+  organizationMemberTable,
 } from "./schema";
 
 export const userTableRelations = relations(userTable, ({ many, one }) => ({
   sessions: many(sessionTable),
   accounts: many(accountTable),
   teamMembers: many(teamMemberTable),
-  workspaces: many(workspaceTable),
-  workspaceMemberships: many(workspaceUserTable),
+  organizations: many(organizationTable),
+  organizationMemberships: many(organizationMemberTable),
   assignedTasks: many(taskTable),
   timeEntries: many(timeEntryTable),
   activities: many(activityTable),
@@ -44,7 +44,7 @@ export const userTableRelations = relations(userTable, ({ many, one }) => ({
   assets: many(assetTable),
   notifications: many(notificationTable),
   notificationPreference: one(userNotificationPreferenceTable),
-  notificationWorkspaceRules: many(userNotificationWorkspaceRuleTable),
+  notificationOrganizationRules: many(userNotificationOrgRuleTable),
   sentInvitations: many(invitationTable),
   apikeys: many(apikeyTable),
 }));
@@ -68,38 +68,38 @@ export const verificationTableRelations = relations(
   () => ({}),
 );
 
-export const workspaceTableRelations = relations(
-  workspaceTable,
+export const organizationTableRelations = relations(
+  organizationTable,
   ({ many }) => ({
     teams: many(teamTable),
-    members: many(workspaceUserTable),
-    projects: many(projectTable),
+    members: many(organizationMemberTable),
+    boards: many(boardTable),
     assets: many(assetTable),
     invitations: many(invitationTable),
-    notificationWorkspaceRules: many(userNotificationWorkspaceRuleTable),
+    notificationOrganizationRules: many(userNotificationOrgRuleTable),
   }),
 );
 
-export const workspaceUserTableRelations = relations(
-  workspaceUserTable,
+export const organizationMemberTableRelations = relations(
+  organizationMemberTable,
   ({ one }) => ({
-    workspace: one(workspaceTable, {
-      fields: [workspaceUserTable.workspaceId],
-      references: [workspaceTable.id],
+    organization: one(organizationTable, {
+      fields: [organizationMemberTable.organizationId],
+      references: [organizationTable.id],
     }),
     user: one(userTable, {
-      fields: [workspaceUserTable.userId],
+      fields: [organizationMemberTable.userId],
       references: [userTable.id],
     }),
   }),
 );
 
-export const projectTableRelations = relations(
-  projectTable,
+export const boardTableRelations = relations(
+  boardTable,
   ({ one, many }) => ({
-    workspace: one(workspaceTable, {
-      fields: [projectTable.workspaceId],
-      references: [workspaceTable.id],
+    organization: one(organizationTable, {
+      fields: [boardTable.organizationId],
+      references: [organizationTable.id],
     }),
     tasks: many(taskTable),
     assets: many(assetTable),
@@ -107,14 +107,14 @@ export const projectTableRelations = relations(
     workflowRules: many(workflowRuleTable),
     githubIntegration: many(githubIntegrationTable),
     integrations: many(integrationTable),
-    notificationWorkspaceProjects: many(userNotificationWorkspaceProjectTable),
+    notificationOrganizationBoards: many(userNotificationOrgBoardTable),
   }),
 );
 
 export const columnTableRelations = relations(columnTable, ({ one, many }) => ({
-  project: one(projectTable, {
-    fields: [columnTable.projectId],
-    references: [projectTable.id],
+  board: one(boardTable, {
+    fields: [columnTable.boardId],
+    references: [boardTable.id],
   }),
   tasks: many(taskTable),
   workflowRules: many(workflowRuleTable),
@@ -123,9 +123,9 @@ export const columnTableRelations = relations(columnTable, ({ one, many }) => ({
 export const workflowRuleTableRelations = relations(
   workflowRuleTable,
   ({ one }) => ({
-    project: one(projectTable, {
-      fields: [workflowRuleTable.projectId],
-      references: [projectTable.id],
+    board: one(boardTable, {
+      fields: [workflowRuleTable.boardId],
+      references: [boardTable.id],
     }),
     column: one(columnTable, {
       fields: [workflowRuleTable.columnId],
@@ -135,9 +135,9 @@ export const workflowRuleTableRelations = relations(
 );
 
 export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
-  project: one(projectTable, {
-    fields: [taskTable.projectId],
-    references: [projectTable.id],
+  board: one(boardTable, {
+    fields: [taskTable.boardId],
+    references: [boardTable.id],
   }),
   assignee: one(userTable, {
     fields: [taskTable.userId],
@@ -181,13 +181,13 @@ export const activityTableRelations = relations(activityTable, ({ one }) => ({
 }));
 
 export const assetTableRelations = relations(assetTable, ({ one }) => ({
-  workspace: one(workspaceTable, {
-    fields: [assetTable.workspaceId],
-    references: [workspaceTable.id],
+  organization: one(organizationTable, {
+    fields: [assetTable.organizationId],
+    references: [organizationTable.id],
   }),
-  project: one(projectTable, {
-    fields: [assetTable.projectId],
-    references: [projectTable.id],
+  board: one(boardTable, {
+    fields: [assetTable.boardId],
+    references: [boardTable.id],
   }),
   task: one(taskTable, {
     fields: [assetTable.taskId],
@@ -230,40 +230,40 @@ export const userNotificationPreferenceTableRelations = relations(
   }),
 );
 
-export const userNotificationWorkspaceRuleTableRelations = relations(
-  userNotificationWorkspaceRuleTable,
+export const userNotificationOrgRuleTableRelations = relations(
+  userNotificationOrgRuleTable,
   ({ one, many }) => ({
     user: one(userTable, {
-      fields: [userNotificationWorkspaceRuleTable.userId],
+      fields: [userNotificationOrgRuleTable.userId],
       references: [userTable.id],
     }),
-    workspace: one(workspaceTable, {
-      fields: [userNotificationWorkspaceRuleTable.workspaceId],
-      references: [workspaceTable.id],
+    organization: one(organizationTable, {
+      fields: [userNotificationOrgRuleTable.organizationId],
+      references: [organizationTable.id],
     }),
-    selectedProjects: many(userNotificationWorkspaceProjectTable),
+    selectedBoards: many(userNotificationOrgBoardTable),
   }),
 );
 
-export const userNotificationWorkspaceProjectTableRelations = relations(
-  userNotificationWorkspaceProjectTable,
+export const userNotificationOrgBoardTableRelations = relations(
+  userNotificationOrgBoardTable,
   ({ one }) => ({
-    workspaceRule: one(userNotificationWorkspaceRuleTable, {
+    organizationRule: one(userNotificationOrgRuleTable, {
       fields: [
-        userNotificationWorkspaceProjectTable.workspaceId,
-        userNotificationWorkspaceProjectTable.workspaceRuleId,
+        userNotificationOrgBoardTable.organizationId,
+        userNotificationOrgBoardTable.orgRuleId,
       ],
       references: [
-        userNotificationWorkspaceRuleTable.workspaceId,
-        userNotificationWorkspaceRuleTable.id,
+        userNotificationOrgRuleTable.organizationId,
+        userNotificationOrgRuleTable.id,
       ],
     }),
-    project: one(projectTable, {
+    board: one(boardTable, {
       fields: [
-        userNotificationWorkspaceProjectTable.workspaceId,
-        userNotificationWorkspaceProjectTable.projectId,
+        userNotificationOrgBoardTable.organizationId,
+        userNotificationOrgBoardTable.boardId,
       ],
-      references: [projectTable.workspaceId, projectTable.id],
+      references: [boardTable.organizationId, boardTable.id],
     }),
   }),
 );
@@ -271,17 +271,17 @@ export const userNotificationWorkspaceProjectTableRelations = relations(
 export const githubIntegrationTableRelations = relations(
   githubIntegrationTable,
   ({ one }) => ({
-    project: one(projectTable, {
-      fields: [githubIntegrationTable.projectId],
-      references: [projectTable.id],
+    board: one(boardTable, {
+      fields: [githubIntegrationTable.boardId],
+      references: [boardTable.id],
     }),
   }),
 );
 
 export const teamTableRelations = relations(teamTable, ({ one, many }) => ({
-  workspace: one(workspaceTable, {
-    fields: [teamTable.workspaceId],
-    references: [workspaceTable.id],
+  organization: one(organizationTable, {
+    fields: [teamTable.organizationId],
+    references: [organizationTable.id],
   }),
   teamMembers: many(teamMemberTable),
 }));
@@ -303,9 +303,9 @@ export const teamMemberTableRelations = relations(
 export const invitationTableRelations = relations(
   invitationTable,
   ({ one }) => ({
-    workspace: one(workspaceTable, {
-      fields: [invitationTable.workspaceId],
-      references: [workspaceTable.id],
+    organization: one(organizationTable, {
+      fields: [invitationTable.organizationId],
+      references: [organizationTable.id],
     }),
     inviter: one(userTable, {
       fields: [invitationTable.inviterId],
@@ -314,12 +314,12 @@ export const invitationTableRelations = relations(
   }),
 );
 
-export const workspaceRoleTableRelations = relations(
-  workspaceRoleTable,
+export const organizationRoleTableRelations = relations(
+  organizationRoleTable,
   ({ one }) => ({
-    workspace: one(workspaceTable, {
-      fields: [workspaceRoleTable.workspaceId],
-      references: [workspaceTable.id],
+    organization: one(organizationTable, {
+      fields: [organizationRoleTable.organizationId],
+      references: [organizationTable.id],
     }),
   }),
 );
@@ -334,9 +334,9 @@ export const apikeyTableRelations = relations(apikeyTable, ({ one }) => ({
 export const integrationTableRelations = relations(
   integrationTable,
   ({ one, many }) => ({
-    project: one(projectTable, {
-      fields: [integrationTable.projectId],
-      references: [projectTable.id],
+    board: one(boardTable, {
+      fields: [integrationTable.boardId],
+      references: [boardTable.id],
     }),
     externalLinks: many(externalLinkTable),
   }),

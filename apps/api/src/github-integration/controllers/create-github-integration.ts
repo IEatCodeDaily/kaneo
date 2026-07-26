@@ -1,16 +1,16 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { integrationTable, projectTable } from "../../database/schema";
+import { integrationTable, boardTable } from "../../database/schema";
 import { defaultGitHubConfig } from "../../plugins/github/config";
 import { getGithubApp } from "../../plugins/github/utils/github-app";
 
 async function createGithubIntegration({
-  projectId,
+  boardId,
   repositoryOwner,
   repositoryName,
 }: {
-  projectId: string;
+  boardId: string;
   repositoryOwner: string;
   repositoryName: string;
 }) {
@@ -22,12 +22,12 @@ async function createGithubIntegration({
     });
   }
 
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
-    throw new HTTPException(404, { message: "Project not found" });
+  if (!board) {
+    throw new HTTPException(404, { message: "Board not found" });
   }
 
   const allGitHubIntegrations = await db.query.integrationTable.findMany({
@@ -35,7 +35,7 @@ async function createGithubIntegration({
   });
 
   for (const integration of allGitHubIntegrations) {
-    if (integration.projectId === projectId) {
+    if (integration.boardId === boardId) {
       continue;
     }
 
@@ -46,7 +46,7 @@ async function createGithubIntegration({
         config.repositoryName === repositoryName
       ) {
         throw new HTTPException(409, {
-          message: `Repository ${repositoryOwner}/${repositoryName} is already linked to another project`,
+          message: `Repository ${repositoryOwner}/${repositoryName} is already linked to another board`,
         });
       }
     } catch (error) {
@@ -70,7 +70,7 @@ async function createGithubIntegration({
 
   const existingIntegration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "github"),
     ),
   });
@@ -92,7 +92,7 @@ async function createGithubIntegration({
       })
       .where(
         and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "github"),
         ),
       )
@@ -100,7 +100,7 @@ async function createGithubIntegration({
 
     return {
       id: updatedIntegration?.id,
-      projectId: updatedIntegration?.projectId,
+      boardId: updatedIntegration?.boardId,
       repositoryOwner,
       repositoryName,
       installationId,
@@ -113,7 +113,7 @@ async function createGithubIntegration({
   const [newIntegration] = await db
     .insert(integrationTable)
     .values({
-      projectId,
+      boardId,
       type: "github",
       config: JSON.stringify(config),
       isActive: true,
@@ -122,7 +122,7 @@ async function createGithubIntegration({
 
   return {
     id: newIntegration?.id,
-    projectId: newIntegration?.projectId,
+    boardId: newIntegration?.boardId,
     repositoryOwner,
     repositoryName,
     installationId,

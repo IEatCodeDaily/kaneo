@@ -65,7 +65,7 @@ export async function handleIssueLabeled(payload: IssueLabeledPayload) {
       ) {
         await publishEvent("task.status_changed", {
           taskId: statusResult.after.id,
-          projectId: statusResult.after.projectId,
+          boardId: statusResult.after.boardId,
           userId: null,
           oldStatus: statusResult.before.status,
           newStatus: statusResult.after.status,
@@ -92,15 +92,15 @@ export async function handleIssueLabeled(payload: IssueLabeledPayload) {
       const task = await db.query.taskTable.findFirst({
         where: eq(taskTable.id, existingLink.taskId),
         with: {
-          project: true,
+          board: true,
         },
       });
 
-      if (task?.project?.workspaceId) {
+      if (task?.board?.organizationId) {
         const existingLabel = await db.query.labelTable.findFirst({
           where: (table, { and, eq }) =>
             and(
-              eq(table.workspaceId, task.project.workspaceId),
+              eq(table.organizationId, task.board.organizationId),
               eq(table.name, addedLabel.name),
               eq(table.taskId, task.id),
             ),
@@ -114,7 +114,7 @@ export async function handleIssueLabeled(payload: IssueLabeledPayload) {
               name: addedLabel.name,
               color,
               taskId: task.id,
-              workspaceId: task.project.workspaceId,
+              organizationId: task.board.organizationId,
             })
             .onConflictDoNothing({
               target: [labelTable.taskId, labelTable.name],

@@ -62,7 +62,7 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
     }
 
     const targetStatus = await resolveTargetStatus(
-      task.projectId,
+      task.boardId,
       "issue_closed",
       "done",
     );
@@ -74,7 +74,7 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
     ) {
       await publishEvent("task.status_changed", {
         taskId: statusResult.after.id,
-        projectId: statusResult.after.projectId,
+        boardId: statusResult.after.boardId,
         userId: null,
         oldStatus: statusResult.before.status,
         newStatus: statusResult.after.status,

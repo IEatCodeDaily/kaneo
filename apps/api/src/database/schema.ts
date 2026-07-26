@@ -106,7 +106,7 @@ export const verificationTable = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const workspaceTable = pgTable("workspace", {
+export const organizationTable = pgTable("organization", {
   id: text("id")
     .$defaultFn(() => createId())
     .primaryKey(),
@@ -118,15 +118,15 @@ export const workspaceTable = pgTable("workspace", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
-export const workspaceUserTable = pgTable(
-  "workspace_member",
+export const organizationMemberTable = pgTable(
+  "organization_member",
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
       }),
     userId: text("user_id")
@@ -138,8 +138,8 @@ export const workspaceUserTable = pgTable(
     joinedAt: timestamp("joined_at", { mode: "date" }).notNull(),
   },
   (table) => [
-    index("workspace_member_workspaceId_idx").on(table.workspaceId),
-    index("workspace_member_userId_idx").on(table.userId),
+    index("organization_member_organizationId_idx").on(table.organizationId),
+    index("organization_member_userId_idx").on(table.userId),
   ],
 );
 
@@ -148,15 +148,15 @@ export const teamTable = pgTable(
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(
       () => /* @__PURE__ */ new Date(),
     ),
   },
-  (table) => [index("team_workspaceId_idx").on(table.workspaceId)],
+  (table) => [index("team_organizationId_idx").on(table.organizationId)],
 );
 
 export const teamMemberTable = pgTable(
@@ -183,9 +183,9 @@ export const invitationTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
     email: text("email").notNull(),
     role: text("role"),
     teamId: text("team_id"),
@@ -197,21 +197,21 @@ export const invitationTable = pgTable(
       .references(() => userTable.id, { onDelete: "cascade" }),
   },
   (table) => [
-    index("invitation_workspaceId_idx").on(table.workspaceId),
+    index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
     index("invitation_inviterId_idx").on(table.inviterId),
   ],
 );
 
-export const workspaceRoleTable = pgTable(
-  "workspace_role",
+export const organizationRoleTable = pgTable(
+  "organization_role",
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -224,20 +224,20 @@ export const workspaceRoleTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("workspace_role_workspaceId_idx").on(table.workspaceId),
-    index("workspace_role_role_idx").on(table.role),
+    index("organization_role_organizationId_idx").on(table.organizationId),
+    index("organization_role_role_idx").on(table.role),
   ],
 );
 
-export const projectTable = pgTable(
-  "project",
+export const boardTable = pgTable(
+  "board",
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -251,7 +251,7 @@ export const projectTable = pgTable(
     lastTaskNumber: integer("last_task_number").notNull().default(0),
   },
   (table) => [
-    unique("project_workspace_id_id_unique").on(table.workspaceId, table.id),
+    unique("board_organization_id_id_unique").on(table.organizationId, table.id),
   ],
 );
 
@@ -261,9 +261,9 @@ export const columnTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    projectId: text("project_id")
+    boardId: text("board_id")
       .notNull()
-      .references(() => projectTable.id, {
+      .references(() => boardTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -279,7 +279,7 @@ export const columnTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("column_projectId_idx").on(table.projectId)],
+  (table) => [index("column_boardId_idx").on(table.boardId)],
 );
 
 export const workflowRuleTable = pgTable(
@@ -288,9 +288,9 @@ export const workflowRuleTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    projectId: text("project_id")
+    boardId: text("board_id")
       .notNull()
-      .references(() => projectTable.id, {
+      .references(() => boardTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -309,7 +309,7 @@ export const workflowRuleTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("workflow_rule_projectId_idx").on(table.projectId),
+    index("workflow_rule_boardId_idx").on(table.boardId),
     index("workflow_rule_columnId_idx").on(table.columnId),
   ],
 );
@@ -320,9 +320,9 @@ export const taskTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    projectId: text("project_id")
+    boardId: text("board_id")
       .notNull()
-      .references(() => projectTable.id, {
+      .references(() => boardTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -349,11 +349,11 @@ export const taskTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("task_projectId_idx").on(table.projectId),
+    index("task_boardId_idx").on(table.boardId),
     index("task_dueDate_idx").on(table.dueDate),
     index("task_assigneeId_idx").on(table.userId),
     index("task_columnId_idx").on(table.columnId),
-    unique("task_project_number_unique").on(table.projectId, table.number),
+    unique("task_board_number_unique").on(table.boardId, table.number),
   ],
 );
 
@@ -463,15 +463,15 @@ export const assetTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    projectId: text("project_id")
+    boardId: text("board_id")
       .notNull()
-      .references(() => projectTable.id, {
+      .references(() => boardTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -496,8 +496,8 @@ export const assetTable = pgTable(
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [
-    index("asset_workspaceId_idx").on(table.workspaceId),
-    index("asset_projectId_idx").on(table.projectId),
+    index("asset_organizationId_idx").on(table.organizationId),
+    index("asset_boardId_idx").on(table.boardId),
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_createdBy_idx").on(table.createdBy),
@@ -521,17 +521,17 @@ export const labelTable = pgTable(
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
-    workspaceId: text("workspace_id").references(() => workspaceTable.id, {
+    organizationId: text("organization_id").references(() => organizationTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
   },
   (table) => [
     index("label_task_id_idx").on(table.taskId),
-    index("label_workspace_id_idx").on(table.workspaceId),
+    index("label_organization_id_idx").on(table.organizationId),
     unique("label_task_name_unique").on(table.taskId, table.name),
-    uniqueIndex("label_workspace_name_unique")
-      .on(table.workspaceId, table.name)
+    uniqueIndex("label_organization_name_unique")
+      .on(table.organizationId, table.name)
       .where(sql`${table.taskId} is null`),
   ],
 );
@@ -613,8 +613,8 @@ export const userNotificationPreferenceTable = pgTable(
   },
 );
 
-export const userNotificationWorkspaceRuleTable = pgTable(
-  "user_notification_workspace_rule",
+export const userNotificationOrgRuleTable = pgTable(
+  "user_notification_org_rule",
   {
     id: text("id")
       .$defaultFn(() => createId())
@@ -625,9 +625,9 @@ export const userNotificationWorkspaceRuleTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -636,7 +636,7 @@ export const userNotificationWorkspaceRuleTable = pgTable(
     ntfyEnabled: boolean("ntfy_enabled").default(false).notNull(),
     gotifyEnabled: boolean("gotify_enabled").default(false).notNull(),
     webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
-    projectMode: text("project_mode").default("all").notNull(),
+    boardMode: text("board_mode").default("all").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -644,35 +644,35 @@ export const userNotificationWorkspaceRuleTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("user_notification_workspace_rule_userId_idx").on(table.userId),
-    index("user_notification_workspace_rule_workspaceId_idx").on(
-      table.workspaceId,
+    index("unor_userId_idx").on(table.userId),
+    index("unor_organizationId_idx").on(
+      table.organizationId,
     ),
-    unique("user_notification_workspace_rule_user_workspace_unique").on(
+    unique("unor_user_org_unique").on(
       table.userId,
-      table.workspaceId,
+      table.organizationId,
     ),
-    unique("user_notification_workspace_rule_workspace_id_id_unique").on(
-      table.workspaceId,
+    unique("unor_org_id_id_unique").on(
+      table.organizationId,
       table.id,
     ),
   ],
 );
 
-export const userNotificationWorkspaceProjectTable = pgTable(
-  "user_notification_workspace_project",
+export const userNotificationOrgBoardTable = pgTable(
+  "user_notification_org_board",
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    workspaceId: text("workspace_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => workspaceTable.id, {
+      .references(() => organizationTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    workspaceRuleId: text("workspace_rule_id").notNull(),
-    projectId: text("project_id").notNull(),
+    orgRuleId: text("org_rule_id").notNull(),
+    boardId: text("board_id").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -681,37 +681,37 @@ export const userNotificationWorkspaceProjectTable = pgTable(
   },
   (table) => [
     foreignKey({
-      columns: [table.workspaceId, table.workspaceRuleId],
+      columns: [table.organizationId, table.orgRuleId],
       foreignColumns: [
-        userNotificationWorkspaceRuleTable.workspaceId,
-        userNotificationWorkspaceRuleTable.id,
+        userNotificationOrgRuleTable.organizationId,
+        userNotificationOrgRuleTable.id,
       ],
     })
       .onDelete("cascade")
       .onUpdate("cascade"),
     foreignKey({
-      columns: [table.workspaceId, table.projectId],
-      foreignColumns: [projectTable.workspaceId, projectTable.id],
+      columns: [table.organizationId, table.boardId],
+      foreignColumns: [boardTable.organizationId, boardTable.id],
     })
       .onDelete("cascade")
       .onUpdate("cascade"),
-    index("user_notification_workspace_project_ruleId_idx").on(
-      table.workspaceRuleId,
+    index("unob_ruleId_idx").on(
+      table.orgRuleId,
     ),
-    index("user_notification_workspace_project_projectId_idx").on(
-      table.projectId,
+    index("unob_boardId_idx").on(
+      table.boardId,
     ),
-    index("user_notification_workspace_project_workspaceId_projectId_idx").on(
-      table.workspaceId,
-      table.projectId,
+    index("unob_organizationId_boardId_idx").on(
+      table.organizationId,
+      table.boardId,
     ),
-    index("unwp_workspaceId_workspaceRuleId_idx").on(
-      table.workspaceId,
-      table.workspaceRuleId,
+    index("unwp_organizationId_orgRuleId_idx").on(
+      table.organizationId,
+      table.orgRuleId,
     ),
-    unique("user_notification_workspace_project_rule_project_unique").on(
-      table.workspaceRuleId,
-      table.projectId,
+    unique("unob_rule_board_unique").on(
+      table.orgRuleId,
+      table.boardId,
     ),
   ],
 );
@@ -720,9 +720,9 @@ export const githubIntegrationTable = pgTable("github_integration", {
   id: text("id")
     .$defaultFn(() => createId())
     .primaryKey(),
-  projectId: text("project_id")
+  boardId: text("board_id")
     .notNull()
-    .references(() => projectTable.id, {
+    .references(() => boardTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
     })
@@ -744,9 +744,9 @@ export const integrationTable = pgTable(
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    projectId: text("project_id")
+    boardId: text("board_id")
       .notNull()
-      .references(() => projectTable.id, {
+      .references(() => boardTable.id, {
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
@@ -760,9 +760,9 @@ export const integrationTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("integration_projectId_idx").on(table.projectId),
+    index("integration_boardId_idx").on(table.boardId),
     index("integration_type_idx").on(table.type),
-    unique("integration_project_type_unique").on(table.projectId, table.type),
+    unique("integration_board_type_unique").on(table.boardId, table.type),
   ],
 );
 
@@ -938,12 +938,12 @@ export const user = userTable;
 export const session = sessionTable;
 export const account = accountTable;
 export const verification = verificationTable;
-export const workspace = workspaceTable;
+export const organization = organizationTable;
 export const team = teamTable;
 export const teamMember = teamMemberTable;
-export const workspace_member = workspaceUserTable;
+export const organization_member = organizationMemberTable;
 export const invitation = invitationTable;
-export const organizationRole = workspaceRoleTable;
+export const organizationRole = organizationRoleTable;
 export const apikey = apikeyTable;
 export const deviceCode = deviceCodeTable;
 
@@ -952,7 +952,7 @@ export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
   teamMembers: many(teamMember),
-  workspace_members: many(workspace_member),
+  organization_members: many(organization_member),
   invitations: many(invitation),
 }));
 
@@ -970,16 +970,16 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
-export const workspaceRelations = relations(workspace, ({ many }) => ({
+export const organizationRelations = relations(organization, ({ many }) => ({
   teams: many(team),
-  workspace_members: many(workspace_member),
+  organization_members: many(organization_member),
   invitations: many(invitation),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
-  workspace: one(workspace, {
-    fields: [team.workspaceId],
-    references: [workspace.id],
+  organization: one(organization, {
+    fields: [team.organizationId],
+    references: [organization.id],
   }),
   teamMembers: many(teamMember),
 }));
@@ -995,24 +995,24 @@ export const teamMemberRelations = relations(teamMember, ({ one }) => ({
   }),
 }));
 
-export const workspace_memberRelations = relations(
-  workspace_member,
+export const organization_memberRelations = relations(
+  organization_member,
   ({ one }) => ({
-    workspace: one(workspace, {
-      fields: [workspace_member.workspaceId],
-      references: [workspace.id],
+    organization: one(organization, {
+      fields: [organization_member.organizationId],
+      references: [organization.id],
     }),
     user: one(user, {
-      fields: [workspace_member.userId],
+      fields: [organization_member.userId],
       references: [user.id],
     }),
   }),
 );
 
 export const invitationRelations = relations(invitation, ({ one }) => ({
-  workspace: one(workspace, {
-    fields: [invitation.workspaceId],
-    references: [workspace.id],
+  organization: one(organization, {
+    fields: [invitation.organizationId],
+    references: [organization.id],
   }),
   user: one(user, {
     fields: [invitation.inviterId],
@@ -1023,9 +1023,9 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 export const organizationRoleRelations = relations(
   organizationRole,
   ({ one }) => ({
-    workspace: one(workspace, {
-      fields: [organizationRole.workspaceId],
-      references: [workspace.id],
+    organization: one(organization, {
+      fields: [organizationRole.organizationId],
+      references: [organization.id],
     }),
   }),
 );

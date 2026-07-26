@@ -12,7 +12,7 @@ async function updateTask(
   status: string,
   startDate: Date | undefined,
   dueDate: Date | undefined,
-  projectId: string,
+  boardId: string,
   description: string,
   priority: string,
   position: number,
@@ -24,7 +24,7 @@ async function updateTask(
       id: taskTable.id,
       description: taskTable.description,
       status: taskTable.status,
-      projectId: taskTable.projectId,
+      boardId: taskTable.boardId,
     })
     .from(taskTable)
     .where(eq(taskTable.id, id))
@@ -36,17 +36,17 @@ async function updateTask(
     });
   }
 
-  if (projectId !== existingTask.projectId) {
+  if (boardId !== existingTask.boardId) {
     throw new HTTPException(400, {
-      message: "Use the task move endpoint to move tasks between projects",
+      message: "Use the task move endpoint to move tasks between boards",
     });
   }
 
-  await assertValidTaskStatus(status, projectId);
+  await assertValidTaskStatus(status, boardId);
 
   const column = await db.query.columnTable.findFirst({
     where: and(
-      eq(columnTable.projectId, projectId),
+      eq(columnTable.boardId, boardId),
       eq(columnTable.slug, status),
     ),
   });
@@ -59,7 +59,7 @@ async function updateTask(
       columnId: column?.id ?? null,
       startDate: startDate || null,
       dueDate: dueDate || null,
-      projectId,
+      boardId,
       description,
       priority,
       position,
@@ -77,7 +77,7 @@ async function updateTask(
   if (existingTask.status !== status) {
     await publishEvent("task.status_changed", {
       taskId: updatedTask.id,
-      projectId: updatedTask.projectId,
+      boardId: updatedTask.boardId,
       userId: currentUserId,
       oldStatus: existingTask.status,
       newStatus: status,
@@ -87,14 +87,14 @@ async function updateTask(
     });
 
     await publishEvent("task-relation.refresh", {
-      projectId: updatedTask.projectId,
+      boardId: updatedTask.boardId,
       userId: currentUserId,
     });
   }
 
   await publishEvent("task.updated", {
     taskId: updatedTask.id,
-    projectId: updatedTask.projectId,
+    boardId: updatedTask.boardId,
     title: updatedTask.title,
     status: updatedTask.status,
     userId: currentUserId,

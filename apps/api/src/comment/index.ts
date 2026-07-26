@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { commentSchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import createComment from "./controllers/create-comment";
 import deleteComment from "./controllers/delete-comment";
 import getComments from "./controllers/get-comments";
@@ -32,7 +32,7 @@ const comment = new Hono<{
       },
     }),
     validator("param", v.object({ taskId: v.string() })),
-    workspaceAccess.fromTaskId(),
+    organizationAccess.fromTaskId(),
     async (c) => {
       const { taskId } = c.req.valid("param");
       const comments = await getComments(taskId);
@@ -59,8 +59,8 @@ const comment = new Hono<{
       "json",
       v.object({ content: v.pipe(v.string(), v.minLength(1)) }),
     ),
-    workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTaskId(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { taskId } = c.req.valid("param");
       const { content } = c.req.valid("json");
@@ -89,8 +89,8 @@ const comment = new Hono<{
       "json",
       v.object({ content: v.pipe(v.string(), v.minLength(1)) }),
     ),
-    workspaceAccess.fromComment(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromComment(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const { content } = c.req.valid("json");
@@ -115,8 +115,8 @@ const comment = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    workspaceAccess.fromComment(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromComment(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const userId = c.get("userId");

@@ -1,34 +1,34 @@
 import { eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { projectTable } from "../../database/schema";
+import { boardTable } from "../../database/schema";
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function claimTaskNumbers(
-  projectId: string,
+  boardId: string,
   count: number,
   dbOrTx: DbOrTx = db,
 ) {
   const [updated] = await dbOrTx
-    .update(projectTable)
+    .update(boardTable)
     .set({
-      lastTaskNumber: sql`${projectTable.lastTaskNumber} + ${count}`,
+      lastTaskNumber: sql`${boardTable.lastTaskNumber} + ${count}`,
     })
-    .where(eq(projectTable.id, projectId))
-    .returning({ lastTaskNumber: projectTable.lastTaskNumber });
+    .where(eq(boardTable.id, boardId))
+    .returning({ lastTaskNumber: boardTable.lastTaskNumber });
 
   if (!updated) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
   return updated.lastTaskNumber - count + 1;
 }
 
-export async function claimTaskNumber(projectId: string, dbOrTx: DbOrTx = db) {
-  return claimTaskNumbers(projectId, 1, dbOrTx);
+export async function claimTaskNumber(boardId: string, dbOrTx: DbOrTx = db) {
+  return claimTaskNumbers(boardId, 1, dbOrTx);
 }
 
 export default claimTaskNumbers;

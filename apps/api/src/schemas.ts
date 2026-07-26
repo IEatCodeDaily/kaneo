@@ -6,12 +6,12 @@ export const labelSchema = v.object({
   color: v.string(),
   createdAt: v.date(),
   taskId: v.nullable(v.string()),
-  workspaceId: v.nullable(v.string()),
+  organizationId: v.nullable(v.string()),
 });
 
-export const projectSchema = v.object({
+export const boardSchema = v.object({
   id: v.string(),
-  workspaceId: v.string(),
+  organizationId: v.string(),
   slug: v.string(),
   icon: v.nullable(v.string()),
   name: v.string(),
@@ -23,7 +23,7 @@ export const projectSchema = v.object({
 
 export const taskSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   position: v.nullable(v.number()),
   number: v.nullable(v.number()),
   userId: v.nullable(v.string()),
@@ -87,7 +87,7 @@ export const notificationSchema = v.object({
   type: v.picklist([
     "info",
     "task_created",
-    "workspace_created",
+    "organization_created",
     "task_status_changed",
     "task_assignee_changed",
     "time_entry_created",
@@ -99,22 +99,22 @@ export const notificationSchema = v.object({
   eventData: v.nullable(v.record(v.string(), v.unknown())),
   isRead: v.optional(v.boolean()),
   resourceId: v.optional(v.string()),
-  resourceType: v.optional(v.picklist(["task", "workspace"] as const)),
+  resourceType: v.optional(v.picklist(["task", "organization"] as const)),
   createdAt: v.date(),
   updatedAt: v.date(),
 });
 
-export const notificationPreferenceWorkspaceRuleSchema = v.object({
+export const notificationPreferenceOrganizationRuleSchema = v.object({
   id: v.string(),
-  workspaceId: v.string(),
-  workspaceName: v.string(),
+  organizationId: v.string(),
+  organizationName: v.string(),
   isActive: v.boolean(),
   emailEnabled: v.boolean(),
   ntfyEnabled: v.boolean(),
   gotifyEnabled: v.boolean(),
   webhookEnabled: v.boolean(),
-  projectMode: v.picklist(["all", "selected"] as const),
-  selectedProjectIds: v.array(v.string()),
+  boardMode: v.picklist(["all", "selected"] as const),
+  selectedBoardIds: v.array(v.string()),
   createdAt: v.date(),
   updatedAt: v.date(),
 });
@@ -143,14 +143,14 @@ export const notificationPreferenceSchema = v.object({
   taskStatusChangeEnabled: v.boolean(),
   dueDateReminderEnabled: v.boolean(),
   dueDateReminderLeadTimeMinutes: v.number(),
-  workspaces: v.array(notificationPreferenceWorkspaceRuleSchema),
+  organizations: v.array(notificationPreferenceOrganizationRuleSchema),
   createdAt: v.nullable(v.date()),
   updatedAt: v.nullable(v.date()),
 });
 
 export const githubIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   repositoryOwner: v.string(),
   repositoryName: v.string(),
   installationId: v.nullable(v.number()),
@@ -163,7 +163,7 @@ export const githubIntegrationSchema = v.object({
 
 export const giteaIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   baseUrl: v.string(),
   repositoryOwner: v.string(),
   repositoryName: v.string(),
@@ -188,7 +188,7 @@ export const integrationEventsSchema = v.object({
 
 export const slackIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   channelName: v.nullable(v.string()),
   webhookConfigured: v.boolean(),
   maskedWebhookUrl: v.string(),
@@ -200,7 +200,7 @@ export const slackIntegrationSchema = v.object({
 
 export const discordIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   channelName: v.nullable(v.string()),
   webhookConfigured: v.boolean(),
   maskedWebhookUrl: v.string(),
@@ -212,7 +212,7 @@ export const discordIntegrationSchema = v.object({
 
 export const genericWebhookIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   webhookConfigured: v.boolean(),
   maskedWebhookUrl: v.nullable(v.string()),
   secretConfigured: v.boolean(),
@@ -234,7 +234,7 @@ export const genericWebhookIntegrationSchema = v.object({
 
 export const telegramIntegrationSchema = v.object({
   id: v.string(),
-  projectId: v.string(),
+  boardId: v.string(),
   chatId: v.string(),
   threadId: v.nullable(v.number()),
   chatLabel: v.nullable(v.string()),

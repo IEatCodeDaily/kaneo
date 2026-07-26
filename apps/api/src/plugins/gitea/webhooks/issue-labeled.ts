@@ -54,7 +54,7 @@ function normalizedGiteaLabelColor(g: { color?: string }): string {
 
 async function syncGiteaLabelsToTask(
   taskId: string,
-  workspaceId: string,
+  organizationId: string,
   giteaLabels: Array<{ name: string; color?: string }>,
 ) {
   const desiredNames = new Set(giteaLabels.map((l) => l.name));
@@ -68,7 +68,7 @@ async function syncGiteaLabelsToTask(
       name: g.name,
       color: normalizedGiteaLabelColor(g),
       taskId,
-      workspaceId,
+      organizationId,
     }));
 
   const colorToIds = new Map<string, string[]>();
@@ -162,7 +162,7 @@ export async function handleGiteaIssueLabeled(
         ) {
           await publishEvent("task.status_changed", {
             taskId: statusResult.after.id,
-            projectId: statusResult.after.projectId,
+            boardId: statusResult.after.boardId,
             userId: null,
             oldStatus: statusResult.before.status,
             newStatus: statusResult.after.status,
@@ -181,13 +181,13 @@ export async function handleGiteaIssueLabeled(
         const task = await db.query.taskTable.findFirst({
           where: eq(taskTable.id, existingLink.taskId),
           with: {
-            project: true,
+            board: true,
           },
         });
-        if (task?.project?.workspaceId) {
+        if (task?.board?.organizationId) {
           await syncGiteaLabelsToTask(
             existingLink.taskId,
-            task.project.workspaceId,
+            task.board.organizationId,
             giteaLabelsForSync(issue.labels),
           );
         }
@@ -206,15 +206,15 @@ export async function handleGiteaIssueLabeled(
         const task = await db.query.taskTable.findFirst({
           where: eq(taskTable.id, existingLink.taskId),
           with: {
-            project: true,
+            board: true,
           },
         });
 
-        if (task?.project?.workspaceId) {
+        if (task?.board?.organizationId) {
           const existingLabel = await db.query.labelTable.findFirst({
             where: (table, { and, eq: e }) =>
               and(
-                e(table.workspaceId, task.project.workspaceId),
+                e(table.organizationId, task.board.organizationId),
                 e(table.name, addedLabel.name),
                 e(table.taskId, task.id),
               ),
@@ -230,7 +230,7 @@ export async function handleGiteaIssueLabeled(
                 name: addedLabel.name,
                 color,
                 taskId: task.id,
-                workspaceId: task.project.workspaceId,
+                organizationId: task.board.organizationId,
               })
               .onConflictDoNothing({
                 target: [labelTable.taskId, labelTable.name],

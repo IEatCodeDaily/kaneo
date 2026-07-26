@@ -14,7 +14,7 @@ const messages = {
   en: {
     preview: "Sign in to Kaneo",
     title: "Your secure sign-in link",
-    subtitle: "Use this link to continue to your Kaneo workspace.",
+    subtitle: "Use this link to continue to your Kaneo organization.",
     cta: "Sign in to Kaneo",
     expiry: "This link expires in 5 minutes for your security.",
     ignore: "If you didn't request this, you can ignore this email.",
@@ -24,7 +24,7 @@ const messages = {
     preview: "Bei Kaneo anmelden",
     title: "Dein sicherer Anmeldelink",
     subtitle:
-      "Verwende diesen Link, um mit deinem Kaneo-Workspace fortzufahren.",
+      "Verwende diesen Link, um mit deinem Kaneo-Organisation fortzufahren.",
     cta: "Bei Kaneo anmelden",
     expiry: "Dieser Link laeuft aus Sicherheitsgruenden in 5 Minuten ab.",
     ignore:

@@ -4,12 +4,12 @@ import { and, eq } from "drizzle-orm";
 import db from "../database";
 import {
   notificationTable,
-  projectTable,
+  boardTable,
   taskTable,
   userNotificationPreferenceTable,
-  userNotificationWorkspaceRuleTable,
+  userNotificationOrgRuleTable,
   userTable,
-  workspaceTable,
+  organizationTable,
 } from "../database/schema";
 import { assertPublicWebhookDestination } from "../plugins/generic-webhook/config";
 import { decryptSecret } from "./secrets";
@@ -32,10 +32,10 @@ async function fetchWithTimeout(
 }
 
 type ResolvedNotificationContext = {
-  workspaceId: string;
-  workspaceName: string;
-  projectId: string | null;
-  projectName: string | null;
+  organizationId: string;
+  organizationName: string;
+  boardId: string | null;
+  boardName: string | null;
   taskId: string | null;
   taskTitle: string | null;
   taskUrl: string | null;
@@ -46,9 +46,9 @@ type DeliveryContent = {
   body: string;
 };
 
-function buildTaskUrl(workspaceId: string, projectId: string, taskId: string) {
+function buildTaskUrl(organizationId: string, boardId: string, taskId: string) {
   const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-  return `${clientUrl}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`;
+  return `${clientUrl}/dashboard/organization/${organizationId}/board/${boardId}/task/${taskId}`;
 }
 
 function getStringValue(
@@ -103,16 +103,16 @@ function buildDeliveryContent(notification: {
           : "A new task was created in Kaneo.",
       };
     }
-    case "workspace_created": {
-      const workspaceName = getStringValue(
+    case "organization_created": {
+      const organizationName = getStringValue(
         notification.eventData,
-        "workspaceName",
+        "organizationName",
       );
       return {
-        title: "Workspace created",
-        body: workspaceName
-          ? `Workspace created: ${workspaceName}`
-          : "A new workspace was created in Kaneo.",
+        title: "Organization created",
+        body: organizationName
+          ? `Organization created: ${organizationName}`
+          : "A new organization was created in Kaneo.",
       };
     }
     case "task_status_changed": {
@@ -217,16 +217,16 @@ async function resolveNotificationContext(notification: {
       .select({
         taskId: taskTable.id,
         taskTitle: taskTable.title,
-        projectId: projectTable.id,
-        projectName: projectTable.name,
-        workspaceId: workspaceTable.id,
-        workspaceName: workspaceTable.name,
+        boardId: boardTable.id,
+        boardName: boardTable.name,
+        organizationId: organizationTable.id,
+        organizationName: organizationTable.name,
       })
       .from(taskTable)
-      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
       .innerJoin(
-        workspaceTable,
-        eq(projectTable.workspaceId, workspaceTable.id),
+        organizationTable,
+        eq(boardTable.organizationId, organizationTable.id),
       )
       .where(eq(taskTable.id, notification.resourceId))
       .limit(1);
@@ -236,35 +236,35 @@ async function resolveNotificationContext(notification: {
     }
 
     return {
-      workspaceId: task.workspaceId,
-      workspaceName: task.workspaceName,
-      projectId: task.projectId,
-      projectName: task.projectName,
+      organizationId: task.organizationId,
+      organizationName: task.organizationName,
+      boardId: task.boardId,
+      boardName: task.boardName,
       taskId: task.taskId,
       taskTitle: task.taskTitle,
-      taskUrl: buildTaskUrl(task.workspaceId, task.projectId, task.taskId),
+      taskUrl: buildTaskUrl(task.organizationId, task.boardId, task.taskId),
     };
   }
 
-  if (notification.resourceType === "workspace") {
-    const [workspace] = await db
+  if (notification.resourceType === "organization") {
+    const [organization] = await db
       .select({
-        workspaceId: workspaceTable.id,
-        workspaceName: workspaceTable.name,
+        organizationId: organizationTable.id,
+        organizationName: organizationTable.name,
       })
-      .from(workspaceTable)
-      .where(eq(workspaceTable.id, notification.resourceId))
+      .from(organizationTable)
+      .where(eq(organizationTable.id, notification.resourceId))
       .limit(1);
 
-    if (!workspace) {
+    if (!organization) {
       return null;
     }
 
     return {
-      workspaceId: workspace.workspaceId,
-      workspaceName: workspace.workspaceName,
-      projectId: null,
-      projectName: null,
+      organizationId: organization.organizationId,
+      organizationName: organization.organizationName,
+      boardId: null,
+      boardName: null,
       taskId: null,
       taskTitle: null,
       taskUrl: null,
@@ -434,13 +434,13 @@ export async function deliverNotification(
     webhookSecret: decryptSecret(preference.webhookSecret),
   };
 
-  const rule = await db.query.userNotificationWorkspaceRuleTable.findFirst({
+  const rule = await db.query.userNotificationOrgRuleTable.findFirst({
     where: and(
-      eq(userNotificationWorkspaceRuleTable.userId, notification.userId),
-      eq(userNotificationWorkspaceRuleTable.workspaceId, context.workspaceId),
+      eq(userNotificationOrgRuleTable.userId, notification.userId),
+      eq(userNotificationOrgRuleTable.organizationId, context.organizationId),
     ),
     with: {
-      selectedProjects: true,
+      selectedBoards: true,
     },
   });
 
@@ -449,10 +449,10 @@ export async function deliverNotification(
   }
 
   if (
-    rule.projectMode === "selected" &&
-    (!context.projectId ||
-      !rule.selectedProjects.some(
-        (project) => project.projectId === context.projectId,
+    rule.boardMode === "selected" &&
+    (!context.boardId ||
+      !rule.selectedBoards.some(
+        (board) => board.boardId === context.boardId,
       ))
   ) {
     return;
@@ -479,14 +479,14 @@ export async function deliverNotification(
       resourceId: notification.resourceId,
       resourceType: notification.resourceType,
     },
-    workspace: {
-      id: context.workspaceId,
-      name: context.workspaceName,
+    organization: {
+      id: context.organizationId,
+      name: context.organizationName,
     },
-    project: context.projectId
+    board: context.boardId
       ? {
-          id: context.projectId,
-          name: context.projectName,
+          id: context.boardId,
+          name: context.boardName,
         }
       : null,
     task: context.taskId

@@ -1,13 +1,13 @@
 import { and, eq, inArray, or } from "drizzle-orm";
 import db from "../../database";
 import {
-  projectTable,
+  boardTable,
   taskRelationTable,
   taskTable,
   userTable,
 } from "../../database/schema";
 
-async function getTaskRelations(taskId: string, workspaceId: string) {
+async function getTaskRelations(taskId: string, organizationId: string) {
   const relations = await db
     .select({
       id: taskRelationTable.id,
@@ -38,7 +38,7 @@ async function getTaskRelations(taskId: string, workspaceId: string) {
       status: string;
       priority: string | null;
       number: number | null;
-      projectId: string;
+      boardId: string;
       userId: string | null;
       assigneeName: string | null;
     }
@@ -52,17 +52,17 @@ async function getTaskRelations(taskId: string, workspaceId: string) {
         status: taskTable.status,
         priority: taskTable.priority,
         number: taskTable.number,
-        projectId: taskTable.projectId,
+        boardId: taskTable.boardId,
         userId: taskTable.userId,
         assigneeName: userTable.name,
       })
       .from(taskTable)
-      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
       .leftJoin(userTable, eq(taskTable.userId, userTable.id))
       .where(
         and(
           inArray(taskTable.id, [...taskIds]),
-          eq(projectTable.workspaceId, workspaceId),
+          eq(boardTable.organizationId, organizationId),
         ),
       );
 

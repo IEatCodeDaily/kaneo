@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { columnTable, projectTable, taskTable } from "../../database/schema";
+import { columnTable, boardTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {
   coercePriority,
@@ -21,25 +21,25 @@ export type ImportTask = {
 };
 
 async function importTasks(
-  projectId: string,
+  boardId: string,
   tasksToImport: ImportTask[],
   currentUserId?: string,
 ) {
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+  const project = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
   if (!project) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
   let taskNumber =
     tasksToImport.length > 0
-      ? (await claimTaskNumbers(projectId, tasksToImport.length)) - 1
+      ? (await claimTaskNumbers(boardId, tasksToImport.length)) - 1
       : 0;
-  const validStatuses = await getValidTaskStatuses(projectId);
+  const validStatuses = await getValidTaskStatuses(boardId);
 
   const results = [];
 
@@ -56,7 +56,7 @@ async function importTasks(
 
       const column = await db.query.columnTable.findFirst({
         where: and(
-          eq(columnTable.projectId, projectId),
+          eq(columnTable.boardId, boardId),
           eq(columnTable.slug, status),
         ),
       });
@@ -64,7 +64,7 @@ async function importTasks(
       const [createdTask] = await db
         .insert(taskTable)
         .values({
-          projectId,
+          boardId,
           userId: taskData.userId || null,
           title: taskData.title,
           status,

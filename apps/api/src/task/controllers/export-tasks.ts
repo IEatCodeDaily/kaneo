@@ -1,16 +1,16 @@
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { projectTable, taskTable, userTable } from "../../database/schema";
+import { boardTable, taskTable, userTable } from "../../database/schema";
 
-async function exportTasks(projectId: string) {
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+async function exportTasks(boardId: string) {
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
+  if (!board) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
@@ -32,14 +32,14 @@ async function exportTasks(projectId: string) {
     })
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
-    .where(eq(taskTable.projectId, projectId))
+    .where(eq(taskTable.boardId, boardId))
     .orderBy(taskTable.position);
 
   return {
-    project: {
-      name: project.name,
-      slug: project.slug,
-      description: project.description,
+    board: {
+      name: board.name,
+      slug: board.slug,
+      description: board.description,
       exportedAt: new Date().toISOString(),
     },
     tasks: tasks.map((task) => ({

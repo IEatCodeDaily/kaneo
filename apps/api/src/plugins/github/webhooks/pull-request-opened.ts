@@ -40,12 +40,12 @@ export async function handlePullRequestOpened(payload: PROpenedPayload) {
   );
 
   for (const integration of integrations) {
-    if (!integration.project) {
+    if (!integration.board) {
       continue;
     }
 
     const config = JSON.parse(integration.config) as GitHubConfig;
-    const projectSlug = integration.project.slug;
+    const boardSlug = integration.board.slug;
     const branchName = pull_request.head.ref;
 
     const taskNumber = extractTaskNumber(
@@ -53,14 +53,14 @@ export async function handlePullRequestOpened(payload: PROpenedPayload) {
       pull_request.title,
       pull_request.body ?? undefined,
       config,
-      projectSlug,
+      boardSlug,
     );
 
     if (taskNumber === null) {
       continue;
     }
 
-    const task = await findTaskByNumber(integration.projectId, taskNumber);
+    const task = await findTaskByNumber(integration.boardId, taskNumber);
 
     if (!task) {
       continue;
@@ -93,7 +93,7 @@ export async function handlePullRequestOpened(payload: PROpenedPayload) {
     });
 
     const targetStatus = await resolveTargetStatus(
-      integration.projectId,
+      integration.boardId,
       "pr_opened",
       config.statusTransitions?.onPROpen || "in-review",
     );
@@ -108,7 +108,7 @@ export async function handlePullRequestOpened(payload: PROpenedPayload) {
       ) {
         await publishEvent("task.status_changed", {
           taskId: statusResult.after.id,
-          projectId: statusResult.after.projectId,
+          boardId: statusResult.after.boardId,
           userId: null,
           oldStatus: statusResult.before.status,
           newStatus: statusResult.after.status,

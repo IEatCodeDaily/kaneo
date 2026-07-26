@@ -22,7 +22,7 @@ export async function findAllIntegrationsByGiteaRepo(
   const integrations = await db.query.integrationTable.findMany({
     where: and(...conditions),
     with: {
-      project: true,
+      board: true,
     },
   });
 

@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import deleteWorkflowRule from "./controllers/delete-workflow-rule";
 import getWorkflowRules from "./controllers/get-workflow-rules";
 import upsertWorkflowRule from "./controllers/upsert-workflow-rule";
@@ -13,11 +13,11 @@ const workflowRule = new Hono<{
   };
 }>()
   .get(
-    "/:projectId",
+    "/:boardId",
     describeRoute({
       operationId: "getWorkflowRules",
       tags: ["Workflow Rules"],
-      description: "Get all workflow rules for a project",
+      description: "Get all workflow rules for a board",
       responses: {
         200: {
           description: "List of workflow rules",
@@ -27,16 +27,16 @@ const workflowRule = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const rules = await getWorkflowRules(projectId);
+      const { boardId } = c.req.valid("param");
+      const rules = await getWorkflowRules(boardId);
       return c.json(rules);
     },
   )
   .put(
-    "/:projectId",
+    "/:boardId",
     describeRoute({
       operationId: "upsertWorkflowRule",
       tags: ["Workflow Rules"],
@@ -50,7 +50,7 @@ const workflowRule = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -59,13 +59,13 @@ const workflowRule = new Hono<{
         columnId: v.string(),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const { integrationType, eventType, columnId } = c.req.valid("json");
       const result = await upsertWorkflowRule({
-        projectId,
+        boardId,
         integrationType,
         eventType,
         columnId,
@@ -89,8 +89,8 @@ const workflowRule = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    workspaceAccess.fromWorkflowRule("id"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromWorkflowRule("id"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const result = await deleteWorkflowRule(id);

@@ -3,10 +3,10 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { integrationTable } from "../../database/schema";
 
-async function deleteGithubIntegration(projectId: string) {
+async function deleteGithubIntegration(boardId: string) {
   const existingIntegration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "github"),
     ),
   });
@@ -19,7 +19,7 @@ async function deleteGithubIntegration(projectId: string) {
     .delete(integrationTable)
     .where(
       and(
-        eq(integrationTable.projectId, projectId),
+        eq(integrationTable.boardId, boardId),
         eq(integrationTable.type, "github"),
       ),
     );

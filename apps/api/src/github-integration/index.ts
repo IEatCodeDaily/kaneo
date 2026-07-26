@@ -5,16 +5,16 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { integrationTable, projectTable } from "../database/schema";
+import { integrationTable, boardTable } from "../database/schema";
 import {
   type GitHubConfig,
   validateGitHubConfig,
 } from "../plugins/github/config";
 import { handleGitHubWebhook } from "../plugins/github/webhook-handler";
 import { githubIntegrationSchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { validateWorkspaceAccess } from "../utils/validate-workspace-access";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { validateOrganizationAccess } from "../utils/validate-organization-access";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import createGithubIntegration from "./controllers/create-github-integration";
 import deleteGithubIntegration from "./controllers/delete-github-integration";
 import getGithubIntegration from "./controllers/get-github-integration";
@@ -51,7 +51,7 @@ const importResultSchema = v.object({
 const githubIntegration = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
     apiKey?: {
       id: string;
       userId: string;
@@ -136,11 +136,11 @@ const githubIntegration = new Hono<{
     },
   )
   .get(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "getGitHubIntegration",
       tags: ["GitHub"],
-      description: "Get GitHub integration for a project",
+      description: "Get GitHub integration for a board",
       responses: {
         200: {
           description: "GitHub integration details",
@@ -150,20 +150,20 @@ const githubIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const integration = await getGithubIntegration(projectId);
+      const { boardId } = c.req.valid("param");
+      const integration = await getGithubIntegration(boardId);
       return c.json(integration);
     },
   )
   .post(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "createGitHubIntegration",
       tags: ["GitHub"],
-      description: "Create a new GitHub integration for a project",
+      description: "Create a new GitHub integration for a board",
       responses: {
         200: {
           description: "Integration created successfully",
@@ -173,7 +173,7 @@ const githubIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -181,14 +181,14 @@ const githubIntegration = new Hono<{
         repositoryName: v.pipe(v.string(), v.minLength(1)),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const { repositoryOwner, repositoryName } = c.req.valid("json");
 
       const integration = await createGithubIntegration({
-        projectId,
+        boardId,
         repositoryOwner,
         repositoryName,
       });
@@ -197,7 +197,7 @@ const githubIntegration = new Hono<{
     },
   )
   .patch(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "updateGitHubIntegration",
       tags: ["GitHub"],
@@ -219,7 +219,7 @@ const githubIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -227,15 +227,15 @@ const githubIntegration = new Hono<{
         commentTaskLinkOnGitHubIssue: v.optional(v.boolean()),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const row = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "github"),
         ),
       });
@@ -277,21 +277,21 @@ const githubIntegration = new Hono<{
         })
         .where(
           and(
-            eq(integrationTable.projectId, projectId),
+            eq(integrationTable.boardId, boardId),
             eq(integrationTable.type, "github"),
           ),
         );
 
-      const updated = await getGithubIntegration(projectId);
+      const updated = await getGithubIntegration(boardId);
       return c.json(updated, 200);
     },
   )
   .delete(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "deleteGitHubIntegration",
       tags: ["GitHub"],
-      description: "Delete GitHub integration for a project",
+      description: "Delete GitHub integration for a board",
       responses: {
         200: {
           description: "Integration deleted successfully",
@@ -301,12 +301,12 @@ const githubIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const result = await deleteGithubIntegration(projectId);
+      const { boardId } = c.req.valid("param");
+      const result = await deleteGithubIntegration(boardId);
       return c.json(result);
     },
   )
@@ -328,7 +328,7 @@ const githubIntegration = new Hono<{
     validator(
       "json",
       v.object({
-        projectId: v.string(),
+        boardId: v.string(),
       }),
     ),
     async (c, next) => {
@@ -337,30 +337,30 @@ const githubIntegration = new Hono<{
         throw new HTTPException(401, { message: "Unauthorized" });
       }
 
-      const { projectId } = c.req.valid("json");
+      const { boardId } = c.req.valid("json");
 
-      const [project] = await db
-        .select({ workspaceId: projectTable.workspaceId })
-        .from(projectTable)
-        .where(eq(projectTable.id, projectId))
+      const [board] = await db
+        .select({ organizationId: boardTable.organizationId })
+        .from(boardTable)
+        .where(eq(boardTable.id, boardId))
         .limit(1);
 
-      if (!project) {
-        throw new HTTPException(404, { message: "Project not found" });
+      if (!board) {
+        throw new HTTPException(404, { message: "Board not found" });
       }
 
       const apiKey = c.get("apiKey");
       const apiKeyId = apiKey?.id;
 
-      await validateWorkspaceAccess(userId, project.workspaceId, apiKeyId);
-      c.set("workspaceId", project.workspaceId);
+      await validateOrganizationAccess(userId, board.organizationId, apiKeyId);
+      c.set("organizationId", board.organizationId);
 
       return next();
     },
-    requireWorkspacePermission({ task: ["create"] }),
+    requireOrganizationPermission({ task: ["create"] }),
     async (c) => {
-      const { projectId } = c.req.valid("json");
-      const result = await importIssues(projectId);
+      const { boardId } = c.req.valid("json");
+      const result = await importIssues(boardId);
       return c.json(result);
     },
   );

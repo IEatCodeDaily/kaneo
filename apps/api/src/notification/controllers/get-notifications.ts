@@ -2,17 +2,17 @@ import { and, desc, eq } from "drizzle-orm";
 import db from "../../database";
 import {
   notificationTable,
-  projectTable,
+  boardTable,
   taskTable,
-  workspaceTable,
+  organizationTable,
 } from "../../database/schema";
 
 async function getNotifications(userId: string) {
   const rows = await db
     .select({
       notification: notificationTable,
-      projectId: projectTable.id,
-      workspaceId: workspaceTable.id,
+      boardId: boardTable.id,
+      organizationId: organizationTable.id,
     })
     .from(notificationTable)
     .leftJoin(
@@ -22,14 +22,14 @@ async function getNotifications(userId: string) {
         eq(notificationTable.resourceType, "task"),
       ),
     )
-    .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-    .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+    .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
     .where(eq(notificationTable.userId, userId))
     .orderBy(desc(notificationTable.createdAt))
     .limit(50);
 
-  return rows.map(({ notification, projectId, workspaceId }) => {
-    if (!projectId && !workspaceId) {
+  return rows.map(({ notification, boardId, organizationId }) => {
+    if (!boardId && !organizationId) {
       return notification;
     }
 
@@ -44,8 +44,8 @@ async function getNotifications(userId: string) {
       ...notification,
       eventData: {
         ...existing,
-        projectId: projectId ?? existing.projectId ?? null,
-        workspaceId: workspaceId ?? existing.workspaceId ?? null,
+        boardId: boardId ?? existing.boardId ?? null,
+        organizationId: organizationId ?? existing.organizationId ?? null,
       },
     };
   });

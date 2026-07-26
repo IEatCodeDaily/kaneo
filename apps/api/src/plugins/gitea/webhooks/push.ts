@@ -82,7 +82,7 @@ export async function handleGiteaPush(
     payload.head_commit ?? payload.commits?.[payload.commits.length - 1];
 
   for (const integration of integrations) {
-    if (!integration.project) {
+    if (!integration.board) {
       continue;
     }
 
@@ -96,19 +96,19 @@ export async function handleGiteaPush(
       });
       continue;
     }
-    const projectSlug = integration.project.slug;
+    const boardSlug = integration.board.slug;
 
     const taskNumber = extractTaskNumberFromBranchGitea(
       branchName,
       config,
-      projectSlug,
+      boardSlug,
     );
 
     if (!taskNumber) {
       continue;
     }
 
-    const task = await findTaskByNumber(integration.projectId, taskNumber);
+    const task = await findTaskByNumber(integration.boardId, taskNumber);
 
     if (!task) {
       continue;
@@ -137,7 +137,7 @@ export async function handleGiteaPush(
     });
 
     const targetStatus = await resolveTargetStatus(
-      integration.projectId,
+      integration.boardId,
       "branch_push",
       config.statusTransitions?.onBranchPush || "in-progress",
     );
@@ -152,7 +152,7 @@ export async function handleGiteaPush(
       ) {
         await publishEvent("task.status_changed", {
           taskId: statusResult.after.id,
-          projectId: statusResult.after.projectId,
+          boardId: statusResult.after.boardId,
           userId: null,
           oldStatus: statusResult.before.status,
           newStatus: statusResult.after.status,

@@ -4,10 +4,10 @@ import db from "../../database";
 import {
   columnTable,
   labelTable,
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
-  workspaceUserTable,
+  organizationMemberTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {
@@ -39,13 +39,13 @@ async function bulkUpdateTasks({
     .select({
       id: taskTable.id,
       title: taskTable.title,
-      projectId: taskTable.projectId,
+      boardId: taskTable.boardId,
       userId: taskTable.userId,
       dueDate: taskTable.dueDate,
-      workspaceId: projectTable.workspaceId,
+      organizationId: boardTable.organizationId,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(inArray(taskTable.id, taskIds));
 
   if (tasks.length === 0) {
@@ -54,36 +54,36 @@ async function bulkUpdateTasks({
     });
   }
 
-  const workspaceIds = [...new Set(tasks.map((t) => t.workspaceId))];
+  const organizationIds = [...new Set(tasks.map((t) => t.organizationId))];
 
-  if (workspaceIds.length > 1) {
+  if (organizationIds.length > 1) {
     throw new HTTPException(400, {
-      message: "All tasks must belong to the same workspace",
+      message: "All tasks must belong to the same organization",
     });
   }
 
-  const workspaceId = workspaceIds[0];
+  const organizationId = organizationIds[0];
 
-  if (!workspaceId) {
+  if (!organizationId) {
     throw new HTTPException(400, {
-      message: "Could not determine workspace",
+      message: "Could not determine organization",
     });
   }
 
   const [membership] = await db
-    .select({ id: workspaceUserTable.id })
-    .from(workspaceUserTable)
+    .select({ id: organizationMemberTable.id })
+    .from(organizationMemberTable)
     .where(
       and(
-        eq(workspaceUserTable.userId, userId),
-        eq(workspaceUserTable.workspaceId, workspaceId),
+        eq(organizationMemberTable.userId, userId),
+        eq(organizationMemberTable.organizationId, organizationId),
       ),
     )
     .limit(1);
 
   if (!membership) {
     throw new HTTPException(403, {
-      message: "You don't have access to this workspace",
+      message: "You don't have access to this organization",
     });
   }
 
@@ -95,33 +95,33 @@ async function bulkUpdateTasks({
       if (!value) {
         throw new HTTPException(400, { message: "Status value is required" });
       }
-      const projectIds = [...new Set(tasks.map((t) => t.projectId))];
+      const boardIds = [...new Set(tasks.map((t) => t.boardId))];
 
-      for (const projectId of projectIds) {
-        await assertValidTaskStatus(value, projectId);
+      for (const boardId of boardIds) {
+        await assertValidTaskStatus(value, boardId);
 
         const column = await db.query.columnTable.findFirst({
           where: and(
-            eq(columnTable.projectId, projectId),
+            eq(columnTable.boardId, boardId),
             eq(columnTable.slug, value),
           ),
         });
 
-        const projectTaskIds = tasks
-          .filter((t) => t.projectId === projectId)
+        const boardTaskIds = tasks
+          .filter((t) => t.boardId === boardId)
           .map((t) => t.id);
 
         const result = await db
           .update(taskTable)
           .set({ status: value, columnId: column?.id ?? null })
-          .where(inArray(taskTable.id, projectTaskIds));
+          .where(inArray(taskTable.id, boardTaskIds));
 
-        updatedCount += result.rowCount ?? projectTaskIds.length;
+        updatedCount += result.rowCount ?? boardTaskIds.length;
 
-        for (const taskId of projectTaskIds) {
+        for (const taskId of boardTaskIds) {
           await publishEvent("task.status_changed", {
             taskId,
-            projectId,
+            boardId,
             userId,
             newStatus: value,
             type: "status_changed",
@@ -129,7 +129,7 @@ async function bulkUpdateTasks({
         }
 
         await publishEvent("task-relation.refresh", {
-          projectId,
+          boardId,
           userId,
         });
       }
@@ -152,7 +152,7 @@ async function bulkUpdateTasks({
       for (const task of tasks) {
         await publishEvent("task.priority_changed", {
           taskId: task.id,
-          projectId: task.projectId,
+          boardId: task.boardId,
           userId,
           newPriority: value,
           type: "priority_changed",
@@ -183,7 +183,7 @@ async function bulkUpdateTasks({
         const eventType = value ? "task.assignee_changed" : "task.unassigned";
         await publishEvent(eventType, {
           taskId: task.id,
-          projectId: task.projectId,
+          boardId: task.boardId,
           userId,
           oldAssignee: task.userId,
           newAssignee: newAssigneeName,
@@ -205,7 +205,7 @@ async function bulkUpdateTasks({
       for (const task of tasks) {
         await publishEvent("task.deleted", {
           taskId: task.id,
-          projectId: task.projectId,
+          boardId: task.boardId,
           userId,
           title: task.title,
         });
@@ -240,7 +240,7 @@ async function bulkUpdateTasks({
             .values({
               name: label.name,
               color: label.color,
-              workspaceId: workspaceId,
+              organizationId: organizationId,
               taskId: task.id,
             })
             .onConflictDoNothing({
@@ -249,7 +249,7 @@ async function bulkUpdateTasks({
           updatedCount++;
 
           await publishEvent("task.label_assigned", {
-            projectId: task.projectId,
+            boardId: task.boardId,
             taskId: task.id,
             userId,
             type: "label_assigned",
@@ -274,7 +274,7 @@ async function bulkUpdateTasks({
 
       for (const task of tasks) {
         await publishEvent("task.label_unassigned", {
-          projectId: task.projectId,
+          boardId: task.boardId,
           taskId: task.id,
           userId,
           type: "label_unassigned",
@@ -304,7 +304,7 @@ async function bulkUpdateTasks({
       for (const task of tasks) {
         await publishEvent("task.due_date_changed", {
           taskId: task.id,
-          projectId: task.projectId,
+          boardId: task.boardId,
           userId,
           oldDueDate: task.dueDate,
           newDueDate: parsedDate,

@@ -1,36 +1,36 @@
 import { and, eq, isNull } from "drizzle-orm";
 import db from "../../database";
-import { projectTable } from "../../database/schema";
+import { boardTable } from "../../database/schema";
 
-async function getProjects(workspaceId: string, includeArchived = false) {
-  const projects = await db.query.projectTable.findMany({
+async function getBoards(organizationId: string, includeArchived = false) {
+  const boards = await db.query.boardTable.findMany({
     where: includeArchived
-      ? eq(projectTable.workspaceId, workspaceId)
+      ? eq(boardTable.organizationId, organizationId)
       : and(
-          eq(projectTable.workspaceId, workspaceId),
-          isNull(projectTable.archivedAt),
+          eq(boardTable.organizationId, organizationId),
+          isNull(boardTable.archivedAt),
         ),
     with: {
       tasks: true,
     },
   });
 
-  const projectsWithStatistics = projects.map((project) => {
-    const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter(
+  const boardsWithStatistics = boards.map((board) => {
+    const totalTasks = board.tasks.length;
+    const completedTasks = board.tasks.filter(
       (task) => task.status === "done" || task.status === "archived",
     ).length;
     const completionPercentage =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-    const dueDate = project.tasks.reduce((earliest: Date | null, task) => {
+    const dueDate = board.tasks.reduce((earliest: Date | null, task) => {
       if (!earliest || (task.dueDate && task.dueDate < earliest))
         return task.dueDate;
       return earliest;
     }, null);
 
     return {
-      ...project,
+      ...board,
       statistics: {
         completionPercentage,
         totalTasks,
@@ -42,7 +42,7 @@ async function getProjects(workspaceId: string, includeArchived = false) {
     };
   });
 
-  return projectsWithStatistics;
+  return boardsWithStatistics;
 }
 
-export default getProjects;
+export default getBoards;

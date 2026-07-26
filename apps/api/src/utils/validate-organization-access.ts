@@ -2,9 +2,9 @@ import { and, eq, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
 
-export async function validateWorkspaceAccess(
+export async function validateOrganizationAccess(
   userId: string,
-  workspaceId: string,
+  organizationId: string,
   apiKeyId?: string,
 ): Promise<void> {
   if (apiKeyId) {
@@ -25,7 +25,7 @@ export async function validateWorkspaceAccess(
 
     if (apiKey.length === 0) {
       throw new HTTPException(403, {
-        message: "Invalid API key for this workspace",
+        message: "Invalid API key for this organization",
       });
     }
   }
@@ -42,18 +42,18 @@ export async function validateWorkspaceAccess(
 
   const membership = await db
     .select()
-    .from(schema.workspaceUserTable)
+    .from(schema.organizationMemberTable)
     .where(
       and(
-        eq(schema.workspaceUserTable.userId, userId),
-        eq(schema.workspaceUserTable.workspaceId, workspaceId),
+        eq(schema.organizationMemberTable.userId, userId),
+        eq(schema.organizationMemberTable.organizationId, organizationId),
       ),
     )
     .limit(1);
 
   if (membership.length === 0) {
     throw new HTTPException(403, {
-      message: "You don't have access to this workspace",
+      message: "You don't have access to this organization",
     });
   }
 }

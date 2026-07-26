@@ -4,7 +4,7 @@ import db from "../../database";
 import {
   assetTable,
   columnTable,
-  projectTable,
+  boardTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
@@ -14,13 +14,13 @@ type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function isSameProjectMove(
   sourceProjectId: string,
-  destinationProjectId: string,
+  destinationBoardId: string,
 ) {
-  return sourceProjectId === destinationProjectId;
+  return sourceProjectId === destinationBoardId;
 }
 
 async function resolveDestinationStatus(
-  destinationProjectId: string,
+  destinationBoardId: string,
   currentStatus: string,
   requestedStatus?: string,
 ) {
@@ -31,7 +31,7 @@ async function resolveDestinationStatus(
       position: columnTable.position,
     })
     .from(columnTable)
-    .where(eq(columnTable.projectId, destinationProjectId))
+    .where(eq(columnTable.boardId, destinationBoardId))
     .orderBy(asc(columnTable.position));
 
   if (destinationColumns.length === 0) {
@@ -59,7 +59,7 @@ async function resolveDestinationStatus(
 
 async function getNextTaskPosition(
   dbOrTx: DbOrTx,
-  projectId: string,
+  boardId: string,
   status: string,
   columnId: string,
 ) {
@@ -68,7 +68,7 @@ async function getNextTaskPosition(
     .from(taskTable)
     .where(
       and(
-        eq(taskTable.projectId, projectId),
+        eq(taskTable.boardId, boardId),
         eq(taskTable.status, status),
         eq(taskTable.columnId, columnId),
       ),
@@ -79,12 +79,12 @@ async function getNextTaskPosition(
 
 async function moveTask({
   taskId,
-  destinationProjectId,
+  destinationBoardId,
   destinationStatus,
   currentUserId,
 }: {
   taskId: string;
-  destinationProjectId: string;
+  destinationBoardId: string;
   destinationStatus?: string;
   currentUserId: string;
 }) {
@@ -98,24 +98,24 @@ async function moveTask({
     });
   }
 
-  if (isSameProjectMove(existingTask.projectId, destinationProjectId)) {
+  if (isSameProjectMove(existingTask.boardId, destinationBoardId)) {
     throw new HTTPException(400, {
       message: "Task is already in that project",
     });
   }
 
   const [sourceProject, destinationProject] = await Promise.all([
-    db.query.projectTable.findFirst({
-      where: eq(projectTable.id, existingTask.projectId),
+    db.query.boardTable.findFirst({
+      where: eq(boardTable.id, existingTask.boardId),
     }),
-    db.query.projectTable.findFirst({
-      where: eq(projectTable.id, destinationProjectId),
+    db.query.boardTable.findFirst({
+      where: eq(boardTable.id, destinationBoardId),
     }),
   ]);
 
   if (!sourceProject || !destinationProject) {
     throw new HTTPException(404, {
-      message: "Project not found",
+      message: "Board not found",
     });
   }
 
@@ -126,17 +126,17 @@ async function moveTask({
   }
 
   const resolvedColumn = await resolveDestinationStatus(
-    destinationProjectId,
+    destinationBoardId,
     existingTask.status,
     destinationStatus,
   );
 
   const movedTask = await db.transaction(async (tx) => {
     const [nextTaskNumber, nextPosition] = await Promise.all([
-      claimTaskNumber(destinationProjectId, tx),
+      claimTaskNumber(destinationBoardId, tx),
       getNextTaskPosition(
         tx,
-        destinationProjectId,
+        destinationBoardId,
         resolvedColumn.slug,
         resolvedColumn.id,
       ),
@@ -145,7 +145,7 @@ async function moveTask({
     const [updatedTask] = await tx
       .update(taskTable)
       .set({
-        projectId: destinationProjectId,
+        boardId: destinationBoardId,
         status: resolvedColumn.slug,
         columnId: resolvedColumn.id,
         number: nextTaskNumber,
@@ -162,7 +162,7 @@ async function moveTask({
 
     await tx
       .update(assetTable)
-      .set({ projectId: destinationProjectId })
+      .set({ boardId: destinationBoardId })
       .where(eq(assetTable.taskId, taskId));
 
     return updatedTask;
@@ -183,7 +183,7 @@ async function moveTask({
   return {
     task: movedTask,
     sourceProjectId: sourceProject.id,
-    destinationProjectId: destinationProject.id,
+    destinationBoardId: destinationProject.id,
   };
 }
 

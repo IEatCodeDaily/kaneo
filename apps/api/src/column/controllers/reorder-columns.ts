@@ -4,7 +4,7 @@ import db from "../../database";
 import { columnTable } from "../../database/schema";
 
 async function reorderColumns(
-  projectId: string,
+  boardId: string,
   columns: Array<{ id: string; position: number }>,
 ) {
   for (const col of columns) {
@@ -12,19 +12,19 @@ async function reorderColumns(
       .update(columnTable)
       .set({ position: col.position })
       .where(
-        and(eq(columnTable.id, col.id), eq(columnTable.projectId, projectId)),
+        and(eq(columnTable.id, col.id), eq(columnTable.boardId, boardId)),
       )
       .returning({ id: columnTable.id });
 
     if (!updated) {
       throw new HTTPException(400, {
-        message: `Column ${col.id} does not belong to this project`,
+        message: `Column ${col.id} does not belong to this board`,
       });
     }
   }
 
   const updated = await db.query.columnTable.findMany({
-    where: eq(columnTable.projectId, projectId),
+    where: eq(columnTable.boardId, boardId),
     orderBy: (columns, { asc }) => [asc(columns.position)],
   });
 

@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
-  projectTable,
+  boardTable,
   taskTable,
   userTable,
-  workspaceTable,
+  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -22,7 +22,7 @@ import { normalizeSlackConfig } from "./config";
 type SlackEventData = {
   taskTitle: string;
   taskNumber: number | null;
-  projectName: string;
+  boardName: string;
   taskUrl: string | null;
   actorName: string | null;
   status: string | null;
@@ -57,7 +57,7 @@ function truncate(value: string, maxLength: number): string {
 
 async function getSlackEventData(
   taskId: string,
-  projectId: string,
+  boardId: string,
   userId: string | null,
 ): Promise<SlackEventData | null> {
   const [taskRow] = await db
@@ -66,14 +66,14 @@ async function getSlackEventData(
       number: taskTable.number,
       status: taskTable.status,
       priority: taskTable.priority,
-      projectName: projectTable.name,
-      projectId: projectTable.id,
-      workspaceId: workspaceTable.id,
+      boardName: boardTable.name,
+      boardId: boardTable.id,
+      organizationId: organizationTable.id,
     })
     .from(taskTable)
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-    .innerJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
-    .where(and(eq(taskTable.id, taskId), eq(projectTable.id, projectId)))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .where(and(eq(taskTable.id, taskId), eq(boardTable.id, boardId)))
     .limit(1);
 
   if (!taskRow) {
@@ -89,12 +89,12 @@ async function getSlackEventData(
     : [];
 
   const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-  const taskUrl = `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`;
+  const taskUrl = `${clientUrl}/dashboard/organization/${taskRow.organizationId}/board/${taskRow.boardId}/task/${taskId}`;
 
   return {
     taskTitle: taskRow.title,
     taskNumber: taskRow.number,
-    projectName: taskRow.projectName,
+    boardName: taskRow.boardName,
     taskUrl,
     actorName: user?.name ?? null,
     status: taskRow.status,
@@ -134,7 +134,7 @@ async function sendSlackMessage(
           },
           {
             type: "mrkdwn",
-            text: `*Project*\n${escapeSlack(data.projectName)}`,
+            text: `*Board*\n${escapeSlack(data.boardName)}`,
           },
           {
             type: "mrkdwn",
@@ -170,7 +170,7 @@ export async function handleTaskCreated(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;
@@ -192,7 +192,7 @@ export async function handleTaskStatusChanged(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;
@@ -214,7 +214,7 @@ export async function handleTaskPriorityChanged(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;
@@ -236,7 +236,7 @@ export async function handleTaskTitleChanged(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;
@@ -258,7 +258,7 @@ export async function handleTaskDescriptionChanged(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;
@@ -280,7 +280,7 @@ export async function handleTaskCommentCreated(
 
   const data = await getSlackEventData(
     event.taskId,
-    event.projectId,
+    event.boardId,
     event.userId,
   );
   if (!data) return;

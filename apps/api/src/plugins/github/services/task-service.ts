@@ -15,10 +15,10 @@ export type UpdateTaskStatusResult =
 
 const NON_COLUMN_STATUSES = new Set(["planned", "archived"]);
 
-export async function findTaskByNumber(projectId: string, taskNumber: number) {
+export async function findTaskByNumber(boardId: string, taskNumber: number) {
   return db.query.taskTable.findFirst({
     where: and(
-      eq(taskTable.projectId, projectId),
+      eq(taskTable.boardId, boardId),
       eq(taskTable.number, taskNumber),
     ),
   });
@@ -46,7 +46,7 @@ export async function updateTaskStatus(
 
   const column = await db.query.columnTable.findFirst({
     where: and(
-      eq(columnTable.projectId, task.projectId),
+      eq(columnTable.boardId, task.boardId),
       eq(columnTable.slug, newStatus),
     ),
   });
@@ -55,7 +55,7 @@ export async function updateTaskStatus(
     columnId = column.id;
   } else if (!NON_COLUMN_STATUSES.has(newStatus)) {
     console.warn(
-      `[GitHub] Skipping status update for task ${taskId}: column "${newStatus}" not found in project ${task.projectId}`,
+      `[GitHub] Skipping status update for task ${taskId}: column "${newStatus}" not found in board ${task.boardId}`,
     );
     return { applied: false };
   }
@@ -77,7 +77,7 @@ export async function updateTaskStatus(
 }
 
 export async function isTaskInFinalState(task: {
-  projectId: string;
+  boardId: string;
   status: string;
   columnId: string | null;
 }): Promise<boolean> {
@@ -85,7 +85,7 @@ export async function isTaskInFinalState(task: {
     const columnById = await db.query.columnTable.findFirst({
       where: and(
         eq(columnTable.id, task.columnId),
-        eq(columnTable.projectId, task.projectId),
+        eq(columnTable.boardId, task.boardId),
       ),
     });
 
@@ -96,7 +96,7 @@ export async function isTaskInFinalState(task: {
 
   const columnByStatus = await db.query.columnTable.findFirst({
     where: and(
-      eq(columnTable.projectId, task.projectId),
+      eq(columnTable.boardId, task.boardId),
       eq(columnTable.slug, task.status),
     ),
   });
@@ -108,11 +108,11 @@ export async function isTaskInFinalState(task: {
   return task.status === "done";
 }
 
-export async function getIntegrationWithProject(integrationId: string) {
+export async function getIntegrationWithBoard(integrationId: string) {
   return db.query.integrationTable.findFirst({
     where: eq(integrationTable.id, integrationId),
     with: {
-      project: true,
+      board: true,
     },
   });
 }
@@ -129,7 +129,7 @@ export async function findAllIntegrationsByRepo(owner: string, repo: string) {
       eq(integrationTable.isActive, true),
     ),
     with: {
-      project: true,
+      board: true,
     },
   });
 

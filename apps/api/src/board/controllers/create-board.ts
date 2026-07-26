@@ -1,5 +1,5 @@
 import db from "../../database";
-import { columnTable, projectTable } from "../../database/schema";
+import { columnTable, boardTable } from "../../database/schema";
 
 export const DEFAULT_PROJECT_COLUMNS = [
   { name: "To Do", slug: "to-do", position: 0, isFinal: false },
@@ -8,27 +8,27 @@ export const DEFAULT_PROJECT_COLUMNS = [
   { name: "Done", slug: "done", position: 3, isFinal: true },
 ] as const;
 
-async function createProject(
-  workspaceId: string,
+async function createBoard(
+  organizationId: string,
   name: string,
   icon: string,
   slug: string,
 ) {
   return db.transaction(async (tx) => {
-    const [createdProject] = await tx
-      .insert(projectTable)
+    const [createdBoard] = await tx
+      .insert(boardTable)
       .values({
-        workspaceId,
+        organizationId,
         name,
         icon,
         slug,
       })
       .returning();
 
-    if (createdProject) {
+    if (createdBoard) {
       for (const col of DEFAULT_PROJECT_COLUMNS) {
         await tx.insert(columnTable).values({
-          projectId: createdProject.id,
+          boardId: createdBoard.id,
           name: col.name,
           slug: col.slug,
           position: col.position,
@@ -37,8 +37,8 @@ async function createProject(
       }
     }
 
-    return createdProject;
+    return createdBoard;
   });
 }
 
-export default createProject;
+export default createBoard;

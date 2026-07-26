@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { integrationTable, projectTable } from "../../database/schema";
+import { integrationTable, boardTable } from "../../database/schema";
 import {
   type GiteaConfig,
   getDefaultGiteaConfig,
@@ -16,31 +16,31 @@ import {
 } from "../../plugins/gitea/utils/gitea-api";
 
 async function createGiteaIntegration({
-  projectId,
+  boardId,
   baseUrl,
   accessToken,
   repositoryOwner,
   repositoryName,
 }: {
-  projectId: string;
+  boardId: string;
   baseUrl: string;
   accessToken: string | undefined;
   repositoryOwner: string;
   repositoryName: string;
 }) {
-  const project = await db.query.projectTable.findFirst({
-    where: eq(projectTable.id, projectId),
+  const board = await db.query.boardTable.findFirst({
+    where: eq(boardTable.id, boardId),
   });
 
-  if (!project) {
-    throw new HTTPException(404, { message: "Project not found" });
+  if (!board) {
+    throw new HTTPException(404, { message: "Board not found" });
   }
 
   const normalizedBase = normalizeGiteaBaseUrl(baseUrl);
 
   const existingIntegration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "gitea"),
     ),
   });
@@ -84,7 +84,7 @@ async function createGiteaIntegration({
   });
 
   for (const integration of allGitea) {
-    if (integration.projectId === projectId) {
+    if (integration.boardId === boardId) {
       continue;
     }
     if (!integration.isActive) {
@@ -102,7 +102,7 @@ async function createGiteaIntegration({
         cfg.repositoryName === repositoryName
       ) {
         throw new HTTPException(409, {
-          message: `Repository ${repositoryOwner}/${repositoryName} on this Gitea instance is already linked to another project`,
+          message: `Repository ${repositoryOwner}/${repositoryName} on this Gitea instance is already linked to another board`,
         });
       }
     } catch (error) {
@@ -159,7 +159,7 @@ async function createGiteaIntegration({
       })
       .where(
         and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "gitea"),
         ),
       )
@@ -173,7 +173,7 @@ async function createGiteaIntegration({
 
     return {
       id: updated.id,
-      projectId: updated.projectId,
+      boardId: updated.boardId,
       baseUrl: normalizedBase,
       repositoryOwner,
       repositoryName,
@@ -187,7 +187,7 @@ async function createGiteaIntegration({
   const [newIntegration] = await db
     .insert(integrationTable)
     .values({
-      projectId,
+      boardId,
       type: "gitea",
       config: JSON.stringify(config),
       isActive: true,
@@ -202,7 +202,7 @@ async function createGiteaIntegration({
 
   return {
     id: newIntegration.id,
-    projectId: newIntegration.projectId,
+    boardId: newIntegration.boardId,
     baseUrl: normalizedBase,
     repositoryOwner,
     repositoryName,

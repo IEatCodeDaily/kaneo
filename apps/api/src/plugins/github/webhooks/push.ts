@@ -61,38 +61,38 @@ export async function handlePush(payload: PushPayload) {
   );
 
   for (const integration of integrations) {
-    if (!integration.project) {
+    if (!integration.board) {
       continue;
     }
 
     const config = JSON.parse(integration.config) as GitHubConfig;
-    const projectSlug = integration.project.slug;
+    const boardSlug = integration.board.slug;
     console.log(
-      `[Push] Trying project: ${projectSlug}, pattern: ${config.branchPattern}`,
+      `[Push] Trying board: ${boardSlug}, pattern: ${config.branchPattern}`,
     );
 
     const taskNumber = extractTaskNumberFromBranch(
       branchName,
       config,
-      projectSlug,
+      boardSlug,
     );
 
     if (!taskNumber) {
       console.log(
-        `[Push] Could not extract task number from branch: ${branchName} (pattern: ${config.branchPattern}, slug: ${projectSlug})`,
+        `[Push] Could not extract task number from branch: ${branchName} (pattern: ${config.branchPattern}, slug: ${boardSlug})`,
       );
       continue;
     }
 
     console.log(
-      `[Push] Extracted task number: ${taskNumber} for project ${projectSlug}`,
+      `[Push] Extracted task number: ${taskNumber} for board ${boardSlug}`,
     );
 
-    const task = await findTaskByNumber(integration.projectId, taskNumber);
+    const task = await findTaskByNumber(integration.boardId, taskNumber);
 
     if (!task) {
       console.log(
-        `[Push] Task #${taskNumber} not found in project ${integration.projectId}`,
+        `[Push] Task #${taskNumber} not found in board ${integration.boardId}`,
       );
       continue;
     }
@@ -121,7 +121,7 @@ export async function handlePush(payload: PushPayload) {
     });
 
     const targetStatus = await resolveTargetStatus(
-      integration.projectId,
+      integration.boardId,
       "branch_push",
       config.statusTransitions?.onBranchPush || "in-progress",
     );
@@ -142,7 +142,7 @@ export async function handlePush(payload: PushPayload) {
       ) {
         await publishEvent("task.status_changed", {
           taskId: statusResult.after.id,
-          projectId: statusResult.after.projectId,
+          boardId: statusResult.after.boardId,
           userId: null,
           oldStatus: statusResult.before.status,
           newStatus: statusResult.after.status,
@@ -159,6 +159,6 @@ export async function handlePush(payload: PushPayload) {
   }
 
   console.log(
-    `[Push] No matching task found in any integrated project for branch: ${branchName}`,
+    `[Push] No matching task found in any integrated board for branch: ${branchName}`,
   );
 }

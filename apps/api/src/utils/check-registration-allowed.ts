@@ -1,6 +1,6 @@
 import { and, eq, gt } from "drizzle-orm";
 import db from "../database";
-import { invitationTable, userTable, workspaceTable } from "../database/schema";
+import { invitationTable, userTable, organizationTable } from "../database/schema";
 
 type RegistrationCheckResult = {
   allowed: boolean;
@@ -8,8 +8,8 @@ type RegistrationCheckResult = {
   invitation?: {
     id: string;
     email: string;
-    workspaceId: string;
-    workspaceName: string;
+    organizationId: string;
+    organizationName: string;
     inviterName: string;
     expiresAt: Date;
     status: string;
@@ -81,16 +81,16 @@ async function findValidInvitation(
     .select({
       id: invitationTable.id,
       email: invitationTable.email,
-      workspaceId: invitationTable.workspaceId,
-      workspaceName: workspaceTable.name,
+      organizationId: invitationTable.organizationId,
+      organizationName: organizationTable.name,
       inviterName: userTable.name,
       expiresAt: invitationTable.expiresAt,
       status: invitationTable.status,
     })
     .from(invitationTable)
     .innerJoin(
-      workspaceTable,
-      eq(invitationTable.workspaceId, workspaceTable.id),
+      organizationTable,
+      eq(invitationTable.organizationId, organizationTable.id),
     )
     .innerJoin(userTable, eq(invitationTable.inviterId, userTable.id))
     .where(and(...conditions))
@@ -107,7 +107,7 @@ async function findValidInvitation(
 type InvitationDetails = {
   id: string;
   email: string;
-  workspaceName: string;
+  organizationName: string;
   inviterName: string;
   expiresAt: Date;
   status: string;
@@ -129,15 +129,15 @@ export async function getInvitationDetails(
     .select({
       id: invitationTable.id,
       email: invitationTable.email,
-      workspaceName: workspaceTable.name,
+      organizationName: organizationTable.name,
       inviterName: userTable.name,
       expiresAt: invitationTable.expiresAt,
       status: invitationTable.status,
     })
     .from(invitationTable)
     .innerJoin(
-      workspaceTable,
-      eq(invitationTable.workspaceId, workspaceTable.id),
+      organizationTable,
+      eq(invitationTable.organizationId, organizationTable.id),
     )
     .innerJoin(userTable, eq(invitationTable.inviterId, userTable.id))
     .where(eq(invitationTable.id, invitationId))
@@ -158,7 +158,7 @@ export async function getInvitationDetails(
   const baseInvitation: InvitationDetails = {
     id: row.id,
     email: row.email,
-    workspaceName: row.workspaceName,
+    organizationName: row.organizationName,
     inviterName: row.inviterName,
     expiresAt: row.expiresAt,
     status: row.status,
@@ -200,8 +200,8 @@ export async function getUserPendingInvitations(userEmail: string) {
     .select({
       id: invitationTable.id,
       email: invitationTable.email,
-      workspaceId: invitationTable.workspaceId,
-      workspaceName: workspaceTable.name,
+      organizationId: invitationTable.organizationId,
+      organizationName: organizationTable.name,
       inviterName: userTable.name,
       expiresAt: invitationTable.expiresAt,
       createdAt: invitationTable.createdAt,
@@ -209,8 +209,8 @@ export async function getUserPendingInvitations(userEmail: string) {
     })
     .from(invitationTable)
     .innerJoin(
-      workspaceTable,
-      eq(invitationTable.workspaceId, workspaceTable.id),
+      organizationTable,
+      eq(invitationTable.organizationId, organizationTable.id),
     )
     .innerJoin(userTable, eq(invitationTable.inviterId, userTable.id))
     .where(

@@ -12,13 +12,13 @@ import {
   validateSlackConfig,
 } from "../plugins/slack/config";
 import { slackIntegrationSchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 
 const slackIntegration = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
     apiKey?: {
       id: string;
       userId: string;
@@ -42,7 +42,7 @@ function maskWebhookUrl(value: string): string {
 
 function toResponse(integration: {
   id: string;
-  projectId: string;
+  boardId: string;
   config: string;
   isActive: boolean | null;
   createdAt: Date;
@@ -54,7 +54,7 @@ function toResponse(integration: {
 
   return {
     id: integration.id,
-    projectId: integration.projectId,
+    boardId: integration.boardId,
     channelName: config.channelName ?? null,
     webhookConfigured: Boolean(config.webhookUrl),
     maskedWebhookUrl: maskWebhookUrl(config.webhookUrl),
@@ -68,10 +68,10 @@ function toResponse(integration: {
   };
 }
 
-async function getSlackIntegration(projectId: string) {
+async function getSlackIntegration(boardId: string) {
   const integration = await db.query.integrationTable.findFirst({
     where: and(
-      eq(integrationTable.projectId, projectId),
+      eq(integrationTable.boardId, boardId),
       eq(integrationTable.type, "slack"),
     ),
   });
@@ -87,11 +87,11 @@ const nullableSlackIntegrationSchema = v.nullable(slackIntegrationSchema);
 
 slackIntegration
   .get(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "getSlackIntegration",
       tags: ["Slack"],
-      description: "Get Slack integration for a project",
+      description: "Get Slack integration for a board",
       responses: {
         200: {
           description: "Slack integration details",
@@ -103,20 +103,20 @@ slackIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const integration = await getSlackIntegration(projectId);
+      const { boardId } = c.req.valid("param");
+      const integration = await getSlackIntegration(boardId);
       return c.json(integration);
     },
   )
   .post(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "createSlackIntegration",
       tags: ["Slack"],
-      description: "Create or replace a Slack integration for a project",
+      description: "Create or replace a Slack integration for a board",
       responses: {
         200: {
           description: "Slack integration created successfully",
@@ -126,7 +126,7 @@ slackIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -144,10 +144,10 @@ slackIntegration
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const config = normalizeSlackConfig({
@@ -165,7 +165,7 @@ slackIntegration
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "slack"),
         ),
       });
@@ -181,19 +181,19 @@ slackIntegration
           .where(eq(integrationTable.id, existing.id));
       } else {
         await db.insert(integrationTable).values({
-          projectId,
+          boardId,
           type: "slack",
           config: JSON.stringify(config),
           isActive: true,
         });
       }
 
-      const integration = await getSlackIntegration(projectId);
+      const integration = await getSlackIntegration(boardId);
       return c.json(integration);
     },
   )
   .patch(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "updateSlackIntegration",
       tags: ["Slack"],
@@ -207,7 +207,7 @@ slackIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -226,15 +226,15 @@ slackIntegration
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "slack"),
         ),
       });
@@ -279,16 +279,16 @@ slackIntegration
         })
         .where(eq(integrationTable.id, existing.id));
 
-      const integration = await getSlackIntegration(projectId);
+      const integration = await getSlackIntegration(boardId);
       return c.json(integration);
     },
   )
   .delete(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "deleteSlackIntegration",
       tags: ["Slack"],
-      description: "Delete Slack integration for a project",
+      description: "Delete Slack integration for a board",
       responses: {
         200: {
           description: "Slack integration deleted successfully",
@@ -300,15 +300,15 @@ slackIntegration
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
 
       const existing = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "slack"),
         ),
       });

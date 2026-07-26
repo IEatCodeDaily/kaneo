@@ -5,19 +5,19 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { integrationTable, projectTable } from "../database/schema";
+import { integrationTable, boardTable } from "../database/schema";
 import { type GiteaConfig, validateGiteaConfig } from "../plugins/gitea/config";
 import { handleGiteaWebhookRequest } from "../plugins/gitea/webhook-handler";
 import { giteaIntegrationSchema } from "../schemas";
 import {
-  hasWorkspacePermission,
-  requireWorkspacePermission,
-} from "../utils/require-workspace-permission";
-import { validateWorkspaceAccess } from "../utils/validate-workspace-access";
+  hasOrganizationPermission,
+  requireOrganizationPermission,
+} from "../utils/require-organization-permission";
+import { validateOrganizationAccess } from "../utils/validate-organization-access";
 import {
-  workspaceAccess,
-  workspaceAccessMiddleware,
-} from "../utils/workspace-access-middleware";
+  organizationAccess,
+  organizationAccessMiddleware,
+} from "../utils/organization-access-middleware";
 import createGiteaIntegration from "./controllers/create-gitea-integration";
 import deleteGiteaIntegration from "./controllers/delete-gitea-integration";
 import getGiteaIntegration from "./controllers/get-gitea-integration";
@@ -57,7 +57,7 @@ const nullableGiteaIntegrationSchema = v.nullable(giteaIntegrationSchema);
 const giteaIntegration = new Hono<{
   Variables: {
     userId: string;
-    workspaceId: string;
+    organizationId: string;
     apiKey?: {
       id: string;
       userId: string;
@@ -132,11 +132,11 @@ const giteaIntegration = new Hono<{
     },
   )
   .get(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "getGiteaIntegration",
       tags: ["Gitea"],
-      description: "Get Gitea integration for a project",
+      description: "Get Gitea integration for a board",
       responses: {
         200: {
           description: "Gitea integration details",
@@ -148,17 +148,17 @@ const giteaIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccessMiddleware({
-      sources: [{ type: "lookup", resource: "project", idKey: "projectId" }],
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccessMiddleware({
+      sources: [{ type: "lookup", resource: "board", idKey: "boardId" }],
     }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const includeWebhookSecret = await hasWorkspacePermission(c, {
-        workspace: ["manage_settings"],
+      const { boardId } = c.req.valid("param");
+      const includeWebhookSecret = await hasOrganizationPermission(c, {
+        organization: ["manage_settings"],
       });
       const integration = await getGiteaIntegration(
-        projectId,
+        boardId,
         includeWebhookSecret,
       );
       if (!integration) {
@@ -168,11 +168,11 @@ const giteaIntegration = new Hono<{
     },
   )
   .post(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "createGiteaIntegration",
       tags: ["Gitea"],
-      description: "Create or update Gitea integration for a project",
+      description: "Create or update Gitea integration for a board",
       responses: {
         200: {
           description: "Integration saved",
@@ -184,7 +184,7 @@ const giteaIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -194,19 +194,19 @@ const giteaIntegration = new Hono<{
         repositoryName: v.pipe(v.string(), v.minLength(1)),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
       await createGiteaIntegration({
-        projectId,
+        boardId,
         baseUrl: body.baseUrl,
         accessToken: body.accessToken,
         repositoryOwner: body.repositoryOwner,
         repositoryName: body.repositoryName,
       });
-      const integration = await getGiteaIntegration(projectId, true);
+      const integration = await getGiteaIntegration(boardId, true);
       if (!integration) {
         throw new HTTPException(500, { message: "Failed to load integration" });
       }
@@ -214,7 +214,7 @@ const giteaIntegration = new Hono<{
     },
   )
   .patch(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "updateGiteaIntegration",
       tags: ["Gitea"],
@@ -230,7 +230,7 @@ const giteaIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -238,15 +238,15 @@ const giteaIntegration = new Hono<{
         commentTaskLinkOnGiteaIssue: v.optional(v.boolean()),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const body = c.req.valid("json");
 
       const row = await db.query.integrationTable.findFirst({
         where: and(
-          eq(integrationTable.projectId, projectId),
+          eq(integrationTable.boardId, boardId),
           eq(integrationTable.type, "gitea"),
         ),
       });
@@ -288,12 +288,12 @@ const giteaIntegration = new Hono<{
         })
         .where(
           and(
-            eq(integrationTable.projectId, projectId),
+            eq(integrationTable.boardId, boardId),
             eq(integrationTable.type, "gitea"),
           ),
         );
 
-      const updated = await getGiteaIntegration(projectId, true);
+      const updated = await getGiteaIntegration(boardId, true);
       if (!updated) {
         throw new HTTPException(500, { message: "Failed to load integration" });
       }
@@ -301,11 +301,11 @@ const giteaIntegration = new Hono<{
     },
   )
   .delete(
-    "/project/:projectId",
+    "/board/:boardId",
     describeRoute({
       operationId: "deleteGiteaIntegration",
       tags: ["Gitea"],
-      description: "Delete Gitea integration for a project",
+      description: "Delete Gitea integration for a board",
       responses: {
         200: {
           description: "Deleted",
@@ -322,12 +322,12 @@ const giteaIntegration = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ workspace: ["manage_settings"] }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const result = await deleteGiteaIntegration(projectId);
+      const { boardId } = c.req.valid("param");
+      const result = await deleteGiteaIntegration(boardId);
       return c.json(result);
     },
   )
@@ -351,7 +351,7 @@ const giteaIntegration = new Hono<{
     validator(
       "json",
       v.object({
-        projectId: v.string(),
+        boardId: v.string(),
       }),
     ),
     async (c, next) => {
@@ -360,30 +360,30 @@ const giteaIntegration = new Hono<{
         throw new HTTPException(401, { message: "Unauthorized" });
       }
 
-      const { projectId } = c.req.valid("json");
+      const { boardId } = c.req.valid("json");
 
-      const [project] = await db
-        .select({ workspaceId: projectTable.workspaceId })
-        .from(projectTable)
-        .where(eq(projectTable.id, projectId))
+      const [board] = await db
+        .select({ organizationId: boardTable.organizationId })
+        .from(boardTable)
+        .where(eq(boardTable.id, boardId))
         .limit(1);
 
-      if (!project) {
-        throw new HTTPException(404, { message: "Project not found" });
+      if (!board) {
+        throw new HTTPException(404, { message: "Board not found" });
       }
 
       const apiKey = c.get("apiKey");
       const apiKeyId = apiKey?.id;
 
-      await validateWorkspaceAccess(userId, project.workspaceId, apiKeyId);
-      c.set("workspaceId", project.workspaceId);
+      await validateOrganizationAccess(userId, board.organizationId, apiKeyId);
+      c.set("organizationId", board.organizationId);
 
       return next();
     },
-    requireWorkspacePermission({ task: ["create"] }),
+    requireOrganizationPermission({ task: ["create"] }),
     async (c) => {
-      const { projectId } = c.req.valid("json");
-      const result = await importGiteaIssues(projectId);
+      const { boardId } = c.req.valid("json");
+      const result = await importGiteaIssues(boardId);
       return c.json(result);
     },
   );

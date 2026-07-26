@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import createColumn from "./controllers/create-column";
 import deleteColumn from "./controllers/delete-column";
 import getColumns from "./controllers/get-columns";
@@ -15,11 +15,11 @@ const column = new Hono<{
   };
 }>()
   .get(
-    "/:projectId",
+    "/:boardId",
     describeRoute({
       operationId: "getColumns",
       tags: ["Columns"],
-      description: "Get all columns for a project",
+      description: "Get all columns for a board",
       responses: {
         200: {
           description: "List of columns ordered by position",
@@ -29,20 +29,20 @@ const column = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
-    workspaceAccess.fromProject("projectId"),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
     async (c) => {
-      const { projectId } = c.req.valid("param");
-      const columns = await getColumns(projectId);
+      const { boardId } = c.req.valid("param");
+      const columns = await getColumns(boardId);
       return c.json(columns);
     },
   )
   .post(
-    "/:projectId",
+    "/:boardId",
     describeRoute({
       operationId: "createColumn",
       tags: ["Columns"],
-      description: "Create a new column in a project",
+      description: "Create a new column in a board",
       responses: {
         200: {
           description: "Column created successfully",
@@ -52,7 +52,7 @@ const column = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -62,13 +62,13 @@ const column = new Hono<{
         isFinal: v.optional(v.boolean()),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const { name, icon, color, isFinal } = c.req.valid("json");
       const result = await createColumn({
-        projectId,
+        boardId,
         name,
         icon,
         color,
@@ -78,11 +78,11 @@ const column = new Hono<{
     },
   )
   .put(
-    "/reorder/:projectId",
+    "/reorder/:boardId",
     describeRoute({
       operationId: "reorderColumns",
       tags: ["Columns"],
-      description: "Reorder columns in a project",
+      description: "Reorder columns in a board",
       responses: {
         200: {
           description: "Columns reordered successfully",
@@ -92,7 +92,7 @@ const column = new Hono<{
         },
       },
     }),
-    validator("param", v.object({ projectId: v.string() })),
+    validator("param", v.object({ boardId: v.string() })),
     validator(
       "json",
       v.object({
@@ -104,12 +104,12 @@ const column = new Hono<{
         ),
       }),
     ),
-    workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
-      const { projectId } = c.req.valid("param");
+      const { boardId } = c.req.valid("param");
       const { columns } = c.req.valid("json");
-      const result = await reorderColumns(projectId, columns);
+      const result = await reorderColumns(boardId, columns);
       return c.json(result);
     },
   )
@@ -138,8 +138,8 @@ const column = new Hono<{
         isFinal: v.optional(v.boolean()),
       }),
     ),
-    workspaceAccess.fromColumn("id"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromColumn("id"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const data = c.req.valid("json");
@@ -163,8 +163,8 @@ const column = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    workspaceAccess.fromColumn("id"),
-    requireWorkspacePermission({ project: ["update"] }),
+    organizationAccess.fromColumn("id"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
       const result = await deleteColumn(id);

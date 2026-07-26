@@ -51,16 +51,16 @@ function parsePermissionStatements(
 }
 
 async function customRoleStatements(
-  workspaceId: string,
+  organizationId: string,
   role: string,
 ): Promise<Record<string, readonly string[]> | null> {
   const [row] = await db
-    .select({ permission: schema.workspaceRoleTable.permission })
-    .from(schema.workspaceRoleTable)
+    .select({ permission: schema.organizationRoleTable.permission })
+    .from(schema.organizationRoleTable)
     .where(
       and(
-        eq(schema.workspaceRoleTable.workspaceId, workspaceId),
-        eq(schema.workspaceRoleTable.role, role),
+        eq(schema.organizationRoleTable.organizationId, organizationId),
+        eq(schema.organizationRoleTable.role, role),
       ),
     )
     .limit(1);
@@ -84,12 +84,12 @@ function satisfies(
   return true;
 }
 
-export async function hasWorkspacePermission(
+export async function hasOrganizationPermission(
   c: Context,
   permissions: PermissionMap,
 ) {
-  const workspaceId = c.get("workspaceId");
-  if (!workspaceId) return false;
+  const organizationId = c.get("organizationId");
+  if (!organizationId) return false;
 
   const apiKey = c.get("apiKey") as
     | { permissions?: Record<string, string[]> | null }
@@ -106,12 +106,12 @@ export async function hasWorkspacePermission(
   if (!userId) return false;
 
   const [member] = await db
-    .select({ role: schema.workspaceUserTable.role })
-    .from(schema.workspaceUserTable)
+    .select({ role: schema.organizationMemberTable.role })
+    .from(schema.organizationMemberTable)
     .where(
       and(
-        eq(schema.workspaceUserTable.workspaceId, workspaceId),
-        eq(schema.workspaceUserTable.userId, userId),
+        eq(schema.organizationMemberTable.organizationId, organizationId),
+        eq(schema.organizationMemberTable.userId, userId),
       ),
     )
     .limit(1);
@@ -121,21 +121,21 @@ export async function hasWorkspacePermission(
   // Prefer the DB row when present so admin-edited defaults
   // (viewer/member/admin) take effect immediately. Falls back to the
   // compiled-in static definitions only when no row exists — protects
-  // viewer/member/admin users from a 403 if their workspace somehow
-  // missed the seed (e.g., seed failed during workspace creation and
+  // viewer/member/admin users from a 403 if their organization somehow
+  // missed the seed (e.g., seed failed during organization creation and
   // the boot-time backfill hasn't run yet).
   const statements =
-    (await customRoleStatements(workspaceId, member.role)) ??
+    (await customRoleStatements(organizationId, member.role)) ??
     builtInRoleStatements(member.role);
 
   return Boolean(statements && satisfies(statements, permissions));
 }
 
-export function requireWorkspacePermission(permissions: PermissionMap) {
+export function requireOrganizationPermission(permissions: PermissionMap) {
   return async (c: Context, next: Next) => {
-    if (!c.get("workspaceId")) {
+    if (!c.get("organizationId")) {
       throw new HTTPException(500, {
-        message: "workspaceId not set in context",
+        message: "organizationId not set in context",
       });
     }
 
@@ -146,7 +146,7 @@ export function requireWorkspacePermission(permissions: PermissionMap) {
       throw new HTTPException(403, { message: "Insufficient API key scope" });
     }
 
-    if (!(await hasWorkspacePermission(c, permissions))) {
+    if (!(await hasOrganizationPermission(c, permissions))) {
       if (!c.get("userId")) {
         throw new HTTPException(401, { message: "Unauthorized" });
       }

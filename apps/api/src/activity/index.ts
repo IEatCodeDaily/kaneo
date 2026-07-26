@@ -3,8 +3,8 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { subscribeToEvent } from "../events";
 import { activitySchema } from "../schemas";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import createActivity from "./controllers/create-activity";
 import createComment from "./controllers/create-comment";
 import deleteComment from "./controllers/delete-comment";
@@ -32,7 +32,7 @@ const activity = new Hono<{
       },
     }),
     validator("param", v.object({ taskId: v.string() })),
-    workspaceAccess.fromTaskId(),
+    organizationAccess.fromTaskId(),
     async (c) => {
       const { taskId } = c.req.valid("param");
       const activities = await getActivities(taskId);
@@ -64,8 +64,8 @@ const activity = new Hono<{
         eventData: v.optional(v.nullable(v.record(v.string(), v.unknown()))),
       }),
     ),
-    workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTaskId(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { taskId, userId, message, type, eventData } = c.req.valid("json");
       const activity = await createActivity(
@@ -100,8 +100,8 @@ const activity = new Hono<{
         comment: v.string(),
       }),
     ),
-    workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    organizationAccess.fromTaskId(),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
       const { taskId, comment } = c.req.valid("json");
       const userId = c.get("userId");
@@ -132,7 +132,7 @@ const activity = new Hono<{
         comment: v.string(),
       }),
     ),
-    workspaceAccess.fromActivity("activityId"),
+    organizationAccess.fromActivity("activityId"),
     async (c) => {
       const { activityId, comment } = c.req.valid("json");
       const userId = c.get("userId");
@@ -161,7 +161,7 @@ const activity = new Hono<{
         activityId: v.string(),
       }),
     ),
-    workspaceAccess.fromActivity("activityId"),
+    organizationAccess.fromActivity("activityId"),
     async (c) => {
       const { activityId } = c.req.valid("json");
       const userId = c.get("userId");
@@ -187,27 +187,27 @@ subscribeToEvent<{
   userId: string;
   type: string;
   content: string;
-  fromProjectId: string;
-  fromProjectName: string;
-  toProjectId: string;
-  toProjectName: string;
+  fromBoardId: string;
+  fromBoardName: string;
+  toBoardId: string;
+  toBoardName: string;
   oldStatus: string;
   newStatus: string;
 }>("task.moved", async (data) => {
   const {
-    fromProjectId,
-    fromProjectName,
-    toProjectId,
-    toProjectName,
+    fromBoardId,
+    fromBoardName,
+    toBoardId,
+    toBoardName,
     oldStatus,
     newStatus,
   } = data;
 
   await createActivity(data.taskId, data.type, data.userId, null, {
-    fromProjectId,
-    fromProjectName,
-    toProjectId,
-    toProjectName,
+    fromBoardId,
+    fromBoardName,
+    toBoardId,
+    toBoardName,
     oldStatus,
     newStatus,
   });

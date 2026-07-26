@@ -36,14 +36,14 @@ async function deleteTask(taskId: string, currentUserId: string) {
 
   await publishEvent("task.deleted", {
     taskId: task.id,
-    projectId: task.projectId,
+    boardId: task.boardId,
     userId: currentUserId,
     title: task.title,
   });
 
   for (const relation of relations) {
     await publishEvent("task-relation.deleted", {
-      projectId: task.projectId,
+      boardId: task.boardId,
       userId: currentUserId,
       taskId: taskId,
       sourceTaskId: relation.sourceTaskId,

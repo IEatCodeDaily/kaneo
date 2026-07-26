@@ -2,16 +2,16 @@ import { and, eq, inArray, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import {
-  projectTable,
+  boardTable,
   userNotificationPreferenceTable,
-  userNotificationWorkspaceProjectTable,
-  userNotificationWorkspaceRuleTable,
-  workspaceUserTable,
+  userNotificationOrgBoardTable,
+  userNotificationOrgRuleTable,
+  organizationMemberTable,
 } from "../database/schema";
 import { assertPublicWebhookDestination } from "../plugins/generic-webhook/config";
 import { decryptSecret, encryptSecret } from "./secrets";
 
-export type NotificationPreferenceProjectMode = "all" | "selected";
+export type NotificationPreferenceBoardMode = "all" | "selected";
 
 export type NotificationPreferenceResponse = {
   emailAddress: string | null;
@@ -37,17 +37,17 @@ export type NotificationPreferenceResponse = {
   taskStatusChangeEnabled: boolean;
   dueDateReminderEnabled: boolean;
   dueDateReminderLeadTimeMinutes: number;
-  workspaces: Array<{
+  organizations: Array<{
     id: string;
-    workspaceId: string;
-    workspaceName: string;
+    organizationId: string;
+    organizationName: string;
     isActive: boolean;
     emailEnabled: boolean;
     ntfyEnabled: boolean;
     gotifyEnabled: boolean;
     webhookEnabled: boolean;
-    projectMode: NotificationPreferenceProjectMode;
-    selectedProjectIds: string[];
+    boardMode: NotificationPreferenceBoardMode;
+    selectedBoardIds: string[];
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -74,17 +74,17 @@ export type UpdateNotificationPreferenceInput = {
   dueDateReminderLeadTimeMinutes?: number;
 };
 
-export type UpsertWorkspaceRuleInput = {
+export type UpsertOrganizationRuleInput = {
   isActive: boolean;
   emailEnabled: boolean;
   ntfyEnabled: boolean;
   gotifyEnabled: boolean;
   webhookEnabled: boolean;
-  projectMode: NotificationPreferenceProjectMode;
-  selectedProjectIds?: string[];
+  boardMode: NotificationPreferenceBoardMode;
+  selectedBoardIds?: string[];
 };
 
-type WorkspaceRuleChannelState = {
+type OrganizationRuleChannelState = {
   emailEnabled: boolean;
   ntfyEnabled: boolean;
   gotifyEnabled: boolean;
@@ -116,48 +116,48 @@ function normalizeSecretInput(
   return normalizeOptionalString(inputValue);
 }
 
-async function assertWorkspaceMembership(userId: string, workspaceId: string) {
+async function assertOrganizationMembership(userId: string, organizationId: string) {
   const [membership] = await db
-    .select({ workspaceId: workspaceUserTable.workspaceId })
-    .from(workspaceUserTable)
+    .select({ organizationId: organizationMemberTable.organizationId })
+    .from(organizationMemberTable)
     .where(
       and(
-        eq(workspaceUserTable.userId, userId),
-        eq(workspaceUserTable.workspaceId, workspaceId),
+        eq(organizationMemberTable.userId, userId),
+        eq(organizationMemberTable.organizationId, organizationId),
       ),
     )
     .limit(1);
 
   if (!membership) {
     throw new HTTPException(403, {
-      message: "You don't have access to this workspace",
+      message: "You don't have access to this organization",
     });
   }
 }
 
-export async function validateProjectSelection(
-  workspaceId: string,
-  selectedProjectIds: string[],
+export async function validateBoardSelection(
+  organizationId: string,
+  selectedBoardIds: string[],
 ) {
-  if (selectedProjectIds.length === 0) {
+  if (selectedBoardIds.length === 0) {
     throw new HTTPException(400, {
-      message: "Select at least one project for selected project mode",
+      message: "Select at least one board for selected board mode",
     });
   }
 
-  const projects = await db
-    .select({ id: projectTable.id })
-    .from(projectTable)
+  const boards = await db
+    .select({ id: boardTable.id })
+    .from(boardTable)
     .where(
       and(
-        eq(projectTable.workspaceId, workspaceId),
-        inArray(projectTable.id, selectedProjectIds),
+        eq(boardTable.organizationId, organizationId),
+        inArray(boardTable.id, selectedBoardIds),
       ),
     );
 
-  if (projects.length !== selectedProjectIds.length) {
+  if (boards.length !== selectedBoardIds.length) {
     throw new HTTPException(400, {
-      message: "One or more selected projects are invalid",
+      message: "One or more selected boards are invalid",
     });
   }
 }
@@ -179,11 +179,11 @@ export async function getNotificationPreferences(
       }
     : null;
 
-  const rules = await db.query.userNotificationWorkspaceRuleTable.findMany({
-    where: eq(userNotificationWorkspaceRuleTable.userId, userId),
+  const rules = await db.query.userNotificationOrgRuleTable.findMany({
+    where: eq(userNotificationOrgRuleTable.userId, userId),
     with: {
-      workspace: true,
-      selectedProjects: true,
+      organization: true,
+      selectedBoards: true,
     },
     orderBy: (table, { asc }) => [asc(table.createdAt)],
   });
@@ -217,19 +217,19 @@ export async function getNotificationPreferences(
     dueDateReminderEnabled: preference?.dueDateReminderEnabled ?? true,
     dueDateReminderLeadTimeMinutes:
       preference?.dueDateReminderLeadTimeMinutes ?? 1440,
-    workspaces: rules.map((rule) => ({
+    organizations: rules.map((rule) => ({
       id: rule.id,
-      workspaceId: rule.workspaceId,
-      workspaceName: rule.workspace.name,
+      organizationId: rule.organizationId,
+      organizationName: rule.organization.name,
       isActive: rule.isActive ?? true,
       emailEnabled: rule.emailEnabled ?? false,
       ntfyEnabled: rule.ntfyEnabled ?? false,
       gotifyEnabled: rule.gotifyEnabled ?? false,
       webhookEnabled: rule.webhookEnabled ?? false,
-      projectMode:
-        rule.projectMode === "selected" ? "selected" : ("all" as const),
-      selectedProjectIds: rule.selectedProjects.map(
-        (project) => project.projectId,
+      boardMode:
+        rule.boardMode === "selected" ? "selected" : ("all" as const),
+      selectedBoardIds: rule.selectedBoards.map(
+        (board) => board.boardId,
       ),
       createdAt: rule.createdAt,
       updatedAt: rule.updatedAt,
@@ -291,7 +291,7 @@ export async function updateNotificationPreferences(
   const webhookEnabled =
     input.webhookEnabled ?? decryptedExisting?.webhookEnabled ?? false;
 
-  const enabledRuleCascade: WorkspaceRuleChannelState = {
+  const enabledRuleCascade: OrganizationRuleChannelState = {
     emailEnabled: false,
     ntfyEnabled: false,
     gotifyEnabled: false,
@@ -474,14 +474,14 @@ export async function updateNotificationPreferences(
 
   const ruleEnableCascade = Object.fromEntries(
     Object.entries(enabledRuleCascade).filter(([, value]) => value),
-  ) as Partial<WorkspaceRuleChannelState>;
+  ) as Partial<OrganizationRuleChannelState>;
 
   if (
     Object.keys(ruleCascade).length > 0 ||
     Object.keys(ruleEnableCascade).length > 0
   ) {
     await db
-      .update(userNotificationWorkspaceRuleTable)
+      .update(userNotificationOrgRuleTable)
       .set({
         ...ruleEnableCascade,
         ...ruleCascade,
@@ -489,13 +489,13 @@ export async function updateNotificationPreferences(
       })
       .where(
         and(
-          eq(userNotificationWorkspaceRuleTable.userId, userId),
-          eq(userNotificationWorkspaceRuleTable.isActive, true),
+          eq(userNotificationOrgRuleTable.userId, userId),
+          eq(userNotificationOrgRuleTable.isActive, true),
           or(
-            eq(userNotificationWorkspaceRuleTable.emailEnabled, true),
-            eq(userNotificationWorkspaceRuleTable.ntfyEnabled, true),
-            eq(userNotificationWorkspaceRuleTable.gotifyEnabled, true),
-            eq(userNotificationWorkspaceRuleTable.webhookEnabled, true),
+            eq(userNotificationOrgRuleTable.emailEnabled, true),
+            eq(userNotificationOrgRuleTable.ntfyEnabled, true),
+            eq(userNotificationOrgRuleTable.gotifyEnabled, true),
+            eq(userNotificationOrgRuleTable.webhookEnabled, true),
           ),
         ),
       );
@@ -504,16 +504,16 @@ export async function updateNotificationPreferences(
   return getNotificationPreferences(userId, emailAddress);
 }
 
-export async function upsertWorkspaceRule(
+export async function upsertOrganizationRule(
   userId: string,
-  workspaceId: string,
+  organizationId: string,
   emailAddress: string | null,
-  input: UpsertWorkspaceRuleInput,
+  input: UpsertOrganizationRuleInput,
 ): Promise<NotificationPreferenceResponse> {
-  await assertWorkspaceMembership(userId, workspaceId);
+  await assertOrganizationMembership(userId, organizationId);
 
-  if (input.projectMode === "selected") {
-    await validateProjectSelection(workspaceId, input.selectedProjectIds ?? []);
+  if (input.boardMode === "selected") {
+    await validateBoardSelection(organizationId, input.selectedBoardIds ?? []);
   }
 
   const preference = await db.query.userNotificationPreferenceTable.findFirst({
@@ -557,10 +557,10 @@ export async function upsertWorkspaceRule(
     });
   }
 
-  const existing = await db.query.userNotificationWorkspaceRuleTable.findFirst({
+  const existing = await db.query.userNotificationOrgRuleTable.findFirst({
     where: and(
-      eq(userNotificationWorkspaceRuleTable.userId, userId),
-      eq(userNotificationWorkspaceRuleTable.workspaceId, workspaceId),
+      eq(userNotificationOrgRuleTable.userId, userId),
+      eq(userNotificationOrgRuleTable.organizationId, organizationId),
     ),
   });
 
@@ -568,57 +568,57 @@ export async function upsertWorkspaceRule(
 
   if (existing) {
     await db
-      .update(userNotificationWorkspaceRuleTable)
+      .update(userNotificationOrgRuleTable)
       .set({
         isActive: input.isActive,
         emailEnabled: input.emailEnabled,
         ntfyEnabled: input.ntfyEnabled,
         gotifyEnabled: input.gotifyEnabled,
         webhookEnabled: input.webhookEnabled,
-        projectMode: input.projectMode,
+        boardMode: input.boardMode,
         updatedAt: new Date(),
       })
-      .where(eq(userNotificationWorkspaceRuleTable.id, existing.id));
+      .where(eq(userNotificationOrgRuleTable.id, existing.id));
   } else {
     const [createdRule] = await db
-      .insert(userNotificationWorkspaceRuleTable)
+      .insert(userNotificationOrgRuleTable)
       .values({
         userId,
-        workspaceId,
+        organizationId,
         isActive: input.isActive,
         emailEnabled: input.emailEnabled,
         ntfyEnabled: input.ntfyEnabled,
         gotifyEnabled: input.gotifyEnabled,
         webhookEnabled: input.webhookEnabled,
-        projectMode: input.projectMode,
+        boardMode: input.boardMode,
       })
-      .returning({ id: userNotificationWorkspaceRuleTable.id });
+      .returning({ id: userNotificationOrgRuleTable.id });
     ruleId = createdRule?.id;
   }
 
   if (!ruleId) {
     throw new HTTPException(500, {
-      message: "Failed to save notification workspace rule",
+      message: "Failed to save notification organization rule",
     });
   }
 
-  const workspaceRuleId = ruleId;
+  const orgRuleId = ruleId;
 
   await db
-    .delete(userNotificationWorkspaceProjectTable)
+    .delete(userNotificationOrgBoardTable)
     .where(
       eq(
-        userNotificationWorkspaceProjectTable.workspaceRuleId,
-        workspaceRuleId,
+        userNotificationOrgBoardTable.orgRuleId,
+        orgRuleId,
       ),
     );
 
-  if (input.projectMode === "selected") {
-    await db.insert(userNotificationWorkspaceProjectTable).values(
-      (input.selectedProjectIds ?? []).map((projectId) => ({
-        workspaceId,
-        workspaceRuleId,
-        projectId,
+  if (input.boardMode === "selected") {
+    await db.insert(userNotificationOrgBoardTable).values(
+      (input.selectedBoardIds ?? []).map((boardId) => ({
+        organizationId,
+        orgRuleId,
+        boardId,
       })),
     );
   }
@@ -626,29 +626,29 @@ export async function upsertWorkspaceRule(
   return getNotificationPreferences(userId, emailAddress);
 }
 
-export async function deleteWorkspaceRule(
+export async function deleteOrganizationRule(
   userId: string,
-  workspaceId: string,
+  organizationId: string,
   emailAddress: string | null,
 ): Promise<NotificationPreferenceResponse> {
-  await assertWorkspaceMembership(userId, workspaceId);
+  await assertOrganizationMembership(userId, organizationId);
 
-  const existing = await db.query.userNotificationWorkspaceRuleTable.findFirst({
+  const existing = await db.query.userNotificationOrgRuleTable.findFirst({
     where: and(
-      eq(userNotificationWorkspaceRuleTable.userId, userId),
-      eq(userNotificationWorkspaceRuleTable.workspaceId, workspaceId),
+      eq(userNotificationOrgRuleTable.userId, userId),
+      eq(userNotificationOrgRuleTable.organizationId, organizationId),
     ),
   });
 
   if (!existing) {
     throw new HTTPException(404, {
-      message: "Workspace notification rule not found",
+      message: "Organization notification rule not found",
     });
   }
 
   await db
-    .delete(userNotificationWorkspaceRuleTable)
-    .where(eq(userNotificationWorkspaceRuleTable.id, existing.id));
+    .delete(userNotificationOrgRuleTable)
+    .where(eq(userNotificationOrgRuleTable.id, existing.id));
 
   return getNotificationPreferences(userId, emailAddress);
 }

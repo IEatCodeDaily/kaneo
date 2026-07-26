@@ -42,7 +42,7 @@ async function updateTaskDueDate({
 
   await publishEvent("task.due_date_changed", {
     taskId: updatedTask.id,
-    projectId: updatedTask.projectId,
+    boardId: updatedTask.boardId,
     userId: currentUserId,
     oldDueDate: existingTask.dueDate,
     newDueDate: dueDate,
