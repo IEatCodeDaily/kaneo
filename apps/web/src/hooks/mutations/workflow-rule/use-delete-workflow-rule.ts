@@ -5,11 +5,11 @@ export function useDeleteWorkflowRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id }: { id: string; projectId: string }) =>
+    mutationFn: ({ id }: { id: string; boardId: string }) =>
       deleteWorkflowRule(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["workflow-rules", variables.projectId],
+        queryKey: ["workflow-rules", variables.boardId],
       });
     },
   });

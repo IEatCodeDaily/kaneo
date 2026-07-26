@@ -1,7 +1,7 @@
 import { addWeeks, endOfWeek, isWithinInterval, startOfWeek } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserPreferencesStore } from "@/store/user-preferences";
-import type { ProjectWithTasks } from "@/types/project";
+import type { BoardWithTasks } from "@/types/board";
 import type Task from "@/types/task";
 import { type BoardFilters, DUE_DATE_FILTER_VALUES } from "./use-task-filters";
 
@@ -41,12 +41,12 @@ function normalizeFilters(raw: unknown): BoardFilters {
 }
 
 export function useTaskFiltersWithLabelsSupport(
-  project: ProjectWithTasks | null | undefined,
-  projectId?: string,
+  board: BoardWithTasks | null | undefined,
+  boardId?: string,
   textQuery?: string,
 ) {
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
-  const storageKey = projectId ? `kaneo:board-filters:${projectId}` : null;
+  const storageKey = boardId ? `kaneo:board-filters:${boardId}` : null;
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -176,18 +176,18 @@ export function useTaskFiltersWithLabelsSupport(
     [filters, textQuery, weekStartsOn],
   );
 
-  const filteredProject = useMemo(() => {
-    if (!project) return null;
+  const filteredBoard = useMemo(() => {
+    if (!board) return null;
 
     return {
-      ...project,
+      ...board,
       columns:
-        project.columns?.map((column) => ({
+        board.columns?.map((column) => ({
           ...column,
           tasks: filterTasks(column.tasks),
         })) ?? [],
     };
-  }, [project, filterTasks]);
+  }, [board, filterTasks]);
 
   const hasActiveFilters = Object.values(filters).some((filter) =>
     Array.isArray(filter) ? filter.length > 0 : filter !== null,
@@ -226,7 +226,7 @@ export function useTaskFiltersWithLabelsSupport(
     setFilters,
     updateFilter,
     updateLabelFilter,
-    filteredProject,
+    filteredBoard,
     hasActiveFilters,
     clearFilters,
   };

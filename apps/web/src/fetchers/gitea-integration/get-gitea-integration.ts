@@ -1,9 +1,9 @@
 import { client } from "@kaneo/libs";
 
-async function getGiteaIntegration(projectId: string) {
-  const response = await client["gitea-integration"].project[":projectId"].$get(
+async function getGiteaIntegration(boardId: string) {
+  const response = await client["gitea-integration"].board[":boardId"].$get(
     {
-      param: { projectId },
+      param: { boardId },
     },
   );
 

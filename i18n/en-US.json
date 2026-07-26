@@ -60,29 +60,29 @@
 			"never": "Never"
 		},
 		"modals": {
-			"createProject": {
-				"title": "Create a new project",
-				"breadcrumbNew": "Create a new project",
-				"workspaceFallback": "WORKSPACE",
-				"description": "Create a new project in your workspace by providing a name, key, and selecting an icon.",
+			"createBoard": {
+				"title": "Create a new board",
+				"breadcrumbNew": "Create a new board",
+				"organizationFallback": "ORGANIZATION",
+				"description": "Create a new board in your organization by providing a name, key, and selecting an icon.",
 				"pickIcon": "Pick icon",
 				"searchIcons": "Search icons...",
-				"projectName": "Project name",
+				"boardName": "Board name",
 				"keyLabel": "Key:",
 				"keyHint": "Used for ticket IDs (e.g., {{example}}-123)",
-				"createButton": "Create Project",
-				"successToast": "Project created successfully",
-				"errorToast": "Failed to create project"
+				"createButton": "Create Board",
+				"successToast": "Board created successfully",
+				"errorToast": "Failed to create board"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
-				"title": "Create a new workspace",
-				"description": "Create a new workspace by providing a name for your workspace.",
-				"namePlaceholder": "Workspace name",
+				"title": "Create a new organization",
+				"description": "Create a new organization by providing a name for your organization.",
+				"namePlaceholder": "Organization name",
 				"descriptionPlaceholder": "Add description...",
-				"createButton": "Create Workspace",
-				"successToast": "Workspace created successfully",
-				"errorToast": "Failed to create workspace"
+				"createButton": "Create Organization",
+				"successToast": "Organization created successfully",
+				"errorToast": "Failed to create organization"
 			},
 			"createTask": {
 				"breadcrumbTask": "TASK",
@@ -90,7 +90,7 @@
 				"description": "Create a new task by providing a title, description, and other details.",
 				"taskTitlePlaceholder": "Task title",
 				"descriptionPlaceholder": "Add a description for your task...",
-				"chooseProjectForImages": "Choose a project before uploading images.",
+				"chooseBoardForImages": "Choose a board before uploading images.",
 				"prepareTaskError": "Failed to prepare task",
 				"successCreated": "Task created successfully",
 				"successUpdated": "Task updated successfully",
@@ -132,9 +132,9 @@
 		"signIn": {
 			"pageTitle": "Sign In",
 			"title": "Welcome back",
-			"subtitle": "Enter your credentials to access your workspace",
+			"subtitle": "Enter your credentials to access your organization",
 			"invitationSubtitle": "Sign in to accept your invitation",
-			"invitationAlert": "After signing in, you'll be able to accept your workspace invitation.",
+			"invitationAlert": "After signing in, you'll be able to accept your organization invitation.",
 			"signingIn": "Signing in...",
 			"continueWithGoogle": "Continue with Google",
 			"continueWithGithub": "Continue with GitHub",
@@ -183,8 +183,8 @@
 			"subtitleInvitation": "Create an account to accept your invitation",
 			"subtitleRegistrationDisabled": "Registration requires an invitation",
 			"subtitlePasswordDisabled": "Use social or OIDC sign-in to create an account",
-			"subtitleDefault": "Get started with your workspace",
-			"invitationAlert": "After creating your account, you'll be able to accept your workspace invitation.",
+			"subtitleDefault": "Get started with your organization",
+			"invitationAlert": "After creating your account, you'll be able to accept your organization invitation.",
 			"registrationDisabledAlert": "Registration is currently disabled. If you were invited, enter the email address that received the invitation to create your account.",
 			"passwordDisabledAlert": "Password-based account creation is disabled. Use a configured social or OIDC sign-in method from the sign-in page.",
 			"signingIn": "Signing in...",
@@ -244,10 +244,10 @@
 			"invitationExpired": "Invitation Expired",
 			"errorLoadDescription": "Failed to load invitation details. The invitation may be invalid or expired.",
 			"goToSignIn": "Go to Sign In",
-			"workspaceLabel": "Workspace: {{workspaceName}}",
-			"joinWorkspace": "Join {{workspaceName}}",
-			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> has invited you to join their workspace.",
-			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> has invited you to join their workspace on Kaneo.",
+			"organizationLabel": "Organization: {{organizationName}}",
+			"joinOrganization": "Join {{organizationName}}",
+			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> has invited you to join their organization.",
+			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> has invited you to join their organization on Kaneo.",
 			"signInToAccept": "Sign in to accept this invitation.",
 			"accepting": "Accepting...",
 			"acceptInvitation": "Accept Invitation",
@@ -263,23 +263,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Welcome to Kaneo",
-			"workspacePageTitle": "Create Workspace",
-			"createWorkspaceTitle": "Create workspace",
-			"createWorkspaceSubtitle": "Set up your workspace to start managing projects",
-			"workspaceName": "Workspace name",
-			"workspaceNamePlaceholder": "e.g. Acme Inc, My Team",
+			"organizationPageTitle": "Create Organization",
+			"createOrganizationTitle": "Create organization",
+			"createOrganizationSubtitle": "Set up your organization to start managing boards",
+			"organizationName": "Organization name",
+			"organizationNamePlaceholder": "e.g. Acme Inc, My Team",
 			"descriptionOptional": "Description (optional)",
 			"descriptionPlaceholder": "What does your team work on?",
 			"creating": "Creating...",
-			"createWorkspace": "Create workspace",
-			"workspaceCreatedTitle": "Workspace created",
-			"redirectingToWorkspace": "Taking you to <name>{{name}}</name>...",
+			"createOrganization": "Create organization",
+			"organizationCreatedTitle": "Organization created",
+			"redirectingToOrganization": "Taking you to <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Workspace created successfully",
-				"createFailed": "Failed to create workspace"
+				"organizationCreated": "Organization created successfully",
+				"createFailed": "Failed to create organization"
 			},
 			"validation": {
-				"workspaceNameRequired": "Workspace name is required"
+				"organizationNameRequired": "Organization name is required"
 			}
 		},
 		"profileSetup": {
@@ -369,10 +369,10 @@
 			"webhookSecretHintConfigured": "A signing secret is already configured ({{masked}}). Enter a new one to replace it.",
 			"webhookSecretHintOptional": "Optional. Kaneo signs the request body when a secret is set.",
 			"connectWebhook": "Connect webhook",
-			"workspaceRulesTitle": "Workspace delivery rules",
-			"workspaceRulesDescription": "Reuse your global channels, then decide which workspaces and projects are allowed to send account notifications.",
-			"workspaceCardHint": "Choose which channels this workspace can use for account notifications.",
-			"workspaceEnabledLabel": "Enable notifications for {{workspaceName}}",
+			"organizationRulesTitle": "Organization delivery rules",
+			"organizationRulesDescription": "Reuse your global channels, then decide which organizations and boards are allowed to send account notifications.",
+			"organizationCardHint": "Choose which channels this organization can use for account notifications.",
+			"organizationEnabledLabel": "Enable notifications for {{organizationName}}",
 			"eventPreferencesTitle": "Notify me about",
 			"eventPreferencesDescription": "Choose which task events create in-app notifications and can be delivered to your connected channels.",
 			"eventTaskAssignments": "Task assignments",
@@ -386,25 +386,25 @@
 			"reminderLeadTimeUnitDays": "Days",
 			"reminderLeadTimeInvalid": "Enter a whole number between 1 and {{max}}.",
 			"saveEventPreferences": "Save notification types",
-			"workspaceCardLabelEmail": "Email",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Custom webhook",
-			"emailChannelHintEnabled": "Send matching workspace notifications by email.",
+			"organizationCardLabelEmail": "Email",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Custom webhook",
+			"emailChannelHintEnabled": "Send matching organization notifications by email.",
 			"emailChannelHintDisabled": "Configure and enable email globally first.",
-			"ntfyChannelHintEnabled": "Send matching workspace notifications to ntfy.",
+			"ntfyChannelHintEnabled": "Send matching organization notifications to ntfy.",
 			"ntfyChannelHintDisabled": "Configure and enable ntfy globally first.",
-			"gotifyChannelHintEnabled": "Send matching workspace notifications to Gotify.",
+			"gotifyChannelHintEnabled": "Send matching organization notifications to Gotify.",
 			"gotifyChannelHintDisabled": "Configure and enable Gotify globally first.",
-			"webhookChannelHintEnabled": "Send matching workspace notifications to your webhook.",
+			"webhookChannelHintEnabled": "Send matching organization notifications to your webhook.",
 			"webhookChannelHintDisabled": "Configure and enable the webhook globally first.",
-			"projectScope": "Project scope",
-			"projectScopeDescription": "All projects are included by default. Narrow it down if this workspace should only send notifications from selected projects.",
-			"allProjects": "All projects",
-			"allProjectsDescription": "Deliver notifications from every project in this workspace.",
-			"selectedProjects": "Selected projects",
-			"selectedProjectsDescription": "Only deliver notifications from chosen projects.",
-			"noProjectsInWorkspace": "No projects available for this workspace yet.",
+			"boardScope": "Board scope",
+			"boardScopeDescription": "All boards are included by default. Narrow it down if this organization should only send notifications from selected boards.",
+			"allBoards": "All boards",
+			"allBoardsDescription": "Deliver notifications from every board in this organization.",
+			"selectedBoards": "Selected boards",
+			"selectedBoardsDescription": "Only deliver notifications from chosen boards.",
+			"noBoardsInOrganization": "No boards available for this organization yet.",
 			"createRule": "Create rule",
 			"removeRule": "Remove rule",
 			"toastEmailSaved": "Email notification settings saved",
@@ -421,14 +421,14 @@
 			"toastWebhookSaveFailed": "Failed to save webhook settings",
 			"toastWebhookDisconnected": "Webhook disconnected",
 			"toastWebhookDisconnectFailed": "Failed to disconnect webhook",
-			"toastRuleSaved": "Saved notification rule for {{workspaceName}}",
-			"toastRuleSaveFailed": "Failed to save workspace notification rule",
-			"toastRuleRemoved": "Removed notification rule for {{workspaceName}}",
-			"toastRuleRemoveFailed": "Failed to remove workspace notification rule",
+			"toastRuleSaved": "Saved notification rule for {{organizationName}}",
+			"toastRuleSaveFailed": "Failed to save organization notification rule",
+			"toastRuleRemoved": "Removed notification rule for {{organizationName}}",
+			"toastRuleRemoveFailed": "Failed to remove organization notification rule",
 			"toastPreferencesSaved": "Notification preferences saved",
 			"toastPreferencesSaveFailed": "Failed to save notification preferences",
-			"toastRuleSavedGeneric": "Workspace notification rule saved",
-			"toastRuleRemovedGeneric": "Workspace notification rule removed"
+			"toastRuleSavedGeneric": "Organization notification rule saved",
+			"toastRuleRemovedGeneric": "Organization notification rule removed"
 		},
 		"preferencesPage": {
 			"title": "Preferences",
@@ -449,7 +449,6 @@
 			"selectFirstDayOfWeek": "Select first day",
 			"weekStartsOnSunday": "Sunday",
 			"weekStartsOnMonday": "Monday",
-			"weekStartsOnSaturday": "Saturday",
 			"defaultView": "Default View",
 			"defaultViewDescription": "Choose your preferred task view mode",
 			"selectViewMode": "Select a view mode",
@@ -469,7 +468,8 @@
 			"labels": "Labels",
 			"labelsDescription": "Show task labels and tags",
 			"priority": "Priority",
-			"priorityDescription": "Display priority indicators"
+			"priorityDescription": "Display priority indicators",
+			"weekStartsOnSaturday": "Saturday"
 		},
 		"developerPage": {
 			"pageTitle": "Developer Settings",
@@ -537,47 +537,47 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "General Settings",
 			"title": "General Settings",
-			"subtitle": "Manage your workspace name and description.",
-			"workspaceInfoTitle": "Workspace Information",
-			"workspaceInfoSubtitle": "Configure your workspace details and preferences.",
-			"nameLabel": "Workspace name",
-			"nameHint": "The name of your workspace",
-			"namePlaceholder": "Enter workspace name",
+			"subtitle": "Manage your organization name and description.",
+			"organizationInfoTitle": "Organization Information",
+			"organizationInfoSubtitle": "Configure your organization details and preferences.",
+			"nameLabel": "Organization name",
+			"nameHint": "The name of your organization",
+			"namePlaceholder": "Enter organization name",
 			"descriptionLabel": "Description",
-			"descriptionHint": "A brief description of your workspace",
-			"descriptionPlaceholder": "Enter workspace description",
+			"descriptionHint": "A brief description of your organization",
+			"descriptionPlaceholder": "Enter organization description",
 			"dangerZone": "Danger zone",
 			"dangerZoneSubtitle": "Irreversible and destructive actions.",
-			"deleteWorkspace": "Delete workspace",
-			"deleteWorkspaceDescription": "Schedule workspace to be permanently deleted",
-			"deleteModalTitle": "Delete Workspace?",
-			"deleteModalDescription": "This will permanently delete the workspace \"{{name}}\" and all its data. This action cannot be undone.",
-			"deleteModalConfirm": "Delete Workspace",
-			"toastUpdated": "Workspace updated successfully",
-			"toastUpdateError": "Failed to update workspace",
-			"toastDeleted": "Workspace deleted successfully",
-			"toastDeleteError": "Failed to delete workspace",
+			"deleteOrganization": "Delete organization",
+			"deleteOrganizationDescription": "Schedule organization to be permanently deleted",
+			"deleteModalTitle": "Delete Organization?",
+			"deleteModalDescription": "This will permanently delete the organization \"{{name}}\" and all its data. This action cannot be undone.",
+			"deleteModalConfirm": "Delete Organization",
+			"toastUpdated": "Organization updated successfully",
+			"toastUpdateError": "Failed to update organization",
+			"toastDeleted": "Organization deleted successfully",
+			"toastDeleteError": "Failed to delete organization",
 			"validation": {
-				"nameRequired": "Workspace name is required",
-				"nameShort": "Workspace name must be at least 2 characters"
+				"nameRequired": "Organization name is required",
+				"nameShort": "Organization name must be at least 2 characters"
 			}
 		},
-		"workspaceRoles": {
+		"organizationRoles": {
 			"pageTitle": "Roles",
 			"title": "Roles",
-			"subtitle": "Define which actions members can perform in {{workspaceName}}.",
-			"thisWorkspace": "this workspace",
-			"noAccess": "You need admin or owner permissions to manage workspace roles.",
-			"sectionTitle": "Workspace roles",
+			"subtitle": "Define which actions members can perform in {{organizationName}}.",
+			"thisOrganization": "this organization",
+			"noAccess": "You need admin or owner permissions to manage organization roles.",
+			"sectionTitle": "Organization roles",
 			"sectionSubtitle": "Edit the default roles or add a tailored one. Members keep their assigned role name across edits.",
 			"newRole": "New role",
 			"loading": "Loading…",
 			"loadError": "Failed to load roles.",
 			"emptyTitle": "No roles yet",
-			"emptyDescription": "Default roles will appear here once they're seeded for this workspace.",
+			"emptyDescription": "Default roles will appear here once they're seeded for this organization.",
 			"defaultBadge": "Default",
 			"permissionCount_one": "{{count}} permission",
 			"permissionCount_other": "{{count}} permissions",
@@ -593,36 +593,36 @@
 			"saveChanges": "Save changes",
 			"defaultRoleDescriptions": {
 				"viewer": "Can view and comment on tasks.",
-				"member": "Can create and manage tasks and projects.",
-				"admin": "Has full access to the workspace."
+				"member": "Can create and manage tasks and boards.",
+				"admin": "Has full access to the organization."
 			},
 			"resources": {
-				"project": "Projects",
+				"board": "Boards",
 				"task": "Tasks",
 				"label": "Labels",
-				"workspace": "Workspace"
+				"organization": "Organization"
 			},
 			"permissions": {
-				"project": {
+				"board": {
 					"create": {
 						"label": "Create",
-						"description": "Can create new projects"
+						"description": "Can create new boards"
 					},
 					"read": {
 						"label": "Read",
-						"description": "Can view projects"
+						"description": "Can view boards"
 					},
 					"update": {
 						"label": "Update",
-						"description": "Can edit project settings"
+						"description": "Can edit board settings"
 					},
 					"delete": {
 						"label": "Delete",
-						"description": "Can delete projects"
+						"description": "Can delete boards"
 					},
 					"share": {
 						"label": "Share",
-						"description": "Can share projects"
+						"description": "Can share boards"
 					}
 				},
 				"task": {
@@ -665,22 +665,22 @@
 						"description": "Can delete labels"
 					}
 				},
-				"workspace": {
+				"organization": {
 					"read": {
 						"label": "Read",
-						"description": "Can view workspace settings"
+						"description": "Can view organization settings"
 					},
 					"update": {
 						"label": "Update",
-						"description": "Can update workspace settings"
+						"description": "Can update organization settings"
 					},
 					"delete": {
 						"label": "Delete",
-						"description": "Can delete workspace"
+						"description": "Can delete organization"
 					},
 					"manage_settings": {
 						"label": "Manage Settings",
-						"description": "Can manage workspace settings"
+						"description": "Can manage organization settings"
 					}
 				}
 			},
@@ -702,10 +702,10 @@
 				"description": "This will permanently delete the role \"{{role}}\". Members assigned to this role will lose its permissions."
 			}
 		},
-		"workspaceLabels": {
+		"organizationLabels": {
 			"pageTitle": "Label Settings",
 			"title": "Labels",
-			"subtitle": "Create, edit, and delete workspace-level labels.",
+			"subtitle": "Create, edit, and delete organization-level labels.",
 			"cardDescription": "Manage labels that can be assigned to tasks.",
 			"createLabel": "Create Label",
 			"editLabel": "Edit Label",
@@ -714,7 +714,7 @@
 			"nameLabel": "Label name",
 			"namePlaceholder": "Enter label name",
 			"colorLabel": "Color",
-			"createDescription": "Create a new label that can be used across tasks in this workspace.",
+			"createDescription": "Create a new label that can be used across tasks in this organization.",
 			"editDescription": "Update the name or color of this label.",
 			"deleteConfirmTitle": "Delete this label?",
 			"deleteConfirmDescription": "This will permanently remove this label from all tasks. This action cannot be undone.",
@@ -727,39 +727,39 @@
 			"deleteError": "Failed to delete label",
 			"nameRequired": "Label name is required"
 		},
-		"projectGeneral": {
-			"pageTitle": "Project Settings",
+		"boardGeneral": {
+			"pageTitle": "Board Settings",
 			"title": "General Settings",
-			"subtitle": "Manage your project name, key, icon and description.",
-			"projectInfoTitle": "Project Information",
-			"projectInfoSubtitle": "Configure your project details and preferences.",
+			"subtitle": "Manage your board name, key, icon and description.",
+			"boardInfoTitle": "Board Information",
+			"boardInfoSubtitle": "Configure your board details and preferences.",
 			"iconLabel": "Icon",
-			"iconHint": "Displayed in the sidebar and project surfaces.",
+			"iconHint": "Displayed in the sidebar and board surfaces.",
 			"pickIconTitle": "Pick icon",
 			"searchIconsPlaceholder": "Search icons...",
-			"projectNameLabel": "Project name",
-			"projectNameHint": "The name of your project",
-			"projectNamePlaceholder": "Enter project name",
+			"boardNameLabel": "Board name",
+			"boardNameHint": "The name of your board",
+			"boardNamePlaceholder": "Enter board name",
 			"keyLabel": "Key",
 			"keyHint": "Used for ticket IDs (e.g., {{slug}}-123)",
 			"keyPlaceholder": "PRO",
 			"descriptionLabel": "Description",
-			"descriptionHint": "A brief description of your project",
-			"descriptionPlaceholder": "Enter project description",
+			"descriptionHint": "A brief description of your board",
+			"descriptionPlaceholder": "Enter board description",
 			"dangerZone": "Danger zone",
 			"dangerZoneSubtitle": "Irreversible and destructive actions.",
-			"deleteProject": "Delete project",
-			"deleteProjectDescription": "Schedule project to be permanently deleted",
-			"deleteModalTitle": "Delete Project?",
-			"deleteModalDescription": "This will permanently delete the project \"{{name}}\" and all its data. This action cannot be undone.",
-			"deleteModalConfirm": "Delete Project",
-			"toastUpdated": "Project updated successfully",
-			"toastUpdateError": "Failed to update project",
-			"toastDeleted": "Project deleted successfully",
-			"toastDeleteError": "Failed to delete project",
+			"deleteBoard": "Delete board",
+			"deleteBoardDescription": "Schedule board to be permanently deleted",
+			"deleteModalTitle": "Delete Board?",
+			"deleteModalDescription": "This will permanently delete the board \"{{name}}\" and all its data. This action cannot be undone.",
+			"deleteModalConfirm": "Delete Board",
+			"toastUpdated": "Board updated successfully",
+			"toastUpdateError": "Failed to update board",
+			"toastDeleted": "Board deleted successfully",
+			"toastDeleteError": "Failed to delete board",
 			"validation": {
-				"nameRequired": "Project name is required",
-				"nameShort": "Project name must be at least 2 characters",
+				"nameRequired": "Board name is required",
+				"nameShort": "Board name must be at least 2 characters",
 				"keyRequired": "Key is required",
 				"keyShort": "Key must be at least 2 characters",
 				"keyMax": "Key must be at most 8 characters",
@@ -768,50 +768,50 @@
 			"importExportTasks": "Import/Export",
 			"importExportTasksDescription": "Import and export tasks."
 		},
-		"projectIntegrations": {
-			"pageTitle": "Project Integrations",
-			"title": "Project Integrations",
-			"subtitle": "Connect your project with external tools and services to streamline your workflow.",
+		"boardIntegrations": {
+			"pageTitle": "Board Integrations",
+			"title": "Board Integrations",
+			"subtitle": "Connect your board with external tools and services to streamline your workflow.",
 			"githubSectionTitle": "GitHub Integration",
 			"githubSectionSubtitle": "Synchronize tasks with GitHub issues and enable two-way sync.",
 			"giteaSectionTitle": "Gitea Integration",
 			"giteaSectionSubtitle": "Synchronize tasks with a self-hosted Gitea instance (issues, PRs, webhooks).",
 			"discordSectionTitle": "Discord Integration",
-			"discordSectionSubtitle": "Send project task updates into a Discord channel with a webhook.",
+			"discordSectionSubtitle": "Send board task updates into a Discord channel with a webhook.",
 			"genericWebhookSectionTitle": "Generic Webhooks",
-			"genericWebhookSectionSubtitle": "Send project task events to any HTTP endpoint as JSON.",
+			"genericWebhookSectionSubtitle": "Send board task events to any HTTP endpoint as JSON.",
 			"slackSectionTitle": "Slack Integration",
-			"slackSectionSubtitle": "Send project task updates into a Slack channel with an incoming webhook.",
+			"slackSectionSubtitle": "Send board task updates into a Slack channel with an incoming webhook.",
 			"telegramSectionTitle": "Telegram Integration",
-			"telegramSectionSubtitle": "Send project task updates into a Telegram chat or topic with a bot."
+			"telegramSectionSubtitle": "Send board task updates into a Telegram chat or topic with a bot."
 		},
-		"projectVisibility": {
-			"pageTitle": "Project Visibility",
+		"boardVisibility": {
+			"pageTitle": "Board Visibility",
 			"title": "Visibility",
-			"subtitle": "Control who can view and access your project.",
+			"subtitle": "Control who can view and access your board.",
 			"sectionTitle": "Visibility",
 			"sectionSubtitle": "Toggle public access and share the public URL.",
 			"publicAccess": "Public access",
-			"publicAccessHint": "Allow anyone with the URL to view this project",
+			"publicAccessHint": "Allow anyone with the URL to view this board",
 			"publicUrl": "Public URL",
-			"publicUrlHint": "Share this link if the project is public",
+			"publicUrlHint": "Share this link if the board is public",
 			"copy": "Copy",
 			"copiedToast": "Copied",
 			"toastUpdated": "Visibility updated",
 			"toastUpdateError": "Failed to update visibility"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Workflow Settings",
 			"title": "Workflow",
-			"subtitle": "Configure board columns and automation rules for this project.",
+			"subtitle": "Configure board columns and automation rules for this board.",
 			"columnsTitle": "Columns",
 			"columnsDescription": "Manage the columns that appear on your board. Drag to reorder. Turn on \"Done column\" for stages that represent completed work.",
 			"automationTitle": "Automation Rules",
 			"automationDescription": "Map integration events to columns. When an event occurs, the linked task moves to the specified column."
 		},
-		"projectSwitcher": {
-			"selectProject": "Select project",
-			"noProjects": "No projects"
+		"boardSwitcher": {
+			"selectBoard": "Select board",
+			"noBoards": "No boards"
 		},
 		"columnEditor": {
 			"toastCreated": "Column created",
@@ -879,7 +879,7 @@
 			"ownerPlaceholder": "e.g., octocat",
 			"repoNameLabel": "Repository Name",
 			"repoNameHint": "The repository name",
-			"repoNamePlaceholder": "e.g., my-project",
+			"repoNamePlaceholder": "e.g., my-board",
 			"actionsTitle": "Actions",
 			"actionsHint": "Manage your repository connection",
 			"browse": "Browse",
@@ -994,7 +994,7 @@
 			"channelPlaceholder": "#team-updates",
 			"channelHint": "Optional label for your reference. Slack controls the actual destination channel from the webhook setup.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which project changes should post to Slack.",
+			"eventsHint": "Choose which board changes should post to Slack.",
 			"events": {
 				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
@@ -1032,7 +1032,7 @@
 			"channelPlaceholder": "#team-updates",
 			"channelHint": "Optional label for your reference. Discord controls the actual destination channel from the webhook setup.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which project changes should post to Discord.",
+			"eventsHint": "Choose which board changes should post to Discord.",
 			"events": {
 				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
@@ -1071,7 +1071,7 @@
 			"secretHint": "Optional. If provided, Kaneo signs the request body and sends the hex digest in the X-Kaneo-Signature header.",
 			"secretHintConfigured": "A signing secret is already configured ({{secret}}). Enter a new one to replace it.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which project changes should trigger outgoing webhooks.",
+			"eventsHint": "Choose which board changes should trigger outgoing webhooks.",
 			"events": {
 				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
@@ -1107,7 +1107,7 @@
 				"removeError": "Failed to remove Telegram integration"
 			},
 			"connectionTitle": "Telegram bot connection",
-			"connectionHint": "Use a Telegram bot token and chat ID to send project task updates into a chat or topic.",
+			"connectionHint": "Use a Telegram bot token and chat ID to send board task updates into a chat or topic.",
 			"connected": "Connected",
 			"paused": "Paused",
 			"botTokenLabel": "Bot token",
@@ -1124,7 +1124,7 @@
 			"chatLabelPlaceholder": "Engineering Updates",
 			"chatLabelHint": "Optional label for your reference inside Kaneo.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which project changes should post to Telegram.",
+			"eventsHint": "Choose which board changes should post to Telegram.",
 			"events": {
 				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
@@ -1160,7 +1160,7 @@
 			"exportTasks": "Export Tasks",
 			"importTasks": "Import Tasks",
 			"dialogTitle": "Import Tasks",
-			"dialogDescription": "Upload a JSON file containing tasks to import into this project.",
+			"dialogDescription": "Upload a JSON file containing tasks to import into this board.",
 			"expectedFormat": "Expected format:",
 			"dropHint": "Drag and drop your JSON file here",
 			"selectFile": "Select File",
@@ -1206,12 +1206,12 @@
 		"commandPalette": {
 			"suggestions": "Suggestions",
 			"commands": "Commands",
-			"projects": "Projects",
+			"boards": "Boards",
 			"search": "Search",
 			"members": "Members",
 			"createTask": "Create task",
-			"createProject": "Create project",
-			"createWorkspace": "Create workspace",
+			"createBoard": "Create board",
+			"createOrganization": "Create organization",
 			"lightTheme": "Light theme",
 			"darkTheme": "Dark theme",
 			"systemTheme": "System theme",
@@ -1227,30 +1227,30 @@
 		"notifications": "Notifications",
 		"sidebar": {
 			"overview": "Overview",
-			"projects": "Projects",
+			"boards": "Boards",
 			"members": "Members",
 			"invitations": "Invitations",
 			"more": "More",
 			"backToBoard": "Back to board"
 		},
-		"projectList": {
-			"viewProject": "View Project",
-			"shareProject": "Share Project",
-			"projectSettings": "Project settings",
-			"linkCopied": "Project link copied to clipboard",
-			"addProject": "Add project",
-			"deleteConfirmTitle": "Delete Project?",
-			"deleteConfirmDescription": "This will permanently remove the project and all its data. You can't undo this action.",
-			"deletedToast": "Project deleted",
-			"deleteProject": "Delete Project"
+		"boardList": {
+			"viewBoard": "View Board",
+			"shareBoard": "Share Board",
+			"boardSettings": "Board settings",
+			"linkCopied": "Board link copied to clipboard",
+			"addBoard": "Add board",
+			"deleteConfirmTitle": "Delete Board?",
+			"deleteConfirmDescription": "This will permanently remove the board and all its data. You can't undo this action.",
+			"deletedToast": "Board deleted",
+			"deleteBoard": "Delete Board"
 		},
 		"search": {
-			"inputPlaceholder": "Search tasks, projects, comments...",
+			"inputPlaceholder": "Search tasks, boards, comments...",
 			"minCharsHint": "Type at least 3 characters to search",
 			"groups": {
 				"task": "Tasks",
-				"project": "Projects",
-				"workspace": "Workspaces",
+				"board": "Boards",
+				"organization": "Organizations",
 				"comment": "Comments",
 				"activity": "Activities",
 				"fallback": "Results"
@@ -1268,20 +1268,20 @@
 			"signingOut": "Signing out...",
 			"logOut": "Log out"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Workspaces",
+		"organizationSwitcher": {
+			"organizations": "Organizations",
 			"switching": "Switching...",
-			"addWorkspace": "Add workspace",
-			"selectWorkspace": "Select workspace"
+			"addOrganization": "Add organization",
+			"selectOrganization": "Select organization"
 		},
 		"page": {
-			"projectsTitle": "Projects",
+			"boardsTitle": "Boards",
 			"settingsTitle": "Settings",
-			"backToWorkspace": "Back to Workspace",
-			"settingsWorkspaceTab": "Workspace"
+			"backToOrganization": "Back to Organization",
+			"settingsOrganizationTab": "Organization"
 		},
-		"projectSettings": {
-			"projectLabel": "Project"
+		"boardSettings": {
+			"boardLabel": "Board"
 		},
 		"keyboardShortcuts": {
 			"title": "Keyboard Shortcuts",
@@ -1302,8 +1302,8 @@
 				"showShortcuts": "Show keyboard shortcuts",
 				"closeModal": "Close modal/popover",
 				"createTask": "Create task",
-				"createProject": "Create project",
-				"createWorkspace": "Create workspace",
+				"createBoard": "Create board",
+				"createOrganization": "Create organization",
 				"boardView": "Switch to board view",
 				"listView": "Switch to list view",
 				"backlogView": "Switch to backlog view",
@@ -1339,9 +1339,9 @@
 				"title": "New task created",
 				"content": "Task \"{{taskTitle}}\" was created"
 			},
-			"workspace_created": {
-				"title": "Workspace created",
-				"content": "Your workspace \"{{workspaceName}}\" has been created successfully"
+			"organization_created": {
+				"title": "Organization created",
+				"content": "Your organization \"{{organizationName}}\" has been created successfully"
 			},
 			"task_status_changed": {
 				"title": "Task status changed",
@@ -1610,7 +1610,7 @@
 		},
 		"relations": {
 			"title": "Relations",
-			"tasksInProject": "Tasks in project",
+			"tasksInBoard": "Tasks in board",
 			"linkError": "Failed to link task",
 			"empty": "No related tasks",
 			"searchPlaceholder": "Search tasks to link...",
@@ -1649,11 +1649,11 @@
 		},
 		"move": {
 			"title": "Move task",
-			"projectLabel": "Destination project",
-			"projectPlaceholder": "Select a project",
+			"boardLabel": "Destination board",
+			"boardPlaceholder": "Select a board",
 			"statusLabel": "Destination status",
-			"statusHintKeep": "This project's workflow already supports the current status.",
-			"statusHintAdjust": "Choose the status to use in the destination project.",
+			"statusHintKeep": "This board's workflow already supports the current status.",
+			"statusHintAdjust": "Choose the status to use in the destination board.",
 			"action": "Move task",
 			"success": "Task moved successfully",
 			"error": "Failed to move task"
@@ -1770,7 +1770,7 @@
 			"hideTasks": "Hide tasks",
 			"showTasks": "Show tasks",
 			"noTasks": "No scheduled tasks",
-			"noTasksSubtitle": "Add a start date, due date, or both to tasks to place them on the project timeline.",
+			"noTasksSubtitle": "Add a start date, due date, or both to tasks to place them on the board timeline.",
 			"noTasksFound": "No tasks found",
 			"noTasksMatch": "No scheduled tasks match \"{{query}}\"",
 			"taskHeader": "Task",
@@ -1869,24 +1869,24 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "Invitations",
 		"pendingInvitations": "Pending Invitations",
-		"acceptSubtitle": "Accept invitations to join workspaces",
+		"acceptSubtitle": "Accept invitations to join organizations",
 		"noPendingTitle": "No pending invitations",
-		"noPendingDescription": "You don't have any pending workspace invitations at the moment.",
+		"noPendingDescription": "You don't have any pending organization invitations at the moment.",
 		"continueToSetup": "Continue to Setup",
 		"skipForNow": "Skip for now",
 		"table": {
-			"workspace": "Workspace",
+			"organization": "Organization",
 			"invitedBy": "Invited By",
 			"expires": "Expires"
 		},
@@ -1897,19 +1897,19 @@
 			"rejectSuccess": "Invitation rejected"
 		}
 	},
-	"workspace": {
-		"projects": {
-			"pageTitle": "Projects",
-			"createProject": "Create project",
+	"organization": {
+		"boards": {
+			"pageTitle": "Boards",
+			"createBoard": "Create board",
 			"title": "Title",
 			"progress": "Progress",
 			"targetDate": "Target date",
 			"dueDate": "Due date",
 			"status": "Status",
-			"emptyTitle": "No projects yet",
-			"emptyDescription": "Get started by creating your first project.",
-			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one.",
-			"projectStatus": {
+			"emptyTitle": "No boards yet",
+			"emptyDescription": "Get started by creating your first board.",
+			"emptyDescriptionReadOnly": "There are no boards in this organization yet. Ask an admin to create one.",
+			"boardStatus": {
 				"notStarted": "Not started",
 				"complete": "Complete",
 				"inProgress": "In progress"
@@ -1920,14 +1920,14 @@
 			"pageTitle": "Search",
 			"backToDashboard": "Back to Dashboard",
 			"placeholder": "Search tasks by title or short ID (e.g. DEP-23)...",
-			"hint": "Search across all projects in this workspace. Use short IDs like DEP-23 to find specific tasks.",
+			"hint": "Search across all boards in this organization. Use short IDs like DEP-23 to find specific tasks.",
 			"searching": "Searching...",
 			"resultsFound_one": "{{count}} result found",
 			"resultsFound_other": "{{count}} results found",
 			"noResultsTitle": "No results found",
 			"noResultsDescription": "Try adjusting your search terms or search for something else",
 			"startTitle": "Start Searching",
-			"startDescription": "Enter a search term to find tasks across all projects",
+			"startDescription": "Enter a search term to find tasks across all boards",
 			"quickSearchesLabel": "Quick searches:",
 			"suggestionHighPriority": "High priority",
 			"suggestionBug": "Bug",
@@ -1936,18 +1936,18 @@
 			"suggestionCompleted": "Completed"
 		},
 		"create": {
-			"pageTitle": "Create Workspace",
-			"heading": "Create a new workspace",
-			"subtitle": "Workspaces are shared environments where teams can work on projects, cycles and issues.",
-			"nameLabel": "Workspace Name",
-			"namePlaceholder": "Enter workspace name",
+			"pageTitle": "Create Organization",
+			"heading": "Create a new organization",
+			"subtitle": "Organizations are shared environments where teams can work on boards, cycles and issues.",
+			"nameLabel": "Organization Name",
+			"namePlaceholder": "Enter organization name",
 			"descriptionLabel": "Description (optional)",
-			"descriptionPlaceholder": "Add a description for your workspace",
+			"descriptionPlaceholder": "Add a description for your organization",
 			"required": "Required",
 			"creating": "Creating...",
-			"submit": "Create workspace",
-			"success": "Workspace created successfully",
-			"error": "Failed to create workspace"
+			"submit": "Create organization",
+			"success": "Organization created successfully",
+			"error": "Failed to create organization"
 		}
 	},
 	"team": {
@@ -1987,7 +1987,7 @@
 			"ariaCancelInvitation": "Cancel invitation",
 			"ariaRemoveMember": "Remove member",
 			"removeDialogTitle": "Remove Team Member?",
-			"removeDialogDescription": "Are you sure you want to remove {{name}} from the workspace? This action cannot be undone.",
+			"removeDialogDescription": "Are you sure you want to remove {{name}} from the organization? This action cannot be undone.",
 			"cancelDialogTitle": "Cancel Invitation?",
 			"cancelDialogDescription": "Are you sure you want to cancel the invitation for {{email}}? This action cannot be undone.",
 			"removeMember": "Remove Member",
@@ -2000,13 +2000,13 @@
 			"roleUpdateError": "Failed to update role"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Public View",
 		"badge": "Public",
 		"readOnly": "Read-only",
 		"error": {
-			"title": "Project Not Found",
-			"description": "This project doesn't exist or is not publicly accessible."
+			"title": "Board Not Found",
+			"description": "This board doesn't exist or is not publicly accessible."
 		},
 		"taskCard": {
 			"viewDetailsAria": "View details for task {{title}}"

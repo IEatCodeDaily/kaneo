@@ -12,15 +12,15 @@ export function useCreateTelegramIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       data,
     }: {
-      projectId: string;
+      boardId: string;
       data: CreateTelegramIntegrationRequest;
-    }) => createTelegramIntegration(projectId, data),
-    onSuccess: (_, { projectId }) => {
+    }) => createTelegramIntegration(boardId, data),
+    onSuccess: (_, { boardId }) => {
       void queryClient.invalidateQueries({
-        queryKey: ["telegram-integration", projectId],
+        queryKey: ["telegram-integration", boardId],
       });
     },
   });
@@ -31,15 +31,15 @@ export function useUpdateTelegramIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       json,
     }: {
-      projectId: string;
+      boardId: string;
       json: UpdateTelegramIntegrationRequest;
-    }) => updateTelegramIntegration(projectId, json),
-    onSuccess: (_, { projectId }) => {
+    }) => updateTelegramIntegration(boardId, json),
+    onSuccess: (_, { boardId }) => {
       void queryClient.invalidateQueries({
-        queryKey: ["telegram-integration", projectId],
+        queryKey: ["telegram-integration", boardId],
       });
     },
   });
@@ -49,10 +49,10 @@ export function useDeleteTelegramIntegration() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (projectId: string) => deleteTelegramIntegration(projectId),
-    onSuccess: (_, projectId) => {
+    mutationFn: (boardId: string) => deleteTelegramIntegration(boardId),
+    onSuccess: (_, boardId) => {
       void queryClient.invalidateQueries({
-        queryKey: ["telegram-integration", projectId],
+        queryKey: ["telegram-integration", boardId],
       });
     },
   });

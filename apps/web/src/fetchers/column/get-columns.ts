@@ -1,8 +1,8 @@
 import { client } from "@kaneo/libs";
 
-async function getColumns(projectId: string) {
-  const response = await client.column[":projectId"].$get({
-    param: { projectId },
+async function getColumns(boardId: string) {
+  const response = await client.column[":boardId"].$get({
+    param: { boardId },
   });
 
   if (!response.ok) {

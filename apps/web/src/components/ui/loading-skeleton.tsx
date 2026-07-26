@@ -28,7 +28,7 @@ export function LoadingSkeleton({ className }: LoadingSkeletonProps) {
           </div>
 
           <div className="space-y-1">
-            {["dashboard", "projects", "settings"].map((item) => (
+            {["dashboard", "boards", "settings"].map((item) => (
               <div
                 key={`nav-item-${item}`}
                 className="flex items-center gap-2 p-2 rounded"
@@ -45,9 +45,9 @@ export function LoadingSkeleton({ className }: LoadingSkeletonProps) {
               <div className="w-16 h-3 bg-muted rounded animate-pulse" />
             </div>
             <div className="ml-4 space-y-1">
-              {["issues", "projects", "views", "settings"].map((item) => (
+              {["issues", "boards", "views", "settings"].map((item) => (
                 <div
-                  key={`workspace-item-${item}`}
+                  key={`organization-item-${item}`}
                   className="flex items-center gap-2 p-1"
                 >
                   <div className="w-4 h-4 bg-muted rounded animate-pulse" />

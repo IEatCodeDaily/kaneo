@@ -15,13 +15,13 @@ export function useMoveTask() {
         queryKey: ["task", variables.taskId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["tasks", result.sourceProjectId],
+        queryKey: ["tasks", result.sourceBoardId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["tasks", result.destinationProjectId],
+        queryKey: ["tasks", result.destinationBoardId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["projects"],
+        queryKey: ["boards"],
       });
       queryClient.invalidateQueries({
         queryKey: ["activities", variables.taskId],

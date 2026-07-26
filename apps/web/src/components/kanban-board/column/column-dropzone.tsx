@@ -5,11 +5,11 @@ import {
 } from "@dnd-kit/sortable";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
-import type { ProjectWithTasks } from "@/types/project";
+import type { BoardWithTasks } from "@/types/board";
 import TaskCard from "../task-card";
 
 type ColumnDropzoneProps = {
-  column: ProjectWithTasks["columns"][number];
+  column: BoardWithTasks["columns"][number];
   disableDragDrop?: boolean;
   onIsOverChange?: (isOver: boolean) => void;
 };

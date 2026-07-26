@@ -60,21 +60,21 @@
 			"never": "안 함"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "새 프로젝트 만들기",
 				"breadcrumbNew": "새 프로젝트 만들기",
-				"workspaceFallback": "워크스페이스",
+				"organizationFallback": "워크스페이스",
 				"description": "이름, 키, 아이콘을 지정하여 워크스페이스에 새 프로젝트를 만듭니다.",
 				"pickIcon": "아이콘 선택",
 				"searchIcons": "아이콘 검색...",
-				"projectName": "프로젝트 이름",
+				"boardName": "프로젝트 이름",
 				"keyLabel": "키:",
 				"keyHint": "티켓 ID에 사용됩니다 (예: {{example}}-123)",
 				"createButton": "프로젝트 만들기",
 				"successToast": "프로젝트가 생성되었습니다",
 				"errorToast": "프로젝트 생성에 실패했습니다"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "새 워크스페이스 만들기",
 				"description": "워크스페이스 이름을 지정하여 새 워크스페이스를 만듭니다.",
@@ -90,7 +90,7 @@
 				"description": "제목, 설명 및 기타 세부 정보를 지정하여 새 작업을 만듭니다.",
 				"taskTitlePlaceholder": "작업 제목",
 				"descriptionPlaceholder": "작업에 대한 설명을 추가하세요...",
-				"chooseProjectForImages": "이미지를 업로드하기 전에 프로젝트를 선택하세요.",
+				"chooseBoardForImages": "이미지를 업로드하기 전에 프로젝트를 선택하세요.",
 				"prepareTaskError": "작업 준비에 실패했습니다",
 				"successCreated": "작업이 생성되었습니다",
 				"successUpdated": "작업이 업데이트되었습니다",
@@ -242,8 +242,8 @@
 			"invitationExpired": "초대 만료됨",
 			"errorLoadDescription": "초대 정보를 불러오지 못했습니다. 초대가 잘못되었거나 만료되었을 수 있습니다.",
 			"goToSignIn": "로그인으로 이동",
-			"workspaceLabel": "워크스페이스: {{workspaceName}}",
-			"joinWorkspace": "{{workspaceName}} 참여",
+			"organizationLabel": "워크스페이스: {{organizationName}}",
+			"joinOrganization": "{{organizationName}} 참여",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter>님이 워크스페이스에 초대했습니다.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter>님이 Kaneo 워크스페이스에 초대했습니다.",
 			"signInToAccept": "이 초대를 수락하려면 로그인하세요.",
@@ -261,23 +261,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Kaneo에 오신 것을 환영합니다",
-			"workspacePageTitle": "워크스페이스 만들기",
-			"createWorkspaceTitle": "워크스페이스 만들기",
-			"createWorkspaceSubtitle": "프로젝트를 관리하기 위해 워크스페이스를 설정하세요",
-			"workspaceName": "워크스페이스 이름",
-			"workspaceNamePlaceholder": "예: Acme Inc, 우리 팀",
+			"organizationPageTitle": "워크스페이스 만들기",
+			"createOrganizationTitle": "워크스페이스 만들기",
+			"createOrganizationSubtitle": "프로젝트를 관리하기 위해 워크스페이스를 설정하세요",
+			"organizationName": "워크스페이스 이름",
+			"organizationNamePlaceholder": "예: Acme Inc, 우리 팀",
 			"descriptionOptional": "설명 (선택)",
 			"descriptionPlaceholder": "팀에서 어떤 일을 하시나요?",
 			"creating": "생성 중...",
-			"createWorkspace": "워크스페이스 만들기",
-			"workspaceCreatedTitle": "워크스페이스가 생성되었습니다",
-			"redirectingToWorkspace": "<name>{{name}}</name>(으)로 이동 중...",
+			"createOrganization": "워크스페이스 만들기",
+			"organizationCreatedTitle": "워크스페이스가 생성되었습니다",
+			"redirectingToOrganization": "<name>{{name}}</name>(으)로 이동 중...",
 			"toast": {
-				"workspaceCreated": "워크스페이스가 생성되었습니다",
+				"organizationCreated": "워크스페이스가 생성되었습니다",
 				"createFailed": "워크스페이스 생성에 실패했습니다"
 			},
 			"validation": {
-				"workspaceNameRequired": "워크스페이스 이름은 필수입니다"
+				"organizationNameRequired": "워크스페이스 이름은 필수입니다"
 			}
 		},
 		"profileSetup": {
@@ -367,13 +367,13 @@
 			"webhookSecretHintConfigured": "서명 시크릿이 이미 구성되어 있습니다 ({{masked}}). 교체하려면 새 시크릿을 입력하세요.",
 			"webhookSecretHintOptional": "선택 사항. 시크릿이 설정된 경우 Kaneo가 요청 본문에 서명합니다.",
 			"connectWebhook": "웹훅 연결",
-			"workspaceRulesTitle": "워크스페이스 전송 규칙",
-			"workspaceRulesDescription": "전역 채널을 재사용한 후 어떤 워크스페이스와 프로젝트가 계정 알림을 보낼 수 있는지 결정합니다.",
-			"workspaceCardHint": "이 워크스페이스가 계정 알림에 사용할 수 있는 채널을 선택합니다.",
-			"workspaceCardLabelEmail": "이메일",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "사용자 정의 웹훅",
+			"organizationRulesTitle": "워크스페이스 전송 규칙",
+			"organizationRulesDescription": "전역 채널을 재사용한 후 어떤 워크스페이스와 프로젝트가 계정 알림을 보낼 수 있는지 결정합니다.",
+			"organizationCardHint": "이 워크스페이스가 계정 알림에 사용할 수 있는 채널을 선택합니다.",
+			"organizationCardLabelEmail": "이메일",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "사용자 정의 웹훅",
 			"emailChannelHintEnabled": "일치하는 워크스페이스 알림을 이메일로 전송합니다.",
 			"emailChannelHintDisabled": "먼저 이메일을 전역으로 구성하고 활성화하세요.",
 			"ntfyChannelHintEnabled": "일치하는 워크스페이스 알림을 ntfy로 전송합니다.",
@@ -382,13 +382,13 @@
 			"gotifyChannelHintDisabled": "먼저 Gotify를 전역으로 구성하고 활성화하세요.",
 			"webhookChannelHintEnabled": "일치하는 워크스페이스 알림을 웹훅으로 전송합니다.",
 			"webhookChannelHintDisabled": "먼저 웹훅을 전역으로 구성하고 활성화하세요.",
-			"projectScope": "프로젝트 범위",
-			"projectScopeDescription": "기본적으로 모든 프로젝트가 포함됩니다. 이 워크스페이스가 선택한 프로젝트에서만 알림을 보내야 한다면 범위를 좁히세요.",
-			"allProjects": "모든 프로젝트",
-			"allProjectsDescription": "이 워크스페이스의 모든 프로젝트에서 알림을 전송합니다.",
-			"selectedProjects": "선택한 프로젝트",
-			"selectedProjectsDescription": "선택한 프로젝트에서만 알림을 전송합니다.",
-			"noProjectsInWorkspace": "이 워크스페이스에 사용 가능한 프로젝트가 아직 없습니다.",
+			"boardScope": "프로젝트 범위",
+			"boardScopeDescription": "기본적으로 모든 프로젝트가 포함됩니다. 이 워크스페이스가 선택한 프로젝트에서만 알림을 보내야 한다면 범위를 좁히세요.",
+			"allBoards": "모든 프로젝트",
+			"allBoardsDescription": "이 워크스페이스의 모든 프로젝트에서 알림을 전송합니다.",
+			"selectedBoards": "선택한 프로젝트",
+			"selectedBoardsDescription": "선택한 프로젝트에서만 알림을 전송합니다.",
+			"noBoardsInOrganization": "이 워크스페이스에 사용 가능한 프로젝트가 아직 없습니다.",
 			"createRule": "규칙 만들기",
 			"removeRule": "규칙 제거",
 			"toastEmailSaved": "이메일 알림 설정이 저장되었습니다",
@@ -405,9 +405,9 @@
 			"toastWebhookSaveFailed": "웹훅 설정 저장에 실패했습니다",
 			"toastWebhookDisconnected": "웹훅 연결이 해제되었습니다",
 			"toastWebhookDisconnectFailed": "웹훅 연결 해제에 실패했습니다",
-			"toastRuleSaved": "{{workspaceName}}의 알림 규칙이 저장되었습니다",
+			"toastRuleSaved": "{{organizationName}}의 알림 규칙이 저장되었습니다",
 			"toastRuleSaveFailed": "워크스페이스 알림 규칙 저장에 실패했습니다",
-			"toastRuleRemoved": "{{workspaceName}}의 알림 규칙이 제거되었습니다",
+			"toastRuleRemoved": "{{organizationName}}의 알림 규칙이 제거되었습니다",
 			"toastRuleRemoveFailed": "워크스페이스 알림 규칙 제거에 실패했습니다",
 			"toastPreferencesSaved": "알림 환경설정이 저장되었습니다",
 			"toastPreferencesSaveFailed": "알림 환경설정 저장에 실패했습니다",
@@ -433,7 +433,6 @@
 			"selectFirstDayOfWeek": "첫 요일 선택",
 			"weekStartsOnSunday": "일요일",
 			"weekStartsOnMonday": "월요일",
-			"weekStartsOnSaturday": "토요일",
 			"defaultView": "기본 보기",
 			"defaultViewDescription": "선호하는 작업 보기 모드를 선택합니다",
 			"selectViewMode": "보기 모드 선택",
@@ -453,7 +452,8 @@
 			"labels": "라벨",
 			"labelsDescription": "작업 라벨과 태그를 표시합니다",
 			"priority": "우선순위",
-			"priorityDescription": "우선순위 표시기를 표시합니다"
+			"priorityDescription": "우선순위 표시기를 표시합니다",
+			"weekStartsOnSaturday": "토요일"
 		},
 		"developerPage": {
 			"pageTitle": "개발자 설정",
@@ -521,12 +521,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "일반 설정",
 			"title": "일반 설정",
 			"subtitle": "워크스페이스 이름과 설명을 관리합니다.",
-			"workspaceInfoTitle": "워크스페이스 정보",
-			"workspaceInfoSubtitle": "워크스페이스 세부 정보 및 환경설정을 구성합니다.",
+			"organizationInfoTitle": "워크스페이스 정보",
+			"organizationInfoSubtitle": "워크스페이스 세부 정보 및 환경설정을 구성합니다.",
 			"nameLabel": "워크스페이스 이름",
 			"nameHint": "워크스페이스의 이름",
 			"namePlaceholder": "워크스페이스 이름 입력",
@@ -535,8 +535,8 @@
 			"descriptionPlaceholder": "워크스페이스 설명 입력",
 			"dangerZone": "위험 영역",
 			"dangerZoneSubtitle": "되돌릴 수 없으며 파괴적인 작업입니다.",
-			"deleteWorkspace": "워크스페이스 삭제",
-			"deleteWorkspaceDescription": "워크스페이스를 영구 삭제하도록 예약합니다",
+			"deleteOrganization": "워크스페이스 삭제",
+			"deleteOrganizationDescription": "워크스페이스를 영구 삭제하도록 예약합니다",
 			"deleteModalTitle": "워크스페이스를 삭제하시겠습니까?",
 			"deleteModalDescription": "이 작업은 워크스페이스 \"{{name}}\"과(와) 모든 데이터를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다.",
 			"deleteModalConfirm": "워크스페이스 삭제",
@@ -549,19 +549,19 @@
 				"nameShort": "워크스페이스 이름은 2자 이상이어야 합니다"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "프로젝트 설정",
 			"title": "일반 설정",
 			"subtitle": "프로젝트 이름, 키, 아이콘 및 설명을 관리합니다.",
-			"projectInfoTitle": "프로젝트 정보",
-			"projectInfoSubtitle": "프로젝트 세부 정보 및 환경설정을 구성합니다.",
+			"boardInfoTitle": "프로젝트 정보",
+			"boardInfoSubtitle": "프로젝트 세부 정보 및 환경설정을 구성합니다.",
 			"iconLabel": "아이콘",
 			"iconHint": "사이드바와 프로젝트 화면에 표시됩니다.",
 			"pickIconTitle": "아이콘 선택",
 			"searchIconsPlaceholder": "아이콘 검색...",
-			"projectNameLabel": "프로젝트 이름",
-			"projectNameHint": "프로젝트의 이름",
-			"projectNamePlaceholder": "프로젝트 이름 입력",
+			"boardNameLabel": "프로젝트 이름",
+			"boardNameHint": "프로젝트의 이름",
+			"boardNamePlaceholder": "프로젝트 이름 입력",
 			"keyLabel": "키",
 			"keyHint": "티켓 ID에 사용됩니다 (예: {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -570,8 +570,8 @@
 			"descriptionPlaceholder": "프로젝트 설명 입력",
 			"dangerZone": "위험 영역",
 			"dangerZoneSubtitle": "되돌릴 수 없으며 파괴적인 작업입니다.",
-			"deleteProject": "프로젝트 삭제",
-			"deleteProjectDescription": "프로젝트를 영구 삭제하도록 예약합니다",
+			"deleteBoard": "프로젝트 삭제",
+			"deleteBoardDescription": "프로젝트를 영구 삭제하도록 예약합니다",
 			"deleteModalTitle": "프로젝트를 삭제하시겠습니까?",
 			"deleteModalDescription": "이 작업은 프로젝트 \"{{name}}\"과(와) 모든 데이터를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다.",
 			"deleteModalConfirm": "프로젝트 삭제",
@@ -590,7 +590,7 @@
 			"importExportTasks": "가져오기/내보내기",
 			"importExportTasksDescription": "작업을 가져오고 내보냅니다."
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "프로젝트 연동",
 			"title": "프로젝트 연동",
 			"subtitle": "외부 도구 및 서비스와 프로젝트를 연결하여 워크플로를 간소화합니다.",
@@ -607,7 +607,7 @@
 			"telegramSectionTitle": "Telegram 연동",
 			"telegramSectionSubtitle": "봇을 사용하여 프로젝트 작업 업데이트를 Telegram 채팅 또는 토픽으로 전송합니다."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "프로젝트 공개 설정",
 			"title": "공개 설정",
 			"subtitle": "프로젝트를 누가 보고 접근할 수 있는지 제어합니다.",
@@ -622,7 +622,7 @@
 			"toastUpdated": "공개 설정이 업데이트되었습니다",
 			"toastUpdateError": "공개 설정 업데이트에 실패했습니다"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "워크플로 설정",
 			"title": "워크플로",
 			"subtitle": "이 프로젝트의 보드 컬럼 및 자동화 규칙을 구성합니다.",
@@ -631,9 +631,9 @@
 			"automationTitle": "자동화 규칙",
 			"automationDescription": "연동 이벤트를 컬럼에 매핑합니다. 이벤트가 발생하면 연결된 작업이 지정된 컬럼으로 이동합니다."
 		},
-		"projectSwitcher": {
-			"selectProject": "프로젝트 선택",
-			"noProjects": "프로젝트 없음"
+		"boardSwitcher": {
+			"selectBoard": "프로젝트 선택",
+			"noBoards": "프로젝트 없음"
 		},
 		"columnEditor": {
 			"toastCreated": "컬럼이 생성되었습니다",
@@ -701,7 +701,7 @@
 			"ownerPlaceholder": "예: octocat",
 			"repoNameLabel": "저장소 이름",
 			"repoNameHint": "저장소 이름",
-			"repoNamePlaceholder": "예: my-project",
+			"repoNamePlaceholder": "예: my-board",
 			"actionsTitle": "작업",
 			"actionsHint": "저장소 연결을 관리합니다",
 			"browse": "찾아보기",
@@ -1026,12 +1026,12 @@
 		"commandPalette": {
 			"suggestions": "추천",
 			"commands": "명령",
-			"projects": "프로젝트",
+			"boards": "프로젝트",
 			"search": "검색",
 			"members": "멤버",
 			"createTask": "작업 만들기",
-			"createProject": "프로젝트 만들기",
-			"createWorkspace": "워크스페이스 만들기",
+			"createBoard": "프로젝트 만들기",
+			"createOrganization": "워크스페이스 만들기",
 			"lightTheme": "라이트 테마",
 			"darkTheme": "다크 테마",
 			"systemTheme": "시스템 테마",
@@ -1047,30 +1047,30 @@
 		"notifications": "알림",
 		"sidebar": {
 			"overview": "개요",
-			"projects": "프로젝트",
+			"boards": "프로젝트",
 			"members": "멤버",
 			"invitations": "초대",
 			"more": "더 보기",
 			"backToBoard": "보드로 돌아가기"
 		},
-		"projectList": {
-			"viewProject": "프로젝트 보기",
-			"shareProject": "프로젝트 공유",
-			"projectSettings": "프로젝트 설정",
+		"boardList": {
+			"viewBoard": "프로젝트 보기",
+			"shareBoard": "프로젝트 공유",
+			"boardSettings": "프로젝트 설정",
 			"linkCopied": "프로젝트 링크가 클립보드에 복사되었습니다",
-			"addProject": "프로젝트 추가",
+			"addBoard": "프로젝트 추가",
 			"deleteConfirmTitle": "프로젝트를 삭제하시겠습니까?",
 			"deleteConfirmDescription": "프로젝트와 모든 데이터가 영구적으로 제거됩니다. 이 작업은 취소할 수 없습니다.",
 			"deletedToast": "프로젝트가 삭제되었습니다",
-			"deleteProject": "프로젝트 삭제"
+			"deleteBoard": "프로젝트 삭제"
 		},
 		"search": {
 			"inputPlaceholder": "작업, 프로젝트, 댓글 검색...",
 			"minCharsHint": "검색하려면 3자 이상 입력하세요",
 			"groups": {
 				"task": "작업",
-				"project": "프로젝트",
-				"workspace": "워크스페이스",
+				"board": "프로젝트",
+				"organization": "워크스페이스",
 				"comment": "댓글",
 				"activity": "활동",
 				"fallback": "결과"
@@ -1088,20 +1088,20 @@
 			"signingOut": "로그아웃 중...",
 			"logOut": "로그아웃"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "워크스페이스",
+		"organizationSwitcher": {
+			"organizations": "워크스페이스",
 			"switching": "전환 중...",
-			"addWorkspace": "워크스페이스 추가",
-			"selectWorkspace": "워크스페이스 선택"
+			"addOrganization": "워크스페이스 추가",
+			"selectOrganization": "워크스페이스 선택"
 		},
 		"page": {
-			"projectsTitle": "프로젝트",
+			"boardsTitle": "프로젝트",
 			"settingsTitle": "설정",
-			"backToWorkspace": "워크스페이스로 돌아가기",
-			"settingsWorkspaceTab": "워크스페이스"
+			"backToOrganization": "워크스페이스로 돌아가기",
+			"settingsOrganizationTab": "워크스페이스"
 		},
-		"projectSettings": {
-			"projectLabel": "프로젝트"
+		"boardSettings": {
+			"boardLabel": "프로젝트"
 		},
 		"keyboardShortcuts": {
 			"title": "키보드 단축키",
@@ -1122,8 +1122,8 @@
 				"showShortcuts": "키보드 단축키 표시",
 				"closeModal": "모달/팝오버 닫기",
 				"createTask": "작업 만들기",
-				"createProject": "프로젝트 만들기",
-				"createWorkspace": "워크스페이스 만들기",
+				"createBoard": "프로젝트 만들기",
+				"createOrganization": "워크스페이스 만들기",
 				"boardView": "보드 보기로 전환",
 				"listView": "목록 보기로 전환",
 				"backlogView": "백로그 보기로 전환",
@@ -1151,9 +1151,9 @@
 				"title": "새 작업 생성됨",
 				"content": "작업 \"{{taskTitle}}\"이(가) 생성되었습니다"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "워크스페이스 생성됨",
-				"content": "워크스페이스 \"{{workspaceName}}\"이(가) 생성되었습니다"
+				"content": "워크스페이스 \"{{organizationName}}\"이(가) 생성되었습니다"
 			},
 			"task_status_changed": {
 				"title": "작업 상태 변경됨",
@@ -1406,7 +1406,7 @@
 		},
 		"relations": {
 			"title": "관계",
-			"tasksInProject": "프로젝트의 작업",
+			"tasksInBoard": "프로젝트의 작업",
 			"linkError": "작업 연결에 실패했습니다",
 			"empty": "관련 작업 없음",
 			"searchPlaceholder": "연결할 작업 검색...",
@@ -1444,8 +1444,8 @@
 		},
 		"move": {
 			"title": "작업 이동",
-			"projectLabel": "대상 프로젝트",
-			"projectPlaceholder": "프로젝트 선택",
+			"boardLabel": "대상 프로젝트",
+			"boardPlaceholder": "프로젝트 선택",
 			"statusLabel": "대상 상태",
 			"statusHintKeep": "이 프로젝트의 워크플로가 이미 현재 상태를 지원합니다.",
 			"statusHintAdjust": "대상 프로젝트에서 사용할 상태를 선택하세요.",
@@ -1664,14 +1664,14 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "초대",
 		"pendingInvitations": "대기 중인 초대",
@@ -1681,7 +1681,7 @@
 		"continueToSetup": "설정으로 계속",
 		"skipForNow": "지금은 건너뛰기",
 		"table": {
-			"workspace": "워크스페이스",
+			"organization": "워크스페이스",
 			"invitedBy": "초대한 사람",
 			"expires": "만료"
 		},
@@ -1692,10 +1692,10 @@
 			"rejectSuccess": "초대를 거절했습니다"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "프로젝트",
-			"createProject": "프로젝트 만들기",
+			"createBoard": "프로젝트 만들기",
 			"title": "제목",
 			"progress": "진행률",
 			"targetDate": "목표일",
@@ -1703,7 +1703,7 @@
 			"status": "상태",
 			"emptyTitle": "아직 프로젝트가 없습니다",
 			"emptyDescription": "첫 프로젝트를 만들어 시작하세요.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "시작되지 않음",
 				"complete": "완료",
 				"inProgress": "진행 중"
@@ -1786,7 +1786,7 @@
 			"cancelInviteError": "초대 취소에 실패했습니다"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "공개 보기",
 		"badge": "공개",
 		"readOnly": "읽기 전용",

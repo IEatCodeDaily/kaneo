@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 export type TelegramIntegration = {
   id: string;
-  projectId: string;
+  boardId: string;
   chatId: string;
   threadId: number | null;
   chatLabel: string | null;
@@ -21,9 +21,9 @@ export type TelegramIntegration = {
   updatedAt: string;
 } | null;
 
-async function getTelegramIntegration(projectId: string) {
+async function getTelegramIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/project/${projectId}`),
+    getApiUrl(`/telegram-integration/board/${boardId}`),
     {
       credentials: "include",
     },

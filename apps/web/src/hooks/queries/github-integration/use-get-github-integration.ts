@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import getGithubIntegration from "@/fetchers/github-integration/get-github-integration";
 
-function useGetGithubIntegration(projectId: string) {
+function useGetGithubIntegration(boardId: string) {
   return useQuery({
-    queryKey: ["github-integration", projectId],
-    queryFn: () => getGithubIntegration(projectId),
-    enabled: !!projectId,
+    queryKey: ["github-integration", boardId],
+    queryFn: () => getGithubIntegration(boardId),
+    enabled: !!boardId,
   });
 }
 

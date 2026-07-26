@@ -1,10 +1,10 @@
 import { client } from "@kaneo/libs";
 
-async function deleteGiteaIntegration(projectId: string) {
-  const response = await client["gitea-integration"].project[
-    ":projectId"
+async function deleteGiteaIntegration(boardId: string) {
+  const response = await client["gitea-integration"].board[
+    ":boardId"
   ].$delete({
-    param: { projectId },
+    param: { boardId },
   });
 
   if (!response.ok) {

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { ProjectWithTasks } from "@/types/project";
+import type { BoardWithTasks } from "@/types/board";
 import { ColumnDropzone } from "./column-dropzone";
 import { ColumnHeader } from "./column-header";
 
 type ColumnProps = {
-  column: ProjectWithTasks["columns"][number];
+  column: BoardWithTasks["columns"][number];
   disableDragDrop?: boolean;
 };
 

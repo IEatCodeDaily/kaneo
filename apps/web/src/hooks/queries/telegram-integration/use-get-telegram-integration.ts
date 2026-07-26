@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import getTelegramIntegration from "@/fetchers/telegram-integration/get-telegram-integration";
 
-function useGetTelegramIntegration(projectId: string) {
+function useGetTelegramIntegration(boardId: string) {
   return useQuery({
-    queryKey: ["telegram-integration", projectId],
-    queryFn: () => getTelegramIntegration(projectId),
-    enabled: Boolean(projectId),
+    queryKey: ["telegram-integration", boardId],
+    queryFn: () => getTelegramIntegration(boardId),
+    enabled: Boolean(boardId),
   });
 }
 

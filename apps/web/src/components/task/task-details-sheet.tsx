@@ -10,22 +10,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import useGetProject from "@/hooks/queries/project/use-get-project";
+import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import TaskDetailsContent from "./task-details-content";
 import TaskPropertiesSidebar from "./task-properties-sidebar";
 
 type TaskDetailsSheetProps = {
   taskId: string | undefined;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
   onClose: () => void;
 };
 
 export default function TaskDetailsSheet({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
   onClose,
 }: TaskDetailsSheetProps) {
   const { t } = useTranslation();
@@ -35,7 +35,7 @@ export default function TaskDetailsSheet({
   );
 
   const { data: task } = useGetTask(currentTaskId ?? "");
-  const { data: project } = useGetProject({ id: projectId, workspaceId });
+  const { data: board } = useGetBoard({ id: boardId, organizationId });
 
   useEffect(() => {
     if (taskId) {
@@ -53,14 +53,14 @@ export default function TaskDetailsSheet({
   const handleOpenFullPage = useCallback(() => {
     if (!currentTaskId) return;
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+      to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
       params: {
-        workspaceId,
-        projectId,
+        organizationId,
+        boardId,
         taskId: currentTaskId,
       },
     });
-  }, [navigate, workspaceId, projectId, currentTaskId]);
+  }, [navigate, organizationId, boardId, currentTaskId]);
 
   return (
     <Sheet open={!!taskId} onOpenChange={(open) => !open && onClose()}>
@@ -71,7 +71,7 @@ export default function TaskDetailsSheet({
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-background shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground">
-              {project?.slug}-{task?.number}
+              {board?.slug}-{task?.number}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -109,8 +109,8 @@ export default function TaskDetailsSheet({
         >
           <TaskPropertiesSidebar
             taskId={currentTaskId}
-            projectId={projectId}
-            workspaceId={workspaceId}
+            boardId={boardId}
+            organizationId={organizationId}
             className="w-full bg-sidebar border-b border-border flex flex-col gap-0 overflow-y-auto shrink-0"
             compact={true}
           />
@@ -119,8 +119,8 @@ export default function TaskDetailsSheet({
             <div className="px-4 py-4">
               <TaskDetailsContent
                 taskId={currentTaskId}
-                projectId={projectId}
-                workspaceId={workspaceId}
+                boardId={boardId}
+                organizationId={organizationId}
                 className="flex flex-col gap-3"
               />
             </div>

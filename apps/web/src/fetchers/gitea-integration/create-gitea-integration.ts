@@ -8,13 +8,13 @@ export type CreateGiteaIntegrationRequest = {
 };
 
 async function createGiteaIntegration(
-  projectId: string,
+  boardId: string,
   data: CreateGiteaIntegrationRequest,
 ) {
-  const response = await client["gitea-integration"].project[
-    ":projectId"
+  const response = await client["gitea-integration"].board[
+    ":boardId"
   ].$post({
-    param: { projectId },
+    param: { boardId },
     json: data,
   });
 

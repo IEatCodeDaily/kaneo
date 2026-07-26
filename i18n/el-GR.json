@@ -60,21 +60,21 @@
 			"never": "Ποτέ"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Δημιουργία νέου έργου",
 				"breadcrumbNew": "Δημιουργία νέου έργου",
-				"workspaceFallback": "ΧΩΡΟΣ ΕΡΓΑΣΙΑΣ",
+				"organizationFallback": "ΧΩΡΟΣ ΕΡΓΑΣΙΑΣ",
 				"description": "Δημιουργήστε ένα νέο έργο στον χώρο εργασίας σας, ορίζοντας όνομα, κλειδί και επιλέγοντας ένα εικονίδιο.",
 				"pickIcon": "Επιλογή εικονιδίου",
 				"searchIcons": "Αναζήτηση εικονιδίων...",
-				"projectName": "Όνομα έργου",
+				"boardName": "Όνομα έργου",
 				"keyLabel": "Κλειδί:",
 				"keyHint": "Χρησιμοποιείται για IDs αιτημάτων (π.χ. {{example}}-123)",
 				"createButton": "Δημιουργία έργου",
 				"successToast": "Το έργο δημιουργήθηκε με επιτυχία",
 				"errorToast": "Αποτυχία δημιουργίας έργου"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Δημιουργία νέου χώρου εργασίας",
 				"description": "Δημιουργήστε έναν νέο χώρο εργασίας ορίζοντας ένα όνομα.",
@@ -90,7 +90,7 @@
 				"description": "Δημιουργήστε μια νέα εργασία συμπληρώνοντας τίτλο, περιγραφή και άλλες λεπτομέρειες.",
 				"taskTitlePlaceholder": "Τίτλος εργασίας",
 				"descriptionPlaceholder": "Προσθέστε μια περιγραφή για την εργασία σας...",
-				"chooseProjectForImages": "Επιλέξτε ένα έργο πριν ανεβάσετε εικόνες.",
+				"chooseBoardForImages": "Επιλέξτε ένα έργο πριν ανεβάσετε εικόνες.",
 				"prepareTaskError": "Αποτυχία προετοιμασίας εργασίας",
 				"successCreated": "Η εργασία δημιουργήθηκε με επιτυχία",
 				"successUpdated": "Η εργασία ενημερώθηκε με επιτυχία",
@@ -242,8 +242,8 @@
 			"invitationExpired": "Η πρόσκληση έληξε",
 			"errorLoadDescription": "Αποτυχία φόρτωσης των στοιχείων της πρόσκλησης. Η πρόσκληση ενδέχεται να είναι μη έγκυρη ή να έχει λήξει.",
 			"goToSignIn": "Μετάβαση στη σύνδεση",
-			"workspaceLabel": "Χώρος εργασίας: {{workspaceName}}",
-			"joinWorkspace": "Συμμετοχή στο {{workspaceName}}",
+			"organizationLabel": "Χώρος εργασίας: {{organizationName}}",
+			"joinOrganization": "Συμμετοχή στο {{organizationName}}",
 			"inviteBodySignedIn": "Ο/Η <inviter>{{inviterName}}</inviter> σας προσκάλεσε να συμμετάσχετε στον χώρο εργασίας του/της.",
 			"inviteBodySignedOut": "Ο/Η <inviter>{{inviterName}}</inviter> σας προσκάλεσε να συμμετάσχετε στον χώρο εργασίας του/της στο Kaneo.",
 			"signInToAccept": "Συνδεθείτε για να αποδεχτείτε αυτήν την πρόσκληση.",
@@ -261,23 +261,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Καλώς ήρθατε στο Kaneo",
-			"workspacePageTitle": "Δημιουργία χώρου εργασίας",
-			"createWorkspaceTitle": "Δημιουργία χώρου εργασίας",
-			"createWorkspaceSubtitle": "Ρυθμίστε τον χώρο εργασίας σας για να ξεκινήσετε τη διαχείριση έργων",
-			"workspaceName": "Όνομα χώρου εργασίας",
-			"workspaceNamePlaceholder": "π.χ. Acme Inc, My Team",
+			"organizationPageTitle": "Δημιουργία χώρου εργασίας",
+			"createOrganizationTitle": "Δημιουργία χώρου εργασίας",
+			"createOrganizationSubtitle": "Ρυθμίστε τον χώρο εργασίας σας για να ξεκινήσετε τη διαχείριση έργων",
+			"organizationName": "Όνομα χώρου εργασίας",
+			"organizationNamePlaceholder": "π.χ. Acme Inc, My Team",
 			"descriptionOptional": "Περιγραφή (προαιρετικό)",
 			"descriptionPlaceholder": "Με τι ασχολείται η ομάδα σας;",
 			"creating": "Γίνεται δημιουργία...",
-			"createWorkspace": "Δημιουργία χώρου εργασίας",
-			"workspaceCreatedTitle": "Ο χώρος εργασίας δημιουργήθηκε",
-			"redirectingToWorkspace": "Μεταφορά στο <name>{{name}}</name>...",
+			"createOrganization": "Δημιουργία χώρου εργασίας",
+			"organizationCreatedTitle": "Ο χώρος εργασίας δημιουργήθηκε",
+			"redirectingToOrganization": "Μεταφορά στο <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Ο χώρος εργασίας δημιουργήθηκε με επιτυχία",
+				"organizationCreated": "Ο χώρος εργασίας δημιουργήθηκε με επιτυχία",
 				"createFailed": "Αποτυχία δημιουργίας χώρου εργασίας"
 			},
 			"validation": {
-				"workspaceNameRequired": "Το όνομα χώρου εργασίας είναι υποχρεωτικό"
+				"organizationNameRequired": "Το όνομα χώρου εργασίας είναι υποχρεωτικό"
 			}
 		},
 		"profileSetup": {
@@ -367,28 +367,28 @@
 			"webhookSecretHintConfigured": "A signing secret is already configured ({{masked}}). Enter a new one to replace it.",
 			"webhookSecretHintOptional": "Optional. Kaneo signs the request body when a secret is set.",
 			"connectWebhook": "Connect webhook",
-			"workspaceRulesTitle": "Workspace delivery rules",
-			"workspaceRulesDescription": "Reuse your global channels, then decide which workspaces and projects are allowed to send account notifications.",
-			"workspaceCardHint": "Choose which channels this workspace can use for account notifications.",
-			"workspaceCardLabelEmail": "Email",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Custom webhook",
-			"emailChannelHintEnabled": "Send matching workspace notifications by email.",
+			"organizationRulesTitle": "Organization delivery rules",
+			"organizationRulesDescription": "Reuse your global channels, then decide which organizations and boards are allowed to send account notifications.",
+			"organizationCardHint": "Choose which channels this organization can use for account notifications.",
+			"organizationCardLabelEmail": "Email",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Custom webhook",
+			"emailChannelHintEnabled": "Send matching organization notifications by email.",
 			"emailChannelHintDisabled": "Configure and enable email globally first.",
-			"ntfyChannelHintEnabled": "Send matching workspace notifications to ntfy.",
+			"ntfyChannelHintEnabled": "Send matching organization notifications to ntfy.",
 			"ntfyChannelHintDisabled": "Configure and enable ntfy globally first.",
-			"gotifyChannelHintEnabled": "Send matching workspace notifications to Gotify.",
+			"gotifyChannelHintEnabled": "Send matching organization notifications to Gotify.",
 			"gotifyChannelHintDisabled": "Configure and enable Gotify globally first.",
-			"webhookChannelHintEnabled": "Send matching workspace notifications to your webhook.",
+			"webhookChannelHintEnabled": "Send matching organization notifications to your webhook.",
 			"webhookChannelHintDisabled": "Configure and enable the webhook globally first.",
-			"projectScope": "Project scope",
-			"projectScopeDescription": "All projects are included by default. Narrow it down if this workspace should only send notifications from selected projects.",
-			"allProjects": "All projects",
-			"allProjectsDescription": "Deliver notifications from every project in this workspace.",
-			"selectedProjects": "Selected projects",
-			"selectedProjectsDescription": "Only deliver notifications from chosen projects.",
-			"noProjectsInWorkspace": "No projects available for this workspace yet.",
+			"boardScope": "Board scope",
+			"boardScopeDescription": "All boards are included by default. Narrow it down if this organization should only send notifications from selected boards.",
+			"allBoards": "All boards",
+			"allBoardsDescription": "Deliver notifications from every board in this organization.",
+			"selectedBoards": "Selected boards",
+			"selectedBoardsDescription": "Only deliver notifications from chosen boards.",
+			"noBoardsInOrganization": "No boards available for this organization yet.",
 			"createRule": "Create rule",
 			"removeRule": "Remove rule",
 			"toastEmailSaved": "Email notification settings saved",
@@ -405,14 +405,14 @@
 			"toastWebhookSaveFailed": "Failed to save webhook settings",
 			"toastWebhookDisconnected": "Webhook disconnected",
 			"toastWebhookDisconnectFailed": "Failed to disconnect webhook",
-			"toastRuleSaved": "Saved notification rule for {{workspaceName}}",
-			"toastRuleSaveFailed": "Failed to save workspace notification rule",
-			"toastRuleRemoved": "Removed notification rule for {{workspaceName}}",
-			"toastRuleRemoveFailed": "Failed to remove workspace notification rule",
+			"toastRuleSaved": "Saved notification rule for {{organizationName}}",
+			"toastRuleSaveFailed": "Failed to save organization notification rule",
+			"toastRuleRemoved": "Removed notification rule for {{organizationName}}",
+			"toastRuleRemoveFailed": "Failed to remove organization notification rule",
 			"toastPreferencesSaved": "Notification preferences saved",
 			"toastPreferencesSaveFailed": "Failed to save notification preferences",
-			"toastRuleSavedGeneric": "Workspace notification rule saved",
-			"toastRuleRemovedGeneric": "Workspace notification rule removed"
+			"toastRuleSavedGeneric": "Organization notification rule saved",
+			"toastRuleRemovedGeneric": "Organization notification rule removed"
 		},
 		"preferencesPage": {
 			"title": "Προτιμήσεις",
@@ -433,7 +433,6 @@
 			"selectFirstDayOfWeek": "Επιλέξτε την πρώτη ημέρα",
 			"weekStartsOnSunday": "Κυριακή",
 			"weekStartsOnMonday": "Δευτέρα",
-			"weekStartsOnSaturday": "Σάββατο",
 			"defaultView": "Προεπιλεγμένη προβολή",
 			"defaultViewDescription": "Επιλέξτε τον προτιμώμενο τρόπο προβολής εργασιών",
 			"selectViewMode": "Επιλέξτε τρόπο προβολής",
@@ -453,7 +452,8 @@
 			"labels": "Ετικέτες",
 			"labelsDescription": "Εμφάνιση ετικετών και tags εργασιών",
 			"priority": "Προτεραιότητα",
-			"priorityDescription": "Εμφάνιση ενδείξεων προτεραιότητας"
+			"priorityDescription": "Εμφάνιση ενδείξεων προτεραιότητας",
+			"weekStartsOnSaturday": "Σάββατο"
 		},
 		"developerPage": {
 			"pageTitle": "Ρυθμίσεις προγραμματιστή",
@@ -521,12 +521,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Γενικές ρυθμίσεις",
 			"title": "Γενικές ρυθμίσεις",
 			"subtitle": "Διαχειριστείτε το όνομα και την περιγραφή του χώρου εργασίας σας.",
-			"workspaceInfoTitle": "Πληροφορίες χώρου εργασίας",
-			"workspaceInfoSubtitle": "Ρυθμίστε τα στοιχεία και τις προτιμήσεις του χώρου εργασίας σας.",
+			"organizationInfoTitle": "Πληροφορίες χώρου εργασίας",
+			"organizationInfoSubtitle": "Ρυθμίστε τα στοιχεία και τις προτιμήσεις του χώρου εργασίας σας.",
 			"nameLabel": "Όνομα χώρου εργασίας",
 			"nameHint": "Το όνομα του χώρου εργασίας σας",
 			"namePlaceholder": "Εισαγάγετε όνομα χώρου εργασίας",
@@ -535,8 +535,8 @@
 			"descriptionPlaceholder": "Εισαγάγετε περιγραφή χώρου εργασίας",
 			"dangerZone": "Ζώνη κινδύνου",
 			"dangerZoneSubtitle": "Μη αναστρέψιμες και καταστροφικές ενέργειες.",
-			"deleteWorkspace": "Διαγραφή χώρου εργασίας",
-			"deleteWorkspaceDescription": "Προγραμματισμός οριστικής διαγραφής του χώρου εργασίας",
+			"deleteOrganization": "Διαγραφή χώρου εργασίας",
+			"deleteOrganizationDescription": "Προγραμματισμός οριστικής διαγραφής του χώρου εργασίας",
 			"deleteModalTitle": "Διαγραφή χώρου εργασίας;",
 			"deleteModalDescription": "Αυτό θα διαγράψει οριστικά τον χώρο εργασίας \"{{name}}\" και όλα τα δεδομένα του. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
 			"deleteModalConfirm": "Διαγραφή χώρου εργασίας",
@@ -549,19 +549,19 @@
 				"nameShort": "Το όνομα χώρου εργασίας πρέπει να έχει τουλάχιστον 2 χαρακτήρες"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Ρυθμίσεις έργου",
 			"title": "Γενικές ρυθμίσεις",
 			"subtitle": "Διαχειριστείτε το όνομα, το κλειδί, το εικονίδιο και την περιγραφή του έργου σας.",
-			"projectInfoTitle": "Πληροφορίες έργου",
-			"projectInfoSubtitle": "Ρυθμίστε τα στοιχεία και τις προτιμήσεις του έργου σας.",
+			"boardInfoTitle": "Πληροφορίες έργου",
+			"boardInfoSubtitle": "Ρυθμίστε τα στοιχεία και τις προτιμήσεις του έργου σας.",
 			"iconLabel": "Εικονίδιο",
 			"iconHint": "Εμφανίζεται στην πλαϊνή μπάρα και στις επιφάνειες του έργου.",
 			"pickIconTitle": "Επιλογή εικονιδίου",
 			"searchIconsPlaceholder": "Αναζήτηση εικονιδίων...",
-			"projectNameLabel": "Όνομα έργου",
-			"projectNameHint": "Το όνομα του έργου σας",
-			"projectNamePlaceholder": "Εισαγάγετε όνομα έργου",
+			"boardNameLabel": "Όνομα έργου",
+			"boardNameHint": "Το όνομα του έργου σας",
+			"boardNamePlaceholder": "Εισαγάγετε όνομα έργου",
 			"keyLabel": "Κλειδί",
 			"keyHint": "Χρησιμοποιείται για IDs αιτημάτων (π.χ. {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -570,8 +570,8 @@
 			"descriptionPlaceholder": "Εισαγάγετε περιγραφή έργου",
 			"dangerZone": "Ζώνη κινδύνου",
 			"dangerZoneSubtitle": "Μη αναστρέψιμες και καταστροφικές ενέργειες.",
-			"deleteProject": "Διαγραφή έργου",
-			"deleteProjectDescription": "Προγραμματισμός οριστικής διαγραφής του έργου",
+			"deleteBoard": "Διαγραφή έργου",
+			"deleteBoardDescription": "Προγραμματισμός οριστικής διαγραφής του έργου",
 			"deleteModalTitle": "Διαγραφή έργου;",
 			"deleteModalDescription": "Αυτό θα διαγράψει οριστικά το έργο \"{{name}}\" και όλα τα δεδομένα του. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
 			"deleteModalConfirm": "Διαγραφή έργου",
@@ -590,7 +590,7 @@
 			"importExportTasks": "Εισαγωγή/Εξαγωγή",
 			"importExportTasksDescription": "Εισαγωγή/Εξαγωγή Εργασιών"
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Ενσωματώσεις έργου",
 			"title": "Ενσωματώσεις έργου",
 			"subtitle": "Συνδέστε το έργο σας με εξωτερικά εργαλεία και υπηρεσίες για πιο ομαλή ροή εργασίας.",
@@ -607,7 +607,7 @@
 			"slackSectionTitle": "Ενσωμάτωση Slack",
 			"slackSectionSubtitle": "Στείλτε ενημερώσεις εργασιών έργου σε κανάλι Slack μέσω εισερχόμενου webhook."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Ορατότητα έργου",
 			"title": "Ορατότητα",
 			"subtitle": "Ελέγξτε ποιος μπορεί να δει και να έχει πρόσβαση στο έργο σας.",
@@ -622,7 +622,7 @@
 			"toastUpdated": "Η ορατότητα ενημερώθηκε",
 			"toastUpdateError": "Αποτυχία ενημέρωσης ορατότητας"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Ρυθμίσεις ροής εργασίας",
 			"title": "Ροή εργασίας",
 			"subtitle": "Ρυθμίστε τις στήλες του πίνακα και τους κανόνες αυτοματοποίησης για αυτό το έργο.",
@@ -631,9 +631,9 @@
 			"automationTitle": "Κανόνες αυτοματοποίησης",
 			"automationDescription": "Αντιστοιχίστε γεγονότα ενσωμάτωσης σε στήλες. Όταν συμβαίνει ένα γεγονός, η συνδεδεμένη εργασία μετακινείται στην καθορισμένη στήλη."
 		},
-		"projectSwitcher": {
-			"selectProject": "Επιλέξτε έργο",
-			"noProjects": "Δεν υπάρχουν έργα"
+		"boardSwitcher": {
+			"selectBoard": "Επιλέξτε έργο",
+			"noBoards": "Δεν υπάρχουν έργα"
 		},
 		"columnEditor": {
 			"toastCreated": "Η στήλη δημιουργήθηκε",
@@ -701,7 +701,7 @@
 			"ownerPlaceholder": "π.χ. octocat",
 			"repoNameLabel": "Όνομα αποθετηρίου",
 			"repoNameHint": "Το όνομα του αποθετηρίου",
-			"repoNamePlaceholder": "π.χ. my-project",
+			"repoNamePlaceholder": "π.χ. my-board",
 			"actionsTitle": "Ενέργειες",
 			"actionsHint": "Διαχειριστείτε τη σύνδεση του αποθετηρίου σας",
 			"browse": "Περιήγηση",
@@ -1024,12 +1024,12 @@
 		"commandPalette": {
 			"suggestions": "Προτάσεις",
 			"commands": "Εντολές",
-			"projects": "Έργα",
+			"boards": "Έργα",
 			"search": "Αναζήτηση",
 			"members": "Μέλη",
 			"createTask": "Δημιουργία εργασίας",
-			"createProject": "Δημιουργία έργου",
-			"createWorkspace": "Δημιουργία χώρου εργασίας",
+			"createBoard": "Δημιουργία έργου",
+			"createOrganization": "Δημιουργία χώρου εργασίας",
 			"lightTheme": "Ανοιχτό θέμα",
 			"darkTheme": "Σκούρο θέμα",
 			"systemTheme": "Θέμα συστήματος",
@@ -1045,30 +1045,30 @@
 		"notifications": "Ειδοποιήσεις",
 		"sidebar": {
 			"overview": "Επισκόπηση",
-			"projects": "Έργα",
+			"boards": "Έργα",
 			"members": "Μέλη",
 			"invitations": "Προσκλήσεις",
 			"more": "Περισσότερα",
 			"backToBoard": "Επιστροφή στον πίνακα"
 		},
-		"projectList": {
-			"viewProject": "Προβολή έργου",
-			"shareProject": "Κοινοποίηση έργου",
-			"projectSettings": "Ρυθμίσεις έργου",
+		"boardList": {
+			"viewBoard": "Προβολή έργου",
+			"shareBoard": "Κοινοποίηση έργου",
+			"boardSettings": "Ρυθμίσεις έργου",
 			"linkCopied": "Ο σύνδεσμος του έργου αντιγράφηκε στο πρόχειρο",
-			"addProject": "Προσθήκη έργου",
+			"addBoard": "Προσθήκη έργου",
 			"deleteConfirmTitle": "Διαγραφή έργου;",
 			"deleteConfirmDescription": "Αυτό θα αφαιρέσει οριστικά το έργο και όλα τα δεδομένα του. Δεν μπορείτε να αναιρέσετε αυτήν την ενέργεια.",
 			"deletedToast": "Το έργο διαγράφηκε",
-			"deleteProject": "Διαγραφή έργου"
+			"deleteBoard": "Διαγραφή έργου"
 		},
 		"search": {
 			"inputPlaceholder": "Αναζήτηση εργασιών, έργων, σχολίων...",
 			"minCharsHint": "Πληκτρολογήστε τουλάχιστον 3 χαρακτήρες για αναζήτηση",
 			"groups": {
 				"task": "Εργασίες",
-				"project": "Έργα",
-				"workspace": "Χώροι εργασίας",
+				"board": "Έργα",
+				"organization": "Χώροι εργασίας",
 				"comment": "Σχόλια",
 				"activity": "Δραστηριότητες",
 				"fallback": "Αποτελέσματα"
@@ -1086,20 +1086,20 @@
 			"signingOut": "Γίνεται αποσύνδεση...",
 			"logOut": "Αποσύνδεση"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Χώροι εργασίας",
+		"organizationSwitcher": {
+			"organizations": "Χώροι εργασίας",
 			"switching": "Γίνεται εναλλαγή...",
-			"addWorkspace": "Προσθήκη χώρου εργασίας",
-			"selectWorkspace": "Επιλέξτε χώρο εργασίας"
+			"addOrganization": "Προσθήκη χώρου εργασίας",
+			"selectOrganization": "Επιλέξτε χώρο εργασίας"
 		},
 		"page": {
-			"projectsTitle": "Έργα",
+			"boardsTitle": "Έργα",
 			"settingsTitle": "Ρυθμίσεις",
-			"backToWorkspace": "Επιστροφή στον χώρο εργασίας",
-			"settingsWorkspaceTab": "Χώρος εργασίας"
+			"backToOrganization": "Επιστροφή στον χώρο εργασίας",
+			"settingsOrganizationTab": "Χώρος εργασίας"
 		},
-		"projectSettings": {
-			"projectLabel": "Έργο"
+		"boardSettings": {
+			"boardLabel": "Έργο"
 		},
 		"keyboardShortcuts": {
 			"title": "Συντομεύσεις πληκτρολογίου",
@@ -1120,8 +1120,8 @@
 				"showShortcuts": "Εμφάνιση συντομεύσεων πληκτρολογίου",
 				"closeModal": "Κλείσιμο modal/popover",
 				"createTask": "Δημιουργία εργασίας",
-				"createProject": "Δημιουργία έργου",
-				"createWorkspace": "Δημιουργία χώρου εργασίας",
+				"createBoard": "Δημιουργία έργου",
+				"createOrganization": "Δημιουργία χώρου εργασίας",
 				"boardView": "Μετάβαση σε προβολή πίνακα",
 				"listView": "Μετάβαση σε προβολή λίστας",
 				"backlogView": "Μετάβαση σε προβολή backlog",
@@ -1149,9 +1149,9 @@
 				"title": "Δημιουργήθηκε νέα εργασία",
 				"content": "Η εργασία \"{{taskTitle}}\" δημιουργήθηκε"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Ο χώρος εργασίας δημιουργήθηκε",
-				"content": "Ο χώρος εργασίας σας \"{{workspaceName}}\" δημιουργήθηκε με επιτυχία"
+				"content": "Ο χώρος εργασίας σας \"{{organizationName}}\" δημιουργήθηκε με επιτυχία"
 			},
 			"task_status_changed": {
 				"title": "Η κατάσταση της εργασίας άλλαξε",
@@ -1404,7 +1404,7 @@
 		},
 		"relations": {
 			"title": "Σχέσεις",
-			"tasksInProject": "Εργασίες στο έργο",
+			"tasksInBoard": "Εργασίες στο έργο",
 			"linkError": "Αποτυχία σύνδεσης εργασίας",
 			"empty": "Δεν υπάρχουν σχετικές εργασίες",
 			"searchPlaceholder": "Αναζήτηση εργασιών για σύνδεση...",
@@ -1442,8 +1442,8 @@
 		},
 		"move": {
 			"title": "Μετακίνηση εργασίας",
-			"projectLabel": "Έργο προορισμού",
-			"projectPlaceholder": "Επιλέξτε έργο",
+			"boardLabel": "Έργο προορισμού",
+			"boardPlaceholder": "Επιλέξτε έργο",
 			"statusLabel": "Κατάσταση προορισμού",
 			"statusHintKeep": "Η τρέχουσα κατάσταση υποστηρίζεται ήδη στο έργο προορισμού.",
 			"statusHintAdjust": "Επιλέξτε την κατάσταση που θα χρησιμοποιηθεί στο έργο προορισμού.",
@@ -1662,14 +1662,14 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "Προσκλήσεις",
 		"pendingInvitations": "Εκκρεμείς προσκλήσεις",
@@ -1679,7 +1679,7 @@
 		"continueToSetup": "Συνέχεια στη ρύθμιση",
 		"skipForNow": "Παράλειψη για τώρα",
 		"table": {
-			"workspace": "Χώρος εργασίας",
+			"organization": "Χώρος εργασίας",
 			"invitedBy": "Προσκλήθηκε από",
 			"expires": "Λήγει"
 		},
@@ -1690,10 +1690,10 @@
 			"rejectSuccess": "Η πρόσκληση απορρίφθηκε"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Έργα",
-			"createProject": "Δημιουργία έργου",
+			"createBoard": "Δημιουργία έργου",
 			"title": "Τίτλος",
 			"progress": "Πρόοδος",
 			"targetDate": "Ημερομηνία στόχος",
@@ -1701,7 +1701,7 @@
 			"status": "Κατάσταση",
 			"emptyTitle": "Δεν υπάρχουν ακόμα έργα",
 			"emptyDescription": "Ξεκινήστε δημιουργώντας το πρώτο σας έργο.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Δεν έχει ξεκινήσει",
 				"complete": "Ολοκληρωμένο",
 				"inProgress": "Σε εξέλιξη"
@@ -1784,7 +1784,7 @@
 			"cancelInviteError": "Αποτυχία ακύρωσης πρόσκλησης"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Δημόσια προβολή",
 		"badge": "Δημόσιο",
 		"readOnly": "Μόνο για ανάγνωση",

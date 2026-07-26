@@ -60,21 +60,21 @@
 			"never": "Asla"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Yeni proje oluştur",
 				"breadcrumbNew": "Yeni proje oluştur",
-				"workspaceFallback": "ÇALIŞMA ALANI",
+				"organizationFallback": "ÇALIŞMA ALANI",
 				"description": "Bir ad, anahtar ve simge girerek çalışma alanınızda yeni bir proje oluşturun.",
 				"pickIcon": "Simge seç",
 				"searchIcons": "Simge ara...",
-				"projectName": "Proje adı",
+				"boardName": "Proje adı",
 				"keyLabel": "Anahtar:",
 				"keyHint": "Talep kimlikleri için kullanılır (örn. {{example}}-123)",
 				"createButton": "Proje Oluştur",
 				"successToast": "Proje başarıyla oluşturuldu",
 				"errorToast": "Proje oluşturulamadı"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Yeni çalışma alanı oluştur",
 				"description": "Çalışma alanınız için bir ad girerek yeni bir çalışma alanı oluşturun.",
@@ -90,7 +90,7 @@
 				"description": "Bir başlık, açıklama ve diğer ayrıntıları girerek yeni bir talep oluşturun.",
 				"taskTitlePlaceholder": "Talep başlığı",
 				"descriptionPlaceholder": "Talebiniz için bir açıklama ekleyin...",
-				"chooseProjectForImages": "Görsel yüklemeden önce bir proje seçin.",
+				"chooseBoardForImages": "Görsel yüklemeden önce bir proje seçin.",
 				"prepareTaskError": "Talep hazırlanamadı",
 				"successCreated": "Talep başarıyla oluşturuldu",
 				"successUpdated": "Talep başarıyla güncellendi",
@@ -243,8 +243,8 @@
 			"invitationExpired": "Davetin Süresi Doldu",
 			"errorLoadDescription": "Davet ayrıntıları yüklenemedi. Davet geçersiz veya süresi dolmuş olabilir.",
 			"goToSignIn": "Girişe Git",
-			"workspaceLabel": "Çalışma alanı: {{workspaceName}}",
-			"joinWorkspace": "{{workspaceName}} çalışma alanına katıl",
+			"organizationLabel": "Çalışma alanı: {{organizationName}}",
+			"joinOrganization": "{{organizationName}} çalışma alanına katıl",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> sizi çalışma alanına katılmaya davet etti.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> sizi Kaneo üzerindeki çalışma alanına katılmaya davet etti.",
 			"signInToAccept": "Bu daveti kabul etmek için giriş yapın.",
@@ -262,23 +262,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Kaneo'ya Hoş Geldiniz",
-			"workspacePageTitle": "Çalışma Alanı Oluştur",
-			"createWorkspaceTitle": "Çalışma alanı oluştur",
-			"createWorkspaceSubtitle": "Projeleri yönetmeye başlamak için çalışma alanınızı kurun",
-			"workspaceName": "Çalışma alanı adı",
-			"workspaceNamePlaceholder": "örn. Acme Inc, Ekibim",
+			"organizationPageTitle": "Çalışma Alanı Oluştur",
+			"createOrganizationTitle": "Çalışma alanı oluştur",
+			"createOrganizationSubtitle": "Projeleri yönetmeye başlamak için çalışma alanınızı kurun",
+			"organizationName": "Çalışma alanı adı",
+			"organizationNamePlaceholder": "örn. Acme Inc, Ekibim",
 			"descriptionOptional": "Açıklama (isteğe bağlı)",
 			"descriptionPlaceholder": "Ekibiniz ne üzerinde çalışıyor?",
 			"creating": "Oluşturuluyor...",
-			"createWorkspace": "Çalışma alanı oluştur",
-			"workspaceCreatedTitle": "Çalışma alanı oluşturuldu",
-			"redirectingToWorkspace": "Sizi <name>{{name}}</name> çalışma alanına götürüyorum...",
+			"createOrganization": "Çalışma alanı oluştur",
+			"organizationCreatedTitle": "Çalışma alanı oluşturuldu",
+			"redirectingToOrganization": "Sizi <name>{{name}}</name> çalışma alanına götürüyorum...",
 			"toast": {
-				"workspaceCreated": "Çalışma alanı başarıyla oluşturuldu",
+				"organizationCreated": "Çalışma alanı başarıyla oluşturuldu",
 				"createFailed": "Çalışma alanı oluşturulamadı"
 			},
 			"validation": {
-				"workspaceNameRequired": "Çalışma alanı adı gereklidir"
+				"organizationNameRequired": "Çalışma alanı adı gereklidir"
 			}
 		},
 		"profileSetup": {
@@ -368,13 +368,13 @@
 			"webhookSecretHintConfigured": "Bir imzalama gizli anahtarı zaten yapılandırılmış ({{masked}}). Değiştirmek için yeni bir tane girin.",
 			"webhookSecretHintOptional": "İsteğe bağlı. Bir gizli anahtar ayarlandığında Kaneo istek gövdesini imzalar.",
 			"connectWebhook": "Webhook bağla",
-			"workspaceRulesTitle": "Çalışma alanı teslim kuralları",
-			"workspaceRulesDescription": "Genel kanallarınızı yeniden kullanın, ardından hangi çalışma alanlarının ve projelerin hesap bildirimleri göndermesine izin verileceğine karar verin.",
-			"workspaceCardHint": "Bu çalışma alanının hesap bildirimleri için hangi kanalları kullanabileceğini seçin.",
-			"workspaceCardLabelEmail": "E-posta",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Özel webhook",
+			"organizationRulesTitle": "Çalışma alanı teslim kuralları",
+			"organizationRulesDescription": "Genel kanallarınızı yeniden kullanın, ardından hangi çalışma alanlarının ve projelerin hesap bildirimleri göndermesine izin verileceğine karar verin.",
+			"organizationCardHint": "Bu çalışma alanının hesap bildirimleri için hangi kanalları kullanabileceğini seçin.",
+			"organizationCardLabelEmail": "E-posta",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Özel webhook",
 			"emailChannelHintEnabled": "Eşleşen çalışma alanı bildirimlerini e-posta ile gönder.",
 			"emailChannelHintDisabled": "Önce e-postayı genel olarak yapılandırın ve etkinleştirin.",
 			"ntfyChannelHintEnabled": "Eşleşen çalışma alanı bildirimlerini ntfy'ye gönder.",
@@ -383,13 +383,13 @@
 			"gotifyChannelHintDisabled": "Önce Gotify'ı genel olarak yapılandırın ve etkinleştirin.",
 			"webhookChannelHintEnabled": "Eşleşen çalışma alanı bildirimlerini webhook'unuza gönder.",
 			"webhookChannelHintDisabled": "Önce webhook'u genel olarak yapılandırın ve etkinleştirin.",
-			"projectScope": "Proje kapsamı",
-			"projectScopeDescription": "Tüm projeler varsayılan olarak dahildir. Bu çalışma alanı yalnızca seçili projelerden bildirim göndermesi gerekiyorsa daraltın.",
-			"allProjects": "Tüm projeler",
-			"allProjectsDescription": "Bu çalışma alanındaki tüm projelerden bildirimleri teslim et.",
-			"selectedProjects": "Seçili projeler",
-			"selectedProjectsDescription": "Yalnızca seçilen projelerden bildirimleri teslim et.",
-			"noProjectsInWorkspace": "Bu çalışma alanında henüz proje yok.",
+			"boardScope": "Proje kapsamı",
+			"boardScopeDescription": "Tüm projeler varsayılan olarak dahildir. Bu çalışma alanı yalnızca seçili projelerden bildirim göndermesi gerekiyorsa daraltın.",
+			"allBoards": "Tüm projeler",
+			"allBoardsDescription": "Bu çalışma alanındaki tüm projelerden bildirimleri teslim et.",
+			"selectedBoards": "Seçili projeler",
+			"selectedBoardsDescription": "Yalnızca seçilen projelerden bildirimleri teslim et.",
+			"noBoardsInOrganization": "Bu çalışma alanında henüz proje yok.",
 			"createRule": "Kural oluştur",
 			"removeRule": "Kuralı kaldır",
 			"toastEmailSaved": "E-posta bildirim ayarları kaydedildi",
@@ -406,9 +406,9 @@
 			"toastWebhookSaveFailed": "Webhook ayarları kaydedilemedi",
 			"toastWebhookDisconnected": "Webhook bağlantısı kesildi",
 			"toastWebhookDisconnectFailed": "Webhook bağlantısı kesilemedi",
-			"toastRuleSaved": "{{workspaceName}} için bildirim kuralı kaydedildi",
+			"toastRuleSaved": "{{organizationName}} için bildirim kuralı kaydedildi",
 			"toastRuleSaveFailed": "Çalışma alanı bildirim kuralı kaydedilemedi",
-			"toastRuleRemoved": "{{workspaceName}} için bildirim kuralı kaldırıldı",
+			"toastRuleRemoved": "{{organizationName}} için bildirim kuralı kaldırıldı",
 			"toastRuleRemoveFailed": "Çalışma alanı bildirim kuralı kaldırılamadı",
 			"toastPreferencesSaved": "Bildirim tercihleri kaydedildi",
 			"toastPreferencesSaveFailed": "Bildirim tercihleri kaydedilemedi",
@@ -434,7 +434,6 @@
 			"selectFirstDayOfWeek": "İlk günü seçin",
 			"weekStartsOnSunday": "Pazar",
 			"weekStartsOnMonday": "Pazartesi",
-			"weekStartsOnSaturday": "Cumartesi",
 			"defaultView": "Varsayılan Görünüm",
 			"defaultViewDescription": "Tercih ettiğiniz talep görünüm modunu seçin",
 			"selectViewMode": "Bir görünüm modu seçin",
@@ -454,7 +453,8 @@
 			"labels": "Etiketler",
 			"labelsDescription": "Talep etiketlerini ve etiketleri göster",
 			"priority": "Öncelik",
-			"priorityDescription": "Öncelik göstergelerini görüntüle"
+			"priorityDescription": "Öncelik göstergelerini görüntüle",
+			"weekStartsOnSaturday": "Cumartesi"
 		},
 		"developerPage": {
 			"pageTitle": "Geliştirici Ayarları",
@@ -522,12 +522,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Genel Ayarlar",
 			"title": "Genel Ayarlar",
 			"subtitle": "Çalışma alanı adınızı ve açıklamanızı yönetin.",
-			"workspaceInfoTitle": "Çalışma Alanı Bilgileri",
-			"workspaceInfoSubtitle": "Çalışma alanı ayrıntılarınızı ve tercihlerinizi yapılandırın.",
+			"organizationInfoTitle": "Çalışma Alanı Bilgileri",
+			"organizationInfoSubtitle": "Çalışma alanı ayrıntılarınızı ve tercihlerinizi yapılandırın.",
 			"nameLabel": "Çalışma alanı adı",
 			"nameHint": "Çalışma alanınızın adı",
 			"namePlaceholder": "Çalışma alanı adını girin",
@@ -536,8 +536,8 @@
 			"descriptionPlaceholder": "Çalışma alanı açıklamasını girin",
 			"dangerZone": "Tehlikeli bölge",
 			"dangerZoneSubtitle": "Geri alınamaz ve yıkıcı işlemler.",
-			"deleteWorkspace": "Çalışma alanını sil",
-			"deleteWorkspaceDescription": "Çalışma alanının kalıcı olarak silinmesini planla",
+			"deleteOrganization": "Çalışma alanını sil",
+			"deleteOrganizationDescription": "Çalışma alanının kalıcı olarak silinmesini planla",
 			"deleteModalTitle": "Çalışma Alanı Silinsin mi?",
 			"deleteModalDescription": "Bu, \"{{name}}\" çalışma alanını ve tüm verilerini kalıcı olarak silecek. Bu işlem geri alınamaz.",
 			"deleteModalConfirm": "Çalışma Alanını Sil",
@@ -550,19 +550,19 @@
 				"nameShort": "Çalışma alanı adı en az 2 karakter olmalıdır"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Proje Ayarları",
 			"title": "Genel Ayarlar",
 			"subtitle": "Proje adınızı, anahtarını, simgesini ve açıklamasını yönetin.",
-			"projectInfoTitle": "Proje Bilgileri",
-			"projectInfoSubtitle": "Proje ayrıntılarınızı ve tercihlerinizi yapılandırın.",
+			"boardInfoTitle": "Proje Bilgileri",
+			"boardInfoSubtitle": "Proje ayrıntılarınızı ve tercihlerinizi yapılandırın.",
 			"iconLabel": "Simge",
 			"iconHint": "Kenar çubuğunda ve proje yüzeylerinde görüntülenir.",
 			"pickIconTitle": "Simge seç",
 			"searchIconsPlaceholder": "Simge ara...",
-			"projectNameLabel": "Proje adı",
-			"projectNameHint": "Projenizin adı",
-			"projectNamePlaceholder": "Proje adını girin",
+			"boardNameLabel": "Proje adı",
+			"boardNameHint": "Projenizin adı",
+			"boardNamePlaceholder": "Proje adını girin",
 			"keyLabel": "Anahtar",
 			"keyHint": "Talep kimlikleri için kullanılır (örn. {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -571,8 +571,8 @@
 			"descriptionPlaceholder": "Proje açıklamasını girin",
 			"dangerZone": "Tehlikeli bölge",
 			"dangerZoneSubtitle": "Geri alınamaz ve yıkıcı işlemler.",
-			"deleteProject": "Projeyi sil",
-			"deleteProjectDescription": "Projenin kalıcı olarak silinmesini planla",
+			"deleteBoard": "Projeyi sil",
+			"deleteBoardDescription": "Projenin kalıcı olarak silinmesini planla",
 			"deleteModalTitle": "Proje Silinsin mi?",
 			"deleteModalDescription": "Bu, \"{{name}}\" projesini ve tüm verilerini kalıcı olarak silecek. Bu işlem geri alınamaz.",
 			"deleteModalConfirm": "Projeyi Sil",
@@ -591,7 +591,7 @@
 			"importExportTasks": "İçe/Dışa Aktar",
 			"importExportTasksDescription": "Talepleri içe ve dışa aktarın."
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Proje Entegrasyonları",
 			"title": "Proje Entegrasyonları",
 			"subtitle": "İş akışınızı kolaylaştırmak için projenizi dış araçlar ve hizmetlerle bağlayın.",
@@ -608,7 +608,7 @@
 			"telegramSectionTitle": "Telegram Entegrasyonu",
 			"telegramSectionSubtitle": "Proje talep güncellemelerini bir bot ile Telegram sohbetine veya konusuna gönderin."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Proje Görünürlüğü",
 			"title": "Görünürlük",
 			"subtitle": "Projenizi kimlerin görüntüleyebileceğini ve erişebileceğini kontrol edin.",
@@ -623,7 +623,7 @@
 			"toastUpdated": "Görünürlük güncellendi",
 			"toastUpdateError": "Görünürlük güncellenemedi"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "İş Akışı Ayarları",
 			"title": "İş Akışı",
 			"subtitle": "Bu proje için pano sütunlarını ve otomasyon kurallarını yapılandırın.",
@@ -632,9 +632,9 @@
 			"automationTitle": "Otomasyon Kuralları",
 			"automationDescription": "Entegrasyon olaylarını sütunlarla eşleştirin. Bir olay gerçekleştiğinde, bağlı talep belirtilen sütuna taşınır."
 		},
-		"projectSwitcher": {
-			"selectProject": "Proje seç",
-			"noProjects": "Proje yok"
+		"boardSwitcher": {
+			"selectBoard": "Proje seç",
+			"noBoards": "Proje yok"
 		},
 		"columnEditor": {
 			"toastCreated": "Sütun oluşturuldu",
@@ -702,7 +702,7 @@
 			"ownerPlaceholder": "örn. octocat",
 			"repoNameLabel": "Depo Adı",
 			"repoNameHint": "Depo adı",
-			"repoNamePlaceholder": "örn. my-project",
+			"repoNamePlaceholder": "örn. my-board",
 			"actionsTitle": "İşlemler",
 			"actionsHint": "Depo bağlantınızı yönetin",
 			"browse": "Göz at",
@@ -1027,12 +1027,12 @@
 		"commandPalette": {
 			"suggestions": "Öneriler",
 			"commands": "Komutlar",
-			"projects": "Projeler",
+			"boards": "Projeler",
 			"search": "Ara",
 			"members": "Üyeler",
 			"createTask": "Talep oluştur",
-			"createProject": "Proje oluştur",
-			"createWorkspace": "Çalışma alanı oluştur",
+			"createBoard": "Proje oluştur",
+			"createOrganization": "Çalışma alanı oluştur",
 			"lightTheme": "Açık tema",
 			"darkTheme": "Koyu tema",
 			"systemTheme": "Sistem teması",
@@ -1048,30 +1048,30 @@
 		"notifications": "Bildirimler",
 		"sidebar": {
 			"overview": "Genel Bakış",
-			"projects": "Projeler",
+			"boards": "Projeler",
 			"members": "Üyeler",
 			"invitations": "Davetler",
 			"more": "Daha fazla",
 			"backToBoard": "Panoya dön"
 		},
-		"projectList": {
-			"viewProject": "Projeyi Görüntüle",
-			"shareProject": "Projeyi Paylaş",
-			"projectSettings": "Proje ayarları",
+		"boardList": {
+			"viewBoard": "Projeyi Görüntüle",
+			"shareBoard": "Projeyi Paylaş",
+			"boardSettings": "Proje ayarları",
 			"linkCopied": "Proje bağlantısı panoya kopyalandı",
-			"addProject": "Proje ekle",
+			"addBoard": "Proje ekle",
 			"deleteConfirmTitle": "Proje Silinsin mi?",
 			"deleteConfirmDescription": "Bu, projeyi ve tüm verilerini kalıcı olarak kaldıracak. Bu işlemi geri alamazsınız.",
 			"deletedToast": "Proje silindi",
-			"deleteProject": "Projeyi Sil"
+			"deleteBoard": "Projeyi Sil"
 		},
 		"search": {
 			"inputPlaceholder": "Talep, proje, yorum ara...",
 			"minCharsHint": "Aramak için en az 3 karakter yazın",
 			"groups": {
 				"task": "Talepler",
-				"project": "Projeler",
-				"workspace": "Çalışma Alanları",
+				"board": "Projeler",
+				"organization": "Çalışma Alanları",
 				"comment": "Yorumlar",
 				"activity": "Aktiviteler",
 				"fallback": "Sonuçlar"
@@ -1089,20 +1089,20 @@
 			"signingOut": "Çıkış yapılıyor...",
 			"logOut": "Çıkış yap"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Çalışma Alanları",
+		"organizationSwitcher": {
+			"organizations": "Çalışma Alanları",
 			"switching": "Geçiliyor...",
-			"addWorkspace": "Çalışma alanı ekle",
-			"selectWorkspace": "Çalışma alanı seç"
+			"addOrganization": "Çalışma alanı ekle",
+			"selectOrganization": "Çalışma alanı seç"
 		},
 		"page": {
-			"projectsTitle": "Projeler",
+			"boardsTitle": "Projeler",
 			"settingsTitle": "Ayarlar",
-			"backToWorkspace": "Çalışma Alanına Dön",
-			"settingsWorkspaceTab": "Çalışma Alanı"
+			"backToOrganization": "Çalışma Alanına Dön",
+			"settingsOrganizationTab": "Çalışma Alanı"
 		},
-		"projectSettings": {
-			"projectLabel": "Proje"
+		"boardSettings": {
+			"boardLabel": "Proje"
 		},
 		"keyboardShortcuts": {
 			"title": "Klavye Kısayolları",
@@ -1123,8 +1123,8 @@
 				"showShortcuts": "Klavye kısayollarını göster",
 				"closeModal": "Modal/açılır pencereyi kapat",
 				"createTask": "Talep oluştur",
-				"createProject": "Proje oluştur",
-				"createWorkspace": "Çalışma alanı oluştur",
+				"createBoard": "Proje oluştur",
+				"createOrganization": "Çalışma alanı oluştur",
 				"boardView": "Pano görünümüne geç",
 				"listView": "Liste görünümüne geç",
 				"backlogView": "Backlog görünümüne geç",
@@ -1152,9 +1152,9 @@
 				"title": "Yeni Talep Oluşturuldu",
 				"content": "\"{{taskTitle}}\" talebi oluşturuldu"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Çalışma alanı oluşturuldu",
-				"content": "\"{{workspaceName}}\" çalışma alanınız başarıyla oluşturuldu"
+				"content": "\"{{organizationName}}\" çalışma alanınız başarıyla oluşturuldu"
 			},
 			"task_status_changed": {
 				"title": "Talep durumu değişti",
@@ -1411,7 +1411,7 @@
 		},
 		"relations": {
 			"title": "İlişkiler",
-			"tasksInProject": "Projedeki talepler",
+			"tasksInBoard": "Projedeki talepler",
 			"linkError": "Talep bağlanamadı",
 			"empty": "İlişkili talep yok",
 			"searchPlaceholder": "Bağlanacak talep ara...",
@@ -1450,8 +1450,8 @@
 		},
 		"move": {
 			"title": "Talebi taşı",
-			"projectLabel": "Hedef proje",
-			"projectPlaceholder": "Bir proje seç",
+			"boardLabel": "Hedef proje",
+			"boardPlaceholder": "Bir proje seç",
 			"statusLabel": "Hedef durum",
 			"statusHintKeep": "Bu projenin iş akışı mevcut durumu zaten destekliyor.",
 			"statusHintAdjust": "Hedef projede kullanılacak durumu seçin.",
@@ -1677,7 +1677,7 @@
 		"continueToSetup": "Kuruluma Devam Et",
 		"skipForNow": "Şimdilik atla",
 		"table": {
-			"workspace": "Çalışma Alanı",
+			"organization": "Çalışma Alanı",
 			"invitedBy": "Davet Eden",
 			"expires": "Süre Sonu"
 		},
@@ -1688,10 +1688,10 @@
 			"rejectSuccess": "Davet reddedildi"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Projeler",
-			"createProject": "Proje oluştur",
+			"createBoard": "Proje oluştur",
 			"title": "Başlık",
 			"progress": "İlerleme",
 			"targetDate": "Hedef tarih",
@@ -1700,7 +1700,7 @@
 			"emptyTitle": "Henüz proje yok",
 			"emptyDescription": "İlk projenizi oluşturarak başlayın.",
 			"emptyDescriptionReadOnly": "Bu çalışma alanında henüz proje yok. Bir yöneticiden oluşturmasını isteyin.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Başlamadı",
 				"complete": "Tamamlandı",
 				"inProgress": "Devam ediyor"
@@ -1786,7 +1786,7 @@
 			"roleUpdateError": "Rol güncellenemedi"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Herkese Açık Görünüm",
 		"badge": "Herkese Açık",
 		"readOnly": "Salt okunur",

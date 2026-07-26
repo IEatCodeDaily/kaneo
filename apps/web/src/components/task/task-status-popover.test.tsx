@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 vi.mock("@/hooks/queries/column/use-get-columns", () => ({
-  useGetColumns: (projectId: string) => useGetColumns(projectId),
+  useGetColumns: (boardId: string) => useGetColumns(boardId),
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task-status", () => ({
@@ -23,8 +23,8 @@ vi.mock("@/hooks/use-numbered-shortcuts", () => ({
   useNumberedShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canManageTasks: () => true }),
+vi.mock("@/hooks/use-organization-permission", () => ({
+  useOrganizationPermission: () => ({ canManageTasks: () => true }),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -45,11 +45,11 @@ const task: Task = {
   userId: null,
   assigneeId: null,
   assigneeName: null,
-  projectId: "project-1",
+  boardId: "board-1",
 };
 
 describe("TaskStatusPopover", () => {
-  it("loads status options for the task project without relying on board state", async () => {
+  it("loads status options for the task board without relying on board state", async () => {
     useGetColumns.mockReturnValue({
       data: [
         {
@@ -70,7 +70,7 @@ describe("TaskStatusPopover", () => {
       </TaskStatusPopover>,
     );
 
-    expect(useGetColumns).toHaveBeenCalledWith("project-1");
+    expect(useGetColumns).toHaveBeenCalledWith("board-1");
     expect(screen.queryByRole("button", { name: /Ready/ })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Status" }));

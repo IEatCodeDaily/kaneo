@@ -40,12 +40,12 @@ import {
 } from "@/components/ui/context-menu";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
-import useGetProject from "@/hooks/queries/project/use-get-project";
+import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
@@ -55,8 +55,8 @@ import SubtaskStatusPopover from "./subtask-status-popover";
 
 type TaskRelationsProps = {
   taskId: string;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
 };
 
 type TaskItem = {
@@ -74,8 +74,8 @@ type TaskGroup = {
 
 export default function TaskRelations({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
 }: TaskRelationsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -87,15 +87,15 @@ export default function TaskRelations({
   >("related");
 
   const { data: relations = [] } = useGetTaskRelations(taskId);
-  const { data: projectData } = useGetTasks(projectId);
-  const { data: project } = useGetProject({ id: projectId, workspaceId });
-  const { data: workspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id ?? "",
+  const { data: boardData } = useGetTasks(boardId);
+  const { data: board } = useGetBoard({ id: boardId, organizationId });
+  const { data: organization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id ?? "",
   );
   const createRelation = useCreateTaskRelation();
   const deleteRelation = useDeleteTaskRelation(taskId);
-  const { canManageTasks } = useWorkspacePermission();
+  const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
 
   useEffect(() => {
@@ -148,11 +148,11 @@ export default function TaskRelations({
   existingRelatedTaskIds.add(taskId);
 
   const allTasks = useMemo(() => {
-    if (!projectData) return [];
+    if (!boardData) return [];
     const tasks: TaskItem[] = [];
 
-    if ("columns" in projectData && Array.isArray(projectData.columns)) {
-      for (const col of projectData.columns as Array<{
+    if ("columns" in boardData && Array.isArray(boardData.columns)) {
+      for (const col of boardData.columns as Array<{
         tasks: TaskItem[];
       }>) {
         if (col.tasks) {
@@ -164,25 +164,25 @@ export default function TaskRelations({
     }
 
     return tasks;
-  }, [projectData]);
+  }, [boardData]);
 
   const finalStatusSlugs = useMemo(() => {
-    if (!projectData) return new Set<string>();
-    if ("columns" in projectData && Array.isArray(projectData.columns)) {
+    if (!boardData) return new Set<string>();
+    if ("columns" in boardData && Array.isArray(boardData.columns)) {
       return new Set(
-        (projectData.columns as Array<{ id: string; isFinal?: boolean }>)
+        (boardData.columns as Array<{ id: string; isFinal?: boolean }>)
           .filter((col) => col.isFinal)
           .map((col) => col.id),
       );
     }
     return new Set<string>();
-  }, [projectData]);
+  }, [boardData]);
 
   const columnIconBySlug = useMemo(() => {
     const icons = new Map<string, string | null | undefined>();
-    if (!projectData) return icons;
-    if ("columns" in projectData && Array.isArray(projectData.columns)) {
-      for (const col of projectData.columns as Array<{
+    if (!boardData) return icons;
+    if ("columns" in boardData && Array.isArray(boardData.columns)) {
+      for (const col of boardData.columns as Array<{
         id: string;
         icon?: string | null;
       }>) {
@@ -190,7 +190,7 @@ export default function TaskRelations({
       }
     }
     return icons;
-  }, [projectData]);
+  }, [boardData]);
 
   const filteredTasks = allTasks.filter(
     (t) => !existingRelatedTaskIds.has(t.id),
@@ -200,7 +200,7 @@ export default function TaskRelations({
     return [
       {
         value: "tasks",
-        label: t("tasks:relations.tasksInProject"),
+        label: t("tasks:relations.tasksInBoard"),
         items: filteredTasks,
       },
     ];
@@ -226,14 +226,14 @@ export default function TaskRelations({
 
   const handleNavigateToTask = (linkedTaskId: string) => {
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-      params: { workspaceId, projectId, taskId: linkedTaskId },
+      to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+      params: { organizationId, boardId, taskId: linkedTaskId },
     });
   };
 
   const getAssignee = (userId: string | null) => {
-    if (!userId || !workspaceUsers?.members) return null;
-    return workspaceUsers.members.find((member) => member.userId === userId);
+    if (!userId || !organizationMembers?.members) return null;
+    return organizationMembers.members.find((member) => member.userId === userId);
   };
 
   const buildTaskObject = (item: {
@@ -254,7 +254,7 @@ export default function TaskRelations({
     assigneeId: item.task.userId,
     assigneeName: item.task.assigneeName,
     assigneeImage: "",
-    projectId: item.task.projectId,
+    boardId: item.task.boardId,
   });
 
   const totalCount = nonSubtaskRelations.length;
@@ -314,7 +314,7 @@ export default function TaskRelations({
                         <div className="group flex items-center gap-2 py-1 px-2 rounded-md hover:bg-accent/50 transition-colors cursor-default">
                           <SubtaskStatusPopover
                             tasks={[taskObj]}
-                            projectId={projectId}
+                            boardId={boardId}
                           >
                             <button
                               type="button"
@@ -342,7 +342,7 @@ export default function TaskRelations({
 
                           <SubtaskAssigneePopover
                             tasks={[taskObj]}
-                            workspaceId={workspaceId}
+                            organizationId={organizationId}
                           >
                             <button
                               type="button"
@@ -432,7 +432,7 @@ export default function TaskRelations({
                         {(item: TaskItem) => (
                           <CommandItem
                             key={item.id}
-                            value={`${project?.slug}-${item.number} ${item.title}`}
+                            value={`${board?.slug}-${item.number} ${item.title}`}
                             onClick={() => handleLinkTask(item.id)}
                             className="flex items-center gap-3 py-2"
                           >
@@ -442,7 +442,7 @@ export default function TaskRelations({
                               columnIconBySlug.get(item.status),
                             )}
                             <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                              {project?.slug}-{item.number}
+                              {board?.slug}-{item.number}
                             </span>
                             <span className="text-sm truncate flex-1">
                               {item.title}

@@ -6,7 +6,7 @@ import {
   CircleDot,
   Search,
 } from "lucide-react";
-import projectIcons from "./project-icons";
+import boardIcons from "./board-icons";
 
 export const DEFAULT_COLUMN_ICON_NAMES = {
   "to-do": "Circle",
@@ -18,7 +18,7 @@ export const DEFAULT_COLUMN_ICON_NAMES = {
 } as const;
 
 const columnIcons = {
-  ...projectIcons,
+  ...boardIcons,
   Circle,
   CircleDot,
   Search,

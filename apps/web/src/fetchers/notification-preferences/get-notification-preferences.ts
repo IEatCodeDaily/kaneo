@@ -1,16 +1,16 @@
 import { getApiUrl } from "@/fetchers/get-api-url";
 
-export type NotificationPreferenceWorkspaceRule = {
+export type NotificationPreferenceOrganizationRule = {
   id: string;
-  workspaceId: string;
-  workspaceName: string;
+  organizationId: string;
+  organizationName: string;
   isActive: boolean;
   emailEnabled: boolean;
   ntfyEnabled: boolean;
   gotifyEnabled: boolean;
   webhookEnabled: boolean;
-  projectMode: "all" | "selected";
-  selectedProjectIds: string[];
+  boardMode: "all" | "selected";
+  selectedBoardIds: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -39,7 +39,7 @@ export type NotificationPreferences = {
   taskStatusChangeEnabled: boolean;
   dueDateReminderEnabled: boolean;
   dueDateReminderLeadTimeMinutes: number;
-  workspaces: NotificationPreferenceWorkspaceRule[];
+  organizations: NotificationPreferenceOrganizationRule[];
   createdAt: string | null;
   updatedAt: string | null;
 };

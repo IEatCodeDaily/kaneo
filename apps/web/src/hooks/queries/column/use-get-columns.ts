@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import getColumns from "@/fetchers/column/get-columns";
 
-export function useGetColumns(projectId: string) {
+export function useGetColumns(boardId: string) {
   return useQuery({
-    queryKey: ["columns", projectId],
-    queryFn: () => getColumns(projectId),
-    enabled: !!projectId,
+    queryKey: ["columns", boardId],
+    queryFn: () => getColumns(boardId),
+    enabled: !!boardId,
   });
 }

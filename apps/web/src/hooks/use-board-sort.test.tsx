@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useBoardSort } from "./use-board-sort";
 
 describe("useBoardSort", () => {
-  const storageKey = "kaneo:board-sort:project-1";
+  const storageKey = "kaneo:board-sort:board-1";
 
   beforeEach(() => {
     window.localStorage.clear();
@@ -19,7 +19,7 @@ describe("useBoardSort", () => {
       JSON.stringify({ field: "priority", direction: "desc" }),
     );
 
-    const { result } = renderHook(() => useBoardSort("project-1"));
+    const { result } = renderHook(() => useBoardSort("board-1"));
 
     await waitFor(() => {
       expect(result.current.sort).toEqual({
@@ -32,7 +32,7 @@ describe("useBoardSort", () => {
   it("falls back to the default sort when stored JSON is invalid", async () => {
     window.localStorage.setItem(storageKey, "not-json{");
 
-    const { result } = renderHook(() => useBoardSort("project-1"));
+    const { result } = renderHook(() => useBoardSort("board-1"));
 
     await waitFor(() => {
       expect(result.current.sort).toEqual({
@@ -43,7 +43,7 @@ describe("useBoardSort", () => {
   });
 
   it("writes sort changes to storage", async () => {
-    const { result } = renderHook(() => useBoardSort("project-1"));
+    const { result } = renderHook(() => useBoardSort("board-1"));
 
     act(() => {
       result.current.setSort({ field: "dueDate", direction: "desc" });
@@ -62,7 +62,7 @@ describe("useBoardSort", () => {
       JSON.stringify({ field: "not-a-field", direction: "desc" }),
     );
 
-    const { result } = renderHook(() => useBoardSort("project-1"));
+    const { result } = renderHook(() => useBoardSort("board-1"));
 
     await waitFor(() => {
       expect(result.current.sort).toEqual({

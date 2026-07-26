@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Trash2, X } from "lucide-react";
-import useDeleteWorkspaceUser from "@/hooks/mutations/workspace-user/use-delete-workspace-user";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useDeleteOrganizationMember from "@/hooks/mutations/organization-member/use-delete-organization-member";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { Button } from "../ui/button";
 import { Dialog, DialogClose, DialogPopup, DialogTitle } from "../ui/dialog";
 
@@ -15,22 +15,22 @@ function DeleteTeamMemberModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const { data: workspace } = useActiveWorkspace();
-  const workspaceId = workspace?.id ?? "";
-  const { mutateAsync: deleteWorkspaceUser } = useDeleteWorkspaceUser();
+  const { data: organization } = useActiveOrganization();
+  const organizationId = organization?.id ?? "";
+  const { mutateAsync: deleteOrganizationMember } = useDeleteOrganizationMember();
   const queryClient = useQueryClient();
-  const { canRemoveMembers } = useWorkspacePermission();
+  const { canRemoveMembers } = useOrganizationPermission();
   const canRemove = canRemoveMembers();
 
   const onRemoveMember = async () => {
     if (!canRemove) return;
-    await deleteWorkspaceUser({
-      workspaceId,
+    await deleteOrganizationMember({
+      organizationId,
       userId,
     });
 
     queryClient.invalidateQueries({
-      queryKey: ["workspace-users"],
+      queryKey: ["organization-members"],
     });
 
     onClose();

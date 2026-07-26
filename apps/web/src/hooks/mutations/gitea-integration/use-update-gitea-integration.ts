@@ -8,15 +8,15 @@ export function useUpdateGiteaIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       json,
     }: {
-      projectId: string;
+      boardId: string;
       json: UpdateGiteaIntegrationRequest;
-    }) => updateGiteaIntegration(projectId, json),
-    onSuccess: (_, { projectId }) => {
+    }) => updateGiteaIntegration(boardId, json),
+    onSuccess: (_, { boardId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["gitea-integration", projectId],
+        queryKey: ["gitea-integration", boardId],
       });
     },
   });

@@ -3,7 +3,7 @@ import { client } from "@kaneo/libs";
 export type InvitationDetails = {
   id: string;
   email: string;
-  workspaceName: string;
+  organizationName: string;
   inviterName: string;
   expiresAt: string;
   status: string;

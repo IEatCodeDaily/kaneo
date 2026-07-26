@@ -16,11 +16,11 @@ export type UpdateSlackIntegrationRequest = {
 };
 
 async function updateSlackIntegration(
-  projectId: string,
+  boardId: string,
   json: UpdateSlackIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/project/${projectId}`),
+    getApiUrl(`/slack-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

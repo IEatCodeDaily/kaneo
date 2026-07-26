@@ -60,21 +60,21 @@
 			"never": "Никогаш"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Креирај нов проект",
 				"breadcrumbNew": "Креирај нов проект",
-				"workspaceFallback": "РАБОТЕН ПРОСТОР",
+				"organizationFallback": "РАБОТЕН ПРОСТОР",
 				"description": "Креирај нов проект во твојот работен простор со име, клуч и избор на икона.",
 				"pickIcon": "Избери икона",
 				"searchIcons": "Пребарај икони...",
-				"projectName": "Име на проект",
+				"boardName": "Име на проект",
 				"keyLabel": "Клуч:",
 				"keyHint": "Се користи за ID на тикети (пр. {{example}}-123)",
 				"createButton": "Креирај проект",
 				"successToast": "Проектот е успешно креиран",
 				"errorToast": "Неуспешно креирање на проект"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Креирај нов работен простор",
 				"description": "Креирај нов работен простор со внесување на име.",
@@ -90,7 +90,7 @@
 				"description": "Креирај нова задача со наслов, опис и други детали.",
 				"taskTitlePlaceholder": "Наслов на задача",
 				"descriptionPlaceholder": "Додади опис за твојата задача...",
-				"chooseProjectForImages": "Избери проект пред да прикачиш слики.",
+				"chooseBoardForImages": "Избери проект пред да прикачиш слики.",
 				"prepareTaskError": "Неуспешна подготовка на задача",
 				"successCreated": "Задачата е успешно креирана",
 				"successUpdated": "Задачата е успешно ажурирана",
@@ -242,8 +242,8 @@
 			"invitationExpired": "Поканата истече",
 			"errorLoadDescription": "Неуспешно вчитување на деталите за поканата. Поканата може да е невалидна или истечена.",
 			"goToSignIn": "Оди на најава",
-			"workspaceLabel": "Работен простор: {{workspaceName}}",
-			"joinWorkspace": "Приклучи се на {{workspaceName}}",
+			"organizationLabel": "Работен простор: {{organizationName}}",
+			"joinOrganization": "Приклучи се на {{organizationName}}",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> те покани да се приклучиш на нивниот работен простор.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> те покани да се приклучиш на нивниот работен простор на Kaneo.",
 			"signInToAccept": "Најави се за да ја прифатиш поканата.",
@@ -261,23 +261,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Добредојде на Kaneo",
-			"workspacePageTitle": "Креирај работен простор",
-			"createWorkspaceTitle": "Креирај работен простор",
-			"createWorkspaceSubtitle": "Постави го твојот работен простор за да почнеш со управување на проекти",
-			"workspaceName": "Име на работен простор",
-			"workspaceNamePlaceholder": "пр. Acme Inc, Мојот тим",
+			"organizationPageTitle": "Креирај работен простор",
+			"createOrganizationTitle": "Креирај работен простор",
+			"createOrganizationSubtitle": "Постави го твојот работен простор за да почнеш со управување на проекти",
+			"organizationName": "Име на работен простор",
+			"organizationNamePlaceholder": "пр. Acme Inc, Мојот тим",
 			"descriptionOptional": "Опис (опционално)",
 			"descriptionPlaceholder": "На што работи твојот тим?",
 			"creating": "Се креира...",
-			"createWorkspace": "Креирај работен простор",
-			"workspaceCreatedTitle": "Работниот простор е креиран",
-			"redirectingToWorkspace": "Те носиме на <name>{{name}}</name>...",
+			"createOrganization": "Креирај работен простор",
+			"organizationCreatedTitle": "Работниот простор е креиран",
+			"redirectingToOrganization": "Те носиме на <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Работниот простор е успешно креиран",
+				"organizationCreated": "Работниот простор е успешно креиран",
 				"createFailed": "Неуспешно креирање на работен простор"
 			},
 			"validation": {
-				"workspaceNameRequired": "Името на работниот простор е задолжително"
+				"organizationNameRequired": "Името на работниот простор е задолжително"
 			}
 		},
 		"profileSetup": {
@@ -367,28 +367,28 @@
 			"webhookSecretHintConfigured": "A signing secret is already configured ({{masked}}). Enter a new one to replace it.",
 			"webhookSecretHintOptional": "Optional. Kaneo signs the request body when a secret is set.",
 			"connectWebhook": "Connect webhook",
-			"workspaceRulesTitle": "Workspace delivery rules",
-			"workspaceRulesDescription": "Reuse your global channels, then decide which workspaces and projects are allowed to send account notifications.",
-			"workspaceCardHint": "Choose which channels this workspace can use for account notifications.",
-			"workspaceCardLabelEmail": "Email",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Custom webhook",
-			"emailChannelHintEnabled": "Send matching workspace notifications by email.",
+			"organizationRulesTitle": "Organization delivery rules",
+			"organizationRulesDescription": "Reuse your global channels, then decide which organizations and boards are allowed to send account notifications.",
+			"organizationCardHint": "Choose which channels this organization can use for account notifications.",
+			"organizationCardLabelEmail": "Email",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Custom webhook",
+			"emailChannelHintEnabled": "Send matching organization notifications by email.",
 			"emailChannelHintDisabled": "Configure and enable email globally first.",
-			"ntfyChannelHintEnabled": "Send matching workspace notifications to ntfy.",
+			"ntfyChannelHintEnabled": "Send matching organization notifications to ntfy.",
 			"ntfyChannelHintDisabled": "Configure and enable ntfy globally first.",
-			"gotifyChannelHintEnabled": "Send matching workspace notifications to Gotify.",
+			"gotifyChannelHintEnabled": "Send matching organization notifications to Gotify.",
 			"gotifyChannelHintDisabled": "Configure and enable Gotify globally first.",
-			"webhookChannelHintEnabled": "Send matching workspace notifications to your webhook.",
+			"webhookChannelHintEnabled": "Send matching organization notifications to your webhook.",
 			"webhookChannelHintDisabled": "Configure and enable the webhook globally first.",
-			"projectScope": "Project scope",
-			"projectScopeDescription": "All projects are included by default. Narrow it down if this workspace should only send notifications from selected projects.",
-			"allProjects": "All projects",
-			"allProjectsDescription": "Deliver notifications from every project in this workspace.",
-			"selectedProjects": "Selected projects",
-			"selectedProjectsDescription": "Only deliver notifications from chosen projects.",
-			"noProjectsInWorkspace": "No projects available for this workspace yet.",
+			"boardScope": "Board scope",
+			"boardScopeDescription": "All boards are included by default. Narrow it down if this organization should only send notifications from selected boards.",
+			"allBoards": "All boards",
+			"allBoardsDescription": "Deliver notifications from every board in this organization.",
+			"selectedBoards": "Selected boards",
+			"selectedBoardsDescription": "Only deliver notifications from chosen boards.",
+			"noBoardsInOrganization": "No boards available for this organization yet.",
 			"createRule": "Create rule",
 			"removeRule": "Remove rule",
 			"toastEmailSaved": "Email notification settings saved",
@@ -405,14 +405,14 @@
 			"toastWebhookSaveFailed": "Failed to save webhook settings",
 			"toastWebhookDisconnected": "Webhook disconnected",
 			"toastWebhookDisconnectFailed": "Failed to disconnect webhook",
-			"toastRuleSaved": "Saved notification rule for {{workspaceName}}",
-			"toastRuleSaveFailed": "Failed to save workspace notification rule",
-			"toastRuleRemoved": "Removed notification rule for {{workspaceName}}",
-			"toastRuleRemoveFailed": "Failed to remove workspace notification rule",
+			"toastRuleSaved": "Saved notification rule for {{organizationName}}",
+			"toastRuleSaveFailed": "Failed to save organization notification rule",
+			"toastRuleRemoved": "Removed notification rule for {{organizationName}}",
+			"toastRuleRemoveFailed": "Failed to remove organization notification rule",
 			"toastPreferencesSaved": "Notification preferences saved",
 			"toastPreferencesSaveFailed": "Failed to save notification preferences",
-			"toastRuleSavedGeneric": "Workspace notification rule saved",
-			"toastRuleRemovedGeneric": "Workspace notification rule removed"
+			"toastRuleSavedGeneric": "Organization notification rule saved",
+			"toastRuleRemovedGeneric": "Organization notification rule removed"
 		},
 		"preferencesPage": {
 			"title": "Преференции",
@@ -433,7 +433,6 @@
 			"selectFirstDayOfWeek": "Избери прв ден",
 			"weekStartsOnSunday": "Недела",
 			"weekStartsOnMonday": "Понеделник",
-			"weekStartsOnSaturday": "Сабота",
 			"defaultView": "Стандарден приказ",
 			"defaultViewDescription": "Избери го претпочитаниот режим на приказ на задачи",
 			"selectViewMode": "Избери режим на приказ",
@@ -453,7 +452,8 @@
 			"labels": "Етикети",
 			"labelsDescription": "Прикажи етикети и тагови на задачите",
 			"priority": "Приоритет",
-			"priorityDescription": "Прикажи индикатори за приоритет"
+			"priorityDescription": "Прикажи индикатори за приоритет",
+			"weekStartsOnSaturday": "Сабота"
 		},
 		"developerPage": {
 			"pageTitle": "Програмерски поставки",
@@ -521,12 +521,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Општи поставки",
 			"title": "Општи поставки",
 			"subtitle": "Управувај со името и описот на работниот простор.",
-			"workspaceInfoTitle": "Информации за работниот простор",
-			"workspaceInfoSubtitle": "Конфигурирај ги деталите и преференциите на работниот простор.",
+			"organizationInfoTitle": "Информации за работниот простор",
+			"organizationInfoSubtitle": "Конфигурирај ги деталите и преференциите на работниот простор.",
 			"nameLabel": "Име на работен простор",
 			"nameHint": "Името на твојот работен простор",
 			"namePlaceholder": "Внеси име на работен простор",
@@ -535,8 +535,8 @@
 			"descriptionPlaceholder": "Внеси опис на работен простор",
 			"dangerZone": "Опасна зона",
 			"dangerZoneSubtitle": "Неповратни и деструктивни акции.",
-			"deleteWorkspace": "Избриши работен простор",
-			"deleteWorkspaceDescription": "Закажи трајно бришење на работниот простор",
+			"deleteOrganization": "Избриши работен простор",
+			"deleteOrganizationDescription": "Закажи трајно бришење на работниот простор",
 			"deleteModalTitle": "Избриши работен простор?",
 			"deleteModalDescription": "Ова трајно ќе го избрише работниот простор \"{{name}}\" и сите негови податоци. Оваа акција не може да се врати.",
 			"deleteModalConfirm": "Избриши работен простор",
@@ -549,19 +549,19 @@
 				"nameShort": "Името на работниот простор мора да има најмалку 2 знаци"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Поставки на проект",
 			"title": "Општи поставки",
 			"subtitle": "Управувај со името, клучот, иконата и описот на проектот.",
-			"projectInfoTitle": "Информации за проектот",
-			"projectInfoSubtitle": "Конфигурирај ги деталите и преференциите на проектот.",
+			"boardInfoTitle": "Информации за проектот",
+			"boardInfoSubtitle": "Конфигурирај ги деталите и преференциите на проектот.",
 			"iconLabel": "Икона",
 			"iconHint": "Се прикажува во страничната лента и на површините на проектот.",
 			"pickIconTitle": "Избери икона",
 			"searchIconsPlaceholder": "Пребарај икони...",
-			"projectNameLabel": "Име на проект",
-			"projectNameHint": "Името на твојот проект",
-			"projectNamePlaceholder": "Внеси име на проект",
+			"boardNameLabel": "Име на проект",
+			"boardNameHint": "Името на твојот проект",
+			"boardNamePlaceholder": "Внеси име на проект",
 			"keyLabel": "Клуч",
 			"keyHint": "Се користи за ID на тикети (пр. {{slug}}-123)",
 			"keyPlaceholder": "ПРО",
@@ -570,8 +570,8 @@
 			"descriptionPlaceholder": "Внеси опис на проект",
 			"dangerZone": "Опасна зона",
 			"dangerZoneSubtitle": "Неповратни и деструктивни акции.",
-			"deleteProject": "Избриши проект",
-			"deleteProjectDescription": "Закажи трајно бришење на проектот",
+			"deleteBoard": "Избриши проект",
+			"deleteBoardDescription": "Закажи трајно бришење на проектот",
 			"deleteModalTitle": "Избриши проект?",
 			"deleteModalDescription": "Ова трајно ќе го избрише проектот \"{{name}}\" и сите негови податоци. Оваа акција не може да се врати.",
 			"deleteModalConfirm": "Избриши проект",
@@ -590,7 +590,7 @@
 			"importExportTasks": "Импортирање/Експортирање",
 			"importExportTasksDescription": "Импортирање/Експортирање на задачи"
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Интеграции на проект",
 			"title": "Интеграции на проект",
 			"subtitle": "Поврзи го твојот проект со надворешни алатки и сервиси за да го подобриш работниот тек.",
@@ -607,7 +607,7 @@
 			"slackSectionTitle": "Slack интеграција",
 			"slackSectionSubtitle": "Испрати ажурирања за задачи на проектот во Slack канал преку дојдовен webhook."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Видливост на проект",
 			"title": "Видливост",
 			"subtitle": "Контролирај кој може да го гледа и пристапува твојот проект.",
@@ -622,7 +622,7 @@
 			"toastUpdated": "Видливоста е ажурирана",
 			"toastUpdateError": "Неуспешно ажурирање на видливоста"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Поставки на работен тек",
 			"title": "Работен тек",
 			"subtitle": "Конфигурирај ги колоните на таблата и правилата за автоматизација за овој проект.",
@@ -631,9 +631,9 @@
 			"automationTitle": "Правила за автоматизација",
 			"automationDescription": "Поврзи настани од интеграции со колони. Кога ќе се случи настан, поврзаната задача се преместува во одредената колона."
 		},
-		"projectSwitcher": {
-			"selectProject": "Избери проект",
-			"noProjects": "Нема проекти"
+		"boardSwitcher": {
+			"selectBoard": "Избери проект",
+			"noBoards": "Нема проекти"
 		},
 		"columnEditor": {
 			"toastCreated": "Колоната е креирана",
@@ -701,7 +701,7 @@
 			"ownerPlaceholder": "пр. octocat",
 			"repoNameLabel": "Име на репозиториум",
 			"repoNameHint": "Името на репозиториумот",
-			"repoNamePlaceholder": "пр. my-project",
+			"repoNamePlaceholder": "пр. my-board",
 			"actionsTitle": "Акции",
 			"actionsHint": "Управувај со конекцијата на репозиториумот",
 			"browse": "Прелистај",
@@ -1024,12 +1024,12 @@
 		"commandPalette": {
 			"suggestions": "Предлози",
 			"commands": "Команди",
-			"projects": "Проекти",
+			"boards": "Проекти",
 			"search": "Пребарај",
 			"members": "Членови",
 			"createTask": "Креирај задача",
-			"createProject": "Креирај проект",
-			"createWorkspace": "Креирај работен простор",
+			"createBoard": "Креирај проект",
+			"createOrganization": "Креирај работен простор",
 			"lightTheme": "Светла тема",
 			"darkTheme": "Темна тема",
 			"systemTheme": "Системска тема",
@@ -1045,30 +1045,30 @@
 		"notifications": "Известувања",
 		"sidebar": {
 			"overview": "Преглед",
-			"projects": "Проекти",
+			"boards": "Проекти",
 			"members": "Членови",
 			"invitations": "Покани",
 			"more": "Повеќе",
 			"backToBoard": "Назад на табла"
 		},
-		"projectList": {
-			"viewProject": "Погледни проект",
-			"shareProject": "Сподели проект",
-			"projectSettings": "Поставки на проектот",
+		"boardList": {
+			"viewBoard": "Погледни проект",
+			"shareBoard": "Сподели проект",
+			"boardSettings": "Поставки на проектот",
 			"linkCopied": "Линкот на проектот е копиран во клипборд",
-			"addProject": "Додади проект",
+			"addBoard": "Додади проект",
 			"deleteConfirmTitle": "Избриши проект?",
 			"deleteConfirmDescription": "Ова трајно ќе го отстрани проектот и сите негови податоци. Не можеш да ја вратиш оваа акција.",
 			"deletedToast": "Проектот е избришан",
-			"deleteProject": "Избриши проект"
+			"deleteBoard": "Избриши проект"
 		},
 		"search": {
 			"inputPlaceholder": "Пребарај задачи, проекти, коментари...",
 			"minCharsHint": "Внеси најмалку 3 знаци за пребарување",
 			"groups": {
 				"task": "Задачи",
-				"project": "Проекти",
-				"workspace": "Работни простори",
+				"board": "Проекти",
+				"organization": "Работни простори",
 				"comment": "Коментари",
 				"activity": "Активности",
 				"fallback": "Резултати"
@@ -1086,20 +1086,20 @@
 			"signingOut": "Се одјавува...",
 			"logOut": "Одјави се"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Работни простори",
+		"organizationSwitcher": {
+			"organizations": "Работни простори",
 			"switching": "Се префрлува...",
-			"addWorkspace": "Додади работен простор",
-			"selectWorkspace": "Избери работен простор"
+			"addOrganization": "Додади работен простор",
+			"selectOrganization": "Избери работен простор"
 		},
 		"page": {
-			"projectsTitle": "Проекти",
+			"boardsTitle": "Проекти",
 			"settingsTitle": "Поставки",
-			"backToWorkspace": "Назад кон работен простор",
-			"settingsWorkspaceTab": "Работен простор"
+			"backToOrganization": "Назад кон работен простор",
+			"settingsOrganizationTab": "Работен простор"
 		},
-		"projectSettings": {
-			"projectLabel": "Проект"
+		"boardSettings": {
+			"boardLabel": "Проект"
 		},
 		"keyboardShortcuts": {
 			"title": "Кратенки на тастатура",
@@ -1120,8 +1120,8 @@
 				"showShortcuts": "Прикажи кратенки на тастатура",
 				"closeModal": "Затвори модал/мени",
 				"createTask": "Креирај задача",
-				"createProject": "Креирај проект",
-				"createWorkspace": "Креирај работен простор",
+				"createBoard": "Креирај проект",
+				"createOrganization": "Креирај работен простор",
 				"boardView": "Премини на приказ табла",
 				"listView": "Премини на приказ листа",
 				"backlogView": "Премини на приказ заостанати",
@@ -1149,9 +1149,9 @@
 				"title": "Нова задача е креирана",
 				"content": "Задачата \"{{taskTitle}}\" е креирана"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Работниот простор е креиран",
-				"content": "Твојот работен простор \"{{workspaceName}}\" е успешно креиран"
+				"content": "Твојот работен простор \"{{organizationName}}\" е успешно креиран"
 			},
 			"task_status_changed": {
 				"title": "Статусот на задачата е променет",
@@ -1404,7 +1404,7 @@
 		},
 		"relations": {
 			"title": "Релации",
-			"tasksInProject": "Задачи во проект",
+			"tasksInBoard": "Задачи во проект",
 			"linkError": "Неуспешно поврзување на задача",
 			"empty": "Нема поврзани задачи",
 			"searchPlaceholder": "Пребарај задачи за поврзување...",
@@ -1442,8 +1442,8 @@
 		},
 		"move": {
 			"title": "Премести задача",
-			"projectLabel": "Целен проект",
-			"projectPlaceholder": "Избери проект",
+			"boardLabel": "Целен проект",
+			"boardPlaceholder": "Избери проект",
 			"statusLabel": "Целен статус",
 			"statusHintKeep": "Тековниот статус веќе е поддржан во целниот проект.",
 			"statusHintAdjust": "Избери статус што ќе се користи во целниот проект.",
@@ -1662,14 +1662,14 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "Покани",
 		"pendingInvitations": "Покани на чекање",
@@ -1679,7 +1679,7 @@
 		"continueToSetup": "Продолжи со поставување",
 		"skipForNow": "Прескокни засега",
 		"table": {
-			"workspace": "Работен простор",
+			"organization": "Работен простор",
 			"invitedBy": "Поканет од",
 			"expires": "Истекува"
 		},
@@ -1690,10 +1690,10 @@
 			"rejectSuccess": "Поканата е одбиена"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Проекти",
-			"createProject": "Креирај проект",
+			"createBoard": "Креирај проект",
 			"title": "Наслов",
 			"progress": "Напредок",
 			"targetDate": "Целен датум",
@@ -1701,7 +1701,7 @@
 			"status": "Статус",
 			"emptyTitle": "Нема проекти засега",
 			"emptyDescription": "Започни со креирање на твојот прв проект.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Не е започнат",
 				"complete": "Завршен",
 				"inProgress": "Во тек"
@@ -1784,7 +1784,7 @@
 			"cancelInviteError": "Неуспешно откажување на покана"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Јавен приказ",
 		"badge": "Јавен",
 		"readOnly": "Само за читање",

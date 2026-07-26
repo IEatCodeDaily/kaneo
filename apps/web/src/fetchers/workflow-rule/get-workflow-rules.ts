@@ -1,8 +1,8 @@
 import { client } from "@kaneo/libs";
 
-async function getWorkflowRules(projectId: string) {
-  const response = await client["workflow-rule"][":projectId"].$get({
-    param: { projectId },
+async function getWorkflowRules(boardId: string) {
+  const response = await client["workflow-rule"][":boardId"].$get({
+    param: { boardId },
   });
 
   if (!response.ok) {

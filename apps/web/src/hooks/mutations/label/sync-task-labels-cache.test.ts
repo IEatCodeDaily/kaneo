@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { updateTaskLabelsInProject } from "./sync-task-labels-cache";
+import { updateTaskLabelsInBoard } from "./sync-task-labels-cache";
 
-describe("updateTaskLabelsInProject", () => {
+describe("updateTaskLabelsInBoard", () => {
   it("adds a label to the matching task without changing other tasks", () => {
-    const project = {
-      id: "project-1",
-      name: "Project",
+    const board = {
+      id: "board-1",
+      name: "Board",
       slug: "PROJ",
       icon: null,
       description: null,
       isPublic: false,
       createdAt: "2026-04-16T00:00:00.000Z",
       updatedAt: "2026-04-16T00:00:00.000Z",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
       columns: [
         {
           id: "todo",
@@ -37,7 +37,7 @@ describe("updateTaskLabelsInProject", () => {
               assigneeId: null,
               assigneeName: null,
               assigneeImage: null,
-              projectId: "project-1",
+              boardId: "board-1",
               labels: [],
               externalLinks: [],
             },
@@ -57,7 +57,7 @@ describe("updateTaskLabelsInProject", () => {
               assigneeId: null,
               assigneeName: null,
               assigneeImage: null,
-              projectId: "project-1",
+              boardId: "board-1",
               labels: [],
               externalLinks: [],
             },
@@ -68,8 +68,8 @@ describe("updateTaskLabelsInProject", () => {
       archivedTasks: [],
     };
 
-    const updatedProject = updateTaskLabelsInProject(
-      project,
+    const updatedBoard = updateTaskLabelsInBoard(
+      board,
       "task-1",
       (labels) => [
         ...labels,
@@ -81,27 +81,27 @@ describe("updateTaskLabelsInProject", () => {
       ],
     );
 
-    expect(updatedProject.columns[0]?.tasks[0]?.labels).toEqual([
+    expect(updatedBoard.columns[0]?.tasks[0]?.labels).toEqual([
       {
         id: "label-bug",
         name: "bug",
         color: "red",
       },
     ]);
-    expect(updatedProject.columns[0]?.tasks[1]?.labels).toEqual([]);
+    expect(updatedBoard.columns[0]?.tasks[1]?.labels).toEqual([]);
   });
 
   it("removes a label from planned and archived task collections too", () => {
-    const project = {
-      id: "project-1",
-      name: "Project",
+    const board = {
+      id: "board-1",
+      name: "Board",
       slug: "PROJ",
       icon: null,
       description: null,
       isPublic: false,
       createdAt: "2026-04-16T00:00:00.000Z",
       updatedAt: "2026-04-16T00:00:00.000Z",
-      workspaceId: "workspace-1",
+      organizationId: "organization-1",
       columns: [],
       plannedTasks: [
         {
@@ -120,7 +120,7 @@ describe("updateTaskLabelsInProject", () => {
           assigneeId: null,
           assigneeName: null,
           assigneeImage: null,
-          projectId: "project-1",
+          boardId: "board-1",
           labels: [
             {
               id: "label-bug",
@@ -148,7 +148,7 @@ describe("updateTaskLabelsInProject", () => {
           assigneeId: null,
           assigneeName: null,
           assigneeImage: null,
-          projectId: "project-1",
+          boardId: "board-1",
           labels: [
             {
               id: "label-bug",
@@ -161,14 +161,14 @@ describe("updateTaskLabelsInProject", () => {
       ],
     };
 
-    const updatedProject = updateTaskLabelsInProject(
-      project,
+    const updatedBoard = updateTaskLabelsInBoard(
+      board,
       "task-3",
       (labels) => labels.filter((label) => label.id !== "label-bug"),
     );
 
-    expect(updatedProject.plannedTasks[0]?.labels).toEqual([]);
-    expect(updatedProject.archivedTasks[0]?.labels).toEqual([
+    expect(updatedBoard.plannedTasks[0]?.labels).toEqual([]);
+    expect(updatedBoard.archivedTasks[0]?.labels).toEqual([
       {
         id: "label-bug",
         name: "bug",

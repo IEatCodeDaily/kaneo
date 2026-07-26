@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMoveTask } from "@/hooks/mutations/task/use-move-task";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
@@ -25,41 +25,41 @@ import type Task from "@/types/task";
 
 type TaskMovePopoverProps = {
   task: Task;
-  workspaceId: string;
+  organizationId: string;
   triggerClassName?: string;
 };
 
 export default function TaskMovePopover({
   task,
-  workspaceId,
+  organizationId,
   triggerClassName,
 }: TaskMovePopoverProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedBoardId, setSelectedBoardId] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const { data: projects = [] } = useGetProjects({ workspaceId });
+  const { data: boards = [] } = useGetBoards({ organizationId });
   const { mutateAsync: moveTask, isPending: isMovePending } = useMoveTask();
-  const destinationProjectId = selectedProjectId || "";
+  const destinationBoardId = selectedBoardId || "";
   const {
-    data: destinationProject,
-    isLoading: isProjectLoading,
-    isError: isProjectError,
-  } = useGetTasks(destinationProjectId);
+    data: destinationBoard,
+    isLoading: isBoardLoading,
+    isError: isBoardError,
+  } = useGetTasks(destinationBoardId);
 
-  const destinationProjects = useMemo(
-    () => projects.filter((project) => project.id !== task.projectId),
-    [projects, task.projectId],
+  const destinationBoards = useMemo(
+    () => boards.filter((board) => board.id !== task.boardId),
+    [boards, task.boardId],
   );
 
-  const selectedProject = useMemo(
-    () => destinationProjects.find((p) => p.id === selectedProjectId),
-    [destinationProjects, selectedProjectId],
+  const selectedBoard = useMemo(
+    () => destinationBoards.find((p) => p.id === selectedBoardId),
+    [destinationBoards, selectedBoardId],
   );
 
-  const destinationColumns = destinationProject?.columns ?? [];
+  const destinationColumns = destinationBoard?.columns ?? [];
   const canKeepCurrentStatus = destinationColumns.some(
     (column) => column.id === task.status,
   );
@@ -76,13 +76,13 @@ export default function TaskMovePopover({
 
   useEffect(() => {
     if (!open) {
-      setSelectedProjectId("");
+      setSelectedBoardId("");
       setSelectedStatus("");
     }
   }, [open]);
 
   useEffect(() => {
-    if (!selectedProjectId) {
+    if (!selectedBoardId) {
       setSelectedStatus("");
       return;
     }
@@ -93,25 +93,25 @@ export default function TaskMovePopover({
     }
 
     setSelectedStatus(fallbackStatus);
-  }, [canKeepCurrentStatus, fallbackStatus, selectedProjectId, task.status]);
+  }, [canKeepCurrentStatus, fallbackStatus, selectedBoardId, task.status]);
 
   const handleMove = async () => {
-    if (!selectedProjectId || !effectiveStatus) return;
+    if (!selectedBoardId || !effectiveStatus) return;
 
     try {
       const result = await moveTask({
         taskId: task.id,
-        destinationProjectId: selectedProjectId,
+        destinationBoardId: selectedBoardId,
         destinationStatus: effectiveStatus,
       });
 
       setOpen(false);
       startTransition(() => {
         navigate({
-          to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+          to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
           params: {
-            workspaceId,
-            projectId: result.task.projectId,
+            organizationId,
+            boardId: result.task.boardId,
             taskId: task.id,
           },
         });
@@ -121,7 +121,7 @@ export default function TaskMovePopover({
     }
   };
 
-  if (destinationProjects.length === 0) {
+  if (destinationBoards.length === 0) {
     return null;
   }
 
@@ -147,30 +147,30 @@ export default function TaskMovePopover({
 
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">
-              {t("tasks:move.projectLabel")}
+              {t("tasks:move.boardLabel")}
             </Label>
             <Select
-              value={selectedProjectId}
+              value={selectedBoardId}
               onValueChange={(value) =>
-                setSelectedProjectId(String(value ?? ""))
+                setSelectedBoardId(String(value ?? ""))
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("tasks:move.projectPlaceholder")}>
-                  {selectedProject?.name}
+                <SelectValue placeholder={t("tasks:move.boardPlaceholder")}>
+                  {selectedBoard?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {destinationProjects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                {destinationBoards.map((board) => (
+                  <SelectItem key={board.id} value={board.id}>
+                    {board.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {selectedProjectId && isProjectLoading && (
+          {selectedBoardId && isBoardLoading && (
             <div className="flex items-center justify-center py-2">
               <span className="text-xs text-muted-foreground">
                 {t("tasks:move.statusLabel")}…
@@ -178,13 +178,13 @@ export default function TaskMovePopover({
             </div>
           )}
 
-          {selectedProjectId && isProjectError && (
+          {selectedBoardId && isBoardError && (
             <p className="text-xs text-destructive">{t("tasks:move.error")}</p>
           )}
 
-          {selectedProjectId &&
-            !isProjectLoading &&
-            !isProjectError &&
+          {selectedBoardId &&
+            !isBoardLoading &&
+            !isBoardError &&
             destinationColumns.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs text-muted-foreground">
@@ -221,12 +221,12 @@ export default function TaskMovePopover({
             size="sm"
             onClick={() => void handleMove()}
             disabled={
-              !selectedProjectId ||
+              !selectedBoardId ||
               !effectiveStatus ||
               isMovePending ||
               isPending ||
-              isProjectLoading ||
-              isProjectError
+              isBoardLoading ||
+              isBoardError
             }
             className="w-full font-medium"
           >

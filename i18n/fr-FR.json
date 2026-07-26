@@ -60,21 +60,21 @@
 			"never": "Jamais"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Créer un nouveau projet",
 				"breadcrumbNew": "Créer un nouveau projet",
-				"workspaceFallback": "ESPACE DE TRAVAIL",
+				"organizationFallback": "ESPACE DE TRAVAIL",
 				"description": "Créez un nouveau projet dans votre espace de travail en fournissant un nom, une clé et en sélectionnant une icône.",
 				"pickIcon": "Choisir une icône",
 				"searchIcons": "Rechercher des icônes...",
-				"projectName": "Nom du projet",
+				"boardName": "Nom du projet",
 				"keyLabel": "Clé :",
 				"keyHint": "Utilisée pour les ID de tickets (par ex. {{example}}-123)",
 				"createButton": "Créer le projet",
 				"successToast": "Projet créé avec succès",
 				"errorToast": "Échec de la création du projet"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Créer un nouvel espace de travail",
 				"description": "Créez un nouvel espace de travail en lui donnant un nom.",
@@ -90,7 +90,7 @@
 				"description": "Créez une nouvelle tâche en fournissant un titre, une description et d'autres détails.",
 				"taskTitlePlaceholder": "Titre de la tâche",
 				"descriptionPlaceholder": "Ajoutez une description pour votre tâche...",
-				"chooseProjectForImages": "Choisissez un projet avant d'importer des images.",
+				"chooseBoardForImages": "Choisissez un projet avant d'importer des images.",
 				"prepareTaskError": "Échec de la préparation de la tâche",
 				"successCreated": "Tâche créée avec succès",
 				"successUpdated": "Tâche mise à jour avec succès",
@@ -244,8 +244,8 @@
 			"invitationExpired": "Invitation expirée",
 			"errorLoadDescription": "Échec du chargement des détails de l'invitation. L'invitation peut être invalide ou expirée.",
 			"goToSignIn": "Aller à la connexion",
-			"workspaceLabel": "Espace de travail: {{workspaceName}}",
-			"joinWorkspace": "Rejoindre {{workspaceName}}",
+			"organizationLabel": "Espace de travail: {{organizationName}}",
+			"joinOrganization": "Rejoindre {{organizationName}}",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> vous a invité à rejoindre son espace de travail.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> vous a invité à rejoindre son espace de travail sur Kaneo.",
 			"signInToAccept": "Connectez-vous pour accepter cette invitation.",
@@ -263,23 +263,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Bienvenue sur Kaneo",
-			"workspacePageTitle": "Créer un espace de travail",
-			"createWorkspaceTitle": "Créer un espace de travail",
-			"createWorkspaceSubtitle": "Configurez votre espace de travail pour commencer à gérer des projets",
-			"workspaceName": "Nom de l'espace de travail",
-			"workspaceNamePlaceholder": "ex: Acme Inc, Mon équipe",
+			"organizationPageTitle": "Créer un espace de travail",
+			"createOrganizationTitle": "Créer un espace de travail",
+			"createOrganizationSubtitle": "Configurez votre espace de travail pour commencer à gérer des projets",
+			"organizationName": "Nom de l'espace de travail",
+			"organizationNamePlaceholder": "ex: Acme Inc, Mon équipe",
 			"descriptionOptional": "Description (optionnelle)",
 			"descriptionPlaceholder": "Sur quoi travaille votre équipe?",
 			"creating": "Création...",
-			"createWorkspace": "Créer un espace de travail",
-			"workspaceCreatedTitle": "Espace de travail créé",
-			"redirectingToWorkspace": "Redirection vers <name>{{name}}</name>...",
+			"createOrganization": "Créer un espace de travail",
+			"organizationCreatedTitle": "Espace de travail créé",
+			"redirectingToOrganization": "Redirection vers <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Espace de travail créé avec succès",
+				"organizationCreated": "Espace de travail créé avec succès",
 				"createFailed": "Échec de la création de l'espace de travail"
 			},
 			"validation": {
-				"workspaceNameRequired": "Le nom de l'espace de travail est requis"
+				"organizationNameRequired": "Le nom de l'espace de travail est requis"
 			}
 		},
 		"profileSetup": {
@@ -369,13 +369,13 @@
 			"webhookSecretHintConfigured": "Un secret de signature est déjà configuré ({{masked}}). Saisissez-en un nouveau pour le remplacer.",
 			"webhookSecretHintOptional": "Facultatif. Kaneo signe le corps de la requête lorsqu'un secret est défini.",
 			"connectWebhook": "Connecter le webhook",
-			"workspaceRulesTitle": "Règles d'envoi par espace de travail",
-			"workspaceRulesDescription": "Réutilisez vos canaux globaux, puis choisissez quels espaces de travail et projets sont autorisés à envoyer des notifications de compte.",
-			"workspaceCardHint": "Choisissez quels canaux cet espace de travail peut utiliser pour les notifications du compte.",
-			"workspaceCardLabelEmail": "Email",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Webhook",
+			"organizationRulesTitle": "Règles d'envoi par espace de travail",
+			"organizationRulesDescription": "Réutilisez vos canaux globaux, puis choisissez quels espaces de travail et projets sont autorisés à envoyer des notifications de compte.",
+			"organizationCardHint": "Choisissez quels canaux cet espace de travail peut utiliser pour les notifications du compte.",
+			"organizationCardLabelEmail": "Email",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Webhook",
 			"emailChannelHintEnabled": "Envoyer les notifications correspondantes de cet espace de travail par email.",
 			"emailChannelHintDisabled": "Configurez et activez d'abord l'email au niveau global.",
 			"ntfyChannelHintEnabled": "Envoyer les notifications correspondantes de cet espace de travail vers ntfy.",
@@ -384,13 +384,13 @@
 			"gotifyChannelHintDisabled": "Configurez et activez d'abord Gotify au niveau global.",
 			"webhookChannelHintEnabled": "Envoyer les notifications correspondantes de cet espace de travail vers votre webhook.",
 			"webhookChannelHintDisabled": "Configurez et activez d'abord le webhook au niveau global.",
-			"projectScope": "Portée des projets",
-			"projectScopeDescription": "Tous les projets sont inclus par défaut. Limitez la portée si cet espace de travail ne doit envoyer des notifications que pour certains projets.",
-			"allProjects": "Tous les projets",
-			"allProjectsDescription": "Envoyer les notifications de tous les projets de cet espace de travail.",
-			"selectedProjects": "Projets sélectionnés",
-			"selectedProjectsDescription": "N'envoyer les notifications que pour les projets choisis.",
-			"noProjectsInWorkspace": "Aucun projet n'est encore disponible dans cet espace de travail.",
+			"boardScope": "Portée des projets",
+			"boardScopeDescription": "Tous les projets sont inclus par défaut. Limitez la portée si cet espace de travail ne doit envoyer des notifications que pour certains projets.",
+			"allBoards": "Tous les projets",
+			"allBoardsDescription": "Envoyer les notifications de tous les projets de cet espace de travail.",
+			"selectedBoards": "Projets sélectionnés",
+			"selectedBoardsDescription": "N'envoyer les notifications que pour les projets choisis.",
+			"noBoardsInOrganization": "Aucun projet n'est encore disponible dans cet espace de travail.",
 			"createRule": "Créer une règle",
 			"removeRule": "Supprimer la règle",
 			"toastEmailSaved": "Paramètres des notifications par email enregistrés",
@@ -407,9 +407,9 @@
 			"toastWebhookSaveFailed": "Échec de l'enregistrement des paramètres du webhook",
 			"toastWebhookDisconnected": "Webhook déconnecté",
 			"toastWebhookDisconnectFailed": "Échec de la déconnexion du webhook",
-			"toastRuleSaved": "Règle de notification enregistrée pour {{workspaceName}}",
+			"toastRuleSaved": "Règle de notification enregistrée pour {{organizationName}}",
 			"toastRuleSaveFailed": "Échec de l'enregistrement de la règle de notification de l'espace de travail",
-			"toastRuleRemoved": "Règle de notification supprimée pour {{workspaceName}}",
+			"toastRuleRemoved": "Règle de notification supprimée pour {{organizationName}}",
 			"toastRuleRemoveFailed": "Échec de la suppression de la règle de notification de l'espace de travail",
 			"toastPreferencesSaved": "Préférences de notification enregistrées",
 			"toastPreferencesSaveFailed": "Échec de l'enregistrement des préférences de notification",
@@ -435,7 +435,6 @@
 			"selectFirstDayOfWeek": "Sélectionnez le premier jour",
 			"weekStartsOnSunday": "Dimanche",
 			"weekStartsOnMonday": "Lundi",
-			"weekStartsOnSaturday": "Samedi",
 			"defaultView": "Vue par défaut",
 			"defaultViewDescription": "Choisissez votre mode d'affichage des tâches préféré",
 			"selectViewMode": "Sélectionnez un mode d'affichage",
@@ -455,7 +454,8 @@
 			"labels": "Labels",
 			"labelsDescription": "Afficher les labels et tags des tâches",
 			"priority": "Priorité",
-			"priorityDescription": "Afficher les indicateurs de priorité"
+			"priorityDescription": "Afficher les indicateurs de priorité",
+			"weekStartsOnSaturday": "Samedi"
 		},
 		"developerPage": {
 			"pageTitle": "Paramètres développeur",
@@ -523,12 +523,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Paramètres Généraux",
 			"title": "Paramètres Généraux",
 			"subtitle": "Gérez le nom et la description de votre espace de travail.",
-			"workspaceInfoTitle": "Informations sur l'espace de travail",
-			"workspaceInfoSubtitle": "Configurez les détails et les préférences de votre espace de travail.",
+			"organizationInfoTitle": "Informations sur l'espace de travail",
+			"organizationInfoSubtitle": "Configurez les détails et les préférences de votre espace de travail.",
 			"nameLabel": "Nom de l'espace de travail",
 			"nameHint": "Le nom de votre espace de travail",
 			"namePlaceholder": "Entrez le nom de l'espace de travail",
@@ -537,8 +537,8 @@
 			"descriptionPlaceholder": "Entrez la description de l'espace de travail",
 			"dangerZone": "Zone dangereuse",
 			"dangerZoneSubtitle": "Actions irréversibles et destructrices.",
-			"deleteWorkspace": "Supprimer l'espace de travail",
-			"deleteWorkspaceDescription": "Planifier la suppression définitive de l'espace de travail",
+			"deleteOrganization": "Supprimer l'espace de travail",
+			"deleteOrganizationDescription": "Planifier la suppression définitive de l'espace de travail",
 			"deleteModalTitle": "Supprimer l'espace de travail?",
 			"deleteModalDescription": "Cela supprimera définitivement l'espace de travail \"{{name}}\" et toutes ses données. Cette action ne peut pas être annulée.",
 			"deleteModalConfirm": "Supprimer l'espace de travail",
@@ -551,19 +551,19 @@
 				"nameShort": "Le nom de l'espace de travail doit contenir au moins 2 caractères"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Paramètres du projet",
 			"title": "Paramètres Généraux",
 			"subtitle": "Gérez le nom, la clé, l'icône et la description de votre projet.",
-			"projectInfoTitle": "Informations sur le projet",
-			"projectInfoSubtitle": "Configurez les détails et les préférences de votre projet.",
+			"boardInfoTitle": "Informations sur le projet",
+			"boardInfoSubtitle": "Configurez les détails et les préférences de votre projet.",
 			"iconLabel": "Icône",
 			"iconHint": "S'affiche dans la barre latérale et les surfaces du projet.",
 			"pickIconTitle": "Choisir une icône",
 			"searchIconsPlaceholder": "Rechercher des icônes...",
-			"projectNameLabel": "Nom du projet",
-			"projectNameHint": "Le nom de votre projet",
-			"projectNamePlaceholder": "Entrez le nom du projet",
+			"boardNameLabel": "Nom du projet",
+			"boardNameHint": "Le nom de votre projet",
+			"boardNamePlaceholder": "Entrez le nom du projet",
 			"keyLabel": "Clé",
 			"keyHint": "Utilisé pour les ID de tickets (ex: {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -572,8 +572,8 @@
 			"descriptionPlaceholder": "Entrez la description du projet",
 			"dangerZone": "Zone dangereuse",
 			"dangerZoneSubtitle": "Actions irréversibles et destructrices.",
-			"deleteProject": "Supprimer le projet",
-			"deleteProjectDescription": "Planifier la suppression définitive du projet",
+			"deleteBoard": "Supprimer le projet",
+			"deleteBoardDescription": "Planifier la suppression définitive du projet",
 			"deleteModalTitle": "Supprimer le projet?",
 			"deleteModalDescription": "Cela supprimera définitivement le projet \"{{name}}\" et toutes ses données. Cette action ne peut pas être annulée.",
 			"deleteModalConfirm": "Supprimer le projet",
@@ -592,7 +592,7 @@
 			"importExportTasks": "Importation/Exportation",
 			"importExportTasksDescription": "Importation/Exportation des Tâches"
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Intégrations du projet",
 			"title": "Intégrations du projet",
 			"subtitle": "Connectez votre projet avec des outils et services externes pour rationaliser votre flux de travail.",
@@ -609,7 +609,7 @@
 			"slackSectionTitle": "Intégration Slack",
 			"slackSectionSubtitle": "Envoyez les mises à jour des tâches du projet dans un canal Slack via un webhook entrant."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Visibilité du projet",
 			"title": "Visibilité",
 			"subtitle": "Contrôlez qui peut voir et accéder à votre projet.",
@@ -624,7 +624,7 @@
 			"toastUpdated": "Visibilité mise à jour",
 			"toastUpdateError": "Échec de la mise à jour de la visibilité"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Paramètres du flux de travail",
 			"title": "Flux de travail",
 			"subtitle": "Configurez les colonnes du tableau et les règles d'automatisation pour ce projet.",
@@ -633,9 +633,9 @@
 			"automationTitle": "Règles d'automatisation",
 			"automationDescription": "Mappez les événements d'intégration aux colonnes. Lorsqu'un événement se produit, la tâche liée se déplace vers la colonne spécifiée."
 		},
-		"projectSwitcher": {
-			"selectProject": "Sélectionner un projet",
-			"noProjects": "Aucun projet"
+		"boardSwitcher": {
+			"selectBoard": "Sélectionner un projet",
+			"noBoards": "Aucun projet"
 		},
 		"columnEditor": {
 			"toastCreated": "Colonne créée",
@@ -703,7 +703,7 @@
 			"ownerPlaceholder": "e.g., octocat",
 			"repoNameLabel": "Nom du dépôt",
 			"repoNameHint": "Le nom du dépôt",
-			"repoNamePlaceholder": "e.g., my-project",
+			"repoNamePlaceholder": "e.g., my-board",
 			"actionsTitle": "Actions",
 			"actionsHint": "Gérer la connexion de votre dépôt",
 			"browse": "Parcourir",
@@ -1028,12 +1028,12 @@
 		"commandPalette": {
 			"suggestions": "Suggestions",
 			"commands": "Commandes",
-			"projects": "Projets",
+			"boards": "Projets",
 			"search": "Recherche",
 			"members": "Membres",
 			"createTask": "Créer une tâche",
-			"createProject": "Créer un projet",
-			"createWorkspace": "Créer un espace de travail",
+			"createBoard": "Créer un projet",
+			"createOrganization": "Créer un espace de travail",
 			"lightTheme": "Thème clair",
 			"darkTheme": "Thème sombre",
 			"systemTheme": "Thème système",
@@ -1049,30 +1049,30 @@
 		"notifications": "Notifications",
 		"sidebar": {
 			"overview": "Vue d'ensemble",
-			"projects": "Projets",
+			"boards": "Projets",
 			"members": "Membres",
 			"invitations": "Invitations",
 			"more": "Plus",
 			"backToBoard": "Retour au tableau"
 		},
-		"projectList": {
-			"viewProject": "Voir le projet",
-			"shareProject": "Partager le projet",
-			"projectSettings": "Paramètres du projet",
+		"boardList": {
+			"viewBoard": "Voir le projet",
+			"shareBoard": "Partager le projet",
+			"boardSettings": "Paramètres du projet",
 			"linkCopied": "Lien du projet copié dans le presse-papiers",
-			"addProject": "Ajouter un projet",
+			"addBoard": "Ajouter un projet",
 			"deleteConfirmTitle": "Supprimer le projet?",
 			"deleteConfirmDescription": "Cela supprimera définitivement le projet et toutes ses données. Vous ne pouvez pas annuler cette action.",
 			"deletedToast": "Projet supprimé",
-			"deleteProject": "Supprimer le projet"
+			"deleteBoard": "Supprimer le projet"
 		},
 		"search": {
 			"inputPlaceholder": "Rechercher des tâches, projets, commentaires...",
 			"minCharsHint": "Tapez au moins 3 caractères pour rechercher",
 			"groups": {
 				"task": "Tâches",
-				"project": "Projets",
-				"workspace": "Espaces de travail",
+				"board": "Projets",
+				"organization": "Espaces de travail",
 				"comment": "Commentaires",
 				"activity": "Activités",
 				"fallback": "Résultats"
@@ -1090,20 +1090,20 @@
 			"signingOut": "Déconnexion...",
 			"logOut": "Déconnexion"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Espaces de travail",
+		"organizationSwitcher": {
+			"organizations": "Espaces de travail",
 			"switching": "Changement...",
-			"addWorkspace": "Ajouter un espace de travail",
-			"selectWorkspace": "Sélectionner un espace de travail"
+			"addOrganization": "Ajouter un espace de travail",
+			"selectOrganization": "Sélectionner un espace de travail"
 		},
 		"page": {
-			"projectsTitle": "Projets",
+			"boardsTitle": "Projets",
 			"settingsTitle": "Paramètres",
-			"backToWorkspace": "Retour à l'espace de travail",
-			"settingsWorkspaceTab": "Espace de travail"
+			"backToOrganization": "Retour à l'espace de travail",
+			"settingsOrganizationTab": "Espace de travail"
 		},
-		"projectSettings": {
-			"projectLabel": "Projet"
+		"boardSettings": {
+			"boardLabel": "Projet"
 		},
 		"keyboardShortcuts": {
 			"title": "Raccourcis clavier",
@@ -1124,8 +1124,8 @@
 				"showShortcuts": "Afficher les raccourcis clavier",
 				"closeModal": "Fermer la modale/popover",
 				"createTask": "Créer une tâche",
-				"createProject": "Créer un projet",
-				"createWorkspace": "Créer un espace de travail",
+				"createBoard": "Créer un projet",
+				"createOrganization": "Créer un espace de travail",
 				"boardView": "Passer à la vue tableau",
 				"listView": "Passer à la vue de liste",
 				"backlogView": "Passer à la vue backlog",
@@ -1153,9 +1153,9 @@
 				"title": "Nouvelle tâche créée",
 				"content": "La tâche \"{{taskTitle}}\" a été créée"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Espace de travail créé",
-				"content": "Votre espace de travail \"{{workspaceName}}\" a été créé avec succès"
+				"content": "Votre espace de travail \"{{organizationName}}\" a été créé avec succès"
 			},
 			"task_status_changed": {
 				"title": "Statut de la tâche modifié",
@@ -1412,7 +1412,7 @@
 		},
 		"relations": {
 			"title": "Relations",
-			"tasksInProject": "Tâches dans le projet",
+			"tasksInBoard": "Tâches dans le projet",
 			"linkError": "Échec de la liaison de la tâche",
 			"empty": "Aucune tâche liée",
 			"searchPlaceholder": "Rechercher des tâches à lier...",
@@ -1451,8 +1451,8 @@
 		},
 		"move": {
 			"title": "Déplacer la tâche",
-			"projectLabel": "Projet de destination",
-			"projectPlaceholder": "Sélectionner un projet",
+			"boardLabel": "Projet de destination",
+			"boardPlaceholder": "Sélectionner un projet",
 			"statusLabel": "Statut de destination",
 			"statusHintKeep": "Le workflow du projet de destination supporte déjà le statut actuel.",
 			"statusHintAdjust": "Choisissez le statut à utiliser dans le projet de destination.",
@@ -1671,9 +1671,9 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} vous invite à rejoindre {{workspaceName}} sur Kaneo",
-			"preview": "Vous êtes invité à rejoindre {{workspaceName}} sur Kaneo",
-			"title": "Rejoindre {{workspaceName}}",
+			"subject": "{{inviterName}} vous invite à rejoindre {{organizationName}} sur Kaneo",
+			"preview": "Vous êtes invité à rejoindre {{organizationName}} sur Kaneo",
+			"title": "Rejoindre {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) vous invite à collaborer sur Kaneo.",
 			"cta": "Accepter l’invitation",
 			"sameEmail": "Vous pouvez accepter l’invitation avec l’adresse e-mail qui a reçu ce message.",
@@ -1682,13 +1682,13 @@
 		},
 		"pageTitle": "Invitations",
 		"pendingInvitations": "Invitations en attente",
-		"acceptSubtitle": "Acceptez les invitations pour rejoindre les workspaces",
+		"acceptSubtitle": "Acceptez les invitations pour rejoindre les organizations",
 		"noPendingTitle": "Aucune invitation en attente",
-		"noPendingDescription": "Vous n'avez aucune invitation de workspace en attente pour le moment.",
+		"noPendingDescription": "Vous n'avez aucune invitation de organization en attente pour le moment.",
 		"continueToSetup": "Continuer vers la configuration",
 		"skipForNow": "Ignorer pour l'instant",
 		"table": {
-			"workspace": "Workspace",
+			"organization": "Organization",
 			"invitedBy": "Invité par",
 			"expires": "Expire"
 		},
@@ -1699,10 +1699,10 @@
 			"rejectSuccess": "Invitation rejetée"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Projets",
-			"createProject": "Créer un projet",
+			"createBoard": "Créer un projet",
 			"title": "Titre",
 			"progress": "Progression",
 			"targetDate": "Date cible",
@@ -1711,7 +1711,7 @@
 			"emptyTitle": "Aucun projet pour le moment",
 			"emptyDescription": "Commencez par créer votre premier projet.",
 			"emptyDescriptionReadOnly": "Il n'y a pas encore de projets dans cet espace de travail. Demandez à un administrateur d'en créer un.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Non commencé",
 				"complete": "Terminé",
 				"inProgress": "En cours"
@@ -1722,7 +1722,7 @@
 			"pageTitle": "Rechercher",
 			"backToDashboard": "Retour au tableau de bord",
 			"placeholder": "Rechercher des tâches par titre ou ID court (ex: DEP-23)...",
-			"hint": "Rechercher dans tous les projets de ce workspace. Utilisez des ID courts comme DEP-23 pour trouver des tâches spécifiques.",
+			"hint": "Rechercher dans tous les projets de ce organization. Utilisez des ID courts comme DEP-23 pour trouver des tâches spécifiques.",
 			"searching": "Recherche...",
 			"resultsFound_one": "{{count}} résultat trouvé",
 			"resultsFound_other": "{{count}} résultats trouvés",
@@ -1738,18 +1738,18 @@
 			"suggestionCompleted": "Terminé"
 		},
 		"create": {
-			"pageTitle": "Créer un workspace",
-			"heading": "Créer un nouveau workspace",
-			"subtitle": "Les workspaces sont des environnements partagés où les équipes peuvent travailler sur des projets, des cycles et des problèmes.",
-			"nameLabel": "Nom du workspace",
-			"namePlaceholder": "Entrez le nom du workspace",
+			"pageTitle": "Créer un organization",
+			"heading": "Créer un nouveau organization",
+			"subtitle": "Les organizations sont des environnements partagés où les équipes peuvent travailler sur des projets, des cycles et des problèmes.",
+			"nameLabel": "Nom du organization",
+			"namePlaceholder": "Entrez le nom du organization",
 			"descriptionLabel": "Description (optionnel)",
-			"descriptionPlaceholder": "Ajoutez une description pour votre workspace",
+			"descriptionPlaceholder": "Ajoutez une description pour votre organization",
 			"required": "Obligatoire",
 			"creating": "Création...",
-			"submit": "Créer un workspace",
-			"success": "Workspace créé avec succès",
-			"error": "Échec de la création du workspace"
+			"submit": "Créer un organization",
+			"success": "Organization créé avec succès",
+			"error": "Échec de la création du organization"
 		}
 	},
 	"team": {
@@ -1802,7 +1802,7 @@
 			"roleUpdateError": "Échec de la mise à jour du rôle"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Vue publique",
 		"badge": "Public",
 		"readOnly": "Lecture seule",

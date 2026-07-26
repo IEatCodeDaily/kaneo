@@ -1,8 +1,8 @@
 import { client } from "@kaneo/libs";
 
-async function exportTasks(projectId: string) {
-  const response = await client.task.export[":projectId"].$get({
-    param: { projectId },
+async function exportTasks(boardId: string) {
+  const response = await client.task.export[":boardId"].$get({
+    param: { boardId },
   });
 
   if (!response.ok) {

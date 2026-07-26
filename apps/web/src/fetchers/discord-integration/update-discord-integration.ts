@@ -16,11 +16,11 @@ export type UpdateDiscordIntegrationRequest = {
 };
 
 async function updateDiscordIntegration(
-  projectId: string,
+  boardId: string,
   json: UpdateDiscordIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/project/${projectId}`),
+    getApiUrl(`/discord-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

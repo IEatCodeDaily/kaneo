@@ -13,8 +13,8 @@ import SubtaskStatusPopover from "./subtask-status-popover";
 type SubtaskRowProps = {
   task: Task;
   tasks: Task[];
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
   isSelected: boolean;
   isFocused: boolean;
   isCompleted: boolean;
@@ -31,8 +31,8 @@ type SubtaskRowProps = {
 export default function SubtaskRow({
   task,
   tasks,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
   isSelected,
   isFocused,
   isCompleted,
@@ -75,7 +75,7 @@ export default function SubtaskRow({
               })}
             />
 
-            <SubtaskStatusPopover tasks={tasks} projectId={projectId}>
+            <SubtaskStatusPopover tasks={tasks} boardId={boardId}>
               <button
                 type="button"
                 className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
@@ -96,7 +96,7 @@ export default function SubtaskRow({
               </span>
             </button>
 
-            <SubtaskAssigneePopover tasks={tasks} workspaceId={workspaceId}>
+            <SubtaskAssigneePopover tasks={tasks} organizationId={organizationId}>
               <button
                 type="button"
                 className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
@@ -129,8 +129,8 @@ export default function SubtaskRow({
         <TaskCardContextMenuContent
           task={task}
           taskCardContext={{
-            projectId,
-            worskpaceId: workspaceId,
+            boardId,
+            worskpaceId: organizationId,
           }}
           onDeleteClick={onDeleteClick}
         />

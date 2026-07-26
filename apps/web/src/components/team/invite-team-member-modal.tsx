@@ -3,9 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod/v4";
-import useInviteWorkspaceUser from "@/hooks/mutations/workspace-user/use-invite-workspace-user";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useInviteOrganizationMember from "@/hooks/mutations/organization-member/use-invite-organization-member";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
 import {
@@ -40,11 +40,11 @@ type TeamMemberFormValues = z.infer<typeof teamMemberSchema>;
 
 function InviteTeamMemberModal({ open, onClose }: Props) {
   const { t } = useTranslation();
-  const { mutateAsync } = useInviteWorkspaceUser();
+  const { mutateAsync } = useInviteOrganizationMember();
   const queryClient = useQueryClient();
-  const { data: workspace } = useActiveWorkspace();
-  const workspaceId = workspace?.id;
-  const { canInviteUsers } = useWorkspacePermission();
+  const { data: organization } = useActiveOrganization();
+  const organizationId = organization?.id;
+  const { canInviteUsers } = useOrganizationPermission();
   const canInvite = canInviteUsers();
 
   const form = useForm<TeamMemberFormValues>({
@@ -55,7 +55,7 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   });
 
   const onSubmit = async ({ email }: TeamMemberFormValues) => {
-    if (!workspaceId) {
+    if (!organizationId) {
       toast.error(t("team:inviteModal.error"));
       return;
     }
@@ -67,9 +67,9 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
       return;
     }
     try {
-      await mutateAsync({ email, workspaceId, role: "member" }); // TODO: role and email
+      await mutateAsync({ email, organizationId, role: "member" }); // TODO: role and email
       await queryClient.refetchQueries({
-        queryKey: ["workspace-users", workspaceId],
+        queryKey: ["organization-members", organizationId],
       });
 
       toast.success(t("team:inviteModal.success"));
@@ -84,9 +84,9 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   };
 
   const resetInviteTeamMember = async () => {
-    if (workspaceId) {
+    if (organizationId) {
       await queryClient.invalidateQueries({
-        queryKey: ["workspace-users", workspaceId],
+        queryKey: ["organization-members", organizationId],
       });
     }
     form.reset();
@@ -135,7 +135,7 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
               <Button
                 type="submit"
                 size="sm"
-                disabled={!workspaceId || !canInvite}
+                disabled={!organizationId || !canInvite}
               >
                 {t("team:inviteModal.sendInvitation")}
               </Button>

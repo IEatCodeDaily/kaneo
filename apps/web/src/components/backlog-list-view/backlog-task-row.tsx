@@ -17,8 +17,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
@@ -26,7 +26,7 @@ import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 import TaskCardContextMenuContent from "../kanban-board/task-card-context-menu/task-card-context-menu-content";
@@ -49,8 +49,8 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
     isDragging,
   } = useSortable({ id: task.id });
 
-  const { project } = useProjectStore();
-  const { data: workspace } = useActiveWorkspace();
+  const { board } = useBoardStore();
+  const { data: organization } = useActiveOrganization();
   const {
     showAssignees,
     showPriority,
@@ -65,15 +65,15 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
 
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id ?? "",
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id ?? "",
   );
 
   const assignee = useMemo(() => {
-    return workspaceUsers?.members?.find(
+    return organizationMembers?.members?.find(
       (member) => member.userId === task.userId,
     );
-  }, [workspaceUsers, task.userId]);
+  }, [organizationMembers, task.userId]);
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -82,7 +82,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!project || !task) return;
+    if (!board || !task) return;
     if (e.defaultPrevented) return;
 
     if (e.metaKey || e.ctrlKey) {
@@ -117,7 +117,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
     try {
       await deleteTask(task.id);
       queryClient.invalidateQueries({
-        queryKey: ["tasks", project?.id],
+        queryKey: ["tasks", board?.id],
       });
     } catch (error) {
       toast.error(
@@ -160,7 +160,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
             )}
             {showTaskNumbers && (
               <div className="text-xs font-mono text-muted-foreground flex-shrink-0">
-                {project?.slug}-{task.number}
+                {board?.slug}-{task.number}
               </div>
             )}
 
@@ -222,12 +222,12 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
           </div>
         </ContextMenuTrigger>
 
-        {project && workspace && (
+        {board && organization && (
           <TaskCardContextMenuContent
             task={task}
             taskCardContext={{
-              projectId: project.id,
-              worskpaceId: workspace.id,
+              boardId: board.id,
+              worskpaceId: organization.id,
             }}
             onDeleteClick={() => setIsDeleteTaskModalOpen(true)}
           />

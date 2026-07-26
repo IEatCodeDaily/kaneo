@@ -90,7 +90,7 @@ function McpAuthorizePage() {
     >
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          This client will be able to act as you and access your workspaces.
+          This client will be able to act as you and access your organizations.
           Only continue if you initiated this connection.
         </p>
         <div className="space-y-3 rounded-md border bg-muted/40 p-3">

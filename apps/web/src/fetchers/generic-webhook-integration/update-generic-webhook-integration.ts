@@ -23,11 +23,11 @@ export type UpdateGenericWebhookIntegrationRequest = {
 };
 
 async function updateGenericWebhookIntegration(
-  projectId: string,
+  boardId: string,
   json: UpdateGenericWebhookIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/generic-webhook-integration/project/${projectId}`),
+    getApiUrl(`/generic-webhook-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

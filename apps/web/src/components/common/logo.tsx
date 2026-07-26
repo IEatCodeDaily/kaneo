@@ -1,17 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 
 type LogoProps = {
   className?: string;
 };
 
 export function Logo({ className = "" }: LogoProps) {
-  const { setProject } = useProjectStore();
+  const { setBoard } = useBoardStore();
 
   return (
     <Link
       onClick={() => {
-        setProject(undefined);
+        setBoard(undefined);
       }}
       to="/dashboard"
       className={`w-auto ${className}`}

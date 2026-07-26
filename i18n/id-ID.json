@@ -60,21 +60,21 @@
 			"never": "Tidak pernah"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Buat proyek baru",
 				"breadcrumbNew": "Buat proyek baru",
-				"workspaceFallback": "RUANG KERJA",
+				"organizationFallback": "RUANG KERJA",
 				"description": "Buat proyek baru di ruang kerja Anda dengan memberikan nama, key, dan memilih ikon.",
 				"pickIcon": "Pilih ikon",
 				"searchIcons": "Cari ikon...",
-				"projectName": "Nama proyek",
+				"boardName": "Nama proyek",
 				"keyLabel": "Key:",
 				"keyHint": "Digunakan untuk ID tiket (contoh, {{example}}-123)",
 				"createButton": "Buat Proyek",
 				"successToast": "Proyek berhasil dibuat",
 				"errorToast": "Gagal membuat proyek"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Buat ruang kerja baru",
 				"description": "Buat ruang kerja baru dengan memberikan nama untuk ruang kerja Anda.",
@@ -90,7 +90,7 @@
 				"description": "Buat tugas baru dengan memberikan judul, deskripsi, dan detail lainnya.",
 				"taskTitlePlaceholder": "Judul tugas",
 				"descriptionPlaceholder": "Tambahkan deskripsi untuk tugas Anda...",
-				"chooseProjectForImages": "Pilih proyek sebelum mengunggah gambar.",
+				"chooseBoardForImages": "Pilih proyek sebelum mengunggah gambar.",
 				"prepareTaskError": "Gagal menyiapkan tugas",
 				"successCreated": "Tugas berhasil dibuat",
 				"successUpdated": "Tugas berhasil diperbarui",
@@ -244,8 +244,8 @@
 			"invitationExpired": "Undangan Kedaluwarsa",
 			"errorLoadDescription": "Gagal memuat detail undangan. Undangan mungkin tidak valid atau sudah kedaluwarsa.",
 			"goToSignIn": "Buka Masuk",
-			"workspaceLabel": "Ruang kerja: {{workspaceName}}",
-			"joinWorkspace": "Gabung {{workspaceName}}",
+			"organizationLabel": "Ruang kerja: {{organizationName}}",
+			"joinOrganization": "Gabung {{organizationName}}",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> mengundang Anda untuk bergabung ke ruang kerjanya.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> mengundang Anda untuk bergabung ke ruang kerjanya di Kaneo.",
 			"signInToAccept": "Masuk untuk menerima undangan ini.",
@@ -263,23 +263,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Selamat datang di Kaneo",
-			"workspacePageTitle": "Buat Ruang Kerja",
-			"createWorkspaceTitle": "Buat ruang kerja",
-			"createWorkspaceSubtitle": "Siapkan ruang kerja Anda untuk mulai mengelola proyek",
-			"workspaceName": "Nama ruang kerja",
-			"workspaceNamePlaceholder": "contohnya: Acme Inc, Tim Saya",
+			"organizationPageTitle": "Buat Ruang Kerja",
+			"createOrganizationTitle": "Buat ruang kerja",
+			"createOrganizationSubtitle": "Siapkan ruang kerja Anda untuk mulai mengelola proyek",
+			"organizationName": "Nama ruang kerja",
+			"organizationNamePlaceholder": "contohnya: Acme Inc, Tim Saya",
 			"descriptionOptional": "Deskripsi (opsional)",
 			"descriptionPlaceholder": "Tim Anda mengerjakan apa?",
 			"creating": "Membuat...",
-			"createWorkspace": "Buat ruang kerja",
-			"workspaceCreatedTitle": "Ruang kerja dibuat",
-			"redirectingToWorkspace": "Mengarahkan Anda ke <name>{{name}}</name>...",
+			"createOrganization": "Buat ruang kerja",
+			"organizationCreatedTitle": "Ruang kerja dibuat",
+			"redirectingToOrganization": "Mengarahkan Anda ke <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Ruang kerja berhasil dibuat",
+				"organizationCreated": "Ruang kerja berhasil dibuat",
 				"createFailed": "Gagal membuat ruang kerja"
 			},
 			"validation": {
-				"workspaceNameRequired": "Nama ruang kerja wajib diisi"
+				"organizationNameRequired": "Nama ruang kerja wajib diisi"
 			}
 		},
 		"profileSetup": {
@@ -369,13 +369,13 @@
 			"webhookSecretHintConfigured": "Signing secret sudah dikonfigurasi ({{masked}}). Masukkan yang baru untuk menggantinya.",
 			"webhookSecretHintOptional": "Opsional. Kaneo mendeteksi dan menandatangani isi request jika secret dikonfigurasi.",
 			"connectWebhook": "Hubungkan webhook",
-			"workspaceRulesTitle": "Aturan pengiriman ruang kerja",
-			"workspaceRulesDescription": "Gunakan ulang kanal global Anda, lalu tentukan ruang kerja dan proyek mana yang boleh mengirim notifikasi akun.",
-			"workspaceCardHint": "Pilih kanal yang dapat digunakan ruang kerja ini untuk notifikasi akun.",
-			"workspaceCardLabelEmail": "Email",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Webhook kustom",
+			"organizationRulesTitle": "Aturan pengiriman ruang kerja",
+			"organizationRulesDescription": "Gunakan ulang kanal global Anda, lalu tentukan ruang kerja dan proyek mana yang boleh mengirim notifikasi akun.",
+			"organizationCardHint": "Pilih kanal yang dapat digunakan ruang kerja ini untuk notifikasi akun.",
+			"organizationCardLabelEmail": "Email",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Webhook kustom",
 			"emailChannelHintEnabled": "Kirim notifikasi ruang kerja yang sesuai melalui email.",
 			"emailChannelHintDisabled": "Konfigurasikan dan aktifkan email secara global terlebih dahulu.",
 			"ntfyChannelHintEnabled": "Kirim notifikasi ruang kerja yang sesuai ke ntfy.",
@@ -384,13 +384,13 @@
 			"gotifyChannelHintDisabled": "Konfigurasikan dan aktifkan Gotify secara global terlebih dahulu.",
 			"webhookChannelHintEnabled": "Kirim notifikasi ruang kerja yang sesuai ke webhook Anda.",
 			"webhookChannelHintDisabled": "Konfigurasikan dan aktifkan webhook secara global terlebih dahulu.",
-			"projectScope": "Cakupan proyek",
-			"projectScopeDescription": "Semua proyek disertakan secara default. Persempit jika ruang kerja ini hanya boleh mengirim notifikasi dari proyek tertentu.",
-			"allProjects": "Semua proyek",
-			"allProjectsDescription": "Kirim notifikasi dari setiap proyek di ruang kerja ini.",
-			"selectedProjects": "Proyek terpilih",
-			"selectedProjectsDescription": "Hanya kirim notifikasi dari proyek yang dipilih.",
-			"noProjectsInWorkspace": "Belum ada proyek yang tersedia untuk ruang kerja ini.",
+			"boardScope": "Cakupan proyek",
+			"boardScopeDescription": "Semua proyek disertakan secara default. Persempit jika ruang kerja ini hanya boleh mengirim notifikasi dari proyek tertentu.",
+			"allBoards": "Semua proyek",
+			"allBoardsDescription": "Kirim notifikasi dari setiap proyek di ruang kerja ini.",
+			"selectedBoards": "Proyek terpilih",
+			"selectedBoardsDescription": "Hanya kirim notifikasi dari proyek yang dipilih.",
+			"noBoardsInOrganization": "Belum ada proyek yang tersedia untuk ruang kerja ini.",
 			"createRule": "Buat aturan",
 			"removeRule": "Hapus aturan",
 			"toastEmailSaved": "Pengaturan notifikasi email disimpan",
@@ -407,9 +407,9 @@
 			"toastWebhookSaveFailed": "Gagal menyimpan pengaturan webhook",
 			"toastWebhookDisconnected": "Webhook diputuskan",
 			"toastWebhookDisconnectFailed": "Gagal memutuskan webhook",
-			"toastRuleSaved": "Aturan notifikasi untuk {{workspaceName}} disimpan",
+			"toastRuleSaved": "Aturan notifikasi untuk {{organizationName}} disimpan",
 			"toastRuleSaveFailed": "Gagal menyimpan aturan notifikasi ruang kerja",
-			"toastRuleRemoved": "Aturan notifikasi untuk {{workspaceName}} dihapus",
+			"toastRuleRemoved": "Aturan notifikasi untuk {{organizationName}} dihapus",
 			"toastRuleRemoveFailed": "Gagal menghapus aturan notifikasi ruang kerja",
 			"toastPreferencesSaved": "Preferensi notifikasi disimpan",
 			"toastPreferencesSaveFailed": "Gagal menyimpan preferensi notifikasi",
@@ -435,7 +435,6 @@
 			"selectFirstDayOfWeek": "Pilih hari pertama",
 			"weekStartsOnSunday": "Minggu",
 			"weekStartsOnMonday": "Senin",
-			"weekStartsOnSaturday": "Sabtu",
 			"defaultView": "Tampilan Default",
 			"defaultViewDescription": "Pilih mode tampilan tugas yang Anda inginkan",
 			"selectViewMode": "Pilih mode tampilan",
@@ -455,7 +454,8 @@
 			"labels": "Label",
 			"labelsDescription": "Tampilkan label dan tag tugas",
 			"priority": "Prioritas",
-			"priorityDescription": "Tampilkan indikator prioritas"
+			"priorityDescription": "Tampilkan indikator prioritas",
+			"weekStartsOnSaturday": "Sabtu"
 		},
 		"developerPage": {
 			"pageTitle": "Pengaturan Pengembang",
@@ -523,12 +523,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Pengaturan Umum",
 			"title": "Pengaturan Umum",
 			"subtitle": "Kelola nama dan deskripsi ruang kerja Anda.",
-			"workspaceInfoTitle": "Informasi Ruang Kerja",
-			"workspaceInfoSubtitle": "Konfigurasikan detail dan preferensi ruang kerja Anda.",
+			"organizationInfoTitle": "Informasi Ruang Kerja",
+			"organizationInfoSubtitle": "Konfigurasikan detail dan preferensi ruang kerja Anda.",
 			"nameLabel": "Nama ruang kerja",
 			"nameHint": "Nama ruang kerja Anda",
 			"namePlaceholder": "Masukkan nama ruang kerja",
@@ -537,8 +537,8 @@
 			"descriptionPlaceholder": "Masukkan deskripsi ruang kerja",
 			"dangerZone": "Zona berbahaya",
 			"dangerZoneSubtitle": "Tindakan destruktif dan tidak dapat dibatalkan.",
-			"deleteWorkspace": "Hapus ruang kerja",
-			"deleteWorkspaceDescription": "Jadwalkan ruang kerja untuk dihapus permanen",
+			"deleteOrganization": "Hapus ruang kerja",
+			"deleteOrganizationDescription": "Jadwalkan ruang kerja untuk dihapus permanen",
 			"deleteModalTitle": "Hapus Ruang Kerja?",
 			"deleteModalDescription": "Ini akan menghapus ruang kerja \"{{name}}\" dan semua datanya secara permanen. Tindakan ini tidak dapat dibatalkan.",
 			"deleteModalConfirm": "Hapus Ruang Kerja",
@@ -551,19 +551,19 @@
 				"nameShort": "Nama ruang kerja harus minimal 2 karakter"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Pengaturan Proyek",
 			"title": "Pengaturan Umum",
 			"subtitle": "Kelola nama, key, ikon, dan deskripsi proyek Anda.",
-			"projectInfoTitle": "Informasi Proyek",
-			"projectInfoSubtitle": "Konfigurasikan detail dan preferensi proyek Anda.",
+			"boardInfoTitle": "Informasi Proyek",
+			"boardInfoSubtitle": "Konfigurasikan detail dan preferensi proyek Anda.",
 			"iconLabel": "Ikon",
 			"iconHint": "Ditampilkan di panel samping dan halaman proyek.",
 			"pickIconTitle": "Pilih ikon",
 			"searchIconsPlaceholder": "Cari ikon...",
-			"projectNameLabel": "Nama proyek",
-			"projectNameHint": "Nama proyek Anda",
-			"projectNamePlaceholder": "Masukkan nama proyek",
+			"boardNameLabel": "Nama proyek",
+			"boardNameHint": "Nama proyek Anda",
+			"boardNamePlaceholder": "Masukkan nama proyek",
 			"keyLabel": "Key",
 			"keyHint": "Digunakan untuk ID tiket (misalnya, {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -572,8 +572,8 @@
 			"descriptionPlaceholder": "Masukkan deskripsi proyek",
 			"dangerZone": "Zona berbahaya",
 			"dangerZoneSubtitle": "Tindakan destruktif dan tidak dapat dibatalkan.",
-			"deleteProject": "Hapus proyek",
-			"deleteProjectDescription": "Jadwalkan proyek untuk dihapus permanen",
+			"deleteBoard": "Hapus proyek",
+			"deleteBoardDescription": "Jadwalkan proyek untuk dihapus permanen",
 			"deleteModalTitle": "Hapus Proyek?",
 			"deleteModalDescription": "Ini akan menghapus proyek \"{{name}}\" dan semua datanya secara permanen. Tindakan ini tidak dapat dibatalkan.",
 			"deleteModalConfirm": "Hapus Proyek",
@@ -592,7 +592,7 @@
 			"importExportTasks": "Impor/Ekspor",
 			"importExportTasksDescription": "Impor dan ekspor tugas."
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Integrasi Proyek",
 			"title": "Integrasi Proyek",
 			"subtitle": "Hubungkan proyek Anda dengan alat dan layanan eksternal untuk memperlancar alur kerja.",
@@ -609,7 +609,7 @@
 			"telegramSectionTitle": "Integrasi Telegram",
 			"telegramSectionSubtitle": "Kirim pembaruan tugas proyek ke chat atau topik Telegram dengan bot."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Visibilitas Proyek",
 			"title": "Visibilitas",
 			"subtitle": "Kontrol siapa yang dapat melihat dan mengakses proyek Anda.",
@@ -624,7 +624,7 @@
 			"toastUpdated": "Visibilitas diperbarui",
 			"toastUpdateError": "Gagal memperbarui visibilitas"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Pengaturan Alur Kerja",
 			"title": "Alur Kerja",
 			"subtitle": "Konfigurasikan kolom papan dan aturan otomatisasi untuk proyek ini.",
@@ -633,9 +633,9 @@
 			"automationTitle": "Aturan Otomatisasi",
 			"automationDescription": "Petakan event integrasi ke kolom. Saat event terjadi, tugas tertaut berpindah ke kolom yang ditentukan."
 		},
-		"projectSwitcher": {
-			"selectProject": "Pilih proyek",
-			"noProjects": "Tidak ada proyek"
+		"boardSwitcher": {
+			"selectBoard": "Pilih proyek",
+			"noBoards": "Tidak ada proyek"
 		},
 		"columnEditor": {
 			"toastCreated": "Kolom dibuat",
@@ -703,7 +703,7 @@
 			"ownerPlaceholder": "misalnya, octocat",
 			"repoNameLabel": "Nama Repositori",
 			"repoNameHint": "Nama repositori",
-			"repoNamePlaceholder": "misalnya, my-project",
+			"repoNamePlaceholder": "misalnya, my-board",
 			"actionsTitle": "Aksi",
 			"actionsHint": "Kelola koneksi repositori Anda",
 			"browse": "Jelajahi",
@@ -1023,11 +1023,11 @@
 			"draft": "Draf",
 			"open": "Terbuka"
 		},
-		"workspaceRoles": {
+		"organizationRoles": {
 			"pageTitle": "Peran",
 			"title": "Peran",
-			"subtitle": "Tentukan tindakan yang dapat dilakukan anggota di {{workspaceName}}.",
-			"thisWorkspace": "ruang kerja ini",
+			"subtitle": "Tentukan tindakan yang dapat dilakukan anggota di {{organizationName}}.",
+			"thisOrganization": "ruang kerja ini",
 			"noAccess": "Anda memerlukan izin admin atau pemilik untuk mengelola peran ruang kerja.",
 			"sectionTitle": "Peran ruang kerja",
 			"sectionSubtitle": "Ubah peran bawaan atau tambahkan peran khusus. Anggota tetap memakai nama peran yang ditetapkan meski peran diubah.",
@@ -1055,13 +1055,13 @@
 				"admin": "Manajemen penuh proyek dan tugas serta pengaturan ruang kerja."
 			},
 			"resources": {
-				"project": "Proyek",
+				"board": "Proyek",
 				"task": "Tugas",
 				"label": "Label",
-				"workspace": "Ruang kerja"
+				"organization": "Ruang kerja"
 			},
 			"permissions": {
-				"project": {
+				"board": {
 					"create": {
 						"label": "Buat proyek",
 						"description": "Buat proyek baru di ruang kerja ini."
@@ -1123,7 +1123,7 @@
 						"description": "Hapus label dari ruang kerja ini secara permanen."
 					}
 				},
-				"workspace": {
+				"organization": {
 					"read": {
 						"label": "Akses ruang kerja",
 						"description": "Baca metadata dan anggota ruang kerja."
@@ -1165,12 +1165,12 @@
 		"commandPalette": {
 			"suggestions": "Saran",
 			"commands": "Perintah",
-			"projects": "Proyek",
+			"boards": "Proyek",
 			"search": "Cari",
 			"members": "Anggota",
 			"createTask": "Buat tugas",
-			"createProject": "Buat proyek",
-			"createWorkspace": "Buat ruang kerja",
+			"createBoard": "Buat proyek",
+			"createOrganization": "Buat ruang kerja",
 			"lightTheme": "Tema terang",
 			"darkTheme": "Tema gelap",
 			"systemTheme": "Tema sistem",
@@ -1186,30 +1186,30 @@
 		"notifications": "Notifikasi",
 		"sidebar": {
 			"overview": "Ringkasan",
-			"projects": "Proyek",
+			"boards": "Proyek",
 			"members": "Anggota",
 			"invitations": "Undangan",
 			"more": "Lainnya",
 			"backToBoard": "Kembali ke papan"
 		},
-		"projectList": {
-			"viewProject": "Lihat Proyek",
-			"shareProject": "Bagikan Proyek",
-			"projectSettings": "Pengaturan proyek",
+		"boardList": {
+			"viewBoard": "Lihat Proyek",
+			"shareBoard": "Bagikan Proyek",
+			"boardSettings": "Pengaturan proyek",
 			"linkCopied": "Tautan proyek disalin ke papan klip",
-			"addProject": "Tambah proyek",
+			"addBoard": "Tambah proyek",
 			"deleteConfirmTitle": "Hapus Proyek?",
 			"deleteConfirmDescription": "Ini akan menghapus proyek dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
 			"deletedToast": "Proyek dihapus",
-			"deleteProject": "Hapus Proyek"
+			"deleteBoard": "Hapus Proyek"
 		},
 		"search": {
 			"inputPlaceholder": "Cari tugas, proyek, komentar...",
 			"minCharsHint": "Ketik minimal 3 karakter untuk mencari",
 			"groups": {
 				"task": "Tugas",
-				"project": "Proyek",
-				"workspace": "Ruang kerja",
+				"board": "Proyek",
+				"organization": "Ruang kerja",
 				"comment": "Komentar",
 				"activity": "Aktivitas",
 				"fallback": "Hasil"
@@ -1227,20 +1227,20 @@
 			"signingOut": "Keluar...",
 			"logOut": "Keluar"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Ruang kerja",
+		"organizationSwitcher": {
+			"organizations": "Ruang kerja",
 			"switching": "Beralih...",
-			"addWorkspace": "Tambah ruang kerja",
-			"selectWorkspace": "Pilih ruang kerja"
+			"addOrganization": "Tambah ruang kerja",
+			"selectOrganization": "Pilih ruang kerja"
 		},
 		"page": {
-			"projectsTitle": "Proyek",
+			"boardsTitle": "Proyek",
 			"settingsTitle": "Pengaturan",
-			"backToWorkspace": "Kembali ke Ruang Kerja",
-			"settingsWorkspaceTab": "Ruang Kerja"
+			"backToOrganization": "Kembali ke Ruang Kerja",
+			"settingsOrganizationTab": "Ruang Kerja"
 		},
-		"projectSettings": {
-			"projectLabel": "Proyek"
+		"boardSettings": {
+			"boardLabel": "Proyek"
 		},
 		"keyboardShortcuts": {
 			"title": "Pintasan Keyboard",
@@ -1261,8 +1261,8 @@
 				"showShortcuts": "Tampilkan pintasan keyboard",
 				"closeModal": "Tutup modal/popover",
 				"createTask": "Buat tugas",
-				"createProject": "Buat proyek",
-				"createWorkspace": "Buat ruang kerja",
+				"createBoard": "Buat proyek",
+				"createOrganization": "Buat ruang kerja",
 				"boardView": "Beralih ke tampilan papan",
 				"listView": "Beralih ke tampilan daftar",
 				"backlogView": "Beralih ke tampilan backlog",
@@ -1290,9 +1290,9 @@
 				"title": "Tugas Baru Dibuat",
 				"content": "Tugas \"{{taskTitle}}\" dibuat"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Ruang kerja dibuat",
-				"content": "Ruang kerja Anda \"{{workspaceName}}\" berhasil dibuat"
+				"content": "Ruang kerja Anda \"{{organizationName}}\" berhasil dibuat"
 			},
 			"task_status_changed": {
 				"title": "Status tugas berubah",
@@ -1549,7 +1549,7 @@
 		},
 		"relations": {
 			"title": "Relasi",
-			"tasksInProject": "Tugas dalam proyek",
+			"tasksInBoard": "Tugas dalam proyek",
 			"linkError": "Gagal menautkan tugas",
 			"empty": "Tidak ada tugas terkait",
 			"searchPlaceholder": "Cari tugas untuk ditautkan...",
@@ -1588,8 +1588,8 @@
 		},
 		"move": {
 			"title": "Pindahkan tugas",
-			"projectLabel": "Proyek tujuan",
-			"projectPlaceholder": "Pilih proyek",
+			"boardLabel": "Proyek tujuan",
+			"boardPlaceholder": "Pilih proyek",
 			"statusLabel": "Status tujuan",
 			"statusHintKeep": "Alur kerja proyek ini sudah mendukung status saat ini.",
 			"statusHintAdjust": "Pilih status yang akan digunakan di proyek tujuan.",
@@ -1808,14 +1808,14 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "Undangan",
 		"pendingInvitations": "Undangan Tertunda",
@@ -1825,7 +1825,7 @@
 		"continueToSetup": "Lanjutkan ke Penyiapan",
 		"skipForNow": "Lewati dulu",
 		"table": {
-			"workspace": "Ruang kerja",
+			"organization": "Ruang kerja",
 			"invitedBy": "Diundang Oleh",
 			"expires": "Kedaluwarsa"
 		},
@@ -1836,10 +1836,10 @@
 			"rejectSuccess": "Undangan ditolak"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Proyek",
-			"createProject": "Buat proyek",
+			"createBoard": "Buat proyek",
 			"title": "Judul",
 			"progress": "Progres",
 			"targetDate": "Tanggal target",
@@ -1848,7 +1848,7 @@
 			"emptyTitle": "Belum ada proyek",
 			"emptyDescription": "Mulai dengan membuat proyek pertama Anda.",
 			"emptyDescriptionReadOnly": "Belum ada proyek di ruang kerja ini. Minta admin untuk membuatnya.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Belum dimulai",
 				"complete": "Selesai",
 				"inProgress": "Sedang berjalan"
@@ -1934,7 +1934,7 @@
 			"roleUpdateError": "Gagal memperbarui peran"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Tampilan Publik",
 		"badge": "Publik",
 		"readOnly": "Hanya baca",

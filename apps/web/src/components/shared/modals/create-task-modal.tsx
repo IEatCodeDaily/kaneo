@@ -40,23 +40,23 @@ import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
-import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 import type Task from "@/types/task";
 
 type CreateTaskModalProps = {
   open: boolean;
   onClose: () => void;
   status?: string;
-  projectId?: string;
+  boardId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -77,7 +77,7 @@ type Label = {
   name: string;
   color: string;
   taskId: string | null;
-  workspaceId: string;
+  organizationId: string;
   createdAt: string;
 };
 
@@ -85,7 +85,7 @@ type PopoverStep = "select" | "color";
 
 function normalizeTask(
   task: Partial<Task> &
-    Pick<Task, "id" | "title" | "status" | "projectId" | "createdAt">,
+    Pick<Task, "id" | "title" | "status" | "boardId" | "createdAt">,
 ): Task {
   return {
     ...task,
@@ -108,10 +108,10 @@ function CreateTaskModal({
   open,
   onClose,
   status,
-  projectId,
+  boardId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
-  const { project, setProject } = useProjectStore();
+  const { board, setBoard } = useBoardStore();
 
   const labelColors = useMemo(
     () =>
@@ -168,15 +168,15 @@ function CreateTaskModal({
     [t],
   );
   const location = useLocation();
-  const { data: workspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id || "",
+  const { data: organization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id || "",
   );
   const { mutateAsync: createLabel } = useCreateLabel();
-  const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(
-    workspace?.id || "",
+  const { data: organizationLabels = [] } = useGetLabelsByOrganization(
+    organization?.id || "",
   );
-  const { canCreateTasks, canManageLabels } = useWorkspacePermission();
+  const { canCreateTasks, canManageLabels } = useOrganizationPermission();
   const canCreateTaskCapability = canCreateTasks();
   const canCreateLabelCapability = canManageLabels();
 
@@ -196,9 +196,9 @@ function CreateTaskModal({
   const [selectedColor, setSelectedColor] = useState<LabelColor>("gray");
   const [newLabelName, setNewLabelName] = useState("");
 
-  const routeProjectId =
-    location.pathname.match(/\/project\/([^/]+)/)?.[1] ?? null;
-  const resolvedProjectId = projectId || project?.id || routeProjectId || "";
+  const routeBoardId =
+    location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
+  const resolvedBoardId = boardId || board?.id || routeBoardId || "";
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const draftCreationPromiseRef = useRef<Promise<Task> | null>(null);
@@ -209,11 +209,11 @@ function CreateTaskModal({
   const { mutateAsync: deleteTask } = useDeleteTask();
 
   const filteredLabels = (() => {
-    const searchFiltered = workspaceLabels.filter((label) =>
+    const searchFiltered = organizationLabels.filter((label) =>
       label.name.toLowerCase().includes(searchValue.toLowerCase()),
     );
 
-    const labelMap = new Map<string, (typeof workspaceLabels)[0]>();
+    const labelMap = new Map<string, (typeof organizationLabels)[0]>();
     for (const label of searchFiltered) {
       const existing = labelMap.get(label.name);
       if (!existing || (label.taskId === null && existing.taskId !== null)) {
@@ -226,7 +226,7 @@ function CreateTaskModal({
 
   const isCreatingNewLabel =
     searchValue &&
-    !workspaceLabels.some(
+    !organizationLabels.some(
       (label) => label.name.toLowerCase() === searchValue.toLowerCase(),
     );
 
@@ -257,11 +257,11 @@ function CreateTaskModal({
     }
   };
 
-  const syncTaskIntoProject = useCallback(
+  const syncTaskIntoBoard = useCallback(
     (task: Task) => {
-      if (!project) return;
+      if (!board) return;
 
-      const updatedProject = produce(project, (draft) => {
+      const updatedBoard = produce(board, (draft) => {
         let existingTask:
           | (typeof draft.columns)[number]["tasks"][number]
           | undefined;
@@ -292,13 +292,13 @@ function CreateTaskModal({
           ...task,
           assigneeId: task.userId,
           assigneeName:
-            workspaceUsers?.members?.find(
+            organizationMembers?.members?.find(
               (member) => member.userId === task.userId,
             )?.user?.name ??
             existingTask?.assigneeName ??
             null,
           assigneeImage:
-            workspaceUsers?.members?.find(
+            organizationMembers?.members?.find(
               (member) => member.userId === task.userId,
             )?.user?.image ??
             existingTask?.assigneeImage ??
@@ -307,9 +307,9 @@ function CreateTaskModal({
         });
       });
 
-      setProject(updatedProject);
+      setBoard(updatedBoard);
     },
-    [project, setProject, workspaceUsers?.members],
+    [board, setBoard, organizationMembers?.members],
   );
 
   const ensureDraftTask = useCallback(async () => {
@@ -322,8 +322,8 @@ function CreateTaskModal({
       return pendingTask.id;
     }
 
-    if (!resolvedProjectId) {
-      toast.error(t("common:modals.createTask.chooseProjectForImages"));
+    if (!resolvedBoardId) {
+      toast.error(t("common:modals.createTask.chooseBoardForImages"));
       return null;
     }
 
@@ -333,7 +333,7 @@ function CreateTaskModal({
       description: description.trim() || "",
       userId: assigneeId,
       priority,
-      projectId: resolvedProjectId,
+      boardId: resolvedBoardId,
       startDate: startDate ? startDate.toISOString() : undefined,
       dueDate: dueDate ? dueDate.toISOString() : undefined,
       status: draftStatus,
@@ -363,14 +363,14 @@ function CreateTaskModal({
     startDate,
     dueDate,
     priority,
-    resolvedProjectId,
+    resolvedBoardId,
     title,
     t,
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !resolvedProjectId || !workspace?.id) return;
+    if (!title.trim() || !resolvedBoardId || !organization?.id) return;
 
     try {
       const taskStatus = status ?? "to-do";
@@ -387,7 +387,7 @@ function CreateTaskModal({
               priority,
               startDate: startDate ? startDate.toISOString() : null,
               dueDate: dueDate ? dueDate.toISOString() : null,
-              projectId: resolvedProjectId,
+              boardId: resolvedBoardId,
             }),
           )
         : normalizeTask(
@@ -396,7 +396,7 @@ function CreateTaskModal({
               description: description.trim() || "",
               userId: assigneeId,
               priority,
-              projectId: resolvedProjectId,
+              boardId: resolvedBoardId,
               startDate: startDate ? startDate.toISOString() : undefined,
               dueDate: dueDate ? dueDate.toISOString() : undefined,
               status: taskStatus,
@@ -409,7 +409,7 @@ function CreateTaskModal({
             name: label.name,
             color: label.color,
             taskId: savedTask.id,
-            workspaceId: workspace.id,
+            organizationId: organization.id,
           });
         } catch (error) {
           console.error("Failed to create label:", error);
@@ -417,7 +417,7 @@ function CreateTaskModal({
       }
 
       setDraftTask(savedTask);
-      syncTaskIntoProject(savedTask);
+      syncTaskIntoBoard(savedTask);
       toast.success(
         draftTask
           ? t("common:modals.createTask.successUpdated")
@@ -471,7 +471,7 @@ function CreateTaskModal({
     }
     return t("tasks:status.in-progress");
   }, [status, t]);
-  const selectedUser = workspaceUsers?.members?.find(
+  const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
   );
 
@@ -487,7 +487,7 @@ function CreateTaskModal({
 
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
-        if (title.trim() && project?.id && workspace?.id) {
+        if (title.trim() && board?.id && organization?.id) {
           const form = document.querySelector("form");
           if (form) {
             form.dispatchEvent(
@@ -497,7 +497,7 @@ function CreateTaskModal({
         }
       }
     },
-    [open, title, project?.id, workspace?.id],
+    [open, title, board?.id, organization?.id],
   );
 
   useEffect(() => {
@@ -522,17 +522,17 @@ function CreateTaskModal({
     if (existingLabel) {
       setLabels(labels.filter((l) => l.name !== labelName));
     } else {
-      const workspaceLabel = workspaceLabels.find((l) => l.name === labelName);
-      if (workspaceLabel) {
+      const organizationLabel = organizationLabels.find((l) => l.name === labelName);
+      if (organizationLabel) {
         setLabels([
           ...labels,
           {
-            id: workspaceLabel.id,
-            name: workspaceLabel.name,
-            color: workspaceLabel.color,
+            id: organizationLabel.id,
+            name: organizationLabel.name,
+            color: organizationLabel.color,
             taskId: null,
-            workspaceId: workspaceLabel.workspaceId || "",
-            createdAt: workspaceLabel.createdAt,
+            organizationId: organizationLabel.organizationId || "",
+            createdAt: organizationLabel.createdAt,
           },
         ]);
       }
@@ -547,13 +547,13 @@ function CreateTaskModal({
   const handleColorSelect = async (color: LabelColor) => {
     setSelectedColor(color);
 
-    if (!newLabelName.trim() || !workspace?.id) return;
+    if (!newLabelName.trim() || !organization?.id) return;
 
     try {
       const createdLabel = await createLabel({
         name: newLabelName.trim(),
         color: color,
-        workspaceId: workspace.id,
+        organizationId: organization.id,
       });
 
       const newLabel: Label = {
@@ -561,7 +561,7 @@ function CreateTaskModal({
         name: createdLabel.name,
         color: createdLabel.color,
         taskId: createdLabel.taskId ?? null,
-        workspaceId: createdLabel.workspaceId ?? workspace.id,
+        organizationId: createdLabel.organizationId ?? organization.id,
         createdAt: createdLabel.createdAt,
       };
 
@@ -597,7 +597,7 @@ function CreateTaskModal({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="text-muted-foreground font-semibold tracking-wider text-sm">
-                  {project?.slug?.toUpperCase() ||
+                  {board?.slug?.toUpperCase() ||
                     t("common:modals.createTask.breadcrumbTask")}
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -804,7 +804,7 @@ function CreateTaskModal({
                       </span>
                       {!assigneeId && <Check className="ml-auto h-4 w-4" />}
                     </button>
-                    {workspaceUsers?.members?.map((member) => (
+                    {organizationMembers?.members?.map((member) => (
                       <button
                         key={member.userId}
                         type="button"

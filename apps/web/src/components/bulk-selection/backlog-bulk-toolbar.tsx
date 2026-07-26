@@ -45,17 +45,17 @@ import {
 } from "@/components/ui/popover";
 import labelColors from "@/constants/label-colors";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
-import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 import { Button } from "../ui/button";
 import { Toolbar, ToolbarGroup, ToolbarSeparator } from "../ui/toolbar";
 
@@ -87,7 +87,7 @@ function BacklogBulkToolbar() {
     ],
     [],
   );
-  const { project } = useProjectStore();
+  const { board } = useBoardStore();
   const {
     bulkMoveToBoard,
     bulkDelete,
@@ -97,14 +97,14 @@ function BacklogBulkToolbar() {
     bulkAddLabel,
     bulkDueDate,
   } = useBulkOperations();
-  const { data: workspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id ?? "",
+  const { data: organization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id ?? "",
   );
-  const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(
-    workspace?.id ?? "",
+  const { data: organizationLabels = [] } = useGetLabelsByOrganization(
+    organization?.id ?? "",
   );
-  const { canManageTasks, canAssignTasks } = useWorkspacePermission();
+  const { canManageTasks, canAssignTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canAssign = canAssignTasks();
   const [isActionsOpen, setIsActionsOpen] = useState(false);
@@ -113,15 +113,15 @@ function BacklogBulkToolbar() {
   const selectedCount = selectedTaskIds.size;
 
   const uniqueLabels = useMemo(() => {
-    const labelMap = new Map<string, (typeof workspaceLabels)[0]>();
-    for (const label of workspaceLabels) {
+    const labelMap = new Map<string, (typeof organizationLabels)[0]>();
+    for (const label of organizationLabels) {
       const existing = labelMap.get(label.name);
       if (!existing || (label.taskId === null && existing.taskId !== null)) {
         labelMap.set(label.name, label);
       }
     }
     return Array.from(labelMap.values());
-  }, [workspaceLabels]);
+  }, [organizationLabels]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -289,7 +289,7 @@ function BacklogBulkToolbar() {
       groups.push({
         value: "assign",
         label: t("tasks:bulk.assignTo"),
-        items: (workspaceUsers?.members ?? []).map((member) => ({
+        items: (organizationMembers?.members ?? []).map((member) => ({
           value: `assign-${member.userId}`,
           label: member.user?.name || t("common:people.someone"),
           icon: (
@@ -348,7 +348,7 @@ function BacklogBulkToolbar() {
   }, [
     canEdit,
     canAssign,
-    workspaceUsers?.members,
+    organizationMembers?.members,
     uniqueLabels,
     handleBulkDelete,
     handleBulkArchive,
@@ -384,7 +384,7 @@ function BacklogBulkToolbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-48">
-                  {(project?.columns ?? []).map((col) => (
+                  {(board?.columns ?? []).map((col) => (
                     <DropdownMenuItem
                       key={col.id}
                       onClick={() => handleMoveToBoard(col.id)}

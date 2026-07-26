@@ -17,7 +17,7 @@ import useSignOut from "@/hooks/mutations/use-sign-out";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 
 export function UserAvatar() {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ export function UserAvatar() {
     config?.customOAuthLogoutUrl,
   );
   const queryClient = useQueryClient();
-  const { setProject } = useProjectStore();
+  const { setBoard } = useBoardStore();
   const navigate = useNavigate();
 
   if (!user) {
@@ -38,7 +38,7 @@ export function UserAvatar() {
     try {
       await signOut();
       queryClient.clear();
-      setProject(undefined);
+      setBoard(undefined);
       toast.success(t("navigation:userMenu.signedOutSuccess"));
     } catch (error) {
       toast.error(

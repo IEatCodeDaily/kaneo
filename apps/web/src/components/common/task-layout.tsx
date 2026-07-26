@@ -12,14 +12,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
-import useGetProject from "@/hooks/queries/project/use-get-project";
+import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import { useProjectWebSocket } from "@/hooks/use-project-websocket";
+import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 
 type TaskLayoutProps = {
   taskId: string;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
   headerActions?: ReactNode;
   children: ReactNode;
   rightSidebar?: ReactNode;
@@ -27,28 +27,28 @@ type TaskLayoutProps = {
 
 export default function TaskLayout({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
   headerActions,
   children,
   rightSidebar,
 }: TaskLayoutProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: project } = useGetProject({ id: projectId, workspaceId });
+  const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: task } = useGetTask(taskId);
 
-  useProjectWebSocket(projectId);
+  useBoardWebSocket(boardId);
 
   const taskLabel =
-    project?.slug && task?.number != null
-      ? `${project.slug}-${task.number}`
+    board?.slug && task?.number != null
+      ? `${board.slug}-${task.number}`
       : t("tasks:common.selectTask");
 
   const handleTaskSwitch = (nextTaskId: string) => {
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-      params: { workspaceId, projectId, taskId: nextTaskId },
+      to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+      params: { organizationId, boardId, taskId: nextTaskId },
     });
   };
 
@@ -84,17 +84,17 @@ export default function TaskLayout({
                   type="button"
                   onClick={() =>
                     navigate({
-                      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
-                      params: { workspaceId, projectId },
+                      to: "/dashboard/organization/$organizationId/board/$boardId/board",
+                      params: { organizationId, boardId },
                     })
                   }
                   className="max-w-40 truncate text-left text-xs text-foreground hover:underline"
                 >
-                  {project?.name || t("navigation:sidebar.projects")}
+                  {board?.name || t("navigation:sidebar.boards")}
                 </button>
                 <span className="text-foreground/70 text-xs">/</span>
                 <TaskCrumbSelect
-                  projectId={projectId}
+                  boardId={boardId}
                   taskId={taskId}
                   taskLabel={taskLabel}
                   onSelectTask={handleTaskSwitch}

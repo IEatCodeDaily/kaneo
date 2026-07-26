@@ -1,11 +1,11 @@
 import { client } from "@kaneo/libs";
 
 async function createColumn(
-  projectId: string,
+  boardId: string,
   data: { name: string; icon?: string; color?: string; isFinal?: boolean },
 ) {
-  const response = await client.column[":projectId"].$post({
-    param: { projectId },
+  const response = await client.column[":boardId"].$post({
+    param: { boardId },
     json: data,
   });
 

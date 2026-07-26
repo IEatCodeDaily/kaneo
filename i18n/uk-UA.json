@@ -60,21 +60,21 @@
 			"never": "Ніколи"
 		},
 		"modals": {
-			"createProject": {
+			"createBoard": {
 				"title": "Створити новий проєкт",
 				"breadcrumbNew": "Створити новий проєкт",
-				"workspaceFallback": "РОБОЧИЙ ПРОСТІР",
+				"organizationFallback": "РОБОЧИЙ ПРОСТІР",
 				"description": "Створіть новий проєкт у вашому робочому просторі, вказавши назву, ключ та обравши іконку.",
 				"pickIcon": "Обрати іконку",
 				"searchIcons": "Пошук іконок...",
-				"projectName": "Назва проєкту",
+				"boardName": "Назва проєкту",
 				"keyLabel": "Ключ:",
 				"keyHint": "Використовується для ID тікетів (напр., {{example}}-123)",
 				"createButton": "Створити проєкт",
 				"successToast": "Проєкт успішно створено",
 				"errorToast": "Не вдалося створити проєкт"
 			},
-			"createWorkspace": {
+			"createOrganization": {
 				"breadcrumbKaneo": "KANEO",
 				"title": "Створити новий робочий простір",
 				"description": "Створіть новий робочий простір, вказавши його назву.",
@@ -90,7 +90,7 @@
 				"description": "Створіть нове завдання, вказавши назву, опис та інші деталі.",
 				"taskTitlePlaceholder": "Назва завдання",
 				"descriptionPlaceholder": "Додайте опис до вашого завдання...",
-				"chooseProjectForImages": "Оберіть проєкт перед завантаженням зображень.",
+				"chooseBoardForImages": "Оберіть проєкт перед завантаженням зображень.",
 				"prepareTaskError": "Не вдалося підготувати завдання",
 				"successCreated": "Завдання успішно створено",
 				"successUpdated": "Завдання успішно оновлено",
@@ -242,8 +242,8 @@
 			"invitationExpired": "Запрошення прострочено",
 			"errorLoadDescription": "Не вдалося завантажити деталі запрошення. Запрошення може бути недійсним або простроченим.",
 			"goToSignIn": "Перейти до входу",
-			"workspaceLabel": "Робочий простір: {{workspaceName}}",
-			"joinWorkspace": "Приєднатися до {{workspaceName}}",
+			"organizationLabel": "Робочий простір: {{organizationName}}",
+			"joinOrganization": "Приєднатися до {{organizationName}}",
 			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> запросив вас приєднатися до свого робочого простору.",
 			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> запросив вас приєднатися до свого робочого простору в Kaneo.",
 			"signInToAccept": "Увійдіть, щоб прийняти це запрошення.",
@@ -261,23 +261,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Ласкаво просимо до Kaneo",
-			"workspacePageTitle": "Створення робочого простору",
-			"createWorkspaceTitle": "Створити робочий простір",
-			"createWorkspaceSubtitle": "Налаштуйте робочий простір, щоб почати керувати проєктами",
-			"workspaceName": "Назва робочого простору",
-			"workspaceNamePlaceholder": "напр. Acme Inc, Моя команда",
+			"organizationPageTitle": "Створення робочого простору",
+			"createOrganizationTitle": "Створити робочий простір",
+			"createOrganizationSubtitle": "Налаштуйте робочий простір, щоб почати керувати проєктами",
+			"organizationName": "Назва робочого простору",
+			"organizationNamePlaceholder": "напр. Acme Inc, Моя команда",
 			"descriptionOptional": "Опис (необов'язково)",
 			"descriptionPlaceholder": "Над чим працює ваша команда?",
 			"creating": "Створення...",
-			"createWorkspace": "Створити робочий простір",
-			"workspaceCreatedTitle": "Робочий простір створено",
-			"redirectingToWorkspace": "Переходимо до <name>{{name}}</name>...",
+			"createOrganization": "Створити робочий простір",
+			"organizationCreatedTitle": "Робочий простір створено",
+			"redirectingToOrganization": "Переходимо до <name>{{name}}</name>...",
 			"toast": {
-				"workspaceCreated": "Робочий простір успішно створено",
+				"organizationCreated": "Робочий простір успішно створено",
 				"createFailed": "Не вдалося створити робочий простір"
 			},
 			"validation": {
-				"workspaceNameRequired": "Назва робочого простору є обов'язковою"
+				"organizationNameRequired": "Назва робочого простору є обов'язковою"
 			}
 		},
 		"profileSetup": {
@@ -367,13 +367,13 @@
 			"webhookSecretHintConfigured": "Секрет підпису вже налаштовано ({{masked}}). Введіть новий, щоб замінити його.",
 			"webhookSecretHintOptional": "Необов'язково. Kaneo підписує тіло запиту, коли секрет встановлено.",
 			"connectWebhook": "Підключити вебхук",
-			"workspaceRulesTitle": "Правила доставки по робочих просторах",
-			"workspaceRulesDescription": "Використовуйте ваші глобальні канали, а потім визначте, які робочі простори та проєкти можуть надсилати сповіщення облікового запису.",
-			"workspaceCardHint": "Оберіть, які канали цей робочий простір може використовувати для сповіщень облікового запису.",
-			"workspaceCardLabelEmail": "Пошта",
-			"workspaceCardLabelNtfy": "ntfy",
-			"workspaceCardLabelGotify": "Gotify",
-			"workspaceCardLabelWebhook": "Власний вебхук",
+			"organizationRulesTitle": "Правила доставки по робочих просторах",
+			"organizationRulesDescription": "Використовуйте ваші глобальні канали, а потім визначте, які робочі простори та проєкти можуть надсилати сповіщення облікового запису.",
+			"organizationCardHint": "Оберіть, які канали цей робочий простір може використовувати для сповіщень облікового запису.",
+			"organizationCardLabelEmail": "Пошта",
+			"organizationCardLabelNtfy": "ntfy",
+			"organizationCardLabelGotify": "Gotify",
+			"organizationCardLabelWebhook": "Власний вебхук",
 			"emailChannelHintEnabled": "Надсилати відповідні сповіщення робочого простору електронною поштою.",
 			"emailChannelHintDisabled": "Спочатку налаштуйте та увімкніть пошту глобально.",
 			"ntfyChannelHintEnabled": "Надсилати відповідні сповіщення робочого простору в ntfy.",
@@ -382,13 +382,13 @@
 			"gotifyChannelHintDisabled": "Спочатку налаштуйте та увімкніть Gotify глобально.",
 			"webhookChannelHintEnabled": "Надсилати відповідні сповіщення робочого простору на ваш вебхук.",
 			"webhookChannelHintDisabled": "Спочатку налаштуйте та увімкніть вебхук глобально.",
-			"projectScope": "Область проєктів",
-			"projectScopeDescription": "Усі проєкти включені за замовчуванням. Звузьте вибір, якщо цей робочий простір має надсилати сповіщення лише з обраних проєктів.",
-			"allProjects": "Усі проєкти",
-			"allProjectsDescription": "Доставляти сповіщення з кожного проєкту в цьому робочому просторі.",
-			"selectedProjects": "Обрані проєкти",
-			"selectedProjectsDescription": "Доставляти сповіщення лише з обраних проєктів.",
-			"noProjectsInWorkspace": "У цьому робочому просторі ще немає доступних проєктів.",
+			"boardScope": "Область проєктів",
+			"boardScopeDescription": "Усі проєкти включені за замовчуванням. Звузьте вибір, якщо цей робочий простір має надсилати сповіщення лише з обраних проєктів.",
+			"allBoards": "Усі проєкти",
+			"allBoardsDescription": "Доставляти сповіщення з кожного проєкту в цьому робочому просторі.",
+			"selectedBoards": "Обрані проєкти",
+			"selectedBoardsDescription": "Доставляти сповіщення лише з обраних проєктів.",
+			"noBoardsInOrganization": "У цьому робочому просторі ще немає доступних проєктів.",
 			"createRule": "Створити правило",
 			"removeRule": "Видалити правило",
 			"toastEmailSaved": "Налаштування сповіщень електронною поштою збережено",
@@ -405,9 +405,9 @@
 			"toastWebhookSaveFailed": "Не вдалося зберегти налаштування вебхука",
 			"toastWebhookDisconnected": "Вебхук від'єднано",
 			"toastWebhookDisconnectFailed": "Не вдалося від'єднати вебхук",
-			"toastRuleSaved": "Правило сповіщень для {{workspaceName}} збережено",
+			"toastRuleSaved": "Правило сповіщень для {{organizationName}} збережено",
 			"toastRuleSaveFailed": "Не вдалося зберегти правило сповіщень робочого простору",
-			"toastRuleRemoved": "Правило сповіщень для {{workspaceName}} видалено",
+			"toastRuleRemoved": "Правило сповіщень для {{organizationName}} видалено",
 			"toastRuleRemoveFailed": "Не вдалося видалити правило сповіщень робочого простору",
 			"toastPreferencesSaved": "Налаштування сповіщень збережено",
 			"toastPreferencesSaveFailed": "Не вдалося зберегти налаштування сповіщень",
@@ -433,7 +433,6 @@
 			"selectFirstDayOfWeek": "Обрати перший день",
 			"weekStartsOnSunday": "Неділя",
 			"weekStartsOnMonday": "Понеділок",
-			"weekStartsOnSaturday": "Субота",
 			"defaultView": "Перегляд за замовчуванням",
 			"defaultViewDescription": "Оберіть бажаний режим перегляду завдань",
 			"selectViewMode": "Обрати режим перегляду",
@@ -453,7 +452,8 @@
 			"labels": "Мітки",
 			"labelsDescription": "Показувати мітки та теґи завдань",
 			"priority": "Пріоритет",
-			"priorityDescription": "Відображати індикатори пріоритету"
+			"priorityDescription": "Відображати індикатори пріоритету",
+			"weekStartsOnSaturday": "Субота"
 		},
 		"developerPage": {
 			"pageTitle": "Налаштування розробника",
@@ -521,12 +521,12 @@
 				}
 			}
 		},
-		"workspaceGeneral": {
+		"organizationGeneral": {
 			"pageTitle": "Загальні налаштування",
 			"title": "Загальні налаштування",
 			"subtitle": "Керуйте назвою та описом вашого робочого простору.",
-			"workspaceInfoTitle": "Інформація про робочий простір",
-			"workspaceInfoSubtitle": "Налаштуйте деталі та параметри вашого робочого простору.",
+			"organizationInfoTitle": "Інформація про робочий простір",
+			"organizationInfoSubtitle": "Налаштуйте деталі та параметри вашого робочого простору.",
 			"nameLabel": "Назва робочого простору",
 			"nameHint": "Назва вашого робочого простору",
 			"namePlaceholder": "Введіть назву робочого простору",
@@ -535,8 +535,8 @@
 			"descriptionPlaceholder": "Введіть опис робочого простору",
 			"dangerZone": "Небезпечна зона",
 			"dangerZoneSubtitle": "Незворотні та руйнівні дії.",
-			"deleteWorkspace": "Видалити робочий простір",
-			"deleteWorkspaceDescription": "Запланувати остаточне видалення робочого простору",
+			"deleteOrganization": "Видалити робочий простір",
+			"deleteOrganizationDescription": "Запланувати остаточне видалення робочого простору",
 			"deleteModalTitle": "Видалити робочий простір?",
 			"deleteModalDescription": "Це назавжди видалить робочий простір «{{name}}» та всі його дані. Цю дію неможливо скасувати.",
 			"deleteModalConfirm": "Видалити робочий простір",
@@ -549,19 +549,19 @@
 				"nameShort": "Назва робочого простору має містити щонайменше 2 символи"
 			}
 		},
-		"projectGeneral": {
+		"boardGeneral": {
 			"pageTitle": "Налаштування проєкту",
 			"title": "Загальні налаштування",
 			"subtitle": "Керуйте назвою, ключем, іконкою та описом вашого проєкту.",
-			"projectInfoTitle": "Інформація про проєкт",
-			"projectInfoSubtitle": "Налаштуйте деталі та параметри вашого проєкту.",
+			"boardInfoTitle": "Інформація про проєкт",
+			"boardInfoSubtitle": "Налаштуйте деталі та параметри вашого проєкту.",
 			"iconLabel": "Іконка",
 			"iconHint": "Відображається в бічній панелі та на поверхнях проєкту.",
 			"pickIconTitle": "Обрати іконку",
 			"searchIconsPlaceholder": "Пошук іконок...",
-			"projectNameLabel": "Назва проєкту",
-			"projectNameHint": "Назва вашого проєкту",
-			"projectNamePlaceholder": "Введіть назву проєкту",
+			"boardNameLabel": "Назва проєкту",
+			"boardNameHint": "Назва вашого проєкту",
+			"boardNamePlaceholder": "Введіть назву проєкту",
 			"keyLabel": "Ключ",
 			"keyHint": "Використовується для ID тікетів (напр., {{slug}}-123)",
 			"keyPlaceholder": "PRO",
@@ -570,8 +570,8 @@
 			"descriptionPlaceholder": "Введіть опис проєкту",
 			"dangerZone": "Небезпечна зона",
 			"dangerZoneSubtitle": "Незворотні та руйнівні дії.",
-			"deleteProject": "Видалити проєкт",
-			"deleteProjectDescription": "Запланувати остаточне видалення проєкту",
+			"deleteBoard": "Видалити проєкт",
+			"deleteBoardDescription": "Запланувати остаточне видалення проєкту",
 			"deleteModalTitle": "Видалити проєкт?",
 			"deleteModalDescription": "Це назавжди видалить проєкт «{{name}}» та всі його дані. Цю дію неможливо скасувати.",
 			"deleteModalConfirm": "Видалити проєкт",
@@ -588,7 +588,7 @@
 				"iconRequired": "Іконка є обов'язковою"
 			}
 		},
-		"projectIntegrations": {
+		"boardIntegrations": {
 			"pageTitle": "Інтеґрації проєкту",
 			"title": "Інтеґрації проєкту",
 			"subtitle": "З'єднайте ваш проєкт із зовнішніми інструментами та сервісами для оптимізації робочого процесу.",
@@ -605,7 +605,7 @@
 			"telegramSectionTitle": "Інтеґрація з Telegram",
 			"telegramSectionSubtitle": "Надсилайте оновлення завдань проєкту до чату або теми Telegram за допомогою бота."
 		},
-		"projectVisibility": {
+		"boardVisibility": {
 			"pageTitle": "Видимість проєкту",
 			"title": "Видимість",
 			"subtitle": "Контролюйте, хто може переглядати ваш проєкт та мати до нього доступ.",
@@ -620,7 +620,7 @@
 			"toastUpdated": "Видимість оновлено",
 			"toastUpdateError": "Не вдалося оновити видимість"
 		},
-		"projectWorkflow": {
+		"boardWorkflow": {
 			"pageTitle": "Налаштування робочого процесу",
 			"title": "Робочий процес",
 			"subtitle": "Налаштуйте колонки дошки та правила автоматизації для цього проєкту.",
@@ -629,9 +629,9 @@
 			"automationTitle": "Правила автоматизації",
 			"automationDescription": "Зіставте події інтеґрацій із колонками. Коли подія відбувається, пов'язане завдання переміщується до вказаної колонки."
 		},
-		"projectSwitcher": {
-			"selectProject": "Обрати проєкт",
-			"noProjects": "Немає проєктів"
+		"boardSwitcher": {
+			"selectBoard": "Обрати проєкт",
+			"noBoards": "Немає проєктів"
 		},
 		"columnEditor": {
 			"toastCreated": "Колонку створено",
@@ -699,7 +699,7 @@
 			"ownerPlaceholder": "напр., octocat",
 			"repoNameLabel": "Назва репозиторію",
 			"repoNameHint": "Назва репозиторію",
-			"repoNamePlaceholder": "напр., my-project",
+			"repoNamePlaceholder": "напр., my-board",
 			"actionsTitle": "Дії",
 			"actionsHint": "Керуйте підключенням до репозиторію",
 			"browse": "Переглянути",
@@ -1024,12 +1024,12 @@
 		"commandPalette": {
 			"suggestions": "Пропозиції",
 			"commands": "Команди",
-			"projects": "Проєкти",
+			"boards": "Проєкти",
 			"search": "Пошук",
 			"members": "Учасники",
 			"createTask": "Створити завдання",
-			"createProject": "Створити проєкт",
-			"createWorkspace": "Створити робочий простір",
+			"createBoard": "Створити проєкт",
+			"createOrganization": "Створити робочий простір",
 			"lightTheme": "Світла тема",
 			"darkTheme": "Темна тема",
 			"systemTheme": "Системна тема",
@@ -1045,29 +1045,29 @@
 		"notifications": "Сповіщення",
 		"sidebar": {
 			"overview": "Огляд",
-			"projects": "Проєкти",
+			"boards": "Проєкти",
 			"members": "Учасники",
 			"invitations": "Запрошення",
 			"more": "Більше"
 		},
-		"projectList": {
-			"viewProject": "Переглянути проєкт",
-			"shareProject": "Поділитися проєктом",
-			"projectSettings": "Налаштування проєкту",
+		"boardList": {
+			"viewBoard": "Переглянути проєкт",
+			"shareBoard": "Поділитися проєктом",
+			"boardSettings": "Налаштування проєкту",
 			"linkCopied": "Посилання на проєкт скопійовано до буфера обміну",
-			"addProject": "Додати проєкт",
+			"addBoard": "Додати проєкт",
 			"deleteConfirmTitle": "Видалити проєкт?",
 			"deleteConfirmDescription": "Це назавжди видалить проєкт та всі його дані. Цю дію неможливо скасувати.",
 			"deletedToast": "Проєкт видалено",
-			"deleteProject": "Видалити проєкт"
+			"deleteBoard": "Видалити проєкт"
 		},
 		"search": {
 			"inputPlaceholder": "Пошук завдань, проєктів, коментарів...",
 			"minCharsHint": "Введіть щонайменше 3 символи для пошуку",
 			"groups": {
 				"task": "Завдання",
-				"project": "Проєкти",
-				"workspace": "Робочі простори",
+				"board": "Проєкти",
+				"organization": "Робочі простори",
 				"comment": "Коментарі",
 				"activity": "Активність",
 				"fallback": "Результати"
@@ -1085,20 +1085,20 @@
 			"signingOut": "Вихід...",
 			"logOut": "Вийти"
 		},
-		"workspaceSwitcher": {
-			"workspaces": "Робочі простори",
+		"organizationSwitcher": {
+			"organizations": "Робочі простори",
 			"switching": "Перемикання...",
-			"addWorkspace": "Додати робочий простір",
-			"selectWorkspace": "Обрати робочий простір"
+			"addOrganization": "Додати робочий простір",
+			"selectOrganization": "Обрати робочий простір"
 		},
 		"page": {
-			"projectsTitle": "Проєкти",
+			"boardsTitle": "Проєкти",
 			"settingsTitle": "Налаштування",
-			"backToWorkspace": "Повернутися до робочого простору",
-			"settingsWorkspaceTab": "Робочий простір"
+			"backToOrganization": "Повернутися до робочого простору",
+			"settingsOrganizationTab": "Робочий простір"
 		},
-		"projectSettings": {
-			"projectLabel": "Проєкт"
+		"boardSettings": {
+			"boardLabel": "Проєкт"
 		},
 		"keyboardShortcuts": {
 			"title": "Гарячі клавіші",
@@ -1119,8 +1119,8 @@
 				"showShortcuts": "Показати гарячі клавіші",
 				"closeModal": "Закрити модальне/спливаюче вікно",
 				"createTask": "Створити завдання",
-				"createProject": "Створити проєкт",
-				"createWorkspace": "Створити робочий простір",
+				"createBoard": "Створити проєкт",
+				"createOrganization": "Створити робочий простір",
 				"boardView": "Перемкнути на вигляд дошки",
 				"listView": "Перемкнути на вигляд списку",
 				"backlogView": "Перемкнути на вигляд беклогу",
@@ -1150,9 +1150,9 @@
 				"title": "Створено нове завдання",
 				"content": "Завдання «{{taskTitle}}» створено"
 			},
-			"workspace_created": {
+			"organization_created": {
 				"title": "Робочий простір створено",
-				"content": "Ваш робочий простір «{{workspaceName}}» успішно створено"
+				"content": "Ваш робочий простір «{{organizationName}}» успішно створено"
 			},
 			"task_status_changed": {
 				"title": "Статус завдання змінено",
@@ -1401,7 +1401,7 @@
 		},
 		"relations": {
 			"title": "Зв'язки",
-			"tasksInProject": "Завдання в проєкті",
+			"tasksInBoard": "Завдання в проєкті",
 			"linkError": "Не вдалося зв'язати завдання",
 			"empty": "Немає пов'язаних завдань",
 			"searchPlaceholder": "Пошук завдань для зв'язування...",
@@ -1439,8 +1439,8 @@
 		},
 		"move": {
 			"title": "Перемістити завдання",
-			"projectLabel": "Цільовий проєкт",
-			"projectPlaceholder": "Обрати проєкт",
+			"boardLabel": "Цільовий проєкт",
+			"boardPlaceholder": "Обрати проєкт",
 			"statusLabel": "Цільовий статус",
 			"statusHintKeep": "Робочий процес цього проєкту вже підтримує поточний статус.",
 			"statusHintAdjust": "Оберіть статус для використання в цільовому проєкті.",
@@ -1661,14 +1661,14 @@
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
-			"preview": "You're invited to {{workspaceName}} on Kaneo",
-			"title": "Join {{workspaceName}}",
+			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+			"preview": "You're invited to {{organizationName}} on Kaneo",
+			"title": "Join {{organizationName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo workspace invitation"
+			"footer": "Kaneo organization invitation"
 		},
 		"pageTitle": "Запрошення",
 		"pendingInvitations": "Очікуючі запрошення",
@@ -1678,7 +1678,7 @@
 		"continueToSetup": "Продовжити налаштування",
 		"skipForNow": "Пропустити поки що",
 		"table": {
-			"workspace": "Робочий простір",
+			"organization": "Робочий простір",
 			"invitedBy": "Запросив",
 			"expires": "Закінчується"
 		},
@@ -1689,10 +1689,10 @@
 			"rejectSuccess": "Запрошення відхилено"
 		}
 	},
-	"workspace": {
-		"projects": {
+	"organization": {
+		"boards": {
 			"pageTitle": "Проєкти",
-			"createProject": "Створити проєкт",
+			"createBoard": "Створити проєкт",
 			"title": "Назва",
 			"progress": "Прогрес",
 			"targetDate": "Цільова дата",
@@ -1700,7 +1700,7 @@
 			"status": "Статус",
 			"emptyTitle": "Проєктів ще немає",
 			"emptyDescription": "Почніть зі створення вашого першого проєкту.",
-			"projectStatus": {
+			"boardStatus": {
 				"notStarted": "Не розпочато",
 				"complete": "Завершено",
 				"inProgress": "В роботі"
@@ -1785,7 +1785,7 @@
 			"cancelInviteError": "Не вдалося скасувати запрошення"
 		}
 	},
-	"publicProject": {
+	"publicBoard": {
 		"pageTitle": "Публічний перегляд",
 		"badge": "Публічний",
 		"readOnly": "Лише для читання",

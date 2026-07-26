@@ -31,21 +31,21 @@ import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { toast } from "@/lib/toast";
 import useBulkSelectionStore from "@/store/bulk-selection";
-import useProjectStore from "@/store/project";
-import type { ProjectWithTasks } from "@/types/project";
+import useBoardStore from "@/store/board";
+import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import { ArchiveTasksModal } from "../shared/modals/archive-tasks-modal";
 import CreateTaskModal from "../shared/modals/create-task-modal";
 import TaskRow from "./task-row";
 
 type ListViewProps = {
-  project: ProjectWithTasks;
+  board: BoardWithTasks;
   disableDragDrop?: boolean;
 };
 
-function ListView({ project, disableDragDrop = false }: ListViewProps) {
+function ListView({ board, disableDragDrop = false }: ListViewProps) {
   const { t } = useTranslation();
-  const { setProject } = useProjectStore();
+  const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
     focusNext,
@@ -61,8 +61,8 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
     Record<string, boolean>
   >(() => {
     const sections: Record<string, boolean> = {};
-    if (project?.columns) {
-      for (const col of project.columns) {
+    if (board?.columns) {
+      for (const col of board.columns) {
         sections[col.id] = true;
       }
     }
@@ -72,17 +72,17 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [columnToArchive, setColumnToArchive] = useState<
-    ProjectWithTasks["columns"][number] | null
+    BoardWithTasks["columns"][number] | null
   >(null);
 
   useEffect(() => {
-    if (project?.columns) {
-      const visibleTaskIds = project.columns
+    if (board?.columns) {
+      const visibleTaskIds = board.columns
         .filter((column) => expandedSections[column.id])
         .flatMap((column) => column.tasks.map((task) => task.id));
       setAvailableTasks(visibleTaskIds);
     }
-  }, [project, expandedSections, setAvailableTasks]);
+  }, [board, expandedSections, setAvailableTasks]);
 
   useEffect(() => {
     clearFocus();
@@ -105,12 +105,12 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
         }
       },
       Enter: () => {
-        if (focusedTaskId && project) {
+        if (focusedTaskId && board) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
             params: {
-              workspaceId: project.workspaceId,
-              projectId: project.id,
+              organizationId: board.organizationId,
+              boardId: board.id,
               taskId: focusedTaskId,
             },
           });
@@ -143,13 +143,13 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
       return;
     }
 
-    if (project?.columns?.some((col) => col.id === over.id)) {
+    if (board?.columns?.some((col) => col.id === over.id)) {
       setOverColumnId(over.id.toString());
       return;
     }
 
     const taskId = over.id.toString();
-    const columnWithTask = project?.columns?.find((col) =>
+    const columnWithTask = board?.columns?.find((col) =>
       col.tasks.some((task) => task.id === taskId),
     );
 
@@ -165,12 +165,12 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
     setActiveId(null);
     setOverColumnId(null);
 
-    if (!over || !project?.columns) return;
+    if (!over || !board?.columns) return;
 
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedProject = produce(project, (draft) => {
+    const updatedBoard = produce(board, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
         col.tasks.some((task) => task.id === activeTaskId),
       );
@@ -232,7 +232,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
       }
     });
 
-    setProject(updatedProject);
+    setBoard(updatedBoard);
   };
 
   const toggleSection = (sectionId: string) => {
@@ -242,7 +242,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
     }));
   };
 
-  const handleArchiveClick = (column: ProjectWithTasks["columns"][number]) => {
+  const handleArchiveClick = (column: BoardWithTasks["columns"][number]) => {
     if (!column.isFinal || column.tasks.length === 0) return;
     setColumnToArchive(column);
     setIsArchiveModalOpen(true);
@@ -251,7 +251,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
   const handleConfirmArchive = () => {
     if (!columnToArchive) return;
 
-    const updatedProject = produce(project, (draft) => {
+    const updatedBoard = produce(board, (draft) => {
       const archivedColumn = draft?.columns?.find(
         (col) => col.id === columnToArchive.id,
       );
@@ -267,7 +267,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
       archivedColumn.tasks = [];
     });
 
-    setProject(updatedProject);
+    setBoard(updatedBoard);
     toast.success(
       t("tasks:archive.success", { count: columnToArchive.tasks.length }),
     );
@@ -279,7 +279,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
   function ColumnSection({
     column,
   }: {
-    column: ProjectWithTasks["columns"][number];
+    column: BoardWithTasks["columns"][number];
   }) {
     const { setNodeRef } = useDroppable({
       id: column.id,
@@ -365,7 +365,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
                   >
-                    <TaskRow task={task} projectSlug={project?.slug ?? ""} />
+                    <TaskRow task={task} boardSlug={board?.slug ?? ""} />
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -382,12 +382,12 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
     );
   }
 
-  if (!project?.columns) {
+  if (!board?.columns) {
     return null;
   }
 
   const activeTask = activeId
-    ? project.columns
+    ? board.columns
         ?.flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
@@ -403,7 +403,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
     >
       <div className="w-full h-full overflow-auto bg-muted/20">
         <div className="divide-y divide-border/50">
-          {project.columns.map((column) => (
+          {board.columns.map((column) => (
             <ColumnSection key={column.id} column={column} />
           ))}
         </div>
@@ -427,7 +427,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-mono text-muted-foreground">
-                    {project?.slug}-{activeTask.number}
+                    {board?.slug}-{activeTask.number}
                   </span>
                   <span className="text-xs text-foreground truncate">
                     {activeTask.title}
@@ -441,7 +441,7 @@ function ListView({ project, disableDragDrop = false }: ListViewProps) {
 
       <CreateTaskModal
         open={isTaskModalOpen}
-        projectId={project.id}
+        boardId={board.id}
         onClose={() => setIsTaskModalOpen(false)}
         status={activeColumn ?? "done"}
       />
