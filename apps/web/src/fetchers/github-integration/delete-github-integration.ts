@@ -1,10 +1,10 @@
 import { client } from "@kaneo/libs";
 
-async function deleteGithubIntegration(projectId: string) {
-  const response = await client["github-integration"].project[
-    ":projectId"
+async function deleteGithubIntegration(boardId: string) {
+  const response = await client["github-integration"].board[
+    ":boardId"
   ].$delete({
-    param: { projectId },
+    param: { boardId },
   });
 
   if (!response.ok) {

@@ -12,15 +12,15 @@ export function useCreateSlackIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       data,
     }: {
-      projectId: string;
+      boardId: string;
       data: CreateSlackIntegrationRequest;
-    }) => createSlackIntegration(projectId, data),
-    onSuccess: (_, { projectId }) => {
+    }) => createSlackIntegration(boardId, data),
+    onSuccess: (_, { boardId }) => {
       void queryClient.invalidateQueries({
-        queryKey: ["slack-integration", projectId],
+        queryKey: ["slack-integration", boardId],
       });
     },
   });
@@ -31,15 +31,15 @@ export function useUpdateSlackIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       json,
     }: {
-      projectId: string;
+      boardId: string;
       json: UpdateSlackIntegrationRequest;
-    }) => updateSlackIntegration(projectId, json),
-    onSuccess: (_, { projectId }) => {
+    }) => updateSlackIntegration(boardId, json),
+    onSuccess: (_, { boardId }) => {
       void queryClient.invalidateQueries({
-        queryKey: ["slack-integration", projectId],
+        queryKey: ["slack-integration", boardId],
       });
     },
   });
@@ -49,10 +49,10 @@ export function useDeleteSlackIntegration() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (projectId: string) => deleteSlackIntegration(projectId),
-    onSuccess: (_, projectId) => {
+    mutationFn: (boardId: string) => deleteSlackIntegration(boardId),
+    onSuccess: (_, boardId) => {
       void queryClient.invalidateQueries({
-        queryKey: ["slack-integration", projectId],
+        queryKey: ["slack-integration", boardId],
       });
     },
   });

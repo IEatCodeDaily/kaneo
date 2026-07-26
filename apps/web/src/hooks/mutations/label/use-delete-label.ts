@@ -9,7 +9,7 @@ function useDeleteLabel() {
     mutationFn: deleteLabel,
     onSuccess: (deletedLabel) => {
       queryClient.setQueryData(
-        ["labels", deletedLabel.workspaceId],
+        ["labels", deletedLabel.organizationId],
         (existingLabels: Array<typeof deletedLabel> | undefined) =>
           existingLabels?.filter((label) => label.id !== deletedLabel.id) ?? [],
       );
@@ -30,7 +30,7 @@ function useDeleteLabel() {
       }
 
       void queryClient.invalidateQueries({
-        queryKey: ["labels", deletedLabel.workspaceId],
+        queryKey: ["labels", deletedLabel.organizationId],
       });
 
       if (deletedLabel.taskId) {

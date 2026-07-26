@@ -6,12 +6,12 @@ export function useCreateColumn() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       data,
     }: {
-      projectId: string;
+      boardId: string;
       data: { name: string; icon?: string; color?: string; isFinal?: boolean };
-    }) => createColumn(projectId, data),
+    }) => createColumn(boardId, data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ refetchType: "all" });
     },

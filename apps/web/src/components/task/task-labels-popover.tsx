@@ -11,8 +11,8 @@ import {
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
-import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
@@ -42,7 +42,7 @@ type LabelColor =
 
 type TaskLabelsPopoverProps = {
   task: Task;
-  workspaceId: string;
+  organizationId: string;
   children: React.ReactNode;
   triggerNativeButton?: boolean;
 };
@@ -51,7 +51,7 @@ type PopoverStep = "select" | "color";
 
 export default function TaskLabelsPopover({
   task,
-  workspaceId,
+  organizationId,
   children,
   triggerNativeButton = true,
 }: TaskLabelsPopoverProps) {
@@ -68,15 +68,15 @@ export default function TaskLabelsPopover({
   const { mutateAsync: createLabel } = useCreateLabel();
   const { mutateAsync: deleteLabel } = useDeleteLabel();
   // Attaching/removing labels from a task is a task mutation; creating a new
-  // workspace label needs the label capability. We gate the popover trigger
+  // organization label needs the label capability. We gate the popover trigger
   // on whichever is required: any flow needs at least task-edit since the
   // result lives on the task.
-  const { canManageTasks, canManageLabels } = useWorkspacePermission();
+  const { canManageTasks, canManageLabels } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canCreateLabels = canManageLabels();
 
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
-  const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(workspaceId);
+  const { data: organizationLabels = [] } = useGetLabelsByOrganization(organizationId);
 
   const taskLabelNames = useMemo(
     () => taskLabels.map((label) => label.name),
@@ -84,11 +84,11 @@ export default function TaskLabelsPopover({
   );
 
   const filteredLabels = useMemo(() => {
-    const searchFiltered = workspaceLabels.filter((label) =>
+    const searchFiltered = organizationLabels.filter((label) =>
       label.name.toLowerCase().includes(searchValue.toLowerCase()),
     );
 
-    const labelMap = new Map<string, (typeof workspaceLabels)[0]>();
+    const labelMap = new Map<string, (typeof organizationLabels)[0]>();
     for (const label of searchFiltered) {
       const existing = labelMap.get(label.name);
       if (!existing || (label.taskId === null && existing.taskId !== null)) {
@@ -97,15 +97,15 @@ export default function TaskLabelsPopover({
     }
 
     return Array.from(labelMap.values());
-  }, [workspaceLabels, searchValue]);
+  }, [organizationLabels, searchValue]);
 
   const isCreatingNewLabel = useMemo(
     () =>
       searchValue &&
-      !workspaceLabels.some(
+      !organizationLabels.some(
         (label) => label.name.toLowerCase() === searchValue.toLowerCase(),
       ),
-    [workspaceLabels, searchValue],
+    [organizationLabels, searchValue],
   );
 
   useEffect(() => {
@@ -128,15 +128,15 @@ export default function TaskLabelsPopover({
 
   const handleToggleLabel = async (labelId: string) => {
     try {
-      const workspaceLabel = workspaceLabels.find((l) => l.id === labelId);
-      if (!workspaceLabel) return;
+      const organizationLabel = organizationLabels.find((l) => l.id === labelId);
+      if (!organizationLabel) return;
 
-      const isCurrentlyAssigned = taskLabelNames.includes(workspaceLabel.name);
+      const isCurrentlyAssigned = taskLabelNames.includes(organizationLabel.name);
 
       if (isCurrentlyAssigned) {
         // Remove label from task - find by name since IDs are different
         const taskLabel = taskLabels.find(
-          (l) => l.name === workspaceLabel.name,
+          (l) => l.name === organizationLabel.name,
         );
         if (taskLabel?.id) {
           await deleteLabel({ id: taskLabel.id });
@@ -145,16 +145,16 @@ export default function TaskLabelsPopover({
       } else {
         // Add label to task
         await createLabel({
-          name: workspaceLabel.name,
-          color: workspaceLabel.color as LabelColor,
+          name: organizationLabel.name,
+          color: organizationLabel.color as LabelColor,
           taskId: task.id,
-          workspaceId,
+          organizationId,
         });
         toast.success(t("tasks:popover.labels.addSuccess"));
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", task.projectId],
+        queryKey: ["tasks", task.boardId],
       });
     } catch (error) {
       toast.error(
@@ -177,11 +177,11 @@ export default function TaskLabelsPopover({
     if (!newLabelName.trim()) return;
 
     try {
-      // First create the label in the workspace
+      // First create the label in the organization
       await createLabel({
         name: newLabelName.trim(),
         color: color,
-        workspaceId,
+        organizationId,
       });
 
       // Then assign it to the task
@@ -189,11 +189,11 @@ export default function TaskLabelsPopover({
         name: newLabelName.trim(),
         color: color,
         taskId: task.id,
-        workspaceId,
+        organizationId,
       });
 
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", task.projectId],
+        queryKey: ["tasks", task.boardId],
       });
 
       toast.success(t("tasks:popover.labels.createSuccess"));

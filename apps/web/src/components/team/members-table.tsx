@@ -2,19 +2,19 @@ import { DEFAULT_ROLE_NAMES } from "@kaneo/permissions";
 import { EllipsisIcon, MailIcon, ShieldIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useCancelInvitation from "@/hooks/mutations/workspace-user/use-cancel-invitation";
-import useDeleteWorkspaceUser from "@/hooks/mutations/workspace-user/use-delete-workspace-user";
-import useUpdateWorkspaceUserRole from "@/hooks/mutations/workspace-user/use-update-workspace-user-role";
-import useWorkspaceRoles from "@/hooks/queries/workspace/use-workspace-roles";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useCancelInvitation from "@/hooks/mutations/organization-member/use-cancel-invitation";
+import useDeleteOrganizationMember from "@/hooks/mutations/organization-member/use-delete-organization-member";
+import useUpdateOrganizationMemberRole from "@/hooks/mutations/organization-member/use-update-organization-member-role";
+import useOrganizationRoles from "@/hooks/queries/organization/use-organization-roles";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import type {
-  WorkspaceUser,
-  WorkspaceUserInvitation,
-} from "@/types/workspace-user";
+  OrganizationMember,
+  OrganizationMemberInvitation,
+} from "@/types/organization-member";
 import { useAuth } from "../providers/auth-provider/hooks/use-auth";
 import {
   AlertDialog,
@@ -46,9 +46,9 @@ import {
 } from "../ui/table";
 
 type Props = {
-  workspaceId: string;
-  invitations: WorkspaceUserInvitation[];
-  users: WorkspaceUser[];
+  organizationId: string;
+  invitations: OrganizationMemberInvitation[];
+  users: OrganizationMember[];
 };
 
 // Stable per-user pastel for the avatar fallback. Picks one of a curated set
@@ -64,7 +64,7 @@ const AVATAR_TONES = [
 ] as const;
 
 // Names that are NOT "truly custom" — viewer/member/admin are seeded as
-// editable workspace_role rows on every workspace creation, and owner is a
+// editable organization_role rows on every organization creation, and owner is a
 // static built-in. The Select already lists them as built-ins, so we filter
 // them out of the custom-roles tail to avoid duplicate options.
 const RESERVED_ROLE_NAMES = new Set<string>([...DEFAULT_ROLE_NAMES, "owner"]);
@@ -83,28 +83,28 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function MembersTable({ workspaceId, invitations, users }: Props) {
+function MembersTable({ organizationId, invitations, users }: Props) {
   const { t } = useTranslation();
-  const [memberToDelete, setMemberToDelete] = useState<WorkspaceUser | null>(
+  const [memberToDelete, setMemberToDelete] = useState<OrganizationMember | null>(
     null,
   );
   const [invitationToCancel, setInvitationToCancel] =
-    useState<WorkspaceUserInvitation | null>(null);
+    useState<OrganizationMemberInvitation | null>(null);
 
   const { user: currentUser } = useAuth();
-  const { mutateAsync: deleteWorkspaceUser, isPending: isDeleting } =
-    useDeleteWorkspaceUser();
+  const { mutateAsync: deleteOrganizationMember, isPending: isDeleting } =
+    useDeleteOrganizationMember();
   const { mutateAsync: cancelInvitation, isPending: isCancelling } =
     useCancelInvitation();
-  const { mutateAsync: updateMemberRole } = useUpdateWorkspaceUserRole();
-  const { data: allWorkspaceRoles = [] } = useWorkspaceRoles(workspaceId);
+  const { mutateAsync: updateMemberRole } = useUpdateOrganizationMemberRole();
+  const { data: allOrganizationRoles = [] } = useOrganizationRoles(organizationId);
   const { canManageTeam, canRemoveMembers, canInviteUsers } =
-    useWorkspacePermission();
+    useOrganizationPermission();
   const canChangeRoles = Boolean(canManageTeam());
   const canRemove = Boolean(canRemoveMembers());
   const canInvite = Boolean(canInviteUsers());
 
-  const customRoles = allWorkspaceRoles.filter(
+  const customRoles = allOrganizationRoles.filter(
     (role) => !RESERVED_ROLE_NAMES.has(role.role),
   );
 
@@ -121,10 +121,10 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
     (inv) => inv.status !== "accepted" && inv.status !== "canceled",
   );
 
-  const handleChangeRole = async (member: WorkspaceUser, role: string) => {
+  const handleChangeRole = async (member: OrganizationMember, role: string) => {
     if (role === member.role) return;
     try {
-      await updateMemberRole({ workspaceId, memberId: member.id, role });
+      await updateMemberRole({ organizationId, memberId: member.id, role });
       toast.success(t("team:membersTable.roleUpdateSuccess"));
     } catch (error) {
       toast.error(
@@ -138,8 +138,8 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
   const handleDeleteMember = async () => {
     if (!memberToDelete) return;
     try {
-      await deleteWorkspaceUser({
-        workspaceId,
+      await deleteOrganizationMember({
+        organizationId,
         userId: memberToDelete.user.email,
       });
       toast.success(t("team:membersTable.removeSuccess"));
@@ -159,7 +159,7 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
     try {
       await cancelInvitation({
         invitationId: invitationToCancel.id,
-        workspaceId,
+        organizationId,
       });
       toast.success(t("team:membersTable.cancelInviteSuccess"));
     } catch (error) {
@@ -264,8 +264,8 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
                         </SelectItem>
                         {/* Owner is intentionally NOT offered here: the better-auth
                             organization plugin requires an explicit ownership
-                            transfer flow (a workspace must have exactly one owner).
-                            That UI lives in workspace settings — TODO. */}
+                            transfer flow (a organization must have exactly one owner).
+                            That UI lives in organization settings — TODO. */}
                         {customRoles.map((r) => (
                           <SelectItem key={r.id} value={r.role}>
                             {capitalize(r.role)}

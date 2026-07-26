@@ -23,27 +23,27 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
-  useDeleteNotificationWorkspaceRule,
+  useDeleteNotificationOrganizationRule,
   useUpdateNotificationPreferences,
-  useUpsertNotificationWorkspaceRule,
+  useUpsertNotificationOrganizationRule,
 } from "@/hooks/mutations/notification-preferences/use-notification-preferences";
 import useGetNotificationPreferences from "@/hooks/queries/notification-preferences/use-get-notification-preferences";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
-import useGetWorkspaces from "@/hooks/queries/workspace/use-get-workspaces";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import useGetOrganizations from "@/hooks/queries/organization/use-get-organizations";
 
-type WorkspaceSummary = {
+type OrganizationSummary = {
   id: string;
   name: string;
 };
 
-type WorkspaceRuleState = {
+type OrganizationRuleState = {
   isActive: boolean;
   emailEnabled: boolean;
   ntfyEnabled: boolean;
   gotifyEnabled: boolean;
   webhookEnabled: boolean;
-  projectMode: "all" | "selected";
-  selectedProjectIds: string[];
+  boardMode: "all" | "selected";
+  selectedBoardIds: string[];
 };
 
 type GlobalChannelPrefsState = {
@@ -62,13 +62,13 @@ type NotificationEventPrefsState = {
   dueDateReminderLeadUnit: "hours" | "days";
 };
 
-function createWorkspaceRuleState(input: {
+function createOrganizationRuleState(input: {
   hasEmailChannel: boolean;
   hasGotifyChannel: boolean;
   hasNtfyChannel: boolean;
   hasWebhookChannel: boolean;
-  rule?: WorkspaceRuleState;
-}): WorkspaceRuleState {
+  rule?: OrganizationRuleState;
+}): OrganizationRuleState {
   if (input.rule) {
     return {
       isActive: input.rule.isActive,
@@ -76,8 +76,8 @@ function createWorkspaceRuleState(input: {
       ntfyEnabled: input.rule.ntfyEnabled,
       gotifyEnabled: input.rule.gotifyEnabled,
       webhookEnabled: input.rule.webhookEnabled,
-      projectMode: input.rule.projectMode,
-      selectedProjectIds: input.rule.selectedProjectIds,
+      boardMode: input.rule.boardMode,
+      selectedBoardIds: input.rule.selectedBoardIds,
     };
   }
 
@@ -87,8 +87,8 @@ function createWorkspaceRuleState(input: {
     ntfyEnabled: input.hasNtfyChannel,
     gotifyEnabled: input.hasGotifyChannel,
     webhookEnabled: input.hasWebhookChannel,
-    projectMode: "all",
-    selectedProjectIds: [],
+    boardMode: "all",
+    selectedBoardIds: [],
   };
 }
 
@@ -167,7 +167,7 @@ function ChannelToggle({
   );
 }
 
-function WorkspaceRuleCard({
+function OrganizationRuleCard({
   hasEmailChannel,
   hasGotifyChannel,
   hasNtfyChannel,
@@ -175,28 +175,28 @@ function WorkspaceRuleCard({
   onDelete,
   onSave,
   rule,
-  workspace,
+  organization,
 }: {
   hasEmailChannel: boolean;
   hasGotifyChannel: boolean;
   hasNtfyChannel: boolean;
   hasWebhookChannel: boolean;
-  onDelete: (workspaceId: string) => Promise<unknown>;
-  onSave: (workspaceId: string, rule: WorkspaceRuleState) => Promise<void>;
+  onDelete: (organizationId: string) => Promise<unknown>;
+  onSave: (organizationId: string, rule: OrganizationRuleState) => Promise<void>;
   rule?: {
     isActive: boolean;
     emailEnabled: boolean;
     ntfyEnabled: boolean;
     gotifyEnabled: boolean;
     webhookEnabled: boolean;
-    projectMode: "all" | "selected";
-    selectedProjectIds: string[];
+    boardMode: "all" | "selected";
+    selectedBoardIds: string[];
   };
-  workspace: WorkspaceSummary;
+  organization: OrganizationSummary;
 }) {
   const { t } = useTranslation();
-  const [state, setState] = React.useState<WorkspaceRuleState>(() =>
-    createWorkspaceRuleState({
+  const [state, setState] = React.useState<OrganizationRuleState>(() =>
+    createOrganizationRuleState({
       hasEmailChannel,
       hasGotifyChannel,
       hasNtfyChannel,
@@ -206,17 +206,17 @@ function WorkspaceRuleCard({
   );
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const { data: projects } = useGetProjects({
-    workspaceId:
-      state.projectMode === "selected" ||
-      (rule?.projectMode ?? "all") === "selected"
-        ? workspace.id
+  const { data: boards } = useGetBoards({
+    organizationId:
+      state.boardMode === "selected" ||
+      (rule?.boardMode ?? "all") === "selected"
+        ? organization.id
         : "",
   });
 
   React.useEffect(() => {
     setState(
-      createWorkspaceRuleState({
+      createOrganizationRuleState({
         hasEmailChannel,
         hasGotifyChannel,
         hasNtfyChannel,
@@ -235,12 +235,12 @@ function WorkspaceRuleCard({
   const isConnected = Boolean(rule);
   const isBusy = isSaving || isDeleting;
 
-  const toggleProject = (projectId: string, checked: boolean) => {
+  const toggleBoard = (boardId: string, checked: boolean) => {
     setState((current) => ({
       ...current,
-      selectedProjectIds: checked
-        ? [...current.selectedProjectIds, projectId]
-        : current.selectedProjectIds.filter((id) => id !== projectId),
+      selectedBoardIds: checked
+        ? [...current.selectedBoardIds, boardId]
+        : current.selectedBoardIds.filter((id) => id !== boardId),
     }));
   };
 
@@ -248,9 +248,9 @@ function WorkspaceRuleCard({
     <div className="space-y-4 border border-border rounded-md bg-sidebar p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium">{workspace.name}</p>
+          <p className="text-sm font-medium">{organization.name}</p>
           <p className="text-xs text-muted-foreground">
-            {t("settings:notificationsPage.workspaceCardHint")}
+            {t("settings:notificationsPage.organizationCardHint")}
           </p>
         </div>
 
@@ -266,8 +266,8 @@ function WorkspaceRuleCard({
             </div>
           ) : null}
           <Switch
-            aria-label={t("settings:notificationsPage.workspaceEnabledLabel", {
-              workspaceName: workspace.name,
+            aria-label={t("settings:notificationsPage.organizationEnabledLabel", {
+              organizationName: organization.name,
             })}
             checked={state.isActive}
             disabled={isBusy}
@@ -289,7 +289,7 @@ function WorkspaceRuleCard({
               ? t("settings:notificationsPage.emailChannelHintEnabled")
               : t("settings:notificationsPage.emailChannelHintDisabled")
           }
-          label={t("settings:notificationsPage.workspaceCardLabelEmail")}
+          label={t("settings:notificationsPage.organizationCardLabelEmail")}
           onCheckedChange={(checked) =>
             setState((current) => ({ ...current, emailEnabled: checked }))
           }
@@ -302,7 +302,7 @@ function WorkspaceRuleCard({
               ? t("settings:notificationsPage.ntfyChannelHintEnabled")
               : t("settings:notificationsPage.ntfyChannelHintDisabled")
           }
-          label={t("settings:notificationsPage.workspaceCardLabelNtfy")}
+          label={t("settings:notificationsPage.organizationCardLabelNtfy")}
           onCheckedChange={(checked) =>
             setState((current) => ({ ...current, ntfyEnabled: checked }))
           }
@@ -315,7 +315,7 @@ function WorkspaceRuleCard({
               ? t("settings:notificationsPage.gotifyChannelHintEnabled")
               : t("settings:notificationsPage.gotifyChannelHintDisabled")
           }
-          label={t("settings:notificationsPage.workspaceCardLabelGotify")}
+          label={t("settings:notificationsPage.organizationCardLabelGotify")}
           onCheckedChange={(checked) =>
             setState((current) => ({ ...current, gotifyEnabled: checked }))
           }
@@ -328,7 +328,7 @@ function WorkspaceRuleCard({
               ? t("settings:notificationsPage.webhookChannelHintEnabled")
               : t("settings:notificationsPage.webhookChannelHintDisabled")
           }
-          label={t("settings:notificationsPage.workspaceCardLabelWebhook")}
+          label={t("settings:notificationsPage.organizationCardLabelWebhook")}
           onCheckedChange={(checked) =>
             setState((current) => ({ ...current, webhookEnabled: checked }))
           }
@@ -340,86 +340,86 @@ function WorkspaceRuleCard({
       <div className="space-y-3">
         <div className="space-y-0.5">
           <Label className="text-sm font-medium">
-            {t("settings:notificationsPage.projectScope")}
+            {t("settings:notificationsPage.boardScope")}
           </Label>
           <p className="text-xs text-muted-foreground">
-            {t("settings:notificationsPage.projectScopeDescription")}
+            {t("settings:notificationsPage.boardScopeDescription")}
           </p>
         </div>
 
         <RadioGroup
           className="gap-2"
-          value={state.projectMode}
+          value={state.boardMode}
           onValueChange={(value) =>
             setState((current) => ({
               ...current,
-              projectMode: value === "selected" ? "selected" : "all",
+              boardMode: value === "selected" ? "selected" : "all",
             }))
           }
         >
           <label
             className="flex items-start gap-3"
-            htmlFor={`${workspace.id}-project-scope-all`}
+            htmlFor={`${organization.id}-board-scope-all`}
           >
             <Radio
               className="mt-0.5"
-              id={`${workspace.id}-project-scope-all`}
+              id={`${organization.id}-board-scope-all`}
               value="all"
             />
             <div className="min-w-0 space-y-0.5">
               <p className="text-sm font-medium">
-                {t("settings:notificationsPage.allProjects")}
+                {t("settings:notificationsPage.allBoards")}
               </p>
               <p className="text-xs text-muted-foreground">
-                {t("settings:notificationsPage.allProjectsDescription")}
+                {t("settings:notificationsPage.allBoardsDescription")}
               </p>
             </div>
           </label>
 
           <label
             className="flex items-start gap-3"
-            htmlFor={`${workspace.id}-project-scope-selected`}
+            htmlFor={`${organization.id}-board-scope-selected`}
           >
             <Radio
               className="mt-0.5"
-              id={`${workspace.id}-project-scope-selected`}
+              id={`${organization.id}-board-scope-selected`}
               value="selected"
             />
             <div className="min-w-0 space-y-0.5">
               <p className="text-sm font-medium">
-                {t("settings:notificationsPage.selectedProjects")}
+                {t("settings:notificationsPage.selectedBoards")}
               </p>
               <p className="text-xs text-muted-foreground">
-                {t("settings:notificationsPage.selectedProjectsDescription")}
+                {t("settings:notificationsPage.selectedBoardsDescription")}
               </p>
             </div>
           </label>
         </RadioGroup>
 
-        {state.projectMode === "selected" ? (
+        {state.boardMode === "selected" ? (
           <div className="space-y-2 border border-dashed border-border/80 rounded-md px-3 py-3">
-            {!projects?.length ? (
+            {!boards?.length ? (
               <p className="text-sm text-muted-foreground">
-                {t("settings:notificationsPage.noProjectsInWorkspace")}
+                {t("settings:notificationsPage.noBoardsInOrganization")}
               </p>
             ) : (
-              projects.map((project) => {
-                const checked = state.selectedProjectIds.includes(project.id);
+              boards.map((board) => {
+                const checked = state.selectedBoardIds.includes(board.id);
 
                 return (
                   <label
-                    key={project.id}
+                    key={board.id}
                     className="flex items-center gap-3"
-                    htmlFor={`${workspace.id}-project-${project.id}`}
+                    htmlFor={`${organization.id}-board-${board.id}`}
                   >
                     <Checkbox
                       checked={checked}
-                      id={`${workspace.id}-project-${project.id}`}
+                      id={`${organization.id}-board-${board.id}`}
                       onCheckedChange={(value) =>
-                        toggleProject(project.id, Boolean(value))
+                        toggleBoard(board.id, Boolean(value))
                       }
                     />
-                    <span className="text-sm font-medium">{project.name}</span>
+                    <span className="text-sm font-medium">{board.name}</span>
                   </label>
                 );
               })
@@ -436,7 +436,7 @@ function WorkspaceRuleCard({
           onClick={async () => {
             setIsSaving(true);
             try {
-              await onSave(workspace.id, state);
+              await onSave(organization.id, state);
             } finally {
               setIsSaving(false);
             }
@@ -453,7 +453,7 @@ function WorkspaceRuleCard({
             onClick={async () => {
               setIsDeleting(true);
               try {
-                await onDelete(workspace.id);
+                await onDelete(organization.id);
               } finally {
                 setIsDeleting(false);
               }
@@ -473,21 +473,21 @@ function WorkspaceRuleCard({
 export function NotificationPreferencesSettings() {
   const { t } = useTranslation();
   const { data: preferences, isLoading } = useGetNotificationPreferences();
-  const { data: workspacesData } = useGetWorkspaces();
+  const { data: organizationsData } = useGetOrganizations();
   const { mutateAsync: updatePreferences, isPending: isSavingPreferences } =
     useUpdateNotificationPreferences();
-  const { mutateAsync: upsertWorkspaceRule } =
-    useUpsertNotificationWorkspaceRule();
-  const { mutateAsync: deleteWorkspaceRule } =
-    useDeleteNotificationWorkspaceRule();
+  const { mutateAsync: upsertOrganizationRule } =
+    useUpsertNotificationOrganizationRule();
+  const { mutateAsync: deleteOrganizationRule } =
+    useDeleteNotificationOrganizationRule();
 
-  const workspaces = React.useMemo(
+  const organizations = React.useMemo(
     () =>
-      ((workspacesData ?? []) as WorkspaceSummary[]).map((workspace) => ({
-        id: workspace.id,
-        name: workspace.name,
+      ((organizationsData ?? []) as OrganizationSummary[]).map((organization) => ({
+        id: organization.id,
+        name: organization.name,
       })),
-    [workspacesData],
+    [organizationsData],
   );
 
   const [globalPrefs, setGlobalPrefs] = React.useState<GlobalChannelPrefsState>(
@@ -551,15 +551,15 @@ export function NotificationPreferencesSettings() {
     eventPrefs.dueDateReminderLeadAmount >= 1 &&
     eventPrefs.dueDateReminderLeadAmount <= leadTimeMax;
 
-  const workspaceRuleMap = React.useMemo(
+  const organizationRuleMap = React.useMemo(
     () =>
       new Map(
-        (preferences?.workspaces ?? []).map((workspaceRule) => [
-          workspaceRule.workspaceId,
-          workspaceRule,
+        (preferences?.organizations ?? []).map((organizationRule) => [
+          organizationRule.organizationId,
+          organizationRule,
         ]),
       ),
-    [preferences?.workspaces],
+    [preferences?.organizations],
   );
 
   if (isLoading) {
@@ -1181,20 +1181,20 @@ export function NotificationPreferencesSettings() {
       <div className="space-y-4">
         <div className="space-y-1">
           <h3 className="font-medium">
-            {t("settings:notificationsPage.workspaceRulesTitle")}
+            {t("settings:notificationsPage.organizationRulesTitle")}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {t("settings:notificationsPage.workspaceRulesDescription")}
+            {t("settings:notificationsPage.organizationRulesDescription")}
           </p>
         </div>
 
         <div className="space-y-4">
-          {workspaces.map((workspace) => {
-            const rule = workspaceRuleMap.get(workspace.id);
+          {organizations.map((organization) => {
+            const rule = organizationRuleMap.get(organization.id);
 
             return (
-              <WorkspaceRuleCard
-                key={workspace.id}
+              <OrganizationRuleCard
+                key={organization.id}
                 hasEmailChannel={Boolean(preferences?.emailEnabled)}
                 hasGotifyChannel={Boolean(
                   preferences?.gotifyEnabled && preferences?.gotifyConfigured,
@@ -1205,15 +1205,15 @@ export function NotificationPreferencesSettings() {
                 hasWebhookChannel={Boolean(
                   preferences?.webhookEnabled && preferences?.webhookConfigured,
                 )}
-                onDelete={deleteWorkspaceRule}
-                onSave={async (workspaceId, nextRule) => {
-                  await upsertWorkspaceRule({
-                    workspaceId,
+                onDelete={deleteOrganizationRule}
+                onSave={async (organizationId, nextRule) => {
+                  await upsertOrganizationRule({
+                    organizationId,
                     json: nextRule,
                   });
                 }}
                 rule={rule}
-                workspace={workspace}
+                organization={organization}
               />
             );
           })}

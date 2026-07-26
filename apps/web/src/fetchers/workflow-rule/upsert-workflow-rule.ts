@@ -1,11 +1,11 @@
 import { client } from "@kaneo/libs";
 
 async function upsertWorkflowRule(
-  projectId: string,
+  boardId: string,
   data: { integrationType: string; eventType: string; columnId: string },
 ) {
-  const response = await client["workflow-rule"][":projectId"].$put({
-    param: { projectId },
+  const response = await client["workflow-rule"][":boardId"].$put({
+    param: { boardId },
     json: data,
   });
 

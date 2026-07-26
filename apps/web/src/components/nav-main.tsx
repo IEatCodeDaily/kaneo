@@ -15,32 +15,32 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 
 export function NavMain() {
   const { t } = useTranslation();
-  const { data: workspace } = useActiveWorkspace();
+  const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
   const { data: invitations = [] } = usePendingInvitations();
 
-  if (!workspace) return null;
+  if (!organization) return null;
 
   const pendingCount = invitations.length;
 
   const navItems = [
     {
-      title: t("navigation:sidebar.projects"),
-      url: `/dashboard/workspace/${workspace.id}`,
+      title: t("navigation:sidebar.boards"),
+      url: `/dashboard/organization/${organization.id}`,
       isActive:
-        window.location.pathname === `/dashboard/workspace/${workspace.id}`,
+        window.location.pathname === `/dashboard/organization/${organization.id}`,
       badge: null,
     },
     {
       title: t("navigation:sidebar.members"),
-      url: `/dashboard/workspace/${workspace.id}/members`,
+      url: `/dashboard/organization/${organization.id}/members`,
       isActive:
         window.location.pathname ===
-        `/dashboard/workspace/${workspace.id}/members`,
+        `/dashboard/organization/${organization.id}/members`,
       badge: null,
     },
     {

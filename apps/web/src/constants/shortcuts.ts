@@ -1,12 +1,12 @@
 import { getModifierKeyText } from "@/hooks/use-keyboard-shortcuts";
 
 export const shortcuts = {
-  project: {
+  board: {
     prefix: "p",
     create: "c",
     list: "l",
   },
-  workspace: {
+  organization: {
     prefix: "w",
     switch: "s",
     create: "c",

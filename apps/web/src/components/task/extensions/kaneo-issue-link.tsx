@@ -8,19 +8,19 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/preview-card";
-import getProject from "@/fetchers/project/get-project";
+import getBoard from "@/fetchers/board/get-board";
 import getTask from "@/fetchers/task/get-task";
 
 function parseTaskRouteFromUrl(url: string) {
   try {
     const parsed = new URL(url);
     const match = parsed.pathname.match(
-      /\/dashboard\/workspace\/([^/]+)\/project\/([^/]+)\/task\/([^/]+)(?:\/|$)/i,
+      /\/dashboard\/organization\/([^/]+)\/board\/([^/]+)\/task\/([^/]+)(?:\/|$)/i,
     );
     if (!match) return null;
     return {
-      workspaceId: match[1],
-      projectId: match[2],
+      organizationId: match[1],
+      boardId: match[2],
       taskId: match[3],
     };
   } catch {
@@ -42,26 +42,26 @@ function KaneoIssueLinkView({ node }: NodeViewProps) {
     enabled: Boolean(taskId),
     staleTime: 1000 * 60,
   });
-  const { data: project } = useQuery({
+  const { data: board } = useQuery({
     queryKey: [
-      "projects",
-      taskRoute?.workspaceId,
-      taskRoute?.projectId,
+      "boards",
+      taskRoute?.organizationId,
+      taskRoute?.boardId,
       "kaneo-issue-link",
     ],
     queryFn: () =>
-      getProject({
-        id: taskRoute?.projectId ?? "",
-        workspaceId: taskRoute?.workspaceId ?? "",
+      getBoard({
+        id: taskRoute?.boardId ?? "",
+        organizationId: taskRoute?.organizationId ?? "",
       }),
-    enabled: Boolean(taskRoute?.workspaceId && taskRoute?.projectId),
+    enabled: Boolean(taskRoute?.organizationId && taskRoute?.boardId),
     staleTime: 1000 * 60,
   });
 
-  const projectSlug = project?.slug ? String(project.slug).toUpperCase() : "";
+  const boardSlug = board?.slug ? String(board.slug).toUpperCase() : "";
   const resolvedIssueKey =
     issueKey ||
-    (projectSlug && task?.number ? `${projectSlug}-${task.number}` : "");
+    (boardSlug && task?.number ? `${boardSlug}-${task.number}` : "");
   const title = task?.title || issueKey || t("tasks:entity.task");
   const status = task?.status
     ? t(`tasks:status.${task.status}`)
@@ -71,8 +71,8 @@ function KaneoIssueLinkView({ node }: NodeViewProps) {
     : t("tasks:priority.no-priority");
   const assignee = task?.assigneeName || t("tasks:assignee.unassigned");
   const href =
-    taskRoute?.workspaceId && taskRoute?.projectId && task?.id
-      ? `/dashboard/workspace/${taskRoute.workspaceId}/project/${taskRoute.projectId}/task/${task.id}`
+    taskRoute?.organizationId && taskRoute?.boardId && task?.id
+      ? `/dashboard/organization/${taskRoute.organizationId}/board/${taskRoute.boardId}/task/${task.id}`
       : url;
   const isInternal = href.startsWith("/");
 

@@ -2,17 +2,17 @@ import { client } from "@kaneo/libs";
 import type { InferRequestType } from "hono";
 
 export type UpdateGithubIntegrationRequest = InferRequestType<
-  (typeof client)["github-integration"]["project"][":projectId"]["$patch"]
+  (typeof client)["github-integration"]["board"][":boardId"]["$patch"]
 >["json"];
 
 async function updateGithubIntegration(
-  projectId: string,
+  boardId: string,
   json: UpdateGithubIntegrationRequest,
 ) {
-  const response = await client["github-integration"].project[
-    ":projectId"
+  const response = await client["github-integration"].board[
+    ":boardId"
   ].$patch({
-    param: { projectId },
+    param: { boardId },
     json,
   });
 

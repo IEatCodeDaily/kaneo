@@ -9,14 +9,14 @@ async function createLabel({
   name,
   color,
   taskId,
-  workspaceId,
+  organizationId,
 }: CreateLabelRequest) {
   const response = await client.label.$post({
     json: {
       name,
       color,
       taskId,
-      workspaceId,
+      organizationId,
     },
   });
 

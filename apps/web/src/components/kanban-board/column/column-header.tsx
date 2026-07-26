@@ -4,22 +4,22 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { toast } from "@/lib/toast";
-import useProjectStore from "@/store/project";
-import type { ProjectWithTasks } from "@/types/project";
+import useBoardStore from "@/store/board";
+import type { BoardWithTasks } from "@/types/board";
 import { ArchiveTasksModal } from "../../shared/modals/archive-tasks-modal";
 
 type ColumnHeaderProps = {
-  column: ProjectWithTasks["columns"][number];
+  column: BoardWithTasks["columns"][number];
 };
 
 export function ColumnHeader({ column }: ColumnHeaderProps) {
   const { t } = useTranslation();
-  const { project, setProject } = useProjectStore();
+  const { board, setBoard } = useBoardStore();
   const { mutate: updateTask } = useUpdateTask();
-  const { canManageTasks, canCreateTasks } = useWorkspacePermission();
+  const { canManageTasks, canCreateTasks } = useOrganizationPermission();
   const canTask = canManageTasks();
   const canCreate = canCreateTasks();
 
@@ -27,9 +27,9 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const handleConfirmArchive = () => {
-    if (!column.isFinal || !project) return;
+    if (!column.isFinal || !board) return;
 
-    const updatedProject = produce(project, (draft) => {
+    const updatedBoard = produce(board, (draft) => {
       const archivedColumn = draft?.columns?.find(
         (col) => col.id === column.id,
       );
@@ -45,7 +45,7 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
       archivedColumn.tasks = [];
     });
 
-    setProject(updatedProject);
+    setBoard(updatedBoard);
     toast.success(t("tasks:archive.success", { count: column.tasks.length }));
     setIsArchiveModalOpen(false);
   };
@@ -90,7 +90,7 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
       <CreateTaskModal
         open={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        projectId={project?.id}
+        boardId={board?.id}
         status={column.id}
       />
 

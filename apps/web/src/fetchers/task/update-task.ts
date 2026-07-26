@@ -13,7 +13,7 @@ async function updateTask(taskId: string, task: Task) {
       startDate: task.startDate?.toString(),
       dueDate: task.dueDate?.toString(),
       position: task.position ?? 0,
-      projectId: task.projectId,
+      boardId: task.boardId,
     },
   });
 

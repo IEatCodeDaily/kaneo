@@ -1,41 +1,41 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { getPendingInvitations } from "@/fetchers/invitation/get-pending-invitations";
-import getWorkspaces from "@/fetchers/workspace/get-workspaces";
+import getOrganizations from "@/fetchers/organization/get-organizations";
 import { authClient } from "@/lib/auth-client";
-import type Workspace from "@/types/workspace";
+import type Organization from "@/types/organization";
 
 export const Route = createFileRoute("/_layout/_authenticated/dashboard/")({
   beforeLoad: async () => {
-    const workspaces: Workspace[] = await getWorkspaces();
+    const organizations: Organization[] = await getOrganizations();
     const invitations = await getPendingInvitations();
 
-    if (invitations && invitations.length > 0 && !workspaces.length) {
+    if (invitations && invitations.length > 0 && !organizations.length) {
       throw redirect({ to: "/invitations" });
     }
 
     const session = await authClient.getSession();
-    const activeWorkspaceId = session?.data?.session?.activeOrganizationId;
+    const activeOrganizationId = session?.data?.session?.activeOrganizationId;
 
-    if (workspaces && workspaces.length > 0) {
+    if (organizations && organizations.length > 0) {
       if (
-        activeWorkspaceId &&
-        workspaces.some((ws) => ws.id === activeWorkspaceId)
+        activeOrganizationId &&
+        organizations.some((ws) => ws.id === activeOrganizationId)
       ) {
         throw redirect({
-          to: "/dashboard/workspace/$workspaceId",
-          params: { workspaceId: activeWorkspaceId },
+          to: "/dashboard/organization/$organizationId",
+          params: { organizationId: activeOrganizationId },
         });
       }
 
-      const firstWorkspace = workspaces[0];
+      const firstOrganization = organizations[0];
 
       authClient.organization.setActive({
-        organizationId: firstWorkspace.id,
+        organizationId: firstOrganization.id,
       });
 
       throw redirect({
-        to: "/dashboard/workspace/$workspaceId",
-        params: { workspaceId: firstWorkspace.id },
+        to: "/dashboard/organization/$organizationId",
+        params: { organizationId: firstOrganization.id },
       });
     }
     throw redirect({ to: "/onboarding" });

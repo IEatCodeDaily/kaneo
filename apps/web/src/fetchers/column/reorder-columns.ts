@@ -1,11 +1,11 @@
 import { client } from "@kaneo/libs";
 
 async function reorderColumns(
-  projectId: string,
+  boardId: string,
   columns: Array<{ id: string; position: number }>,
 ) {
-  const response = await client.column.reorder[":projectId"].$put({
-    param: { projectId },
+  const response = await client.column.reorder[":boardId"].$put({
+    param: { boardId },
     json: { columns },
   });
 

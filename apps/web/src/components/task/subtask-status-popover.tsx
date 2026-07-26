@@ -11,7 +11,7 @@ import { ShortcutNumber } from "@/components/ui/shortcut-number";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { toast } from "@/lib/toast";
@@ -19,18 +19,18 @@ import type Task from "@/types/task";
 
 type SubtaskStatusPopoverProps = {
   tasks: Task[];
-  projectId: string;
+  boardId: string;
   children: React.ReactNode;
 };
 
 export default function SubtaskStatusPopover({
   tasks,
-  projectId,
+  boardId,
   children,
 }: SubtaskStatusPopoverProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const { data: columns = [] } = useGetColumns(projectId);
+  const { data: columns = [] } = useGetColumns(boardId);
   const statusOptions = columns.map((col) => ({
     value: col.slug,
     label: col.name,
@@ -38,7 +38,7 @@ export default function SubtaskStatusPopover({
     isFinal: col.isFinal,
   }));
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
-  const { canManageTasks } = useWorkspacePermission();
+  const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
 
   const allSameStatus =

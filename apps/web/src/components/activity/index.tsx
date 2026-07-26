@@ -1,7 +1,7 @@
 import { Calendar, CircleAlert, History, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import useGetWorkspaceUsers from "@/hooks/queries/workspace-users/use-get-workspace-users";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
 import { formatDateMedium, formatRelativeTime } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusLabel } from "@/lib/i18n/domain";
@@ -39,7 +39,7 @@ function getEventDataRecord(
   return eventData as Record<string, unknown>;
 }
 
-type WorkspaceUser = {
+type OrganizationMember = {
   user?: {
     id?: string;
     name?: string | null;
@@ -88,7 +88,7 @@ function toDisplayCase(value: string) {
     .join(" ");
 }
 
-function findUserByName(users: WorkspaceUser[] | undefined, name: string) {
+function findUserByName(users: OrganizationMember[] | undefined, name: string) {
   if (!users) return null;
   const matches = users.filter(
     (member) =>
@@ -103,7 +103,7 @@ function UserHoverName({
   user,
   fallbackName,
 }: {
-  user: WorkspaceUser | null;
+  user: OrganizationMember | null;
   fallbackName: string;
 }) {
   if (!user?.user) {
@@ -146,7 +146,7 @@ function ActorAvatar({
   user,
   fallbackName,
 }: {
-  user: WorkspaceUser | null;
+  user: OrganizationMember | null;
   fallbackName: string;
 }) {
   return (
@@ -161,11 +161,11 @@ function ActorAvatar({
 
 function renderActivityContent({
   activity,
-  workspaceUsers,
+  organizationMembers,
   t,
 }: {
   activity: ActivityItem;
-  workspaceUsers: WorkspaceUser[] | undefined;
+  organizationMembers: OrganizationMember[] | undefined;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const content = activity.content || "";
@@ -305,7 +305,7 @@ function renderActivityContent({
       const targetId = String(eventData.newAssigneeId ?? "");
       const targetName = String(eventData.newAssignee ?? "");
       const targetUser =
-        workspaceUsers?.find((member) => member.user?.id === targetId) || null;
+        organizationMembers?.find((member) => member.user?.id === targetId) || null;
 
       return (
         <span className="text-sm text-muted-foreground">
@@ -330,7 +330,7 @@ function renderActivityContent({
     if (tokenMatch) {
       const [, targetId, targetName] = tokenMatch;
       const targetUser =
-        workspaceUsers?.find((member) => member.user?.id === targetId) || null;
+        organizationMembers?.find((member) => member.user?.id === targetId) || null;
 
       return (
         <span className="text-sm text-muted-foreground">
@@ -344,7 +344,7 @@ function renderActivityContent({
     const legacyMatch = content.match(/assigned the task to (.+)$/i);
     if (legacyMatch) {
       const targetName = legacyMatch[1];
-      const targetUser = findUserByName(workspaceUsers, targetName);
+      const targetUser = findUserByName(organizationMembers, targetName);
       return (
         <span className="text-sm text-muted-foreground">
           {t("activity:assignedTo", {
@@ -385,8 +385,8 @@ function renderActivityContent({
       return (
         <span className="text-sm text-muted-foreground">
           {t("activity:moved", {
-            from: String(eventData.fromProjectName ?? ""),
-            to: String(eventData.toProjectName ?? ""),
+            from: String(eventData.fromBoardName ?? ""),
+            to: String(eventData.toBoardName ?? ""),
           })}
         </span>
       );
@@ -420,14 +420,14 @@ function Activity({
   showConnector?: boolean;
 }) {
   const { t } = useTranslation();
-  const { data: workspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetWorkspaceUsers({
-    workspaceId: workspace?.id,
+  const { data: organization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetOrganizationMembers({
+    organizationId: organization?.id,
   });
 
   const user = activity.userId
-    ? workspaceUsers?.find(
-        (workspaceUser) => workspaceUser.user?.id === activity.userId,
+    ? organizationMembers?.find(
+        (organizationMember) => organizationMember.user?.id === activity.userId,
       )
     : null;
 
@@ -484,7 +484,7 @@ function Activity({
         <UserHoverName user={user || null} fallbackName={actorName} />{" "}
         {renderActivityContent({
           activity,
-          workspaceUsers: workspaceUsers as WorkspaceUser[] | undefined,
+          organizationMembers: organizationMembers as OrganizationMember[] | undefined,
           t,
         })}{" "}
         <span className="whitespace-nowrap text-muted-foreground/70 text-xs">

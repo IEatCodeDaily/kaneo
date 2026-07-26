@@ -6,12 +6,12 @@ export function useReorderColumns() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       columns,
     }: {
-      projectId: string;
+      boardId: string;
       columns: Array<{ id: string; position: number }>;
-    }) => reorderColumns(projectId, columns),
+    }) => reorderColumns(boardId, columns),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ refetchType: "all" });
     },

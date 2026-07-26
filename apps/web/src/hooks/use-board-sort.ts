@@ -48,8 +48,8 @@ function normalizeSort(value: unknown): SortConfig {
   return { field: candidate.field, direction: candidate.direction };
 }
 
-export function useBoardSort(projectId: string | undefined) {
-  const storageKey = projectId ? `kaneo:board-sort:${projectId}` : null;
+export function useBoardSort(boardId: string | undefined) {
+  const storageKey = boardId ? `kaneo:board-sort:${boardId}` : null;
   const [sort, setSort] = useState<SortConfig>(DEFAULT_SORT);
 
   useEffect(() => {

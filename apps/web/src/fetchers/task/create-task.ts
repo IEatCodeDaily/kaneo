@@ -2,25 +2,25 @@ import { client } from "@kaneo/libs";
 import type { InferRequestType } from "hono/client";
 
 export type CreateTaskRequest = InferRequestType<
-  (typeof client)["task"][":projectId"]["$post"]
+  (typeof client)["task"][":boardId"]["$post"]
 >["json"] &
-  InferRequestType<(typeof client)["task"][":projectId"]["$post"]>["param"];
+  InferRequestType<(typeof client)["task"][":boardId"]["$post"]>["param"];
 
 async function createTask(
   title: string,
   description: string,
-  projectId: string,
+  boardId: string,
   userId: string,
   status: string,
   startDate: Date | undefined,
   dueDate: Date | undefined,
   priority: string,
 ) {
-  if (!projectId) {
-    throw new Error("No project selected for task creation");
+  if (!boardId) {
+    throw new Error("No board selected for task creation");
   }
 
-  const response = await client.task[":projectId"].$post({
+  const response = await client.task[":boardId"].$post({
     json: {
       title,
       description,
@@ -30,7 +30,7 @@ async function createTask(
       dueDate: dueDate?.toISOString() || undefined,
       priority,
     },
-    param: { projectId },
+    param: { boardId },
   });
 
   if (!response.ok) {

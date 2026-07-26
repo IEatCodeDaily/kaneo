@@ -9,8 +9,8 @@ import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings",
@@ -22,9 +22,9 @@ function SettingsLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: workspace } = useActiveWorkspace();
-  const { data: projects } = useGetProjects({
-    workspaceId: workspace?.id ?? "",
+  const { data: organization } = useActiveOrganization();
+  const { data: boards } = useGetBoards({
+    organizationId: organization?.id ?? "",
   });
 
   const getActiveTab = () => {
@@ -32,11 +32,11 @@ function SettingsLayout() {
     if (pathname.includes("/dashboard/settings/account")) {
       return "account";
     }
-    if (pathname.includes("/dashboard/settings/workspace")) {
-      return "workspace";
+    if (pathname.includes("/dashboard/settings/organization")) {
+      return "organization";
     }
-    if (pathname.includes("/dashboard/settings/projects")) {
-      return "project";
+    if (pathname.includes("/dashboard/settings/boards")) {
+      return "board";
     }
     return "account";
   };
@@ -54,13 +54,13 @@ function SettingsLayout() {
               size="sm"
               onClick={() =>
                 navigate({
-                  to: "/dashboard/workspace/$workspaceId",
-                  params: { workspaceId: workspace?.id ?? "" },
+                  to: "/dashboard/organization/$organizationId",
+                  params: { organizationId: organization?.id ?? "" },
                 })
               }
             >
               <ChevronLeft className=" border border-border rounded-md p-1 size-6" />
-              {t("navigation:page.backToWorkspace")}
+              {t("navigation:page.backToOrganization")}
             </Button>
 
             <h1 className="text-2xl font-semibold pl-2 mt-2">
@@ -79,23 +79,23 @@ function SettingsLayout() {
                   {t("settings:account")}
                 </TabsTrigger>
                 <TabsTrigger
-                  value="workspace"
+                  value="organization"
                   className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
                   onClick={() =>
-                    navigate({ to: "/dashboard/settings/workspace/general" })
+                    navigate({ to: "/dashboard/settings/organization/general" })
                   }
                 >
-                  {t("navigation:page.settingsWorkspaceTab")}
+                  {t("navigation:page.settingsOrganizationTab")}
                 </TabsTrigger>
                 <TabsTrigger
-                  disabled={projects?.length === 0}
-                  value="project"
+                  disabled={boards?.length === 0}
+                  value="board"
                   className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
                   onClick={() =>
-                    navigate({ to: "/dashboard/settings/projects" })
+                    navigate({ to: "/dashboard/settings/boards" })
                   }
                 >
-                  {t("navigation:sidebar.projects")}
+                  {t("navigation:sidebar.boards")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>

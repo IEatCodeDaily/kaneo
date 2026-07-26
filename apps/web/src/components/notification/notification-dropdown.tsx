@@ -80,8 +80,8 @@ export function getNotificationTitle(
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
-      case "workspace_created":
-        return t("notifications:events.workspace_created.title", {
+      case "organization_created":
+        return t("notifications:events.organization_created.title", {
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
@@ -140,8 +140,8 @@ export function getNotificationContent(
           ...eventData,
           defaultValue: notification.content ?? "",
         });
-      case "workspace_created":
-        return t("notifications:events.workspace_created.content", {
+      case "organization_created":
+        return t("notifications:events.organization_created.content", {
           ...eventData,
           defaultValue: notification.content ?? "",
         });
@@ -215,21 +215,21 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
         }
 
         const ed = getEventDataRecord(notification.eventData);
-        const workspaceId =
-          typeof ed?.workspaceId === "string" ? ed.workspaceId : null;
-        const projectId =
-          typeof ed?.projectId === "string" ? ed.projectId : null;
+        const organizationId =
+          typeof ed?.organizationId === "string" ? ed.organizationId : null;
+        const boardId =
+          typeof ed?.boardId === "string" ? ed.boardId : null;
         const taskId = notification.resourceId ?? null;
 
         if (
           notification.resourceType === "task" &&
-          workspaceId &&
-          projectId &&
+          organizationId &&
+          boardId &&
           taskId
         ) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-            params: { workspaceId, projectId, taskId },
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            params: { organizationId, boardId, taskId },
           });
         }
       },

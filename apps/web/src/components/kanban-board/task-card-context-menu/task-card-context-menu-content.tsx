@@ -20,20 +20,20 @@ import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-stat
 import { useUpdateTaskPriority } from "@/hooks/mutations/task/use-update-task-status-priority";
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { generateLink } from "@/lib/generate-link";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 import type Task from "@/types/task";
 
 type TaskCardContext = {
   worskpaceId: string;
-  projectId: string;
+  boardId: string;
 };
 
 type TaskCardContextMenuContentProps = {
@@ -48,11 +48,11 @@ export default function TaskCardContextMenuContent({
   onDeleteClick,
 }: TaskCardContextMenuContentProps) {
   const { t } = useTranslation();
-  const { project } = useProjectStore();
-  const { data: columnsData = [] } = useGetColumns(taskCardContext.projectId);
+  const { board } = useBoardStore();
+  const { data: columnsData = [] } = useGetColumns(taskCardContext.boardId);
   const columns =
-    project?.columns && project.columns.length > 0
-      ? project.columns.map((col) => ({
+    board?.columns && board.columns.length > 0
+      ? board.columns.map((col) => ({
           slug: col.id,
           name: col.name,
           icon: col.icon,
@@ -64,7 +64,7 @@ export default function TaskCardContextMenuContent({
           icon: col.icon,
           isFinal: col.isFinal,
         }));
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
     taskCardContext.worskpaceId,
   );
   const { mutateAsync: updateTask } = useUpdateTask();
@@ -74,21 +74,21 @@ export default function TaskCardContextMenuContent({
   const { mutateAsync: updateTaskTitle } = useUpdateTaskTitle();
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
   const { mutateAsync: updateTaskDueDate } = useUpdateTaskDueDate();
-  const { canManageTasks, canAssignTasks } = useWorkspacePermission();
+  const { canManageTasks, canAssignTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canAssign = canAssignTasks();
 
   const usersOptions = useMemo(() => {
-    return workspaceUsers?.members?.map((member) => ({
+    return organizationMembers?.members?.map((member) => ({
       label: member?.user?.name ?? member.userId,
       value: member.userId,
       image: member?.user?.image ?? "",
       name: member?.user?.name ?? "",
     }));
-  }, [workspaceUsers]);
+  }, [organizationMembers]);
 
   const handleCopyTaskLink = () => {
-    const path = `/dashboard/workspace/${taskCardContext.worskpaceId}/project/${taskCardContext.projectId}/task/${task.id}`;
+    const path = `/dashboard/organization/${taskCardContext.worskpaceId}/board/${taskCardContext.boardId}/task/${task.id}`;
     const taskLink = generateLink(path);
 
     navigator.clipboard.writeText(taskLink);

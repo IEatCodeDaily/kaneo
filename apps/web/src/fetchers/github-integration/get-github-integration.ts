@@ -1,10 +1,10 @@
 import { client } from "@kaneo/libs";
 
-async function getGithubIntegration(projectId: string) {
-  const response = await client["github-integration"].project[
-    ":projectId"
+async function getGithubIntegration(boardId: string) {
+  const response = await client["github-integration"].board[
+    ":boardId"
   ].$get({
-    param: { projectId },
+    param: { boardId },
   });
 
   if (!response.ok) {

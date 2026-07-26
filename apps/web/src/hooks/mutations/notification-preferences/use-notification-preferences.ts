@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import i18n from "i18next";
-import deleteNotificationWorkspaceRule from "@/fetchers/notification-preferences/delete-notification-workspace-rule";
+import deleteNotificationOrganizationRule from "@/fetchers/notification-preferences/delete-notification-organization-rule";
 import updateNotificationPreferences, {
   type UpdateNotificationPreferencesRequest,
 } from "@/fetchers/notification-preferences/update-notification-preferences";
-import upsertNotificationWorkspaceRule, {
-  type UpsertNotificationWorkspaceRuleRequest,
-} from "@/fetchers/notification-preferences/upsert-notification-workspace-rule";
+import upsertNotificationOrganizationRule, {
+  type UpsertNotificationOrganizationRuleRequest,
+} from "@/fetchers/notification-preferences/upsert-notification-organization-rule";
 import { toast } from "@/lib/toast";
 
 export function useUpdateNotificationPreferences() {
@@ -31,17 +31,17 @@ export function useUpdateNotificationPreferences() {
   });
 }
 
-export function useUpsertNotificationWorkspaceRule() {
+export function useUpsertNotificationOrganizationRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
-      workspaceId,
+      organizationId,
       json,
     }: {
-      workspaceId: string;
-      json: UpsertNotificationWorkspaceRuleRequest;
-    }) => upsertNotificationWorkspaceRule(workspaceId, json),
+      organizationId: string;
+      json: UpsertNotificationOrganizationRuleRequest;
+    }) => upsertNotificationOrganizationRule(organizationId, json),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ["notification-preferences"],
@@ -58,12 +58,12 @@ export function useUpsertNotificationWorkspaceRule() {
   });
 }
 
-export function useDeleteNotificationWorkspaceRule() {
+export function useDeleteNotificationOrganizationRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (workspaceId: string) =>
-      deleteNotificationWorkspaceRule(workspaceId),
+    mutationFn: (organizationId: string) =>
+      deleteNotificationOrganizationRule(organizationId),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ["notification-preferences"],

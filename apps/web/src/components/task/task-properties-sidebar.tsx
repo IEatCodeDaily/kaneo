@@ -23,10 +23,10 @@ import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetGiteaIntegration from "@/hooks/queries/gitea-integration/use-get-gitea-integration";
 import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
-import useGetProject from "@/hooks/queries/project/use-get-project";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
+import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -54,43 +54,43 @@ function slugify(text: string | undefined): string {
 
 function generateBranchName(
   pattern: string,
-  projectSlug: string | undefined,
+  boardSlug: string | undefined,
   taskNumber: number | null | undefined,
   taskTitle: string | undefined,
 ): string {
-  if (!projectSlug || !taskNumber) return "";
+  if (!boardSlug || !taskNumber) return "";
   return pattern
-    .replace("{slug}", projectSlug.toLowerCase())
+    .replace("{slug}", boardSlug.toLowerCase())
     .replace("{number}", taskNumber.toString())
     .replace("{title}", slugify(taskTitle));
 }
 
 type TaskPropertiesSidebarProps = {
   taskId: string | undefined;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
   className?: string;
   compact?: boolean;
 };
 
 export default function TaskPropertiesSidebar({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
   className,
   compact = false,
 }: TaskPropertiesSidebarProps) {
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId ?? "");
-  const { data: project } = useGetProject({ id: projectId, workspaceId });
-  const { data: columns = [] } = useGetColumns(projectId);
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(workspaceId);
+  const { data: board } = useGetBoard({ id: boardId, organizationId });
+  const { data: columns = [] } = useGetColumns(boardId);
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
-  const { data: githubIntegration } = useGetGithubIntegration(projectId);
-  const { data: giteaIntegration } = useGetGiteaIntegration(projectId);
-  const { data: workspaceProjects = [] } = useGetProjects({ workspaceId });
+  const { data: githubIntegration } = useGetGithubIntegration(boardId);
+  const { data: giteaIntegration } = useGetGiteaIntegration(boardId);
+  const { data: organizationBoards = [] } = useGetBoards({ organizationId });
   const canMoveTask =
-    Boolean(task) && workspaceProjects.some((p) => p.id !== task?.projectId);
+    Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
   const statusColumn = columns.find(
     (column) => column.slug === task?.status || column.id === task?.status,
   );
@@ -101,20 +101,20 @@ export default function TaskPropertiesSidebar({
   const statusIsFinal = statusColumn?.isFinal ?? false;
   const statusIcon = statusColumn?.icon;
 
-  const projectSlug = project?.slug;
+  const boardSlug = board?.slug;
   const taskNumber = task?.number;
   const branchPattern =
     githubIntegration?.branchPattern ||
     giteaIntegration?.branchPattern ||
     "{slug}-{number}";
 
-  const assignee = workspaceUsers?.members?.find(
+  const assignee = organizationMembers?.members?.find(
     (member) => member.userId === task?.userId,
   );
 
   const handleCopyTaskLink = () => {
     navigator.clipboard.writeText(
-      `${window.location.origin}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`,
+      `${window.location.origin}/dashboard/organization/${organizationId}/board/${boardId}/task/${taskId}`,
     );
     toast.message(t("tasks:properties.copyTaskLink"));
   };
@@ -122,7 +122,7 @@ export default function TaskPropertiesSidebar({
   const handleCopyTaskBranch = () => {
     const branchName = generateBranchName(
       branchPattern,
-      projectSlug,
+      boardSlug,
       taskNumber,
       task?.title,
     );
@@ -140,7 +140,7 @@ export default function TaskPropertiesSidebar({
               {task && canMoveTask && (
                 <TaskMovePopover
                   task={task}
-                  workspaceId={workspaceId}
+                  organizationId={organizationId}
                   triggerClassName="rounded-l-md rounded-r-none border-r-0"
                 />
               )}
@@ -223,7 +223,7 @@ export default function TaskPropertiesSidebar({
                 </TaskPriorityPopover>
               )}
               {task && (
-                <TaskAssigneePopover task={task} workspaceId={workspaceId}>
+                <TaskAssigneePopover task={task} organizationId={organizationId}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -327,7 +327,7 @@ export default function TaskPropertiesSidebar({
                 {task && canMoveTask && (
                   <TaskMovePopover
                     task={task}
-                    workspaceId={workspaceId}
+                    organizationId={organizationId}
                     triggerClassName="rounded-l-md rounded-r-none border-r-0"
                   />
                 )}
@@ -410,7 +410,7 @@ export default function TaskPropertiesSidebar({
                   </TaskPriorityPopover>
                 )}
                 {task && (
-                  <TaskAssigneePopover task={task} workspaceId={workspaceId}>
+                  <TaskAssigneePopover task={task} organizationId={organizationId}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -516,7 +516,7 @@ export default function TaskPropertiesSidebar({
                   {task && canMoveTask && (
                     <TaskMovePopover
                       task={task}
-                      workspaceId={workspaceId}
+                      organizationId={organizationId}
                       triggerClassName="rounded-l-md rounded-r-none border-r-0"
                     />
                   )}
@@ -600,7 +600,7 @@ export default function TaskPropertiesSidebar({
                   </TaskPriorityPopover>
                 )}
                 {task && (
-                  <TaskAssigneePopover task={task} workspaceId={workspaceId}>
+                  <TaskAssigneePopover task={task} organizationId={organizationId}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -711,7 +711,7 @@ export default function TaskPropertiesSidebar({
                     <TaskLabelsPopover
                       key={`edit-${label.id}`}
                       task={task}
-                      workspaceId={workspaceId}
+                      organizationId={organizationId}
                       triggerNativeButton={false}
                     >
                       <Badge
@@ -735,7 +735,7 @@ export default function TaskPropertiesSidebar({
                 )}
 
               {task && (
-                <TaskLabelsPopover task={task} workspaceId={workspaceId}>
+                <TaskLabelsPopover task={task} organizationId={organizationId}>
                   <Button
                     variant="ghost"
                     size="sm"

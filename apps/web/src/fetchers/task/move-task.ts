@@ -2,17 +2,17 @@ import { client } from "@kaneo/libs";
 
 async function moveTask({
   taskId,
-  destinationProjectId,
+  destinationBoardId,
   destinationStatus,
 }: {
   taskId: string;
-  destinationProjectId: string;
+  destinationBoardId: string;
   destinationStatus?: string;
 }) {
   const response = await client.task.move[":id"].$put({
     param: { id: taskId },
     json: {
-      destinationProjectId,
+      destinationBoardId,
       destinationStatus,
     },
   });

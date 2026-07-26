@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/command";
 import { shortcuts } from "@/constants/shortcuts";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 type SearchResultItem = {
@@ -34,11 +34,11 @@ type SearchResultItem = {
   title: string;
   description?: string;
   content?: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity";
-  projectId?: string;
-  workspaceId?: string;
+  type: "task" | "board" | "organization" | "comment" | "activity";
+  boardId?: string;
+  organizationId?: string;
   taskNumber?: number;
-  projectSlug?: string;
+  boardSlug?: string;
   priority?: string;
   status?: string;
 };
@@ -57,7 +57,7 @@ type SearchCommandMenuProps = {
 function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
-  const { data: workspace } = useActiveWorkspace();
+  const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
 
   const searchEnabled = query.trim().length >= 3;
@@ -65,7 +65,7 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
   const { data: searchResults } = useGlobalSearch({
     q: query,
     type: "all",
-    workspaceId: workspace?.id,
+    organizationId: organization?.id,
     limit: 20,
   });
 
@@ -89,46 +89,46 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
 
     switch (item.type) {
       case "task":
-        if (item.projectId && item.id && workspace?.id) {
+        if (item.boardId && item.id && organization?.id) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
             params: {
-              workspaceId: workspace.id,
-              projectId: item.projectId,
+              organizationId: organization.id,
+              boardId: item.boardId,
               taskId: item.id,
             },
           });
         }
         break;
-      case "project":
-        if (item.id && workspace?.id) {
+      case "board":
+        if (item.id && organization?.id) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+            to: "/dashboard/organization/$organizationId/board/$boardId/board",
             params: {
-              workspaceId: workspace.id,
-              projectId: item.id,
+              organizationId: organization.id,
+              boardId: item.id,
             },
           });
         }
         break;
-      case "workspace":
+      case "organization":
         if (item.id) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId",
+            to: "/dashboard/organization/$organizationId",
             params: {
-              workspaceId: item.id,
+              organizationId: item.id,
             },
           });
         }
         break;
       case "comment":
       case "activity":
-        if (item.projectId && item.id && workspace?.id) {
+        if (item.boardId && item.id && organization?.id) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
             params: {
-              workspaceId: workspace.id,
-              projectId: item.projectId,
+              organizationId: organization.id,
+              boardId: item.boardId,
               taskId: item.id,
             },
           });
@@ -141,9 +141,9 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
     switch (type) {
       case "task":
         return Hash;
-      case "project":
+      case "board":
         return FolderKanban;
-      case "workspace":
+      case "organization":
         return Users;
       case "comment":
         return MessageSquare;
@@ -170,10 +170,10 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       switch (type as SearchResultItem["type"]) {
         case "task":
           return t("navigation:search.groups.task");
-        case "project":
-          return t("navigation:search.groups.project");
-        case "workspace":
-          return t("navigation:search.groups.workspace");
+        case "board":
+          return t("navigation:search.groups.board");
+        case "organization":
+          return t("navigation:search.groups.organization");
         case "comment":
           return t("navigation:search.groups.comment");
         case "activity":

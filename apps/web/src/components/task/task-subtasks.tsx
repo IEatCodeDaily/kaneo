@@ -26,9 +26,9 @@ import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-stat
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
@@ -36,14 +36,14 @@ import SubtaskRow from "./subtask-row";
 
 type TaskSubtasksProps = {
   taskId: string;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
 };
 
 export default function TaskSubtasks({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -56,19 +56,19 @@ export default function TaskSubtasks({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: relations = [] } = useGetTaskRelations(taskId);
-  const { data: workspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id ?? "",
+  const { data: organization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id ?? "",
   );
   const createTask = useCreateTask();
   const createRelation = useCreateTaskRelation();
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
-  const { data: columns = [] } = useGetColumns(projectId);
-  const { canManageTasks } = useWorkspacePermission();
+  const { data: columns = [] } = useGetColumns(boardId);
+  const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
 
-  // Map the completion checkbox to the project's actual column slugs (the API
+  // Map the completion checkbox to the board's actual column slugs (the API
   // validates status against columns). A subtask counts as completed when its
   // status is a final column.
   const doneSlug = columns.find((c) => c.isFinal)?.slug ?? "done";
@@ -125,7 +125,7 @@ export default function TaskSubtasks({
     userId: subtask.task.userId,
     assigneeId: subtask.task.userId,
     assigneeName: subtask.task.assigneeName,
-    projectId: subtask.task.projectId,
+    boardId: subtask.task.boardId,
   });
 
   const getTargetTasks = (currentTask: Task): Task[] => {
@@ -153,9 +153,9 @@ export default function TaskSubtasks({
   };
 
   const getAssignee = (userId: string | null) => {
-    if (!userId || !workspaceUsers?.members) return null;
+    if (!userId || !organizationMembers?.members) return null;
     return (
-      workspaceUsers.members.find((member) => member.userId === userId) ?? null
+      organizationMembers.members.find((member) => member.userId === userId) ?? null
     );
   };
 
@@ -215,10 +215,10 @@ export default function TaskSubtasks({
           if (focusedIndex >= 0 && focusedIndex < totalCount) {
             e.preventDefault();
             navigate({
-              to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+              to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
               params: {
-                workspaceId,
-                projectId,
+                organizationId,
+                boardId,
                 taskId: subtasks[focusedIndex].task.id,
               },
             });
@@ -247,8 +247,8 @@ export default function TaskSubtasks({
     hasSelection,
     clearSelection,
     navigate,
-    workspaceId,
-    projectId,
+    organizationId,
+    boardId,
     toggleSelection,
   ]);
 
@@ -259,7 +259,7 @@ export default function TaskSubtasks({
       const newTask = await createTask.mutateAsync({
         title: newTitle.trim(),
         description: "",
-        projectId,
+        boardId,
         status: "to-do",
         priority: "no-priority",
       });
@@ -281,7 +281,7 @@ export default function TaskSubtasks({
     if (!deleteTaskId) return;
     try {
       await deleteTask(deleteTaskId);
-      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
       queryClient.invalidateQueries({ queryKey: ["task-relations", taskId] });
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -363,8 +363,8 @@ export default function TaskSubtasks({
                     key={subtask.task.id}
                     task={taskObj}
                     tasks={getTargetTasks(taskObj)}
-                    projectId={projectId}
-                    workspaceId={workspace?.id ?? workspaceId}
+                    boardId={boardId}
+                    organizationId={organization?.id ?? organizationId}
                     isSelected={isSelected}
                     isFocused={focusedIndex === index}
                     isCompleted={isCompleted(subtask.task.status)}
@@ -374,10 +374,10 @@ export default function TaskSubtasks({
                     onToggleComplete={() => handleToggleComplete(taskObj)}
                     onNavigate={() =>
                       navigate({
-                        to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+                        to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
                         params: {
-                          workspaceId,
-                          projectId,
+                          organizationId,
+                          boardId,
                           taskId: subtask.task.id,
                         },
                       })

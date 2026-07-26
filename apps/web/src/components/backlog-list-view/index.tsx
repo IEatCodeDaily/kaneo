@@ -29,25 +29,25 @@ import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
-import useProjectStore from "@/store/project";
-import type { ProjectWithTasks } from "@/types/project";
+import useBoardStore from "@/store/board";
+import type { BoardWithTasks } from "@/types/board";
 import type Task from "@/types/task";
 import BacklogBulkToolbar from "../bulk-selection/backlog-bulk-toolbar";
 import CreateTaskModal from "../shared/modals/create-task-modal";
 import BacklogTaskRow from "./backlog-task-row";
 
 type BacklogListViewProps = {
-  project?: ProjectWithTasks;
+  board?: BoardWithTasks;
   disableDragDrop?: boolean;
 };
 
 function BacklogListView({
-  project,
+  board,
   disableDragDrop = false,
 }: BacklogListViewProps) {
   const { t } = useTranslation();
   const { mutate: updateTask } = useUpdateTask();
-  const { setProject } = useProjectStore();
+  const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
     focusNext,
@@ -68,21 +68,21 @@ function BacklogListView({
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
 
   useEffect(() => {
-    if (project) {
+    if (board) {
       const visibleTaskIds: string[] = [];
       if (expandedSections.planned) {
         visibleTaskIds.push(
-          ...(project.plannedTasks || []).map((task) => task.id),
+          ...(board.plannedTasks || []).map((task) => task.id),
         );
       }
       if (expandedSections.archived) {
         visibleTaskIds.push(
-          ...(project.archivedTasks || []).map((task) => task.id),
+          ...(board.archivedTasks || []).map((task) => task.id),
         );
       }
       setAvailableTasks(visibleTaskIds);
     }
-  }, [project, expandedSections, setAvailableTasks]);
+  }, [board, expandedSections, setAvailableTasks]);
 
   useEffect(() => {
     clearFocus();
@@ -105,12 +105,12 @@ function BacklogListView({
         }
       },
       Enter: () => {
-        if (focusedTaskId && project) {
+        if (focusedTaskId && board) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
             params: {
-              workspaceId: project.workspaceId,
-              projectId: project.id,
+              organizationId: board.organizationId,
+              boardId: board.id,
               taskId: focusedTaskId,
             },
           });
@@ -149,8 +149,8 @@ function BacklogListView({
     }
 
     const taskId = over.id.toString();
-    const plannedTasks = project?.plannedTasks || [];
-    const archivedTasks = project?.archivedTasks || [];
+    const plannedTasks = board?.plannedTasks || [];
+    const archivedTasks = board?.archivedTasks || [];
 
     if (plannedTasks.some((task) => task.id === taskId)) {
       setOverColumnId("planned");
@@ -166,13 +166,13 @@ function BacklogListView({
     setActiveId(null);
     setOverColumnId(null);
 
-    if (!over || !project) return;
+    if (!over || !board) return;
 
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
 
-    const plannedTasks = project.plannedTasks || [];
-    const archivedTasks = project.archivedTasks || [];
+    const plannedTasks = board.plannedTasks || [];
+    const archivedTasks = board.archivedTasks || [];
     const activeTask = [...plannedTasks, ...archivedTasks].find(
       (task) => task.id === activeTaskId,
     );
@@ -190,7 +190,7 @@ function BacklogListView({
       }
     }
 
-    const updatedProject = produce(project, (draft) => {
+    const updatedBoard = produce(board, (draft) => {
       const sourceSection =
         activeTask.status === "planned"
           ? draft.plannedTasks || []
@@ -278,7 +278,7 @@ function BacklogListView({
       }
     });
 
-    setProject(updatedProject);
+    setBoard(updatedBoard);
   };
 
   const toggleSection = (sectionId: string) => {
@@ -401,16 +401,16 @@ function BacklogListView({
     );
   }
 
-  if (!project) {
+  if (!board) {
     return null;
   }
 
-  const plannedTasks = project.plannedTasks || [];
-  const archivedTasks = project.archivedTasks || [];
+  const plannedTasks = board.plannedTasks || [];
+  const archivedTasks = board.archivedTasks || [];
 
   const activeTask =
-    project.plannedTasks.find((task) => task.id === activeId) ||
-    project.archivedTasks.find((task) => task.id === activeId);
+    board.plannedTasks.find((task) => task.id === activeId) ||
+    board.archivedTasks.find((task) => task.id === activeId);
 
   return (
     <DndContext
@@ -458,7 +458,7 @@ function BacklogListView({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-mono text-muted-foreground">
-                    {project?.slug}-{activeTask.number}
+                    {board?.slug}-{activeTask.number}
                   </span>
                   <span className="text-xs text-foreground truncate">
                     {activeTask.title}
@@ -472,7 +472,7 @@ function BacklogListView({
 
       <CreateTaskModal
         open={isTaskModalOpen}
-        projectId={project?.id}
+        boardId={board?.id}
         onClose={() => setIsTaskModalOpen(false)}
         status={activeColumn ?? "planned"}
       />

@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
@@ -38,7 +38,7 @@ import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import useBulkSelectionStore from "@/store/bulk-selection";
-import useProjectStore from "@/store/project";
+import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 import TaskCardContextMenuContent from "../kanban-board/task-card-context-menu/task-card-context-menu-content";
@@ -47,10 +47,10 @@ import { ContextMenu, ContextMenuTrigger } from "../ui/context-menu";
 
 type TaskRowProps = {
   task: Task;
-  projectSlug: string;
+  boardSlug: string;
 };
 
-function TaskRow({ task, projectSlug }: TaskRowProps) {
+function TaskRow({ task, boardSlug }: TaskRowProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
@@ -62,8 +62,8 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
     isDragging,
   } = useSortable({ id: task.id });
 
-  const { project } = useProjectStore();
-  const { data: workspace } = useActiveWorkspace();
+  const { board } = useBoardStore();
+  const { data: organization } = useActiveOrganization();
   const {
     showAssignees,
     showPriority,
@@ -78,15 +78,15 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
 
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    workspace?.id ?? "",
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id ?? "",
   );
 
   const assignee = useMemo(() => {
-    return workspaceUsers?.members?.find(
+    return organizationMembers?.members?.find(
       (member) => member.userId === task.userId,
     );
-  }, [workspaceUsers, task.userId]);
+  }, [organizationMembers, task.userId]);
 
   const pullRequests = useMemo(() => {
     if (!externalLinks) return [];
@@ -127,7 +127,7 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!project || !task) return;
+    if (!board || !task) return;
     if (e.defaultPrevented) return;
 
     if (e.metaKey || e.ctrlKey) {
@@ -162,7 +162,7 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
     try {
       await deleteTask(task.id);
       queryClient.invalidateQueries({
-        queryKey: ["tasks", project?.id],
+        queryKey: ["tasks", board?.id],
       });
     } catch (error) {
       toast.error(
@@ -205,7 +205,7 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
             )}
             {showTaskNumbers && (
               <div className="text-xs font-mono text-muted-foreground flex-shrink-0">
-                {projectSlug}-{task.number}
+                {boardSlug}-{task.number}
               </div>
             )}
 
@@ -376,12 +376,12 @@ function TaskRow({ task, projectSlug }: TaskRowProps) {
           </div>
         </ContextMenuTrigger>
 
-        {project && workspace && (
+        {board && organization && (
           <TaskCardContextMenuContent
             task={task}
             taskCardContext={{
-              projectId: project.id,
-              worskpaceId: workspace.id,
+              boardId: board.id,
+              worskpaceId: organization.id,
             }}
             onDeleteClick={() => setIsDeleteTaskModalOpen(true)}
           />

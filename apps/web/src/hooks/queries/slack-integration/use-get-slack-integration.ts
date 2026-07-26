@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import getSlackIntegration from "@/fetchers/slack-integration/get-slack-integration";
 
-function useGetSlackIntegration(projectId: string) {
+function useGetSlackIntegration(boardId: string) {
   return useQuery({
-    queryKey: ["slack-integration", projectId],
-    queryFn: () => getSlackIntegration(projectId),
-    enabled: Boolean(projectId),
+    queryKey: ["slack-integration", boardId],
+    queryFn: () => getSlackIntegration(boardId),
+    enabled: Boolean(boardId),
   });
 }
 

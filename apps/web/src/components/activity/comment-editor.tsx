@@ -59,8 +59,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
@@ -189,19 +189,19 @@ export default function CommentEditor({
   const { t } = useTranslation();
   const resolvedPlaceholder =
     placeholder ?? t("activity:comment.leavePlaceholder");
-  const { data: activeWorkspace } = useActiveWorkspace();
-  const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
-    activeWorkspace?.id ?? "",
+  const { data: activeOrganization } = useActiveOrganization();
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    activeOrganization?.id ?? "",
   );
   const mentionMembersRef = useRef<MentionMember[]>([]);
   mentionMembersRef.current = useMemo(
     () =>
-      (workspaceUsers?.members ?? []).map((member) => ({
+      (organizationMembers?.members ?? []).map((member) => ({
         id: member.userId,
         label: member.user?.name ?? member.user?.email ?? "",
         image: member.user?.image ?? null,
       })),
-    [workspaceUsers],
+    [organizationMembers],
   );
   const editorShellRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);

@@ -12,15 +12,15 @@ export function useCreateGiteaIntegration() {
 
   return useMutation({
     mutationFn: ({
-      projectId,
+      boardId,
       data,
     }: {
-      projectId: string;
+      boardId: string;
       data: CreateGiteaIntegrationRequest;
-    }) => createGiteaIntegration(projectId, data),
-    onSuccess: (_, { projectId }) => {
+    }) => createGiteaIntegration(boardId, data),
+    onSuccess: (_, { boardId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["gitea-integration", projectId],
+        queryKey: ["gitea-integration", boardId],
       });
     },
   });
@@ -30,10 +30,10 @@ export function useDeleteGiteaIntegration() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (projectId: string) => deleteGiteaIntegration(projectId),
-    onSuccess: (_, projectId) => {
+    mutationFn: (boardId: string) => deleteGiteaIntegration(boardId),
+    onSuccess: (_, boardId) => {
       queryClient.invalidateQueries({
-        queryKey: ["gitea-integration", projectId],
+        queryKey: ["gitea-integration", boardId],
       });
     },
   });

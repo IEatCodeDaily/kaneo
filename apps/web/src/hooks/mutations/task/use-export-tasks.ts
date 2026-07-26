@@ -3,7 +3,7 @@ import exportTasks from "@/fetchers/task/export-tasks";
 
 const useExportTasks = () => {
   return useMutation({
-    mutationFn: (projectId: string) => exportTasks(projectId),
+    mutationFn: (boardId: string) => exportTasks(boardId),
   });
 };
 

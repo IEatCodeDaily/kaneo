@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/menu";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import debounce from "@/lib/debounce";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
@@ -264,7 +264,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId);
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
-  const { canManageTasks } = useWorkspacePermission();
+  const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
 
   const editorShellRef = useRef<HTMLDivElement | null>(null);
@@ -767,7 +767,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     );
   }, [editor, shikiHighlighter]);
 
-  // Toggle Tiptap's editable flag based on workspace permission. When the
+  // Toggle Tiptap's editable flag based on organization permission. When the
   // user can't manage tasks, the description renders as read-only — slash
   // menus, paste handlers, and toolbar buttons all become no-ops because
   // the editor refuses content mutations.

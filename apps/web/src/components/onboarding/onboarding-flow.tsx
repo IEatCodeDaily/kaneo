@@ -20,13 +20,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import useCreateWorkspace from "@/hooks/queries/workspace/use-create-workspace";
+import useCreateOrganization from "@/hooks/queries/organization/use-create-organization";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "@/lib/toast";
 
-type OnboardingStep = "workspace" | "success";
+type OnboardingStep = "organization" | "success";
 
-export type WorkspaceFormValues = {
+export type OrganizationFormValues = {
   name: string;
   description?: string;
 };
@@ -43,53 +43,53 @@ function useFadeTransition() {
 export function OnboardingFlow() {
   const fadeTransition = useFadeTransition();
   const { t } = useTranslation();
-  const [step, setStep] = useState<OnboardingStep>("workspace");
-  const [createdWorkspaceName, setCreatedWorkspaceName] = useState("");
+  const [step, setStep] = useState<OnboardingStep>("organization");
+  const [createdOrganizationName, setCreatedOrganizationName] = useState("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { mutateAsync: createWorkspace, isPending } = useCreateWorkspace();
+  const { mutateAsync: createOrganization, isPending } = useCreateOrganization();
   const { user } = useAuth();
 
-  const workspaceSchema = useMemo(
+  const organizationSchema = useMemo(
     () =>
       z.object({
         name: z
           .string()
-          .min(1, t("auth:onboarding.validation.workspaceNameRequired")),
+          .min(1, t("auth:onboarding.validation.organizationNameRequired")),
         description: z.string().optional(),
       }),
     [t],
   );
 
-  const form = useForm<WorkspaceFormValues>({
-    resolver: standardSchemaResolver(workspaceSchema),
+  const form = useForm<OrganizationFormValues>({
+    resolver: standardSchemaResolver(organizationSchema),
     defaultValues: {
       name: "",
       description: "",
     },
   });
 
-  const onSubmit = async (data: WorkspaceFormValues) => {
+  const onSubmit = async (data: OrganizationFormValues) => {
     try {
-      const workspace = await createWorkspace({
+      const organization = await createOrganization({
         name: data.name.trim(),
         description: data.description?.trim() || "",
         userId: user?.id,
       });
 
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      await queryClient.invalidateQueries({ queryKey: ["organizations"] });
       await authClient.organization.setActive({
-        organizationId: workspace.id,
+        organizationId: organization.id,
       });
-      setCreatedWorkspaceName(data.name);
-      toast.success(t("auth:onboarding.toast.workspaceCreated"));
+      setCreatedOrganizationName(data.name);
+      toast.success(t("auth:onboarding.toast.organizationCreated"));
 
       setStep("success");
 
       setTimeout(() => {
         navigate({
-          to: "/dashboard/workspace/$workspaceId",
-          params: { workspaceId: workspace.id },
+          to: "/dashboard/organization/$organizationId",
+          params: { organizationId: organization.id },
           replace: true,
         });
       }, 1500);
@@ -102,9 +102,9 @@ export function OnboardingFlow() {
     }
   };
 
-  const renderWorkspaceStep = () => (
+  const renderOrganizationStep = () => (
     <motion.div
-      key="workspace"
+      key="organization"
       variants={fadeTransition}
       initial="initial"
       animate="animate"
@@ -117,10 +117,10 @@ export function OnboardingFlow() {
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="text-center mb-6">
           <h1 className="text-xl font-semibold text-foreground mb-2">
-            {t("auth:onboarding.createWorkspaceTitle")}
+            {t("auth:onboarding.createOrganizationTitle")}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {t("auth:onboarding.createWorkspaceSubtitle")}
+            {t("auth:onboarding.createOrganizationSubtitle")}
           </p>
         </div>
 
@@ -133,12 +133,12 @@ export function OnboardingFlow() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium">
-                      {t("auth:onboarding.workspaceName")}
+                      {t("auth:onboarding.organizationName")}
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder={t(
-                          "auth:onboarding.workspaceNamePlaceholder",
+                          "auth:onboarding.organizationNamePlaceholder",
                         )}
                         autoFocus
                         {...field}
@@ -174,7 +174,7 @@ export function OnboardingFlow() {
             <Button type="submit" disabled={isPending} className="w-full mt-4">
               {isPending
                 ? t("auth:onboarding.creating")
-                : t("auth:onboarding.createWorkspace")}
+                : t("auth:onboarding.createOrganization")}
             </Button>
           </form>
         </Form>
@@ -202,12 +202,12 @@ export function OnboardingFlow() {
 
           <div className="space-y-2">
             <h1 className="text-xl font-semibold text-foreground">
-              {t("auth:onboarding.workspaceCreatedTitle")}
+              {t("auth:onboarding.organizationCreatedTitle")}
             </h1>
             <p className="text-muted-foreground text-sm">
               <Trans
-                i18nKey="auth:onboarding.redirectingToWorkspace"
-                values={{ name: createdWorkspaceName }}
+                i18nKey="auth:onboarding.redirectingToOrganization"
+                values={{ name: createdOrganizationName }}
                 components={{ name: <strong /> }}
               />
             </p>
@@ -223,10 +223,10 @@ export function OnboardingFlow() {
 
   return (
     <>
-      <PageTitle title={t("auth:onboarding.workspacePageTitle")} />
+      <PageTitle title={t("auth:onboarding.organizationPageTitle")} />
       <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-4">
         <AnimatePresence mode="wait">
-          {step === "workspace" && renderWorkspaceStep()}
+          {step === "organization" && renderOrganizationStep()}
           {step === "success" && renderSuccessStep()}
         </AnimatePresence>
       </div>

@@ -13,24 +13,24 @@ import {
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 
 type TaskCrumbSelectProps = {
-  projectId: string;
+  boardId: string;
   taskId: string;
   taskLabel?: string;
   onSelectTask: (taskId: string) => void;
 };
 
 export default function TaskCrumbSelect({
-  projectId,
+  boardId,
   taskId,
   taskLabel,
   onSelectTask,
 }: TaskCrumbSelectProps) {
   const { t } = useTranslation();
-  const { data: project } = useGetTasks(projectId);
+  const { data: board } = useGetTasks(boardId);
   const tasks = [
-    ...(project?.columns?.flatMap((column) => column.tasks) ?? []),
-    ...(project?.plannedTasks ?? []),
-    ...(project?.archivedTasks ?? []),
+    ...(board?.columns?.flatMap((column) => column.tasks) ?? []),
+    ...(board?.plannedTasks ?? []),
+    ...(board?.archivedTasks ?? []),
   ];
 
   return (

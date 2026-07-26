@@ -70,8 +70,8 @@ function AcceptInvitation() {
       }
 
       navigate({
-        to: "/dashboard/workspace/$workspaceId",
-        params: { workspaceId: data?.invitation.organizationId || "" },
+        to: "/dashboard/organization/$organizationId",
+        params: { organizationId: data?.invitation.organizationId || "" },
       });
     } catch (error) {
       toast.error(
@@ -154,8 +154,8 @@ function AcceptInvitation() {
               </p>
               {invitationData.invitation && (
                 <p className="text-xs text-muted-foreground">
-                  {t("auth:invitation.workspaceLabel", {
-                    workspaceName: invitationData.invitation.workspaceName,
+                  {t("auth:invitation.organizationLabel", {
+                    organizationName: invitationData.invitation.organizationName,
                   })}
                 </p>
               )}
@@ -199,8 +199,8 @@ function AcceptInvitation() {
 
             <div className="space-y-3 text-center">
               <h2 className="text-lg font-semibold text-foreground">
-                {t("auth:invitation.joinWorkspace", {
-                  workspaceName: invitation.workspaceName,
+                {t("auth:invitation.joinOrganization", {
+                  organizationName: invitation.organizationName,
                 })}
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -264,8 +264,8 @@ function AcceptInvitation() {
 
           <div className="space-y-3 text-center">
             <h2 className="text-lg font-semibold text-foreground">
-              {t("auth:invitation.joinWorkspace", {
-                workspaceName: invitation.workspaceName,
+              {t("auth:invitation.joinOrganization", {
+                organizationName: invitation.organizationName,
               })}
             </h2>
             <p className="text-sm text-muted-foreground">

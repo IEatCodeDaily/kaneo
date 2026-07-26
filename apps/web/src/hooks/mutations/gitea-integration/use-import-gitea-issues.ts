@@ -5,10 +5,10 @@ export default function useImportGiteaIssues() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (projectId: string) => importGiteaIssues(projectId),
-    onSuccess: (_, projectId) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    mutationFn: (boardId: string) => importGiteaIssues(boardId),
+    onSuccess: (_, boardId) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
+      queryClient.invalidateQueries({ queryKey: ["board", boardId] });
     },
   });
 }

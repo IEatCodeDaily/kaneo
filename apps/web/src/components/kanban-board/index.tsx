@@ -20,20 +20,20 @@ import { useEffect, useState } from "react";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import useBulkSelectionStore from "@/store/bulk-selection";
-import useProjectStore from "@/store/project";
-import type { ProjectWithTasks } from "@/types/project";
+import useBoardStore from "@/store/board";
+import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import Column from "./column";
 import TaskCard from "./task-card";
 
 type KanbanBoardProps = {
-  project: ProjectWithTasks;
+  board: BoardWithTasks;
   disableDragDrop?: boolean;
 };
 
-function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
+function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
   const queryClient = useQueryClient();
-  const { setProject } = useProjectStore();
+  const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
     focusNext,
@@ -46,13 +46,13 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (project?.columns) {
-      const allTaskIds = project.columns.flatMap((column) =>
+    if (board?.columns) {
+      const allTaskIds = board.columns.flatMap((column) =>
         column.tasks.map((task) => task.id),
       );
       setAvailableTasks(allTaskIds);
     }
-  }, [project, setAvailableTasks]);
+  }, [board, setAvailableTasks]);
 
   useEffect(() => {
     clearFocus();
@@ -75,12 +75,12 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
         }
       },
       Enter: () => {
-        if (focusedTaskId && project) {
+        if (focusedTaskId && board) {
           navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
             params: {
-              workspaceId: project.workspaceId,
-              projectId: project.id,
+              organizationId: board.organizationId,
+              boardId: board.id,
               taskId: focusedTaskId,
             },
           });
@@ -122,12 +122,12 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over || !project?.columns) return;
+    if (!over || !board?.columns) return;
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedProject = produce(project, (draft) => {
+    const updatedBoard = produce(board, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
         col.tasks.some((task) => task.id === activeId),
       );
@@ -159,7 +159,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
         });
 
         queryClient.invalidateQueries({
-          queryKey: ["projects", project.workspaceId],
+          queryKey: ["boards", board.organizationId],
         });
       } else {
         task.status = destinationColumn.id;
@@ -180,11 +180,11 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
       }
     });
 
-    setProject(updatedProject);
+    setBoard(updatedBoard);
     setActiveId(null);
   };
 
-  if (!project || !project?.columns) {
+  if (!board || !board?.columns) {
     return (
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/25 to-background">
         <header className="mb-6 mt-6 space-y-6 shrink-0 px-6">
@@ -233,7 +233,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
   }
 
   const activeTask = activeId
-    ? project.columns
+    ? board.columns
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
@@ -248,7 +248,7 @@ function KanbanBoard({ project, disableDragDrop = false }: KanbanBoardProps) {
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
         <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {project.columns?.map((column) => (
+            {board.columns?.map((column) => (
               <div
                 key={column.id}
                 className="h-full max-w-96 min-w-80 shrink-0 flex-1"

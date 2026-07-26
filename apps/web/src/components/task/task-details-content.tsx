@@ -9,7 +9,7 @@ import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
-import useGetProject from "@/hooks/queries/project/use-get-project";
+import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import type { ExternalLink } from "@/types/external-link";
@@ -20,21 +20,21 @@ import TaskTitle from "./task-title";
 
 type TaskDetailsContentProps = {
   taskId: string | undefined;
-  projectId: string;
-  workspaceId: string;
+  boardId: string;
+  organizationId: string;
   className?: string;
 };
 
 export default function TaskDetailsContent({
   taskId,
-  projectId,
-  workspaceId,
+  boardId,
+  organizationId,
   className,
 }: TaskDetailsContentProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: task } = useGetTask(taskId ?? "");
-  const { data: project } = useGetProject({ id: projectId, workspaceId });
+  const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: activities = [] } = useGetActivitiesByTaskId(taskId ?? "");
   const { data: externalLinks = [], isLoading: isLoadingExternalLinks } =
     useExternalLinks(taskId ?? "");
@@ -57,10 +57,10 @@ export default function TaskDetailsContent({
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
             onClick={() =>
               navigate({
-                to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+                to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
                 params: {
-                  workspaceId,
-                  projectId,
+                  organizationId,
+                  boardId,
                   taskId: parentTask.id,
                 },
               })
@@ -74,7 +74,7 @@ export default function TaskDetailsContent({
           </button>
         )}
         <p className="text-xs font-semibold text-foreground/70">
-          {project?.slug}-{task?.number}
+          {board?.slug}-{task?.number}
         </p>
         <TaskTitle taskId={taskId} />
         <TaskDescription taskId={taskId} />
@@ -90,15 +90,15 @@ export default function TaskDetailsContent({
       <div className="mt-4">
         <TaskSubtasks
           taskId={taskId}
-          projectId={projectId}
-          workspaceId={workspaceId}
+          boardId={boardId}
+          organizationId={organizationId}
         />
       </div>
       <div className="mt-2">
         <TaskRelations
           taskId={taskId}
-          projectId={projectId}
-          workspaceId={workspaceId}
+          boardId={boardId}
+          organizationId={organizationId}
         />
       </div>
       <span className="text-sm font-medium text-muted-foreground h-[1px] bg-border w-full block shrink-0" />

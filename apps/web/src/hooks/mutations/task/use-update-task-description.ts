@@ -12,13 +12,13 @@ export function useUpdateTaskDescription() {
         queryKey: ["task", variables.id],
       });
       queryClient.invalidateQueries({
-        queryKey: ["tasks", variables.projectId],
+        queryKey: ["tasks", variables.boardId],
       });
       queryClient.invalidateQueries({
         queryKey: ["notifications"],
       });
       queryClient.invalidateQueries({
-        queryKey: ["projects"],
+        queryKey: ["boards"],
       });
       queryClient.invalidateQueries({
         queryKey: ["activities", variables.id],

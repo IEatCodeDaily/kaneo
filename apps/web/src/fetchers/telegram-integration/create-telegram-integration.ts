@@ -17,11 +17,11 @@ export type CreateTelegramIntegrationRequest = {
 };
 
 async function createTelegramIntegration(
-  projectId: string,
+  boardId: string,
   json: CreateTelegramIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/project/${projectId}`),
+    getApiUrl(`/telegram-integration/board/${boardId}`),
     {
       method: "POST",
       credentials: "include",

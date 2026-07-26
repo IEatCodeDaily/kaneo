@@ -15,11 +15,11 @@ export type CreateSlackIntegrationRequest = {
 };
 
 async function createSlackIntegration(
-  projectId: string,
+  boardId: string,
   json: CreateSlackIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/project/${projectId}`),
+    getApiUrl(`/slack-integration/board/${boardId}`),
     {
       method: "POST",
       credentials: "include",

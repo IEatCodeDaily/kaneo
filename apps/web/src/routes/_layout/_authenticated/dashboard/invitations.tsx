@@ -63,9 +63,9 @@ function InvitationsPage() {
       });
 
       navigate({
-        to: "/dashboard/workspace/$workspaceId",
+        to: "/dashboard/organization/$organizationId",
         params: {
-          workspaceId: data?.invitation.organizationId || organizationId,
+          organizationId: data?.invitation.organizationId || organizationId,
         },
       });
     } catch (error) {
@@ -177,7 +177,7 @@ function InvitationsPage() {
                   <TableHeader>
                     <TableRow className="border-b">
                       <TableHead className="font-semibold">
-                        {t("invitations:table.workspace")}
+                        {t("invitations:table.organization")}
                       </TableHead>
                       <TableHead className="font-semibold">
                         {t("invitations:table.invitedBy")}
@@ -207,7 +207,7 @@ function InvitationsPage() {
                           )}
                         >
                           <TableCell className="font-medium">
-                            {invitation.workspaceName}
+                            {invitation.organizationName}
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
                             {invitation.inviterName}
@@ -234,7 +234,7 @@ function InvitationsPage() {
                                 onClick={() =>
                                   handleAcceptInvitation(
                                     invitation.id,
-                                    invitation.workspaceId,
+                                    invitation.organizationId,
                                   )
                                 }
                                 disabled={isProcessing}

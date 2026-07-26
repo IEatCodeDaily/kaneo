@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchCommandMenu from "@/components/search-command-menu";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import CreateWorkspaceModal from "@/components/shared/modals/create-workspace-modal";
+import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
 import {
   Command,
   CommandCollection,
@@ -23,10 +23,10 @@ import {
 } from "@/components/ui/command";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { shortcuts } from "@/constants/shortcuts";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUserPreferencesStore } from "@/store/user-preferences";
-import CreateProjectModal from "../shared/modals/create-project-modal";
+import CreateBoardModal from "../shared/modals/create-board-modal";
 
 type PaletteActionItem = {
   value: string;
@@ -46,14 +46,14 @@ function CommandPalette() {
   const { setTheme } = useUserPreferencesStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: workspace } = useActiveWorkspace();
+  const { data: organization } = useActiveOrganization();
   const [open, setOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
-  const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false);
-  const projectIdFromRoute =
-    location.pathname.match(/\/project\/([^/]+)/)?.[1] ?? undefined;
+  const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
+  const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] = useState(false);
+  const boardIdFromRoute =
+    location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");
 
   useRegisterShortcuts({
@@ -70,22 +70,22 @@ function CommandPalette() {
       },
     },
     sequentialShortcuts: {
-      [shortcuts.project.prefix]: {
-        [shortcuts.project.list]: () => {
-          if (!workspace?.id) return;
+      [shortcuts.board.prefix]: {
+        [shortcuts.board.list]: () => {
+          if (!organization?.id) return;
           navigate({
-            to: "/dashboard/workspace/$workspaceId",
-            params: { workspaceId: workspace.id },
+            to: "/dashboard/organization/$organizationId",
+            params: { organizationId: organization.id },
           });
         },
-        [shortcuts.project.create]: () => setIsCreateProjectOpen(true),
+        [shortcuts.board.create]: () => setIsCreateBoardOpen(true),
       },
       [shortcuts.task.prefix]: {
         [shortcuts.task.create]: () => setIsCreateTaskOpen(true),
       },
-      [shortcuts.workspace.prefix]: {
-        [shortcuts.workspace.create]: () => {
-          setIsCreateWorkspaceOpen(true);
+      [shortcuts.organization.prefix]: {
+        [shortcuts.organization.create]: () => {
+          setIsCreateOrganizationOpen(true);
         },
       },
     },
@@ -103,14 +103,14 @@ function CommandPalette() {
         label: t("navigation:commandPalette.suggestions"),
         items: [
           {
-            value: "projects",
-            label: t("navigation:commandPalette.projects"),
-            shortcut: `${shortcuts.project.prefix} ${shortcuts.project.list}`,
+            value: "boards",
+            label: t("navigation:commandPalette.boards"),
+            shortcut: `${shortcuts.board.prefix} ${shortcuts.board.list}`,
             onRun: () => {
-              if (!workspace?.id) return;
+              if (!organization?.id) return;
               navigate({
-                to: "/dashboard/workspace/$workspaceId",
-                params: { workspaceId: workspace.id },
+                to: "/dashboard/organization/$organizationId",
+                params: { organizationId: organization.id },
               });
             },
           },
@@ -126,7 +126,7 @@ function CommandPalette() {
               defaultValue: "Members",
             }),
             onRun: () => {
-              navigate({ to: "/dashboard/settings/workspace/members" });
+              navigate({ to: "/dashboard/settings/organization/members" });
             },
           },
           {
@@ -136,10 +136,10 @@ function CommandPalette() {
             onRun: () => setIsCreateTaskOpen(true),
           },
           {
-            value: "create-project",
-            label: t("navigation:commandPalette.createProject"),
-            shortcut: `${shortcuts.project.prefix} ${shortcuts.project.create}`,
-            onRun: () => setIsCreateProjectOpen(true),
+            value: "create-board",
+            label: t("navigation:commandPalette.createBoard"),
+            shortcut: `${shortcuts.board.prefix} ${shortcuts.board.create}`,
+            onRun: () => setIsCreateBoardOpen(true),
           },
         ],
       },
@@ -148,10 +148,10 @@ function CommandPalette() {
         label: t("navigation:commandPalette.commands"),
         items: [
           {
-            value: "create-workspace",
-            label: t("navigation:commandPalette.createWorkspace"),
-            shortcut: `${shortcuts.workspace.prefix} ${shortcuts.workspace.create}`,
-            onRun: () => setIsCreateWorkspaceOpen(true),
+            value: "create-organization",
+            label: t("navigation:commandPalette.createOrganization"),
+            shortcut: `${shortcuts.organization.prefix} ${shortcuts.organization.create}`,
+            onRun: () => setIsCreateOrganizationOpen(true),
           },
           {
             value: "theme-light",
@@ -183,7 +183,7 @@ function CommandPalette() {
         ],
       },
     ],
-    [navigate, setTheme, t, workspace?.id],
+    [navigate, setTheme, t, organization?.id],
   );
 
   const shortcutHandlers = useMemo(() => {
@@ -318,17 +318,17 @@ function CommandPalette() {
       <SearchCommandMenu open={isSearchOpen} setOpen={setIsSearchOpen} />
       <CreateTaskModal
         open={isCreateTaskOpen}
-        projectId={projectIdFromRoute}
+        boardId={boardIdFromRoute}
         status={isBacklogView ? "planned" : undefined}
         onClose={() => setIsCreateTaskOpen(false)}
       />
-      <CreateWorkspaceModal
-        open={isCreateWorkspaceOpen}
-        onClose={() => setIsCreateWorkspaceOpen(false)}
+      <CreateOrganizationModal
+        open={isCreateOrganizationOpen}
+        onClose={() => setIsCreateOrganizationOpen(false)}
       />
-      <CreateProjectModal
-        open={isCreateProjectOpen}
-        onClose={() => setIsCreateProjectOpen(false)}
+      <CreateBoardModal
+        open={isCreateBoardOpen}
+        onClose={() => setIsCreateBoardOpen(false)}
       />
     </>
   );

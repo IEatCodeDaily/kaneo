@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { ProjectWithTasks } from "@/types/project";
+import type { BoardWithTasks } from "@/types/board";
 import type Task from "@/types/task";
 
 type TaskLabel = NonNullable<Task["labels"]>[number];
@@ -20,23 +20,23 @@ function updateTaskLabels(
   };
 }
 
-export function updateTaskLabelsInProject(
-  project: ProjectWithTasks,
+export function updateTaskLabelsInBoard(
+  board: BoardWithTasks,
   taskId: string,
   updater: TaskLabelsUpdater,
-): ProjectWithTasks {
+): BoardWithTasks {
   return {
-    ...project,
-    columns: project.columns.map((column) => ({
+    ...board,
+    columns: board.columns.map((column) => ({
       ...column,
       tasks: column.tasks.map((task) =>
         updateTaskLabels(task, taskId, updater),
       ),
     })),
-    plannedTasks: project.plannedTasks.map((task) =>
+    plannedTasks: board.plannedTasks.map((task) =>
       updateTaskLabels(task, taskId, updater),
     ),
-    archivedTasks: project.archivedTasks.map((task) =>
+    archivedTasks: board.archivedTasks.map((task) =>
       updateTaskLabels(task, taskId, updater),
     ),
   };
@@ -47,14 +47,14 @@ export function syncTaskLabelsInTasksCache(
   taskId: string,
   updater: TaskLabelsUpdater,
 ) {
-  queryClient.setQueriesData<ProjectWithTasks | undefined>(
+  queryClient.setQueriesData<BoardWithTasks | undefined>(
     {
       queryKey: ["tasks"],
     },
-    (existingProject) =>
-      existingProject
-        ? updateTaskLabelsInProject(existingProject, taskId, updater)
-        : existingProject,
+    (existingBoard) =>
+      existingBoard
+        ? updateTaskLabelsInBoard(existingBoard, taskId, updater)
+        : existingBoard,
   );
 }
 

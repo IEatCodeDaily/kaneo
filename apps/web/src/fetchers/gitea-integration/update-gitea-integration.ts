@@ -2,17 +2,17 @@ import { client } from "@kaneo/libs";
 import type { InferRequestType } from "hono";
 
 export type UpdateGiteaIntegrationRequest = InferRequestType<
-  (typeof client)["gitea-integration"]["project"][":projectId"]["$patch"]
+  (typeof client)["gitea-integration"]["board"][":boardId"]["$patch"]
 >["json"];
 
 async function updateGiteaIntegration(
-  projectId: string,
+  boardId: string,
   json: UpdateGiteaIntegrationRequest,
 ) {
-  const response = await client["gitea-integration"].project[
-    ":projectId"
+  const response = await client["gitea-integration"].board[
+    ":boardId"
   ].$patch({
-    param: { projectId },
+    param: { boardId },
     json,
   });
 

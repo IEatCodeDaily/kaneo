@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 export type SlackIntegration = {
   id: string;
-  projectId: string;
+  boardId: string;
   channelName: string | null;
   webhookConfigured: boolean;
   maskedWebhookUrl: string;
@@ -19,9 +19,9 @@ export type SlackIntegration = {
   updatedAt: string;
 } | null;
 
-async function getSlackIntegration(projectId: string) {
+async function getSlackIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/project/${projectId}`),
+    getApiUrl(`/slack-integration/board/${boardId}`),
     {
       credentials: "include",
     },

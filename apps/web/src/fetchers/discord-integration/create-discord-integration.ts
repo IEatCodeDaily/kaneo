@@ -15,11 +15,11 @@ export type CreateDiscordIntegrationRequest = {
 };
 
 async function createDiscordIntegration(
-  projectId: string,
+  boardId: string,
   json: CreateDiscordIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/project/${projectId}`),
+    getApiUrl(`/discord-integration/board/${boardId}`),
     {
       method: "POST",
       credentials: "include",

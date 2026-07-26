@@ -25,9 +25,9 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import type { SortConfig } from "@/lib/sort-tasks";
-import type { ProjectWithTasks } from "@/types/project";
+import type { BoardWithTasks } from "@/types/board";
 
-type WorkspaceLabel = {
+type OrganizationLabel = {
   id: string;
   name: string;
   color: string;
@@ -44,7 +44,7 @@ type ActiveUsers = {
 };
 
 type BoardToolbarProps = {
-  project?: ProjectWithTasks | null;
+  board?: BoardWithTasks | null;
   filters: BoardFilters;
   updateFilter: (
     key: keyof BoardFilters,
@@ -54,7 +54,7 @@ type BoardToolbarProps = {
   clearFilters: () => void;
   hasActiveFilters: boolean;
   users?: ActiveUsers;
-  workspaceLabels: WorkspaceLabel[];
+  organizationLabels: OrganizationLabel[];
   viewMode: "board" | "list";
   setViewMode: (mode: "board" | "list") => void;
   sort: SortConfig;
@@ -131,14 +131,14 @@ function StackedIcons({
 }
 
 export default function BoardToolbar({
-  project,
+  board,
   filters,
   updateFilter,
   updateLabelFilter,
   clearFilters,
   hasActiveFilters,
   users,
-  workspaceLabels,
+  organizationLabels,
   viewMode,
   setViewMode,
   sort,
@@ -151,11 +151,11 @@ export default function BoardToolbar({
   const selectedDueDateFilters = filters.dueDate ?? [];
 
   const getStatusDisplayName = (statusId: string) => {
-    const column = project?.columns?.find((col) => col.id === statusId);
+    const column = board?.columns?.find((col) => col.id === statusId);
     return column?.name || statusId;
   };
   const getStatusIcon = (statusId: string) => {
-    const column = project?.columns?.find((col) => col.id === statusId);
+    const column = board?.columns?.find((col) => col.id === statusId);
     return getColumnIcon(statusId, column?.isFinal, column?.icon);
   };
 
@@ -181,8 +181,8 @@ export default function BoardToolbar({
     );
   };
 
-  const uniqueLabels = workspaceLabels.reduce(
-    (acc: WorkspaceLabel[], label: WorkspaceLabel) => {
+  const uniqueLabels = organizationLabels.reduce(
+    (acc: OrganizationLabel[], label: OrganizationLabel) => {
       const existing = acc.find(
         (l) => l.name === label.name && l.color === label.color,
       );
@@ -193,7 +193,7 @@ export default function BoardToolbar({
   );
 
   const isLabelGroupSelected = (label: { name: string; color: string }) => {
-    return workspaceLabels
+    return organizationLabels
       .filter((l) => l.name === label.name && l.color === label.color)
       .some((l) => filters.labels?.includes(l.id));
   };
@@ -231,7 +231,7 @@ export default function BoardToolbar({
   };
 
   const toggleLabelGroup = (label: { name: string; color: string }) => {
-    const matching = workspaceLabels.filter(
+    const matching = organizationLabels.filter(
       (l) => l.name === label.name && l.color === label.color,
     );
     const anySelected = matching.some((l) => filters.labels?.includes(l.id));
@@ -294,7 +294,7 @@ export default function BoardToolbar({
                         <CheckSlot checked={selectedStatusIds.length === 0} />
                         {t("tasks:boardFilters.allStatuses")}
                       </button>
-                      {project?.columns?.map((column) => (
+                      {board?.columns?.map((column) => (
                         <button
                           key={column.id}
                           className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-left text-xs ${
