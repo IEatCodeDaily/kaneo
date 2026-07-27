@@ -42,6 +42,29 @@ export default defineConfig({
       },
     },
   },
+  // `vite preview` serves the production build (a handful of bundled, hashed
+  // assets) instead of the dev server's ~250 individual module requests. That
+  // matters a lot here because the app is reached through Cloudflare, where
+  // every request costs ~130ms.
+  preview: {
+    host: true,
+    port: 5173,
+    allowedHosts: ["kaneo.entelechia.cloud", "kaneo.k3s.home"],
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+      "/.well-known/oauth-protected-resource/api/mcp": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+      "/.well-known/oauth-authorization-server/api": {
+        target: "http://127.0.0.1:1337",
+        changeOrigin: true,
+      },
+    },
+  },
   optimizeDeps: {
     exclude: ["better-auth"],
   },
