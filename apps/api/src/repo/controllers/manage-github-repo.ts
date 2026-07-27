@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+import { Octokit } from "octokit";
 import db from "../../database";
-import { repoTable } from "../../database/schema";
+import { accountTable, repoTable, userTable } from "../../database/schema";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
@@ -29,7 +30,7 @@ function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
   return installationId;
 }
 
-async function getGitHubRepoClient(repoId: string) {
+export async function getGitHubRepoClient(repoId: string) {
   const repo = await db.query.repoTable.findFirst({
     where: eq(repoTable.id, repoId),
   });
@@ -108,18 +109,58 @@ export async function createGitHubItemComment({
   repoId,
   number,
   body,
+  userId,
 }: {
   repoId: string;
   number: number;
   body: string;
+  userId: string;
 }) {
-  const { repo, octokit } = await getGitHubRepoClient(repoId);
-  const { data } = await octokit.rest.issues.createComment({
-    owner: repo.owner,
-    repo: repo.name,
-    issue_number: number,
-    body,
-  });
+  const { repo, octokit: installationOctokit } = await getGitHubRepoClient(repoId);
+  const [githubAccount] = await db
+    .select({ accessToken: accountTable.accessToken })
+    .from(accountTable)
+    .where(
+      and(
+        eq(accountTable.userId, userId),
+        eq(accountTable.providerId, "github"),
+      ),
+    )
+    .limit(1);
+  const [user] = await db
+    .select({ name: userTable.name })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+
+  // Better Auth persists the OAuth token on the linked GitHub account. Prefer
+  // it so GitHub records the real Kaneo member as the comment author. The
+  // configured SSO scope may not grant repository access, and tokens may be
+  // revoked, so preserve the installation-token path as a reliable fallback.
+  let octokit = installationOctokit;
+  let author = "github-app";
+  let commentBody = body;
+  if (githubAccount?.accessToken) {
+    octokit = new Octokit({ auth: githubAccount.accessToken });
+    author = "github-user";
+  } else {
+    commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
+  }
+
+  let data;
+  try {
+    ({ data } = await octokit.rest.issues.createComment({
+      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+    }));
+  } catch (error) {
+    // A linked token may be sign-in-only or revoked; degrade to the App bot.
+    if (author !== "github-user") throw error;
+    author = "github-app";
+    commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
+    ({ data } = await installationOctokit.rest.issues.createComment({
+      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+    }));
+  }
 
   // Comments are represented by the mirror's comment count, so refresh before
   // returning rather than making a local count assumption.
@@ -128,6 +169,7 @@ export async function createGitHubItemComment({
     id: String(data.id),
     url: data.html_url,
     createdAt: new Date(data.created_at),
+    author,
   };
 }
 

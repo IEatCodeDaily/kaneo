@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
 import RepoLayout from "@/components/common/repo-layout";
+import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import PageTitle from "@/components/page-title";
 import RepoDetailManagement from "@/components/repo/repo-detail-management";
+import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -100,9 +102,7 @@ function RouteComponent() {
               </header>
               <div className="min-h-48 px-5 py-6 sm:px-6">
                 {issue.body ? (
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
-                    {issue.body}
-                  </p>
+                  <MarkdownRenderer content={issue.body} />
                 ) : (
                   <p className="text-sm italic text-muted-foreground">
                     No description provided.
@@ -118,6 +118,7 @@ function RouteComponent() {
                 state={issue.state}
                 title={issue.title}
               />
+              <RepoIssueHistory github={issue.github} />
               <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
                 {issue.commentCount > 0 && (
                   <span className="flex items-center gap-1.5">
