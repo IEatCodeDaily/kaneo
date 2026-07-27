@@ -40,6 +40,27 @@ function RouteComponent() {
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
   const parts = path ? path.split("/").filter(Boolean) : [];
   const baseSearch = ref ? { ref } : {};
+  const renderCrumb = (part: string, index: number) => {
+    const segmentPath = parts.slice(0, index + 1).join("/");
+    const isLast = index === parts.length - 1;
+    return (
+      <span className="flex min-w-0 items-center gap-1" key={segmentPath}>
+        <span className="text-muted-foreground">/</span>
+        {isLast ? (
+          <span className="truncate font-medium">{part}</span>
+        ) : (
+          <Link
+            className="truncate text-primary hover:underline"
+            params={{ organizationId, repoId }}
+            search={{ ...baseSearch, path: segmentPath }}
+            to="/dashboard/organization/$organizationId/repo/$repoId/code"
+          >
+            {part}
+          </Link>
+        )}
+      </span>
+    );
+  };
 
   return (
     <>
@@ -56,27 +77,7 @@ function RouteComponent() {
               >
                 {repoTitle}
               </Link>
-              {parts.map((part, index) => {
-                const segmentPath = parts.slice(0, index + 1).join("/");
-                const isLast = index === parts.length - 1;
-                return (
-                  <span className="flex min-w-0 items-center gap-1" key={segmentPath}>
-                    <span className="text-muted-foreground">/</span>
-                    {isLast ? (
-                      <span className="truncate font-medium">{part}</span>
-                    ) : (
-                      <Link
-                        className="truncate text-primary hover:underline"
-                        params={{ organizationId, repoId }}
-                        search={{ ...baseSearch, path: segmentPath }}
-                        to="/dashboard/organization/$organizationId/repo/$repoId/code"
-                      >
-                        {part}
-                      </Link>
-                    )}
-                  </span>
-                );
-              })}
+              {parts.map((part, index) => renderCrumb(part, index))}
             </div>
             <span className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
               <GitBranch className="size-3.5" />

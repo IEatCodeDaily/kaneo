@@ -225,19 +225,39 @@ const repo = new Hono<{
     }),
     validator(
       "json",
-      v.object({
-        organizationId: v.string(),
-        provider: v.picklist(["github", "gitea"] as const),
-        owner: v.string(),
-        name: v.string(),
-        url: v.string(),
-        externalId: v.optional(v.string()),
-        description: v.optional(v.string()),
-        defaultBranch: v.optional(v.string()),
-        isPrivate: v.optional(v.boolean()),
-        config: v.optional(v.record(v.string(), v.unknown())),
-        installationId: v.optional(v.number()),
-      }),
+      v.pipe(
+        v.object({
+          organizationId: v.string(),
+          // Forgejo is API-compatible with Gitea and rides the same branch.
+          provider: v.picklist(["github", "gitea"] as const),
+          owner: v.string(),
+          name: v.string(),
+          // GitHub resolves the canonical URL from the installation, so the
+          // client cannot supply it; self-hosted Gitea/Forgejo must.
+          url: v.optional(v.string()),
+          externalId: v.optional(v.string()),
+          description: v.optional(v.string()),
+          defaultBranch: v.optional(v.string()),
+          isPrivate: v.optional(v.boolean()),
+          config: v.optional(v.record(v.string(), v.unknown())),
+          installationId: v.optional(v.number()),
+        }),
+        v.forward(
+          v.check(
+            (input) => input.provider !== "gitea" || Boolean(input.url),
+            "url is required for Gitea and Forgejo repositories",
+          ),
+          ["url"],
+        ),
+        v.forward(
+          v.check(
+            (input) =>
+              input.provider !== "github" || typeof input.installationId === "number",
+            "installationId is required for GitHub repositories",
+          ),
+          ["installationId"],
+        ),
+      ),
     ),
     organizationAccess.fromBody(),
     // No `repo` permission verb exists yet — reuse `board: ["create"]`.
@@ -249,7 +269,7 @@ const repo = new Hono<{
         body.provider === "github"
           ? await createGithubRepo({
               organizationId,
-              installationId: body.installationId ?? -1,
+              installationId: body.installationId as number,
               owner: body.owner,
               name: body.name,
             })
@@ -258,7 +278,7 @@ const repo = new Hono<{
               provider: body.provider,
               owner: body.owner,
               name: body.name,
-              url: body.url,
+              url: body.url as string,
               externalId: body.externalId,
               description: body.description,
               defaultBranch: body.defaultBranch,

@@ -87,7 +87,7 @@ export async function getGitHubRepoContents({
     return {
       path,
       ref: ref ?? null,
-      type: entry.type,
+      type: entry.type === "dir" ? "directory" : entry.type,
       entries: [],
       file: null,
     };
@@ -99,7 +99,10 @@ export async function getGitHubRepoContents({
     });
   }
 
-  const encoded = data.content?.replace(/\n/g, "") ?? "";
+  const fileData = data as {
+    content?: string;
+  };
+  const encoded = fileData.content?.replace(/\n/g, "") ?? "";
   const buffer = Buffer.from(encoded, "base64");
   return {
     path,
