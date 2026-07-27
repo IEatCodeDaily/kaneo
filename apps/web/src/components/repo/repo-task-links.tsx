@@ -24,7 +24,7 @@ type Props = {
   repoId: string;
   number: number;
   itemType: "issues" | "pull-requests";
-  taskLinks: RepoTaskLink[];
+  taskLinks?: RepoTaskLink[];
 };
 
 type CandidateTask = {
@@ -51,7 +51,7 @@ export default function RepoTaskLinks({
   repoId,
   number,
   itemType,
-  taskLinks,
+  taskLinks = [],
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -134,13 +134,18 @@ export default function RepoTaskLinks({
   return (
     <section className="border-t border-border/80 px-5 py-4 sm:px-6">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 text-sm font-medium">
-          <Link2 className="size-4" /> Linked tasks
-          {taskLinks.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {taskLinks.length}
-            </span>
-          )}
+        <div>
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <Link2 className="size-4" /> Linked Kaneo tasks
+            {taskLinks.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {taskLinks.length}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Connect this GitHub item to work already tracked in Kaneo.
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button size="sm" variant="outline" />}>

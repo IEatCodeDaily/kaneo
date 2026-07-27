@@ -29,6 +29,7 @@ import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
 import { handleGithubWebhookRoute } from "./github-integration";
+import githubIntegration from "./github-integration";
 import githubDelegation, { handleGitHubDelegationCallback } from "./github-delegation";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
@@ -529,6 +530,10 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
   const oauthApi = api.route("/oauth", oauth);
   const githubDelegationApi = api.route("/github-delegation", githubDelegation);
+  const githubIntegrationApi = api.route(
+    "/github-integration",
+    githubIntegration,
+  );
 
   const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
@@ -583,6 +588,18 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
         await authenticateApiRequest(c);
       } catch (error) {
         if (error instanceof HTTPException) {
+          // Never log cookie values. Presence and names establish whether the
+          // browser's authenticated upgrade reached the API with cookies at all.
+          const cookieNames = (c.req.header("cookie") ?? "")
+            .split(";")
+            .map((part) => part.trim().split("=", 1)[0])
+            .filter(Boolean);
+          console.warn("WebSocket user auth rejected", {
+            hasCookie: cookieNames.length > 0,
+            cookieNames,
+            origin: c.req.header("origin") ?? null,
+            host: c.req.header("host") ?? null,
+          });
           throw error;
         }
         console.error("API authentication failed:", error);
