@@ -35,6 +35,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteImp
 import { Route as LayoutAuthenticatedDashboardOrganizationCreateRouteImport } from './routes/_layout/_authenticated/dashboard/organization/create'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards'
+import { Route as LayoutAuthenticatedDashboardSettingsConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/members'
@@ -205,6 +206,12 @@ const LayoutAuthenticatedDashboardSettingsBoardsRoute =
   LayoutAuthenticatedDashboardSettingsBoardsRouteImport.update({
     id: '/boards',
     path: '/boards',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsRoute,
+  } as any)
+const LayoutAuthenticatedDashboardSettingsConnectionsRoute =
+  LayoutAuthenticatedDashboardSettingsConnectionsRouteImport.update({
+    id: '/connections',
+    path: '/connections',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsRoute,
   } as any)
 const LayoutAuthenticatedDashboardSettingsOrganizationRoute =
@@ -474,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/create': typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   '/dashboard/settings/account': typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   '/dashboard/settings/boards': typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
+  '/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
@@ -528,6 +536,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/create': typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   '/dashboard/settings/account': typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   '/dashboard/settings/boards': typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
+  '/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
@@ -588,6 +597,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/create': typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   '/_layout/_authenticated/dashboard/settings/account': typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   '/_layout/_authenticated/dashboard/settings/boards': typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
+  '/_layout/_authenticated/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/_layout/_authenticated/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/create'
     | '/dashboard/settings/account'
     | '/dashboard/settings/boards'
+    | '/dashboard/settings/connections'
     | '/dashboard/settings/organization'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/search'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/create'
     | '/dashboard/settings/account'
     | '/dashboard/settings/boards'
+    | '/dashboard/settings/connections'
     | '/dashboard/settings/organization'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/search'
@@ -760,6 +772,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/create'
     | '/_layout/_authenticated/dashboard/settings/account'
     | '/_layout/_authenticated/dashboard/settings/boards'
+    | '/_layout/_authenticated/dashboard/settings/connections'
     | '/_layout/_authenticated/dashboard/settings/organization'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/members'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/search'
@@ -986,6 +999,13 @@ declare module '@tanstack/react-router' {
       path: '/boards'
       fullPath: '/dashboard/settings/boards'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsBoardsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsRoute
+    }
+    '/_layout/_authenticated/dashboard/settings/connections': {
+      id: '/_layout/_authenticated/dashboard/settings/connections'
+      path: '/connections'
+      fullPath: '/dashboard/settings/connections'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsConnectionsRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsRoute
     }
     '/_layout/_authenticated/dashboard/settings/organization': {
@@ -1286,6 +1306,7 @@ const LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren =
 interface LayoutAuthenticatedDashboardSettingsRouteChildren {
   LayoutAuthenticatedDashboardSettingsAccountRoute: typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   LayoutAuthenticatedDashboardSettingsBoardsRoute: typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
+  LayoutAuthenticatedDashboardSettingsConnectionsRoute: typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   LayoutAuthenticatedDashboardSettingsOrganizationRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
 }
 
@@ -1295,6 +1316,8 @@ const LayoutAuthenticatedDashboardSettingsRouteChildren: LayoutAuthenticatedDash
       LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren,
     LayoutAuthenticatedDashboardSettingsBoardsRoute:
       LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren,
+    LayoutAuthenticatedDashboardSettingsConnectionsRoute:
+      LayoutAuthenticatedDashboardSettingsConnectionsRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationRoute:
       LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren,
   }

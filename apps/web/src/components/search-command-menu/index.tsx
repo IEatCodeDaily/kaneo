@@ -1,7 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
+  CircleDot,
   FileText,
+  FolderGit2,
   FolderKanban,
+  GitPullRequest,
   Hash,
   MessageSquare,
   Search,
@@ -34,13 +37,26 @@ type SearchResultItem = {
   title: string;
   description?: string;
   content?: string;
-  type: "task" | "board" | "organization" | "comment" | "activity";
+  type:
+    | "task"
+    | "board"
+    | "organization"
+    | "comment"
+    | "activity"
+    | "repository"
+    | "issue"
+    | "pull_request";
   boardId?: string;
   organizationId?: string;
   taskNumber?: number;
   boardSlug?: string;
   priority?: string;
   status?: string;
+  repoId?: string;
+  repoOwner?: string;
+  repoName?: string;
+  itemNumber?: number;
+  url?: string;
 };
 
 type SearchGroup = {
@@ -134,6 +150,39 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
           });
         }
         break;
+      case "repository":
+        if (item.repoId && organization?.id) {
+          navigate({
+            to: "/dashboard/organization/$organizationId/repo/$repoId/code",
+            params: { organizationId: organization.id, repoId: item.repoId },
+            search: { path: "" },
+          });
+        }
+        break;
+      case "issue":
+        if (item.repoId && item.itemNumber && organization?.id) {
+          navigate({
+            to: "/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
+            params: {
+              organizationId: organization.id,
+              repoId: item.repoId,
+              number: String(item.itemNumber),
+            },
+          });
+        }
+        break;
+      case "pull_request":
+        if (item.repoId && item.itemNumber && organization?.id) {
+          navigate({
+            to: "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number",
+            params: {
+              organizationId: organization.id,
+              repoId: item.repoId,
+              number: String(item.itemNumber),
+            },
+          });
+        }
+        break;
     }
   };
 
@@ -149,6 +198,12 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         return MessageSquare;
       case "activity":
         return Zap;
+      case "repository":
+        return FolderGit2;
+      case "issue":
+        return CircleDot;
+      case "pull_request":
+        return GitPullRequest;
       default:
         return FileText;
     }
@@ -178,6 +233,12 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
           return t("navigation:search.groups.comment");
         case "activity":
           return t("navigation:search.groups.activity");
+        case "repository":
+          return "Repositories";
+        case "issue":
+          return "Issues";
+        case "pull_request":
+          return "Pull requests";
         default:
           return t("navigation:search.groups.fallback");
       }

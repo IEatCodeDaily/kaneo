@@ -15,12 +15,36 @@ const organizationSchema = v.object({
   createdAt: v.date(),
 });
 
+const repositorySchema = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  provider: v.string(),
+  owner: v.string(),
+  name: v.string(),
+  description: v.nullable(v.string()),
+  url: v.string(),
+  createdAt: v.date(),
+});
+
+const repoItemSchema = v.object({
+  id: v.string(),
+  repoId: v.string(),
+  number: v.number(),
+  title: v.string(),
+  state: v.string(),
+  url: v.string(),
+  createdAt: v.date(),
+});
+
 const searchResultSchema = v.object({
   tasks: v.optional(v.array(taskSchema)),
   boards: v.optional(v.array(boardSchema)),
   organizations: v.optional(v.array(organizationSchema)),
   comments: v.optional(v.array(activitySchema)),
   activities: v.optional(v.array(activitySchema)),
+  repositories: v.optional(v.array(repositorySchema)),
+  issues: v.optional(v.array(repoItemSchema)),
+  pullRequests: v.optional(v.array(repoItemSchema)),
 });
 
 const search = new Hono<{
@@ -33,7 +57,7 @@ const search = new Hono<{
     operationId: "globalSearch",
     tags: ["Search"],
     description:
-      "Search across tasks, boards, organizations, comments, and activities",
+      "Search across tasks, boards, organizations, comments, activities, repositories, GitHub issues, and pull requests",
     responses: {
       200: {
         description: "Search results",
@@ -58,6 +82,9 @@ const search = new Hono<{
           "organizations",
           "comments",
           "activities",
+          "repositories",
+          "issues",
+          "pullRequests",
         ]),
         "all",
       ),
