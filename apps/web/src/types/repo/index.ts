@@ -32,6 +32,22 @@ export type RepoGithubMetadata = {
   }>;
 };
 
+export type RepoContentEntry = {
+  name: string;
+  path: string;
+  type: "file" | "dir" | "symlink" | "submodule";
+  size: number;
+  sha: string;
+};
+
+export type RepoContents = {
+  path: string;
+  ref: string | null;
+  type: "directory" | "file" | "symlink" | "submodule";
+  entries: RepoContentEntry[];
+  file: (RepoContentEntry & { content: string | null; isBinary: boolean }) | null;
+};
+
 export type RepoIssueState = "open" | "closed";
 
 export type RepoIssueGithubActor = {
