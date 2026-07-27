@@ -1,7 +1,6 @@
 import { discordPlugin } from "./discord";
 import { genericWebhookPlugin } from "./generic-webhook";
-import { giteaPlugin } from "./gitea";
-import { githubPlugin, initializeGitHubPlugin } from "./github";
+import { initializeGitHubPlugin } from "./github";
 import { initializeEventSubscriptions, registerPlugin } from "./registry";
 import { slackPlugin } from "./slack";
 import { telegramPlugin } from "./telegram";
@@ -9,8 +8,7 @@ import { telegramPlugin } from "./telegram";
 export function initializePlugins() {
   console.log("Initializing plugins...");
 
-  registerPlugin(githubPlugin);
-  registerPlugin(giteaPlugin);
+  // GitHub/Gitea are Repo providers, not board/task event plugins.
   registerPlugin(slackPlugin);
   registerPlugin(discordPlugin);
   registerPlugin(genericWebhookPlugin);

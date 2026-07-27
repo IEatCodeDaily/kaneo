@@ -1230,7 +1230,8 @@
       "members": "Members",
       "invitations": "Invitations",
       "more": "More",
-      "backToBoard": "Back to board"
+      "backToBoard": "Back to board",
+      "repos": "Repos"
     },
     "boardList": {
       "viewBoard": "View Board",
@@ -1311,6 +1312,9 @@
         "openTask": "Open selected task",
         "quickSelectNumber": "Select option by number"
       }
+    },
+    "repoList": {
+      "allRepos": "All repos"
     }
   },
   "notifications": {
@@ -1951,6 +1955,50 @@
       "submit": "Create organization",
       "success": "Organization created successfully",
       "error": "Failed to create organization"
+    },
+    "repos": {
+      "pageTitle": "Repos",
+      "emptyTitle": "No repos yet",
+      "emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
+      "neverSynced": "Never synced",
+      "backToRepos": "Back to repos",
+      "table": {
+        "name": "Repository",
+        "provider": "Provider",
+        "openIssues": "Open issues",
+        "openPullRequests": "Open pull requests",
+        "lastSynced": "Last synced"
+      },
+      "state": {
+        "open": "Open",
+        "closed": "Closed",
+        "merged": "Merged",
+        "draft": "Draft"
+      },
+      "stateFilter": {
+        "open": "Open",
+        "closed": "Closed",
+        "merged": "Merged",
+        "all": "All"
+      },
+      "issues": {
+        "pageTitle": "Issues",
+        "tab": "Issues",
+        "emptyTitle": "No issues",
+        "emptyDescription": "There are no issues matching this filter."
+      },
+      "pullRequests": {
+        "pageTitle": "Pull requests",
+        "tab": "Pull requests",
+        "emptyTitle": "No pull requests",
+        "emptyDescription": "There are no pull requests matching this filter."
+      },
+      "add": {
+        "button": "Connect repo",
+        "title": "Connect repository",
+        "description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+        "submit": "Connect and sync"
+      }
     }
   },
   "team": {

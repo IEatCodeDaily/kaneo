@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ChevronDown,
-  FolderGit,
-  Github,
   MessageCircle,
   Radio,
   Send,
@@ -13,8 +11,6 @@ import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
 import { DiscordIntegrationSettings } from "@/components/board/discord-integration-settings";
 import { GenericWebhookIntegrationSettings } from "@/components/board/generic-webhook-integration-settings";
-import { GiteaIntegrationSettings } from "@/components/board/gitea-integration-settings";
-import { GitHubIntegrationSettings } from "@/components/board/github-integration-settings";
 import { SlackIntegrationSettings } from "@/components/board/slack-integration-settings";
 import { TelegramIntegrationSettings } from "@/components/board/telegram-integration-settings";
 import {
@@ -47,22 +43,6 @@ function RouteComponent() {
         </div>
 
         <div className="space-y-6">
-          <IntegrationSection
-            icon={<Github className="size-4" />}
-            subtitle={t("settings:boardIntegrations.githubSectionSubtitle")}
-            title={t("settings:boardIntegrations.githubSectionTitle")}
-          >
-            <GitHubIntegrationSettings boardId={boardId} />
-          </IntegrationSection>
-
-          <IntegrationSection
-            icon={<FolderGit className="size-4" />}
-            subtitle={t("settings:boardIntegrations.giteaSectionSubtitle")}
-            title={t("settings:boardIntegrations.giteaSectionTitle")}
-          >
-            <GiteaIntegrationSettings boardId={boardId} />
-          </IntegrationSection>
-
           <IntegrationSection
             icon={<MessageCircle className="size-4" />}
             subtitle={t("settings:boardIntegrations.discordSectionSubtitle")}
