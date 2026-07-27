@@ -14,7 +14,8 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
-import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -81,6 +82,7 @@ type Props = {
     linkedPullRequests?: Array<{ number: number; title: string; state: string; url: string }>;
     subIssuesSupported?: boolean;
   } | null;
+  descriptionActionTargetId?: string;
 };
 
 // ─── shared internals ────────────────────────────────────────────
@@ -438,6 +440,7 @@ export function RepoIssueActions({
   title,
   body,
   state,
+  descriptionActionTargetId,
 }: Props) {
   const name = kind === "issue" ? "Issue" : "Pull Request";
   const { update, resourcePath, queryKey, request } = useRepoMutations(
@@ -452,6 +455,16 @@ export function RepoIssueActions({
   const [draftTitle, setDraftTitle] = useState(title);
   const [draftBody, setDraftBody] = useState(body ?? "");
   const [duplicateOf, setDuplicateOf] = useState("");
+  const [descriptionActionTarget, setDescriptionActionTarget] =
+    useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setDescriptionActionTarget(
+      descriptionActionTargetId
+        ? document.getElementById(descriptionActionTargetId)
+        : null,
+    );
+  }, [descriptionActionTargetId]);
 
   const openEdit = () => {
     setDraftTitle(title);
@@ -465,7 +478,7 @@ export function RepoIssueActions({
       toast.success(`${name} updated on GitHub.`);
       setEditOpen(false);
     } catch {
-      toast.error("Could not update the " + name.toLowerCase() + ".");
+      toast.error(`Could not update the ${name.toLowerCase()}.`);
     }
   };
 
@@ -530,67 +543,17 @@ export function RepoIssueActions({
 
   return (
     <>
-      {/* Action bar */}
+      {descriptionActionTarget
+        ? createPortal(
+            <Button onClick={openEdit} size="sm" variant="ghost">
+              <Edit3 className="size-3.5" /> Edit
+            </Button>,
+            descriptionActionTarget,
+          )
+        : null}
+
+      {/* Pull request action bar */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border/80 px-5 py-3 sm:px-6">
-        <Button onClick={openEdit} size="sm" variant="outline">
-          <Edit3 className="size-3.5" /> Edit
-        </Button>
-
-        {showIssueClose && (
-          <Menu>
-            <MenuTrigger
-              render={
-                <Button size="sm" variant="outline" />
-              }
-            >
-              <span className="flex items-center gap-1.5">
-                <Check className="size-3.5" /> Close issue
-              </span>
-              <ChevronDown className="size-3.5" />
-            </MenuTrigger>
-            <MenuPopup align="start" className="min-w-52">
-              <MenuItem
-                disabled={closeIssueWith.isPending}
-                onClick={() => closeIssueWith.mutate("completed")}
-              >
-                <Check className="size-3.5" /> Close as completed
-              </MenuItem>
-              <MenuItem
-                disabled={closeIssueWith.isPending}
-                onClick={() => closeIssueWith.mutate("not_planned")}
-              >
-                <Ban className="size-3.5" /> Close as not planned
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem onClick={() => setDuplicateOpen(true)}>
-                <Copy className="size-3.5" /> Close as duplicate…
-              </MenuItem>
-            </MenuPopup>
-          </Menu>
-        )}
-
-        {state !== "merged" && !showIssueClose && (
-          <Button
-            disabled={update.isPending}
-            onClick={async () => {
-              try {
-                await update.mutateAsync({
-                  state: state === "open" ? "closed" : "open",
-                });
-                toast.success(
-                  state === "open" ? "Closed on GitHub." : "Reopened on GitHub.",
-                );
-              } catch {
-                toast.error("Could not update the state.");
-              }
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <Check className="size-3.5" />
-            {state === "open" ? "Close" : "Reopen"}
-          </Button>
-        )}
 
         {kind === "pull-request" && state === "open" && (
           <AlertDialog>
@@ -639,7 +602,55 @@ export function RepoIssueActions({
           rows={4}
           value={comment}
         />
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          {showIssueClose && (
+            <Menu>
+              <MenuTrigger render={<Button size="sm" variant="outline" />}>
+                <Check className="size-3.5" /> Close issue
+                <ChevronDown className="size-3.5" />
+              </MenuTrigger>
+              <MenuPopup align="end" className="min-w-52">
+                <MenuItem
+                  disabled={closeIssueWith.isPending}
+                  onClick={() => closeIssueWith.mutate("completed")}
+                >
+                  <Check className="size-3.5" /> Close as completed
+                </MenuItem>
+                <MenuItem
+                  disabled={closeIssueWith.isPending}
+                  onClick={() => closeIssueWith.mutate("not_planned")}
+                >
+                  <Ban className="size-3.5" /> Close as not planned
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem onClick={() => setDuplicateOpen(true)}>
+                  <Copy className="size-3.5" /> Close as duplicate…
+                </MenuItem>
+              </MenuPopup>
+            </Menu>
+          )}
+          {state !== "merged" && !showIssueClose && (
+            <Button
+              disabled={update.isPending}
+              onClick={async () => {
+                try {
+                  await update.mutateAsync({
+                    state: state === "open" ? "closed" : "open",
+                  });
+                  toast.success(
+                    state === "open" ? "Closed on GitHub." : "Reopened on GitHub.",
+                  );
+                } catch {
+                  toast.error("Could not update the state.");
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Check className="size-3.5" />
+              {state === "open" ? "Close" : "Reopen"}
+            </Button>
+          )}
           <Button
             disabled={addComment.isPending || !comment.trim()}
             onClick={() => addComment.mutate()}

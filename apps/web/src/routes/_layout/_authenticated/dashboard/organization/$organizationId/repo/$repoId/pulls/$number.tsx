@@ -114,6 +114,10 @@ function RouteComponent() {
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
               <div className="min-w-0">
                 <div className="min-h-48 px-5 py-6 sm:px-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-medium">Description</h2>
+                    <div id="pull-description-actions" />
+                  </div>
                   {pullRequest.body ? (
                     <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
                       {pullRequest.body}
@@ -139,6 +143,7 @@ function RouteComponent() {
                 </footer>
                 <RepoIssueActions
                   body={pullRequest.body}
+                  descriptionActionTargetId="pull-description-actions"
                   kind="pull-request"
                   labels={pullRequest.labels}
                   number={pullRequest.number}

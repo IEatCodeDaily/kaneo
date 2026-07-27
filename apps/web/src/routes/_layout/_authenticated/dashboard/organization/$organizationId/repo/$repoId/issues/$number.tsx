@@ -89,6 +89,10 @@ function RouteComponent() {
               {/* Main body column */}
               <div className="min-w-0">
                 <div className="min-h-48 px-5 py-6 sm:px-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-medium">Description</h2>
+                    <div id="issue-description-actions" />
+                  </div>
                   {issue.body ? (
                     <MarkdownRenderer content={issue.body} />
                   ) : (
@@ -113,6 +117,7 @@ function RouteComponent() {
                 <RepoIssueActions
                   assignees={issue.assigneeLogins ?? []}
                   body={issue.body}
+                  descriptionActionTargetId="issue-description-actions"
                   kind="issue"
                   labels={issue.labels}
                   milestoneNumber={issue.github?.milestone?.number ?? null}
