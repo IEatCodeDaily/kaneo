@@ -110,9 +110,11 @@ function RouteComponent() {
                 )}
               </div>
               <RepoDetailManagement
+                assignees={issue.assigneeLogins ?? []}
                 body={issue.body}
                 kind="issue"
                 labels={issue.labels}
+                milestoneNumber={issue.github?.milestone?.number ?? null}
                 number={issue.number}
                 repoId={repoId}
                 state={issue.state}
