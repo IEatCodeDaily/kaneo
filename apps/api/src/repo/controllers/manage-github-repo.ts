@@ -66,6 +66,50 @@ function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
   return installationId;
 }
 
+/**
+ * Reconcile an issue's assignees to an exact list.
+ *
+ * The pinned Octokit build has addAssignees/removeAssignees but no
+ * setAssignees, so calling setAssignees threw a TypeError and every
+ * assignee change failed.
+ */
+async function setGitHubAssignees({
+  octokit,
+  owner,
+  repo,
+  issue_number,
+  assignees,
+}: {
+  octokit: Awaited<ReturnType<typeof getInstallationOctokit>>;
+  owner: string;
+  repo: string;
+  issue_number: number;
+  assignees: string[];
+}) {
+  const { data } = await octokit.rest.issues.get({ owner, repo, issue_number });
+  const current = (data.assignees ?? []).map((user) => user.login);
+  const desired = [...new Set(assignees)];
+  const toAdd = desired.filter((login) => !current.includes(login));
+  const toRemove = current.filter((login) => !desired.includes(login));
+
+  if (toRemove.length > 0) {
+    await octokit.rest.issues.removeAssignees({
+      owner,
+      repo,
+      issue_number,
+      assignees: toRemove,
+    });
+  }
+  if (toAdd.length > 0) {
+    await octokit.rest.issues.addAssignees({
+      owner,
+      repo,
+      issue_number,
+      assignees: toAdd,
+    });
+  }
+}
+
 export async function getGitHubRepoClient(repoId: string) {
   const repo = await db.query.repoTable.findFirst({
     where: eq(repoTable.id, repoId),
@@ -127,9 +171,12 @@ export async function updateGitHubItem({
           issue_number,
           labels: updates.labels,
         }),
+    // This Octokit build exposes addAssignees/removeAssignees but no
+    // setAssignees, so reconcile the desired list against the current one.
     updates.assignees === undefined
       ? Promise.resolve()
-      : octokit.rest.issues.setAssignees({
+      : setGitHubAssignees({
+          octokit,
           owner: repo.owner,
           repo: repo.name,
           issue_number,
