@@ -1,18 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Edit3, ExternalLink, MessageSquare, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
 import PageTitle from "@/components/page-title";
-import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
+import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
 import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
-import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
-import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import { toast } from "@/lib/toast";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
@@ -94,7 +90,7 @@ function RouteComponent() {
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
               {/* Main body column */}
               <div className="min-w-0">
-                <InlineIssueDescription
+                <RepoIssueDescription
                   body={issue.body ?? ""}
                   number={issue.number}
                   repoId={repoId}
@@ -152,7 +148,7 @@ function RouteComponent() {
   );
 }
 
-function InlineIssueDescription({
+function RepoIssueDescription({
   body,
   repoId,
   number,
@@ -162,37 +158,30 @@ function InlineIssueDescription({
   number: number;
 }) {
   const queryClient = useQueryClient();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(body);
-  useEffect(() => {
-    if (!editing) setDraft(body);
-  }, [body, editing]);
   const update = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (markdown: string) => {
       const response = await fetch(getApiUrl(`/repo/${repoId}/issues/${number}`), {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: draft }),
+        body: JSON.stringify({ body: markdown }),
       });
       if (!response.ok) throw new Error(await response.text());
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["repo-issue", repoId, number] });
-      setEditing(false);
       toast.success("Description updated on GitHub.");
     },
     onError: () => toast.error("Could not update the description."),
   });
-  return <div className="min-h-48 px-5 py-6 sm:px-6">
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-medium">Description</h2>
-      {!editing && <Button onClick={() => setEditing(true)} size="sm" variant="ghost"><Edit3 className="size-3.5" /> Edit</Button>}
-    </div>
-    {editing ? <><Textarea aria-label="Issue description" className="min-h-56 font-mono text-sm" onChange={(event) => setDraft(event.target.value)} value={draft} />
-      <div className="mt-3 flex justify-end gap-2"><Button disabled={update.isPending} onClick={() => { setDraft(body); setEditing(false); }} size="sm" variant="outline"><X className="size-3.5" /> Cancel</Button><Button disabled={update.isPending} onClick={() => update.mutate()} size="sm"><Check className="size-3.5" /> Save</Button></div>
-    </> : body ? <MarkdownRenderer content={body} /> : <p className="text-sm italic text-muted-foreground">No description provided.</p>}
-  </div>;
+
+  return (
+    <RepoDescriptionEditor
+      body={body}
+      isSaving={update.isPending}
+      onSave={update.mutateAsync}
+    />
+  );
 }
 
 function Author({

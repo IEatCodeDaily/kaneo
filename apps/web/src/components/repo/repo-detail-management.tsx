@@ -14,8 +14,8 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -78,24 +78,33 @@ type Props = {
   assignees?: string[];
   milestoneNumber?: number | null;
   github?: {
-    subIssues?: Array<{ number: number; title: string; state: string; url: string }>;
-    linkedPullRequests?: Array<{ number: number; title: string; state: string; url: string }>;
+    subIssues?: Array<{
+      number: number;
+      title: string;
+      state: string;
+      url: string;
+    }>;
+    linkedPullRequests?: Array<{
+      number: number;
+      title: string;
+      state: string;
+      url: string;
+    }>;
     subIssuesSupported?: boolean;
   } | null;
-  descriptionActionTargetId?: string;
+  descriptionActionTargetId?: never;
 };
 
 // ─── shared internals ────────────────────────────────────────────
-
-function useRepoMutations(
-  kind: Kind,
-  repoId: string,
-  number: number,
-) {
+function useRepoMutations(kind: Kind, repoId: string, number: number) {
   const queryClient = useQueryClient();
   const isIssue = kind === "issue";
   const resourcePath = `/repo/${repoId}/${isIssue ? "issues" : "pull-requests"}/${number}`;
-  const queryKey = [isIssue ? "repo-issue" : "repo-pull-request", repoId, number];
+  const queryKey = [
+    isIssue ? "repo-issue" : "repo-pull-request",
+    repoId,
+    number,
+  ];
 
   const request = async (path: string, init: RequestInit) => {
     const response = await fetch(getApiUrl(path), {
@@ -234,9 +243,7 @@ export function RepoIssueSidebar({
                   )}
                 </>
               ) : (
-                <span className="text-xs text-muted-foreground">
-                  None yet
-                </span>
+                <span className="text-xs text-muted-foreground">None yet</span>
               )}
             </span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -245,10 +252,9 @@ export function RepoIssueSidebar({
             <MenuGroup>
               <MenuGroupLabel>Apply labels</MenuGroupLabel>
               {metadataLoading && <MenuItem disabled>Loading labels…</MenuItem>}
-              {emptyMeta &&
-                metadata.labels.length === 0 && (
-                  <MenuItem disabled>No labels in this repository</MenuItem>
-                )}
+              {emptyMeta && metadata.labels.length === 0 && (
+                <MenuItem disabled>No labels in this repository</MenuItem>
+              )}
               {metadata?.labels.map((label) => (
                 <MenuCheckboxItem
                   checked={selectedLabels.includes(label.name)}
@@ -293,10 +299,7 @@ export function RepoIssueSidebar({
               )}
               {assignees.length > 0 ? (
                 assignees.map((login) => (
-                  <span
-                    className="flex items-center gap-1 text-xs"
-                    key={login}
-                  >
+                  <span className="flex items-center gap-1 text-xs" key={login}>
                     <Avatar className="size-4">
                       <AvatarFallback className="text-[7px]">
                         {login.slice(0, 2).toUpperCase()}
@@ -317,10 +320,9 @@ export function RepoIssueSidebar({
             <MenuGroup>
               <MenuGroupLabel>Assign people</MenuGroupLabel>
               {metadataLoading && <MenuItem disabled>Loading people…</MenuItem>}
-              {emptyMeta &&
-                metadata.assignableUsers.length === 0 && (
-                  <MenuItem disabled>No assignable users</MenuItem>
-                )}
+              {emptyMeta && metadata.assignableUsers.length === 0 && (
+                <MenuItem disabled>No assignable users</MenuItem>
+              )}
               {metadata?.assignableUsers.map((user) => (
                 <MenuCheckboxItem
                   checked={assignees.includes(user.login)}
@@ -376,9 +378,7 @@ export function RepoIssueSidebar({
                       {ms.title}
                     </>
                   ) : (
-                    <span className="text-muted-foreground">
-                      No milestone
-                    </span>
+                    <span className="text-muted-foreground">No milestone</span>
                   );
                 })()}
               </span>
@@ -427,7 +427,9 @@ export function RepoIssueSidebar({
                 target="_blank"
               >
                 <GitMerge className="size-3 text-muted-foreground" />
-                <span className="truncate">#{pr.number} {pr.title}</span>
+                <span className="truncate">
+                  #{pr.number} {pr.title}
+                </span>
               </a>
             ))}
           </div>
@@ -443,7 +445,9 @@ export function RepoIssueSidebar({
                 target="_blank"
               >
                 <CircleDot className="size-3 text-muted-foreground" />
-                <span className="truncate">#{sub.number} {sub.title}</span>
+                <span className="truncate">
+                  #{sub.number} {sub.title}
+                </span>
               </a>
             ))}
           </div>
@@ -465,9 +469,7 @@ export function RepoIssueActions({
   repoId,
   number,
   title,
-  body,
   state,
-  descriptionActionTargetId,
 }: Props) {
   const name = kind === "issue" ? "Issue" : "Pull Request";
   const { update, resourcePath, queryKey, request } = useRepoMutations(
@@ -480,28 +482,16 @@ export function RepoIssueActions({
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [draftTitle, setDraftTitle] = useState(title);
-  const [draftBody, setDraftBody] = useState(body ?? "");
   const [duplicateOf, setDuplicateOf] = useState("");
-  const [descriptionActionTarget, setDescriptionActionTarget] =
-    useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setDescriptionActionTarget(
-      descriptionActionTargetId
-        ? document.getElementById(descriptionActionTargetId)
-        : null,
-    );
-  }, [descriptionActionTargetId]);
 
   const openEdit = () => {
     setDraftTitle(title);
-    setDraftBody(body ?? "");
     setEditOpen(true);
   };
 
   const saveEdit = async () => {
     try {
-      await update.mutateAsync({ title: draftTitle, body: draftBody });
+      await update.mutateAsync({ title: draftTitle });
       toast.success(`${name} updated on GitHub.`);
       setEditOpen(false);
     } catch {
@@ -519,7 +509,11 @@ export function RepoIssueActions({
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [kind === "issue" ? "repo-issue" : "repo-pull-request", repoId, number],
+        queryKey: [
+          kind === "issue" ? "repo-issue" : "repo-pull-request",
+          repoId,
+          number,
+        ],
       });
       toast.success("Issue closed on GitHub.");
     },
@@ -563,30 +557,20 @@ export function RepoIssueActions({
       toast.success("Pull request merged.");
     },
     onError: (error) =>
-      toast.error(
-        error instanceof Error ? error.message : "Could not merge.",
-      ),
+      toast.error(error instanceof Error ? error.message : "Could not merge."),
   });
 
   return (
     <>
-      {descriptionActionTarget
-        ? createPortal(
-            <Button onClick={openEdit} size="sm" variant="ghost">
-              <Edit3 className="size-3.5" /> Edit
-            </Button>,
-            descriptionActionTarget,
-          )
-        : null}
-
       {/* Pull request action bar */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border/80 px-5 py-3 sm:px-6">
+        <Button onClick={openEdit} size="sm" variant="ghost">
+          <Edit3 className="size-3.5" /> Rename
+        </Button>
 
         {kind === "pull-request" && state === "open" && (
           <AlertDialog>
-            <AlertDialogTrigger
-              render={<Button size="sm" variant="default" />}
-            >
+            <AlertDialogTrigger render={<Button size="sm" variant="default" />}>
               <GitMerge className="size-3.5" /> Merge
             </AlertDialogTrigger>
             <AlertDialogPopup>
@@ -665,7 +649,9 @@ export function RepoIssueActions({
                     state: state === "open" ? "closed" : "open",
                   });
                   toast.success(
-                    state === "open" ? "Closed on GitHub." : "Reopened on GitHub.",
+                    state === "open"
+                      ? "Closed on GitHub."
+                      : "Reopened on GitHub.",
                   );
                 } catch {
                   toast.error("Could not update the state.");
@@ -691,27 +677,18 @@ export function RepoIssueActions({
         </div>
       </div>
 
-      {/* Edit dialog */}
+      {/* Rename dialog: the description is edited inline by RepoDescriptionEditor. */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogPopup>
           <DialogHeader>
-            <DialogTitle>Edit {name}</DialogTitle>
-            <DialogDescription>
-              Update the title and description in GitHub. Markdown is supported.
-            </DialogDescription>
+            <DialogTitle>Rename {name}</DialogTitle>
+            <DialogDescription>Update the title in GitHub.</DialogDescription>
           </DialogHeader>
           <DialogPanel className="space-y-4">
             <Input
               aria-label="Title"
               onChange={(event) => setDraftTitle(event.target.value)}
               value={draftTitle}
-            />
-            <Textarea
-              aria-label="Description"
-              className="font-mono text-sm"
-              onChange={(event) => setDraftBody(event.target.value)}
-              rows={12}
-              value={draftBody}
             />
           </DialogPanel>
           <DialogFooter>
