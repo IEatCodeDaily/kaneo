@@ -36,8 +36,11 @@ function configuredClient(): { clientId: string; clientSecret: string } {
 }
 
 function callbackUrl(): string {
+  // KANEO_API_URL may or may not already include the /api prefix depending on
+  // how the deployment terminates routing, so normalise instead of assuming.
   const apiUrl = (process.env.KANEO_API_URL || "http://localhost:1337").replace(/\/$/, "");
-  return `${apiUrl}/api/github-delegation/callback`;
+  const base = apiUrl.endsWith("/api") ? apiUrl : `${apiUrl}/api`;
+  return `${base}/github-delegation/callback`;
 }
 
 function sha256(value: string): string {
