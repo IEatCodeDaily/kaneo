@@ -1,4 +1,10 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  Link,
+  Outlet,
+  createFileRoute,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { GitPullRequest, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import RepoLayout from "@/components/common/repo-layout";
@@ -42,11 +48,15 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const { t } = useTranslation();
+  const location = useLocation();
   const { organizationId, repoId } = Route.useParams();
   const { state } = Route.useSearch();
   const navigate = useNavigate();
   const { data: repo } = useGetRepo({ id: repoId });
   const { data, isLoading } = useGetRepoPullRequests({ repoId, state });
+  const isDetailRoute = /\/pulls\/[^/]+$/.test(location.pathname);
+
+  if (isDetailRoute) return <Outlet />;
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
 
   return (

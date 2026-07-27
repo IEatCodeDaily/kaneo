@@ -3,8 +3,8 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
-import createRepoCtrl from "./controllers/create-repo";
 import { createGithubRepo } from "./controllers/create-github-repo";
+import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
@@ -12,9 +12,18 @@ import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
+import {
+  createGitHubItemComment,
+  mergeGitHubPullRequest,
+  updateGitHubItem,
+} from "./controllers/manage-github-repo";
+import {
+  addRepoItemTaskLink,
+  removeRepoItemTaskLink,
+} from "./controllers/repo-task-links";
+import { toRepoResponse, toRepoResponses } from "./controllers/repo-response";
 import updateRepoCtrl from "./controllers/update-repo";
 import { repoOrganizationAccess } from "./repo-organization-access";
-import { toRepoResponse, toRepoResponses } from "./controllers/repo-response";
 import { syncRepo } from "./services/sync-gitea-repo";
 
 // NOTE: the permission statement vocabulary in @kaneo/permissions is
@@ -75,6 +84,14 @@ const repoIssueSchema = v.object({
   closedAt: v.nullable(v.date()),
   createdAt: v.date(),
   updatedAt: v.date(),
+});
+
+const repoItemUpdateSchema = v.object({
+  title: v.optional(v.string()),
+  body: v.optional(v.nullable(v.string())),
+  state: v.optional(v.picklist(["open", "closed"] as const)),
+  labels: v.optional(v.array(v.string())),
+  assignees: v.optional(v.array(v.string())),
 });
 
 const repoPullRequestSchema = v.object({
@@ -284,20 +301,34 @@ const repo = new Hono<{
   )
   .get(
     "/:id/issues/:number",
-    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number)) })),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(v.string(), v.transform(Number)),
+      }),
+    ),
     repoOrganizationAccess(),
     async (c) => {
       const { id, number } = c.req.valid("param");
-      return c.json(await getRepoIssue(id, number));
+      return c.json(await getRepoIssue(id, number, c.get("organizationId")));
     },
   )
   .get(
     "/:id/pull-requests/:number",
-    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number)) })),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(v.string(), v.transform(Number)),
+      }),
+    ),
     repoOrganizationAccess(),
     async (c) => {
       const { id, number } = c.req.valid("param");
-      return c.json(await getRepoPullRequest(id, number));
+      return c.json(
+        await getRepoPullRequest(id, number, c.get("organizationId")),
+      );
     },
   )
   .get(
@@ -391,6 +422,36 @@ const repo = new Hono<{
     },
   )
   .post(
+    "/:id/:itemType/:number/task-links",
+    validator("param", v.object({ id: v.string(), itemType: v.picklist(["issues", "pull-requests"] as const), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)) })),
+    validator("json", v.object({ taskId: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, itemType, number } = c.req.valid("param");
+      const link = await addRepoItemTaskLink({
+        repoId: id, number, taskId: c.req.valid("json").taskId,
+        itemType: itemType === "issues" ? "issue" : "pullRequest",
+        organizationId: c.get("organizationId"),
+      });
+      return c.json(link);
+    },
+  )
+  .delete(
+    "/:id/:itemType/:number/task-links/:taskId",
+    validator("param", v.object({ id: v.string(), itemType: v.picklist(["issues", "pull-requests"] as const), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)), taskId: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, itemType, number, taskId } = c.req.valid("param");
+      return c.json(await removeRepoItemTaskLink({
+        repoId: id, number, taskId,
+        itemType: itemType === "issues" ? "issue" : "pullRequest",
+        organizationId: c.get("organizationId"),
+      }));
+    },
+  )
+  .post(
     "/:id/sync",
     describeRoute({
       operationId: "syncRepo",
@@ -417,6 +478,157 @@ const repo = new Hono<{
       const { id } = c.req.valid("param");
       const result = await syncRepo(id);
       return c.json(result);
+    },
+  )
+  .patch(
+    "/:id/issues/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", repoItemUpdateSchema),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await updateGitHubItem({
+          repoId: id,
+          number,
+          kind: "issue",
+          updates: c.req.valid("json"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/comments",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await createGitHubItemComment({
+          repoId: id,
+          number,
+          body: c.req.valid("json").body,
+        }),
+      );
+    },
+  )
+  .patch(
+    "/:id/pull-requests/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", repoItemUpdateSchema),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await updateGitHubItem({
+          repoId: id,
+          number,
+          kind: "pullRequest",
+          updates: c.req.valid("json"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/comments",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await createGitHubItemComment({
+          repoId: id,
+          number,
+          body: c.req.valid("json").body,
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/merge",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.optional(
+        v.object({
+          method: v.optional(
+            v.picklist(["merge", "squash", "rebase"] as const),
+          ),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await mergeGitHubPullRequest({
+          repoId: id,
+          number,
+          method: c.req.valid("json")?.method,
+        }),
+      );
     },
   );
 
