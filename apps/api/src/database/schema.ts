@@ -118,6 +118,32 @@ export const organizationTable = pgTable("organization", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
+export const organizationGithubInstallationTable = pgTable(
+  "organization_github_installation",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    installationId: integer("installation_id").notNull(),
+    accountId: integer("account_id").notNull(),
+    accountLogin: text("account_login").notNull(),
+    accountType: text("account_type").notNull(),
+    accountAvatarUrl: text("account_avatar_url"),
+    repositorySelection: text("repository_selection"),
+    permissions: jsonb("permissions").$type<Record<string, string>>(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("organization_github_installation_organizationId_idx").on(table.organizationId),
+    unique("organization_github_installation_unique").on(table.organizationId, table.installationId),
+  ],
+);
+
 export const organizationMemberTable = pgTable(
   "organization_member",
   {

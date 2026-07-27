@@ -33,6 +33,7 @@ import {
   repoPullRequestTableRelations,
   organizationTableRelations,
   organizationMemberTableRelations,
+  organizationGithubInstallationTableRelations,
 } from "./relations";
 import { resolveDatabaseConnectionString } from "./resolve-database-url";
 import {
@@ -65,6 +66,7 @@ import {
   organizationRoleTable,
   organizationTable,
   organizationMemberTable,
+  organizationGithubInstallationTable,
   repoTable,
   repoIssueTable,
   repoPullRequestTable,
@@ -102,6 +104,7 @@ export const schema = {
   organizationRoleTable,
   organizationTable,
   organizationMemberTable,
+  organizationGithubInstallationTable,
   repoTable,
   repoIssueTable,
   repoPullRequestTable,
@@ -133,6 +136,7 @@ export const schema = {
   organizationRoleTableRelations,
   organizationTableRelations,
   organizationMemberTableRelations,
+  organizationGithubInstallationTableRelations,
   repoTableRelations,
   repoIssueTableRelations,
   repoPullRequestTableRelations,
