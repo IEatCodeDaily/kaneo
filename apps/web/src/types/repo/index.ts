@@ -21,6 +21,17 @@ export type RepoLabel = {
   color: string | null;
 };
 
+export type RepoGithubMetadata = {
+  labels: Array<{ name: string; color: string; description: string | null }>;
+  assignableUsers: Array<{ login: string; avatarUrl: string }>;
+  milestones: Array<{
+    number: number;
+    title: string;
+    state: string;
+    dueOn: string | null;
+  }>;
+};
+
 export type RepoIssueState = "open" | "closed";
 
 export type RepoIssueGithubActor = {
@@ -53,6 +64,8 @@ export type RepoIssueGithub = {
     state?: string | null;
     mergedAt?: string | null;
   }>;
+  milestone?: { number: number; title: string } | null;
+  stateReason?: string | null;
   subIssues: Array<{
     id?: number | string;
     number?: number;
@@ -71,6 +84,7 @@ export type RepoIssue = {
   state: RepoIssueState;
   authorLogin: string | null;
   authorAvatarUrl: string | null;
+  assigneeLogins: string[] | null;
   labels: RepoLabel[];
   commentCount: number;
   url: string;

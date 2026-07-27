@@ -33,7 +33,7 @@ export async function getRepoIssue(
     per_page: 100,
     headers: { accept: "application/vnd.github+json" },
   };
-  const [comments, timeline, subIssues] = await Promise.all([
+  const [comments, timeline, subIssues, detail] = await Promise.all([
     octokit.paginate(
       "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
       request,
@@ -56,6 +56,13 @@ export async function getRepoIssue(
         }
         throw error;
       }),
+    // The mirror has no milestone column, so read the current assignment
+    // live rather than letting the UI assume "no milestone".
+    octokit.rest.issues.get({
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+    }),
   ]);
 
   // GitHub represents development relationships as cross-reference timeline
@@ -78,6 +85,13 @@ export async function getRepoIssue(
       comments,
       timeline,
       linkedPullRequests,
+      milestone: detail.data.milestone
+        ? {
+            number: detail.data.milestone.number,
+            title: detail.data.milestone.title,
+          }
+        : null,
+      stateReason: detail.data.state_reason ?? null,
       subIssues: subIssues.data,
       subIssuesSupported: subIssues.supported,
     },
