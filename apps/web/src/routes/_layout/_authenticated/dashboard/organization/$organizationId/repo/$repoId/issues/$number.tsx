@@ -6,6 +6,7 @@ import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor
 import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
+import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

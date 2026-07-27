@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
-import { getGitHubRepoClient } from "./manage-github-repo";
-import { getRepoIssue } from "./get-repo-issue";
 import { syncGitHubRepo } from "../services/sync-github-repo";
+import { getRepoIssue } from "./get-repo-issue";
+import { getGitHubRepoClient } from "./manage-github-repo";
 
 type CloseReason = "completed" | "not_planned";
 
@@ -41,6 +41,88 @@ async function getIssueNodeId(repoId: string, number: number) {
   return { nodeId: data.node_id, octokit };
 }
 
+async function getIssueId(repoId: string, number: number) {
+  const { repo, octokit } = await getGitHubRepoClient(repoId);
+  const { data } = await octokit.rest.issues.get({
+    owner: repo.owner,
+    repo: repo.name,
+    issue_number: number,
+  });
+  return { id: data.id, octokit, repo };
+}
+
+/**
+ * Sub-issues use REST ids (not node ids) and are only available on repos where
+ * GitHub has enabled the feature, so surface a clear error instead of a 404.
+ */
+export async function addGitHubSubIssue({
+  repoId,
+  number,
+  subIssueNumber,
+}: {
+  repoId: string;
+  number: number;
+  subIssueNumber: number;
+}) {
+  if (number === subIssueNumber) {
+    throw new HTTPException(400, {
+      message: "An issue cannot be its own sub-issue",
+    });
+  }
+  const [parent, child] = await Promise.all([
+    getIssueId(repoId, number),
+    getIssueId(repoId, subIssueNumber),
+  ]);
+  try {
+    await parent.octokit.request(
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues",
+      {
+        owner: parent.repo.owner,
+        repo: parent.repo.name,
+        issue_number: number,
+        sub_issue_id: child.id,
+      },
+    );
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status === 404 || status === 410 || status === 422) {
+      throw new HTTPException(422, {
+        message:
+          "GitHub rejected this sub-issue. The repository may not have sub-issues enabled, or the issue is already linked.",
+      });
+    }
+    throw error;
+  }
+  await syncGitHubRepo(repoId);
+  return getRepoIssue(repoId, number);
+}
+
+export async function removeGitHubSubIssue({
+  repoId,
+  number,
+  subIssueNumber,
+}: {
+  repoId: string;
+  number: number;
+  subIssueNumber: number;
+}) {
+  const [parent, child] = await Promise.all([
+    getIssueId(repoId, number),
+    getIssueId(repoId, subIssueNumber),
+  ]);
+  await parent.octokit.request(
+    "DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue",
+    {
+      owner: parent.repo.owner,
+      repo: parent.repo.name,
+      issue_number: number,
+      sub_issue_id: child.id,
+    },
+  );
+  await syncGitHubRepo(repoId);
+  return getRepoIssue(repoId, number);
+}
+
 export async function markGitHubIssueDuplicate({
   repoId,
   number,
@@ -51,7 +133,9 @@ export async function markGitHubIssueDuplicate({
   canonicalNumber: number;
 }) {
   if (number === canonicalNumber) {
-    throw new HTTPException(400, { message: "An issue cannot duplicate itself" });
+    throw new HTTPException(400, {
+      message: "An issue cannot duplicate itself",
+    });
   }
   const [duplicate, canonical] = await Promise.all([
     getIssueNodeId(repoId, number),

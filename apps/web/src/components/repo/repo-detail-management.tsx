@@ -10,12 +10,13 @@ import {
   LoaderCircle,
   MessageSquare,
   Milestone,
+  Plus,
   Tags,
   Users,
   Workflow,
+  X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -185,6 +186,54 @@ export function RepoIssueSidebar({
 
   const emptyMeta = !metadataLoading && metadata;
   const isGithubIssue = kind === "issue";
+
+  // Sub-issues are a GitHub-side relation, so mutate then refetch the detail.
+  const queryClient = useQueryClient();
+  const { resourcePath, queryKey, request } = useRepoMutations(
+    kind,
+    repoId,
+    number,
+  );
+  const [addingSubIssue, setAddingSubIssue] = useState(false);
+  const [subIssueNumber, setSubIssueNumber] = useState("");
+
+  const refreshDetail = async () => {
+    await queryClient.invalidateQueries({ queryKey });
+    await queryClient.invalidateQueries({
+      queryKey: ["repo-issue", repoId, number],
+    });
+  };
+
+  const addSubIssue = useMutation({
+    mutationFn: (value: number) =>
+      request(`${resourcePath}/sub-issues`, {
+        body: JSON.stringify({ subIssueNumber: value }),
+        method: "POST",
+      }),
+    onSuccess: async () => {
+      await refreshDetail();
+      setAddingSubIssue(false);
+      setSubIssueNumber("");
+      toast.success("Sub-issue linked on GitHub.");
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not link the sub-issue.",
+      ),
+  });
+
+  const removeSubIssue = useMutation({
+    mutationFn: (value: number) =>
+      request(`${resourcePath}/sub-issues/${value}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await refreshDetail();
+      toast.success("Sub-issue removed on GitHub.");
+    },
+    onError: () => toast.error("Could not remove the sub-issue."),
+  });
+  const subIssuePending = addSubIssue.isPending || removeSubIssue.isPending;
 
   return (
     <aside
@@ -437,18 +486,29 @@ export function RepoIssueSidebar({
         {github?.subIssues && github.subIssues.length > 0 ? (
           <div className="space-y-1">
             {github.subIssues.map((sub) => (
-              <a
-                className="flex items-center gap-1.5 text-xs hover:text-primary"
-                href={sub.url}
-                key={sub.number}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <CircleDot className="size-3 text-muted-foreground" />
-                <span className="truncate">
+              <div className="group flex items-center gap-1.5" key={sub.number}>
+                <CircleDot className="size-3 shrink-0 text-muted-foreground" />
+                <a
+                  className="min-w-0 flex-1 truncate text-xs hover:text-primary"
+                  href={sub.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
                   #{sub.number} {sub.title}
-                </span>
-              </a>
+                </a>
+                {isGithubIssue && (
+                  <Button
+                    aria-label={`Remove sub-issue #${sub.number}`}
+                    className="opacity-0 group-hover:opacity-100"
+                    disabled={subIssuePending}
+                    onClick={() => removeSubIssue.mutate(sub.number)}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <X className="size-3" />
+                  </Button>
+                )}
+              </div>
             ))}
           </div>
         ) : null}
@@ -456,6 +516,59 @@ export function RepoIssueSidebar({
           <p className="text-xs text-muted-foreground">
             No linked branches or sub-issues yet.
           </p>
+        )}
+        {isGithubIssue && (
+          <div className="mt-2">
+            {addingSubIssue ? (
+              <form
+                className="flex items-center gap-1.5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const parsed = Number(subIssueNumber);
+                  if (!Number.isInteger(parsed) || parsed < 1) {
+                    toast.error("Enter a valid issue number.");
+                    return;
+                  }
+                  addSubIssue.mutate(parsed);
+                }}
+              >
+                <Input
+                  aria-label="Sub-issue number"
+                  autoFocus
+                  className="h-7 text-xs"
+                  onChange={(event) => setSubIssueNumber(event.target.value)}
+                  placeholder="Issue #"
+                  value={subIssueNumber}
+                />
+                <Button disabled={subIssuePending} size="xs" type="submit">
+                  {subIssuePending ? (
+                    <LoaderCircle className="size-3 animate-spin" />
+                  ) : (
+                    "Add"
+                  )}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setAddingSubIssue(false);
+                    setSubIssueNumber("");
+                  }}
+                  size="xs"
+                  type="button"
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+              </form>
+            ) : (
+              <Button
+                onClick={() => setAddingSubIssue(true)}
+                size="xs"
+                variant="ghost"
+              >
+                <Plus className="size-3" /> Add sub-issue
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </aside>
