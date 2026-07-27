@@ -126,6 +126,7 @@ function RouteComponent() {
               <RepoIssueSidebar
                 assignees={issue.assigneeLogins ?? []}
                 body={issue.body}
+                github={issue.github}
                 kind="issue"
                 labels={issue.labels}
                 milestoneNumber={issue.github?.milestone?.number ?? null}
