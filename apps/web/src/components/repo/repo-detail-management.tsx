@@ -239,26 +239,34 @@ export default function RepoDetailManagement({
   const emptyMeta = !metadataLoading && metadata;
 
   return (
-    <section
-      className="space-y-4 border-t border-border/80 px-5 py-5 sm:px-6"
+    <aside
+      className="space-y-4 border-border/80 bg-muted/10 p-5 sm:p-6 lg:sticky lg:top-4 lg:border-l"
       aria-label={`${name} management`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-3">
         <div>
-          <h2 className="font-medium text-sm">Manage {name}</h2>
+          <h2 className="font-medium text-sm">{name} context</h2>
           <p className="text-muted-foreground text-xs">
             Changes are sent directly to GitHub.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={openEdit} size="sm" variant="outline">
-            <Edit3 className="size-3.5" /> Edit
-          </Button>
+        <div className="flex flex-col gap-2">
 
           <Menu>
-            <MenuTrigger render={<Button size="sm" variant="outline" />}>
-              <Tags className="size-3.5" /> Labels <ChevronDown className="size-3.5" />
+            <MenuTrigger
+              render={
+                <Button
+                  className="w-full justify-between"
+                  size="sm"
+                  variant="outline"
+                />
+              }
+            >
+              <span className="flex items-center gap-1.5">
+                <Tags className="size-3.5" /> Labels
+              </span>
+              <ChevronDown className="size-3.5" />
             </MenuTrigger>
             <MenuPopup align="end" className="min-w-56">
               <MenuGroupLabel>Apply labels</MenuGroupLabel>
@@ -285,8 +293,18 @@ export default function RepoDetailManagement({
           </Menu>
 
           <Menu>
-            <MenuTrigger render={<Button size="sm" variant="outline" />}>
-              <Users className="size-3.5" /> Assignees{" "}
+            <MenuTrigger
+              render={
+                <Button
+                  className="w-full justify-between"
+                  size="sm"
+                  variant="outline"
+                />
+              }
+            >
+              <span className="flex items-center gap-1.5">
+                <Users className="size-3.5" /> Assignees
+              </span>
               <ChevronDown className="size-3.5" />
             </MenuTrigger>
             <MenuPopup align="end" className="min-w-56">
@@ -317,8 +335,18 @@ export default function RepoDetailManagement({
 
           {isGithubIssue && (
             <Menu>
-              <MenuTrigger render={<Button size="sm" variant="outline" />}>
-                <Milestone className="size-3.5" /> Milestone{" "}
+              <MenuTrigger
+                render={
+                  <Button
+                    className="w-full justify-between"
+                    size="sm"
+                    variant="outline"
+                  />
+                }
+              >
+                <span className="flex items-center gap-1.5">
+                  <Milestone className="size-3.5" /> Milestone
+                </span>
                 <ChevronDown className="size-3.5" />
               </MenuTrigger>
               <MenuPopup align="end" className="min-w-56">
@@ -345,12 +373,28 @@ export default function RepoDetailManagement({
             </Menu>
           )}
 
+          <div className="my-1 border-t border-border/80" />
+
+          <Button className="w-full justify-start" onClick={openEdit} size="sm" variant="outline">
+            <Edit3 className="size-3.5" /> Edit {name}
+          </Button>
+
           {/* GitHub nests close reasons under one action; three sibling
               buttons was not how the provider models this. */}
           {showIssueClose && (
             <Menu>
-              <MenuTrigger render={<Button size="sm" variant="outline" />}>
-                <Check className="size-3.5" /> Close issue{" "}
+              <MenuTrigger
+                render={
+                  <Button
+                    className="w-full justify-between"
+                    size="sm"
+                    variant="outline"
+                  />
+                }
+              >
+                <span className="flex items-center gap-1.5">
+                  <Check className="size-3.5" /> Close issue
+                </span>
                 <ChevronDown className="size-3.5" />
               </MenuTrigger>
               <MenuPopup align="end" className="min-w-52">
@@ -376,6 +420,7 @@ export default function RepoDetailManagement({
 
           {state !== "merged" && !showIssueClose && (
             <Button
+              className="w-full justify-start"
               disabled={update.isPending}
               onClick={async () => {
                 try {
@@ -399,7 +444,11 @@ export default function RepoDetailManagement({
 
           {kind === "pull-request" && state === "open" && (
             <AlertDialog>
-              <AlertDialogTrigger render={<Button size="sm" variant="default" />}>
+              <AlertDialogTrigger
+                render={
+                  <Button className="w-full justify-start" size="sm" variant="default" />
+                }
+              >
                 <GitMerge className="size-3.5" /> Merge
               </AlertDialogTrigger>
               <AlertDialogPopup>
@@ -507,7 +556,7 @@ export default function RepoDetailManagement({
         </DialogPopup>
       </Dialog>
 
-      <div className="rounded-lg border border-border/80 bg-muted/25 p-3">
+      <div className="rounded-lg border border-border/80 bg-card p-3">
         <div className="mb-2 flex items-center gap-1.5 font-medium text-sm">
           <MessageSquare className="size-3.5" /> Add a comment
         </div>
@@ -531,6 +580,6 @@ export default function RepoDetailManagement({
           </Button>
         </div>
       </div>
-    </section>
+    </aside>
   );
 }

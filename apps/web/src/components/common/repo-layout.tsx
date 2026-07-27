@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { CircleDot, Code2, GitPullRequest } from "lucide-react";
+import { CircleDot, Code2, GitPullRequest, Package, Rocket } from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
 import { KbdSequence } from "@/components/ui/kbd";
@@ -20,8 +20,6 @@ type RepoLayoutProps = {
   headerActions?: ReactNode;
 };
 
-// Releases and Packages are deliberately omitted until their routes exist:
-// tabs that navigate nowhere are worse than tabs that are absent.
 const VIEWS = [
   {
     label: "Code",
@@ -40,6 +38,18 @@ const VIEWS = [
     icon: GitPullRequest,
     key: "pulls" as const,
     to: "/dashboard/organization/$organizationId/repo/$repoId/pulls" as const,
+  },
+  {
+    label: "Releases",
+    icon: Rocket,
+    key: "releases" as const,
+    to: "/dashboard/organization/$organizationId/repo/$repoId/releases" as const,
+  },
+  {
+    label: "Packages",
+    icon: Package,
+    key: "packages" as const,
+    to: "/dashboard/organization/$organizationId/repo/$repoId/packages" as const,
   },
 ];
 

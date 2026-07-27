@@ -111,39 +111,43 @@ function RouteComponent() {
                 </div>
               )}
             </header>
-            <div className="min-h-48 px-5 py-6 sm:px-6">
-              {pullRequest.body ? (
-                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
-                  {pullRequest.body}
-                </p>
-              ) : (
-                <p className="text-sm italic text-muted-foreground">
-                  No description provided.
-                </p>
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              <div className="min-w-0">
+                <div className="min-h-48 px-5 py-6 sm:px-6">
+                  {pullRequest.body ? (
+                    <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                      {pullRequest.body}
+                    </p>
+                  ) : (
+                    <p className="text-sm italic text-muted-foreground">
+                      No description provided.
+                    </p>
+                  )}
+                </div>
+                <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+                  {pullRequest.commentCount > 0 && (
+                    <span className="flex items-center gap-1.5">
+                      <MessageSquare className="size-3.5" />
+                      {pullRequest.commentCount} comments
+                    </span>
+                  )}
+                  {pullRequest.mergedAt ? (
+                    <span>Merged {formatDateMedium(pullRequest.mergedAt)}</span>
+                  ) : pullRequest.closedAt ? (
+                    <span>Closed {formatDateMedium(pullRequest.closedAt)}</span>
+                  ) : null}
+                </footer>
+              </div>
+              <RepoDetailManagement
+                body={pullRequest.body}
+                kind="pull-request"
+                labels={pullRequest.labels}
+                number={pullRequest.number}
+                repoId={repoId}
+                state={pullRequest.state}
+                title={pullRequest.title}
+              />
             </div>
-            <RepoDetailManagement
-              body={pullRequest.body}
-              kind="pull-request"
-              labels={pullRequest.labels}
-              number={pullRequest.number}
-              repoId={repoId}
-              state={pullRequest.state}
-              title={pullRequest.title}
-            />
-            <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-              {pullRequest.commentCount > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <MessageSquare className="size-3.5" />
-                  {pullRequest.commentCount} comments
-                </span>
-              )}
-              {pullRequest.mergedAt ? (
-                <span>Merged {formatDateMedium(pullRequest.mergedAt)}</span>
-              ) : pullRequest.closedAt ? (
-                <span>Closed {formatDateMedium(pullRequest.closedAt)}</span>
-              ) : null}
-            </footer>
           </article>
         </main>
       )}

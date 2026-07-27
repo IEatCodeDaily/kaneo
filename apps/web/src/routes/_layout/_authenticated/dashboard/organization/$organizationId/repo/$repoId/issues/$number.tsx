@@ -98,38 +98,42 @@ function RouteComponent() {
                 <RepoLabelList labels={issue.labels} />
               </div>
             </header>
-            <div className="min-h-48 px-5 py-6 sm:px-6">
-              {issue.body ? (
-                <MarkdownRenderer content={issue.body} />
-              ) : (
-                <p className="text-sm italic text-muted-foreground">
-                  No description provided.
-                </p>
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              <div className="min-w-0">
+                <div className="min-h-48 px-5 py-6 sm:px-6">
+                  {issue.body ? (
+                    <MarkdownRenderer content={issue.body} />
+                  ) : (
+                    <p className="text-sm italic text-muted-foreground">
+                      No description provided.
+                    </p>
+                  )}
+                </div>
+                <RepoIssueHistory github={issue.github} />
+                <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+                  {issue.commentCount > 0 && (
+                    <span className="flex items-center gap-1.5">
+                      <MessageSquare className="size-3.5" />
+                      {issue.commentCount} comments
+                    </span>
+                  )}
+                  {issue.closedAt && (
+                    <span>Closed {formatDateMedium(issue.closedAt)}</span>
+                  )}
+                </footer>
+              </div>
+              <RepoDetailManagement
+                assignees={issue.assigneeLogins ?? []}
+                body={issue.body}
+                kind="issue"
+                labels={issue.labels}
+                milestoneNumber={issue.github?.milestone?.number ?? null}
+                number={issue.number}
+                repoId={repoId}
+                state={issue.state}
+                title={issue.title}
+              />
             </div>
-            <RepoDetailManagement
-              assignees={issue.assigneeLogins ?? []}
-              body={issue.body}
-              kind="issue"
-              labels={issue.labels}
-              milestoneNumber={issue.github?.milestone?.number ?? null}
-              number={issue.number}
-              repoId={repoId}
-              state={issue.state}
-              title={issue.title}
-            />
-            <RepoIssueHistory github={issue.github} />
-            <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-              {issue.commentCount > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <MessageSquare className="size-3.5" />
-                  {issue.commentCount} comments
-                </span>
-              )}
-              {issue.closedAt && (
-                <span>Closed {formatDateMedium(issue.closedAt)}</span>
-              )}
-            </footer>
           </article>
         </main>
       )}
