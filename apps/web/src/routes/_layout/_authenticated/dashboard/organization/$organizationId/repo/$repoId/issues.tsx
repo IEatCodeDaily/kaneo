@@ -121,14 +121,11 @@ function RouteComponent() {
                   >
                     <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {issue.title}
-                        </span>
-                        <RepoStateBadge state={issue.state} />
-                        <RepoLabelList labels={issue.labels} />
+                      <div className="min-w-0 truncate text-sm font-medium">
+                        {issue.title}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-xs text-muted-foreground">
+                        <RepoStateBadge state={issue.state} />
                         <span>#{issue.number}</span>
                         {issue.authorLogin && (
                           <span className="flex items-center gap-1.5">

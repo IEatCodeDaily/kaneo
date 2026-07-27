@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import PageTitle from "@/components/page-title";
-import RepoDetailManagement from "@/components/repo/repo-detail-management";
+import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -137,8 +137,17 @@ function RouteComponent() {
                     <span>Closed {formatDateMedium(pullRequest.closedAt)}</span>
                   ) : null}
                 </footer>
+                <RepoIssueActions
+                  body={pullRequest.body}
+                  kind="pull-request"
+                  labels={pullRequest.labels}
+                  number={pullRequest.number}
+                  repoId={repoId}
+                  state={pullRequest.state}
+                  title={pullRequest.title}
+                />
               </div>
-              <RepoDetailManagement
+              <RepoIssueSidebar
                 body={pullRequest.body}
                 kind="pull-request"
                 labels={pullRequest.labels}
