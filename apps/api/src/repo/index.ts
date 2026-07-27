@@ -21,6 +21,10 @@ import {
 import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
+import {
+  listGitHubRepoPackages,
+  listGitHubRepoReleases,
+} from "./controllers/list-github-repo-resources";
 import listReposCtrl from "./controllers/list-repos";
 import {
   createGitHubItemComment,
@@ -175,6 +179,14 @@ const githubRepoContentsSchema = v.object({
       isBinary: v.boolean(),
     }),
   ),
+});
+
+const githubReleaseSchema = v.object({
+  id: v.number(), tagName: v.string(), name: v.nullable(v.string()), body: v.nullable(v.string()), publishedAt: v.nullable(v.string()), createdAt: v.string(), isDraft: v.boolean(), isPrerelease: v.boolean(), url: v.string(),
+  assets: v.array(v.object({ id: v.number(), name: v.string(), size: v.number(), downloadUrl: v.string(), downloadCount: v.number() })),
+});
+const githubPackageSchema = v.object({
+  id: v.number(), name: v.string(), packageType: v.string(), visibility: v.string(), url: v.string(), createdAt: v.string(), updatedAt: v.string(), versionCount: v.number(),
 });
 
 const repo = new Hono<{
@@ -620,6 +632,18 @@ const repo = new Hono<{
       const result = await syncRepo(id);
       return c.json(result);
     },
+  )
+  .get(
+    "/:id/releases",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubRepoReleases(c.req.valid("param").id)),
+  )
+  .get(
+    "/:id/packages",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubRepoPackages(c.req.valid("param").id)),
   )
   .get(
     "/:id/github-metadata",
