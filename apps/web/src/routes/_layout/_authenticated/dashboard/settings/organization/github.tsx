@@ -79,13 +79,24 @@ function RouteComponent() {
               </CardDescription>
             </CardHeader>
             <CardPanel className="flex flex-wrap items-center gap-3">
-              <Button asChild disabled={!installUrl}>
-                <a href={installUrl ?? undefined} rel="noreferrer" target="_blank">
+              {/* Base UI Button composes via `render`, not `asChild`; using
+                  asChild left a disabled <button> wrapping a dead anchor. */}
+              {installUrl ? (
+                <Button
+                  render={
+                    <a href={installUrl} rel="noreferrer" target="_blank" />
+                  }
+                >
                   <Github />
                   Install GitHub App
                   <ExternalLink />
-                </a>
-              </Button>
+                </Button>
+              ) : (
+                <Button disabled>
+                  <Github />
+                  Install GitHub App
+                </Button>
+              )}
               <p className="text-sm text-muted-foreground">
                 Choose the GitHub account and repository access on GitHub. Nothing is selected or exposed inside Kaneo.
               </p>
