@@ -18,6 +18,7 @@ import {
   validateTaskAssetUploadInput,
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
+import { getTaskRepoItemLinks } from "../repo/controllers/repo-task-links";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
@@ -238,6 +239,44 @@ const task = new Hono<{
       const task = await getTask(id);
 
       return c.json(task);
+    },
+  )
+  .get(
+    "/:id/repo-links",
+    describeRoute({
+      operationId: "listTaskRepoLinks",
+      tags: ["Tasks"],
+      description: "List GitHub issues and pull requests linked to a task",
+      responses: {
+        200: {
+          description: "Linked repository items",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.array(
+                  v.object({
+                    id: v.string(),
+                    itemType: v.picklist(["issues", "pull-requests"] as const),
+                    repoId: v.string(),
+                    number: v.number(),
+                    title: v.string(),
+                    state: v.string(),
+                    url: v.string(),
+                    createdAt: v.date(),
+                  }),
+                ),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const links = await getTaskRepoItemLinks(id, c.get("organizationId"));
+      return c.json(links);
     },
   )
   .put(

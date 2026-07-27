@@ -1,10 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CircleDot,
+  ExternalLink,
   Github,
   GitPullRequest,
   Link2,
   LoaderCircle,
+  Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
 import useGetRepoPullRequests from "@/hooks/queries/repo/use-get-repo-pull-requests";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
+import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
 
 type ResourceType = "issues" | "pull-requests";
@@ -67,6 +70,8 @@ export default function TaskResources({
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [resourceType, setResourceType] = useState<ResourceType>("issues");
   const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+  const { data: links = [] } = useGetTaskRepoLinks(taskId);
   const { data: repos = [], isLoading: reposLoading } = useGetRepos({
     organizationId,
   });
@@ -88,10 +93,37 @@ export default function TaskResources({
       toast.error(
         error instanceof Error ? error.message : "Could not link resource.",
       ),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["task-repo-links", taskId],
+      });
       toast.success("GitHub resource linked.");
       setOpen(false);
       setSearch("");
+    },
+  });
+
+  const unlink = useMutation({
+    mutationFn: async (link: { repoId: string; itemType: ResourceType; number: number }) => {
+      const response = await fetch(
+        getApiUrl(
+          `/repo/${link.repoId}/${link.itemType}/${link.number}/task-links/${taskId}`,
+        ),
+        { credentials: "include", method: "DELETE" },
+      );
+      if (!response.ok) {
+        throw new Error((await response.text()) || "Could not remove link.");
+      }
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Could not remove link.",
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["task-repo-links", taskId],
+      });
+      toast.success("GitHub resource unlinked.");
     },
   });
 
@@ -247,6 +279,50 @@ export default function TaskResources({
           </DialogPopup>
         </Dialog>
       </div>
+      {links.length > 0 && (
+        <div className="flex flex-col gap-0.5">
+          {links.map((link) => (
+            <div
+              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/60"
+              key={link.id}
+            >
+              {link.itemType === "issues" ? (
+                <CircleDot className="size-4 shrink-0 text-muted-foreground" />
+              ) : (
+                <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
+              )}
+              <a
+                className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary hover:underline"
+                href={link.url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="font-mono text-xs text-muted-foreground">
+                  #{link.number}
+                </span>
+                <span className="min-w-0 truncate">{link.title}</span>
+                <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
+              </a>
+              <Button
+                aria-label={`Unlink #${link.number}`}
+                className="opacity-0 group-hover:opacity-100"
+                disabled={unlink.isPending}
+                onClick={() =>
+                  unlink.mutate({
+                    itemType: link.itemType,
+                    number: link.number,
+                    repoId: link.repoId,
+                  })
+                }
+                size="icon-xs"
+                variant="ghost"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
       <button
         className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
         onClick={() => setOpen(true)}

@@ -15,6 +15,7 @@ import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-rela
 import type { ExternalLink } from "@/types/external-link";
 import TaskDescription from "./task-description";
 import TaskRelations from "./task-relations";
+import TaskResources from "./task-resources";
 import TaskSubtasks from "./task-subtasks";
 import TaskTitle from "./task-title";
 
@@ -100,6 +101,9 @@ export default function TaskDetailsContent({
           boardId={boardId}
           organizationId={organizationId}
         />
+      </div>
+      <div className="mt-2">
+        <TaskResources organizationId={organizationId} taskId={taskId} />
       </div>
       <span className="text-sm font-medium text-muted-foreground h-[1px] bg-border w-full block shrink-0" />
       <div className="flex flex-col gap-4">
