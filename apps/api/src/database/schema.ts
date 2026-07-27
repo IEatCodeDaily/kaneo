@@ -88,6 +88,43 @@ export const accountTable = pgTable(
   (table) => [index("account_userId_idx").on(table.userId)],
 );
 
+// Separate from Better Auth's `account` table: this grant permits Kaneo to act
+// as a member on GitHub; a `github` account remains exclusively for sign-in.
+export const githubUserGrantTable = pgTable(
+  "github_user_grant",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+    providerId: text("provider_id").notNull(),
+    githubUserId: text("github_user_id").notNull(),
+    githubLogin: text("github_login").notNull(),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
+    scope: text("scope"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()).notNull(),
+  },
+  (table) => [
+    unique("github_user_grant_user_provider_unique").on(table.userId, table.providerId),
+    index("github_user_grant_user_idx").on(table.userId),
+  ],
+);
+
+export const githubDelegationStateTable = pgTable(
+  "github_delegation_state",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+    sessionId: text("session_id").notNull().references(() => sessionTable.id, { onDelete: "cascade" }),
+    stateHash: text("state_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [index("github_delegation_state_expires_idx").on(table.expiresAt)],
+);
+
 export const verificationTable = pgTable(
   "verification",
   {

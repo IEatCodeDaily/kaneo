@@ -8,6 +8,14 @@ import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
+import {
+  closeGitHubIssue,
+  createGitHubMilestone,
+  listGitHubMilestones,
+  markGitHubIssueDuplicate,
+  unmarkGitHubIssueDuplicate,
+  updateGitHubMilestone,
+} from "./controllers/github-issue-management";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
@@ -479,6 +487,51 @@ const repo = new Hono<{
       const result = await syncRepo(id);
       return c.json(result);
     },
+  )
+  .get(
+    "/:id/milestones",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubMilestones(c.req.valid("param").id)),
+  )
+  .post(
+    "/:id/milestones",
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ title: v.pipe(v.string(), v.minLength(1)), description: v.optional(v.string()), dueOn: v.optional(v.string()) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => c.json(await createGitHubMilestone(c.req.valid("param").id, c.req.valid("json"))),
+  )
+  .patch(
+    "/:id/milestones/:number",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)) })),
+    validator("json", v.object({ title: v.optional(v.string()), description: v.optional(v.nullable(v.string())), dueOn: v.optional(v.nullable(v.string())), state: v.optional(v.picklist(["open", "closed"] as const)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => { const { id, number } = c.req.valid("param"); return c.json(await updateGitHubMilestone(id, number, c.req.valid("json"))); },
+  )
+  .post(
+    "/:id/issues/:number/close",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)) })),
+    validator("json", v.object({ reason: v.picklist(["completed", "not_planned"] as const) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => { const { id, number } = c.req.valid("param"); return c.json(await closeGitHubIssue({ repoId: id, number, reason: c.req.valid("json").reason })); },
+  )
+  .post(
+    "/:id/issues/:number/duplicate",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)) })),
+    validator("json", v.object({ canonicalNumber: v.pipe(v.number(), v.integer(), v.minValue(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => { const { id, number } = c.req.valid("param"); return c.json(await markGitHubIssueDuplicate({ repoId: id, number, canonicalNumber: c.req.valid("json").canonicalNumber })); },
+  )
+  .delete(
+    "/:id/issues/:number/duplicate",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => { const { id, number } = c.req.valid("param"); return c.json(await unmarkGitHubIssueDuplicate({ repoId: id, number })); },
   )
   .patch(
     "/:id/issues/:number",
