@@ -1199,3 +1199,36 @@ export const repoPullRequestTable = pgTable(
     ),
   ],
 );
+
+// A link is intentionally a join, not ownership: Repo items remain
+// organization-level provider mirrors while tasks remain board-level entities.
+export const taskRepoItemLinkTable = pgTable(
+  "task_repo_item_link",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    repoIssueId: text("repo_issue_id").references(() => repoIssueTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    repoPullRequestId: text("repo_pull_request_id").references(
+      () => repoPullRequestTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("task_repo_item_link_task_idx").on(table.taskId),
+    index("task_repo_item_link_issue_idx").on(table.repoIssueId),
+    index("task_repo_item_link_pull_request_idx").on(table.repoPullRequestId),
+    unique("task_repo_item_link_task_issue_unique").on(table.taskId, table.repoIssueId),
+    unique("task_repo_item_link_task_pull_request_unique").on(
+      table.taskId,
+      table.repoPullRequestId,
+    ),
+  ],
+);
