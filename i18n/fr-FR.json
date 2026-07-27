@@ -1053,7 +1053,8 @@
 			"members": "Membres",
 			"invitations": "Invitations",
 			"more": "Plus",
-			"backToBoard": "Retour au tableau"
+			"backToBoard": "Retour au tableau",
+			"repos": "Repos"
 		},
 		"boardList": {
 			"viewBoard": "Voir le projet",
@@ -1134,6 +1135,9 @@
 				"openTask": "Ouvrir la tâche sélectionnée",
 				"quickSelectNumber": "Sélectionner une option par numéro"
 			}
+		},
+		"repoList": {
+			"allRepos": "All repos"
 		}
 	},
 	"notifications": {
@@ -1754,6 +1758,50 @@
 			"submit": "Créer un organization",
 			"success": "Organization créé avec succès",
 			"error": "Échec de la création du organization"
+		},
+		"repos": {
+			"pageTitle": "Repos",
+			"emptyTitle": "No repos yet",
+			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
+			"neverSynced": "Never synced",
+			"backToRepos": "Back to repos",
+			"table": {
+				"name": "Repository",
+				"provider": "Provider",
+				"openIssues": "Open issues",
+				"openPullRequests": "Open pull requests",
+				"lastSynced": "Last synced"
+			},
+			"state": {
+				"open": "Open",
+				"closed": "Closed",
+				"merged": "Merged",
+				"draft": "Draft"
+			},
+			"stateFilter": {
+				"open": "Open",
+				"closed": "Closed",
+				"merged": "Merged",
+				"all": "All"
+			},
+			"issues": {
+				"pageTitle": "Issues",
+				"tab": "Issues",
+				"emptyTitle": "No issues",
+				"emptyDescription": "There are no issues matching this filter."
+			},
+			"pullRequests": {
+				"pageTitle": "Pull requests",
+				"tab": "Pull requests",
+				"emptyTitle": "No pull requests",
+				"emptyDescription": "There are no pull requests matching this filter."
+			},
+			"add": {
+				"button": "Connect repo",
+				"title": "Connect repository",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"submit": "Connect and sync"
+			}
 		}
 	},
 	"team": {

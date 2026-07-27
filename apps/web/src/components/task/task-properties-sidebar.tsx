@@ -20,8 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import labelColors from "@/constants/label-colors";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import useGetGiteaIntegration from "@/hooks/queries/gitea-integration/use-get-gitea-integration";
-import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
@@ -86,8 +84,6 @@ export default function TaskPropertiesSidebar({
   const { data: columns = [] } = useGetColumns(boardId);
   const { data: organizationMembers } = useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
-  const { data: githubIntegration } = useGetGithubIntegration(boardId);
-  const { data: giteaIntegration } = useGetGiteaIntegration(boardId);
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
   const canMoveTask =
     Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
@@ -103,10 +99,9 @@ export default function TaskPropertiesSidebar({
 
   const boardSlug = board?.slug;
   const taskNumber = task?.number;
-  const branchPattern =
-    githubIntegration?.branchPattern ||
-    giteaIntegration?.branchPattern ||
-    "{slug}-{number}";
+  // Branch names are a task convenience only. They no longer imply a board
+  // GitHub/Gitea integration: Repos are a separate, org-level domain.
+  const branchPattern = "{slug}-{number}";
 
   const assignee = organizationMembers?.members?.find(
     (member) => member.userId === task?.userId,
