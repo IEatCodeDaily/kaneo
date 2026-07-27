@@ -533,6 +533,7 @@ const repo = new Hono<{
           repoId: id,
           number,
           body: c.req.valid("json").body,
+          userId: c.get("userId"),
         }),
       );
     },
@@ -590,6 +591,7 @@ const repo = new Hono<{
           repoId: id,
           number,
           body: c.req.valid("json").body,
+          userId: c.get("userId"),
         }),
       );
     },

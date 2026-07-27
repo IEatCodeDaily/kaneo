@@ -23,6 +23,34 @@ export type RepoLabel = {
 
 export type RepoIssueState = "open" | "closed";
 
+export type RepoIssueGithubActor = {
+  login?: string | null;
+  avatar_url?: string | null;
+};
+
+export type RepoIssueGithub = {
+  comments: Array<{
+    id?: number | string;
+    body?: string | null;
+    created_at?: string | null;
+    user?: RepoIssueGithubActor;
+  }>;
+  timeline: Array<{
+    id?: number | string;
+    node_id?: string;
+    event?: string | null;
+    created_at?: string | null;
+    actor?: RepoIssueGithubActor;
+  }>;
+  subIssues: Array<{
+    id?: number | string;
+    number?: number;
+    title?: string | null;
+    html_url?: string | null;
+  }>;
+  subIssuesSupported: boolean;
+};
+
 export type RepoIssue = {
   id: string;
   repoId: string;
@@ -37,6 +65,7 @@ export type RepoIssue = {
   url: string;
   externalCreatedAt: string | null;
   closedAt: string | null;
+  github?: RepoIssueGithub;
 };
 
 export type RepoPullRequestState = "open" | "closed" | "merged";
