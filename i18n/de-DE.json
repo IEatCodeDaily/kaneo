@@ -1458,7 +1458,8 @@
       "types": {
         "blocks": "blockiert",
         "related": "steht in Beziehung zu"
-      }
+      },
+      "otherBoard": "anderes Board"
     },
     "subtasks": {
       "title": "Teilaufgaben",
@@ -1470,7 +1471,10 @@
       "deleteError": "Aufgabe konnte nicht gelöscht werden",
       "deleteDialogTitle": "Aufgabe löschen?",
       "deleteDialogDescription": "Dadurch wird die Aufgabe und alle zugehörigen Daten dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "deleteAction": "Aufgabe löschen"
+      "deleteAction": "Aufgabe löschen",
+      "linkExisting": "Bestehende Aufgabe verknüpfen",
+      "linkExistingHint": "Aufgabe als Unteraufgabe auswählen",
+      "searchPlaceholder": "Aufgaben in allen Boards suchen…"
     },
     "properties": {
       "title": "Eigenschaften",

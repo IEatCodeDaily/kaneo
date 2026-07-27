@@ -1424,7 +1424,8 @@
         "blocks": "engeller",
         "blocked_by": "engellenen",
         "related": "ilişkilidir"
-      }
+      },
+      "otherBoard": "diğer pano"
     },
     "subtasks": {
       "title": "Alt talepler",
@@ -1436,7 +1437,10 @@
       "deleteError": "Talep silinemedi",
       "deleteDialogTitle": "Talep Silinsin mi?",
       "deleteDialogDescription": "Bu, talebi ve tüm verilerini kalıcı olarak kaldıracak. Bu işlemi geri alamazsınız.",
-      "deleteAction": "Talebi Sil"
+      "deleteAction": "Talebi Sil",
+      "linkExisting": "Mevcut görevi bağla",
+      "linkExistingHint": "Alt görev olarak eklenecek görevi seçin",
+      "searchPlaceholder": "Tüm panolarda görev ara…"
     },
     "properties": {
       "title": "Özellikler",

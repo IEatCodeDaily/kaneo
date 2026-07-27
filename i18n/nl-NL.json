@@ -1202,7 +1202,8 @@
       "types": {
         "blocks": "blokkeert",
         "related": "is gerelateerd aan"
-      }
+      },
+      "otherBoard": "ander bord"
     },
     "subtasks": {
       "title": "Subtaken",
@@ -1214,7 +1215,10 @@
       "deleteError": "Verwijderen taak mislukt",
       "deleteDialogTitle": "Taak verwijderen?",
       "deleteDialogDescription": "Dit zal de taak en alle data permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
-      "deleteAction": "Taak verwijderen"
+      "deleteAction": "Taak verwijderen",
+      "linkExisting": "Bestaande taak koppelen",
+      "linkExistingHint": "Selecteer een taak om als subtaak toe te voegen",
+      "searchPlaceholder": "Zoek taken in alle borden…"
     },
     "properties": {
       "title": "Eigenschappen",

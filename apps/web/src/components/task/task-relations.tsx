@@ -41,6 +41,7 @@ import {
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -64,6 +65,9 @@ type TaskItem = {
   title: string;
   number: number | null;
   status: string;
+  boardId: string;
+  boardName: string;
+  boardSlug: string;
 };
 
 type TaskGroup = {
@@ -89,6 +93,9 @@ export default function TaskRelations({
   const { data: relations = [] } = useGetTaskRelations(taskId);
   const { data: boardData } = useGetTasks(boardId);
   const { data: board } = useGetBoard({ id: boardId, organizationId });
+  // Relations are organization-scoped server-side, so the picker offers tasks
+  // from every board in the organization, not just the current one.
+  const { data: organizationBoards } = useGetBoards({ organizationId });
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id ?? "",
@@ -148,23 +155,48 @@ export default function TaskRelations({
   existingRelatedTaskIds.add(taskId);
 
   const allTasks = useMemo(() => {
-    if (!boardData) return [];
     const tasks: TaskItem[] = [];
+    if (!organizationBoards) return tasks;
 
-    if ("columns" in boardData && Array.isArray(boardData.columns)) {
-      for (const col of boardData.columns as Array<{
-        tasks: TaskItem[];
-      }>) {
-        if (col.tasks) {
-          for (const t of col.tasks) {
-            tasks.push(t);
-          }
+    for (const b of organizationBoards) {
+      // Board payloads carry `tasks` (active), plus archived/planned buckets.
+      const buckets = [
+        (b as { tasks?: unknown }).tasks,
+        (b as { plannedTasks?: unknown }).plannedTasks,
+      ];
+      for (const bucket of buckets) {
+        if (!Array.isArray(bucket)) continue;
+        for (const raw of bucket) {
+          const tk = raw as {
+            id: string;
+            title: string;
+            number: number | null;
+            status: string;
+          };
+          if (!tk?.id) continue;
+          tasks.push({
+            id: tk.id,
+            title: tk.title,
+            number: tk.number,
+            status: tk.status,
+            boardId: b.id,
+            boardName: b.name,
+            boardSlug: b.slug,
+          });
         }
       }
     }
 
     return tasks;
-  }, [boardData]);
+  }, [organizationBoards]);
+
+  const boardNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of organizationBoards ?? []) {
+      map.set(b.id, b.name);
+    }
+    return map;
+  }, [organizationBoards]);
 
   const finalStatusSlugs = useMemo(() => {
     if (!boardData) return new Set<string>();
@@ -197,14 +229,38 @@ export default function TaskRelations({
   );
 
   const commandGroups = useMemo<TaskGroup[]>(() => {
-    return [
-      {
-        value: "tasks",
+    // Group by board so cross-board links are explicit; current board first.
+    const byBoard = new Map<string, TaskItem[]>();
+    for (const item of filteredTasks) {
+      const list = byBoard.get(item.boardId);
+      if (list) {
+        list.push(item);
+      } else {
+        byBoard.set(item.boardId, [item]);
+      }
+    }
+
+    const groups: TaskGroup[] = [];
+    const current = byBoard.get(boardId);
+    if (current?.length) {
+      groups.push({
+        value: boardId,
         label: t("tasks:relations.tasksInBoard"),
-        items: filteredTasks,
-      },
-    ];
-  }, [filteredTasks, t]);
+        items: current,
+      });
+    }
+
+    for (const [bId, items] of byBoard) {
+      if (bId === boardId || !items.length) continue;
+      groups.push({
+        value: bId,
+        label: items[0]?.boardName ?? bId,
+        items,
+      });
+    }
+
+    return groups;
+  }, [filteredTasks, boardId, t]);
 
   const handleLinkTask = async (targetTaskId: string) => {
     try {
@@ -224,10 +280,19 @@ export default function TaskRelations({
     deleteRelation.mutate(relationId);
   };
 
-  const handleNavigateToTask = (linkedTaskId: string) => {
+  const handleNavigateToTask = (
+    linkedTaskId: string,
+    linkedBoardId?: string,
+  ) => {
+    // Linked tasks can live on another board, so navigate using the task's own
+    // boardId. Falling back to the current board would produce a broken URL.
     navigate({
       to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
-      params: { organizationId, boardId, taskId: linkedTaskId },
+      params: {
+        organizationId,
+        boardId: linkedBoardId || boardId,
+        taskId: linkedTaskId,
+      },
     });
   };
 
@@ -331,13 +396,24 @@ export default function TaskRelations({
                           <button
                             type="button"
                             className="flex-1 min-w-0 text-left outline-none"
-                            onClick={() => handleNavigateToTask(item.task.id)}
+                            onClick={() =>
+                              handleNavigateToTask(
+                                item.task.id,
+                                item.task.boardId,
+                              )
+                            }
                           >
                             <span
                               className={`text-sm truncate block ${finalStatusSlugs.has(item.task.status) ? "line-through text-muted-foreground" : "text-foreground/90"}`}
                             >
                               {item.task.title}
                             </span>
+                            {item.task.boardId !== boardId && (
+                              <span className="text-[10px] font-mono text-muted-foreground/70">
+                                {boardNameById.get(item.task.boardId) ??
+                                  t("tasks:relations.otherBoard")}
+                              </span>
+                            )}
                           </button>
 
                           <SubtaskAssigneePopover
@@ -375,7 +451,9 @@ export default function TaskRelations({
 
                       <ContextMenuContent className="w-40">
                         <ContextMenuItem
-                          onClick={() => handleNavigateToTask(item.task.id)}
+                          onClick={() =>
+                            handleNavigateToTask(item.task.id, item.task.boardId)
+                          }
                         >
                           <span>{t("tasks:relations.openTask")}</span>
                         </ContextMenuItem>
@@ -432,7 +510,7 @@ export default function TaskRelations({
                         {(item: TaskItem) => (
                           <CommandItem
                             key={item.id}
-                            value={`${board?.slug}-${item.number} ${item.title}`}
+                            value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
                             onClick={() => handleLinkTask(item.id)}
                             className="flex items-center gap-3 py-2"
                           >
@@ -442,7 +520,7 @@ export default function TaskRelations({
                               columnIconBySlug.get(item.status),
                             )}
                             <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                              {board?.slug}-{item.number}
+                              {item.boardSlug}-{item.number}
                             </span>
                             <span className="text-sm truncate flex-1">
                               {item.title}

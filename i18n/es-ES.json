@@ -1201,7 +1201,8 @@
       "types": {
         "blocks": "bloquea",
         "related": "relacionada con"
-      }
+      },
+      "otherBoard": "otro tablero"
     },
     "subtasks": {
       "title": "Sub-tareas",
@@ -1213,7 +1214,10 @@
       "deleteError": "Error al eliminar tarea",
       "deleteDialogTitle": "¿Eliminar tarea?",
       "deleteDialogDescription": "Esto eliminará permanentemente la tarea y sus datos. Esta acción no puede deshacerse.",
-      "deleteAction": "Eliminar tarea"
+      "deleteAction": "Eliminar tarea",
+      "linkExisting": "Vincular tarea existente",
+      "linkExistingHint": "Selecciona una tarea para añadir como subtarea",
+      "searchPlaceholder": "Buscar tareas en todos los tableros…"
     },
     "properties": {
       "title": "Propiedades",

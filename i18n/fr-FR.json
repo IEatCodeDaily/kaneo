@@ -1425,7 +1425,8 @@
         "blocks": "bloqué",
         "blocked_by": "bloqué par",
         "related": "relatif à"
-      }
+      },
+      "otherBoard": "autre tableau"
     },
     "subtasks": {
       "title": "Sous-tâches",
@@ -1437,7 +1438,10 @@
       "deleteError": "Échec de la suppression de la tâche",
       "deleteDialogTitle": "Supprimer la tâche ?",
       "deleteDialogDescription": "Cela supprimera définitivement la tâche et toutes ses données. Vous ne pouvez pas annuler cette action.",
-      "deleteAction": "Supprimer la tâche"
+      "deleteAction": "Supprimer la tâche",
+      "linkExisting": "Lier une tâche existante",
+      "linkExistingHint": "Sélectionnez une tâche à ajouter en sous-tâche",
+      "searchPlaceholder": "Rechercher des tâches dans tous les tableaux…"
     },
     "properties": {
       "title": "Propriétés",

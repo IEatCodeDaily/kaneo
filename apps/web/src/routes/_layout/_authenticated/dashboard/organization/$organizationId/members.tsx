@@ -11,7 +11,7 @@ import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-or
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 
 export const Route = createFileRoute(
-  "/_layout/_authenticated/dashboard/organization/$organizationId/$workspaceId/members",
+  "/_layout/_authenticated/dashboard/organization/$organizationId/members",
 )({
   component: RouteComponent,
 });
