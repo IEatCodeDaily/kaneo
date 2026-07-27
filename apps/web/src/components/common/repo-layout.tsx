@@ -1,11 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import {
-  CircleDot,
-  Code2,
-  GitPullRequest,
-  Package,
-  Rocket,
-} from "lucide-react";
+import { CircleDot, Code2, GitPullRequest } from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
 import { KbdSequence } from "@/components/ui/kbd";
@@ -26,45 +20,26 @@ type RepoLayoutProps = {
   headerActions?: ReactNode;
 };
 
-type RepoView = {
-  label: string;
-  icon: typeof Code2;
-  key: "code" | "issues" | "pulls" | "releases" | "packages";
-  to: "/dashboard/organization/$organizationId/repo/$repoId/code" | "/dashboard/organization/$organizationId/repo/$repoId/issues" | "/dashboard/organization/$organizationId/repo/$repoId/pulls" | "/dashboard/organization/$organizationId/repo/$repoId/releases" | "/dashboard/organization/$organizationId/repo/$repoId/packages";
-  search?: Record<string, string>;
-};
-
-const VIEWS: RepoView[] = [
+// Releases and Packages are deliberately omitted until their routes exist:
+// tabs that navigate nowhere are worse than tabs that are absent.
+const VIEWS = [
   {
     label: "Code",
     icon: Code2,
-    key: "code",
-    to: "/dashboard/organization/$organizationId/repo/$repoId/code",
-    search: { path: "" },
+    key: "code" as const,
+    to: "/dashboard/organization/$organizationId/repo/$repoId/code" as const,
   },
   {
     label: "Issues",
     icon: CircleDot,
-    key: "issues",
-    to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
+    key: "issues" as const,
+    to: "/dashboard/organization/$organizationId/repo/$repoId/issues" as const,
   },
   {
     label: "Pull requests",
     icon: GitPullRequest,
-    key: "pulls",
-    to: "/dashboard/organization/$organizationId/repo/$repoId/pulls",
-  },
-  {
-    label: "Releases",
-    icon: Rocket,
-    key: "releases",
-    to: "/dashboard/organization/$organizationId/repo/$repoId/releases",
-  },
-  {
-    label: "Packages",
-    icon: Package,
-    key: "packages",
-    to: "/dashboard/organization/$organizationId/repo/$repoId/packages",
+    key: "pulls" as const,
+    to: "/dashboard/organization/$organizationId/repo/$repoId/pulls" as const,
   },
 ];
 
@@ -77,9 +52,9 @@ export default function RepoLayout({
   const location = useLocation();
   const { data: repo } = useGetRepo({ id: repoId });
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
-  const activeView = VIEWS.map((v) => v.key).find((key) =>
-    location.pathname.includes(`/${key}`),
-  ) ?? "issues";
+  const activeView =
+    VIEWS.find((view) => location.pathname.includes(`/${view.key}`))?.key ??
+    "issues";
 
   return (
     <Layout>
@@ -122,11 +97,10 @@ export default function RepoLayout({
                     className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-medium transition-colors sm:px-2 ${isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                     key={view.key}
                     params={{ organizationId, repoId }}
-                    search={view.search ?? {}}
                     to={view.to}
                   >
                     <Icon className="size-3.5" />
-                    {/* On constrained widths the tabs deliberately become icon-only. */}
+                    {/* Constrained widths collapse the tabs to icons only. */}
                     <span className="hidden 2xl:inline">{view.label}</span>
                   </Link>
                 );

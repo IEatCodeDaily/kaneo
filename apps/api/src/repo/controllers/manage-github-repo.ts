@@ -25,6 +25,35 @@ type UpdateGitHubItemInput = {
 
 type CloseReason = "completed" | "not_planned";
 
+/**
+ * Compute the diff between the issue's current assignees and the desired set.
+ *
+ * octokit 5.x (plugin-rest-endpoint-methods 17.x) does not expose
+ * `setAssignees` — GitHub's REST API only offers `addAssignees` (POST) and
+ * `removeAssignees` (DELETE). To set an absolute list we compute the symmetric
+ * diff and issue one add and one remove in parallel.
+ */
+async function replaceIssueAssignees(
+  octokit: Octokit,
+  target: { owner: string; repo: string; issue_number: number },
+  current: string[],
+  desired: string[],
+) {
+  const toAdd = desired.filter((login) => !current.includes(login));
+  const toRemove = current.filter((login) => !desired.includes(login));
+  await Promise.all([
+    toAdd.length > 0
+      ? octokit.rest.issues.addAssignees({ ...target, assignees: toAdd })
+      : Promise.resolve(),
+    toRemove.length > 0
+      ? octokit.rest.issues.removeAssignees({
+          ...target,
+          assignees: toRemove,
+        })
+      : Promise.resolve(),
+  ]);
+}
+
 function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
   const config = (repo.config ?? {}) as { installationId?: number | string };
   const raw = config.installationId;

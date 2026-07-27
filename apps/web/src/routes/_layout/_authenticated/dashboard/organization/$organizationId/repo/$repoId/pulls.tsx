@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import RepoLayout from "@/components/common/repo-layout";
 import PageTitle from "@/components/page-title";
 import RepoLabelList from "@/components/repo/repo-label-list";
+import RepoMasterDetail from "@/components/repo/repo-master-detail";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -64,21 +65,13 @@ function RouteComponent() {
         title={`${repoTitle} · ${t("organization:repos.pullRequests.pageTitle")}`}
       />
       <RepoLayout organizationId={organizationId} repoId={repoId}>
-        <div
-          className={
-            isDetailRoute
-              ? "grid min-h-0 lg:grid-cols-[20rem_minmax(0,1fr)]"
-              : "min-h-0"
-          }
-        >
-          <section
-            className={
-              isDetailRoute
-                ? "min-h-0 border-b lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:border-r lg:border-b-0"
-                : undefined
-            }
-          >
-            <div className="px-3 py-2">
+        <RepoMasterDetail
+          hasDetail={isDetailRoute}
+          id="pulls"
+          detail={<Outlet />}
+          list={
+            <div className="min-h-0">
+              <div className="px-3 py-2">
               <Tabs value={state}>
                 <TabsList className="bg-sidebar gap-2">
                   {STATE_FILTERS.map((filter) => (
@@ -187,9 +180,9 @@ function RouteComponent() {
                 ))}
               </div>
             )}
-          </section>
-          {isDetailRoute && <Outlet />}
-        </div>
+            </div>
+          }
+        />
       </RepoLayout>
     </>
   );
