@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -7,6 +8,7 @@ import {
 } from "lucide-react";
 
 import PageTitle from "@/components/page-title";
+import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
 import {
   RepoIssueActions,
   RepoIssueSidebar,
@@ -17,9 +19,11 @@ import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoPullRequest from "@/hooks/queries/repo/use-get-repo-pull-request";
 import { formatDateMedium } from "@/lib/format";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number",
@@ -117,21 +121,11 @@ function RouteComponent() {
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
               <div className="min-w-0">
-                <div className="min-h-48 px-5 py-6 sm:px-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-medium">Description</h2>
-                    <div id="pull-description-actions" />
-                  </div>
-                  {pullRequest.body ? (
-                    <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
-                      {pullRequest.body}
-                    </p>
-                  ) : (
-                    <p className="text-sm italic text-muted-foreground">
-                      No description provided.
-                    </p>
-                  )}
-                </div>
+                <RepoPullRequestDescription
+                  body={pullRequest.body ?? ""}
+                  number={pullRequest.number}
+                  repoId={repoId}
+                />
                 <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
                   {pullRequest.commentCount > 0 && (
                     <span className="flex items-center gap-1.5">
@@ -147,7 +141,7 @@ function RouteComponent() {
                 </footer>
                 <RepoIssueActions
                   body={pullRequest.body}
-                  descriptionActionTargetId="pull-description-actions"
+
                   kind="pull-request"
                   labels={pullRequest.labels}
                   number={pullRequest.number}
@@ -177,6 +171,47 @@ function RouteComponent() {
         </main>
       )}
     </>
+  );
+}
+
+function RepoPullRequestDescription({
+  body,
+  repoId,
+  number,
+}: {
+  body: string;
+  repoId: string;
+  number: number;
+}) {
+  const queryClient = useQueryClient();
+  const update = useMutation({
+    mutationFn: async (markdown: string) => {
+      const response = await fetch(
+        getApiUrl(`/repo/${repoId}/pull-requests/${number}`),
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: markdown }),
+        },
+      );
+      if (!response.ok) throw new Error(await response.text());
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["repo-pull-request", repoId, number],
+      });
+      toast.success("Description updated on GitHub.");
+    },
+    onError: () => toast.error("Could not update the description."),
+  });
+
+  return (
+    <RepoDescriptionEditor
+      body={body}
+      isSaving={update.isPending}
+      onSave={update.mutateAsync}
+    />
   );
 }
 
