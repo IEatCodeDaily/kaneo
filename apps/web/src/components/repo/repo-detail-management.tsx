@@ -3,6 +3,7 @@ import {
   Ban,
   Check,
   ChevronDown,
+  CircleDot,
   Copy,
   Edit3,
   GitMerge,
@@ -75,6 +76,11 @@ type Props = {
   labels: RepoLabel[];
   assignees?: string[];
   milestoneNumber?: number | null;
+  github?: {
+    subIssues?: Array<{ number: number; title: string; state: string; url: string }>;
+    linkedPullRequests?: Array<{ number: number; title: string; state: string; url: string }>;
+    subIssuesSupported?: boolean;
+  } | null;
 };
 
 // ─── shared internals ────────────────────────────────────────────
@@ -123,6 +129,7 @@ export function RepoIssueSidebar({
   labels,
   assignees = [],
   milestoneNumber = null,
+  github,
 }: Props) {
   const name = kind === "issue" ? "Issue" : "Pull Request";
   const { update } = useRepoMutations(kind, repoId, number);
@@ -375,14 +382,48 @@ export function RepoIssueSidebar({
         </div>
       )}
 
-      {/* Development / Sub-issues placeholder */}
+      {/* Development: linked PRs and sub-issues */}
       <div className="border-t border-border/80 pt-3">
-        <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Workflow className="size-3.5" /> Development
         </p>
-        <p className="text-xs text-muted-foreground">
-          Linked branches and deployments appear here.
-        </p>
+        {github?.linkedPullRequests && github.linkedPullRequests.length > 0 ? (
+          <div className="mb-2 space-y-1">
+            {github.linkedPullRequests.map((pr) => (
+              <a
+                className="flex items-center gap-1.5 text-xs hover:text-primary"
+                href={pr.url}
+                key={pr.number}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <GitMerge className="size-3 text-muted-foreground" />
+                <span className="truncate">#{pr.number} {pr.title}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
+        {github?.subIssues && github.subIssues.length > 0 ? (
+          <div className="space-y-1">
+            {github.subIssues.map((sub) => (
+              <a
+                className="flex items-center gap-1.5 text-xs hover:text-primary"
+                href={sub.url}
+                key={sub.number}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <CircleDot className="size-3 text-muted-foreground" />
+                <span className="truncate">#{sub.number} {sub.title}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
+        {!github?.linkedPullRequests?.length && !github?.subIssues?.length && (
+          <p className="text-xs text-muted-foreground">
+            No linked branches or sub-issues yet.
+          </p>
+        )}
       </div>
     </aside>
   );
