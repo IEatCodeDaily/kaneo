@@ -8,7 +8,10 @@ type SearchParams = {
     | "boards"
     | "organizations"
     | "comments"
-    | "activities";
+    | "activities"
+    | "repositories"
+    | "issues"
+    | "pullRequests";
   organizationId?: string;
   boardId?: string;
   limit?: number;
