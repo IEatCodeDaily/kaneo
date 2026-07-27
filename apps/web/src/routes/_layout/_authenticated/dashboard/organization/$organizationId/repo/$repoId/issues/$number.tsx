@@ -1,14 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Check, Edit3, ExternalLink, MessageSquare, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import PageTitle from "@/components/page-title";
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
+import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { getApiUrl } from "@/fetchers/get-api-url";
+import { toast } from "@/lib/toast";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssue from "@/hooks/queries/repo/use-get-repo-issue";
 import { formatDateMedium } from "@/lib/format";
@@ -88,19 +94,11 @@ function RouteComponent() {
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
               {/* Main body column */}
               <div className="min-w-0">
-                <div className="min-h-48 px-5 py-6 sm:px-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-medium">Description</h2>
-                    <div id="issue-description-actions" />
-                  </div>
-                  {issue.body ? (
-                    <MarkdownRenderer content={issue.body} />
-                  ) : (
-                    <p className="text-sm italic text-muted-foreground">
-                      No description provided.
-                    </p>
-                  )}
-                </div>
+                <InlineIssueDescription
+                  body={issue.body ?? ""}
+                  number={issue.number}
+                  repoId={repoId}
+                />
                 <RepoIssueHistory github={issue.github} />
                 <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
                   {issue.commentCount > 0 && (
@@ -117,7 +115,6 @@ function RouteComponent() {
                 <RepoIssueActions
                   assignees={issue.assigneeLogins ?? []}
                   body={issue.body}
-                  descriptionActionTargetId="issue-description-actions"
                   kind="issue"
                   labels={issue.labels}
                   milestoneNumber={issue.github?.milestone?.number ?? null}
@@ -125,6 +122,13 @@ function RouteComponent() {
                   repoId={repoId}
                   state={issue.state}
                   title={issue.title}
+                />
+                <RepoTaskLinks
+                  itemType="issues"
+                  number={issue.number}
+                  organizationId={organizationId}
+                  repoId={repoId}
+                  taskLinks={issue.taskLinks}
                 />
               </div>
               {/* Right sidebar: metadata only */}
@@ -146,6 +150,49 @@ function RouteComponent() {
       )}
     </>
   );
+}
+
+function InlineIssueDescription({
+  body,
+  repoId,
+  number,
+}: {
+  body: string;
+  repoId: string;
+  number: number;
+}) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(body);
+  useEffect(() => {
+    if (!editing) setDraft(body);
+  }, [body, editing]);
+  const update = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(getApiUrl(`/repo/${repoId}/issues/${number}`), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: draft }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["repo-issue", repoId, number] });
+      setEditing(false);
+      toast.success("Description updated on GitHub.");
+    },
+    onError: () => toast.error("Could not update the description."),
+  });
+  return <div className="min-h-48 px-5 py-6 sm:px-6">
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="text-sm font-medium">Description</h2>
+      {!editing && <Button onClick={() => setEditing(true)} size="sm" variant="ghost"><Edit3 className="size-3.5" /> Edit</Button>}
+    </div>
+    {editing ? <><Textarea aria-label="Issue description" className="min-h-56 font-mono text-sm" onChange={(event) => setDraft(event.target.value)} value={draft} />
+      <div className="mt-3 flex justify-end gap-2"><Button disabled={update.isPending} onClick={() => { setDraft(body); setEditing(false); }} size="sm" variant="outline"><X className="size-3.5" /> Cancel</Button><Button disabled={update.isPending} onClick={() => update.mutate()} size="sm"><Check className="size-3.5" /> Save</Button></div>
+    </> : body ? <MarkdownRenderer content={body} /> : <p className="text-sm italic text-muted-foreground">No description provided.</p>}
+  </div>;
 }
 
 function Author({
