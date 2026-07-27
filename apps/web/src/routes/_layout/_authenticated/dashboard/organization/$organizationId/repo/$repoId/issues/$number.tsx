@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
 import PageTitle from "@/components/page-title";
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
-import RepoDetailManagement from "@/components/repo/repo-detail-management";
+import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
@@ -50,7 +50,7 @@ function RouteComponent() {
       ) : (
         <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
           <Button
-            className="mb-5 gap-1.5"
+            className="mb-5 gap-1.5 lg:hidden"
             onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
@@ -65,40 +65,28 @@ function RouteComponent() {
           </Button>
           <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
             <header className="border-b border-border/80 px-5 py-5 sm:px-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                    {issue.title}
-                  </h1>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <RepoStateBadge state={issue.state} />
-                    <span>#{issue.number}</span>
-                    {issue.externalCreatedAt && (
-                      <span>
-                        opened {formatDateMedium(issue.externalCreatedAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                {issue.title}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <RepoStateBadge state={issue.state} />
+                <span>#{issue.number}</span>
+                {issue.authorLogin && <span>opened by {issue.authorLogin}</span>}
+                {issue.externalCreatedAt && (
+                  <span>{formatDateMedium(issue.externalCreatedAt)}</span>
+                )}
                 <a
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   href={issue.url}
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Open externally
-                  <ExternalLink className="size-3.5" />
+                  GitHub <ExternalLink className="size-3" />
                 </a>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Author
-                  login={issue.authorLogin}
-                  avatarUrl={issue.authorAvatarUrl}
-                />{" "}
-                <RepoLabelList labels={issue.labels} />
               </div>
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              {/* Main body column */}
               <div className="min-w-0">
                 <div className="min-h-48 px-5 py-6 sm:px-6">
                   {issue.body ? (
@@ -121,8 +109,21 @@ function RouteComponent() {
                     <span>Closed {formatDateMedium(issue.closedAt)}</span>
                   )}
                 </footer>
+                {/* Action bar + comment composer in the main body */}
+                <RepoIssueActions
+                  assignees={issue.assigneeLogins ?? []}
+                  body={issue.body}
+                  kind="issue"
+                  labels={issue.labels}
+                  milestoneNumber={issue.github?.milestone?.number ?? null}
+                  number={issue.number}
+                  repoId={repoId}
+                  state={issue.state}
+                  title={issue.title}
+                />
               </div>
-              <RepoDetailManagement
+              {/* Right sidebar: metadata only */}
+              <RepoIssueSidebar
                 assignees={issue.assigneeLogins ?? []}
                 body={issue.body}
                 kind="issue"
