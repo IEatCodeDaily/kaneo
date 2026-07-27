@@ -27,7 +27,7 @@ describe("KaneoClient", () => {
     });
 
     await expect(
-      client.json("/api/project", {
+      client.json("/api/board", {
         method: "POST",
         body: JSON.stringify({ name: "Inbox" }),
       }),
