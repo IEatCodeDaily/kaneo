@@ -7,9 +7,13 @@ import {
 } from "lucide-react";
 
 import PageTitle from "@/components/page-title";
-import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
+import {
+  RepoIssueActions,
+  RepoIssueSidebar,
+} from "@/components/repo/repo-detail-management";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
+import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,6 +154,13 @@ function RouteComponent() {
                   repoId={repoId}
                   state={pullRequest.state}
                   title={pullRequest.title}
+                />
+                <RepoTaskLinks
+                  itemType="pull-requests"
+                  number={pullRequest.number}
+                  organizationId={organizationId}
+                  repoId={repoId}
+                  taskLinks={pullRequest.taskLinks}
                 />
               </div>
               <RepoIssueSidebar

@@ -45,7 +45,9 @@ export type RepoContents = {
   ref: string | null;
   type: "directory" | "file" | "symlink" | "submodule";
   entries: RepoContentEntry[];
-  file: (RepoContentEntry & { content: string | null; isBinary: boolean }) | null;
+  file:
+    | (RepoContentEntry & { content: string | null; isBinary: boolean })
+    | null;
 };
 
 export type RepoIssueState = "open" | "closed";
@@ -91,6 +93,20 @@ export type RepoIssueGithub = {
   subIssuesSupported: boolean;
 };
 
+export type RepoTaskLink = {
+  id: string;
+  taskId: string;
+  createdAt: string;
+  task: {
+    id: string;
+    title: string;
+    status: string;
+    priority: string | null;
+    number: number | null;
+    boardId: string;
+  };
+};
+
 export type RepoIssue = {
   id: string;
   repoId: string;
@@ -106,6 +122,7 @@ export type RepoIssue = {
   url: string;
   externalCreatedAt: string | null;
   closedAt: string | null;
+  taskLinks: RepoTaskLink[];
   github?: RepoIssueGithub;
 };
 
@@ -129,6 +146,7 @@ export type RepoPullRequest = {
   externalCreatedAt: string | null;
   mergedAt: string | null;
   closedAt: string | null;
+  taskLinks: RepoTaskLink[];
 };
 
 export type RepoIssueStateFilter = "open" | "closed" | "all";
