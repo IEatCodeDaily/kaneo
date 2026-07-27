@@ -9,7 +9,7 @@ describe("buildFullTaskUpdateBody", () => {
       description: "D",
       status: "open",
       priority: "low",
-      projectId: "p1",
+      boardId: "p1",
       position: 1,
       userId: "u1",
     };

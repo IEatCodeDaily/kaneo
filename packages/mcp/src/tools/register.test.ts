@@ -58,14 +58,14 @@ describe("registerTools", () => {
     registerTools(server as never, { client: client as never });
 
     const result = await tools.get("list_tasks")?.handler({
-      projectId: "project 1",
+      boardId: "board 1",
       status: "open",
       page: 2,
       sortOrder: "desc",
     });
 
     expect(client.json).toHaveBeenCalledWith(
-      "/api/task/tasks/project%201?status=open&page=2&sortOrder=desc",
+      "/api/task/tasks/board%201?status=open&page=2&sortOrder=desc",
       { method: "GET" },
     );
     expect(result).toEqual({
@@ -89,7 +89,7 @@ describe("registerTools", () => {
           description: "Write docs",
           status: "open",
           priority: "medium",
-          projectId: "project-1",
+          boardId: "board-1",
           position: 4,
         })
         .mockResolvedValueOnce({ id: "task-1", status: "done" }),
@@ -116,14 +116,14 @@ describe("registerTools", () => {
         description: "Write docs",
         status: "done",
         priority: "medium",
-        projectId: "project-1",
+        boardId: "board-1",
         position: 4,
       }),
     );
     expect(result?.isError).toBe(false);
   });
 
-  it("fetches the current project and sends a full body for update_project", async () => {
+  it("fetches the current board and sends a full body for update_board", async () => {
     const { server, tools } = createServerMock();
     const client = {
       json: vi
@@ -132,21 +132,21 @@ describe("registerTools", () => {
           name: "Roadmap",
           slug: "roadmap",
         })
-        .mockResolvedValueOnce({ id: "project-1", name: "Roadmap v2" }),
+        .mockResolvedValueOnce({ id: "board-1", name: "Roadmap v2" }),
     };
 
     registerTools(server as never, { client: client as never });
 
-    const result = await tools.get("update_project")?.handler({
-      id: "project-1",
+    const result = await tools.get("update_board")?.handler({
+      id: "board-1",
       name: "Roadmap v2",
     });
 
-    expect(client.json).toHaveBeenNthCalledWith(1, "/api/project/project-1", {
+    expect(client.json).toHaveBeenNthCalledWith(1, "/api/board/board-1", {
       method: "GET",
     });
     const putCall = client.json.mock.calls[1];
-    expect(putCall?.[0]).toBe("/api/project/project-1");
+    expect(putCall?.[0]).toBe("/api/board/board-1");
     const putBody = JSON.parse(
       String((putCall?.[1] as { body?: string })?.body ?? "{}"),
     );
@@ -193,7 +193,7 @@ describe("registerTools", () => {
       schema?.parse({
         name: "Bug",
         color: "red",
-        workspaceId: "workspace-1",
+        organizationId: "organization-1",
       }),
     ).toThrow(/hex color/i);
   });
@@ -208,7 +208,7 @@ describe("registerTools", () => {
     expect(schema).toBeDefined();
     expect(() =>
       schema?.parse({
-        projectId: "project-1",
+        boardId: "board-1",
         dueBefore: "2026-04-04",
       }),
     ).toThrow();
@@ -304,7 +304,7 @@ describe("registerTools", () => {
     expect(result?.isError).toBe(false);
   });
 
-  it("refuses to delete a workspace label (taskId null)", async () => {
+  it("refuses to delete a organization label (taskId null)", async () => {
     const { server, tools } = createServerMock();
     const client = {
       json: vi.fn().mockResolvedValue({ id: "label-1", taskId: null }),

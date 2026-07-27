@@ -54,10 +54,10 @@ export function registerTools(
   );
 
   server.registerTool(
-    "list_workspaces",
+    "list_organizations",
     {
       description:
-        "List workspaces (Better Auth organizations) the signed-in user can access.",
+        "List organizations (Better Auth organizations) the signed-in user can access.",
       inputSchema: z.object({}),
     },
     async () =>
@@ -65,57 +65,57 @@ export function registerTools(
   );
 
   server.registerTool(
-    "list_projects",
+    "list_boards",
     {
-      description: "List projects in a workspace.",
+      description: "List boards in a organization.",
       inputSchema: z.object({
-        workspaceId: nonEmptyString.describe("Workspace ID"),
+        organizationId: nonEmptyString.describe("Organization ID"),
         includeArchived: z
           .boolean()
           .optional()
-          .describe("Include archived projects"),
+          .describe("Include archived boards"),
       }),
     },
     async (args) => {
-      const { workspaceId, includeArchived } = args;
-      const qs = new URLSearchParams({ workspaceId });
+      const { organizationId, includeArchived } = args;
+      const qs = new URLSearchParams({ organizationId });
       if (includeArchived === true) {
         qs.set("includeArchived", "true");
       }
       return run(() =>
-        client.json(`/api/project?${qs.toString()}`, { method: "GET" }),
+        client.json(`/api/board?${qs.toString()}`, { method: "GET" }),
       );
     },
   );
 
   server.registerTool(
-    "get_project",
+    "get_board",
     {
-      description: "Get a single project by ID.",
+      description: "Get a single board by ID.",
       inputSchema: z.object({ id: nonEmptyString }),
     },
     async (args) =>
-      run(() => client.json(`/api/project/${encodeURIComponent(args.id)}`)),
+      run(() => client.json(`/api/board/${encodeURIComponent(args.id)}`)),
   );
 
   server.registerTool(
-    "create_project",
+    "create_board",
     {
-      description: "Create a project in a workspace.",
+      description: "Create a board in a organization.",
       inputSchema: z.object({
         name: nonEmptyString,
-        workspaceId: nonEmptyString,
+        organizationId: nonEmptyString,
         icon: nonEmptyString,
         slug: nonEmptyString,
       }),
     },
     async (args) =>
       run(() =>
-        client.json("/api/project", {
+        client.json("/api/board", {
           method: "POST",
           body: JSON.stringify({
             name: args.name,
-            workspaceId: args.workspaceId,
+            organizationId: args.organizationId,
             icon: args.icon,
             slug: args.slug,
           }),
@@ -124,10 +124,10 @@ export function registerTools(
   );
 
   server.registerTool(
-    "update_project",
+    "update_board",
     {
       description:
-        "Update project metadata (PATCH-style: only provided fields are changed).",
+        "Update board metadata (PATCH-style: only provided fields are changed).",
       inputSchema: z.object({
         id: nonEmptyString,
         name: optionalNonEmptyString,
@@ -141,14 +141,14 @@ export function registerTools(
       const { id, ...patch } = args;
       return run(async () => {
         const existing = (await client.json(
-          `/api/project/${encodeURIComponent(id)}`,
+          `/api/board/${encodeURIComponent(id)}`,
           { method: "GET" },
         )) as Record<string, unknown>;
         const name =
           patch.name ??
           (typeof existing.name === "string" ? existing.name : "");
         if (!name) {
-          throw new Error("Cannot update project: missing name.");
+          throw new Error("Cannot update board: missing name.");
         }
         const icon =
           patch.icon !== undefined
@@ -160,7 +160,7 @@ export function registerTools(
           patch.slug ??
           (typeof existing.slug === "string" ? existing.slug : "");
         if (!slug) {
-          throw new Error("Cannot update project: missing slug.");
+          throw new Error("Cannot update board: missing slug.");
         }
         const description =
           patch.description !== undefined
@@ -177,7 +177,7 @@ export function registerTools(
 
         const body = { name, icon, slug, description, isPublic };
 
-        return client.json(`/api/project/${encodeURIComponent(id)}`, {
+        return client.json(`/api/board/${encodeURIComponent(id)}`, {
           method: "PUT",
           body: JSON.stringify(body),
         });
@@ -186,7 +186,7 @@ export function registerTools(
   );
 
   const listTasksSchema = z.object({
-    projectId: nonEmptyString,
+    boardId: nonEmptyString,
     status: optionalNonEmptyString,
     priority: prioritySchema.optional(),
     assigneeId: optionalNonEmptyString,
@@ -203,11 +203,11 @@ export function registerTools(
   server.registerTool(
     "list_tasks",
     {
-      description: "List tasks for a project (optionally filtered/sorted).",
+      description: "List tasks for a board (optionally filtered/sorted).",
       inputSchema: listTasksSchema,
     },
     async (args) => {
-      const { projectId, ...rest } = args;
+      const { boardId, ...rest } = args;
       const qs = new URLSearchParams();
       for (const [k, v] of Object.entries(rest)) {
         if (v === undefined || v === null) {
@@ -216,7 +216,7 @@ export function registerTools(
         qs.set(k, String(v));
       }
       const q = qs.toString();
-      const path = `/api/task/tasks/${encodeURIComponent(projectId)}${q ? `?${q}` : ""}`;
+      const path = `/api/task/tasks/${encodeURIComponent(boardId)}${q ? `?${q}` : ""}`;
       return run(() => client.json(path, { method: "GET" }));
     },
   );
@@ -238,9 +238,9 @@ export function registerTools(
   server.registerTool(
     "create_task",
     {
-      description: "Create a task in a project.",
+      description: "Create a task in a board.",
       inputSchema: z.object({
-        projectId: nonEmptyString,
+        boardId: nonEmptyString,
         title: nonEmptyString,
         description: z.string(),
         priority: prioritySchema,
@@ -267,7 +267,7 @@ export function registerTools(
         body.userId = args.userId;
       }
       return run(() =>
-        client.json(`/api/task/${encodeURIComponent(args.projectId)}`, {
+        client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
           method: "POST",
           body: JSON.stringify(body),
         }),
@@ -281,7 +281,7 @@ export function registerTools(
     description: z.string().nullable().optional(),
     status: optionalNonEmptyString,
     priority: prioritySchema.optional(),
-    projectId: optionalNonEmptyString,
+    boardId: optionalNonEmptyString,
     position: z.number().optional(),
     startDate: nullableOptionalIsoDateTimeSchema,
     dueDate: nullableOptionalIsoDateTimeSchema,
@@ -315,10 +315,10 @@ export function registerTools(
     "move_task",
     {
       description:
-        "Move a task to another project (and optional column status).",
+        "Move a task to another board (and optional column status).",
       inputSchema: z.object({
         taskId: nonEmptyString,
-        destinationProjectId: nonEmptyString,
+        destinationBoardId: nonEmptyString,
         destinationStatus: optionalNonEmptyString,
       }),
     },
@@ -327,7 +327,7 @@ export function registerTools(
         client.json(`/api/task/move/${encodeURIComponent(args.taskId)}`, {
           method: "PUT",
           body: JSON.stringify({
-            destinationProjectId: args.destinationProjectId,
+            destinationBoardId: args.destinationBoardId,
             ...(args.destinationStatus !== undefined
               ? { destinationStatus: args.destinationStatus }
               : {}),
@@ -419,15 +419,15 @@ export function registerTools(
   );
 
   server.registerTool(
-    "list_workspace_labels",
+    "list_organization_labels",
     {
-      description: "List labels defined in a workspace.",
-      inputSchema: z.object({ workspaceId: nonEmptyString }),
+      description: "List labels defined in a organization.",
+      inputSchema: z.object({ organizationId: nonEmptyString }),
     },
     async (args) =>
       run(() =>
         client.json(
-          `/api/label/workspace/${encodeURIComponent(args.workspaceId)}`,
+          `/api/label/organization/${encodeURIComponent(args.organizationId)}`,
           { method: "GET" },
         ),
       ),
@@ -437,11 +437,11 @@ export function registerTools(
     "create_label",
     {
       description:
-        "Create a label in a workspace (optionally attach to a task).",
+        "Create a label in a organization (optionally attach to a task).",
       inputSchema: z.object({
         name: nonEmptyString,
         color: hexColorSchema,
-        workspaceId: nonEmptyString,
+        organizationId: nonEmptyString,
         taskId: optionalNonEmptyString,
       }),
     },
@@ -452,7 +452,7 @@ export function registerTools(
           body: JSON.stringify({
             name: args.name,
             color: args.color,
-            workspaceId: args.workspaceId,
+            organizationId: args.organizationId,
             ...(args.taskId !== undefined ? { taskId: args.taskId } : {}),
           }),
         }),
@@ -548,7 +548,7 @@ export function registerTools(
     "delete_label",
     {
       description:
-        "Delete a label by ID. Only task-associated labels can be deleted; workspace-level labels (taskId null) are rejected by the API.",
+        "Delete a label by ID. Only task-associated labels can be deleted; organization-level labels (taskId null) are rejected by the API.",
       inputSchema: z.object({ id: nonEmptyString }),
     },
     async (args) =>
@@ -559,7 +559,7 @@ export function registerTools(
         )) as { taskId?: string | null };
         if (!label?.taskId) {
           throw new Error(
-            "Label is not associated with a task and cannot be deleted (workspace-level labels are not deletable via this endpoint).",
+            "Label is not associated with a task and cannot be deleted (organization-level labels are not deletable via this endpoint).",
           );
         }
         return client.json(`/api/label/${encodeURIComponent(args.id)}`, {
