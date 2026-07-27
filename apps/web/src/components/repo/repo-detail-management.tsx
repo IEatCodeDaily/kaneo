@@ -139,24 +139,39 @@ export function RepoIssueSidebar({
     useGetRepoGithubMetadata({ repoId });
 
   const selectedLabels = labels.map((l) => l.name);
+  const [pendingField, setPendingField] = useState<
+    "labels" | "assignees" | "milestone" | null
+  >(null);
+
+  const updateMetadata = (
+    field: "labels" | "assignees" | "milestone",
+    payload: UpdatePayload,
+  ) => {
+    setPendingField(field);
+    update.mutate(payload, {
+      onSuccess: () => toast.success("Updated on GitHub."),
+      onError: () => toast.error("GitHub could not save this update."),
+      onSettled: () => setPendingField(null),
+    });
+  };
 
   const toggleLabel = (label: string, checked: boolean) => {
     const next = checked
       ? [...new Set([...selectedLabels, label])]
       : selectedLabels.filter((l) => l !== label);
-    update.mutate({ labels: next });
+    updateMetadata("labels", { labels: next });
   };
 
   const toggleAssignee = (login: string, checked: boolean) => {
     const next = checked
       ? [...new Set([...assignees, login])]
       : assignees.filter((a) => a !== login);
-    update.mutate({ assignees: next });
+    updateMetadata("assignees", { assignees: next });
   };
 
   const setMilestone = (value: string) => {
     const n = value === "none" ? null : Number(value);
-    update.mutate({ milestone: n });
+    updateMetadata("milestone", { milestone: n });
   };
 
   const emptyMeta = !metadataLoading && metadata;
@@ -175,12 +190,16 @@ export function RepoIssueSidebar({
             render={
               <Button
                 className="w-full justify-between"
+                disabled={pendingField === "labels"}
                 size="sm"
                 variant="ghost"
               />
             }
           >
             <span className="flex min-w-0 items-center gap-1.5 truncate">
+              {pendingField === "labels" && (
+                <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
+              )}
               {selectedLabels.length > 0 ? (
                 <>
                   {selectedLabels.slice(0, 3).map((ln) => {
@@ -262,12 +281,16 @@ export function RepoIssueSidebar({
             render={
               <Button
                 className="w-full justify-between"
+                disabled={pendingField === "assignees"}
                 size="sm"
                 variant="ghost"
               />
             }
           >
             <span className="flex min-w-0 items-center gap-1.5 truncate">
+              {pendingField === "assignees" && (
+                <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
+              )}
               {assignees.length > 0 ? (
                 assignees.map((login) => (
                   <span
@@ -333,12 +356,16 @@ export function RepoIssueSidebar({
               render={
                 <Button
                   className="w-full justify-between"
+                  disabled={pendingField === "milestone"}
                   size="sm"
                   variant="ghost"
                 />
               }
             >
               <span className="flex min-w-0 items-center gap-1.5 truncate text-xs">
+                {pendingField === "milestone" && (
+                  <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />
+                )}
                 {(() => {
                   const ms = metadata?.milestones.find(
                     (m) => m.number === milestoneNumber,
