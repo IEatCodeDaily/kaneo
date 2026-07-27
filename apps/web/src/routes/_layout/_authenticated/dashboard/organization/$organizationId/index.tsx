@@ -33,7 +33,7 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { formatDateMedium } from "@/lib/format";
 
 export const Route = createFileRoute(
-  "/_layout/_authenticated/dashboard/organization/$organizationId/$workspaceId/",
+  "/_layout/_authenticated/dashboard/organization/$organizationId/",
 )({
   component: RouteComponent,
 });

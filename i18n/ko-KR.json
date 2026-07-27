@@ -1419,7 +1419,8 @@
 			"types": {
 				"blocks": "차단함",
 				"related": "관련됨"
-			}
+			},
+			"otherBoard": "다른 보드"
 		},
 		"subtasks": {
 			"title": "하위 작업",
@@ -1431,7 +1432,10 @@
 			"deleteError": "작업 삭제에 실패했습니다",
 			"deleteDialogTitle": "작업을 삭제하시겠습니까?",
 			"deleteDialogDescription": "작업과 모든 데이터가 영구적으로 제거됩니다. 이 작업은 취소할 수 없습니다.",
-			"deleteAction": "작업 삭제"
+			"deleteAction": "작업 삭제",
+			"linkExisting": "기존 작업 연결",
+			"linkExistingHint": "하위 작업으로 추가할 작업 선택",
+			"searchPlaceholder": "모든 보드에서 작업 검색…"
 		},
 		"properties": {
 			"title": "속성",

@@ -1420,7 +1420,8 @@
 			"types": {
 				"blocks": "блокирует",
 				"related": "связана с"
-			}
+			},
+			"otherBoard": "другая доска"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1432,7 +1433,10 @@
 			"deleteError": "Не удалось удалить задачу",
 			"deleteDialogTitle": "Удалить задачу?",
 			"deleteDialogDescription": "Задача и все её данные будут безвозвратно удалены. Это действие нельзя отменить.",
-			"deleteAction": "Удалить задачу"
+			"deleteAction": "Удалить задачу",
+			"linkExisting": "Связать существующую задачу",
+			"linkExistingHint": "Выберите задачу для добавления как подзадачу",
+			"searchPlaceholder": "Поиск задач по всем доскам…"
 		},
 		"properties": {
 			"title": "Свойства",

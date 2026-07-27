@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, Link2, Plus, Search } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -13,6 +13,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandCollection,
+  CommandDialog,
+  CommandDialogPopup,
+  CommandEmpty,
+  CommandFooter,
+  CommandGroup,
+  CommandGroupLabel,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandPanel,
+  CommandSeparator,
+} from "@/components/ui/command";
 import CircularProgress from "@/components/ui/circular-progress";
 import {
   Collapsible,
@@ -24,6 +39,7 @@ import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -51,6 +67,8 @@ export default function TaskSubtasks({
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkQuery, setLinkQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,6 +83,9 @@ export default function TaskSubtasks({
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { data: columns = [] } = useGetColumns(boardId);
+  // Subtask relations are organization-scoped server-side, so existing tasks
+  // from any board in the organization can be linked as subtasks.
+  const { data: organizationBoards } = useGetBoards({ organizationId });
   const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
 
@@ -93,6 +114,12 @@ export default function TaskSubtasks({
   ).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
+
+  useEffect(() => {
+    if (!linkOpen) {
+      setLinkQuery("");
+    }
+  }, [linkOpen]);
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -218,7 +245,8 @@ export default function TaskSubtasks({
               to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
               params: {
                 organizationId,
-                boardId,
+                // Subtasks may live on another board; use the subtask's own board.
+                boardId: subtasks[focusedIndex].task.boardId || boardId,
                 taskId: subtasks[focusedIndex].task.id,
               },
             });
@@ -277,6 +305,83 @@ export default function TaskSubtasks({
     }
   };
 
+  // Tasks eligible to become a subtask: every task in the organization except
+  // this task, its existing subtasks, and tasks already related to it.
+  const linkCandidates = useMemo(() => {
+    const taken = new Set<string>([taskId]);
+    for (const rel of relations) {
+      taken.add(rel.sourceTaskId);
+      taken.add(rel.targetTaskId);
+    }
+
+    const groups: Array<{
+      value: string;
+      label: string;
+      items: Array<{
+        id: string;
+        title: string;
+        number: number | null;
+        status: string;
+        boardId: string;
+        boardSlug: string;
+        boardName: string;
+      }>;
+    }> = [];
+
+    for (const b of organizationBoards ?? []) {
+      const items: (typeof groups)[number]["items"] = [];
+      for (const bucket of [
+        (b as { tasks?: unknown }).tasks,
+        (b as { plannedTasks?: unknown }).plannedTasks,
+      ]) {
+        if (!Array.isArray(bucket)) continue;
+        for (const raw of bucket) {
+          const tk = raw as {
+            id: string;
+            title: string;
+            number: number | null;
+            status: string;
+          };
+          if (!tk?.id || taken.has(tk.id)) continue;
+          items.push({
+            id: tk.id,
+            title: tk.title,
+            number: tk.number,
+            status: tk.status,
+            boardId: b.id,
+            boardSlug: b.slug,
+            boardName: b.name,
+          });
+        }
+      }
+      if (items.length) {
+        groups.push({ value: b.id, label: b.name, items });
+      }
+    }
+
+    // Current board first so the common case stays at the top.
+    groups.sort((a, x) =>
+      a.value === boardId ? -1 : x.value === boardId ? 1 : 0,
+    );
+    return groups;
+  }, [organizationBoards, relations, taskId, boardId]);
+
+  const handleLinkExistingSubtask = async (targetTaskId: string) => {
+    try {
+      await createRelation.mutateAsync({
+        sourceTaskId: taskId,
+        targetTaskId,
+        relationType: "subtask",
+      });
+      setLinkOpen(false);
+      setLinkQuery("");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("tasks:subtasks.createError"),
+      );
+    }
+  };
+
   const handleDeleteTask = async () => {
     if (!deleteTaskId) return;
     try {
@@ -331,14 +436,25 @@ export default function TaskSubtasks({
             )}
           </div>
           {canEdit && (
-            <Button
-              variant="ghost"
-              size="xs"
-              className="text-muted-foreground"
-              onClick={() => setIsAdding(true)}
-            >
-              <Plus className="size-3.5" />
-            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-muted-foreground"
+                title={t("tasks:subtasks.linkExisting")}
+                onClick={() => setLinkOpen(true)}
+              >
+                <Link2 className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-muted-foreground"
+                onClick={() => setIsAdding(true)}
+              >
+                <Plus className="size-3.5" />
+              </Button>
+            </div>
           )}
         </div>
 
@@ -363,7 +479,7 @@ export default function TaskSubtasks({
                     key={subtask.task.id}
                     task={taskObj}
                     tasks={getTargetTasks(taskObj)}
-                    boardId={boardId}
+                    boardId={subtask.task.boardId || boardId}
                     organizationId={organization?.id ?? organizationId}
                     isSelected={isSelected}
                     isFocused={focusedIndex === index}
@@ -377,7 +493,7 @@ export default function TaskSubtasks({
                         to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
                         params: {
                           organizationId,
-                          boardId,
+                          boardId: subtask.task.boardId || boardId,
                           taskId: subtask.task.id,
                         },
                       })
@@ -462,6 +578,65 @@ export default function TaskSubtasks({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CommandDialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <CommandDialogPopup>
+          <Command items={linkCandidates}>
+            <CommandInput
+              placeholder={t("tasks:subtasks.searchPlaceholder")}
+              value={linkQuery}
+              onChange={(e) => setLinkQuery(e.target.value)}
+            />
+            <CommandPanel>
+              <CommandEmpty>
+                <div className="text-center py-6">
+                  <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("tasks:relations.noTasksFound")}
+                  </p>
+                </div>
+              </CommandEmpty>
+              <CommandList>
+                {(
+                  group: (typeof linkCandidates)[number],
+                  groupIndex: number,
+                ) => (
+                  <Fragment key={group.value}>
+                    <CommandGroup items={group.items}>
+                      <CommandGroupLabel>{group.label}</CommandGroupLabel>
+                      <CommandCollection>
+                        {(item: (typeof group.items)[number]) => (
+                          <CommandItem
+                            key={item.id}
+                            value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
+                            onClick={() => handleLinkExistingSubtask(item.id)}
+                            className="flex items-center gap-3 py-2"
+                          >
+                            <span className="text-xs text-muted-foreground shrink-0 font-mono">
+                              {item.boardSlug}-{item.number}
+                            </span>
+                            <span className="text-sm truncate flex-1">
+                              {item.title}
+                            </span>
+                          </CommandItem>
+                        )}
+                      </CommandCollection>
+                    </CommandGroup>
+                    {groupIndex < linkCandidates.length - 1 && (
+                      <CommandSeparator />
+                    )}
+                  </Fragment>
+                )}
+              </CommandList>
+            </CommandPanel>
+            <CommandFooter>
+              <span className="text-muted-foreground/60">
+                {t("tasks:subtasks.linkExistingHint")}
+              </span>
+            </CommandFooter>
+          </Command>
+        </CommandDialogPopup>
+      </CommandDialog>
     </>
   );
 }

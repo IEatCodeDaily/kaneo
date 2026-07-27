@@ -1624,7 +1624,8 @@
 				"blocks": "blocks",
 				"blocked_by": "blocked by",
 				"related": "relates to"
-			}
+			},
+			"otherBoard": "other board"
 		},
 		"subtasks": {
 			"title": "Sub-tasks",
@@ -1636,7 +1637,10 @@
 			"deleteError": "Failed to delete task",
 			"deleteDialogTitle": "Delete Task?",
 			"deleteDialogDescription": "This will permanently remove the task and all its data. You can't undo this action.",
-			"deleteAction": "Delete Task"
+			"deleteAction": "Delete Task",
+			"linkExisting": "Link existing task",
+			"linkExistingHint": "Select a task to add as subtask",
+			"searchPlaceholder": "Search tasks across boards…"
 		},
 		"properties": {
 			"title": "Properties",

@@ -1417,7 +1417,8 @@
 			"types": {
 				"blocks": "блокира",
 				"related": "е поврзана со"
-			}
+			},
+			"otherBoard": "друга табла"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1429,7 +1430,10 @@
 			"deleteError": "Неуспешно бришење на задача",
 			"deleteDialogTitle": "Избриши задача?",
 			"deleteDialogDescription": "Ова трајно ќе ја отстрани задачата и сите нејзини податоци. Не можеш да ја вратиш оваа акција.",
-			"deleteAction": "Избриши задача"
+			"deleteAction": "Избриши задача",
+			"linkExisting": "Поврзи постоечка задача",
+			"linkExistingHint": "Изберете задача за додавање како подзадача",
+			"searchPlaceholder": "Барај задачи низ сите табли…"
 		},
 		"properties": {
 			"title": "Својства",

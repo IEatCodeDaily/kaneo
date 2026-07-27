@@ -1563,7 +1563,8 @@
 				"blocks": "memblokir",
 				"blocked_by": "diblokir oleh",
 				"related": "terkait dengan"
-			}
+			},
+			"otherBoard": "papan lain"
 		},
 		"subtasks": {
 			"title": "Subtugas",
@@ -1575,7 +1576,10 @@
 			"deleteError": "Gagal menghapus tugas",
 			"deleteDialogTitle": "Hapus Tugas?",
 			"deleteDialogDescription": "Ini akan menghapus tugas dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
-			"deleteAction": "Hapus Tugas"
+			"deleteAction": "Hapus Tugas",
+			"linkExisting": "Tautkan tugas yang ada",
+			"linkExistingHint": "Pilih tugas untuk ditambahkan sebagai subtugas",
+			"searchPlaceholder": "Cari tugas di semua papan…"
 		},
 		"properties": {
 			"title": "Properti",

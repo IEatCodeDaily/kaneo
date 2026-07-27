@@ -10,7 +10,7 @@ import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { getPriorityIcon } from "@/lib/priority";
 
 export const Route = createFileRoute(
-  "/_layout/_authenticated/dashboard/organization/$organizationId/$workspaceId/search",
+  "/_layout/_authenticated/dashboard/organization/$organizationId/search",
 )({
   component: SearchComponent,
 });
