@@ -260,6 +260,13 @@
 			"when": 1785083042547,
 			"tag": "0036_repo_entity",
 			"breakpoints": true
+		},
+		{
+			"idx": 37,
+			"version": "7",
+			"when": 1785125569978,
+			"tag": "0037_organization_github_installation",
+			"breakpoints": true
 		}
 	]
 }

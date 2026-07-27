@@ -77,6 +77,7 @@ import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-
 import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
 import organization from "./organization";
+import organizationGithub from "./organization-github";
 import {
   addConnection,
   addUserConnection,
@@ -572,6 +573,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
+  const organizationGithubApi = api.route("/organization-github", organizationGithub);
 
   app.route(
     "/",
@@ -734,6 +736,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
     timeEntryApi,
     workflowRuleApi,
     organizationApi,
+    organizationGithubApi,
     oauthApi,
   };
 }

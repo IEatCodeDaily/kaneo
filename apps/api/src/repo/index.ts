@@ -4,8 +4,11 @@ import * as v from "valibot";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import createRepoCtrl from "./controllers/create-repo";
+import { createGithubRepo } from "./controllers/create-github-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import getRepoCtrl from "./controllers/get-repo";
+import { getRepoIssue } from "./controllers/get-repo-issue";
+import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
@@ -159,6 +162,7 @@ const repo = new Hono<{
         defaultBranch: v.optional(v.string()),
         isPrivate: v.optional(v.boolean()),
         config: v.optional(v.record(v.string(), v.unknown())),
+        installationId: v.optional(v.number()),
       }),
     ),
     organizationAccess.fromBody(),
@@ -167,18 +171,26 @@ const repo = new Hono<{
     async (c) => {
       const body = c.req.valid("json");
       const organizationId = c.get("organizationId");
-      const newRepo = await createRepoCtrl({
-        organizationId,
-        provider: body.provider,
-        owner: body.owner,
-        name: body.name,
-        url: body.url,
-        externalId: body.externalId,
-        description: body.description,
-        defaultBranch: body.defaultBranch,
-        isPrivate: body.isPrivate,
-        config: body.config,
-      });
+      const newRepo =
+        body.provider === "github"
+          ? await createGithubRepo({
+              organizationId,
+              installationId: body.installationId ?? -1,
+              owner: body.owner,
+              name: body.name,
+            })
+          : await createRepoCtrl({
+              organizationId,
+              provider: body.provider,
+              owner: body.owner,
+              name: body.name,
+              url: body.url,
+              externalId: body.externalId,
+              description: body.description,
+              defaultBranch: body.defaultBranch,
+              isPrivate: body.isPrivate,
+              config: body.config,
+            });
       return c.json(toRepoResponse(newRepo));
     },
   )
@@ -229,6 +241,7 @@ const repo = new Hono<{
         description: v.optional(v.string()),
         isActive: v.optional(v.boolean()),
         config: v.optional(v.record(v.string(), v.unknown())),
+        installationId: v.optional(v.number()),
       }),
     ),
     repoOrganizationAccess(),
@@ -267,6 +280,24 @@ const repo = new Hono<{
       const organizationId = c.get("organizationId");
       const deletedRepo = await deleteRepoCtrl(id, organizationId);
       return c.json(toRepoResponse(deletedRepo));
+    },
+  )
+  .get(
+    "/:id/issues/:number",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number)) })),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoIssue(id, number));
+    },
+  )
+  .get(
+    "/:id/pull-requests/:number",
+    validator("param", v.object({ id: v.string(), number: v.pipe(v.string(), v.transform(Number)) })),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoPullRequest(id, number));
     },
   )
   .get(
