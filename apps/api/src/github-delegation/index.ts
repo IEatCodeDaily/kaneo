@@ -89,7 +89,10 @@ export async function refreshGitHubDelegationGrant(userId: string) {
   const { clientId, clientSecret } = configuredClient();
   const response = await fetch(GITHUB_TOKEN_URL, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
     body: new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
@@ -149,7 +152,12 @@ export async function handleGitHubDelegationCallback(c: Context) {
     const { clientId, clientSecret } = configuredClient();
     const tokenResponse = await fetch(GITHUB_TOKEN_URL, {
       method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      // URLSearchParams is form-encoded; declaring application/json made
+      // GitHub reject the exchange and return an empty body.
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
@@ -157,9 +165,26 @@ export async function handleGitHubDelegationCallback(c: Context) {
         redirect_uri: callbackUrl(),
       }),
     });
-    const tokens = (await tokenResponse.json()) as Record<string, unknown>;
+    // Read as text first: GitHub returns an empty or form-encoded body on
+    // malformed requests, and a bare .json() there throws an opaque
+    // SyntaxError that hides the real cause.
+    const rawToken = await tokenResponse.text();
+    let tokens: Record<string, unknown> = {};
+    try {
+      tokens = rawToken ? (JSON.parse(rawToken) as Record<string, unknown>) : {};
+    } catch {
+      throw new Error(
+        `GitHub token exchange returned a non-JSON body (${tokenResponse.status}): ${rawToken.slice(0, 200)}`,
+      );
+    }
     if (!tokenResponse.ok || typeof tokens.access_token !== "string") {
-      throw new Error("GitHub token exchange failed");
+      throw new Error(
+        `GitHub token exchange failed (${tokenResponse.status}): ${
+          typeof tokens.error_description === "string"
+            ? tokens.error_description
+            : (tokens.error ?? "no access_token returned")
+        }`,
+      );
     }
 
     const identityResponse = await fetch("https://api.github.com/user", {

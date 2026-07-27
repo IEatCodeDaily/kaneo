@@ -17,6 +17,7 @@ import {
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
+import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
@@ -100,6 +101,7 @@ const repoItemUpdateSchema = v.object({
   state: v.optional(v.picklist(["open", "closed"] as const)),
   labels: v.optional(v.array(v.string())),
   assignees: v.optional(v.array(v.string())),
+  milestone: v.optional(v.nullable(v.number())),
 });
 
 const repoPullRequestSchema = v.object({
@@ -126,6 +128,27 @@ const repoPullRequestSchema = v.object({
   closedAt: v.nullable(v.date()),
   createdAt: v.date(),
   updatedAt: v.date(),
+});
+
+const githubRepoMetadataSchema = v.object({
+  labels: v.array(
+    v.object({
+      name: v.string(),
+      color: v.string(),
+      description: v.nullable(v.string()),
+    }),
+  ),
+  assignableUsers: v.array(
+    v.object({ login: v.string(), avatarUrl: v.string() }),
+  ),
+  milestones: v.array(
+    v.object({
+      number: v.number(),
+      title: v.string(),
+      state: v.string(),
+      dueOn: v.nullable(v.string()),
+    }),
+  ),
 });
 
 const repo = new Hono<{
@@ -487,6 +510,29 @@ const repo = new Hono<{
       const result = await syncRepo(id);
       return c.json(result);
     },
+  )
+  .get(
+    "/:id/github-metadata",
+    describeRoute({
+      operationId: "getGitHubRepoMetadata",
+      tags: ["Repos"],
+      description:
+        "Live GitHub labels, assignable users and milestones for a repo, for building pickers. Non-GitHub repos return empty arrays.",
+      responses: {
+        200: {
+          description: "GitHub repo metadata",
+          content: {
+            "application/json": {
+              schema: resolver(githubRepoMetadataSchema),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) =>
+      c.json(await getGitHubRepoMetadata(c.req.valid("param").id)),
   )
   .get(
     "/:id/milestones",

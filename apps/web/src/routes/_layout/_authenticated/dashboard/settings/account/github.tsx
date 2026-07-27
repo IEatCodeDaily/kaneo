@@ -120,10 +120,18 @@ function RouteComponent() {
                     <p className="text-sm text-muted-foreground">@{displayName}</p>
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline">
-                  <a href={`https://github.com/${displayName}`} rel="noreferrer" target="_blank">
-                    View GitHub profile <ExternalLink />
-                  </a>
+                <Button
+                  render={
+                    <a
+                      href={`https://github.com/${displayName}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    />
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  View GitHub profile <ExternalLink />
                 </Button>
               </CardPanel>
             </Card>
