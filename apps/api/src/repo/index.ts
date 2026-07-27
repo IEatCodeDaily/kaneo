@@ -11,20 +11,22 @@ import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
 import {
+  addGitHubSubIssue,
   closeGitHubIssue,
   createGitHubMilestone,
   listGitHubMilestones,
   markGitHubIssueDuplicate,
+  removeGitHubSubIssue,
   unmarkGitHubIssueDuplicate,
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
 import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
-import listRepoIssuesCtrl from "./controllers/list-repo-issues";
-import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import {
   listGitHubRepoPackages,
   listGitHubRepoReleases,
 } from "./controllers/list-github-repo-resources";
+import listRepoIssuesCtrl from "./controllers/list-repo-issues";
+import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
 import {
   createGitHubItemComment,
@@ -182,11 +184,34 @@ const githubRepoContentsSchema = v.object({
 });
 
 const githubReleaseSchema = v.object({
-  id: v.number(), tagName: v.string(), name: v.nullable(v.string()), body: v.nullable(v.string()), publishedAt: v.nullable(v.string()), createdAt: v.string(), isDraft: v.boolean(), isPrerelease: v.boolean(), url: v.string(),
-  assets: v.array(v.object({ id: v.number(), name: v.string(), size: v.number(), downloadUrl: v.string(), downloadCount: v.number() })),
+  id: v.number(),
+  tagName: v.string(),
+  name: v.nullable(v.string()),
+  body: v.nullable(v.string()),
+  publishedAt: v.nullable(v.string()),
+  createdAt: v.string(),
+  isDraft: v.boolean(),
+  isPrerelease: v.boolean(),
+  url: v.string(),
+  assets: v.array(
+    v.object({
+      id: v.number(),
+      name: v.string(),
+      size: v.number(),
+      downloadUrl: v.string(),
+      downloadCount: v.number(),
+    }),
+  ),
 });
 const githubPackageSchema = v.object({
-  id: v.number(), name: v.string(), packageType: v.string(), visibility: v.string(), url: v.string(), createdAt: v.string(), updatedAt: v.string(), versionCount: v.number(),
+  id: v.number(),
+  name: v.string(),
+  packageType: v.string(),
+  visibility: v.string(),
+  url: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  versionCount: v.number(),
 });
 
 const repo = new Hono<{
@@ -264,7 +289,8 @@ const repo = new Hono<{
         v.forward(
           v.check(
             (input) =>
-              input.provider !== "github" || typeof input.installationId === "number",
+              input.provider !== "github" ||
+              typeof input.installationId === "number",
             "installationId is required for GitHub repositories",
           ),
           ["installationId"],
@@ -754,6 +780,78 @@ const repo = new Hono<{
           number,
           reason: c.req.valid("json").reason,
         }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/sub-issues",
+    describeRoute({
+      operationId: "addRepoSubIssue",
+      tags: ["Repos"],
+      description: "Attach an existing issue as a sub-issue on GitHub",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({
+        subIssueNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await addGitHubSubIssue({
+          repoId: id,
+          number,
+          subIssueNumber: c.req.valid("json").subIssueNumber,
+        }),
+      );
+    },
+  )
+  .delete(
+    "/:id/issues/:number/sub-issues/:subIssueNumber",
+    describeRoute({
+      operationId: "removeRepoSubIssue",
+      tags: ["Repos"],
+      description: "Detach a sub-issue on GitHub",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        subIssueNumber: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, subIssueNumber } = c.req.valid("param");
+      return c.json(
+        await removeGitHubSubIssue({ repoId: id, number, subIssueNumber }),
       );
     },
   )

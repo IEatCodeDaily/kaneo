@@ -56,7 +56,9 @@ export default function RepoTaskLinks({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
-  const { data: boards, isLoading: boardsLoading } = useGetBoards({ organizationId });
+  const { data: boards, isLoading: boardsLoading } = useGetBoards({
+    organizationId,
+  });
   const taskQueries = useQueries({
     queries: (boards ?? []).map((board) => ({
       queryKey: ["tasks", board.id],
@@ -64,7 +66,8 @@ export default function RepoTaskLinks({
       enabled: open,
     })),
   });
-  const isLoading = boardsLoading || taskQueries.some((query) => query.isLoading);
+  const isLoading =
+    boardsLoading || taskQueries.some((query) => query.isLoading);
   const queryKey = [
     itemType === "issues" ? "repo-issue" : "repo-pull-request",
     repoId,
@@ -75,17 +78,38 @@ export default function RepoTaskLinks({
   const candidates = useMemo<CandidateTask[]>(() => {
     const result: CandidateTask[] = [];
     for (const [index, board] of (boards ?? []).entries()) {
-      const tasks = taskQueries[index]?.data ?? [];
-      for (const task of tasks) {
-        if (!task.id || !task.title || existingTaskIds.has(task.id)) continue;
-        result.push({
-          id: task.id,
-          title: task.title,
-          number: task.number ?? null,
-          boardId: board.id,
-          boardName: board.name,
-          boardSlug: board.slug,
-        });
+      // `/task/tasks/:boardId` returns the whole board: tasks are nested under
+      // columns plus the archived/planned buckets, never a flat array.
+      const payload = taskQueries[index]?.data as
+        | {
+            columns?: Array<{ tasks?: unknown }>;
+            archivedTasks?: unknown;
+            plannedTasks?: unknown;
+          }
+        | undefined;
+      const buckets: unknown[] = [
+        ...(payload?.columns ?? []).map((column) => column?.tasks),
+        payload?.archivedTasks,
+        payload?.plannedTasks,
+      ];
+      for (const bucket of buckets) {
+        if (!Array.isArray(bucket)) continue;
+        for (const task of bucket as Array<{
+          id?: string;
+          title?: string;
+          number?: number | null;
+        }>) {
+          if (!task?.id || !task.title || existingTaskIds.has(task.id))
+            continue;
+          result.push({
+            id: task.id,
+            title: task.title,
+            number: task.number ?? null,
+            boardId: board.id,
+            boardName: board.name,
+            boardSlug: board.slug,
+          });
+        }
       }
     }
     return result;
