@@ -12,6 +12,11 @@ function useGetRepoIssue({
     queryFn: () => getRepoIssue(repoId, number),
     queryKey: ["repo-issue", repoId, number],
     enabled: !!repoId && Number.isFinite(number),
+    // GitHub webhooks refresh the mirror server-side. Poll the live detail
+    // endpoint as well so provider-side comments/events appear without a
+    // browser refresh even when this client missed the webhook broadcast.
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
   });
 }
 

@@ -267,6 +267,13 @@
       "when": 1785128400000,
       "tag": "0037_task_repo_item_link",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1785128400001,
+      "tag": "0038_github_user_delegation",
+      "breakpoints": true
     }
   ]
 }

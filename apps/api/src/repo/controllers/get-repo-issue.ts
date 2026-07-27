@@ -58,11 +58,26 @@ export async function getRepoIssue(
       }),
   ]);
 
+  // GitHub represents development relationships as cross-reference timeline
+  // events. Expose linked PRs separately while retaining raw timeline data.
+  const linkedPullRequests = timeline.flatMap((event: any) => {
+    const source = event?.source?.issue;
+    if (!source?.pull_request) return [];
+    return [{
+      number: source.number,
+      title: source.title,
+      url: source.html_url,
+      state: source.state,
+      mergedAt: source.pull_request.merged_at ?? null,
+    }];
+  });
+
   return {
     ...result,
     github: {
       comments,
       timeline,
+      linkedPullRequests,
       subIssues: subIssues.data,
       subIssuesSupported: subIssues.supported,
     },

@@ -29,6 +29,7 @@ import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
 import { handleGithubWebhookRoute } from "./github-integration";
+import githubDelegation, { handleGitHubDelegationCallback } from "./github-delegation";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
 import label from "./label";
@@ -220,6 +221,9 @@ export function createApp() {
   });
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
+  // GitHub returns here as a browser navigation, before API auth middleware.
+  // The handler revalidates the initiating Better Auth session and OAuth state.
+  api.get("/github-delegation/callback", handleGitHubDelegationCallback);
 
 api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
@@ -524,6 +528,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   });
 
   const oauthApi = api.route("/oauth", oauth);
+  const githubDelegationApi = api.route("/github-delegation", githubDelegation);
 
   const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
@@ -721,6 +726,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
     workflowRuleApi,
     organizationApi,
     organizationGithubApi,
+    githubDelegationApi,
     oauthApi,
   };
 }

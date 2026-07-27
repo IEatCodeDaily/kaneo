@@ -2,7 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { Octokit } from "octokit";
 import db from "../../database";
-import { accountTable, repoTable, userTable } from "../../database/schema";
+import {
+  githubUserGrantTable,
+  repoTable,
+  userTable,
+} from "../../database/schema";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
@@ -16,7 +20,10 @@ type UpdateGitHubItemInput = {
   state?: "open" | "closed";
   labels?: string[];
   assignees?: string[];
+  milestone?: number | null;
 };
+
+type CloseReason = "completed" | "not_planned";
 
 function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
   const config = (repo.config ?? {}) as { installationId?: number | string };
@@ -68,7 +75,8 @@ export async function updateGitHubItem({
   if (
     updates.title !== undefined ||
     updates.body !== undefined ||
-    updates.state !== undefined
+    updates.state !== undefined ||
+    updates.milestone !== undefined
   ) {
     await octokit.rest.issues.update({
       owner: repo.owner,
@@ -77,6 +85,7 @@ export async function updateGitHubItem({
       title: updates.title,
       body: updates.body,
       state: updates.state,
+      milestone: updates.milestone,
     });
   }
 
@@ -117,13 +126,15 @@ export async function createGitHubItemComment({
   userId: string;
 }) {
   const { repo, octokit: installationOctokit } = await getGitHubRepoClient(repoId);
+  // This is deliberately a dedicated grant, separate from sign-in OAuth.
+  // Sign-in commonly has user:email only; delegated identity has repo scope.
   const [githubAccount] = await db
-    .select({ accessToken: accountTable.accessToken })
-    .from(accountTable)
+    .select({ accessToken: githubUserGrantTable.accessToken })
+    .from(githubUserGrantTable)
     .where(
       and(
-        eq(accountTable.userId, userId),
-        eq(accountTable.providerId, "github"),
+        eq(githubUserGrantTable.userId, userId),
+        eq(githubUserGrantTable.providerId, "github-delegation"),
       ),
     )
     .limit(1);
