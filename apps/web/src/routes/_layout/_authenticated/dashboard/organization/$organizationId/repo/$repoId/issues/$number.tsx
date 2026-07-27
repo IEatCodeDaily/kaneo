@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
-import RepoLayout from "@/components/common/repo-layout";
-import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import PageTitle from "@/components/page-title";
+import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import RepoDetailManagement from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoLabelList from "@/components/repo/repo-label-list";
@@ -37,105 +36,103 @@ function RouteComponent() {
           issue ? `#${issue.number} · ${issue.title}` : `${repoTitle} · Issue`
         }
       />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
-        {isLoading ? (
-          <DetailSkeleton />
-        ) : isError || !issue ? (
-          <NotFound
-            onBack={() =>
+      {isLoading ? (
+        <DetailSkeleton />
+      ) : isError || !issue ? (
+        <NotFound
+          onBack={() =>
+            navigate({
+              to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
+              params: { organizationId, repoId },
+            })
+          }
+        />
+      ) : (
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
+          <Button
+            className="mb-5 gap-1.5"
+            onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
                 params: { organizationId, repoId },
               })
             }
-          />
-        ) : (
-          <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-            <Button
-              className="mb-5 gap-1.5"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
-                  params: { organizationId, repoId },
-                })
-              }
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to issues
-            </Button>
-            <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-              <header className="border-b border-border/80 px-5 py-5 sm:px-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                      {issue.title}
-                    </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <RepoStateBadge state={issue.state} />
-                      <span>#{issue.number}</span>
-                      {issue.externalCreatedAt && (
-                        <span>
-                          opened {formatDateMedium(issue.externalCreatedAt)}
-                        </span>
-                      )}
-                    </div>
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to issues
+          </Button>
+          <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+            <header className="border-b border-border/80 px-5 py-5 sm:px-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    {issue.title}
+                  </h1>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <RepoStateBadge state={issue.state} />
+                    <span>#{issue.number}</span>
+                    {issue.externalCreatedAt && (
+                      <span>
+                        opened {formatDateMedium(issue.externalCreatedAt)}
+                      </span>
+                    )}
                   </div>
-                  <a
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-                    href={issue.url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open externally
-                    <ExternalLink className="size-3.5" />
-                  </a>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Author
-                    login={issue.authorLogin}
-                    avatarUrl={issue.authorAvatarUrl}
-                  />{" "}
-                  <RepoLabelList labels={issue.labels} />
-                </div>
-              </header>
-              <div className="min-h-48 px-5 py-6 sm:px-6">
-                {issue.body ? (
-                  <MarkdownRenderer content={issue.body} />
-                ) : (
-                  <p className="text-sm italic text-muted-foreground">
-                    No description provided.
-                  </p>
-                )}
+                <a
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                  href={issue.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open externally
+                  <ExternalLink className="size-3.5" />
+                </a>
               </div>
-              <RepoDetailManagement
-                assignees={issue.assigneeLogins ?? []}
-                body={issue.body}
-                kind="issue"
-                labels={issue.labels}
-                milestoneNumber={issue.github?.milestone?.number ?? null}
-                number={issue.number}
-                repoId={repoId}
-                state={issue.state}
-                title={issue.title}
-              />
-              <RepoIssueHistory github={issue.github} />
-              <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-                {issue.commentCount > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <MessageSquare className="size-3.5" />
-                    {issue.commentCount} comments
-                  </span>
-                )}
-                {issue.closedAt && (
-                  <span>Closed {formatDateMedium(issue.closedAt)}</span>
-                )}
-              </footer>
-            </article>
-          </main>
-        )}
-      </RepoLayout>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Author
+                  login={issue.authorLogin}
+                  avatarUrl={issue.authorAvatarUrl}
+                />{" "}
+                <RepoLabelList labels={issue.labels} />
+              </div>
+            </header>
+            <div className="min-h-48 px-5 py-6 sm:px-6">
+              {issue.body ? (
+                <MarkdownRenderer content={issue.body} />
+              ) : (
+                <p className="text-sm italic text-muted-foreground">
+                  No description provided.
+                </p>
+              )}
+            </div>
+            <RepoDetailManagement
+              assignees={issue.assigneeLogins ?? []}
+              body={issue.body}
+              kind="issue"
+              labels={issue.labels}
+              milestoneNumber={issue.github?.milestone?.number ?? null}
+              number={issue.number}
+              repoId={repoId}
+              state={issue.state}
+              title={issue.title}
+            />
+            <RepoIssueHistory github={issue.github} />
+            <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+              {issue.commentCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="size-3.5" />
+                  {issue.commentCount} comments
+                </span>
+              )}
+              {issue.closedAt && (
+                <span>Closed {formatDateMedium(issue.closedAt)}</span>
+              )}
+            </footer>
+          </article>
+        </main>
+      )}
     </>
   );
 }

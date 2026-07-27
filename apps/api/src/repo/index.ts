@@ -6,6 +6,7 @@ import { requireOrganizationPermission } from "../utils/require-organization-per
 import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
+import { getGitHubRepoContents } from "./controllers/get-github-repo-contents";
 import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
@@ -147,6 +148,31 @@ const githubRepoMetadataSchema = v.object({
       title: v.string(),
       state: v.string(),
       dueOn: v.nullable(v.string()),
+    }),
+  ),
+});
+
+const githubRepoContentsSchema = v.object({
+  path: v.string(),
+  ref: v.nullable(v.string()),
+  type: v.picklist(["directory", "file", "symlink", "submodule"] as const),
+  entries: v.array(
+    v.object({
+      name: v.string(),
+      path: v.string(),
+      type: v.picklist(["file", "dir", "symlink", "submodule"] as const),
+      size: v.number(),
+      sha: v.string(),
+    }),
+  ),
+  file: v.nullable(
+    v.object({
+      name: v.string(),
+      path: v.string(),
+      size: v.number(),
+      sha: v.string(),
+      content: v.nullable(v.string()),
+      isBinary: v.boolean(),
     }),
   ),
 });
@@ -328,6 +354,39 @@ const repo = new Hono<{
       const organizationId = c.get("organizationId");
       const deletedRepo = await deleteRepoCtrl(id, organizationId);
       return c.json(toRepoResponse(deletedRepo));
+    },
+  )
+  .get(
+    "/:id/contents",
+    describeRoute({
+      operationId: "getGitHubRepoContents",
+      tags: ["Repos"],
+      description:
+        "Browse a GitHub repository directory or read a text file through its installation",
+      responses: {
+        200: {
+          description: "Repository directory entries or file content",
+          content: {
+            "application/json": { schema: resolver(githubRepoContentsSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(
+        v.object({
+          path: v.optional(v.pipe(v.string(), v.maxLength(4096))),
+          ref: v.optional(v.pipe(v.string(), v.maxLength(512))),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { path = "", ref } = c.req.valid("query") || {};
+      return c.json(await getGitHubRepoContents({ repoId: id, path, ref }));
     },
   )
   .get(

@@ -58,6 +58,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoa
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_'
@@ -373,6 +374,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute
         LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport.update(
+    {
+      id: '/repo/$repoId/code',
+      path: '/repo/$repoId/code',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute =
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteImport.update(
     {
@@ -465,6 +475,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
   '/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
   '/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
+  '/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
   '/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
   '/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
   '/dashboard/organization/$organizationId/board/$boardId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
@@ -516,6 +527,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
   '/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
   '/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
+  '/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
   '/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
   '/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
   '/dashboard/organization/$organizationId/board/$boardId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
@@ -573,6 +585,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
   '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
   '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
@@ -629,6 +642,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationId/board/$boardId/backlog'
     | '/dashboard/organization/$organizationId/board/$boardId/board'
     | '/dashboard/organization/$organizationId/board/$boardId/gantt'
+    | '/dashboard/organization/$organizationId/repo/$repoId/code'
     | '/dashboard/organization/$organizationId/repo/$repoId/issues'
     | '/dashboard/organization/$organizationId/repo/$repoId/pulls'
     | '/dashboard/organization/$organizationId/board/$boardId/'
@@ -680,6 +694,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationId/board/$boardId/backlog'
     | '/dashboard/organization/$organizationId/board/$boardId/board'
     | '/dashboard/organization/$organizationId/board/$boardId/gantt'
+    | '/dashboard/organization/$organizationId/repo/$repoId/code'
     | '/dashboard/organization/$organizationId/repo/$repoId/issues'
     | '/dashboard/organization/$organizationId/repo/$repoId/pulls'
     | '/dashboard/organization/$organizationId/board/$boardId'
@@ -736,6 +751,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt'
+    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/'
@@ -1101,6 +1117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
     }
+    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
+      path: '/repo/$repoId/code'
+      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/code'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    }
     '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues': {
       id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
       path: '/repo/$repoId/issues'
@@ -1273,6 +1296,7 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren {
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
@@ -1296,6 +1320,8 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren: Layou
       LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute:

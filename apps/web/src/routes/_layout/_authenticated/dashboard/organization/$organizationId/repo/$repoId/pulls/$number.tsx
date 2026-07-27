@@ -5,7 +5,7 @@ import {
   GitBranch,
   MessageSquare,
 } from "lucide-react";
-import RepoLayout from "@/components/common/repo-layout";
+
 import PageTitle from "@/components/page-title";
 import RepoDetailManagement from "@/components/repo/repo-detail-management";
 import RepoLabelList from "@/components/repo/repo-label-list";
@@ -47,109 +47,106 @@ function RouteComponent() {
             : `${repoTitle} · Pull request`
         }
       />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
-        {isLoading ? (
-          <DetailSkeleton />
-        ) : isError || !pullRequest ? (
-          <NotFound onBack={back} />
-        ) : (
-          <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-            <Button
-              className="mb-5 gap-1.5"
-              onClick={back}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to pull requests
-            </Button>
-            <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-              <header className="border-b border-border/80 px-5 py-5 sm:px-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                      {pullRequest.title}
-                    </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <RepoStateBadge
-                        state={
-                          pullRequest.isDraft && pullRequest.state === "open"
-                            ? "draft"
-                            : pullRequest.state
-                        }
-                      />
-                      <span>#{pullRequest.number}</span>
-                      {pullRequest.externalCreatedAt && (
-                        <span>
-                          opened{" "}
-                          {formatDateMedium(pullRequest.externalCreatedAt)}
-                        </span>
-                      )}
-                    </div>
+      {isLoading ? (
+        <DetailSkeleton />
+      ) : isError || !pullRequest ? (
+        <NotFound onBack={back} />
+      ) : (
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
+          <Button
+            className="mb-5 gap-1.5"
+            onClick={back}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to pull requests
+          </Button>
+          <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+            <header className="border-b border-border/80 px-5 py-5 sm:px-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    {pullRequest.title}
+                  </h1>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <RepoStateBadge
+                      state={
+                        pullRequest.isDraft && pullRequest.state === "open"
+                          ? "draft"
+                          : pullRequest.state
+                      }
+                    />
+                    <span>#{pullRequest.number}</span>
+                    {pullRequest.externalCreatedAt && (
+                      <span>
+                        opened {formatDateMedium(pullRequest.externalCreatedAt)}
+                      </span>
+                    )}
                   </div>
-                  <a
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-                    href={pullRequest.url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open externally
-                    <ExternalLink className="size-3.5" />
-                  </a>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Author
-                    login={pullRequest.authorLogin}
-                    avatarUrl={pullRequest.authorAvatarUrl}
-                  />
-                  <RepoLabelList labels={pullRequest.labels} />
-                </div>
-                {pullRequest.headBranch && pullRequest.baseBranch && (
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-xs">
-                    <GitBranch className="size-3.5 text-muted-foreground" />
-                    {pullRequest.headBranch}
-                    <span className="text-muted-foreground">→</span>
-                    {pullRequest.baseBranch}
-                  </div>
-                )}
-              </header>
-              <div className="min-h-48 px-5 py-6 sm:px-6">
-                {pullRequest.body ? (
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
-                    {pullRequest.body}
-                  </p>
-                ) : (
-                  <p className="text-sm italic text-muted-foreground">
-                    No description provided.
-                  </p>
-                )}
+                <a
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                  href={pullRequest.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open externally
+                  <ExternalLink className="size-3.5" />
+                </a>
               </div>
-              <RepoDetailManagement
-                body={pullRequest.body}
-                kind="pull-request"
-                labels={pullRequest.labels}
-                number={pullRequest.number}
-                repoId={repoId}
-                state={pullRequest.state}
-                title={pullRequest.title}
-              />
-              <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-                {pullRequest.commentCount > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <MessageSquare className="size-3.5" />
-                    {pullRequest.commentCount} comments
-                  </span>
-                )}
-                {pullRequest.mergedAt ? (
-                  <span>Merged {formatDateMedium(pullRequest.mergedAt)}</span>
-                ) : pullRequest.closedAt ? (
-                  <span>Closed {formatDateMedium(pullRequest.closedAt)}</span>
-                ) : null}
-              </footer>
-            </article>
-          </main>
-        )}
-      </RepoLayout>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Author
+                  login={pullRequest.authorLogin}
+                  avatarUrl={pullRequest.authorAvatarUrl}
+                />
+                <RepoLabelList labels={pullRequest.labels} />
+              </div>
+              {pullRequest.headBranch && pullRequest.baseBranch && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-xs">
+                  <GitBranch className="size-3.5 text-muted-foreground" />
+                  {pullRequest.headBranch}
+                  <span className="text-muted-foreground">→</span>
+                  {pullRequest.baseBranch}
+                </div>
+              )}
+            </header>
+            <div className="min-h-48 px-5 py-6 sm:px-6">
+              {pullRequest.body ? (
+                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                  {pullRequest.body}
+                </p>
+              ) : (
+                <p className="text-sm italic text-muted-foreground">
+                  No description provided.
+                </p>
+              )}
+            </div>
+            <RepoDetailManagement
+              body={pullRequest.body}
+              kind="pull-request"
+              labels={pullRequest.labels}
+              number={pullRequest.number}
+              repoId={repoId}
+              state={pullRequest.state}
+              title={pullRequest.title}
+            />
+            <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+              {pullRequest.commentCount > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="size-3.5" />
+                  {pullRequest.commentCount} comments
+                </span>
+              )}
+              {pullRequest.mergedAt ? (
+                <span>Merged {formatDateMedium(pullRequest.mergedAt)}</span>
+              ) : pullRequest.closedAt ? (
+                <span>Closed {formatDateMedium(pullRequest.closedAt)}</span>
+              ) : null}
+            </footer>
+          </article>
+        </main>
+      )}
     </>
   );
 }
