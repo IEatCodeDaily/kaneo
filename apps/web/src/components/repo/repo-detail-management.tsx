@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  Ban,
   Check,
+  Copy,
   Edit3,
   GitMerge,
   LoaderCircle,
@@ -165,6 +167,7 @@ export default function RepoDetailManagement({
   };
 
   const changeState = async () => {
+    if (state === "open" && kind === "issue") return;
     try {
       await update.mutateAsync({ state: state === "open" ? "closed" : "open" });
       toast.success(
@@ -174,6 +177,33 @@ export default function RepoDetailManagement({
       toast.error("Could not update the state.");
     }
   };
+
+  const closeIssueWith = useMutation({
+    mutationFn: (reason: "completed" | "not_planned") =>
+      request(`${resourcePath}/close`, {
+        body: JSON.stringify({ reason }),
+        method: "POST",
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: ["repo", repoId] });
+      toast.success("Closed on GitHub.");
+    },
+    onError: () => toast.error("Could not close the issue."),
+  });
+
+  const markDuplicate = useMutation({
+    mutationFn: (canonicalNumber: number) =>
+      request(`${resourcePath}/duplicate`, {
+        body: JSON.stringify({ canonicalNumber }),
+        method: "POST",
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+      toast.success("Marked as duplicate on GitHub.");
+    },
+    onError: () => toast.error("Could not mark as duplicate."),
+  });
 
   const isPending = update.isPending || addComment.isPending || merge.isPending;
   const name = kind === "issue" ? "issue" : "pull request";
@@ -278,7 +308,29 @@ export default function RepoDetailManagement({
               </DialogFooter>
             </DialogPopup>
           </Dialog>
-          {state !== "merged" && (
+          {kind === "issue" && state === "open" && (
+            <>
+              <Button disabled={closeIssueWith.isPending} onClick={() => closeIssueWith.mutate("completed")} size="sm" variant="outline">
+                <Check className="size-3.5" /> Close as completed
+              </Button>
+              <Button disabled={closeIssueWith.isPending} onClick={() => closeIssueWith.mutate("not_planned")} size="sm" variant="outline">
+                <Ban className="size-3.5" /> Close as not planned
+              </Button>
+              <Button
+                disabled={markDuplicate.isPending}
+                onClick={() => {
+                  const answer = window.prompt("Duplicate of which issue number?");
+                  const canonical = Number(answer);
+                  if (Number.isInteger(canonical) && canonical > 0) markDuplicate.mutate(canonical);
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <Copy className="size-3.5" /> Close as duplicate
+              </Button>
+            </>
+          )}
+          {state !== "merged" && !(kind === "issue" && state === "open") && (
             <Button
               disabled={isPending}
               onClick={changeState}

@@ -40,7 +40,18 @@ export type RepoIssueGithub = {
     node_id?: string;
     event?: string | null;
     created_at?: string | null;
+    state_reason?: string | null;
     actor?: RepoIssueGithubActor;
+    assignee?: RepoIssueGithubActor;
+    label?: { name?: string | null };
+    milestone?: { title?: string | null };
+  }>;
+  linkedPullRequests?: Array<{
+    number: number;
+    title?: string | null;
+    url?: string | null;
+    state?: string | null;
+    mergedAt?: string | null;
   }>;
   subIssues: Array<{
     id?: number | string;
