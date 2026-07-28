@@ -26,37 +26,6 @@ type UpdateGitHubItemInput = {
   milestone?: number | null;
 };
 
-type CloseReason = "completed" | "not_planned";
-
-/**
- * Compute the diff between the issue's current assignees and the desired set.
- *
- * octokit 5.x (plugin-rest-endpoint-methods 17.x) does not expose
- * `setAssignees` — GitHub's REST API only offers `addAssignees` (POST) and
- * `removeAssignees` (DELETE). To set an absolute list we compute the symmetric
- * diff and issue one add and one remove in parallel.
- */
-async function replaceIssueAssignees(
-  octokit: Octokit,
-  target: { owner: string; repo: string; issue_number: number },
-  current: string[],
-  desired: string[],
-) {
-  const toAdd = desired.filter((login) => !current.includes(login));
-  const toRemove = current.filter((login) => !desired.includes(login));
-  await Promise.all([
-    toAdd.length > 0
-      ? octokit.rest.issues.addAssignees({ ...target, assignees: toAdd })
-      : Promise.resolve(),
-    toRemove.length > 0
-      ? octokit.rest.issues.removeAssignees({
-          ...target,
-          assignees: toRemove,
-        })
-      : Promise.resolve(),
-  ]);
-}
-
 function configuredInstallationId(
   repo: typeof repoTable.$inferSelect,
 ): number | null {
@@ -191,37 +160,39 @@ export async function updateGitHubItem({
   number,
   kind,
   updates,
+  userId,
 }: {
   repoId: string;
   number: number;
   kind: GitHubItemKind;
   updates: UpdateGitHubItemInput;
+  userId?: string;
 }) {
   if (Object.keys(updates).length === 0) {
     throw new HTTPException(400, { message: "At least one field is required" });
   }
 
-  const { repo, octokit } = await getGitHubRepoClient(repoId);
+  // Attribute the change to the acting member, not the Kaneo App bot.
+  const { repo, octokit } = await getActingOctokit(repoId, userId);
   const issue_number = number;
 
-  if (
+  // Batch every field change concurrently instead of serially: GitHub's issue
+  // update, labels, and assignees are independent endpoints.
+  await Promise.all([
     updates.title !== undefined ||
     updates.body !== undefined ||
     updates.state !== undefined ||
     updates.milestone !== undefined
-  ) {
-    await octokit.rest.issues.update({
-      owner: repo.owner,
-      repo: repo.name,
-      issue_number,
-      title: updates.title,
-      body: updates.body,
-      state: updates.state,
-      milestone: updates.milestone,
-    });
-  }
-
-  await Promise.all([
+      ? octokit.rest.issues.update({
+          owner: repo.owner,
+          repo: repo.name,
+          issue_number,
+          title: updates.title,
+          body: updates.body,
+          state: updates.state,
+          milestone: updates.milestone,
+        })
+      : Promise.resolve(),
     updates.labels === undefined
       ? Promise.resolve()
       : octokit.rest.issues.setLabels({
@@ -243,10 +214,57 @@ export async function updateGitHubItem({
         }),
   ]);
 
-  await syncGitHubRepo(repoId);
+  // A full repo re-sync made every metadata edit wait on all issues and PRs.
+  // Return the fresh single item instead and let the mirror catch up in the
+  // background, so the UI responds immediately.
+  void syncGitHubRepo(repoId).catch((error) => {
+    console.error("[updateGitHubItem] background sync failed", error);
+  });
+
   return kind === "issue"
     ? getRepoIssue(repoId, number)
     : getRepoPullRequest(repoId, number);
+}
+
+/**
+ * Prefer the acting member's delegated GitHub token so writes are attributed to
+ * them instead of the Kaneo App bot. Falls back to the installation token when
+ * the user hasn't connected their GitHub account (or the grant was revoked).
+ */
+async function getActingOctokit(
+  repoId: string,
+  userId?: string,
+): Promise<{
+  repo: typeof repoTable.$inferSelect;
+  octokit: Octokit;
+  actedAsUser: boolean;
+}> {
+  const { repo, octokit: installationOctokit } =
+    await getGitHubRepoClient(repoId);
+  if (!userId) {
+    return { repo, octokit: installationOctokit, actedAsUser: false };
+  }
+
+  const [grant] = await db
+    .select({ accessToken: githubUserGrantTable.accessToken })
+    .from(githubUserGrantTable)
+    .where(
+      and(
+        eq(githubUserGrantTable.userId, userId),
+        eq(githubUserGrantTable.providerId, "github-delegation"),
+      ),
+    )
+    .limit(1);
+
+  if (!grant?.accessToken) {
+    return { repo, octokit: installationOctokit, actedAsUser: false };
+  }
+
+  return {
+    repo,
+    octokit: new Octokit({ auth: grant.accessToken }),
+    actedAsUser: true,
+  };
 }
 
 export async function createGitHubItemComment({

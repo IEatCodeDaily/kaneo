@@ -71,7 +71,7 @@ test.describe("repo issue and pull request details", () => {
     await gotoAndSettle(page, issueUrl());
     await page.getByRole("button", { name: /^Edit$/ }).click();
 
-    const editor = page.locator(".ProseMirror").first();
+    const editor = page.locator(".ProseMirror[contenteditable='true']").first();
     await expect(editor).toBeVisible();
     await editor.click();
     // Start on a fresh line so the slash trigger regex matches.
@@ -107,7 +107,7 @@ test.describe("repo issue and pull request details", () => {
     await gotoAndSettle(page, issueUrl());
     await page.getByRole("button", { name: /^Edit$/ }).click();
 
-    const editor = page.locator(".ProseMirror").first();
+    const editor = page.locator(".ProseMirror[contenteditable='true']").first();
     await editor.click();
     await page.keyboard.press("Control+End");
     await page.keyboard.press("Enter");

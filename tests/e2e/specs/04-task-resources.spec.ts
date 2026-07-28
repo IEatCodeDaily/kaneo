@@ -7,32 +7,52 @@ const fixtures = loadFixtures();
  * against the API so we prove persistence rather than optimistic rendering.
  */
 test.describe("task resources and github linking", () => {
-  test.skip(!fixtures.boardId || !fixtures.repoId, "board/repo fixtures missing");
+  test.skip(
+    !fixtures.boardId || !fixtures.repoId,
+    "board/repo fixtures missing",
+  );
 
   let taskId: string | undefined;
   let taskUrl: string;
 
   test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext({ baseURL: fixtures.baseURL });
+    // Reuse the signed-in storage state: a bare context is unauthenticated, so
+    // POST /api/task returned 401 and every test below silently skipped.
+    const context = await browser.newContext({
+      baseURL: fixtures.baseURL,
+      storageState: "tests/e2e/.auth/user.json",
+    });
     const columns = await context.request.get(
       `${fixtures.baseURL}/api/column/${fixtures.boardId}`,
     );
     const columnBody = columns.ok() ? await columns.json() : [];
-    const columnId = Array.isArray(columnBody)
-      ? columnBody[0]?.id
-      : columnBody?.[0]?.id;
+    // `status` is the column SLUG, not its id.
+    const columnSlug = Array.isArray(columnBody)
+      ? columnBody[0]?.slug
+      : columnBody?.[0]?.slug;
 
-    const created = await context.request.post(`${fixtures.baseURL}/api/task`, {
-      data: {
-        boardId: fixtures.boardId,
-        title: `E2E resource link ${Date.now()}`,
-        status: columnId ?? "to-do",
-        priority: "medium",
+    // Task creation is POST /task/{boardId} (not /task), and `description` is
+    // required — the old call 404'd, silently skipping every test here.
+    const created = await context.request.post(
+      `${fixtures.baseURL}/api/task/${fixtures.boardId}`,
+      {
+        data: {
+          title: `E2E resource link ${Date.now()}`,
+          description: "Seeded by the Playwright resources suite.",
+          status: columnSlug ?? "to-do",
+          priority: "medium",
+        },
       },
-    });
+    );
     if (created.ok()) {
       const body = await created.json();
       taskId = body?.id ?? body?.task?.id;
+    } else {
+      console.error(
+        "[04-task-resources] task seed failed",
+        created.status(),
+        await created.text(),
+      );
     }
     await context.close();
   });
@@ -58,23 +78,27 @@ test.describe("task resources and github linking", () => {
     test.skip(!fixtures.issueNumber, "no mirrored issue available");
     await gotoAndSettle(page, taskUrl);
 
-    await page.getByRole("button", { name: /Link issue or pull request/i }).click();
+    await page
+      .getByRole("button", { name: /Link issue or pull request/i })
+      .click();
 
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-
-    // Pick the fixture repository, then choose an issue.
-    await dialog.getByLabel("Repository").selectOption(fixtures.repoId as string);
-    await expect(dialog.getByRole("tab", { name: /Issues/i })).toBeVisible();
+    // The picker is now a command palette (matching Relations): type to filter
+    // across repos, then pick the issue. No repository <select> or tabs.
+    // NOTE: the task detail sheet is ALSO role=dialog, so scope by the search
+    // box rather than a bare getByRole("dialog").
+    const search = page.getByPlaceholder(/Search issues and pull requests/i);
+    await expect(search).toBeVisible();
+    const dialog = page.getByRole("dialog").filter({ has: search });
+    await search.fill(String(fixtures.issueNumber));
 
     const issueRow = dialog
-      .getByRole("button", { name: new RegExp(`#${fixtures.issueNumber}\\b`) })
+      .getByRole("option", { name: new RegExp(`#${fixtures.issueNumber}\\b`) })
       .first();
     await expect(issueRow).toBeVisible({ timeout: 20_000 });
     await issueRow.click();
 
-    // Dialog closes and the link appears in the Resources list.
-    await expect(dialog).toBeHidden({ timeout: 20_000 });
+    // Palette closes and the link appears in the Resources list.
+    await expect(search).toBeHidden({ timeout: 20_000 });
     const linkedItem = page
       .getByRole("link", { name: new RegExp(`#${fixtures.issueNumber}\\b`) })
       .first();
@@ -111,7 +135,9 @@ test.describe("task resources and github linking", () => {
     // Remove the link through the UI.
     await linked.hover();
     await page
-      .getByRole("button", { name: new RegExp(`Unlink #${fixtures.issueNumber}`) })
+      .getByRole("button", {
+        name: new RegExp(`Unlink #${fixtures.issueNumber}`),
+      })
       .click();
     await expect(linked).toBeHidden({ timeout: 20_000 });
 
@@ -131,7 +157,12 @@ test.describe("task resources and github linking", () => {
 
   test.afterAll(async ({ browser }) => {
     if (!taskId) return;
-    const context = await browser.newContext({ baseURL: fixtures.baseURL });
+    // Reuse the signed-in storage state: a bare context is unauthenticated, so
+    // POST /api/task returned 401 and every test below silently skipped.
+    const context = await browser.newContext({
+      baseURL: fixtures.baseURL,
+      storageState: "tests/e2e/.auth/user.json",
+    });
     await context.request.delete(`${fixtures.baseURL}/api/task/${taskId}`);
     await context.close();
   });

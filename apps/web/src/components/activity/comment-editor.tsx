@@ -590,6 +590,21 @@ export default function CommentEditor({
     );
   }, [slashCommands, slashMenu?.query]);
 
+  // `useEditor` intentionally does NOT depend on slashMenu/filteredSlashCommands
+  // (recreating the editor on every keystroke would destroy the selection), so
+  // its handleKeyDown closure would otherwise capture a stale `null` slashMenu
+  // and swallow ArrowUp/ArrowDown/Enter. Mirror both into refs the handler can
+  // read at call time.
+  const slashMenuRef = useRef<SlashMenuState | null>(null);
+  slashMenuRef.current = slashMenu;
+  const filteredSlashCommandsRef = useRef<SlashCommand[]>(
+    filteredSlashCommands,
+  );
+  filteredSlashCommandsRef.current = filteredSlashCommands;
+  // Same stale-closure problem for the editor itself: on the render that builds
+  // `editorProps`, the `editor` binding is still undefined.
+  const editorInstanceRef = useRef<Editor | null>(null);
+
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -784,6 +799,8 @@ export default function CommentEditor({
           return true;
         },
         handleKeyDown: (_view, event) => {
+          const slashMenu = slashMenuRef.current;
+          const filteredSlashCommands = filteredSlashCommandsRef.current;
           if (!readOnly && !disabled && slashMenu) {
             if (event.key === "ArrowDown") {
               event.preventDefault();
@@ -820,7 +837,8 @@ export default function CommentEditor({
               filteredSlashCommands.length
             ) {
               event.preventDefault();
-              if (!editor) return true;
+              const activeEditor = editorInstanceRef.current;
+              if (!activeEditor) return true;
               const command =
                 filteredSlashCommands[
                   Math.min(
@@ -829,7 +847,10 @@ export default function CommentEditor({
                   )
                 ];
               if (command) {
-                command.run(editor, { from: slashMenu.from, to: slashMenu.to });
+                command.run(activeEditor, {
+                  from: slashMenu.from,
+                  to: slashMenu.to,
+                });
                 setSlashMenu(null);
               }
               return true;
@@ -892,6 +913,9 @@ export default function CommentEditor({
     },
     [handleAssetFileUpload, resolvedPlaceholder, toShikiLanguage],
   );
+
+  // Keep the live editor available to the stable editorProps handlers above.
+  editorInstanceRef.current = editor ?? null;
 
   useEffect(() => {
     if (!onAttachActionChange) return;
