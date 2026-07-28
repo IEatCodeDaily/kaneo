@@ -7,6 +7,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+import { ErrorBoundary } from "@/components/error-boundary";
 import PageTitle from "@/components/page-title";
 import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
 import {
@@ -141,7 +142,6 @@ function RouteComponent() {
                 </footer>
                 <RepoIssueActions
                   body={pullRequest.body}
-
                   kind="pull-request"
                   labels={pullRequest.labels}
                   number={pullRequest.number}
@@ -149,23 +149,35 @@ function RouteComponent() {
                   state={pullRequest.state}
                   title={pullRequest.title}
                 />
-                <RepoTaskLinks
-                  itemType="pull-requests"
-                  number={pullRequest.number}
-                  organizationId={organizationId}
-                  repoId={repoId}
-                  taskLinks={pullRequest.taskLinks}
-                />
+                <ErrorBoundary
+                  className="m-4"
+                  fallbackDescription="Linked Kaneo tasks could not be rendered. The rest of this pull request still works."
+                  fallbackTitle="Linked tasks unavailable"
+                >
+                  <RepoTaskLinks
+                    itemType="pull-requests"
+                    number={pullRequest.number}
+                    organizationId={organizationId}
+                    repoId={repoId}
+                    taskLinks={pullRequest.taskLinks}
+                  />
+                </ErrorBoundary>
               </div>
-              <RepoIssueSidebar
-                body={pullRequest.body}
-                kind="pull-request"
-                labels={pullRequest.labels}
-                number={pullRequest.number}
-                repoId={repoId}
-                state={pullRequest.state}
-                title={pullRequest.title}
-              />
+              <ErrorBoundary
+                className="m-4"
+                fallbackDescription="Pull request metadata could not be rendered."
+                fallbackTitle="Sidebar unavailable"
+              >
+                <RepoIssueSidebar
+                  body={pullRequest.body}
+                  kind="pull-request"
+                  labels={pullRequest.labels}
+                  number={pullRequest.number}
+                  repoId={repoId}
+                  state={pullRequest.state}
+                  title={pullRequest.title}
+                />
+              </ErrorBoundary>
             </div>
           </article>
         </main>

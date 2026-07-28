@@ -5,23 +5,26 @@ import {
   Github,
   GitPullRequest,
   Link2,
-  LoaderCircle,
+  Search,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogPopup,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Command,
+  CommandCollection,
+  CommandDialog,
+  CommandDialogPopup,
+  CommandEmpty,
+  CommandFooter,
+  CommandGroup,
+  CommandGroupLabel,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandPanel,
+  CommandSeparator,
+} from "@/components/ui/command";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
 import useGetRepoPullRequests from "@/hooks/queries/repo/use-get-repo-pull-requests";
@@ -34,6 +37,20 @@ type ResourceType = "issues" | "pull-requests";
 type TaskResourcesProps = {
   taskId: string;
   organizationId: string;
+};
+
+type ResourceItem = {
+  id: string;
+  number: number;
+  title: string;
+  repoId: string;
+  repoLabel: string;
+};
+
+type ResourceGroup = {
+  value: string;
+  label: string;
+  items: ResourceItem[];
 };
 
 async function linkResource({
@@ -66,27 +83,28 @@ export default function TaskResources({
   taskId,
   organizationId,
 }: TaskResourcesProps) {
-  const [open, setOpen] = useState(false);
-  const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [resourceType, setResourceType] = useState<ResourceType>("issues");
-  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
   const { data: links = [] } = useGetTaskRepoLinks(taskId);
-  const { data: repos = [], isLoading: reposLoading } = useGetRepos({
-    organizationId,
-  });
-  const selectedRepo = repos.find((repo) => repo.id === selectedRepoId);
-  const { data: issues, isLoading: issuesLoading } = useGetRepoIssues({
-    repoId: selectedRepoId ?? "",
+  const { data: repos = [] } = useGetRepos({ organizationId });
+
+  // The command palette searches across every connected repo at once, so scope
+  // fetches to the first repo only when there is exactly one; otherwise the
+  // selected repo comes from the item the user picks.
+  const primaryRepoId = repos.length > 0 ? repos[0].id : "";
+  const { data: issues } = useGetRepoIssues({
+    repoId: primaryRepoId,
     state: "all",
     limit: 100,
   });
-  const { data: pullRequests, isLoading: pullRequestsLoading } =
-    useGetRepoPullRequests({
-      repoId: selectedRepoId ?? "",
-      state: "all",
-      limit: 100,
-    });
+  const { data: pullRequests } = useGetRepoPullRequests({
+    repoId: primaryRepoId,
+    state: "all",
+    limit: 100,
+  });
+
   const link = useMutation({
     mutationFn: linkResource,
     onError: (error) =>
@@ -98,16 +116,20 @@ export default function TaskResources({
         queryKey: ["task-repo-links", taskId],
       });
       toast.success("GitHub resource linked.");
-      setOpen(false);
-      setSearch("");
+      setCommandOpen(false);
+      setSearchQuery("");
     },
   });
 
   const unlink = useMutation({
-    mutationFn: async (link: { repoId: string; itemType: ResourceType; number: number }) => {
+    mutationFn: async (target: {
+      repoId: string;
+      itemType: ResourceType;
+      number: number;
+    }) => {
       const response = await fetch(
         getApiUrl(
-          `/repo/${link.repoId}/${link.itemType}/${link.number}/task-links/${taskId}`,
+          `/repo/${target.repoId}/${target.itemType}/${target.number}/task-links/${taskId}`,
         ),
         { credentials: "include", method: "DELETE" },
       );
@@ -127,29 +149,48 @@ export default function TaskResources({
     },
   });
 
-  const resources =
-    resourceType === "issues" ? issues?.data : pullRequests?.data;
-  const isLoading =
-    reposLoading ||
-    (selectedRepoId !== null &&
-      (resourceType === "issues" ? issuesLoading : pullRequestsLoading));
-  const normalizedSearch = search.trim().toLocaleLowerCase();
-  const filteredResources = useMemo(
-    () =>
-      (resources ?? []).filter((resource) =>
-        `#${resource.number} ${resource.title}`
-          .toLocaleLowerCase()
-          .includes(normalizedSearch),
-      ),
-    [normalizedSearch, resources],
+  const linkedKeys = useMemo(
+    () => new Set(links.map((item) => `${item.itemType}-${item.number}`)),
+    [links],
   );
 
-  const reset = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      setSearch("");
-      setSelectedRepoId(null);
-    }
+  // One group per repository, matching how Relations groups tasks by board.
+  const commandGroups = useMemo<ResourceGroup[]>(() => {
+    const source =
+      resourceType === "issues" ? issues?.data : pullRequests?.data;
+    const repo = repos.find((candidate) => candidate.id === primaryRepoId);
+    if (!repo || !source) return [];
+
+    const items = source
+      .filter(
+        (resource) => !linkedKeys.has(`${resourceType}-${resource.number}`),
+      )
+      .map((resource) => ({
+        id: String(resource.id),
+        number: resource.number,
+        title: resource.title,
+        repoId: repo.id,
+        repoLabel: `${repo.owner}/${repo.name}`,
+      }));
+
+    return items.length > 0
+      ? [
+          {
+            value: repo.id,
+            label: `${repo.owner}/${repo.name}`,
+            items,
+          },
+        ]
+      : [];
+  }, [issues, linkedKeys, primaryRepoId, pullRequests, repos, resourceType]);
+
+  const handleLink = (item: ResourceItem) => {
+    link.mutate({
+      itemType: resourceType,
+      number: item.number,
+      repoId: item.repoId,
+      taskId,
+    });
   };
 
   return (
@@ -158,160 +199,49 @@ export default function TaskResources({
         <span className="text-xs font-medium text-foreground/70">
           Resources
         </span>
-        <Dialog onOpenChange={reset} open={open}>
-          <DialogTrigger render={<Button size="icon-xs" variant="ghost" />}>
-            <Link2 className="size-3.5" />
-            <span className="sr-only">Link GitHub resource</span>
-          </DialogTrigger>
-          <DialogPopup className="sm:max-w-xl">
-            <DialogHeader>
-              <DialogTitle>Link GitHub resource</DialogTitle>
-              <DialogDescription>
-                Choose a repository, then link one of its issues or pull
-                requests to this task.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogPanel className="space-y-3">
-              <div className="space-y-1.5">
-                <label
-                  className="text-sm font-medium"
-                  htmlFor="task-resource-repo"
-                >
-                  Repository
-                </label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  id="task-resource-repo"
-                  onChange={(event) => {
-                    setSelectedRepoId(event.target.value || null);
-                    setSearch("");
-                  }}
-                  value={selectedRepoId ?? ""}
-                >
-                  <option value="">Select a repository…</option>
-                  {repos.map((repo) => (
-                    <option key={repo.id} value={repo.id}>
-                      {repo.owner}/{repo.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedRepo && (
-                <>
-                  <Tabs
-                    onValueChange={(value) =>
-                      setResourceType(value as ResourceType)
-                    }
-                    value={resourceType}
-                  >
-                    <TabsList>
-                      <TabsTrigger value="issues">
-                        <CircleDot /> Issues
-                      </TabsTrigger>
-                      <TabsTrigger value="pull-requests">
-                        <GitPullRequest /> Pull requests
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  <Input
-                    aria-label="Search GitHub resources"
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder={`Search ${resourceType === "issues" ? "issues" : "pull requests"}…`}
-                    value={search}
-                  />
-                  <div className="max-h-72 overflow-y-auto rounded-md border">
-                    {isLoading ? (
-                      <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                        <LoaderCircle className="size-4 animate-spin" /> Loading
-                        resources…
-                      </p>
-                    ) : filteredResources.length === 0 ? (
-                      <p className="p-4 text-sm text-muted-foreground">
-                        No{" "}
-                        {resourceType === "issues" ? "issues" : "pull requests"}{" "}
-                        found in {selectedRepo.owner}/{selectedRepo.name}.
-                      </p>
-                    ) : (
-                      filteredResources.map((resource) => (
-                        <button
-                          className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
-                          disabled={link.isPending}
-                          key={resource.id}
-                          onClick={() =>
-                            link.mutate({
-                              itemType: resourceType,
-                              number: resource.number,
-                              repoId: selectedRepo.id,
-                              taskId,
-                            })
-                          }
-                          type="button"
-                        >
-                          {resourceType === "issues" ? (
-                            <CircleDot className="size-4 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="font-mono text-xs text-muted-foreground">
-                            #{resource.number}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-sm">
-                            {resource.title}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-              {!selectedRepo && !reposLoading && repos.length === 0 && (
-                <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                  No repositories are connected to this organization yet.
-                </p>
-              )}
-            </DialogPanel>
-            <DialogFooter>
-              <Button onClick={() => reset(false)} variant="outline">
-                Cancel
-              </Button>
-            </DialogFooter>
-          </DialogPopup>
-        </Dialog>
+        <Button
+          onClick={() => setCommandOpen(true)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Link2 className="size-3.5" />
+          <span className="sr-only">Link GitHub resource</span>
+        </Button>
       </div>
+
       {links.length > 0 && (
         <div className="flex flex-col gap-0.5">
-          {links.map((link) => (
+          {links.map((item) => (
             <div
               className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/60"
-              key={link.id}
+              key={item.id}
             >
-              {link.itemType === "issues" ? (
+              {item.itemType === "issues" ? (
                 <CircleDot className="size-4 shrink-0 text-muted-foreground" />
               ) : (
                 <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
               )}
               <a
                 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary hover:underline"
-                href={link.url}
+                href={item.url}
                 rel="noreferrer"
                 target="_blank"
               >
                 <span className="font-mono text-xs text-muted-foreground">
-                  #{link.number}
+                  #{item.number}
                 </span>
-                <span className="min-w-0 truncate">{link.title}</span>
+                <span className="min-w-0 truncate">{item.title}</span>
                 <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
               </a>
               <Button
-                aria-label={`Unlink #${link.number}`}
+                aria-label={`Unlink #${item.number}`}
                 className="opacity-0 group-hover:opacity-100"
                 disabled={unlink.isPending}
                 onClick={() =>
                   unlink.mutate({
-                    itemType: link.itemType,
-                    number: link.number,
-                    repoId: link.repoId,
+                    itemType: item.itemType,
+                    number: item.number,
+                    repoId: item.repoId,
                   })
                 }
                 size="icon-xs"
@@ -323,14 +253,94 @@ export default function TaskResources({
           ))}
         </div>
       )}
+
       <button
         className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-        onClick={() => setOpen(true)}
+        onClick={() => setCommandOpen(true)}
         type="button"
       >
         <Github className="size-4" />
         <span>Link issue or pull request</span>
       </button>
+
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandDialogPopup>
+          <Command items={commandGroups}>
+            <CommandInput
+              placeholder="Search issues and pull requests..."
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+            <CommandPanel>
+              <CommandEmpty>
+                <div className="text-center py-6">
+                  <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {repos.length === 0
+                      ? "No repositories are connected to this organization yet."
+                      : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
+                  </p>
+                </div>
+              </CommandEmpty>
+              <CommandList>
+                {(group: ResourceGroup, groupIndex: number) => (
+                  <Fragment key={group.value}>
+                    <CommandGroup items={group.items}>
+                      <CommandGroupLabel>{group.label}</CommandGroupLabel>
+                      <CommandCollection>
+                        {(item: ResourceItem) => (
+                          <CommandItem
+                            key={item.id}
+                            value={`#${item.number} ${item.title} ${item.repoLabel}`}
+                            onClick={() => handleLink(item)}
+                            className="flex items-center gap-3 py-2"
+                          >
+                            {resourceType === "issues" ? (
+                              <CircleDot className="size-4 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
+                            )}
+                            <span className="text-xs text-muted-foreground shrink-0 font-mono">
+                              #{item.number}
+                            </span>
+                            <span className="text-sm truncate flex-1">
+                              {item.title}
+                            </span>
+                          </CommandItem>
+                        )}
+                      </CommandCollection>
+                    </CommandGroup>
+                    {groupIndex < commandGroups.length - 1 && (
+                      <CommandSeparator />
+                    )}
+                  </Fragment>
+                )}
+              </CommandList>
+            </CommandPanel>
+            <CommandFooter>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "issues" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setResourceType("issues")}
+                >
+                  <CircleDot className="size-3" />
+                  Issues
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "pull-requests" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setResourceType("pull-requests")}
+                >
+                  <GitPullRequest className="size-3" />
+                  Pull requests
+                </button>
+              </div>
+              <span className="text-muted-foreground/60">Select to link</span>
+            </CommandFooter>
+          </Command>
+        </CommandDialogPopup>
+      </CommandDialog>
     </section>
   );
 }

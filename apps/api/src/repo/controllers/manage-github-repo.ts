@@ -7,7 +7,10 @@ import {
   repoTable,
   userTable,
 } from "../../database/schema";
-import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
+import {
+  getGithubApp,
+  getInstallationOctokit,
+} from "../../plugins/github/utils/github-app";
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
 import { getRepoPullRequest } from "./get-repo-pull-request";
@@ -54,16 +57,72 @@ async function replaceIssueAssignees(
   ]);
 }
 
-function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
+function configuredInstallationId(
+  repo: typeof repoTable.$inferSelect,
+): number | null {
   const config = (repo.config ?? {}) as { installationId?: number | string };
   const raw = config.installationId;
   const installationId = typeof raw === "string" ? Number(raw) : raw;
-  if (!installationId || !Number.isInteger(installationId)) {
+  return installationId && Number.isInteger(installationId)
+    ? installationId
+    : null;
+}
+
+/**
+ * Resolve the live installation ID that can actually reach this repo.
+ *
+ * A repo's `config.installationId` is a cache, and it goes stale the moment the
+ * user uninstalls/reinstalls the GitHub App (GitHub issues a brand new
+ * installation ID each time). The old ID then 404s on every token request,
+ * which surfaced as blanket 500s across the repo UI.
+ *
+ * Strategy: ask the App which installation owns `repo.owner`, and persist that
+ * so subsequent calls stay cheap. Fall back to the cached ID only if the
+ * lookup fails for an unrelated reason.
+ */
+export async function resolveInstallationId(
+  repo: typeof repoTable.$inferSelect,
+): Promise<number> {
+  const cached = configuredInstallationId(repo);
+  const app = getGithubApp();
+  if (!app) {
+    if (cached) return cached;
     throw new HTTPException(422, {
-      message: "GitHub repository has no usable installation ID",
+      message: "GitHub App is not configured on this instance",
     });
   }
-  return installationId;
+
+  let liveId: number | null = null;
+  try {
+    // Works for both user- and organization-owned accounts.
+    const { data } = await app.octokit.request(
+      "GET /users/{username}/installation",
+      { username: repo.owner },
+    );
+    liveId = data.id;
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status !== 404) throw error;
+  }
+
+  if (!liveId) {
+    throw new HTTPException(422, {
+      message: `The Kaneo GitHub App is not installed on "${repo.owner}". Install it for that account, then reload.`,
+    });
+  }
+
+  if (liveId !== cached) {
+    // Self-heal the cache so we stop hammering a dead installation.
+    await db
+      .update(repoTable)
+      .set({
+        config: { ...(repo.config ?? {}), installationId: liveId },
+        updatedAt: new Date(),
+      })
+      .where(eq(repoTable.id, repo.id));
+  }
+
+  return liveId;
 }
 
 /**
@@ -123,7 +182,7 @@ export async function getGitHubRepoClient(repoId: string) {
 
   return {
     repo,
-    octokit: await getInstallationOctokit(installationIdForRepo(repo)),
+    octokit: await getInstallationOctokit(await resolveInstallationId(repo)),
   };
 }
 
@@ -201,7 +260,8 @@ export async function createGitHubItemComment({
   body: string;
   userId: string;
 }) {
-  const { repo, octokit: installationOctokit } = await getGitHubRepoClient(repoId);
+  const { repo, octokit: installationOctokit } =
+    await getGitHubRepoClient(repoId);
   // This is deliberately a dedicated grant, separate from sign-in OAuth.
   // Sign-in commonly has user:email only; delegated identity has repo scope.
   const [githubAccount] = await db
@@ -237,7 +297,10 @@ export async function createGitHubItemComment({
   let data;
   try {
     ({ data } = await octokit.rest.issues.createComment({
-      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+      body: commentBody,
     }));
   } catch (error) {
     // A linked token may be sign-in-only or revoked; degrade to the App bot.
@@ -245,7 +308,10 @@ export async function createGitHubItemComment({
     author = "github-app";
     commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
     ({ data } = await installationOctokit.rest.issues.createComment({
-      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+      body: commentBody,
     }));
   }
 

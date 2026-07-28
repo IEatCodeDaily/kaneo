@@ -92,9 +92,7 @@ function RouteComponent() {
     });
   }, [location.pathname, navigate, boards]);
 
-  const selectedBoard = boards?.find(
-    (board) => board.id === selectedBoardId,
-  );
+  const selectedBoard = boards?.find((board) => board.id === selectedBoardId);
 
   return (
     <div className="flex gap-6 h-full">

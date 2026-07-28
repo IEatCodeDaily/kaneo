@@ -9,8 +9,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import PageTitle from "@/components/page-title";
 import { TasksImportExport } from "@/components/board/tasks-import-export.tsx";
+import PageTitle from "@/components/page-title";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -39,8 +39,8 @@ import { Separator } from "@/components/ui/separator";
 import icons from "@/constants/board-icons";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useUpdateBoard from "@/hooks/mutations/board/use-update-board";
-import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
@@ -66,9 +66,7 @@ type NormalizedBoardValues = {
   icon: string;
 };
 
-function normalizeBoardValues(
-  data: BoardFormValues,
-): NormalizedBoardValues {
+function normalizeBoardValues(data: BoardFormValues): NormalizedBoardValues {
   return {
     name: data.name.trim(),
     slug: data.slug.trim(),
@@ -122,8 +120,7 @@ function RouteComponent() {
   }, [fetchedBoard, setBoard]);
 
   const { mutateAsync: updateBoard } = useUpdateBoard();
-  const { mutateAsync: deleteBoard, isPending: isDeleting } =
-    useDeleteBoard();
+  const { mutateAsync: deleteBoard, isPending: isDeleting } = useDeleteBoard();
   const { canManageBoards, canDeleteBoards } = useOrganizationPermission();
   const canEdit = canManageBoards();
   const canDelete = canDeleteBoards();

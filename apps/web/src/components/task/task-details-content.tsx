@@ -4,12 +4,13 @@ import { useTranslation } from "react-i18next";
 import Activity from "@/components/activity";
 import CommentInput from "@/components/activity/comment-input";
 import { isCommentActivity } from "@/components/activity/utils";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { ExternalLinksAccordion } from "@/components/external-links/external-links-accordion";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import type { ExternalLink } from "@/types/external-link";
@@ -103,7 +104,12 @@ export default function TaskDetailsContent({
         />
       </div>
       <div className="mt-2">
-        <TaskResources organizationId={organizationId} taskId={taskId} />
+        <ErrorBoundary
+          fallbackDescription="Linked GitHub issues and pull requests could not be rendered."
+          fallbackTitle="Resources unavailable"
+        >
+          <TaskResources organizationId={organizationId} taskId={taskId} />
+        </ErrorBoundary>
       </div>
       <span className="text-sm font-medium text-muted-foreground h-[1px] bg-border w-full block shrink-0" />
       <div className="flex flex-col gap-4">

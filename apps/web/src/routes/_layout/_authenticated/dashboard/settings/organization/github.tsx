@@ -6,6 +6,6 @@ export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/organization/github",
 )({
   beforeLoad: () => {
-    throw redirect({ to: "/dashboard/settings/connections" });
+    throw redirect({ to: "/dashboard/settings/organization/connections" });
   },
 });
