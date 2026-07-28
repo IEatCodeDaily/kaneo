@@ -18,11 +18,15 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import getGitHubAppInfo from "@/fetchers/github-integration/get-app-info";
-import { useDisconnectOrganizationGithubInstallation } from "@/hooks/mutations/organization-github/use-organization-github-installations";
-import { useConnectOrganizationGithubInstallation } from "@/hooks/mutations/organization-github/use-organization-github-installations";
+import {
+  useConnectOrganizationGithubInstallation,
+  useDisconnectOrganizationGithubInstallation,
+} from "@/hooks/mutations/organization-github/use-organization-github-installations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { useOrganizationGithubInstallations } from "@/hooks/queries/organization-github/use-organization-github-installations";
-import { useAvailableOrganizationGithubInstallations } from "@/hooks/queries/organization-github/use-organization-github-installations";
+import {
+  useAvailableOrganizationGithubInstallations,
+  useOrganizationGithubInstallations,
+} from "@/hooks/queries/organization-github/use-organization-github-installations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
@@ -49,14 +53,38 @@ export function OrganizationGithubConnection() {
   const canManage = canManageOrganization();
   const { data: installations = [], isLoading } =
     useOrganizationGithubInstallations(organizationId);
+  // Installations that exist on GitHub but aren't linked to this org yet.
+  // Without surfacing these, a freshly installed App is invisible in Kaneo.
+  const { data: available = [] } =
+    useAvailableOrganizationGithubInstallations(organizationId);
   const { data: appInfo } = useQuery({
     queryFn: getGitHubAppInfo,
     queryKey: ["github-app-info"],
   });
   const disconnectInstallation = useDisconnectOrganizationGithubInstallation();
+  const connectInstallation = useConnectOrganizationGithubInstallation();
   const installUrl = appInfo?.appName
     ? `https://github.com/apps/${appInfo.appName}/installations/new`
     : null;
+
+  const linkedIds = new Set(
+    installations.map((installation) => installation.installationId),
+  );
+  const unlinked = available.filter(
+    (installation) => !linkedIds.has(installation.installationId),
+  );
+
+  const handleConnect = async (installationId: number) => {
+    if (!organizationId) return;
+    try {
+      await connectInstallation.mutateAsync({ installationId, organizationId });
+      toast.success("GitHub App connected");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to connect GitHub App",
+      );
+    }
+  };
 
   const handleDisconnect = async (installationId: number) => {
     if (!organizationId) return;
@@ -130,6 +158,51 @@ export function OrganizationGithubConnection() {
             </CardDescription>
           </CardHeader>
         </Card>
+      )}
+
+      {canManage && unlinked.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium">Ready to connect</p>
+          <p className="text-sm text-muted-foreground">
+            These installations exist on GitHub but aren't linked to this
+            organization yet.
+          </p>
+          {unlinked.map((installation) => {
+            const accountName = installation.accountLogin ?? "GitHub account";
+            return (
+              <Card key={installation.installationId}>
+                <CardPanel className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="size-10 border">
+                      <AvatarImage
+                        alt={accountName}
+                        src={installation.accountAvatarUrl ?? undefined}
+                      />
+                      <AvatarFallback>
+                        {getInitials(accountName, "GH")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{accountName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {installation.accountType === "Organization"
+                          ? "Organization account"
+                          : "Personal account"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    disabled={connectInstallation.isPending}
+                    onClick={() => handleConnect(installation.installationId)}
+                    size="sm"
+                  >
+                    <Github /> Connect
+                  </Button>
+                </CardPanel>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {isLoading ? (

@@ -125,7 +125,55 @@ function useRepoMutations(kind: Kind, repoId: string, number: number) {
   const update = useMutation({
     mutationFn: (payload: UpdatePayload) =>
       request(resourcePath, { body: JSON.stringify(payload), method: "PATCH" }),
-    onSuccess: invalidate,
+    // Optimistic update: patch the cached item immediately so labels,
+    // assignees, and milestone changes feel instant instead of waiting on a
+    // GitHub round trip. Rolled back if the request fails.
+    onMutate: async (payload: UpdatePayload) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (current: unknown) => {
+        if (!current || typeof current !== "object") return current;
+        const item = current as Record<string, unknown> & {
+          github?: Record<string, unknown> | null;
+        };
+        const next: Record<string, unknown> = { ...item };
+        if (payload.labels !== undefined) {
+          // Preserve each label's color from the cached item so the optimistic
+          // render doesn't flash uncoloured chips before the refetch lands.
+          const existing = new Map(
+            ((item.labels as { name: string; color?: string }[]) ?? []).map(
+              (label) => [label.name, label.color],
+            ),
+          );
+          next.labels = payload.labels.map((name) => ({
+            name,
+            color: existing.get(name),
+          }));
+        }
+        if (payload.assignees !== undefined) {
+          next.assigneeLogins = payload.assignees;
+        }
+        if (payload.title !== undefined) next.title = payload.title;
+        if (payload.body !== undefined) next.body = payload.body;
+        if (payload.state !== undefined) next.state = payload.state;
+        if (payload.milestone !== undefined) {
+          next.github = {
+            ...(item.github ?? {}),
+            milestone:
+              payload.milestone === null ? null : { number: payload.milestone },
+          };
+        }
+        return next;
+      });
+      return { previous };
+    },
+    onError: (_error, _payload, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    },
+    // Always reconcile with the server so GitHub stays the source of truth.
+    onSettled: invalidate,
   });
 
   return { update, resourcePath, queryKey, invalidate, request };

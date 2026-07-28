@@ -11,7 +11,17 @@ export const statement = {
   board: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
-  organization: ["read", "update", "delete", "manage_settings"],
+  // `manage_connections` and `manage_members` are split out from the broad
+  // `manage_settings` so an org can delegate GitHub/integration wiring or
+  // membership administration without handing over every setting.
+  organization: [
+    "read",
+    "update",
+    "delete",
+    "manage_settings",
+    "manage_connections",
+    "manage_members",
+  ],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -37,7 +47,13 @@ export const admin = ac.newRole({
   board: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
-  organization: ["read", "update", "manage_settings"],
+  organization: [
+    "read",
+    "update",
+    "manage_settings",
+    "manage_connections",
+    "manage_members",
+  ],
 });
 
 export const owner = ac.newRole({
@@ -45,7 +61,14 @@ export const owner = ac.newRole({
   board: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
-  organization: ["read", "update", "delete", "manage_settings"],
+  organization: [
+    "read",
+    "update",
+    "delete",
+    "manage_settings",
+    "manage_connections",
+    "manage_members",
+  ],
 });
 
 export const builtInRoles = { viewer, member, admin, owner } as const;

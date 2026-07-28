@@ -934,6 +934,7 @@ const repo = new Hono<{
           number,
           kind: "issue",
           updates: c.req.valid("json"),
+          userId: c.get("userId"),
         }),
       );
     },
@@ -992,6 +993,7 @@ const repo = new Hono<{
           number,
           kind: "pullRequest",
           updates: c.req.valid("json"),
+          userId: c.get("userId"),
         }),
       );
     },
