@@ -40,11 +40,13 @@ import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRouteImport } 
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/members'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/search'
+import { Route as LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountDeveloperRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/developer'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountGithubRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/github'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountInformationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/information'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountNotificationsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/notifications'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountPreferencesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/preferences'
+import { Route as LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/general'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationGithubRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/github'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationLabelsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/labels'
@@ -247,6 +249,12 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute =
         LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute =
+  LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport.update({
+    id: '/connections',
+    path: '/connections',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsAccountRoute,
+  } as any)
 const LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute =
   LayoutAuthenticatedDashboardSettingsAccountDeveloperRouteImport.update({
     id: '/developer',
@@ -277,6 +285,15 @@ const LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute =
     path: '/preferences',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsAccountRoute,
   } as any)
+const LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute =
+  LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRouteImport.update(
+    {
+      id: '/connections',
+      path: '/connections',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardSettingsOrganizationRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute =
   LayoutAuthenticatedDashboardSettingsOrganizationGeneralRouteImport.update({
     id: '/general',
@@ -485,11 +502,13 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
   '/dashboard/settings/account/github': typeof LayoutAuthenticatedDashboardSettingsAccountGithubRoute
   '/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
@@ -540,11 +559,13 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
   '/dashboard/settings/account/github': typeof LayoutAuthenticatedDashboardSettingsAccountGithubRoute
   '/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
@@ -601,11 +622,13 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/_layout/_authenticated/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/_layout/_authenticated/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
   '/_layout/_authenticated/dashboard/settings/account/github': typeof LayoutAuthenticatedDashboardSettingsAccountGithubRoute
   '/_layout/_authenticated/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/_layout/_authenticated/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/_layout/_authenticated/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/_layout/_authenticated/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/_layout/_authenticated/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/_layout/_authenticated/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
@@ -661,11 +684,13 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/search'
+    | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
     | '/dashboard/settings/account/github'
     | '/dashboard/settings/account/information'
     | '/dashboard/settings/account/notifications'
     | '/dashboard/settings/account/preferences'
+    | '/dashboard/settings/organization/connections'
     | '/dashboard/settings/organization/general'
     | '/dashboard/settings/organization/github'
     | '/dashboard/settings/organization/labels'
@@ -716,11 +741,13 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/search'
+    | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
     | '/dashboard/settings/account/github'
     | '/dashboard/settings/account/information'
     | '/dashboard/settings/account/notifications'
     | '/dashboard/settings/account/preferences'
+    | '/dashboard/settings/organization/connections'
     | '/dashboard/settings/organization/general'
     | '/dashboard/settings/organization/github'
     | '/dashboard/settings/organization/labels'
@@ -776,11 +803,13 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/members'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/search'
+    | '/_layout/_authenticated/dashboard/settings/account/connections'
     | '/_layout/_authenticated/dashboard/settings/account/developer'
     | '/_layout/_authenticated/dashboard/settings/account/github'
     | '/_layout/_authenticated/dashboard/settings/account/information'
     | '/_layout/_authenticated/dashboard/settings/account/notifications'
     | '/_layout/_authenticated/dashboard/settings/account/preferences'
+    | '/_layout/_authenticated/dashboard/settings/organization/connections'
     | '/_layout/_authenticated/dashboard/settings/organization/general'
     | '/_layout/_authenticated/dashboard/settings/organization/github'
     | '/_layout/_authenticated/dashboard/settings/organization/labels'
@@ -1036,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
     }
+    '/_layout/_authenticated/dashboard/settings/account/connections': {
+      id: '/_layout/_authenticated/dashboard/settings/account/connections'
+      path: '/connections'
+      fullPath: '/dashboard/settings/account/connections'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsAccountRoute
+    }
     '/_layout/_authenticated/dashboard/settings/account/developer': {
       id: '/_layout/_authenticated/dashboard/settings/account/developer'
       path: '/developer'
@@ -1070,6 +1106,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/settings/account/preferences'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsAccountRoute
+    }
+    '/_layout/_authenticated/dashboard/settings/organization/connections': {
+      id: '/_layout/_authenticated/dashboard/settings/organization/connections'
+      path: '/connections'
+      fullPath: '/dashboard/settings/organization/connections'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
     }
     '/_layout/_authenticated/dashboard/settings/organization/general': {
       id: '/_layout/_authenticated/dashboard/settings/organization/general'
@@ -1229,6 +1272,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface LayoutAuthenticatedDashboardSettingsAccountRouteChildren {
+  LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute: typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute: typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
   LayoutAuthenticatedDashboardSettingsAccountGithubRoute: typeof LayoutAuthenticatedDashboardSettingsAccountGithubRoute
   LayoutAuthenticatedDashboardSettingsAccountInformationRoute: typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
@@ -1238,6 +1282,8 @@ interface LayoutAuthenticatedDashboardSettingsAccountRouteChildren {
 
 const LayoutAuthenticatedDashboardSettingsAccountRouteChildren: LayoutAuthenticatedDashboardSettingsAccountRouteChildren =
   {
+    LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute:
+      LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute,
     LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute:
       LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute,
     LayoutAuthenticatedDashboardSettingsAccountGithubRoute:
@@ -1280,6 +1326,7 @@ const LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren =
   )
 
 interface LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren {
+  LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
@@ -1288,6 +1335,8 @@ interface LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren {
 
 const LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren: LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren =
   {
+    LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute:
+      LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute:
       LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute:

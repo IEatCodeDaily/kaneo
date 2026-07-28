@@ -69,7 +69,7 @@ function RouteComponent() {
     },
     {
       title: "Connections",
-      url: "/dashboard/settings/connections",
+      url: "/dashboard/settings/organization/connections",
       icon: Plug,
     },
   ];

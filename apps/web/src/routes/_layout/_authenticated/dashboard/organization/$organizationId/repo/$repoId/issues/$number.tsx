@@ -1,9 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
+import { ErrorBoundary } from "@/components/error-boundary";
 import PageTitle from "@/components/page-title";
 import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
-import { RepoIssueActions, RepoIssueSidebar } from "@/components/repo/repo-detail-management";
+import {
+  RepoIssueActions,
+  RepoIssueSidebar,
+} from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
 import RepoTaskLinks from "@/components/repo/repo-task-links";
@@ -11,10 +15,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getApiUrl } from "@/fetchers/get-api-url";
-import { toast } from "@/lib/toast";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssue from "@/hooks/queries/repo/use-get-repo-issue";
 import { formatDateMedium } from "@/lib/format";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
@@ -74,7 +78,9 @@ function RouteComponent() {
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <RepoStateBadge state={issue.state} />
                 <span>#{issue.number}</span>
-                {issue.authorLogin && <span>opened by {issue.authorLogin}</span>}
+                {issue.authorLogin && (
+                  <span>opened by {issue.authorLogin}</span>
+                )}
                 {issue.externalCreatedAt && (
                   <span>{formatDateMedium(issue.externalCreatedAt)}</span>
                 )}
@@ -120,27 +126,39 @@ function RouteComponent() {
                   state={issue.state}
                   title={issue.title}
                 />
-                <RepoTaskLinks
-                  itemType="issues"
-                  number={issue.number}
-                  organizationId={organizationId}
-                  repoId={repoId}
-                  taskLinks={issue.taskLinks}
-                />
+                <ErrorBoundary
+                  className="m-4"
+                  fallbackDescription="Linked Kaneo tasks could not be rendered. The rest of this issue still works."
+                  fallbackTitle="Linked tasks unavailable"
+                >
+                  <RepoTaskLinks
+                    itemType="issues"
+                    number={issue.number}
+                    organizationId={organizationId}
+                    repoId={repoId}
+                    taskLinks={issue.taskLinks}
+                  />
+                </ErrorBoundary>
               </div>
               {/* Right sidebar: metadata only */}
-              <RepoIssueSidebar
-                assignees={issue.assigneeLogins ?? []}
-                body={issue.body}
-                github={issue.github}
-                kind="issue"
-                labels={issue.labels}
-                milestoneNumber={issue.github?.milestone?.number ?? null}
-                number={issue.number}
-                repoId={repoId}
-                state={issue.state}
-                title={issue.title}
-              />
+              <ErrorBoundary
+                className="m-4"
+                fallbackDescription="Issue metadata could not be rendered."
+                fallbackTitle="Sidebar unavailable"
+              >
+                <RepoIssueSidebar
+                  assignees={issue.assigneeLogins ?? []}
+                  body={issue.body}
+                  github={issue.github}
+                  kind="issue"
+                  labels={issue.labels}
+                  milestoneNumber={issue.github?.milestone?.number ?? null}
+                  number={issue.number}
+                  repoId={repoId}
+                  state={issue.state}
+                  title={issue.title}
+                />
+              </ErrorBoundary>
             </div>
           </article>
         </main>
@@ -161,16 +179,21 @@ function RepoIssueDescription({
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: async (markdown: string) => {
-      const response = await fetch(getApiUrl(`/repo/${repoId}/issues/${number}`), {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: markdown }),
-      });
+      const response = await fetch(
+        getApiUrl(`/repo/${repoId}/issues/${number}`),
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: markdown }),
+        },
+      );
       if (!response.ok) throw new Error(await response.text());
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["repo-issue", repoId, number] });
+      await queryClient.invalidateQueries({
+        queryKey: ["repo-issue", repoId, number],
+      });
       toast.success("Description updated on GitHub.");
     },
     onError: () => toast.error("Could not update the description."),

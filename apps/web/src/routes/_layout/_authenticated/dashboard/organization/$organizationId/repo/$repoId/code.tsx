@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import RepoLayout from "@/components/common/repo-layout";
+import { ErrorBoundary } from "@/components/error-boundary";
 import PageTitle from "@/components/page-title";
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import { Button } from "@/components/ui/button";
@@ -44,11 +45,30 @@ function formatBytes(size: number) {
 function languageForPath(path: string) {
   const extension = path.split(".").pop()?.toLowerCase();
   const languages: Record<string, string> = {
-    c: "cpp", cc: "cpp", cpp: "cpp", css: "css", go: "go", htm: "html",
-    html: "html", java: "java", js: "javascript", json: "json", jsx: "javascript",
-    md: "markdown", mjs: "javascript", py: "python", rs: "rust", sh: "bash",
-    sql: "sql", toml: "toml", ts: "typescript", tsx: "typescript", txt: "text",
-    xml: "xml", yaml: "yaml", yml: "yaml",
+    c: "cpp",
+    cc: "cpp",
+    cpp: "cpp",
+    css: "css",
+    go: "go",
+    htm: "html",
+    html: "html",
+    java: "java",
+    js: "javascript",
+    json: "json",
+    jsx: "javascript",
+    md: "markdown",
+    mjs: "javascript",
+    py: "python",
+    rs: "rust",
+    sh: "bash",
+    sql: "sql",
+    toml: "toml",
+    ts: "typescript",
+    tsx: "typescript",
+    txt: "text",
+    xml: "xml",
+    yaml: "yaml",
+    yml: "yaml",
   };
   return languages[extension ?? ""] ?? "text";
 }
@@ -246,95 +266,112 @@ function RouteComponent() {
               aria-label="File explorer"
               className="w-64 shrink-0 overflow-y-auto border-r py-2 pr-1 pl-1"
             >
-              <TreeLevel
-                depth={0}
-                gitRef={ref}
-                onSelect={setSelectedPath}
-                path=""
-                repoId={repoId}
-                selectedPath={selectedPath}
-              />
+              <ErrorBoundary
+                fallbackDescription="The file tree could not be rendered. You can still reload to retry."
+                fallbackTitle="File explorer unavailable"
+              >
+                <TreeLevel
+                  depth={0}
+                  gitRef={ref}
+                  onSelect={setSelectedPath}
+                  path=""
+                  repoId={repoId}
+                  selectedPath={selectedPath}
+                />
+              </ErrorBoundary>
             </aside>
 
             <section className="min-w-0 flex-1 overflow-y-auto">
-              {current.error ? (
-                <Empty className="min-h-64">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <TriangleAlert />
-                    </EmptyMedia>
-                    <EmptyTitle>Unable to load this path</EmptyTitle>
-                    <EmptyDescription>{current.error.message}</EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ) : current.isLoading ? (
-                <div className="space-y-2 p-4">
-                  {[1, 2, 3, 4, 5, 6].map((item) => (
-                    <Skeleton className="h-4 w-full" key={item} />
-                  ))}
-                </div>
-              ) : file ? (
-                <>
-                  <div className="sticky top-0 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 text-xs text-muted-foreground backdrop-blur">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate">
-                      <FileCode2 className="size-3.5" />
-                      {file.path}
-                    </span>
-                    <span className="flex items-center gap-3">
-                      <span>{formatBytes(file.size)}</span>
-                      {richAvailable && (
-                        <span className="flex items-center gap-1">
-                          <Button
-                            onClick={() => setView("source")}
-                            size="xs"
-                            variant={view === "source" ? "secondary" : "ghost"}
-                          >
-                            Source
-                          </Button>
-                          <Button
-                            onClick={() => setView("render")}
-                            size="xs"
-                            variant={view === "render" ? "secondary" : "ghost"}
-                          >
-                            Preview
-                          </Button>
-                        </span>
-                      )}
-                    </span>
+              <ErrorBoundary
+                className="m-4"
+                fallbackDescription="This file could not be rendered. Pick another file or retry."
+                fallbackTitle="File preview unavailable"
+              >
+                {current.error ? (
+                  <Empty className="min-h-64">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <TriangleAlert />
+                      </EmptyMedia>
+                      <EmptyTitle>Unable to load this path</EmptyTitle>
+                      <EmptyDescription>
+                        {current.error.message}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                ) : current.isLoading ? (
+                  <div className="space-y-2 p-4">
+                    {[1, 2, 3, 4, 5, 6].map((item) => (
+                      <Skeleton className="h-4 w-full" key={item} />
+                    ))}
                   </div>
-                  {file.isBinary || !file.content ? (
-                    <Empty className="min-h-64">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <File />
-                        </EmptyMedia>
-                        <EmptyTitle>Binary file</EmptyTitle>
-                        <EmptyDescription>
-                          This file cannot be displayed as text.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  ) : (
-                    <FileContent
-                      content={file.content}
-                      path={file.path}
-                      rich={view === "render" && richAvailable}
-                    />
-                  )}
-                </>
-              ) : (
-                <Empty className="min-h-64">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <FileCode2 />
-                    </EmptyMedia>
-                    <EmptyTitle>Select a file</EmptyTitle>
-                    <EmptyDescription>
-                      Choose a file in the explorer to view its contents.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
+                ) : file ? (
+                  <>
+                    <div className="sticky top-0 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 text-xs text-muted-foreground backdrop-blur">
+                      <span className="flex min-w-0 items-center gap-1.5 truncate">
+                        <FileCode2 className="size-3.5" />
+                        {file.path}
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <span>{formatBytes(file.size)}</span>
+                        {richAvailable && (
+                          <span className="flex items-center gap-1">
+                            <Button
+                              onClick={() => setView("source")}
+                              size="xs"
+                              variant={
+                                view === "source" ? "secondary" : "ghost"
+                              }
+                            >
+                              Source
+                            </Button>
+                            <Button
+                              onClick={() => setView("render")}
+                              size="xs"
+                              variant={
+                                view === "render" ? "secondary" : "ghost"
+                              }
+                            >
+                              Preview
+                            </Button>
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {file.isBinary || !file.content ? (
+                      <Empty className="min-h-64">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <File />
+                          </EmptyMedia>
+                          <EmptyTitle>Binary file</EmptyTitle>
+                          <EmptyDescription>
+                            This file cannot be displayed as text.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : (
+                      <FileContent
+                        content={file.content}
+                        path={file.path}
+                        rich={view === "render" && richAvailable}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <Empty className="min-h-64">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <FileCode2 />
+                      </EmptyMedia>
+                      <EmptyTitle>Select a file</EmptyTitle>
+                      <EmptyDescription>
+                        Choose a file in the explorer to view its contents.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+              </ErrorBoundary>
             </section>
           </div>
         </div>

@@ -224,7 +224,8 @@ function RouteComponent() {
           </h1>
           <p className="text-muted-foreground">
             {t("settings:organizationLabels.subtitle", {
-              defaultValue: "Create, edit, and delete organization-level labels.",
+              defaultValue:
+                "Create, edit, and delete organization-level labels.",
             })}
           </p>
         </div>

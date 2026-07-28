@@ -28,19 +28,23 @@ test.describe("global search", () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test("command palette surfaces repo results and navigates", async ({
+  test("search palette surfaces repo results and navigates", async ({
     page,
     pageErrors,
   }) => {
     test.skip(!fixtures.repoName, "no repo fixture available");
     await gotoAndSettle(page, "/dashboard");
 
-    // Open the command palette via its registered shortcut.
-    await page.keyboard.press("ControlOrMeta+k");
+    // Click the sidebar Search affordance — the "/" shortcut only fires when
+    // the page body already has focus, which is unreliable right after load.
+    await page.getByRole("button", { name: /^Search/ }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
-    await page.keyboard.type(fixtures.repoName as string);
+    // The command input is a custom combobox, so target it by placeholder
+    // rather than the textbox role.
+    const input = page.getByPlaceholder(/Search tasks, boards, comments/i);
+    await input.fill(fixtures.repoName as string);
 
     // Repositories group must appear for a repo-name query.
     await expect(dialog.getByText("Repositories")).toBeVisible({

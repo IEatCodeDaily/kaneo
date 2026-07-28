@@ -1,5 +1,6 @@
 import { syncGitHubWebhookPayload } from "../../repo/services/webhook-sync";
 import { getGithubApp } from "./utils/github-app";
+import { syncGitHubInstallationEvent } from "./utils/sync-installation-event";
 
 /**
  * GitHub webhook ingress for first-class Repos.
@@ -22,12 +23,12 @@ export async function handleGitHubWebhook(
   try {
     await githubApp.webhooks.verifyAndReceive({
       id: deliveryId,
-      name: eventName as
-        | "issues"
-        | "pull_request"
-        | "push"
-        | "label"
-        | "issue_comment",
+      // The narrow union here previously omitted "installation", so uninstall
+      // deliveries were rejected at the type/runtime boundary and never
+      // reached the handlers. Cast to the library's own event-name type.
+      name: eventName as Parameters<
+        typeof githubApp.webhooks.verifyAndReceive
+      >[0]["name"],
       signature,
       payload: body,
     });
@@ -48,7 +49,15 @@ export function setupWebhookHandlers() {
   // One provider-level mirror refresh covers issue, PR, label, comment and
   // push events. It is idempotent (upsert by repo+number) and never touches a
   // task, board, column or external_link.
-  githubApp.webhooks.onAny(async ({ payload }) => {
+  githubApp.webhooks.onAny(async ({ name, payload }) => {
+    // `installation` deliveries carry no `repository`, so the mirror sync below
+    // ignores them. They are the only signal we get that an install was removed
+    // or re-scoped, and a stale row breaks every later token request.
+    if (await syncGitHubInstallationEvent(name, payload)) {
+      console.log("[GitHub Webhook] installation registry refreshed");
+      return;
+    }
+
     const synced = await syncGitHubWebhookPayload(payload);
     if (synced) console.log("[GitHub Webhook] repo mirror refreshed");
   });

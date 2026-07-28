@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "__Secure-better-auth.session_token",
-      "value": "UQBLKRuSpRxj3YDBUFm5vZMeogz1xiYZ.5gv%2B%2BaZYG2z0%2FtKsb38hHcchPIP%2BHgCufFZvPUqbXyI%3D",
+      "value": "u8qWaafJrRorCSrHqakRX1as1uJtM8ih.bOWkI%2BTPcpJgQ66aBuI3jLhlSHDtdey%2FlPUg4jjkX4A%3D",
       "domain": "kaneo.entelechia.cloud",
       "path": "/",
-      "expires": 1785777708.462,
+      "expires": 1785807541.122,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "__Secure-better-auth.session_data",
-      "value": "eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wM1QxNzoyMTo0OC4yMjZaIiwidG9rZW4iOiJVUUJMS1J1U3BSeGozWURCVUZtNXZaTWVvZ3oxeGlZWiIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjdUMTc6MjE6NDguMjI3WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjdUMTc6MjE6NDguMjI3WiIsImlwQWRkcmVzcyI6IjI0MDI6ODc4MDoxMDZmOjEyYjg6MDAwMDowMDAwOjAwMDA6MDAwMCIsInVzZXJBZ2VudCI6Ik1vemlsbGEvNS4wIChYMTE7IExpbnV4IHg4Nl82NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgSGVhZGxlc3NDaHJvbWUvMTUxLjAuNzkyMi4zNCBTYWZhcmkvNTM3LjM2IiwidXNlcklkIjoidHY4emQyOHY5bnRoaXI0eW9wN3Z1NjNrIiwiYWN0aXZlT3JnYW5pemF0aW9uSWQiOm51bGwsImFjdGl2ZVRlYW1JZCI6bnVsbCwiaW1wZXJzb25hdGVkQnkiOm51bGwsImlkIjoiY0hYS20xSndlVmp3ejF5V2JRdHZmbU5BM0NaZm5MZ3gifSwidXNlciI6eyJuYW1lIjoiUGxheXdyaWdodCBFMkUiLCJlbWFpbCI6InB3LWUyZUBlbnRlbGVjaGlhLmNsb3VkIiwiZW1haWxWZXJpZmllZCI6dHJ1ZSwiaW1hZ2UiOm51bGwsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjdUMTY6NTM6MDUuNjMyWiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjdUMTY6NTM6MDUuNjMyWiIsInJvbGUiOm51bGwsImJhbm5lZCI6ZmFsc2UsImJhblJlYXNvbiI6bnVsbCwiYmFuRXhwaXJlcyI6bnVsbCwibG9jYWxlIjpudWxsLCJpZCI6InR2OHpkMjh2OW50aGlyNHlvcDd2dTYzayJ9LCJ1cGRhdGVkQXQiOjE3ODUxNzI5MDgzNzgsInZlcnNpb24iOiIxIn0sImV4cGlyZXNBdCI6MTc4NTE3MzIwODM3OCwic2lnbmF0dXJlIjoiSjlrRzZubjVfelFILWg1ZGZPamlDLXFhbXFHRE5YcWVXdGxSSDhFTjZHMCJ9",
+      "value": "eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0IjoiMjAyNi0wOC0wNFQwMTozOTowMS4wNzZaIiwidG9rZW4iOiJ1OHFXYWFmSnJSb3JDU3JIcWFrUlgxYXMxdUp0TThpaCIsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjhUMDE6Mzk6MDEuMDc2WiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjhUMDE6Mzk6MDEuMDc2WiIsImlwQWRkcmVzcyI6IjI0MDI6ODc4MDoxMDZmOjEyYjg6MDAwMDowMDAwOjAwMDA6MDAwMCIsInVzZXJBZ2VudCI6Ik1vemlsbGEvNS4wIChYMTE7IExpbnV4IHg4Nl82NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgSGVhZGxlc3NDaHJvbWUvMTUxLjAuNzkyMi4zNCBTYWZhcmkvNTM3LjM2IiwidXNlcklkIjoidHY4emQyOHY5bnRoaXI0eW9wN3Z1NjNrIiwiYWN0aXZlT3JnYW5pemF0aW9uSWQiOm51bGwsImFjdGl2ZVRlYW1JZCI6bnVsbCwiaW1wZXJzb25hdGVkQnkiOm51bGwsImlkIjoiMm1YZkVtUndsTzlmOWhOT01yMXN0VHlSZzBnSjZSeEgifSwidXNlciI6eyJuYW1lIjoiUGxheXdyaWdodCBFMkUiLCJlbWFpbCI6InB3LWUyZUBlbnRlbGVjaGlhLmNsb3VkIiwiZW1haWxWZXJpZmllZCI6dHJ1ZSwiaW1hZ2UiOm51bGwsImNyZWF0ZWRBdCI6IjIwMjYtMDctMjdUMTY6NTM6MDUuNjMyWiIsInVwZGF0ZWRBdCI6IjIwMjYtMDctMjdUMTY6NTM6MDUuNjMyWiIsInJvbGUiOm51bGwsImJhbm5lZCI6ZmFsc2UsImJhblJlYXNvbiI6bnVsbCwiYmFuRXhwaXJlcyI6bnVsbCwibG9jYWxlIjpudWxsLCJpZCI6InR2OHpkMjh2OW50aGlyNHlvcDd2dTYzayJ9LCJ1cGRhdGVkQXQiOjE3ODUyMDI3NDEwOTAsInZlcnNpb24iOiIxIn0sImV4cGlyZXNBdCI6MTc4NTIwMzA0MTA5MCwic2lnbmF0dXJlIjoiYnpPdHhJcldrb1UyXzFHNkFIQktsWk52enY3MzZONXAyTXRMUDRQQzFCbyJ9",
       "domain": "kaneo.entelechia.cloud",
       "path": "/",
-      "expires": 1785173208.463,
+      "expires": 1785203041.122,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
@@ -25,7 +25,7 @@
       "value": "email",
       "domain": "kaneo.entelechia.cloud",
       "path": "/",
-      "expires": 1787764908.465,
+      "expires": 1787794741.122,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
