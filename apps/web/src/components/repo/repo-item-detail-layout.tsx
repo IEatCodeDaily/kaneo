@@ -81,8 +81,8 @@ type RepoItemDetailLayoutProps = {
   body: string | null;
   /** Issue-only conversation timeline. */
   history?: ReactNode;
-  /** Kind-specific sections between description and conversation history. */
-  details?: ReactNode;
+  /** Kind-specific sections, optionally wrapping the complete conversation. */
+  details?: ReactNode | ((discussion: ReactNode) => ReactNode);
   commentCount: number;
   closedAt?: string | null;
   mergedAt?: string | null;
@@ -134,34 +134,34 @@ export function RepoItemDetailLayout({
           {/* Main body column. Every section below uses the same px-6 py-5
               rhythm so the left edge and vertical spacing stay consistent. */}
           <div className="flex min-w-0 flex-col">
-            <div className="border-b border-border/80 px-4 py-4 sm:px-6 sm:py-5">
-              <RepoItemDescription
-                body={body ?? ""}
+            {typeof details === "function" ? (
+              details(
+                <RepoItemDiscussion
+                  body={body}
+                  closedAt={closedAt}
+                  commentCount={commentCount}
+                  history={history}
+                  kind={kind}
+                  management={management}
+                  mergedAt={mergedAt}
+                  number={number}
+                  repoId={repoId}
+                />,
+              )
+            ) : (
+              <RepoItemDiscussion
+                body={body}
+                closedAt={closedAt}
+                commentCount={commentCount}
+                details={details}
+                history={history}
                 kind={kind}
+                management={management}
+                mergedAt={mergedAt}
                 number={number}
                 repoId={repoId}
               />
-            </div>
-            {details}
-            {history}
-            {(commentCount > 0 || mergedAt || closedAt) && (
-              <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/80 px-4 py-2.5 text-xs text-muted-foreground sm:px-6">
-                {commentCount > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <MessageSquare className="size-3.5" />
-                    {commentCount} comments
-                  </span>
-                )}
-                {mergedAt ? (
-                  <span>Merged {formatDateMedium(mergedAt)}</span>
-                ) : closedAt ? (
-                  <span>Closed {formatDateMedium(closedAt)}</span>
-                ) : null}
-              </footer>
             )}
-            <div className="mt-auto md:sticky md:bottom-0 md:z-10 md:bg-background/95 md:backdrop-blur">
-              <RepoItemCommentComposer {...management} />
-            </div>
           </div>
           {/* Right sidebar: metadata only */}
           <ErrorBoundary
@@ -178,6 +178,63 @@ export function RepoItemDetailLayout({
         </div>
       </article>
     </main>
+  );
+}
+
+function RepoItemDiscussion({
+  body,
+  closedAt,
+  commentCount,
+  details,
+  history,
+  kind,
+  management,
+  mergedAt,
+  number,
+  repoId,
+}: {
+  body: string | null;
+  closedAt?: string | null;
+  commentCount: number;
+  details?: ReactNode;
+  history?: ReactNode;
+  kind: RepoItemKind;
+  management: RepoItemManagementProps;
+  mergedAt?: string | null;
+  number: number;
+  repoId: string;
+}) {
+  return (
+    <div className="flex min-h-0 flex-col">
+      <div className="border-b border-border/80 px-4 py-4 sm:px-6 sm:py-5">
+        <RepoItemDescription
+          body={body ?? ""}
+          kind={kind}
+          number={number}
+          repoId={repoId}
+        />
+      </div>
+      {details}
+      {history}
+      {(commentCount > 0 || mergedAt || closedAt) && (
+        <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/80 px-4 py-2.5 text-xs text-muted-foreground sm:px-6">
+          {commentCount > 0 && (
+            <span className="flex items-center gap-1.5">
+              <MessageSquare className="size-3.5" />
+              {commentCount} comments
+            </span>
+          )}
+          {mergedAt ? (
+            <span>Merged {formatDateMedium(mergedAt)}</span>
+          ) : closedAt ? (
+            <span>Closed {formatDateMedium(closedAt)}</span>
+          ) : null}
+        </footer>
+      )}
+      <div className="mt-auto md:sticky md:bottom-0 md:z-10 md:bg-background/95 md:backdrop-blur">
+        <RepoItemCommentComposer {...management} />
+      </div>
+    </div>
   );
 }
 

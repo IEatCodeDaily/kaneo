@@ -118,28 +118,42 @@ test.describe("repository issue and pull request list parity", () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test("pull detail renders files, commits, and checks from live endpoints", async ({
+  test("pull detail uses viewport tabs and a single-file diff workspace", async ({
     page,
     pageErrors,
   }) => {
+    test.skip(!fixtures.pullNumber, "no mirrored pull request available");
+
     await page.route("**/api/repo/*/pull-requests/*/files", (route) =>
       route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
           files: [
             {
-              filename: "src/verified.ts",
+              filename: "src/first.ts",
               status: "modified",
               additions: 1,
               deletions: 1,
               changes: 2,
-              patch: "@@ -1 +1 @@\n-old\n+new",
+              patch:
+                "@@ -1 +1 @@\n-export const value = 'old';\n+export const value = 'first';",
               previousFilename: null,
-              blobUrl: "https://example.test/blob",
-              rawUrl: "https://example.test/raw",
+              blobUrl: "https://example.test/blob/first",
+              rawUrl: "https://example.test/raw/first",
+            },
+            {
+              filename: "src/second.ts",
+              status: "added",
+              additions: 1,
+              deletions: 0,
+              changes: 1,
+              patch: "@@ -0,0 +1 @@\n+export const selected = 'second';",
+              previousFilename: null,
+              blobUrl: "https://example.test/blob/second",
+              rawUrl: "https://example.test/raw/second",
             },
           ],
-          totals: { additions: 1, deletions: 1, changedFiles: 1 },
+          totals: { additions: 2, deletions: 1, changedFiles: 2 },
         }),
       }),
     );
@@ -150,7 +164,7 @@ test.describe("repository issue and pull request list parity", () => {
           commits: [
             {
               sha: "1234567890abcdef",
-              message: "Verify PR UI",
+              message: "Deterministic tab commit",
               authorLogin: "octocat",
               authorName: "Octo Cat",
               committedAt: "2026-07-29T00:00:00Z",
@@ -167,7 +181,7 @@ test.describe("repository issue and pull request list parity", () => {
           conclusion: "success",
           checks: [
             {
-              name: "unit",
+              name: "deterministic-ci",
               status: "completed",
               conclusion: "success",
               url: "https://example.test/check",
@@ -178,19 +192,78 @@ test.describe("repository issue and pull request list parity", () => {
       }),
     );
 
+    await page.setViewportSize({ width: 1440, height: 900 });
     await gotoAndSettle(
       page,
       `/dashboard/organization/${fixtures.organizationId}/repo/${fixtures.repoId}/pulls/${fixtures.pullNumber}`,
     );
+
+    const tabs = page.getByRole("tablist", { name: "Pull request sections" });
+    for (const name of ["Discussions", "Commits", "Checks", "Diffs"]) {
+      await expect(
+        tabs.getByRole("tab", { name, exact: true }),
+        `Expected a visible ${name} viewport tab, not stacked collapsible sections.`,
+      ).toBeVisible();
+    }
+
+    await tabs.getByRole("tab", { name: "Commits" }).click();
+    await expect(page.getByText("Deterministic tab commit")).toBeVisible();
     await expect(
-      page
-        .getByTestId("pull-request-file")
-        .getByText("src/verified.ts")
-        .first(),
+      page.getByText("deterministic-ci", { exact: true }),
+    ).toBeHidden();
+
+    await tabs.getByRole("tab", { name: "Checks" }).click();
+    await expect(
+      page.getByText("deterministic-ci", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Verify PR UI")).toBeVisible();
-    await expect(page.getByText("unit", { exact: true })).toBeVisible();
-    await expect(page.locator("diffs-container")).toHaveCount(1);
+    await expect(page.getByText("Deterministic tab commit")).toBeHidden();
+
+    await tabs.getByRole("tab", { name: "Discussions" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Description" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("deterministic-ci", { exact: true }),
+    ).toBeHidden();
+
+    await tabs.getByRole("tab", { name: "Diffs" }).click();
+    const workspace = page.getByTestId("pull-request-diff-workspace");
+    const selectedFile = workspace.getByTestId("pull-request-selected-file");
+    await expect(selectedFile).toHaveText("src/first.ts");
+    await expect(workspace.locator("diffs-container")).toHaveCount(1);
+
+    await workspace
+      .getByRole("button", { name: "src/second.ts", exact: true })
+      .click();
+    await expect(selectedFile).toHaveText("src/second.ts");
+    await expect(
+      workspace.getByText("src/first.ts", { exact: true }),
+    ).toBeVisible();
+
+    const unified = workspace.getByRole("button", { name: "Unified" });
+    const split = workspace.getByRole("button", { name: "Side-by-side" });
+    await expect(unified).toHaveAttribute("aria-pressed", "true");
+    await split.click();
+    await expect(split).toHaveAttribute("aria-pressed", "true");
+    await expect(unified).toHaveAttribute("aria-pressed", "false");
+    await expect(
+      workspace.getByTestId("pull-request-diff-renderer"),
+    ).toHaveAttribute("data-diff-style", "split");
+
+    await workspace
+      .getByRole("button", { name: "Open diff fullscreen" })
+      .click();
+    const dialog = page.getByRole("dialog", { name: "Pull request diff" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByTestId("pull-request-selected-file")).toHaveText(
+      "src/second.ts",
+    );
+    await expect(dialog.locator("diffs-container")).toHaveCount(1);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(selectedFile).toHaveText("src/second.ts");
+    await expect(workspace.locator("diffs-container")).toHaveCount(1);
     expect(pageErrors).toEqual([]);
   });
 

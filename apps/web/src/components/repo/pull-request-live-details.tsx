@@ -1,46 +1,29 @@
 import { PatchDiff } from "@pierre/diffs/react";
 import {
   CheckCircle2,
-  ChevronDown,
   CircleDot,
+  Expand,
   ExternalLink,
   GitCommitHorizontal,
+  ListTree,
+  PanelsTopLeft,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Dialog,
+  DialogDescription,
+  DialogPopup,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import useGetPullRequestChecks from "@/hooks/queries/repo/use-get-pull-request-checks";
 import useGetPullRequestCommits from "@/hooks/queries/repo/use-get-pull-request-commits";
 import useGetPullRequestFiles from "@/hooks/queries/repo/use-get-pull-request-files";
+import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
-import type { RepoPullRequestCheck } from "@/types/repo";
-
-function Section({
-  title,
-  summary,
-  children,
-}: {
-  title: string;
-  summary?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <Collapsible className="border-b border-border/80" defaultOpen>
-      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 px-4 py-4 text-left sm:px-6 sm:py-5">
-        <span className="font-semibold">{title}</span>
-        <span className="ml-auto text-xs text-muted-foreground">{summary}</span>
-        <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="px-4 pb-5 sm:px-6">{children}</div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
+import type { RepoPullRequestCheck, RepoPullRequestFile } from "@/types/repo";
 
 const Loading = () => (
   <div aria-label="Loading" className="space-y-2" role="status">
@@ -77,16 +60,77 @@ function CheckRow({ item }: { item: RepoPullRequestCheck }) {
   );
 }
 
+function DiffView({
+  file,
+  split,
+}: {
+  file: RepoPullRequestFile;
+  split: boolean;
+}) {
+  return (
+    <div
+      className="min-w-0 overflow-hidden rounded-md border bg-background"
+      data-diff-style={split ? "split" : "unified"}
+      data-testid="pull-request-diff-renderer"
+    >
+      <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 font-mono text-xs">
+        <span
+          className="min-w-0 flex-1 truncate"
+          data-testid="pull-request-selected-file"
+        >
+          {file.filename}
+        </span>
+        <span className="text-emerald-600">+{file.additions}</span>
+        <span className="text-destructive">−{file.deletions}</span>
+      </div>
+      {file.patch ? (
+        <PatchDiff
+          disableWorkerPool
+          options={{
+            diffStyle: split ? "split" : "unified",
+            disableFileHeader: true,
+            overflow: "scroll",
+            themeType: "system",
+          }}
+          patch={`diff --git a/${file.filename} b/${file.filename}\n--- a/${file.filename}\n+++ b/${file.filename}\n${file.patch}`}
+        />
+      ) : (
+        <div className="space-y-2 px-4 py-6 text-sm text-muted-foreground">
+          <p>Binary or oversized file — no patch is available.</p>
+          <p className="text-xs">
+            Open the pull request externally to inspect or download this file.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PullRequestLiveDetails({
   repoId,
   number,
+  discussion,
 }: {
   repoId: string;
   number: number;
+  discussion: ReactNode;
 }) {
   const files = useGetPullRequestFiles(repoId, number);
   const commits = useGetPullRequestCommits(repoId, number);
   const checks = useGetPullRequestChecks(repoId, number);
+  const [selectedFilename, setSelectedFilename] = useState<string>();
+  const [split, setSplit] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const selectedFile =
+    files.data?.files.find((file) => file.filename === selectedFilename) ??
+    files.data?.files[0];
+
+  useEffect(() => {
+    if (selectedFile && selectedFilename !== selectedFile.filename) {
+      setSelectedFilename(selectedFile.filename);
+    }
+  }, [selectedFile, selectedFilename]);
+
   const checkItems = [
     ...(checks.data?.checks ?? []),
     ...(checks.data?.runs ?? []),
@@ -96,68 +140,34 @@ export default function PullRequestLiveDetails({
   );
 
   return (
-    <div data-testid="pull-request-live-details">
-      <Section
-        title="Files changed"
-        summary={
-          files.data && (
-            <>
-              <span className="text-emerald-600">
-                +{files.data.totals.additions}
-              </span>{" "}
-              <span className="text-destructive">
-                −{files.data.totals.deletions}
-              </span>{" "}
-              · {files.data.totals.changedFiles} files
-            </>
-          )
-        }
-      >
-        {files.isLoading ? (
-          <Loading />
-        ) : files.isError ? (
-          <ErrorState />
-        ) : files.data?.files.length ? (
-          <div className="space-y-4">
-            {files.data.files.map((file) => (
-              <div
-                className="overflow-hidden rounded-md border"
-                data-testid="pull-request-file"
-                key={file.filename}
-              >
-                <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2 font-mono text-xs">
-                  <span className="min-w-0 flex-1 truncate">
-                    {file.filename}
-                  </span>
-                  <span className="text-emerald-600">+{file.additions}</span>
-                  <span className="text-destructive">−{file.deletions}</span>
-                </div>
-                {file.patch ? (
-                  <PatchDiff
-                    disableWorkerPool
-                    options={{
-                      diffStyle: "unified",
-                      overflow: "scroll",
-                      themeType: "system",
-                    }}
-                    patch={`diff --git a/${file.filename} b/${file.filename}\n--- a/${file.filename}\n+++ b/${file.filename}\n${file.patch}`}
-                  />
-                ) : (
-                  <p className="px-3 py-4 text-sm text-muted-foreground">
-                    Binary or oversized file — no patch available.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No changed files.</p>
-        )}
-      </Section>
-      <Section
-        title="Commits"
-        summary={commits.data && `${commits.data.commits.length} commits`}
-      >
+    <Tabs
+      className="gap-0"
+      defaultValue="discussion"
+      data-testid="pull-request-live-details"
+    >
+      <div className="overflow-x-auto border-b px-4 sm:px-6">
+        <TabsList
+          aria-label="Pull request sections"
+          className="min-w-max"
+          variant="underline"
+        >
+          <TabsTab aria-label="Discussions" value="discussion">
+            Discussions
+          </TabsTab>
+          <TabsTab aria-label="Commits" value="commits">
+            Commits{commits.data ? ` (${commits.data.commits.length})` : ""}
+          </TabsTab>
+          <TabsTab aria-label="Checks" value="checks">
+            Checks
+          </TabsTab>
+          <TabsTab aria-label="Diffs" value="diffs">
+            Diffs{files.data ? ` (${files.data.totals.changedFiles})` : ""}
+          </TabsTab>
+        </TabsList>
+      </div>
+
+      <TabsPanel value="discussion">{discussion}</TabsPanel>
+      <TabsPanel className="px-4 py-5 sm:px-6" value="commits">
         {commits.isLoading ? (
           <Loading />
         ) : commits.isError ? (
@@ -166,7 +176,7 @@ export default function PullRequestLiveDetails({
           <div className="divide-y">
             {commits.data.commits.map((commit) => (
               <a
-                className="flex items-start gap-3 py-3 text-sm hover:text-foreground"
+                className="flex items-start gap-3 py-3 text-sm"
                 href={commit.url}
                 key={commit.sha}
                 rel="noreferrer"
@@ -193,14 +203,9 @@ export default function PullRequestLiveDetails({
         ) : (
           <p className="text-sm text-muted-foreground">No commits.</p>
         )}
-      </Section>
-      <Section
-        title="Checks"
-        summary={
-          checks.data &&
-          (checks.data.conclusion ?? `${checkItems.length} checks`)
-        }
-      >
+      </TabsPanel>
+
+      <TabsPanel className="px-4 py-5 sm:px-6" value="checks">
         {checks.isLoading ? (
           <Loading />
         ) : checks.isError ? (
@@ -227,7 +232,107 @@ export default function PullRequestLiveDetails({
             No checks or workflow runs for this pull request.
           </p>
         )}
-      </Section>
-    </div>
+      </TabsPanel>
+
+      <TabsPanel
+        className="min-w-0 px-4 py-5 sm:px-6"
+        data-testid="pull-request-diff-workspace"
+        value="diffs"
+      >
+        {files.isLoading ? (
+          <Loading />
+        ) : files.isError ? (
+          <ErrorState />
+        ) : selectedFile ? (
+          <>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground">
+                <span className="text-emerald-600">
+                  +{files.data?.totals.additions}
+                </span>{" "}
+                <span className="text-destructive">
+                  −{files.data?.totals.deletions}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  aria-label="Unified"
+                  aria-pressed={!split}
+                  onClick={() => setSplit(false)}
+                  size="sm"
+                  variant={split ? "ghost" : "secondary"}
+                >
+                  <ListTree /> Unified
+                </Button>
+                <Button
+                  aria-label="Side-by-side"
+                  aria-pressed={split}
+                  onClick={() => setSplit(true)}
+                  size="sm"
+                  variant={split ? "secondary" : "ghost"}
+                >
+                  <PanelsTopLeft /> Side-by-side
+                </Button>
+                <Button
+                  aria-label="Open diff fullscreen"
+                  onClick={() => setFullscreen(true)}
+                  size="icon-sm"
+                  variant="outline"
+                >
+                  <Expand />
+                </Button>
+              </div>
+            </div>
+            <div className="grid min-w-0 gap-3 xl:grid-cols-[15rem_minmax(0,1fr)]">
+              <nav
+                aria-label="Changed files"
+                className="max-h-[32rem] overflow-auto rounded-md border p-1"
+              >
+                {files.data?.files.map((file) => (
+                  <button
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-2 text-left font-mono text-xs hover:bg-muted",
+                      file.filename === selectedFile.filename &&
+                        "bg-muted font-medium",
+                    )}
+                    aria-label={file.filename}
+                    key={file.filename}
+                    onClick={() => setSelectedFilename(file.filename)}
+                    type="button"
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {file.filename}
+                    </span>
+                    <span className="text-emerald-600">+{file.additions}</span>
+                    <span className="text-destructive">−{file.deletions}</span>
+                  </button>
+                ))}
+              </nav>
+              <DiffView file={selectedFile} split={split} />
+            </div>
+            <Dialog open={fullscreen} onOpenChange={setFullscreen}>
+              <DialogPopup
+                bottomStickOnMobile={false}
+                className="h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)]"
+              >
+                <div className="border-b px-5 py-4 pr-12">
+                  <DialogTitle className="text-base">
+                    Pull request diff
+                  </DialogTitle>
+                  <DialogDescription>
+                    Full-screen code comparison
+                  </DialogDescription>
+                </div>
+                <div className="min-h-0 flex-1 overflow-auto p-4">
+                  <DiffView file={selectedFile} split={split} />
+                </div>
+              </DialogPopup>
+            </Dialog>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No changed files.</p>
+        )}
+      </TabsPanel>
+    </Tabs>
   );
 }

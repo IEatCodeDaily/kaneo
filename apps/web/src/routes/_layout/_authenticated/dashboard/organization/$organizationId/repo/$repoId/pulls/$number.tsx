@@ -113,7 +113,13 @@ function RouteComponent() {
               )}
             </>
           }
-          details={<PullRequestLiveDetails number={number} repoId={repoId} />}
+          details={(discussion) => (
+            <PullRequestLiveDetails
+              discussion={discussion}
+              number={number}
+              repoId={repoId}
+            />
+          )}
           kind="pull-request"
           management={{
             body: pullRequest.body,
