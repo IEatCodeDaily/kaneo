@@ -194,6 +194,20 @@ const githubRepoContentsSchema = v.object({
   ),
 });
 
+const githubRepoTreeSchema = v.object({
+  entries: v.array(
+    v.object({
+      name: v.string(),
+      path: v.string(),
+      type: v.picklist(["file", "dir", "symlink", "submodule"] as const),
+      size: v.number(),
+      sha: v.string(),
+    }),
+  ),
+  ref: v.string(),
+  truncated: v.boolean(),
+});
+
 const githubReleaseSchema = v.object({
   id: v.number(),
   tagName: v.string(),
@@ -468,6 +482,37 @@ const repo = new Hono<{
       const { id } = c.req.valid("param");
       const { path = "", ref } = c.req.valid("query") || {};
       return c.json(await getGitHubRepoContents({ repoId: id, path, ref }));
+    },
+  )
+  .get(
+    "/:id/tree",
+    describeRoute({
+      operationId: "getGitHubRepoTree",
+      tags: ["Repos"],
+      description:
+        "Preload a GitHub repository's recursive tree for local file-explorer expansion",
+      responses: {
+        200: {
+          description:
+            "Recursive repository tree; truncated trees require lazy browsing",
+          content: {
+            "application/json": { schema: resolver(githubRepoTreeSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(
+        v.object({ ref: v.optional(v.pipe(v.string(), v.maxLength(512))) }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { ref } = c.req.valid("query") || {};
+      return c.json(await getGitHubRepoTree({ repoId: id, ref }));
     },
   )
   .get(

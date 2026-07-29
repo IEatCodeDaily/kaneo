@@ -31,6 +31,7 @@ export default defineConfig({
       "/api": {
         target: "http://127.0.0.1:1337",
         changeOrigin: true,
+        ws: true,
       },
       "/.well-known/oauth-protected-resource/api/mcp": {
         target: "http://127.0.0.1:1337",
@@ -54,6 +55,7 @@ export default defineConfig({
       "/api": {
         target: "http://127.0.0.1:1337",
         changeOrigin: true,
+        ws: true,
       },
       "/.well-known/oauth-protected-resource/api/mcp": {
         target: "http://127.0.0.1:1337",

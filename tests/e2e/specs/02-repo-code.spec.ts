@@ -8,31 +8,78 @@ test.describe("repo code browser", () => {
   const codeUrl = () =>
     `/dashboard/organization/${fixtures.organizationId}/repo/${fixtures.repoId}/code`;
 
-  test("shows the file tree and expands directories in place", async ({
+  test("preloads one recursive tree and expands nested folders locally", async ({
     page,
     pageErrors,
   }) => {
+    const metadataRequests: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (/\/api\/repo\/[^/]+\/(tree|contents)(?:\?|$)/.test(url)) {
+        metadataRequests.push(url);
+      }
+    });
     await gotoAndSettle(page, codeUrl());
 
     const explorer = page.getByLabel("File explorer");
     await expect(explorer).toBeVisible();
-
-    // Root entries must render from the mirrored repo contents.
     const entries = explorer.locator("button");
     await expect(entries.first()).toBeVisible();
     const rootCount = await entries.count();
     expect(rootCount).toBeGreaterThan(0);
+    expect(
+      metadataRequests.filter((url) => /\/tree(?:\?|$)/.test(url)),
+    ).toHaveLength(1);
+    expect(
+      metadataRequests.filter((url) => /\/contents(?:\?|$)/.test(url)),
+    ).toHaveLength(0);
 
-    // Expanding a folder should add children without unmounting the tree.
-    const folder = explorer.getByRole("button", { name: /^src$|^docs$/ }).first();
-    if (await folder.count()) {
-      await folder.click();
-      await expect
-        .poll(async () => explorer.locator("button").count(), { timeout: 15_000 })
-        .toBeGreaterThan(rootCount);
-      await expect(explorer).toBeVisible();
-    }
+    const folder = explorer
+      .getByRole("button", { name: /^src$|^docs$/ })
+      .first();
+    test.skip(!(await folder.count()), "fixture repo has no nested directory");
+    await folder.click();
+    await expect
+      .poll(async () => explorer.locator("button").count(), { timeout: 15_000 })
+      .toBeGreaterThan(rootCount);
 
+    const nestedFolder = explorer
+      .getByRole("button", { name: "components" })
+      .first();
+    if (await nestedFolder.count()) await nestedFolder.click();
+    await page.waitForTimeout(250);
+
+    expect(
+      metadataRequests.filter((url) => /\/tree(?:\?|$)/.test(url)),
+    ).toHaveLength(1);
+    expect(
+      metadataRequests.filter((url) => /\/contents(?:\?|$)/.test(url)),
+    ).toHaveLength(0);
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("mobile file selection replaces the tree and provides Back to files", async ({
+    page,
+    pageErrors,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoAndSettle(page, codeUrl());
+    const explorer = page.getByLabel("File explorer");
+    await expect(explorer).toBeVisible();
+
+    const file = explorer
+      .getByRole("button", { name: /\.(md|json|ts|tsx)$/ })
+      .first();
+    test.skip(!(await file.count()), "no text file in fixture root");
+    await file.click();
+
+    await expect(page.getByLabel("File viewer")).toBeVisible();
+    await expect(explorer).toBeHidden();
+    const back = page.getByRole("button", { name: "Back to files" });
+    await expect(back).toBeVisible();
+    await back.click();
+    await expect(explorer).toBeVisible();
+    await expect(page.getByLabel("File viewer")).toBeHidden();
     expect(pageErrors).toEqual([]);
   });
 
@@ -61,7 +108,9 @@ test.describe("repo code browser", () => {
     await file.click();
 
     // Detail pane shows the file, and Shiki produced highlighted markup.
-    await expect(page.getByText(fileName, { exact: false }).first()).toBeVisible();
+    await expect(
+      page.getByText(fileName, { exact: false }).first(),
+    ).toBeVisible();
     await expect(page.locator("pre").first()).toBeVisible({ timeout: 20_000 });
 
     // The explorer stays mounted: selecting a file must not remount the tree.
@@ -78,7 +127,9 @@ test.describe("repo code browser", () => {
     await gotoAndSettle(page, codeUrl());
     const explorer = page.getByLabel("File explorer");
 
-    const readme = explorer.getByRole("button", { name: /README\.md/i }).first();
+    const readme = explorer
+      .getByRole("button", { name: /README\.md/i })
+      .first();
     test.skip(!(await readme.count()), "fixture repo has no root README.md");
     await readme.click();
 
@@ -100,7 +151,9 @@ test.describe("repo code browser", () => {
   test("code surface inherits the app background", async ({ page }) => {
     await gotoAndSettle(page, codeUrl());
     const explorer = page.getByLabel("File explorer");
-    const file = explorer.getByRole("button", { name: /\.(md|json|ts|tsx)$/ }).first();
+    const file = explorer
+      .getByRole("button", { name: /\.(md|json|ts|tsx)$/ })
+      .first();
     test.skip(!(await file.count()), "no text file in fixture root");
     await file.click();
 
@@ -108,9 +161,20 @@ test.describe("repo code browser", () => {
     await expect(pre).toBeVisible({ timeout: 20_000 });
     // Shiki's inlined theme background is stripped; the element must be
     // transparent so it blends with the card surface.
-    const background = await pre.evaluate(
-      (node) => getComputedStyle(node).backgroundColor,
-    );
-    expect(background).toMatch(/rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
+    //
+    // Shiki swaps the plain <pre> for highlighted markup after first paint, so
+    // a single read can land on the detached node and return "". Poll until the
+    // element settles rather than sampling once.
+    await expect
+      .poll(
+        async () =>
+          await page
+            .locator("pre")
+            .first()
+            .evaluate((node) => getComputedStyle(node).backgroundColor)
+            .catch(() => ""),
+        { timeout: 20_000 },
+      )
+      .toMatch(/rgba\(0,\s*0,\s*0,\s*0\)|transparent/);
   });
 });
