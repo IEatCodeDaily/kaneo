@@ -15,6 +15,9 @@ type TaskLink = {
   id: string;
   taskId: string;
   createdAt: Date;
+  syncEnabled: boolean;
+  syncBrokenAt: Date | null;
+  syncBrokenReason: string | null;
   task: {
     id: string;
     title: string;
@@ -49,6 +52,9 @@ export async function getRepoItemTaskLinks(
       id: taskRepoItemLinkTable.id,
       taskId: taskTable.id,
       createdAt: taskRepoItemLinkTable.createdAt,
+      syncEnabled: taskRepoItemLinkTable.syncEnabled,
+      syncBrokenAt: taskRepoItemLinkTable.syncBrokenAt,
+      syncBrokenReason: taskRepoItemLinkTable.syncBrokenReason,
       task: {
         id: taskTable.id,
         title: taskTable.title,
@@ -119,7 +125,9 @@ export async function getTaskRepoItemLinks(
     return {
       id: row.id,
       createdAt: row.createdAt,
-      itemType: row.issue?.id ? ("issues" as const) : ("pull-requests" as const),
+      itemType: row.issue?.id
+        ? ("issues" as const)
+        : ("pull-requests" as const),
       repoId: item?.repoId ?? "",
       number: item?.number ?? 0,
       title: item?.title ?? "",
@@ -150,14 +158,21 @@ export async function addRepoItemTaskLink({
     .where(and(eq(item.repoId, repoId), eq(item.number, number)))
     .limit(1);
   if (!repoItem) {
-    throw new HTTPException(404, { message: `${itemType === "issue" ? "Issue" : "Pull request"} not found` });
+    throw new HTTPException(404, {
+      message: `${itemType === "issue" ? "Issue" : "Pull request"} not found`,
+    });
   }
 
   const [task] = await db
     .select({ id: taskTable.id })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .where(and(eq(taskTable.id, taskId), eq(boardTable.organizationId, organizationId)))
+    .where(
+      and(
+        eq(taskTable.id, taskId),
+        eq(boardTable.organizationId, organizationId),
+      ),
+    )
     .limit(1);
   if (!task) throw new HTTPException(404, { message: "Task not found" });
 
@@ -165,13 +180,19 @@ export async function addRepoItemTaskLink({
     itemType === "issue"
       ? { taskId, repoIssueId: repoItem.id }
       : { taskId, repoPullRequestId: repoItem.id };
-  const [link] = await db.insert(taskRepoItemLinkTable).values(values).onConflictDoNothing().returning();
+  const [link] = await db
+    .insert(taskRepoItemLinkTable)
+    .values(values)
+    .onConflictDoNothing()
+    .returning();
   if (link) return link;
 
   const [existing] = await db
     .select()
     .from(taskRepoItemLinkTable)
-    .where(and(eq(taskRepoItemLinkTable.taskId, taskId), eq(itemId, repoItem.id)))
+    .where(
+      and(eq(taskRepoItemLinkTable.taskId, taskId), eq(itemId, repoItem.id)),
+    )
     .limit(1);
   return existing;
 }
@@ -208,7 +229,9 @@ export async function removeRepoItemTaskLink({
     .limit(1);
   if (!link) throw new HTTPException(404, { message: "Task link not found" });
 
-  await db.delete(taskRepoItemLinkTable).where(eq(taskRepoItemLinkTable.id, link.id));
+  await db
+    .delete(taskRepoItemLinkTable)
+    .where(eq(taskRepoItemLinkTable.id, link.id));
   return link;
 }
 

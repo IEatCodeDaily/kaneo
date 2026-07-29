@@ -2,9 +2,9 @@ import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
   boardTable,
+  organizationTable,
   taskTable,
   userTable,
-  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -72,7 +72,10 @@ async function getSlackEventData(
     })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .innerJoin(
+      organizationTable,
+      eq(boardTable.organizationId, organizationTable.id),
+    )
     .where(and(eq(taskTable.id, taskId), eq(boardTable.id, boardId)))
     .limit(1);
 
@@ -288,7 +291,10 @@ export async function handleTaskCommentCreated(
   await sendSlackMessage(
     config,
     "New task comment",
-    truncate(event.comment.replace(/\s+/g, " "), 200),
+    `${event.authorName ? `${event.authorName}: ` : ""}${truncate(
+      event.comment.replace(/\s+/g, " "),
+      200,
+    )}`,
     data,
   );
 }

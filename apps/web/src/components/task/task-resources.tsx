@@ -1,8 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   CircleDot,
   ExternalLink,
+  GitBranch,
   Github,
+  GitMerge,
   GitPullRequest,
   Link2,
   Search,
@@ -26,11 +29,13 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
 import useGetRepoPullRequests from "@/hooks/queries/repo/use-get-repo-pull-requests";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
+import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 
 type ResourceType = "issues" | "pull-requests";
 
@@ -52,6 +57,40 @@ type ResourceGroup = {
   label: string;
   items: ResourceItem[];
 };
+
+/**
+ * Derives "owner/repo" from a GitHub/Gitea resource URL.
+ *
+ * Auto-synced links only carry a URL — they are not tied to a Kaneo `repo` row,
+ * so there is no id to look the repository up by.
+ */
+function getRepoLabelFromUrl(url: string) {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    if (segments.length < 2) return null;
+    return `${segments[0]}/${segments[1]}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Repository name shown beside each resource.
+ *
+ * Truncation is done with CSS rather than by slicing the string so the full
+ * "owner/repo" stays available in the native tooltip, and so a long name can
+ * never push the title or row actions out of the row.
+ */
+function RepoLabel({ label }: { label: string }) {
+  return (
+    <span
+      className="max-w-[38%] shrink-0 truncate text-xs text-muted-foreground"
+      title={label}
+    >
+      {label}
+    </span>
+  );
+}
 
 async function linkResource({
   repoId,
@@ -88,6 +127,7 @@ export default function TaskResources({
   const [resourceType, setResourceType] = useState<ResourceType>("issues");
   const queryClient = useQueryClient();
   const { data: links = [] } = useGetTaskRepoLinks(taskId);
+  const { data: externalLinks = [] } = useExternalLinks(taskId);
   const { data: repos = [] } = useGetRepos({ organizationId });
 
   // The command palette searches across every connected repo at once, so scope
@@ -154,6 +194,39 @@ export default function TaskResources({
     [links],
   );
 
+  /**
+   * Auto-synced links (board↔GitHub/Gitea integration, webhooks) live in a
+   * different table than manually linked repo items, but users think of them as
+   * one list, so they render under a single "Resources" header.
+   *
+   * Only manual links can be unlinked here — an auto-synced link would just be
+   * recreated by the next sync, so offering the action would be a lie.
+   */
+  const autoLinks = useMemo(() => {
+    const manualUrls = new Set(links.map((item) => item.url));
+
+    // A branch link is noise once its pull request is present.
+    const hasPullRequest =
+      links.some((item) => item.itemType === "pull-requests") ||
+      (externalLinks as ExternalLinkType[]).some(
+        (link) => link.resourceType === "pull_request",
+      );
+
+    return (externalLinks as ExternalLinkType[]).filter((link) => {
+      if (manualUrls.has(link.url)) return false;
+      if (hasPullRequest && link.resourceType === "branch") return false;
+      return true;
+    });
+  }, [externalLinks, links]);
+
+  const hasAnyResource = links.length > 0 || autoLinks.length > 0;
+
+  /** repoId -> "owner/name", so manual links can show their repository. */
+  const repoLabelById = useMemo(
+    () => new Map(repos.map((repo) => [repo.id, `${repo.owner}/${repo.name}`])),
+    [repos],
+  );
+
   // One group per repository, matching how Relations groups tasks by board.
   const commandGroups = useMemo<ResourceGroup[]>(() => {
     const source =
@@ -209,7 +282,7 @@ export default function TaskResources({
         </Button>
       </div>
 
-      {links.length > 0 && (
+      {hasAnyResource && (
         <div className="flex flex-col gap-0.5">
           {links.map((item) => (
             <div
@@ -221,18 +294,43 @@ export default function TaskResources({
               ) : (
                 <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
               )}
-              <a
+              {/*
+                A repo link points at a repository Kaneo itself renders, so it
+                navigates in-app. Board-level GitHub links (rendered elsewhere)
+                have no Kaneo page and open on GitHub instead.
+              */}
+              <Link
                 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary hover:underline"
-                href={item.url}
-                rel="noreferrer"
-                target="_blank"
+                params={{
+                  organizationId,
+                  repoId: item.repoId,
+                  number: String(item.number),
+                }}
+                to={
+                  item.itemType === "issues"
+                    ? "/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
+                    : "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
+                }
               >
                 <span className="font-mono text-xs text-muted-foreground">
                   #{item.number}
                 </span>
-                <span className="min-w-0 truncate">{item.title}</span>
-                <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
-              </a>
+                <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                {repoLabelById.has(item.repoId) && (
+                  <RepoLabel label={repoLabelById.get(item.repoId) as string} />
+                )}
+              </Link>
+              <Button
+                aria-label={`Open #${item.number} on GitHub`}
+                asChild
+                className="opacity-0 group-hover:opacity-100"
+                size="icon-xs"
+                variant="ghost"
+              >
+                <a href={item.url} rel="noreferrer" target="_blank">
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </Button>
               <Button
                 aria-label={`Unlink #${item.number}`}
                 className="opacity-0 group-hover:opacity-100"
@@ -251,6 +349,58 @@ export default function TaskResources({
               </Button>
             </div>
           ))}
+
+          {autoLinks.map((link) => {
+            const isMerged = link.metadata?.merged === true;
+            const isPullRequest = link.resourceType === "pull_request";
+            const isBranch = link.resourceType === "branch";
+            const repoLabel = getRepoLabelFromUrl(link.url);
+
+            return (
+              <a
+                className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
+                href={link.url}
+                key={link.id}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {/*
+                  Auto-synced rows carry a small Link2 badge over the resource
+                  icon so they are distinguishable from manually linked items,
+                  which are the only ones that can be unlinked here.
+                */}
+                <span
+                  className="relative flex size-4 shrink-0 items-center justify-center"
+                  title="Linked automatically by the repository integration"
+                >
+                  {isBranch ? (
+                    <GitBranch className="size-4 text-muted-foreground" />
+                  ) : isMerged ? (
+                    <GitMerge className="size-4 text-info-foreground" />
+                  ) : isPullRequest ? (
+                    <GitPullRequest className="size-4 text-muted-foreground" />
+                  ) : (
+                    <CircleDot className="size-4 text-muted-foreground" />
+                  )}
+                  <Link2
+                    aria-hidden
+                    className="absolute -bottom-1 -right-1 size-2.5 rounded-full bg-background text-muted-foreground"
+                  />
+                  <span className="sr-only">Linked automatically</span>
+                </span>
+                {!isBranch && (
+                  <span className="font-mono text-xs text-muted-foreground">
+                    #{link.externalId}
+                  </span>
+                )}
+                <span className="min-w-0 flex-1 truncate">
+                  {link.title || link.externalId}
+                </span>
+                {repoLabel && <RepoLabel label={repoLabel} />}
+                <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              </a>
+            );
+          })}
         </div>
       )}
 

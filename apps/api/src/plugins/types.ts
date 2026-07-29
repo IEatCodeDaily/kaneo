@@ -53,7 +53,14 @@ export type TaskCommentCreatedEvent = {
   taskId: string;
   boardId: string;
   userId: string;
+  /**
+   * Raw comment markdown exactly as the author wrote it. Consumers that need
+   * attribution use `authorName`; embedding the author inside this string would
+   * corrupt rich content (it previously forced the body into a blockquote,
+   * which broke images, lists, and code blocks when mirrored to GitHub).
+   */
   comment: string;
+  authorName: string | null;
 };
 
 export type TaskDeletedEvent = {

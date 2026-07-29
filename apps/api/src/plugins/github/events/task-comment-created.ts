@@ -1,3 +1,4 @@
+import { createGitHubComment } from "../../../repo/controllers/manage-github-repo";
 import type { PluginContext, TaskCommentCreatedEvent } from "../../types";
 import type { GitHubConfig } from "../config";
 import { findExternalLinkByTaskAndType } from "../services/link-manager";
@@ -25,26 +26,19 @@ export async function handleTaskCommentCreated(
     return;
   }
 
-  try {
-    let installationId = config.installationId;
-    if (!installationId) {
-      installationId = await getInstallationIdForRepo(
-        repositoryOwner,
-        repositoryName,
-      );
-    }
+  const installationId =
+    config.installationId ??
+    (await getInstallationIdForRepo(repositoryOwner, repositoryName));
+  const installationOctokit =
+    await githubApp.getInstallationOctokit(installationId);
 
-    const octokit = await githubApp.getInstallationOctokit(installationId);
-
-    const issueNumber = Number.parseInt(existingLink.externalId, 10);
-
-    await octokit.rest.issues.createComment({
-      owner: repositoryOwner,
-      repo: repositoryName,
-      issue_number: issueNumber,
-      body: event.comment,
-    });
-  } catch (error) {
-    console.error("Failed to create GitHub comment:", error);
-  }
+  await createGitHubComment({
+    owner: repositoryOwner,
+    repo: repositoryName,
+    number: Number.parseInt(existingLink.externalId, 10),
+    body: event.comment,
+    userId: event.userId,
+    installationOctokit,
+    fallbackToInstallation: true,
+  });
 }

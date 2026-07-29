@@ -3,9 +3,9 @@ import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
   boardTable,
+  organizationTable,
   taskTable,
   userTable,
-  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -114,7 +114,10 @@ async function getTelegramEventData(
     })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .innerJoin(
+      organizationTable,
+      eq(boardTable.organizationId, organizationTable.id),
+    )
     .where(and(eq(taskTable.id, taskId), eq(boardTable.id, boardId)))
     .limit(1);
 
@@ -288,6 +291,9 @@ export async function handleTaskCommentCreated(
 ): Promise<void> {
   await runTelegramHandler(context, event, "taskCommentCreated", () => ({
     title: "New task comment",
-    body: truncate(event.comment.replace(/\s+/g, " "), 200),
+    body: `${event.authorName ? `${event.authorName}: ` : ""}${truncate(
+      event.comment.replace(/\s+/g, " "),
+      200,
+    )}`,
   }));
 }

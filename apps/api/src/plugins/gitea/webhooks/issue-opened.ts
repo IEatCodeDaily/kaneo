@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../../database";
-import { columnTable, boardTable, taskTable } from "../../../database/schema";
+import { boardTable, columnTable, taskTable } from "../../../database/schema";
 import { publishEvent } from "../../../events";
 import { claimTaskNumber } from "../../../task/controllers/claim-task-numbers";
 import {

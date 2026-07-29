@@ -20,10 +20,7 @@ export function generateBranchName(
     .replace("{title}", slugify(taskTitle));
 }
 
-export function createBranchRegex(
-  pattern: string,
-  boardSlug: string,
-): RegExp {
+export function createBranchRegex(pattern: string, boardSlug: string): RegExp {
   const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const regexPattern = escapedPattern
@@ -112,11 +109,7 @@ export function extractTaskNumber(
   config: GitHubConfig,
   boardSlug: string,
 ): number | null {
-  const fromBranch = extractTaskNumberFromBranch(
-    branchName,
-    config,
-    boardSlug,
-  );
+  const fromBranch = extractTaskNumberFromBranch(branchName, config, boardSlug);
   if (fromBranch !== null) return fromBranch;
 
   if (prTitle) {

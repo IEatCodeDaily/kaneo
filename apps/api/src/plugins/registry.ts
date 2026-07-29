@@ -128,6 +128,7 @@ export function initializeEventSubscriptions(): void {
     taskId: string;
     userId: string;
     comment: string;
+    authorName?: string | null;
     boardId: string;
   }>("comment.created", async (data) => {
     await broadcastTaskCommentCreated({
@@ -135,6 +136,7 @@ export function initializeEventSubscriptions(): void {
       boardId: data.boardId,
       userId: data.userId,
       comment: data.comment,
+      authorName: data.authorName ?? null,
     });
   });
 
