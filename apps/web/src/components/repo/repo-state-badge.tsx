@@ -6,7 +6,8 @@ type RepoStateBadgeState = "open" | "closed" | "merged" | "draft";
 
 const stateClassNames: Record<RepoStateBadgeState, string> = {
   open: "bg-success/12 text-success-foreground dark:bg-success/20",
-  closed: "bg-destructive/12 text-destructive-foreground dark:bg-destructive/20",
+  closed:
+    "bg-destructive/12 text-destructive-foreground dark:bg-destructive/20",
   merged:
     "bg-purple-500/12 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
   draft: "bg-muted text-muted-foreground",
@@ -29,7 +30,11 @@ export default function RepoStateBadge({
   const { t } = useTranslation();
 
   return (
-    <Badge className={cn(stateClassNames[state], className)} size="sm">
+    <Badge
+      className={cn(stateClassNames[state], className)}
+      data-slot="repo-state-badge"
+      size="sm"
+    >
       {t(stateLabelKeys[state])}
     </Badge>
   );

@@ -684,12 +684,42 @@ const repo = new Hono<{
   )
   .get(
     "/:id/releases",
+    describeRoute({
+      operationId: "listGitHubRepoReleases",
+      tags: ["Repos"],
+      description: "List a GitHub repository's releases and their assets",
+      responses: {
+        200: {
+          description: "Repository releases",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(githubReleaseSchema)),
+            },
+          },
+        },
+      },
+    }),
     validator("param", v.object({ id: v.string() })),
     repoOrganizationAccess(),
     async (c) => c.json(await listGitHubRepoReleases(c.req.valid("param").id)),
   )
   .get(
     "/:id/packages",
+    describeRoute({
+      operationId: "listGitHubRepoPackages",
+      tags: ["Repos"],
+      description: "List packages published from a GitHub repository",
+      responses: {
+        200: {
+          description: "Repository packages",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(githubPackageSchema)),
+            },
+          },
+        },
+      },
+    }),
     validator("param", v.object({ id: v.string() })),
     repoOrganizationAccess(),
     async (c) => c.json(await listGitHubRepoPackages(c.req.valid("param").id)),

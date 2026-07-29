@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CircleDot, GitPullRequest, Github, Plus } from "lucide-react";
+import { CircleDot, Github, GitPullRequest, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
-import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import PageTitle from "@/components/page-title";
+import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -37,6 +37,12 @@ function RouteComponent() {
   const { organizationId } = Route.useParams();
   const navigate = useNavigate();
   const { data: repos, isLoading } = useGetRepos({ organizationId });
+  const headerActions = (
+    <Button variant="outline" size="xs" onClick={() => setAddOpen(true)}>
+      <Plus className="size-3" />
+      {t("organization:repos.add.button")}
+    </Button>
+  );
 
   const handleRepoClick = (repoId: string) => {
     navigate({
@@ -49,7 +55,10 @@ function RouteComponent() {
     return (
       <>
         <PageTitle title={t("organization:repos.pageTitle")} />
-        <OrganizationLayout title={t("organization:repos.pageTitle")}>
+        <OrganizationLayout
+          title={t("organization:repos.pageTitle")}
+          headerActions={headerActions}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -104,13 +113,10 @@ function RouteComponent() {
     return (
       <>
         <PageTitle title={t("organization:repos.pageTitle")} />
-        <OrganizationLayout title={t("organization:repos.pageTitle")}>
-          <div className="mb-4 flex justify-end">
-            <Button onClick={() => setAddOpen(true)}>
-              <Plus className="mr-2 size-4" />
-              {t("organization:repos.add.button")}
-            </Button>
-          </div>
+        <OrganizationLayout
+          title={t("organization:repos.pageTitle")}
+          headerActions={headerActions}
+        >
           <Empty className="min-h-[60vh]">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -135,13 +141,10 @@ function RouteComponent() {
   return (
     <>
       <PageTitle title={t("organization:repos.pageTitle")} />
-      <OrganizationLayout title={t("organization:repos.pageTitle")}>
-        <div className="mb-4 flex justify-end">
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            {t("organization:repos.add.button")}
-          </Button>
-        </div>
+      <OrganizationLayout
+        title={t("organization:repos.pageTitle")}
+        headerActions={headerActions}
+      >
         <Table>
           <TableHeader className="p-4">
             <TableRow>

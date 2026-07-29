@@ -1,12 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { Octokit } from "octokit";
 import db from "../../database";
-import {
-  githubUserGrantTable,
-  repoTable,
-  userTable,
-} from "../../database/schema";
+import { repoTable, userTable } from "../../database/schema";
+import { getUsableDelegatedToken } from "../../github-delegation";
 import {
   getGithubApp,
   getInstallationOctokit,
@@ -14,6 +11,10 @@ import {
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
 import { getRepoPullRequest } from "./get-repo-pull-request";
+import {
+  formatGitHubCommentBody,
+  selectGitHubCommentAuthor,
+} from "./github-comment-author-policy";
 
 type GitHubItemKind = "issue" | "pullRequest";
 
@@ -245,16 +246,9 @@ async function getActingOctokit(
     return { repo, octokit: installationOctokit, actedAsUser: false };
   }
 
-  const [grant] = await db
-    .select({ accessToken: githubUserGrantTable.accessToken })
-    .from(githubUserGrantTable)
-    .where(
-      and(
-        eq(githubUserGrantTable.userId, userId),
-        eq(githubUserGrantTable.providerId, "github-delegation"),
-      ),
-    )
-    .limit(1);
+  // Refreshes the 8h App user token when needed; null means no delegation.
+  const delegatedToken = await getUsableDelegatedToken(userId);
+  const grant = delegatedToken ? { accessToken: delegatedToken } : undefined;
 
   if (!grant?.accessToken) {
     return { repo, octokit: installationOctokit, actedAsUser: false };
@@ -280,62 +274,89 @@ export async function createGitHubItemComment({
 }) {
   const { repo, octokit: installationOctokit } =
     await getGitHubRepoClient(repoId);
+  const result = await createGitHubComment({
+    owner: repo.owner,
+    repo: repo.name,
+    number,
+    body,
+    userId,
+    installationOctokit,
+  });
+
+  // Comments are represented by the mirror's comment count, so refresh before
+  // returning rather than making a local count assumption.
+  await syncGitHubRepo(repoId);
+  return result;
+}
+
+export async function createGitHubComment({
+  owner,
+  repo,
+  number,
+  body,
+  userId,
+  installationOctokit,
+  fallbackToInstallation = false,
+}: {
+  owner: string;
+  repo: string;
+  number: number;
+  body: string;
+  userId: string;
+  installationOctokit: Octokit;
+  fallbackToInstallation?: boolean;
+}) {
   // This is deliberately a dedicated grant, separate from sign-in OAuth.
   // Sign-in commonly has user:email only; delegated identity has repo scope.
-  const [githubAccount] = await db
-    .select({ accessToken: githubUserGrantTable.accessToken })
-    .from(githubUserGrantTable)
-    .where(
-      and(
-        eq(githubUserGrantTable.userId, userId),
-        eq(githubUserGrantTable.providerId, "github-delegation"),
-      ),
-    )
-    .limit(1);
+  // Refreshes the 8h App user token when needed; null means no delegation, so
+  // the caller falls back to the app instead of posting with a dead token.
+  const delegatedAccessToken = await getUsableDelegatedToken(userId);
+  const githubAccount = delegatedAccessToken
+    ? { accessToken: delegatedAccessToken }
+    : undefined;
   const [user] = await db
     .select({ name: userTable.name })
     .from(userTable)
     .where(eq(userTable.id, userId))
     .limit(1);
 
-  // Better Auth persists the OAuth token on the linked GitHub account. Prefer
-  // it so GitHub records the real Kaneo member as the comment author. The
-  // configured SSO scope may not grant repository access, and tokens may be
-  // revoked, so preserve the installation-token path as a reliable fallback.
+  // A delegated grant makes the GitHub user the real author. When that grant is
+  // an App user token, GitHub itself renders "with <App>" provenance, so Kaneo
+  // adds no footer — a manual one would duplicate what GitHub already shows.
+  // Only the App-installation fallback needs an attribution line, because there
+  // the author is the bot rather than the person.
   let octokit = installationOctokit;
-  let author = "github-app";
-  let commentBody = body;
+  let { author } = selectGitHubCommentAuthor(
+    Boolean(githubAccount?.accessToken),
+  );
+  // Attribution is applied on both paths: the delegated comment is authored by
+  // the real user, but the trailing line still records that it came from Kaneo.
+  const commentBody = formatGitHubCommentBody(body, user?.name);
   if (githubAccount?.accessToken) {
     octokit = new Octokit({ auth: githubAccount.accessToken });
-    author = "github-user";
-  } else {
-    commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
   }
 
-  let data;
+  let data: Awaited<
+    ReturnType<typeof octokit.rest.issues.createComment>
+  >["data"];
   try {
     ({ data } = await octokit.rest.issues.createComment({
-      owner: repo.owner,
-      repo: repo.name,
+      owner,
+      repo,
       issue_number: number,
       body: commentBody,
     }));
   } catch (error) {
-    // A linked token may be sign-in-only or revoked; degrade to the App bot.
-    if (author !== "github-user") throw error;
+    if (!fallbackToInstallation || !githubAccount?.accessToken) throw error;
+    // The body already carries attribution, so the fallback reuses it as-is.
     author = "github-app";
-    commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
     ({ data } = await installationOctokit.rest.issues.createComment({
-      owner: repo.owner,
-      repo: repo.name,
+      owner,
+      repo,
       issue_number: number,
       body: commentBody,
     }));
   }
-
-  // Comments are represented by the mirror's comment count, so refresh before
-  // returning rather than making a local count assumption.
-  await syncGitHubRepo(repoId);
   return {
     id: String(data.id),
     url: data.html_url,

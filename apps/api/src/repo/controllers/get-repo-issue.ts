@@ -5,13 +5,81 @@ import { repoIssueTable, repoTable } from "../../database/schema";
 import { getGitHubRepoClient } from "./manage-github-repo";
 import { getRepoItemTaskLinks } from "./repo-task-links";
 
+const UNSUPPORTED_RELATION_STATUSES = new Set([404, 410, 422]);
+
+async function optionalGitHubRelation<T>(request: Promise<T>) {
+  return request
+    .then((data) => ({ supported: true, data }))
+    .catch((error: unknown) => {
+      const status = (error as { status?: number }).status;
+      if (status && UNSUPPORTED_RELATION_STATUSES.has(status)) {
+        return { supported: false, data: null };
+      }
+      throw error;
+    });
+}
+
+type GitHubIssueRelation = Record<string, unknown>;
+type GitHubTimelineEvent = {
+  source?: {
+    issue?: {
+      html_url?: string;
+      number?: number;
+      pull_request?: { merged_at?: string | null };
+      state?: string;
+      title?: string;
+    };
+  };
+};
+
+export async function getGitHubIssueRelations(
+  octokit: {
+    paginate: (
+      route: string,
+      request: Record<string, unknown>,
+    ) => Promise<GitHubIssueRelation[]>;
+    request: (
+      route: string,
+      request: Record<string, unknown>,
+    ) => Promise<{ data: GitHubIssueRelation }>;
+  },
+  request: Record<string, unknown>,
+) {
+  const [parent, subIssues] = await Promise.all([
+    optionalGitHubRelation(
+      octokit
+        .request(
+          "GET /repos/{owner}/{repo}/issues/{issue_number}/parent",
+          request,
+        )
+        .then(({ data }) => data),
+    ),
+    optionalGitHubRelation(
+      octokit.paginate(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues",
+        request,
+      ),
+    ),
+  ]);
+
+  return {
+    parent: parent.data,
+    parentSupported: parent.supported,
+    subIssues: subIssues.data ?? [],
+    subIssuesSupported: subIssues.supported,
+  };
+}
+
 export async function getRepoIssue(
   repoId: string,
   number: number,
   organizationId?: string,
 ) {
   const issue = await db.query.repoIssueTable.findFirst({
-    where: and(eq(repoIssueTable.repoId, repoId), eq(repoIssueTable.number, number)),
+    where: and(
+      eq(repoIssueTable.repoId, repoId),
+      eq(repoIssueTable.number, number),
+    ),
   });
   if (!issue) throw new HTTPException(404, { message: "Issue not found" });
   const result = {
@@ -23,9 +91,17 @@ export async function getRepoIssue(
   const repo = await db.query.repoTable.findFirst({
     where: eq(repoTable.id, repoId),
   });
-  if (!repo || repo.provider !== "github") return result;
+  if (repo?.provider !== "github") return result;
 
-  const { octokit } = await getGitHubRepoClient(repoId);
+  let octokit: Awaited<ReturnType<typeof getGitHubRepoClient>>["octokit"];
+  try {
+    ({ octokit } = await getGitHubRepoClient(repoId));
+  } catch (error) {
+    // Mirrored issue detail remains usable when the App is unavailable or the
+    // repository is an offline fixture. Sync retry handles broken-state marking.
+    console.warn("GitHub issue enrichment unavailable; using mirror", error);
+    return result;
+  }
   const request = {
     owner: repo.owner,
     repo: repo.name,
@@ -33,7 +109,7 @@ export async function getRepoIssue(
     per_page: 100,
     headers: { accept: "application/vnd.github+json" },
   };
-  const [comments, timeline, subIssues, detail] = await Promise.all([
+  const [comments, timeline, relations, detail] = await Promise.all([
     octokit.paginate(
       "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
       request,
@@ -42,20 +118,7 @@ export async function getRepoIssue(
       "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline",
       request,
     ),
-    // GitHub exposes this endpoint only where sub-issues are available.
-    octokit
-      .paginate(
-        "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues",
-        request,
-      )
-      .then((data) => ({ supported: true, data }))
-      .catch((error: unknown) => {
-        const status = (error as { status?: number }).status;
-        if (status === 404 || status === 410 || status === 422) {
-          return { supported: false, data: [] as unknown[] };
-        }
-        throw error;
-      }),
+    getGitHubIssueRelations(octokit, request),
     // The mirror has no milestone column, so read the current assignment
     // live rather than letting the UI assume "no milestone".
     octokit.rest.issues.get({
@@ -67,17 +130,21 @@ export async function getRepoIssue(
 
   // GitHub represents development relationships as cross-reference timeline
   // events. Expose linked PRs separately while retaining raw timeline data.
-  const linkedPullRequests = timeline.flatMap((event: any) => {
-    const source = event?.source?.issue;
-    if (!source?.pull_request) return [];
-    return [{
-      number: source.number,
-      title: source.title,
-      url: source.html_url,
-      state: source.state,
-      mergedAt: source.pull_request.merged_at ?? null,
-    }];
-  });
+  const linkedPullRequests = (timeline as GitHubTimelineEvent[]).flatMap(
+    (event) => {
+      const source = event?.source?.issue;
+      if (!source?.pull_request) return [];
+      return [
+        {
+          number: source.number,
+          title: source.title,
+          url: source.html_url,
+          state: source.state,
+          mergedAt: source.pull_request.merged_at ?? null,
+        },
+      ];
+    },
+  );
 
   return {
     ...result,
@@ -92,8 +159,10 @@ export async function getRepoIssue(
           }
         : null,
       stateReason: detail.data.state_reason ?? null,
-      subIssues: subIssues.data,
-      subIssuesSupported: subIssues.supported,
+      parent: relations.parent,
+      parentSupported: relations.parentSupported,
+      subIssues: relations.subIssues,
+      subIssuesSupported: relations.subIssuesSupported,
     },
   };
 }

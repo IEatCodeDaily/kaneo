@@ -1,44 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Ban,
-  Check,
-  ChevronDown,
-  CircleDot,
-  Copy,
-  Edit3,
-  GitMerge,
-  LoaderCircle,
-  MessageSquare,
-  Milestone,
-  Plus,
-  Tags,
-  Users,
-  Workflow,
-  X,
-} from "lucide-react";
+import { ChevronDown, LoaderCircle, Milestone } from "lucide-react";
 import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogPopup,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogPanel,
-  DialogPopup,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
   Menu,
   MenuCheckboxItem,
@@ -48,10 +13,8 @@ import {
   MenuPopup,
   MenuRadioGroup,
   MenuRadioItem,
-  MenuSeparator,
   MenuTrigger,
 } from "@/components/ui/menu";
-import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoGithubMetadata from "@/hooks/queries/repo/use-get-repo-github-metadata";
 import { toast } from "@/lib/toast";
@@ -78,21 +41,8 @@ type Props = {
   labels: RepoLabel[];
   assignees?: string[];
   milestoneNumber?: number | null;
-  github?: {
-    subIssues?: Array<{
-      number: number;
-      title: string;
-      state: string;
-      url: string;
-    }>;
-    linkedPullRequests?: Array<{
-      number: number;
-      title: string;
-      state: string;
-      url: string;
-    }>;
-    subIssuesSupported?: boolean;
-  } | null;
+  organizationId: string;
+  taskLinks?: import("@/types/repo").RepoTaskLink[];
   descriptionActionTargetId?: never;
 };
 
@@ -185,11 +135,12 @@ export function RepoIssueSidebar({
   kind,
   repoId,
   number,
-  title,
+
   labels,
   assignees = [],
   milestoneNumber = null,
-  github,
+  organizationId,
+  taskLinks,
 }: Props) {
   const name = kind === "issue" ? "Issue" : "Pull Request";
   const { update } = useRepoMutations(kind, repoId, number);
@@ -235,57 +186,9 @@ export function RepoIssueSidebar({
   const emptyMeta = !metadataLoading && metadata;
   const isGithubIssue = kind === "issue";
 
-  // Sub-issues are a GitHub-side relation, so mutate then refetch the detail.
-  const queryClient = useQueryClient();
-  const { resourcePath, queryKey, request } = useRepoMutations(
-    kind,
-    repoId,
-    number,
-  );
-  const [addingSubIssue, setAddingSubIssue] = useState(false);
-  const [subIssueNumber, setSubIssueNumber] = useState("");
-
-  const refreshDetail = async () => {
-    await queryClient.invalidateQueries({ queryKey });
-    await queryClient.invalidateQueries({
-      queryKey: ["repo-issue", repoId, number],
-    });
-  };
-
-  const addSubIssue = useMutation({
-    mutationFn: (value: number) =>
-      request(`${resourcePath}/sub-issues`, {
-        body: JSON.stringify({ subIssueNumber: value }),
-        method: "POST",
-      }),
-    onSuccess: async () => {
-      await refreshDetail();
-      setAddingSubIssue(false);
-      setSubIssueNumber("");
-      toast.success("Sub-issue linked on GitHub.");
-    },
-    onError: (error) =>
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not link the sub-issue.",
-      ),
-  });
-
-  const removeSubIssue = useMutation({
-    mutationFn: (value: number) =>
-      request(`${resourcePath}/sub-issues/${value}`, { method: "DELETE" }),
-    onSuccess: async () => {
-      await refreshDetail();
-      toast.success("Sub-issue removed on GitHub.");
-    },
-    onError: () => toast.error("Could not remove the sub-issue."),
-  });
-  const subIssuePending = addSubIssue.isPending || removeSubIssue.isPending;
-
   return (
     <aside
-      className="space-y-4 border-border/80 p-5 sm:p-6 lg:sticky lg:top-4 lg:border-l"
+      className="space-y-4 border-border/80 p-5 sm:p-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:border-l"
       aria-label={`${name} metadata`}
     >
       {/* Labels */}
@@ -508,406 +411,17 @@ export function RepoIssueSidebar({
         </div>
       )}
 
-      {/* Development: linked PRs and sub-issues */}
       <div className="border-t border-border/80 pt-3">
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Workflow className="size-3.5" /> Development
-        </p>
-        {github?.linkedPullRequests && github.linkedPullRequests.length > 0 ? (
-          <div className="mb-2 space-y-1">
-            {github.linkedPullRequests.map((pr) => (
-              <a
-                className="flex items-center gap-1.5 text-xs hover:text-primary"
-                href={pr.url}
-                key={pr.number}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <GitMerge className="size-3 text-muted-foreground" />
-                <span className="truncate">
-                  #{pr.number} {pr.title}
-                </span>
-              </a>
-            ))}
-          </div>
-        ) : null}
-        {github?.subIssues && github.subIssues.length > 0 ? (
-          <div className="space-y-1">
-            {github.subIssues.map((sub) => (
-              <div className="group flex items-center gap-1.5" key={sub.number}>
-                <CircleDot className="size-3 shrink-0 text-muted-foreground" />
-                <a
-                  className="min-w-0 flex-1 truncate text-xs hover:text-primary"
-                  href={sub.url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  #{sub.number} {sub.title}
-                </a>
-                {isGithubIssue && (
-                  <Button
-                    aria-label={`Remove sub-issue #${sub.number}`}
-                    className="opacity-0 group-hover:opacity-100"
-                    disabled={subIssuePending}
-                    onClick={() => removeSubIssue.mutate(sub.number)}
-                    size="icon-xs"
-                    variant="ghost"
-                  >
-                    <X className="size-3" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {!github?.linkedPullRequests?.length && !github?.subIssues?.length && (
-          <p className="text-xs text-muted-foreground">
-            No linked branches or sub-issues yet.
-          </p>
-        )}
-        {isGithubIssue && (
-          <div className="mt-2">
-            {addingSubIssue ? (
-              <form
-                className="flex items-center gap-1.5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const parsed = Number(subIssueNumber);
-                  if (!Number.isInteger(parsed) || parsed < 1) {
-                    toast.error("Enter a valid issue number.");
-                    return;
-                  }
-                  addSubIssue.mutate(parsed);
-                }}
-              >
-                <Input
-                  aria-label="Sub-issue number"
-                  autoFocus
-                  className="h-7 text-xs"
-                  onChange={(event) => setSubIssueNumber(event.target.value)}
-                  placeholder="Issue #"
-                  value={subIssueNumber}
-                />
-                <Button disabled={subIssuePending} size="xs" type="submit">
-                  {subIssuePending ? (
-                    <LoaderCircle className="size-3 animate-spin" />
-                  ) : (
-                    "Add"
-                  )}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setAddingSubIssue(false);
-                    setSubIssueNumber("");
-                  }}
-                  size="xs"
-                  type="button"
-                  variant="ghost"
-                >
-                  Cancel
-                </Button>
-              </form>
-            ) : (
-              <Button
-                onClick={() => setAddingSubIssue(true)}
-                size="xs"
-                variant="ghost"
-              >
-                <Plus className="size-3" /> Add sub-issue
-              </Button>
-            )}
-          </div>
-        )}
+        <RepoTaskLinks
+          compact
+          itemType={kind === "issue" ? "issues" : "pull-requests"}
+          number={number}
+          organizationId={organizationId}
+          repoId={repoId}
+          taskLinks={taskLinks}
+        />
       </div>
     </aside>
-  );
-}
-
-// ─── main body: edit, close/reopen, merge, comment ───────────────
-
-export function RepoIssueActions({
-  kind,
-  repoId,
-  number,
-  title,
-  state,
-}: Props) {
-  const name = kind === "issue" ? "Issue" : "Pull Request";
-  const { update, resourcePath, queryKey, request } = useRepoMutations(
-    kind,
-    repoId,
-    number,
-  );
-  const queryClient = useQueryClient();
-  const [editOpen, setEditOpen] = useState(false);
-  const [duplicateOpen, setDuplicateOpen] = useState(false);
-  const [comment, setComment] = useState("");
-  const [draftTitle, setDraftTitle] = useState(title);
-  const [duplicateOf, setDuplicateOf] = useState("");
-
-  const openEdit = () => {
-    setDraftTitle(title);
-    setEditOpen(true);
-  };
-
-  const saveEdit = async () => {
-    try {
-      await update.mutateAsync({ title: draftTitle });
-      toast.success(`${name} updated on GitHub.`);
-      setEditOpen(false);
-    } catch {
-      toast.error(`Could not update the ${name.toLowerCase()}.`);
-    }
-  };
-
-  const showIssueClose = kind === "issue" && state === "open";
-
-  const closeIssueWith = useMutation({
-    mutationFn: (reason: "completed" | "not_planned") =>
-      request(resourcePath, {
-        body: JSON.stringify({ state: "closed", stateReason: reason }),
-        method: "PATCH",
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [
-          kind === "issue" ? "repo-issue" : "repo-pull-request",
-          repoId,
-          number,
-        ],
-      });
-      toast.success("Issue closed on GitHub.");
-    },
-    onError: () => toast.error("Could not close the issue."),
-  });
-
-  const markDuplicate = useMutation({
-    mutationFn: (canonical: number) =>
-      request(`${resourcePath}/duplicate`, {
-        body: JSON.stringify({ duplicateOf: canonical }),
-        method: "POST",
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["repo-issue", repoId, number],
-      });
-      toast.success("Issue marked as duplicate.");
-      setDuplicateOpen(false);
-    },
-    onError: () => toast.error("Could not mark as duplicate."),
-  });
-
-  const addComment = useMutation({
-    mutationFn: () =>
-      request(`${resourcePath}/comments`, {
-        body: JSON.stringify({ body: comment.trim() }),
-        method: "POST",
-      }),
-    onSuccess: async () => {
-      setComment("");
-      await queryClient.invalidateQueries({ queryKey });
-      toast.success("Comment submitted to GitHub.");
-    },
-    onError: () => toast.error("Could not submit the comment."),
-  });
-
-  const merge = useMutation({
-    mutationFn: () => request(`${resourcePath}/merge`, { method: "POST" }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey });
-      toast.success("Pull request merged.");
-    },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Could not merge."),
-  });
-
-  return (
-    <>
-      {/* Pull request action bar */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-border/80 px-5 py-3 sm:px-6">
-        <Button onClick={openEdit} size="sm" variant="ghost">
-          <Edit3 className="size-3.5" /> Rename
-        </Button>
-
-        {kind === "pull-request" && state === "open" && (
-          <AlertDialog>
-            <AlertDialogTrigger render={<Button size="sm" variant="default" />}>
-              <GitMerge className="size-3.5" /> Merge
-            </AlertDialogTrigger>
-            <AlertDialogPopup>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Merge pull request?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will merge the open pull request in GitHub. GitHub still
-                  enforces branch protection and required reviews.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogClose render={<Button variant="outline" />}>
-                  Cancel
-                </AlertDialogClose>
-                <Button
-                  disabled={merge.isPending}
-                  onClick={() => merge.mutate()}
-                >
-                  {merge.isPending && (
-                    <LoaderCircle className="size-3.5 animate-spin" />
-                  )}
-                  Merge pull request
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogPopup>
-          </AlertDialog>
-        )}
-      </div>
-
-      {/* Comment composer */}
-      <div className="border-t border-border/80 px-5 py-4 sm:px-6">
-        <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-          <MessageSquare className="size-4" /> Leave a comment
-        </div>
-        <Textarea
-          aria-label="Comment"
-          className="mb-2"
-          onChange={(event) => setComment(event.target.value)}
-          placeholder="Leave a comment on GitHub…"
-          rows={4}
-          value={comment}
-        />
-        <div className="flex flex-wrap justify-end gap-2">
-          {showIssueClose && (
-            <Menu>
-              <MenuTrigger render={<Button size="sm" variant="outline" />}>
-                <Check className="size-3.5" /> Close issue
-                <ChevronDown className="size-3.5" />
-              </MenuTrigger>
-              <MenuPopup align="end" className="min-w-52">
-                <MenuItem
-                  disabled={closeIssueWith.isPending}
-                  onClick={() => closeIssueWith.mutate("completed")}
-                >
-                  <Check className="size-3.5" /> Close as completed
-                </MenuItem>
-                <MenuItem
-                  disabled={closeIssueWith.isPending}
-                  onClick={() => closeIssueWith.mutate("not_planned")}
-                >
-                  <Ban className="size-3.5" /> Close as not planned
-                </MenuItem>
-                <MenuSeparator />
-                <MenuItem onClick={() => setDuplicateOpen(true)}>
-                  <Copy className="size-3.5" /> Close as duplicate…
-                </MenuItem>
-              </MenuPopup>
-            </Menu>
-          )}
-          {state !== "merged" && !showIssueClose && (
-            <Button
-              disabled={update.isPending}
-              onClick={async () => {
-                try {
-                  await update.mutateAsync({
-                    state: state === "open" ? "closed" : "open",
-                  });
-                  toast.success(
-                    state === "open"
-                      ? "Closed on GitHub."
-                      : "Reopened on GitHub.",
-                  );
-                } catch {
-                  toast.error("Could not update the state.");
-                }
-              }}
-              size="sm"
-              variant="outline"
-            >
-              <Check className="size-3.5" />
-              {state === "open" ? "Close" : "Reopen"}
-            </Button>
-          )}
-          <Button
-            disabled={addComment.isPending || !comment.trim()}
-            onClick={() => addComment.mutate()}
-            size="sm"
-          >
-            {addComment.isPending && (
-              <LoaderCircle className="size-3.5 animate-spin" />
-            )}
-            Comment
-          </Button>
-        </div>
-      </div>
-
-      {/* Rename dialog: the description is edited inline by RepoDescriptionEditor. */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Rename {name}</DialogTitle>
-            <DialogDescription>Update the title in GitHub.</DialogDescription>
-          </DialogHeader>
-          <DialogPanel className="space-y-4">
-            <Input
-              aria-label="Title"
-              onChange={(event) => setDraftTitle(event.target.value)}
-              value={draftTitle}
-            />
-          </DialogPanel>
-          <DialogFooter>
-            <Button onClick={() => setEditOpen(false)} variant="outline">
-              Cancel
-            </Button>
-            <Button
-              disabled={update.isPending || !draftTitle.trim()}
-              onClick={saveEdit}
-            >
-              {update.isPending && (
-                <LoaderCircle className="size-3.5 animate-spin" />
-              )}
-              Save changes
-            </Button>
-          </DialogFooter>
-        </DialogPopup>
-      </Dialog>
-
-      {/* Duplicate dialog */}
-      <Dialog open={duplicateOpen} onOpenChange={setDuplicateOpen}>
-        <DialogPopup>
-          <DialogHeader>
-            <DialogTitle>Close as duplicate</DialogTitle>
-            <DialogDescription>
-              Enter the issue number this duplicates. GitHub will link them and
-              close this issue.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogPanel>
-            <Input
-              aria-label="Canonical issue number"
-              onChange={(event) => setDuplicateOf(event.target.value)}
-              placeholder="e.g. 42"
-              value={duplicateOf}
-            />
-          </DialogPanel>
-          <DialogFooter>
-            <Button onClick={() => setDuplicateOpen(false)} variant="outline">
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                markDuplicate.isPending ||
-                !Number.isInteger(Number(duplicateOf)) ||
-                Number(duplicateOf) <= 0
-              }
-              onClick={() => markDuplicate.mutate(Number(duplicateOf))}
-            >
-              {markDuplicate.isPending && (
-                <LoaderCircle className="size-3.5 animate-spin" />
-              )}
-              Close as duplicate
-            </Button>
-          </DialogFooter>
-        </DialogPopup>
-      </Dialog>
-    </>
   );
 }
 

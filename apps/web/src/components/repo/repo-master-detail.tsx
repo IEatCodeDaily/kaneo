@@ -1,4 +1,10 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const MIN_WIDTH = 240;
@@ -48,15 +54,12 @@ export default function RepoMasterDetail({
     setWidth(readStoredWidth(id));
   }, [id]);
 
-  const applyWidth = useCallback(
-    (clientX: number) => {
-      const left = containerRef.current?.getBoundingClientRect().left ?? 0;
-      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, clientX - left));
-      setWidth(next);
-      return next;
-    },
-    [],
-  );
+  const applyWidth = useCallback((clientX: number) => {
+    const left = containerRef.current?.getBoundingClientRect().left ?? 0;
+    const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, clientX - left));
+    setWidth(next);
+    return next;
+  }, []);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -98,34 +101,46 @@ export default function RepoMasterDetail({
   }
 
   return (
-    <div className="flex min-h-0 items-stretch" ref={containerRef}>
+    <div
+      className="flex h-full min-h-0 items-stretch overflow-hidden"
+      ref={containerRef}
+    >
       <section
-        className="min-h-0 shrink-0 overflow-y-auto border-r lg:max-h-[calc(100vh-8rem)]"
+        className="min-h-0 shrink-0 overflow-y-auto overscroll-contain border-r"
+        data-testid="repo-list-viewport"
         style={{ width }}
       >
         {list}
       </section>
-      {/* Keyboard users get the same range control as the pointer drag. */}
-      <input
-        aria-label="Resize list panel"
-        className="h-auto w-1.5 cursor-col-resize appearance-none border-0 bg-transparent p-0 transition-colors hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none data-[resizing=true]:bg-primary/40"
+      <div
+        className="group relative w-1.5 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-primary/30 data-[resizing=true]:bg-primary/40"
         data-resizing={isResizing}
-        max={MAX_WIDTH}
-        min={MIN_WIDTH}
-        onChange={(event) => {
-          const next = Number(event.target.value);
-          setWidth(next);
-          window.localStorage.setItem(storageKey(id), String(next));
-        }}
         onPointerDown={(event) => {
           event.preventDefault();
           setIsResizing(true);
         }}
-        step={8}
-        type="range"
-        value={width}
-      />
-      <section className="min-h-0 flex-1 overflow-y-auto lg:max-h-[calc(100vh-8rem)]">
+      >
+        {/* Keyboard users retain an accessible range without exposing the
+            browser's native slider thumb as a stray white square. */}
+        <input
+          aria-label="Resize list panel"
+          className="sr-only"
+          max={MAX_WIDTH}
+          min={MIN_WIDTH}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            setWidth(next);
+            window.localStorage.setItem(storageKey(id), String(next));
+          }}
+          step={8}
+          type="range"
+          value={width}
+        />
+      </div>
+      <section
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+        data-testid="repo-detail-viewport"
+      >
         {detail}
       </section>
     </div>

@@ -1,24 +1,18 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
-import { ErrorBoundary } from "@/components/error-boundary";
+import { ExternalLink } from "lucide-react";
 import PageTitle from "@/components/page-title";
-import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
-import {
-  RepoIssueActions,
-  RepoIssueSidebar,
-} from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
+import RepoIssueRelations from "@/components/repo/repo-issue-relations";
+import { RepoItemTitleAction } from "@/components/repo/repo-item-actions";
+import {
+  RepoItemDetailLayout,
+  RepoItemDetailSkeleton,
+  RepoItemNotFound,
+} from "@/components/repo/repo-item-detail-layout";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
-import RepoTaskLinks from "@/components/repo/repo-task-links";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssue from "@/hooks/queries/repo/use-get-repo-issue";
 import { formatDateMedium } from "@/lib/format";
-import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
@@ -35,6 +29,11 @@ function RouteComponent() {
     isError,
   } = useGetRepoIssue({ repoId, number });
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
+  const back = () =>
+    navigate({
+      to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
+      params: { organizationId, repoId },
+    });
 
   return (
     <>
@@ -44,37 +43,34 @@ function RouteComponent() {
         }
       />
       {isLoading ? (
-        <DetailSkeleton />
+        <RepoItemDetailSkeleton kind="issue" />
       ) : isError || !issue ? (
-        <NotFound
-          onBack={() =>
-            navigate({
-              to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
-              params: { organizationId, repoId },
-            })
-          }
-        />
+        <RepoItemNotFound kind="issue" onBack={back} />
       ) : (
-        <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
-          <Button
-            className="mb-5 gap-1.5 lg:hidden"
-            onClick={() =>
-              navigate({
-                to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
-                params: { organizationId, repoId },
-              })
-            }
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back to issues
-          </Button>
-          <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-            <header className="border-b border-border/80 px-5 py-5 sm:px-6">
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {issue.title}
-              </h1>
+        <RepoItemDetailLayout
+          body={issue.body}
+          closedAt={issue.closedAt}
+          commentCount={issue.commentCount}
+          details={
+            <RepoIssueRelations
+              github={issue.github}
+              number={issue.number}
+              repoId={repoId}
+            />
+          }
+          header={
+            <>
+              <div className="flex min-w-0 items-start gap-2">
+                <h1 className="min-w-0 flex-1 text-xl font-semibold tracking-tight sm:text-2xl">
+                  {issue.title}
+                </h1>
+                <RepoItemTitleAction
+                  kind="issue"
+                  number={issue.number}
+                  repoId={repoId}
+                  title={issue.title}
+                />
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <RepoStateBadge state={issue.state} />
                 <span>#{issue.number}</span>
@@ -93,164 +89,30 @@ function RouteComponent() {
                   GitHub <ExternalLink className="size-3" />
                 </a>
               </div>
-            </header>
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
-              {/* Main body column */}
-              <div className="min-w-0">
-                <RepoIssueDescription
-                  body={issue.body ?? ""}
-                  number={issue.number}
-                  repoId={repoId}
-                />
-                <RepoIssueHistory github={issue.github} />
-                <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-                  {issue.commentCount > 0 && (
-                    <span className="flex items-center gap-1.5">
-                      <MessageSquare className="size-3.5" />
-                      {issue.commentCount} comments
-                    </span>
-                  )}
-                  {issue.closedAt && (
-                    <span>Closed {formatDateMedium(issue.closedAt)}</span>
-                  )}
-                </footer>
-                {/* Action bar + comment composer in the main body */}
-                <RepoIssueActions
-                  assignees={issue.assigneeLogins ?? []}
-                  body={issue.body}
-                  kind="issue"
-                  labels={issue.labels}
-                  milestoneNumber={issue.github?.milestone?.number ?? null}
-                  number={issue.number}
-                  repoId={repoId}
-                  state={issue.state}
-                  title={issue.title}
-                />
-                <ErrorBoundary
-                  className="m-4"
-                  fallbackDescription="Linked Kaneo tasks could not be rendered. The rest of this issue still works."
-                  fallbackTitle="Linked tasks unavailable"
-                >
-                  <RepoTaskLinks
-                    itemType="issues"
-                    number={issue.number}
-                    organizationId={organizationId}
-                    repoId={repoId}
-                    taskLinks={issue.taskLinks}
-                  />
-                </ErrorBoundary>
-              </div>
-              {/* Right sidebar: metadata only */}
-              <ErrorBoundary
-                className="m-4"
-                fallbackDescription="Issue metadata could not be rendered."
-                fallbackTitle="Sidebar unavailable"
-              >
-                <RepoIssueSidebar
-                  assignees={issue.assigneeLogins ?? []}
-                  body={issue.body}
-                  github={issue.github}
-                  kind="issue"
-                  labels={issue.labels}
-                  milestoneNumber={issue.github?.milestone?.number ?? null}
-                  number={issue.number}
-                  repoId={repoId}
-                  state={issue.state}
-                  title={issue.title}
-                />
-              </ErrorBoundary>
-            </div>
-          </article>
-        </main>
+            </>
+          }
+          history={<RepoIssueHistory github={issue.github} />}
+          kind="issue"
+          management={{
+            assignees: issue.assigneeLogins ?? [],
+            body: issue.body,
+            kind: "issue",
+            labels: issue.labels,
+            milestoneNumber: issue.github?.milestone?.number ?? null,
+            number: issue.number,
+            organizationId,
+            repoId,
+            state: issue.state,
+            taskLinks: issue.taskLinks,
+            title: issue.title,
+          }}
+          number={issue.number}
+          onBack={back}
+          organizationId={organizationId}
+          repoId={repoId}
+          taskLinks={issue.taskLinks}
+        />
       )}
     </>
-  );
-}
-
-function RepoIssueDescription({
-  body,
-  repoId,
-  number,
-}: {
-  body: string;
-  repoId: string;
-  number: number;
-}) {
-  const queryClient = useQueryClient();
-  const update = useMutation({
-    mutationFn: async (markdown: string) => {
-      const response = await fetch(
-        getApiUrl(`/repo/${repoId}/issues/${number}`),
-        {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ body: markdown }),
-        },
-      );
-      if (!response.ok) throw new Error(await response.text());
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["repo-issue", repoId, number],
-      });
-      toast.success("Description updated on GitHub.");
-    },
-    onError: () => toast.error("Could not update the description."),
-  });
-
-  return (
-    <RepoDescriptionEditor
-      body={body}
-      isSaving={update.isPending}
-      onSave={update.mutateAsync}
-    />
-  );
-}
-
-function Author({
-  login,
-  avatarUrl,
-}: {
-  login: string | null;
-  avatarUrl: string | null;
-}) {
-  if (!login) return null;
-  return (
-    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Avatar className="size-6">
-        {avatarUrl && <AvatarImage src={avatarUrl} />}
-        <AvatarFallback className="text-[9px]">
-          {login.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-      {login}
-    </span>
-  );
-}
-function DetailSkeleton() {
-  return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-      <Skeleton className="mb-5 h-8 w-28" />
-      <div className="rounded-xl border p-6">
-        <Skeleton className="h-8 w-3/4" />
-        <Skeleton className="mt-4 h-5 w-1/3" />
-        <Skeleton className="mt-10 h-4 w-full" />
-        <Skeleton className="mt-3 h-4 w-5/6" />
-      </div>
-    </main>
-  );
-}
-function NotFound({ onBack }: { onBack: () => void }) {
-  return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-2xl font-semibold">Issue not found</h1>
-      <p className="max-w-md text-muted-foreground">
-        This issue may not exist or is no longer available.
-      </p>
-      <Button onClick={onBack} variant="outline">
-        Back to issues
-      </Button>
-    </main>
   );
 }

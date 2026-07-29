@@ -3,7 +3,9 @@
  * API boundary. Keep non-secret metadata (e.g. GitHub installationId) useful
  * to the client while stripping tokens and webhook secrets.
  */
-export function toRepoResponse<T extends { config: unknown } | undefined>(repo: T) {
+export function toRepoResponse<T extends { config: unknown } | undefined>(
+  repo: T,
+) {
   if (!repo) return repo;
   const config =
     repo.config && typeof repo.config === "object"
@@ -18,6 +20,8 @@ export function toRepoResponse<T extends { config: unknown } | undefined>(repo: 
   return { ...repo, config };
 }
 
-export function toRepoResponses<T extends { config: unknown } | undefined>(repos: T[]) {
+export function toRepoResponses<T extends { config: unknown } | undefined>(
+  repos: T[],
+) {
   return repos.map(toRepoResponse);
 }
