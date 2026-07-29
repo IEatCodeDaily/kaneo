@@ -1,6 +1,7 @@
 import type React from "react";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { MobileUserFab } from "@/components/common/mobile-user-fab";
 import { DemoAlert } from "@/components/demo-alert";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { isDemoMode } from "@/constants/urls";
@@ -69,6 +70,7 @@ function Layout({ children, className }: LayoutProps) {
         >
           {isDemoMode && <DemoAlert />}
           {children}
+          <MobileUserFab />
         </SidebarInset>
       </SidebarProvider>
     </div>

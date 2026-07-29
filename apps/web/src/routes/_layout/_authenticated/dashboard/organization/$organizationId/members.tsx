@@ -59,7 +59,7 @@ function RouteComponent() {
         title={t("team:members.pageTitle")}
         headerNavigation={
           <div
-            className="ml-2 inline-flex h-8 min-w-0 items-center gap-0.5 overflow-hidden rounded-lg border border-border/80 bg-background p-0.5"
+            className="ml-2 inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5"
             role="tablist"
             aria-label="Organization people"
           >

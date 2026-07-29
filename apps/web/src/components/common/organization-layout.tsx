@@ -40,12 +40,12 @@ export default function OrganizationLayout({
   return (
     <Layout>
       <Layout.Header>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-1 w-full">
+        <div className="flex w-full min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-6 w-6" />
+                  <SidebarTrigger className="-ml-1 h-6 w-6 shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="flex items-center gap-2 text-[10px]">
@@ -61,18 +61,28 @@ export default function OrganizationLayout({
               </Tooltip>
             </TooltipProvider>
             <div className="mx-1.5 h-4 w-px shrink-0 bg-border/80" />
-            <Breadcrumb className="flex h-8 items-center gap-1 text-xs">
-              <BreadcrumbList>
-                <BreadcrumbItem>
+            {/*
+              The breadcrumb is the only expendable element in this row: on a
+              phone the organization name plus page title can consume the width
+              the tab group needs, which previously let header actions paint
+              over the tabs. Allow it to shrink and truncate, and drop the
+              organization crumb below `sm` where space is tightest.
+            */}
+            <Breadcrumb className="flex h-8 min-w-0 shrink items-center gap-1 overflow-hidden text-xs">
+              <BreadcrumbList className="flex-nowrap">
+                <BreadcrumbItem className="hidden sm:inline-flex">
                   <BreadcrumbLink href="/">
                     <span className="text-xs font-normal text-card-foreground">
                       {organization?.name}
                     </span>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <span className="text-xs font-normal text-card-foreground">
+                <BreadcrumbSeparator className="hidden sm:block" />
+                <BreadcrumbItem className="min-w-0">
+                  <span
+                    className="block truncate text-xs font-normal text-card-foreground"
+                    title={title}
+                  >
                     {title}
                   </span>
                 </BreadcrumbItem>
@@ -80,7 +90,9 @@ export default function OrganizationLayout({
             </Breadcrumb>
             {headerNavigation}
           </div>
-          <div className={`${cn("flex items-center gap-1.5", className)}`}>
+          <div
+            className={`${cn("flex shrink-0 items-center gap-1.5", className)}`}
+          >
             {headerActions}
           </div>
         </div>

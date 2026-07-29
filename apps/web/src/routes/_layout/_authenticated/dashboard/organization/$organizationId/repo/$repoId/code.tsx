@@ -101,8 +101,7 @@ function RepoFileTree({
         .map((path) => (path.endsWith("/") ? path.slice(0, -1) : path))
         .map((path) => entries.find((candidate) => candidate.path === path))
         .find(
-          (candidate) =>
-            Boolean(candidate?.path) && candidate?.type !== "dir",
+          (candidate) => Boolean(candidate?.path) && candidate?.type !== "dir",
         );
       if (entry) onSelect(entry.path);
     },
