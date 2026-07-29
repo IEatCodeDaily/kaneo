@@ -228,6 +228,102 @@ describe("live pull request data controllers", () => {
           url: "https://github.test/acme/widget/actions/runs/4",
         },
       ],
+      unavailable: [],
     });
+  });
+
+  it("keeps workflow runs when the App cannot read check runs", async () => {
+    const github = client();
+    const forbidden = Object.assign(
+      new Error("Resource not accessible by integration"),
+      { status: 403 },
+    );
+    // Only the Checks API is denied: `checks: read` and `actions: read` are
+    // separate GitHub App permissions, and a 403 on one must not discard the
+    // other's data or fail the whole panel.
+    github.octokit.paginate.mockImplementation(async (endpoint: unknown) => {
+      if (endpoint === github.listForRef) throw forbidden;
+      if (endpoint === github.listWorkflowRunsForRepo) {
+        return [
+          {
+            name: "CI",
+            display_title: "CI",
+            run_number: 4,
+            status: "completed",
+            conclusion: "success",
+            run_started_at: "2026-07-28T10:01:00Z",
+            created_at: "2026-07-28T10:00:00Z",
+            updated_at: "2026-07-28T10:02:00Z",
+            html_url: "https://github.test/acme/widget/actions/runs/4",
+          },
+        ];
+      }
+      throw new Error("unexpected endpoint");
+    });
+    mocks.getGitHubRepoClient.mockResolvedValue({
+      repo: { owner: "acme", name: "widget" },
+      octokit: github.octokit,
+    });
+
+    const result = await getRepoPullRequestChecks({
+      repoId: "repo-1",
+      number: 7,
+    });
+
+    expect(result).toEqual({
+      conclusion: "success",
+      headSha: "head-sha",
+      checks: [],
+      runs: [
+        {
+          name: "CI",
+          status: "completed",
+          conclusion: "success",
+          startedAt: "2026-07-28T10:01:00Z",
+          completedAt: "2026-07-28T10:02:00Z",
+          url: "https://github.test/acme/widget/actions/runs/4",
+        },
+      ],
+      unavailable: ["checks"],
+    });
+  });
+
+  it("reports both sources unavailable without throwing", async () => {
+    const github = client();
+    const forbidden = Object.assign(new Error("forbidden"), { status: 403 });
+    github.octokit.paginate.mockRejectedValue(forbidden);
+    mocks.getGitHubRepoClient.mockResolvedValue({
+      repo: { owner: "acme", name: "widget" },
+      octokit: github.octokit,
+    });
+
+    await expect(
+      getRepoPullRequestChecks({ repoId: "repo-1", number: 7 }),
+    ).resolves.toEqual({
+      // No readable source means CI state is genuinely unknown, which must not
+      // be reported as a successful roll-up.
+      conclusion: null,
+      headSha: "head-sha",
+      checks: [],
+      runs: [],
+      unavailable: ["checks", "runs"],
+    });
+  });
+
+  it("still propagates non-permission GitHub failures", async () => {
+    const github = client();
+    // A 500 is not a permission gap; swallowing it would hide a real outage
+    // behind a "no CI configured" message.
+    github.octokit.paginate.mockRejectedValue(
+      Object.assign(new Error("server error"), { status: 500 }),
+    );
+    mocks.getGitHubRepoClient.mockResolvedValue({
+      repo: { owner: "acme", name: "widget" },
+      octokit: github.octokit,
+    });
+
+    await expect(
+      getRepoPullRequestChecks({ repoId: "repo-1", number: 7 }),
+    ).rejects.toThrow("server error");
   });
 });

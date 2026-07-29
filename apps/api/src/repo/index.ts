@@ -284,6 +284,7 @@ const pullRequestChecksSchema = v.object({
   headSha: v.string(),
   checks: v.array(pullRequestCheckEntrySchema),
   runs: v.array(pullRequestCheckEntrySchema),
+  unavailable: v.array(v.picklist(["checks", "runs"])),
 });
 
 // GitHub caps a PR's number at a positive integer; reject anything else before

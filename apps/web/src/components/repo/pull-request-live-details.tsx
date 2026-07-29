@@ -91,6 +91,9 @@ export default function PullRequestLiveDetails({
     ...(checks.data?.checks ?? []),
     ...(checks.data?.runs ?? []),
   ];
+  const unavailableSources = (checks.data?.unavailable ?? []).map((source) =>
+    source === "checks" ? "check runs" : "workflow runs",
+  );
 
   return (
     <div data-testid="pull-request-live-details">
@@ -207,7 +210,18 @@ export default function PullRequestLiveDetails({
             {checkItems.map((item) => (
               <CheckRow item={item} key={`${item.name}-${item.url}`} />
             ))}
+            {unavailableSources.length ? (
+              <p className="pt-2 text-sm text-muted-foreground">
+                {unavailableSources.join(" and ")} unavailable — the GitHub App
+                is missing read access.
+              </p>
+            ) : null}
           </div>
+        ) : unavailableSources.length ? (
+          <p className="text-sm text-muted-foreground">
+            Cannot read {unavailableSources.join(" or ")} — the GitHub App is
+            missing read access, so CI status is unknown.
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground">
             No checks or workflow runs for this pull request.

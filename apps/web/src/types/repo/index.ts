@@ -229,4 +229,6 @@ export type RepoPullRequestChecks = {
   headSha: string;
   checks: RepoPullRequestCheck[];
   runs: RepoPullRequestCheck[];
+  /** Sources the GitHub App lacks permission to read (`checks: read` / `actions: read`). */
+  unavailable: Array<"checks" | "runs">;
 };

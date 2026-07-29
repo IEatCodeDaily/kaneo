@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     headSha: "head-sha",
     checks: [],
     runs: [],
+    unavailable: ["checks"],
   }),
 }));
 
@@ -45,7 +46,16 @@ describe("pull request live-data routes", () => {
     [
       "checks",
       mocks.checks,
-      { conclusion: null, headSha: "head-sha", checks: [], runs: [] },
+      {
+        conclusion: null,
+        headSha: "head-sha",
+        checks: [],
+        runs: [],
+        // Proves the route's response schema actually serializes `unavailable`
+        // rather than silently stripping it, which would leave the UI unable to
+        // distinguish "no CI" from "not permitted to read CI".
+        unavailable: ["checks"],
+      },
     ],
   ])(
     "routes /%s with normalized numeric parameters",
