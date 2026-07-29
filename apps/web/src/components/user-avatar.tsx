@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, Shield } from "lucide-react";
+import { LogOut, Mail, Settings, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import useSignOut from "@/hooks/mutations/use-sign-out";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
+import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -29,6 +30,7 @@ export function UserAvatar() {
   const queryClient = useQueryClient();
   const { setBoard } = useBoardStore();
   const navigate = useNavigate();
+  const { data: invitations = [] } = usePendingInvitations();
 
   if (!user) {
     return null;
@@ -59,6 +61,7 @@ export function UserAvatar() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="Open profile menu"
           variant="ghost"
           size="icon"
           className="h-8 w-8 rounded-full p-0 hover:bg-sidebar-accent/70"
@@ -102,6 +105,24 @@ export function UserAvatar() {
           >
             <Settings className="size-3.5" />
             {t("navigation:userMenu.settings")}
+          </DropdownMenuItem>
+          {/*
+            Invitations are account-scoped, not organization-scoped, so they
+            belong beside Settings rather than in the organization's sidebar
+            navigation. The pending count is surfaced here so it stays visible
+            now that the sidebar entry is gone.
+          */}
+          <DropdownMenuItem
+            onClick={() => navigate({ to: "/dashboard/invitations" })}
+            className="h-7 gap-2 px-2 text-sm font-normal"
+          >
+            <Mail className="size-3.5" />
+            {t("navigation:sidebar.invitations")}
+            {invitations.length > 0 && (
+              <span className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-border/60 px-1 text-[11px] font-medium text-muted-foreground">
+                {invitations.length}
+              </span>
+            )}
           </DropdownMenuItem>
           {user.role === "admin" && (
             <DropdownMenuItem
