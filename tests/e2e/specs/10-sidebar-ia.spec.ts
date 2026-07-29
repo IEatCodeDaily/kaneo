@@ -95,9 +95,25 @@ test.describe("sidebar information architecture", () => {
     await expect(
       page.getByRole("menuitem", { name: "Board settings" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("menuitem", { name: "Hide from sidebar" }),
-    ).toBeVisible();
+    await page.getByRole("menuitem", { name: "Hide from sidebar" }).click();
+    await expect(boardRow).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = localStorage.getItem("user-preferences");
+          const data = raw ? JSON.parse(raw) : null;
+          return data?.state?.hiddenBoardIds?.[0] ?? "";
+        }),
+      )
+      .toMatch(/^[^:]+:[^:]+$/);
+
+    await sidebar
+      .getByRole("button", { name: "Board sidebar options" })
+      .click();
+    await page
+      .getByRole("menuitem", { name: "Show Kaneo Feature List" })
+      .click();
+    await expect(boardRow).toBeVisible();
   });
 
   test("a repository can be hidden and restored without leaving the sidebar", async ({

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -55,6 +56,7 @@ import { Button } from "./ui/button";
 
 export function NavBoards() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
   const { data: boards } = useGetBoards({
@@ -115,9 +117,13 @@ export function NavBoards() {
   if (!organization) return null;
 
   const hiddenBoards =
-    boards?.filter((board) => hiddenBoardIds.includes(board.id)) ?? [];
+    boards?.filter((board) =>
+      hiddenBoardIds.includes(`${user?.id}:${board.id}`),
+    ) ?? [];
   const visibleBoards =
-    boards?.filter((board) => !hiddenBoardIds.includes(board.id)) ?? [];
+    boards?.filter(
+      (board) => !hiddenBoardIds.includes(`${user?.id}:${board.id}`),
+    ) ?? [];
 
   return (
     <>
@@ -153,6 +159,7 @@ export function NavBoards() {
                 <DropdownMenuTrigger
                   render={
                     <button
+                      aria-label="Board sidebar options"
                       type="button"
                       className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
                     />
@@ -168,7 +175,13 @@ export function NavBoards() {
                     <DropdownMenuItem
                       className="cursor-pointer text-sm"
                       key={board.id}
-                      onClick={() => setBoardSidebarVisibility(board.id, true)}
+                      onClick={() =>
+                        setBoardSidebarVisibility(
+                          user?.id ?? "",
+                          board.id,
+                          true,
+                        )
+                      }
                     >
                       Show {board.name}
                     </DropdownMenuItem>
@@ -239,7 +252,11 @@ export function NavBoards() {
                           <DropdownMenuItem
                             className="h-7 items-start cursor-pointer text-sm"
                             onClick={() =>
-                              setBoardSidebarVisibility(board.id, false)
+                              setBoardSidebarVisibility(
+                                user?.id ?? "",
+                                board.id,
+                                false,
+                              )
                             }
                           >
                             <EyeOff className="text-muted-foreground" />
@@ -277,7 +294,13 @@ export function NavBoards() {
                       {t("navigation:boardList.boardSettings")}
                     </ContextMenuItem>
                     <ContextMenuItem
-                      onClick={() => setBoardSidebarVisibility(board.id, false)}
+                      onClick={() =>
+                        setBoardSidebarVisibility(
+                          user?.id ?? "",
+                          board.id,
+                          false,
+                        )
+                      }
                     >
                       <EyeOff className="text-muted-foreground" />
                       Hide from sidebar

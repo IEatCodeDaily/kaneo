@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,6 +35,7 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export function NavRepos() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: organization } = useActiveOrganization();
   const { canCreateBoards } = useOrganizationPermission();
   const canCreateRepo = canCreateBoards();
@@ -58,8 +60,12 @@ export function NavRepos() {
   const setRepoSidebarVisibility = useUserPreferencesStore(
     (state) => state.setRepoSidebarVisibility,
   );
-  const visibleRepos = repos.filter((repo) => !hiddenRepoIds.includes(repo.id));
-  const hiddenRepos = repos.filter((repo) => hiddenRepoIds.includes(repo.id));
+  const visibleRepos = repos.filter(
+    (repo) => !hiddenRepoIds.includes(`${user?.id}:${repo.id}`),
+  );
+  const hiddenRepos = repos.filter((repo) =>
+    hiddenRepoIds.includes(`${user?.id}:${repo.id}`),
+  );
 
   const isCurrentRepo = (repoId: string) =>
     currentRepoId === repoId && currentOrganizationId === organization?.id;
@@ -120,7 +126,9 @@ export function NavRepos() {
               {hiddenRepos.map((repo) => (
                 <MenuItem
                   key={repo.id}
-                  onClick={() => setRepoSidebarVisibility(repo.id, true)}
+                  onClick={() =>
+                    setRepoSidebarVisibility(user?.id ?? "", repo.id, true)
+                  }
                 >
                   Show {repo.name}
                 </MenuItem>
@@ -181,7 +189,13 @@ export function NavRepos() {
                         Settings
                       </MenuItem>
                       <MenuItem
-                        onClick={() => setRepoSidebarVisibility(repo.id, false)}
+                        onClick={() =>
+                          setRepoSidebarVisibility(
+                            user?.id ?? "",
+                            repo.id,
+                            false,
+                          )
+                        }
                       >
                         Hide from sidebar
                       </MenuItem>
@@ -206,7 +220,9 @@ export function NavRepos() {
                   Settings
                 </ContextMenuItem>
                 <ContextMenuItem
-                  onClick={() => setRepoSidebarVisibility(repo.id, false)}
+                  onClick={() =>
+                    setRepoSidebarVisibility(user?.id ?? "", repo.id, false)
+                  }
                 >
                   Hide from sidebar
                 </ContextMenuItem>

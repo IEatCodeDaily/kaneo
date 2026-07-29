@@ -42,9 +42,17 @@ type UserPreferencesStore = {
   setSidebarDefaultOpen: (open: boolean) => void;
 
   hiddenBoardIds: string[];
-  setBoardSidebarVisibility: (boardId: string, visible: boolean) => void;
+  setBoardSidebarVisibility: (
+    userId: string,
+    boardId: string,
+    visible: boolean,
+  ) => void;
   hiddenRepoIds: string[];
-  setRepoSidebarVisibility: (repoId: string, visible: boolean) => void;
+  setRepoSidebarVisibility: (
+    userId: string,
+    repoId: string,
+    visible: boolean,
+  ) => void;
 
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
@@ -119,19 +127,25 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setSidebarDefaultOpen: (open) => set({ sidebarDefaultOpen: open }),
 
       hiddenBoardIds: [],
-      setBoardSidebarVisibility: (boardId, visible) =>
-        set((state) => ({
-          hiddenBoardIds: visible
-            ? state.hiddenBoardIds.filter((id) => id !== boardId)
-            : Array.from(new Set([...state.hiddenBoardIds, boardId])),
-        })),
+      setBoardSidebarVisibility: (userId, boardId, visible) =>
+        set((state) => {
+          const key = `${userId}:${boardId}`;
+          return {
+            hiddenBoardIds: visible
+              ? state.hiddenBoardIds.filter((id) => id !== key)
+              : Array.from(new Set([...state.hiddenBoardIds, key])),
+          };
+        }),
       hiddenRepoIds: [],
-      setRepoSidebarVisibility: (repoId, visible) =>
-        set((state) => ({
-          hiddenRepoIds: visible
-            ? state.hiddenRepoIds.filter((id) => id !== repoId)
-            : Array.from(new Set([...state.hiddenRepoIds, repoId])),
-        })),
+      setRepoSidebarVisibility: (userId, repoId, visible) =>
+        set((state) => {
+          const key = `${userId}:${repoId}`;
+          return {
+            hiddenRepoIds: visible
+              ? state.hiddenRepoIds.filter((id) => id !== key)
+              : Array.from(new Set([...state.hiddenRepoIds, key])),
+          };
+        }),
 
       weekStartsOn: 0,
       setWeekStartsOn: (weekStartsOn) => set({ weekStartsOn }),
