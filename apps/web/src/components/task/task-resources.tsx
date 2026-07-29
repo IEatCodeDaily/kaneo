@@ -238,6 +238,10 @@ export default function TaskResources({
       );
 
     return (externalLinks as ExternalLinkType[]).filter((link) => {
+      // The canonical synchronized issue is task metadata and renders in
+      // Properties. Resources remains for manually linked items and secondary
+      // integration artifacts such as pull requests and branches.
+      if (link.resourceType === "issue") return false;
       if (manualUrls.has(link.url)) return false;
       if (hasPullRequest && link.resourceType === "branch") return false;
       return true;
@@ -297,7 +301,7 @@ export default function TaskResources({
   };
 
   return (
-    <section className="flex flex-col gap-1">
+    <section className="flex flex-col gap-1" data-slot="task-resources">
       <div className="flex items-center justify-between gap-2 px-2">
         <span className="text-xs font-medium text-foreground/70">
           Resources

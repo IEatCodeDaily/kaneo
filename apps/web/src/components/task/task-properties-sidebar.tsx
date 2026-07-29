@@ -40,6 +40,7 @@ import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
+import TaskSyncedIssueProperty from "./task-synced-issue-property";
 
 function slugify(text: string | undefined): string {
   if (!text) return "";
@@ -127,7 +128,7 @@ export default function TaskPropertiesSidebar({
   };
 
   return (
-    <div className={className}>
+    <div className={className} data-slot="task-properties-sidebar">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
         {/* Compact mode: properties + icons in one row */}
         {compact && (
@@ -314,6 +315,7 @@ export default function TaskPropertiesSidebar({
                   </Button>
                 </TaskDueDatePopover>
               )}
+              {taskId && <TaskSyncedIssueProperty compact taskId={taskId} />}
             </div>
           </div>
         )}
@@ -505,6 +507,7 @@ export default function TaskPropertiesSidebar({
                     </Button>
                   </TaskDueDatePopover>
                 )}
+                {taskId && <TaskSyncedIssueProperty compact taskId={taskId} />}
               </div>
             </div>
 
@@ -752,6 +755,7 @@ export default function TaskPropertiesSidebar({
               )}
             </div>
           </div>
+          {taskId && <TaskSyncedIssueProperty showLabel taskId={taskId} />}
         </div>
       </div>
     </div>
