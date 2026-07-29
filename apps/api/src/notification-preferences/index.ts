@@ -184,7 +184,12 @@ notificationPreferences
       const body = c.req.valid("json");
 
       return c.json(
-        await upsertOrganizationRule(userId, organizationId, userEmail || null, body),
+        await upsertOrganizationRule(
+          userId,
+          organizationId,
+          userEmail || null,
+          body,
+        ),
       );
     },
   )

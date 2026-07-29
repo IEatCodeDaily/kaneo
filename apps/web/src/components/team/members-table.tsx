@@ -85,9 +85,8 @@ function capitalize(value: string): string {
 
 function MembersTable({ organizationId, invitations, users }: Props) {
   const { t } = useTranslation();
-  const [memberToDelete, setMemberToDelete] = useState<OrganizationMember | null>(
-    null,
-  );
+  const [memberToDelete, setMemberToDelete] =
+    useState<OrganizationMember | null>(null);
   const [invitationToCancel, setInvitationToCancel] =
     useState<OrganizationMemberInvitation | null>(null);
 
@@ -97,7 +96,8 @@ function MembersTable({ organizationId, invitations, users }: Props) {
   const { mutateAsync: cancelInvitation, isPending: isCancelling } =
     useCancelInvitation();
   const { mutateAsync: updateMemberRole } = useUpdateOrganizationMemberRole();
-  const { data: allOrganizationRoles = [] } = useOrganizationRoles(organizationId);
+  const { data: allOrganizationRoles = [] } =
+    useOrganizationRoles(organizationId);
   const { canManageTeam, canRemoveMembers, canInviteUsers } =
     useOrganizationPermission();
   const canChangeRoles = Boolean(canManageTeam());

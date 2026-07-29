@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, type Page, test as base } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
 
 export type Fixtures = {
   baseURL: string;
@@ -29,7 +29,11 @@ export const test = base.extend<{ pageErrors: string[] }>({
       if (message.type() !== "error") return;
       const text = message.text();
       // Network noise and provider rate limits are not app defects.
-      if (/Failed to load resource|net::ERR_|status of 4\d\d|status of 5\d\d/.test(text)) {
+      if (
+        /Failed to load resource|net::ERR_|status of 4\d\d|status of 5\d\d/.test(
+          text,
+        )
+      ) {
         return;
       }
       errors.push(`console: ${text}`);

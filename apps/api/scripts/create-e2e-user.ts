@@ -102,7 +102,10 @@ async function main() {
 
   for (const org of orgs) {
     const members = await db
-      .select({ id: organizationMemberTable.id, userId: organizationMemberTable.userId })
+      .select({
+        id: organizationMemberTable.id,
+        userId: organizationMemberTable.userId,
+      })
       .from(organizationMemberTable)
       .where(eq(organizationMemberTable.organizationId, org.id));
 

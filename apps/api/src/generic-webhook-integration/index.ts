@@ -12,8 +12,8 @@ import {
   validateGenericWebhookConfig,
 } from "../plugins/generic-webhook/config";
 import { genericWebhookIntegrationSchema } from "../schemas";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 
 const genericWebhookIntegration = new Hono<{
   Variables: {

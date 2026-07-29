@@ -5,7 +5,9 @@ type GetOrganizationInvitesRequest = {
   organizationId?: string;
 };
 
-function useGetOrganizationInvites({ organizationId }: GetOrganizationInvitesRequest) {
+function useGetOrganizationInvites({
+  organizationId,
+}: GetOrganizationInvitesRequest) {
   return useQuery({
     queryKey: ["organization-invites", organizationId],
     queryFn: async () => {

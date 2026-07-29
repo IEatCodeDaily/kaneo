@@ -612,6 +612,8 @@ export default function CommentEditor({
       editable: !readOnly && !disabled,
       extensions: [
         StarterKit.configure({
+          // Link is configured separately below; StarterKit v3 already ships it.
+          link: false,
           heading: { levels: [1, 2, 3] },
           trailingNode: false,
           codeBlock: {
@@ -1175,7 +1177,7 @@ export default function CommentEditor({
       const resolvedLanguage = language === "auto" ? "" : language;
       const { nodePos } = hoveredCodeBlock;
       const node = editor.state.doc.nodeAt(nodePos);
-      if (!node || node.type.name !== "codeBlock") return;
+      if (node?.type.name !== "codeBlock") return;
 
       editor
         .chain()
@@ -1422,7 +1424,7 @@ export default function CommentEditor({
   const copyHoveredCodeBlock = useCallback(async () => {
     if (!editor || !hoveredCodeBlock) return;
     const node = editor.state.doc.nodeAt(hoveredCodeBlock.nodePos);
-    if (!node || node.type.name !== "codeBlock") return;
+    if (node?.type.name !== "codeBlock") return;
 
     const content = node.textContent || "";
     if (!content) return;

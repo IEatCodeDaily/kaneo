@@ -27,8 +27,8 @@ import {
   useUpdateNotificationPreferences,
   useUpsertNotificationOrganizationRule,
 } from "@/hooks/mutations/notification-preferences/use-notification-preferences";
-import useGetNotificationPreferences from "@/hooks/queries/notification-preferences/use-get-notification-preferences";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import useGetNotificationPreferences from "@/hooks/queries/notification-preferences/use-get-notification-preferences";
 import useGetOrganizations from "@/hooks/queries/organization/use-get-organizations";
 
 type OrganizationSummary = {
@@ -182,7 +182,10 @@ function OrganizationRuleCard({
   hasNtfyChannel: boolean;
   hasWebhookChannel: boolean;
   onDelete: (organizationId: string) => Promise<unknown>;
-  onSave: (organizationId: string, rule: OrganizationRuleState) => Promise<void>;
+  onSave: (
+    organizationId: string,
+    rule: OrganizationRuleState,
+  ) => Promise<void>;
   rule?: {
     isActive: boolean;
     emailEnabled: boolean;
@@ -266,9 +269,12 @@ function OrganizationRuleCard({
             </div>
           ) : null}
           <Switch
-            aria-label={t("settings:notificationsPage.organizationEnabledLabel", {
-              organizationName: organization.name,
-            })}
+            aria-label={t(
+              "settings:notificationsPage.organizationEnabledLabel",
+              {
+                organizationName: organization.name,
+              },
+            )}
             checked={state.isActive}
             disabled={isBusy}
             onCheckedChange={(checked) =>
@@ -483,10 +489,12 @@ export function NotificationPreferencesSettings() {
 
   const organizations = React.useMemo(
     () =>
-      ((organizationsData ?? []) as OrganizationSummary[]).map((organization) => ({
-        id: organization.id,
-        name: organization.name,
-      })),
+      ((organizationsData ?? []) as OrganizationSummary[]).map(
+        (organization) => ({
+          id: organization.id,
+          name: organization.name,
+        }),
+      ),
     [organizationsData],
   );
 

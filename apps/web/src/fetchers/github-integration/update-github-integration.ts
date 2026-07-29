@@ -9,9 +9,7 @@ async function updateGithubIntegration(
   boardId: string,
   json: UpdateGithubIntegrationRequest,
 ) {
-  const response = await client["github-integration"].board[
-    ":boardId"
-  ].$patch({
+  const response = await client["github-integration"].board[":boardId"].$patch({
     param: { boardId },
     json,
   });

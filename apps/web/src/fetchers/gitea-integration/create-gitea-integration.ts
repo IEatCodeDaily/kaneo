@@ -11,9 +11,7 @@ async function createGiteaIntegration(
   boardId: string,
   data: CreateGiteaIntegrationRequest,
 ) {
-  const response = await client["gitea-integration"].board[
-    ":boardId"
-  ].$post({
+  const response = await client["gitea-integration"].board[":boardId"].$post({
     param: { boardId },
     json: data,
   });

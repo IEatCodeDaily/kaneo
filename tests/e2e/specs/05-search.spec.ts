@@ -37,7 +37,10 @@ test.describe("global search", () => {
 
     // Click the sidebar Search affordance — the "/" shortcut only fires when
     // the page body already has focus, which is unreliable right after load.
-    await page.getByRole("button", { name: /^Search/ }).first().click();
+    await page
+      .getByRole("button", { name: /^Search/ })
+      .first()
+      .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
@@ -52,7 +55,9 @@ test.describe("global search", () => {
     });
 
     const repoOption = dialog
-      .getByRole("option", { name: new RegExp(fixtures.repoName as string, "i") })
+      .getByRole("option", {
+        name: new RegExp(fixtures.repoName as string, "i"),
+      })
       .first();
     await expect(repoOption).toBeVisible();
     await repoOption.click();

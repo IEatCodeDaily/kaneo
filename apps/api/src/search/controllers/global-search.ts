@@ -3,14 +3,15 @@ import db from "../../database";
 import {
   activityTable,
   boardTable,
-  taskTable,
-  userTable,
-  organizationTable,
   organizationMemberTable,
-  repoTable,
+  organizationTable,
   repoIssueTable,
   repoPullRequestTable,
+  repoTable,
+  taskTable,
+  userTable,
 } from "../../database/schema";
+import { requireResourcePrivilege } from "../../resource-access";
 
 type SearchParams = {
   query: string;
@@ -275,7 +276,10 @@ async function globalSearch(params: SearchParams): Promise<{
       })
       .from(taskTable)
       .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+      .leftJoin(
+        organizationTable,
+        eq(boardTable.organizationId, organizationTable.id),
+      )
       .leftJoin(userTable, eq(taskTable.userId, userTable.id))
       .where(
         and(
@@ -336,7 +340,10 @@ async function globalSearch(params: SearchParams): Promise<{
         relevanceScore: boardRelevanceScore.as("relevanceScore"),
       })
       .from(boardTable)
-      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+      .leftJoin(
+        organizationTable,
+        eq(boardTable.organizationId, organizationTable.id),
+      )
       .where(
         and(
           organizationFilter,
@@ -398,7 +405,10 @@ async function globalSearch(params: SearchParams): Promise<{
           ),
         ),
       )
-      .orderBy(desc(organizationRelevanceScore), desc(organizationTable.createdAt))
+      .orderBy(
+        desc(organizationRelevanceScore),
+        desc(organizationTable.createdAt),
+      )
       .limit(limit);
 
     const organizations = await organizationQuery;
@@ -449,7 +459,10 @@ async function globalSearch(params: SearchParams): Promise<{
       .from(activityTable)
       .leftJoin(taskTable, eq(activityTable.taskId, taskTable.id))
       .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-      .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+      .leftJoin(
+        organizationTable,
+        eq(boardTable.organizationId, organizationTable.id),
+      )
       .leftJoin(userTable, eq(activityTable.userId, userTable.id))
       .where(
         and(
@@ -703,18 +716,43 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  results.sort((a, b) => {
+  const visibility = await Promise.all(
+    results.map(async (result) => {
+      if (result.boardId && result.organizationId) {
+        return requireResourcePrivilege({
+          organizationId: result.organizationId,
+          resourceType: "board",
+          resourceId: result.boardId,
+          userId: resolvedUserId,
+          required: "view",
+        });
+      }
+      if (result.repoId && result.organizationId) {
+        return requireResourcePrivilege({
+          organizationId: result.organizationId,
+          resourceType: "repo",
+          resourceId: result.repoId,
+          userId: resolvedUserId,
+          required: "view",
+        });
+      }
+      return true;
+    }),
+  );
+  const filteredResults = results.filter((_, index) => visibility[index]);
+
+  filteredResults.sort((a, b) => {
     if (a.relevanceScore !== b.relevanceScore) {
       return b.relevanceScore - a.relevanceScore;
     }
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
-  const finalResults = results.slice(0, limit);
+  const finalResults = filteredResults.slice(0, limit);
 
   return {
     results: finalResults,
-    totalCount: results.length,
+    totalCount: filteredResults.length,
     searchQuery: query,
   };
 }

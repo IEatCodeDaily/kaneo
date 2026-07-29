@@ -305,7 +305,8 @@ function renderActivityContent({
       const targetId = String(eventData.newAssigneeId ?? "");
       const targetName = String(eventData.newAssignee ?? "");
       const targetUser =
-        organizationMembers?.find((member) => member.user?.id === targetId) || null;
+        organizationMembers?.find((member) => member.user?.id === targetId) ||
+        null;
 
       return (
         <span className="text-sm text-muted-foreground">
@@ -330,7 +331,8 @@ function renderActivityContent({
     if (tokenMatch) {
       const [, targetId, targetName] = tokenMatch;
       const targetUser =
-        organizationMembers?.find((member) => member.user?.id === targetId) || null;
+        organizationMembers?.find((member) => member.user?.id === targetId) ||
+        null;
 
       return (
         <span className="text-sm text-muted-foreground">
@@ -484,7 +486,9 @@ function Activity({
         <UserHoverName user={user || null} fallbackName={actorName} />{" "}
         {renderActivityContent({
           activity,
-          organizationMembers: organizationMembers as OrganizationMember[] | undefined,
+          organizationMembers: organizationMembers as
+            | OrganizationMember[]
+            | undefined,
           t,
         })}{" "}
         <span className="whitespace-nowrap text-muted-foreground/70 text-xs">

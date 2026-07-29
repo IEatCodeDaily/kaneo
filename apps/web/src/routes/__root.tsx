@@ -19,7 +19,7 @@ export const Route = createRootRouteWithContext<{
 function RootComponent() {
   return (
     <ToastProvider position="bottom-right">
-      <div className="flex h-svh w-full flex-row overflow-x-hidden overflow-y-hidden bg-background scrollbar-thin scrollbar-thumb-border scrollbar-track-muted">
+      <div className="flex min-h-svh w-full flex-row overflow-x-hidden bg-background scrollbar-thin scrollbar-thumb-border scrollbar-track-muted md:h-svh md:min-h-0 md:overflow-y-hidden">
         <ErrorBoundary
           className="m-auto max-w-2xl"
           fallbackDescription="This page hit an unexpected error. Try again, or reload the app."

@@ -196,8 +196,7 @@ function CreateTaskModal({
   const [selectedColor, setSelectedColor] = useState<LabelColor>("gray");
   const [newLabelName, setNewLabelName] = useState("");
 
-  const routeBoardId =
-    location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
+  const routeBoardId = location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
   const resolvedBoardId = boardId || board?.id || routeBoardId || "";
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -522,7 +521,9 @@ function CreateTaskModal({
     if (existingLabel) {
       setLabels(labels.filter((l) => l.name !== labelName));
     } else {
-      const organizationLabel = organizationLabels.find((l) => l.name === labelName);
+      const organizationLabel = organizationLabels.find(
+        (l) => l.name === labelName,
+      );
       if (organizationLabel) {
         setLabels([
           ...labels,

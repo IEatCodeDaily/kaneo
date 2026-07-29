@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { integrationTable, boardTable } from "../../database/schema";
+import { boardTable, integrationTable } from "../../database/schema";
 import {
   type GiteaConfig,
   getDefaultGiteaConfig,

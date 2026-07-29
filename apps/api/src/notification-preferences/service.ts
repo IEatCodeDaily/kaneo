@@ -3,10 +3,10 @@ import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import {
   boardTable,
-  userNotificationPreferenceTable,
+  organizationMemberTable,
   userNotificationOrgBoardTable,
   userNotificationOrgRuleTable,
-  organizationMemberTable,
+  userNotificationPreferenceTable,
 } from "../database/schema";
 import { assertPublicWebhookDestination } from "../plugins/generic-webhook/config";
 import { decryptSecret, encryptSecret } from "./secrets";
@@ -116,7 +116,10 @@ function normalizeSecretInput(
   return normalizeOptionalString(inputValue);
 }
 
-async function assertOrganizationMembership(userId: string, organizationId: string) {
+async function assertOrganizationMembership(
+  userId: string,
+  organizationId: string,
+) {
   const [membership] = await db
     .select({ organizationId: organizationMemberTable.organizationId })
     .from(organizationMemberTable)
@@ -226,11 +229,8 @@ export async function getNotificationPreferences(
       ntfyEnabled: rule.ntfyEnabled ?? false,
       gotifyEnabled: rule.gotifyEnabled ?? false,
       webhookEnabled: rule.webhookEnabled ?? false,
-      boardMode:
-        rule.boardMode === "selected" ? "selected" : ("all" as const),
-      selectedBoardIds: rule.selectedBoards.map(
-        (board) => board.boardId,
-      ),
+      boardMode: rule.boardMode === "selected" ? "selected" : ("all" as const),
+      selectedBoardIds: rule.selectedBoards.map((board) => board.boardId),
       createdAt: rule.createdAt,
       updatedAt: rule.updatedAt,
     })),
@@ -606,12 +606,7 @@ export async function upsertOrganizationRule(
 
   await db
     .delete(userNotificationOrgBoardTable)
-    .where(
-      eq(
-        userNotificationOrgBoardTable.orgRuleId,
-        orgRuleId,
-      ),
-    );
+    .where(eq(userNotificationOrgBoardTable.orgRuleId, orgRuleId));
 
   if (input.boardMode === "selected") {
     await db.insert(userNotificationOrgBoardTable).values(

@@ -2,14 +2,14 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { labelSchema } from "../schemas";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import assignLabelToTask from "./controllers/assign-label-to-task";
 import createLabel from "./controllers/create-label";
 import deleteLabel from "./controllers/delete-label";
 import getLabel from "./controllers/get-label";
-import getLabelsByTaskId from "./controllers/get-labels-by-task-id";
 import getLabelsByOrganizationId from "./controllers/get-labels-by-organization-id";
+import getLabelsByTaskId from "./controllers/get-labels-by-task-id";
 import unassignLabelFromTask from "./controllers/unassign-label-from-task";
 import updateLabel from "./controllers/update-label";
 
@@ -93,7 +93,13 @@ const label = new Hono<{
     async (c) => {
       const { name, color, organizationId, taskId } = c.req.valid("json");
       const userId = c.get("userId");
-      const label = await createLabel(name, color, taskId, organizationId, userId);
+      const label = await createLabel(
+        name,
+        color,
+        taskId,
+        organizationId,
+        userId,
+      );
       return c.json(label);
     },
   )

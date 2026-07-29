@@ -1,10 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
 import db from "../../database";
 import {
-  notificationTable,
   boardTable,
-  taskTable,
+  notificationTable,
   organizationTable,
+  taskTable,
 } from "../../database/schema";
 
 async function getNotifications(userId: string) {
@@ -23,7 +23,10 @@ async function getNotifications(userId: string) {
       ),
     )
     .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .leftJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .leftJoin(
+      organizationTable,
+      eq(boardTable.organizationId, organizationTable.id),
+    )
     .where(eq(notificationTable.userId, userId))
     .orderBy(desc(notificationTable.createdAt))
     .limit(50);

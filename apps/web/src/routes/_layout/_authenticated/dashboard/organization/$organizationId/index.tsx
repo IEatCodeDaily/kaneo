@@ -222,7 +222,7 @@ function RouteComponent() {
           </TableHeader>
           <TableBody>
             {boards?.map((board) => {
-              if (!board || !board.id || !board.statistics) return null;
+              if (!board?.id || !board.statistics) return null;
 
               const IconComponent =
                 icons[board.icon as keyof typeof icons] || icons.Layout;

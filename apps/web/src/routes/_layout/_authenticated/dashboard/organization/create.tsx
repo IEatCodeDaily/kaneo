@@ -119,7 +119,9 @@ function RouteComponent() {
                       id="organization-description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder={t("organization:create.descriptionPlaceholder")}
+                      placeholder={t(
+                        "organization:create.descriptionPlaceholder",
+                      )}
                       className="h-10"
                     />
                   </div>

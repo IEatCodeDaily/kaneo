@@ -27,7 +27,10 @@ type CreateOrganizationModalProps = {
   onClose: () => void;
 };
 
-function CreateOrganizationModal({ open, onClose }: CreateOrganizationModalProps) {
+function CreateOrganizationModal({
+  open,
+  onClose,
+}: CreateOrganizationModalProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -109,7 +112,9 @@ function CreateOrganizationModal({ open, onClose }: CreateOrganizationModalProps
               unstyled
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("common:modals.createOrganization.namePlaceholder")}
+              placeholder={t(
+                "common:modals.createOrganization.namePlaceholder",
+              )}
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-2 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
               required
             />

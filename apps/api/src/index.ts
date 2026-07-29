@@ -18,8 +18,12 @@ import {
   validator,
 } from "hono-openapi";
 import * as v from "valibot";
+import accountAuthentication from "./account-authentication";
 import activity from "./activity";
+import admin from "./admin";
 import { auth } from "./auth";
+import board from "./board";
+import { getPublicBoard } from "./board/controllers/get-public-board";
 import column from "./column";
 import comment from "./comment";
 import config from "./config";
@@ -31,9 +35,12 @@ import { eventContext } from "./events";
 import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
-import { handleGithubWebhookRoute } from "./github-integration";
-import githubIntegration from "./github-integration";
-import githubDelegation, { handleGitHubDelegationCallback } from "./github-delegation";
+import githubDelegation, {
+  handleGitHubDelegationCallback,
+} from "./github-delegation";
+import githubIntegration, {
+  handleGithubWebhookRoute,
+} from "./github-integration";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
 import label from "./label";
@@ -42,10 +49,13 @@ import { migrateColumns } from "./migrations/column-migration";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
+import oidcTeamSync from "./oidc-team-sync";
+import organization from "./organization";
+import organizationGithub from "./organization-github";
 import { initializePlugins } from "./plugins";
-import board from "./board";
-import { getPublicBoard } from "./board/controllers/get-public-board";
 import repo from "./repo";
+import { getResourcePrivilege, privilegeAllows } from "./resource-access";
+import resourceGrant from "./resource-grant";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
 import search from "./search";
 import slackIntegration from "./slack-integration";
@@ -61,8 +71,8 @@ import {
 import { getInvitationDetails } from "./utils/check-registration-allowed";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
-import { migrateSessionColumn } from "./utils/migrate-session-column";
 import { migrateOrganizationUserEmail } from "./utils/migrate-organization-user-email";
+import { migrateSessionColumn } from "./utils/migrate-session-column";
 import {
   dedupeOperationIds,
   ensureOperationSummaries,
@@ -78,8 +88,6 @@ import {
 import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-roles";
 import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
-import organization from "./organization";
-import organizationGithub from "./organization-github";
 import {
   addConnection,
   addUserConnection,
@@ -242,7 +250,7 @@ export function createApp() {
   // The handler revalidates the initiating Better Auth session and OAuth state.
   api.get("/github-delegation/callback", handleGitHubDelegationCallback);
 
-api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
+  api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
   const invitationPublicApi = api.get("/invitation/public/:id", async (c) => {
     const { id } = c.req.param();
@@ -298,6 +306,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
           mimeType: schema.assetTable.mimeType,
           filename: schema.assetTable.filename,
           organizationId: schema.assetTable.organizationId,
+          boardId: schema.assetTable.boardId,
           isPublic: schema.boardTable.isPublic,
         })
         .from(schema.assetTable)
@@ -315,7 +324,20 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
       const { userId, apiKeyId } = await resolveAssetBearerOrCookie(c);
 
       if (userId) {
-        await validateOrganizationAccess(userId, asset.organizationId, apiKeyId);
+        await validateOrganizationAccess(
+          userId,
+          asset.organizationId,
+          apiKeyId,
+        );
+        const privilege = await getResourcePrivilege({
+          organizationId: asset.organizationId,
+          resourceType: "board",
+          resourceId: asset.boardId,
+          userId,
+        });
+        if (!privilegeAllows(privilege, "view")) {
+          throw new HTTPException(404, { message: "Asset not found" });
+        }
       } else if (!asset.isPublic) {
         throw new HTTPException(401, { message: "Unauthorized" });
       }
@@ -545,6 +567,11 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   });
 
   const oauthApi = api.route("/oauth", oauth);
+  const accountAuthenticationApi = api.route(
+    "/account-authentication",
+    accountAuthentication,
+  );
+  const adminApi = api.route("/admin", admin);
   const githubDelegationApi = api.route("/github-delegation", githubDelegation);
   const githubIntegrationApi = api.route(
     "/github-integration",
@@ -554,6 +581,8 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
   const repoApi = api.route("/repo", repo);
+  const resourceGrantApi = api.route("/resource-grant", resourceGrant);
+  const oidcTeamSyncApi = api.route("/oidc-team-sync", oidcTeamSync);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
@@ -583,7 +612,10 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
-  const organizationGithubApi = api.route("/organization-github", organizationGithub);
+  const organizationGithubApi = api.route(
+    "/organization-github",
+    organizationGithub,
+  );
 
   app.route(
     "/",
@@ -687,6 +719,15 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
         }
 
         await validateOrganizationAccess(userId, board.organizationId);
+        const privilege = await getResourcePrivilege({
+          organizationId: board.organizationId,
+          resourceType: "board",
+          resourceId: boardId,
+          userId,
+        });
+        if (!privilegeAllows(privilege, "view")) {
+          throw new HTTPException(404, { message: "Board not found" });
+        }
       }
 
       const windowId = c.req.query("windowId");
@@ -750,6 +791,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
     boardApi,
     publicBoardApi,
     repoApi,
+    resourceGrantApi,
     searchApi,
     slackIntegrationApi,
     taskApi,
@@ -760,6 +802,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
     organizationApi,
     organizationGithubApi,
     githubDelegationApi,
+    accountAuthenticationApi,
     oauthApi,
   };
 }
@@ -868,6 +911,7 @@ const {
   boardApi,
   publicBoardApi,
   repoApi,
+  resourceGrantApi,
   searchApi,
   slackIntegrationApi,
   taskApi,

@@ -1,6 +1,6 @@
 import { Cron } from "croner";
-import { checkDueDateReminders } from "./due-date-reminders";
 import { checkBoardWebhookReminders } from "./board-webhook-reminders";
+import { checkDueDateReminders } from "./due-date-reminders";
 
 const jobs: Cron[] = [];
 

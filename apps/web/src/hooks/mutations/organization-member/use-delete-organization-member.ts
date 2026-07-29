@@ -9,14 +9,19 @@ type DeleteOrganizationMemberRequest = {
 
 function useDeleteOrganizationMember() {
   return useMutation({
-    mutationFn: async ({ organizationId, userId }: DeleteOrganizationMemberRequest) => {
+    mutationFn: async ({
+      organizationId,
+      userId,
+    }: DeleteOrganizationMemberRequest) => {
       const { data, error } = await authClient.organization.removeMember({
         memberIdOrEmail: userId,
         organizationId: organizationId,
       });
 
       if (error) {
-        throw new Error(error.message || "Failed to remove organization member");
+        throw new Error(
+          error.message || "Failed to remove organization member",
+        );
       }
 
       return data;

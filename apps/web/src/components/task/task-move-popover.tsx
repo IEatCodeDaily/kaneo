@@ -151,9 +151,7 @@ export default function TaskMovePopover({
             </Label>
             <Select
               value={selectedBoardId}
-              onValueChange={(value) =>
-                setSelectedBoardId(String(value ?? ""))
-              }
+              onValueChange={(value) => setSelectedBoardId(String(value ?? ""))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t("tasks:move.boardPlaceholder")}>

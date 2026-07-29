@@ -9,6 +9,7 @@ type UpdateOrganizationRequest = {
   slug?: string;
   logo?: string;
   metadata?: Record<string, unknown>;
+  reposEnabled?: boolean;
 };
 
 function useUpdateOrganization() {
@@ -20,6 +21,7 @@ function useUpdateOrganization() {
       slug,
       logo,
       metadata,
+      reposEnabled,
     }: UpdateOrganizationRequest) => {
       const updateData: {
         name?: string;
@@ -27,6 +29,7 @@ function useUpdateOrganization() {
         slug?: string;
         logo?: string;
         metadata?: Record<string, unknown>;
+        reposEnabled?: boolean;
       } = {};
 
       if (name !== undefined) {
@@ -50,6 +53,9 @@ function useUpdateOrganization() {
 
       if (metadata !== undefined) {
         updateData.metadata = metadata;
+      }
+      if (reposEnabled !== undefined) {
+        updateData.reposEnabled = reposEnabled;
       }
 
       const { data, error } = await authClient.organization.update({

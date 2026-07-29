@@ -549,6 +549,9 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       immediatelyRender: false,
       extensions: [
         StarterKit.configure({
+          // Link is configured separately below; StarterKit v3 includes it by
+          // default, so leaving both enabled registers duplicate extensions.
+          link: false,
           codeBlock: {
             HTMLAttributes: { class: "kaneo-tiptap-codeblock" },
           },
@@ -1267,7 +1270,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const copyHoveredCodeBlock = useCallback(async () => {
     if (!editor || !hoveredCodeBlock) return;
     const node = editor.state.doc.nodeAt(hoveredCodeBlock.nodePos);
-    if (!node || node.type.name !== "codeBlock") return;
+    if (node?.type.name !== "codeBlock") return;
 
     const content = node.textContent || "";
     if (!content) return;

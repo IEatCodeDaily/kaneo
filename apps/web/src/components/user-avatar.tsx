@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -103,6 +103,15 @@ export function UserAvatar() {
             <Settings className="size-3.5" />
             {t("navigation:userMenu.settings")}
           </DropdownMenuItem>
+          {user.role === "admin" && (
+            <DropdownMenuItem
+              onClick={() => navigate({ to: "/dashboard/admin" })}
+              className="h-7 gap-2 px-2 text-sm font-normal"
+            >
+              <Shield className="size-3.5" />
+              System administration
+            </DropdownMenuItem>
+          )}
         </div>
 
         <DropdownMenuSeparator />

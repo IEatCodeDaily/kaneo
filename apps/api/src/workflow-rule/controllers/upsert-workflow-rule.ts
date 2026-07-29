@@ -15,10 +15,7 @@ async function upsertWorkflowRule({
   columnId: string;
 }) {
   const targetColumn = await db.query.columnTable.findFirst({
-    where: and(
-      eq(columnTable.id, columnId),
-      eq(columnTable.boardId, boardId),
-    ),
+    where: and(eq(columnTable.id, columnId), eq(columnTable.boardId, boardId)),
   });
 
   if (!targetColumn) {

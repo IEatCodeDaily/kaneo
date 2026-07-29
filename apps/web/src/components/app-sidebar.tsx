@@ -1,8 +1,8 @@
 import type * as React from "react";
-
-import { NavMain } from "@/components/nav-main";
 import { NavBoards } from "@/components/nav-boards";
+import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
+import { OrganizationSwitcher } from "@/components/organization-switcher";
 import { ThemeToggleDropdown } from "@/components/theme-toggle-dropdown";
 import {
   Sidebar,
@@ -12,7 +12,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { VersionDisplay } from "@/components/version-display";
-import { OrganizationSwitcher } from "@/components/organization-switcher";
 import { shortcuts } from "@/constants/shortcuts";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import Search from "./search";

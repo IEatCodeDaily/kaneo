@@ -1,5 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { CircleDot, Code2, GitPullRequest, Package, Rocket } from "lucide-react";
+import {
+  CircleDot,
+  Code2,
+  GitPullRequest,
+  Package,
+  Rocket,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
 import { KbdSequence } from "@/components/ui/kbd";

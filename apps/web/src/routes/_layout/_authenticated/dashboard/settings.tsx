@@ -1,6 +1,7 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
@@ -9,12 +10,30 @@ import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import getOrganizations from "@/fetchers/organization/get-organizations";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGetRepos from "@/hooks/queries/repo/use-get-repos";
+import { authClient } from "@/lib/auth-client";
+
+let hasResolvedActiveOrganization = false;
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings",
 )({
+  beforeLoad: async () => {
+    if (hasResolvedActiveOrganization) return;
+
+    const session = await authClient.getSession();
+    if (!session?.data?.session?.activeOrganizationId) {
+      const organizations = await getOrganizations();
+      if (organizations.length === 0) throw redirect({ to: "/onboarding" });
+      await authClient.organization.setActive({
+        organizationId: organizations[0].id,
+      });
+    }
+    hasResolvedActiveOrganization = true;
+  },
   component: SettingsLayout,
 });
 
@@ -25,6 +44,10 @@ function SettingsLayout() {
   const { data: organization } = useActiveOrganization();
   const { data: boards } = useGetBoards({
     organizationId: organization?.id ?? "",
+  });
+  const { data: repos } = useGetRepos({
+    organizationId: organization?.id ?? "",
+    enabled: organization?.reposEnabled === true,
   });
 
   const getActiveTab = () => {
@@ -37,6 +60,9 @@ function SettingsLayout() {
     }
     if (pathname.includes("/dashboard/settings/boards")) {
       return "board";
+    }
+    if (pathname.includes("/dashboard/settings/repos")) {
+      return "repo";
     }
     return "account";
   };
@@ -95,6 +121,18 @@ function SettingsLayout() {
                 >
                   {t("navigation:sidebar.boards")}
                 </TabsTrigger>
+                {organization?.reposEnabled ? (
+                  <TabsTrigger
+                    disabled={repos?.length === 0}
+                    value="repo"
+                    className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
+                    onClick={() =>
+                      navigate({ to: "/dashboard/settings/repos" })
+                    }
+                  >
+                    Repos
+                  </TabsTrigger>
+                ) : null}
               </TabsList>
             </Tabs>
           </div>

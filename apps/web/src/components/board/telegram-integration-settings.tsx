@@ -80,11 +80,7 @@ function isValidTelegramThreadId(value: string): boolean {
   return /^\d+$/.test(value) && Number(value) > 0;
 }
 
-export function TelegramIntegrationSettings({
-  boardId,
-}: {
-  boardId: string;
-}) {
+export function TelegramIntegrationSettings({ boardId }: { boardId: string }) {
   const { t } = useTranslation();
   const schema = React.useMemo(
     () =>

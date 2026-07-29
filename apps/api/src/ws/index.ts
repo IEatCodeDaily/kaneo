@@ -2,9 +2,9 @@ import type { WSContext } from "hono/ws";
 import { subscribeToEvent } from "../events";
 import { isRedisConfigured } from "../redis";
 import type {
+  BoardBroadcastMessage,
   BroadcastAdapter,
   BroadcastMessage,
-  BoardBroadcastMessage,
 } from "./broadcast-adapter";
 import { InMemoryBroadcastAdapter } from "./in-memory-broadcast-adapter";
 import { RedisBroadcastAdapter } from "./redis-broadcast-adapter";
@@ -77,10 +77,7 @@ const boardBroadcastQueues = new Map<
   string,
   Map<string, { message: BoardBroadcastMessage; excludeInitiatorId?: string }>
 >();
-const boardBroadcastTimeouts = new Map<
-  string,
-  ReturnType<typeof setTimeout>
->();
+const boardBroadcastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 let adapter: BroadcastAdapter | null = null;
 

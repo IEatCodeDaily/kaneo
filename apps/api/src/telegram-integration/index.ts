@@ -12,8 +12,8 @@ import {
   validateTelegramConfig,
 } from "../plugins/telegram/config";
 import { telegramIntegrationSchema } from "../schemas";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
   buildNextTelegramConfigFromPatch,
   getTelegramIntegration,

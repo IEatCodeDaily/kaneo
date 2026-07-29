@@ -1,8 +1,8 @@
 import { apiKey } from "@better-auth/api-key";
 import {
   sendMagicLinkEmail,
-  sendOtpEmail,
   sendOrganizationInvitationEmail,
+  sendOtpEmail,
 } from "@kaneo/email";
 import {
   ac,
@@ -33,11 +33,15 @@ import {
 import type { AccessControl } from "better-auth/plugins/access";
 import type { UserWithAnonymous } from "better-auth/plugins/anonymous";
 import { config } from "dotenv-mono";
-import { count, eq, sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
-import { checkRegistrationAllowed } from "./utils/check-registration-allowed";
+import { decodeJwtPayload, syncOidcTeams } from "./oidc-team-sync/service";
 import { checkOrganizationName } from "./utils/check-organization-name";
+import {
+  checkRegistrationAllowed,
+  hasPendingInvitationForEmail,
+} from "./utils/check-registration-allowed";
 import { mapCustomOAuthProfileToUser } from "./utils/custom-oauth-profile";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getInvitationEmailSubject } from "./utils/get-invitation-email-subject";
@@ -298,6 +302,12 @@ export const auth = betterAuth({
               input: true,
               required: false,
             },
+            reposEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {
@@ -326,7 +336,7 @@ export const auth = betterAuth({
           },
         },
       },
-      allowUserToCreateOrganization: true,
+      allowUserToCreateOrganization: (user) => user.role === "admin",
       // Better Auth defaults this to `true`, which blocks any user whose email
       // is not verified from accepting/rejecting an invitation. Kaneo does not
       // verify emails on signup (and guest/anonymous users are unverified by
@@ -353,7 +363,10 @@ export const auth = betterAuth({
               .select({ role: schema.organizationRoleTable.role })
               .from(schema.organizationRoleTable)
               .where(
-                eq(schema.organizationRoleTable.organizationId, organization.id),
+                eq(
+                  schema.organizationRoleTable.organizationId,
+                  organization.id,
+                ),
               );
             const taken = new Set(existing.map((r) => r.role));
             const now = new Date();
@@ -508,6 +521,17 @@ export const auth = betterAuth({
               ctx?.query?.invitationId ||
               ctx?.headers?.get("x-invitation-id"),
           );
+          const isOAuthCallback =
+            ctx?.path?.startsWith("/callback/") ||
+            ctx?.path?.startsWith("/oauth2/callback/");
+          if (
+            isRegistrationDisabled &&
+            isOAuthCallback &&
+            (await hasPendingInvitationForEmail(user.email))
+          ) {
+            return;
+          }
+
           const result = await checkRegistrationAllowed(
             user.email,
             invitationId,
@@ -679,16 +703,43 @@ export const auth = betterAuth({
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
+      if (
+        ctx.path === "/oauth2/callback/custom" ||
+        ctx.path === "/callback/custom"
+      ) {
+        const newSession = ctx.context.newSession;
+        if (newSession) {
+          const [account] = await db
+            .select({ idToken: schema.accountTable.idToken })
+            .from(schema.accountTable)
+            .where(
+              and(
+                eq(schema.accountTable.userId, newSession.user.id),
+                eq(schema.accountTable.providerId, "custom"),
+              ),
+            )
+            .limit(1);
+          const claims = account?.idToken
+            ? decodeJwtPayload(account.idToken)
+            : null;
+          if (claims) await syncOidcTeams(newSession.user.id, claims);
+        }
+      }
       if (ctx.path.startsWith("/sign-up") || ctx.path.startsWith("/sign-in")) {
         const newSession = ctx.context.newSession;
         if (newSession) {
           const organizationMember = await db
-            .select({ organizationId: schema.organizationMemberTable.organizationId })
+            .select({
+              organizationId: schema.organizationMemberTable.organizationId,
+            })
             .from(schema.organizationMemberTable)
-            .where(eq(schema.organizationMemberTable.userId, newSession.user.id))
+            .where(
+              eq(schema.organizationMemberTable.userId, newSession.user.id),
+            )
             .limit(1);
 
-          const activeOrganizationId = organizationMember[0]?.organizationId || null;
+          const activeOrganizationId =
+            organizationMember[0]?.organizationId || null;
 
           if (activeOrganizationId) {
             await db

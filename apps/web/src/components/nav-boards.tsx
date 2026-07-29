@@ -67,13 +67,9 @@ export function NavBoards() {
       strict: false,
     });
 
-  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] =
-    useState(false);
-  const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] =
-    useState(false);
-  const [boardToDeleteId, setBoardToDeleteID] = useState<string | null>(
-    null,
-  );
+  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
+  const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
+  const [boardToDeleteId, setBoardToDeleteID] = useState<string | null>(null);
 
   const isCurrentBoard = (boardId: string) => {
     return (
@@ -145,9 +141,7 @@ export function NavBoards() {
                             onClick={() => handleBoardClick(board)}
                           >
                             <Folder className="text-muted-foreground" />
-                            <span>
-                              {t("navigation:boardList.viewBoard")}
-                            </span>
+                            <span>{t("navigation:boardList.viewBoard")}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="h-7 items-start cursor-pointer text-sm"
@@ -161,9 +155,7 @@ export function NavBoards() {
                             }}
                           >
                             <Forward className="text-muted-foreground" />
-                            <span>
-                              {t("navigation:boardList.shareBoard")}
-                            </span>
+                            <span>{t("navigation:boardList.shareBoard")}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="h-7 items-start cursor-pointer text-sm"

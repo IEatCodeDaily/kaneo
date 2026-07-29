@@ -1,6 +1,6 @@
-import { chromium, type FullConfig } from "@playwright/test";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { chromium, type FullConfig } from "@playwright/test";
 
 const AUTH_FILE = "tests/e2e/.auth/user.json";
 const FIXTURE_FILE = "tests/e2e/.auth/fixtures.json";
@@ -60,7 +60,14 @@ async function globalSetup(config: FullConfig) {
     `${baseURL}/api/repo?organizationId=${resolvedOrganizationId}`,
   );
   const repos = reposResponse.ok() ? await reposResponse.json() : [];
-  const repo = Array.isArray(repos) ? repos[0] : undefined;
+  // The seed script owns this local mirror. Prefer it over arbitrary connected
+  // GitHub repos so E2E always has deterministic issue/PR fixtures.
+  const repo = Array.isArray(repos)
+    ? repos.find(
+        (candidate) =>
+          candidate.owner === "kaneo-e2e" && candidate.name === "repo-fixtures",
+      )
+    : undefined;
 
   const boardsResponse = await context.request.get(
     `${baseURL}/api/board?organizationId=${resolvedOrganizationId}`,
@@ -88,7 +95,8 @@ async function globalSetup(config: FullConfig) {
   }
 
   for (const file of [AUTH_FILE, FIXTURE_FILE]) {
-    if (!existsSync(dirname(file))) mkdirSync(dirname(file), { recursive: true });
+    if (!existsSync(dirname(file)))
+      mkdirSync(dirname(file), { recursive: true });
   }
 
   await context.storageState({ path: AUTH_FILE });

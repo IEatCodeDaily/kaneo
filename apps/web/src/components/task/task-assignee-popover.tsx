@@ -37,7 +37,8 @@ export default function TaskAssigneePopover({
     INITIAL_VISIBLE_USERS,
   );
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
-  const { data: organizationMembers } = useGetActiveOrganizationMembers(organizationId);
+  const { data: organizationMembers } =
+    useGetActiveOrganizationMembers(organizationId);
   const { canAssignTasks } = useOrganizationPermission();
   const canAssign = canAssignTasks();
 

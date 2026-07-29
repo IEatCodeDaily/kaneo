@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/popover";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
-import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
+import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
@@ -76,7 +76,8 @@ export default function TaskLabelsPopover({
   const canCreateLabels = canManageLabels();
 
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
-  const { data: organizationLabels = [] } = useGetLabelsByOrganization(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
 
   const taskLabelNames = useMemo(
     () => taskLabels.map((label) => label.name),
@@ -128,10 +129,14 @@ export default function TaskLabelsPopover({
 
   const handleToggleLabel = async (labelId: string) => {
     try {
-      const organizationLabel = organizationLabels.find((l) => l.id === labelId);
+      const organizationLabel = organizationLabels.find(
+        (l) => l.id === labelId,
+      );
       if (!organizationLabel) return;
 
-      const isCurrentlyAssigned = taskLabelNames.includes(organizationLabel.name);
+      const isCurrentlyAssigned = taskLabelNames.includes(
+        organizationLabel.name,
+      );
 
       if (isCurrentlyAssigned) {
         // Remove label from task - find by name since IDs are different

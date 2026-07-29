@@ -28,8 +28,8 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { shortcuts } from "@/constants/shortcuts";
-import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 type SearchResultItem = {

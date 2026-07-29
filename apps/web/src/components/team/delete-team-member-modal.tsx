@@ -17,7 +17,8 @@ function DeleteTeamMemberModal({
 }) {
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
-  const { mutateAsync: deleteOrganizationMember } = useDeleteOrganizationMember();
+  const { mutateAsync: deleteOrganizationMember } =
+    useDeleteOrganizationMember();
   const queryClient = useQueryClient();
   const { canRemoveMembers } = useOrganizationPermission();
   const canRemove = canRemoveMembers();

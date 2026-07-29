@@ -93,21 +93,35 @@ export const accountTable = pgTable(
 export const githubUserGrantTable = pgTable(
   "github_user_grant",
   {
-    id: text("id").$defaultFn(() => createId()).primaryKey(),
-    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
     providerId: text("provider_id").notNull(),
     githubUserId: text("github_user_id").notNull(),
     githubLogin: text("github_login").notNull(),
     accessToken: text("access_token").notNull(),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      mode: "date",
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      mode: "date",
+    }),
     scope: text("scope"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()).notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
   },
   (table) => [
-    unique("github_user_grant_user_provider_unique").on(table.userId, table.providerId),
+    unique("github_user_grant_user_provider_unique").on(
+      table.userId,
+      table.providerId,
+    ),
     index("github_user_grant_user_idx").on(table.userId),
   ],
 );
@@ -115,9 +129,15 @@ export const githubUserGrantTable = pgTable(
 export const githubDelegationStateTable = pgTable(
   "github_delegation_state",
   {
-    id: text("id").$defaultFn(() => createId()).primaryKey(),
-    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
-    sessionId: text("session_id").notNull().references(() => sessionTable.id, { onDelete: "cascade" }),
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => sessionTable.id, { onDelete: "cascade" }),
     stateHash: text("state_hash").notNull().unique(),
     expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
@@ -152,16 +172,22 @@ export const organizationTable = pgTable("organization", {
   logo: text("logo"),
   metadata: text("metadata"),
   description: text("description"),
+  reposEnabled: boolean("repos_enabled").default(false).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
 export const organizationGithubInstallationTable = pgTable(
   "organization_github_installation",
   {
-    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
     organizationId: text("organization_id")
       .notNull()
-      .references(() => organizationTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
     installationId: integer("installation_id").notNull(),
     accountId: integer("account_id").notNull(),
     accountLogin: text("account_login").notNull(),
@@ -176,8 +202,13 @@ export const organizationGithubInstallationTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("organization_github_installation_organizationId_idx").on(table.organizationId),
-    unique("organization_github_installation_unique").on(table.organizationId, table.installationId),
+    index("organization_github_installation_organizationId_idx").on(
+      table.organizationId,
+    ),
+    unique("organization_github_installation_unique").on(
+      table.organizationId,
+      table.installationId,
+    ),
   ],
 );
 
@@ -214,6 +245,7 @@ export const teamTable = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizationTable.id, { onDelete: "cascade" }),
+    source: text("source").notNull().default("kaneo"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(
       () => /* @__PURE__ */ new Date(),
@@ -237,6 +269,84 @@ export const teamMemberTable = pgTable(
   (table) => [
     index("teamMember_teamId_idx").on(table.teamId),
     index("teamMember_userId_idx").on(table.userId),
+  ],
+);
+
+export const oidcTeamSyncConfigTable = pgTable("oidc_team_sync_config", {
+  organizationId: text("organization_id")
+    .primaryKey()
+    .references(() => organizationTable.id, { onDelete: "cascade" }),
+  claimPath: text("claim_path").notNull().default("roles"),
+  roleMappings: jsonb("role_mappings")
+    .$type<Array<{ role: string; teamId: string }>>()
+    .notNull()
+    .default([]),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const resourceGrantTable = pgTable(
+  "resource_grant",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "cascade",
+    }),
+    teamId: text("team_id").references(() => teamTable.id, {
+      onDelete: "cascade",
+    }),
+    privilege: text("privilege").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "resource_grant_resource_type_check",
+      sql`${table.resourceType} in ('board', 'repo')`,
+    ),
+    check(
+      "resource_grant_privilege_check",
+      sql`${table.privilege} in ('view', 'edit', 'manage')`,
+    ),
+    check(
+      "resource_grant_single_principal_check",
+      sql`num_nonnulls(${table.userId}, ${table.teamId}) = 1`,
+    ),
+    index("resource_grant_resource_idx").on(
+      table.organizationId,
+      table.resourceType,
+      table.resourceId,
+    ),
+    index("resource_grant_user_idx").on(table.userId),
+    index("resource_grant_team_idx").on(table.teamId),
+    uniqueIndex("resource_grant_user_unique")
+      .on(
+        table.organizationId,
+        table.resourceType,
+        table.resourceId,
+        table.userId,
+      )
+      .where(sql`${table.userId} is not null`),
+    uniqueIndex("resource_grant_team_unique")
+      .on(
+        table.organizationId,
+        table.resourceType,
+        table.resourceId,
+        table.teamId,
+      )
+      .where(sql`${table.teamId} is not null`),
   ],
 );
 
@@ -314,7 +424,10 @@ export const boardTable = pgTable(
     lastTaskNumber: integer("last_task_number").notNull().default(0),
   },
   (table) => [
-    unique("board_organization_id_id_unique").on(table.organizationId, table.id),
+    unique("board_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
   ],
 );
 
@@ -584,10 +697,13 @@ export const labelTable = pgTable(
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
-    organizationId: text("organization_id").references(() => organizationTable.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    }),
+    organizationId: text("organization_id").references(
+      () => organizationTable.id,
+      {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      },
+    ),
   },
   (table) => [
     index("label_task_id_idx").on(table.taskId),
@@ -708,17 +824,9 @@ export const userNotificationOrgRuleTable = pgTable(
   },
   (table) => [
     index("unor_userId_idx").on(table.userId),
-    index("unor_organizationId_idx").on(
-      table.organizationId,
-    ),
-    unique("unor_user_org_unique").on(
-      table.userId,
-      table.organizationId,
-    ),
-    unique("unor_org_id_id_unique").on(
-      table.organizationId,
-      table.id,
-    ),
+    index("unor_organizationId_idx").on(table.organizationId),
+    unique("unor_user_org_unique").on(table.userId, table.organizationId),
+    unique("unor_org_id_id_unique").on(table.organizationId, table.id),
   ],
 );
 
@@ -758,12 +866,8 @@ export const userNotificationOrgBoardTable = pgTable(
     })
       .onDelete("cascade")
       .onUpdate("cascade"),
-    index("unob_ruleId_idx").on(
-      table.orgRuleId,
-    ),
-    index("unob_boardId_idx").on(
-      table.boardId,
-    ),
+    index("unob_ruleId_idx").on(table.orgRuleId),
+    index("unob_boardId_idx").on(table.boardId),
     index("unob_organizationId_boardId_idx").on(
       table.organizationId,
       table.boardId,
@@ -772,10 +876,7 @@ export const userNotificationOrgBoardTable = pgTable(
       table.organizationId,
       table.orgRuleId,
     ),
-    unique("unob_rule_board_unique").on(
-      table.orgRuleId,
-      table.boardId,
-    ),
+    unique("unob_rule_board_unique").on(table.orgRuleId, table.boardId),
   ],
 );
 
@@ -1247,7 +1348,10 @@ export const taskRepoItemLinkTable = pgTable(
       .primaryKey(),
     taskId: text("task_id")
       .notNull()
-      .references(() => taskTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
     repoIssueId: text("repo_issue_id").references(() => repoIssueTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",

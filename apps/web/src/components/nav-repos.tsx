@@ -20,8 +20,16 @@ import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 export function NavRepos() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
+  const reposEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { reposEnabled?: boolean })
+        | undefined
+    )?.reposEnabled,
+  );
   const { data: repos } = useGetRepos({
     organizationId: organization?.id || "",
+    enabled: reposEnabled,
   });
   const navigate = useNavigate();
   const { organizationId: currentOrganizationId, repoId: currentRepoId } =
@@ -32,7 +40,7 @@ export function NavRepos() {
   const isCurrentRepo = (repoId: string) =>
     currentRepoId === repoId && currentOrganizationId === organization?.id;
 
-  if (!organization) return null;
+  if (!organization || !reposEnabled) return null;
 
   return (
     <Collapsible className="group/collapsible" defaultOpen>
@@ -79,21 +87,6 @@ export function NavRepos() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-
-              <SidebarMenuItem className="mt-1">
-                <SidebarMenuButton
-                  className="h-8 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-                  onClick={() =>
-                    navigate({
-                      to: "/dashboard/organization/$organizationId/repo",
-                      params: { organizationId: organization.id },
-                    })
-                  }
-                  size="default"
-                >
-                  <span>{t("navigation:repoList.allRepos")}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </CollapsiblePanel>

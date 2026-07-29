@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
+import { getResourcePrivilege, privilegeAllows } from "../resource-access";
 import { validateOrganizationAccess } from "./validate-organization-access";
 
 type OrganizationIdSource =
@@ -83,6 +84,35 @@ export function organizationAccessMiddleware(
     const apiKeyId = apiKey?.id;
 
     await validateOrganizationAccess(userId, organizationId, apiKeyId);
+
+    const boardSource = config.sources.find(
+      (source) => source.type === "lookup" && source.resource !== "label",
+    );
+    if (boardSource?.type === "lookup") {
+      const body = await readJsonObjectBody(c);
+      const resourceId =
+        c.req.param(boardSource.idKey) ||
+        c.req.query(boardSource.idKey) ||
+        (typeof body[boardSource.idKey] === "string"
+          ? body[boardSource.idKey]
+          : null);
+      if (resourceId) {
+        const boardId = await lookupBoardId(boardSource.resource, resourceId);
+        if (!boardId) {
+          throw new HTTPException(404, { message: "Resource not found" });
+        }
+        const privilege = await getResourcePrivilege({
+          organizationId,
+          resourceType: "board",
+          resourceId: boardId,
+          userId,
+        });
+        const required = c.req.method === "GET" ? "view" : "edit";
+        if (!privilegeAllows(privilege, required)) {
+          throw new HTTPException(404, { message: "Board not found" });
+        }
+      }
+    }
 
     c.set("organizationId", organizationId);
 
@@ -235,6 +265,75 @@ async function lookupOrganizationId(
   } catch (error) {
     console.error(`Error looking up organizationId for ${resource}:`, error);
     return null;
+  }
+}
+
+async function lookupBoardId(
+  resource: Exclude<
+    Extract<OrganizationIdSource, { type: "lookup" }>["resource"],
+    "label"
+  >,
+  id: string,
+): Promise<string | null> {
+  switch (resource) {
+    case "board":
+      return id;
+    case "task": {
+      const [row] = await db
+        .select({ boardId: schema.taskTable.boardId })
+        .from(schema.taskTable)
+        .where(eq(schema.taskTable.id, id))
+        .limit(1);
+      return row?.boardId ?? null;
+    }
+    case "timeEntry": {
+      const [row] = await db
+        .select({ boardId: schema.taskTable.boardId })
+        .from(schema.timeEntryTable)
+        .innerJoin(
+          schema.taskTable,
+          eq(schema.timeEntryTable.taskId, schema.taskTable.id),
+        )
+        .where(eq(schema.timeEntryTable.id, id))
+        .limit(1);
+      return row?.boardId ?? null;
+    }
+    case "activity":
+    case "comment": {
+      const [row] = await db
+        .select({ boardId: schema.taskTable.boardId })
+        .from(schema.activityTable)
+        .innerJoin(
+          schema.taskTable,
+          eq(schema.activityTable.taskId, schema.taskTable.id),
+        )
+        .where(
+          resource === "comment"
+            ? and(
+                eq(schema.activityTable.id, id),
+                eq(schema.activityTable.type, "comment"),
+              )
+            : eq(schema.activityTable.id, id),
+        )
+        .limit(1);
+      return row?.boardId ?? null;
+    }
+    case "column": {
+      const [row] = await db
+        .select({ boardId: schema.columnTable.boardId })
+        .from(schema.columnTable)
+        .where(eq(schema.columnTable.id, id))
+        .limit(1);
+      return row?.boardId ?? null;
+    }
+    case "workflowRule": {
+      const [row] = await db
+        .select({ boardId: schema.workflowRuleTable.boardId })
+        .from(schema.workflowRuleTable)
+        .where(eq(schema.workflowRuleTable.id, id))
+        .limit(1);
+      return row?.boardId ?? null;
+    }
   }
 }
 

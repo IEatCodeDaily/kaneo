@@ -21,6 +21,7 @@ import { cn } from "@/lib/cn";
 
 type OrganizationLayoutProps = {
   title: string;
+  headerNavigation?: ReactNode;
   headerActions?: ReactNode;
   children: ReactNode;
   onCreateBoard?: () => void;
@@ -29,6 +30,7 @@ type OrganizationLayoutProps = {
 
 export default function OrganizationLayout({
   title,
+  headerNavigation,
   headerActions,
   children,
   className,
@@ -59,7 +61,7 @@ export default function OrganizationLayout({
               </Tooltip>
             </TooltipProvider>
             <div className="mx-1.5 h-4 w-px shrink-0 bg-border/80" />
-            <Breadcrumb className="flex items-center gap-1 text-xs w-full">
+            <Breadcrumb className="flex h-8 items-center gap-1 text-xs">
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink href="/">
@@ -76,6 +78,7 @@ export default function OrganizationLayout({
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+            {headerNavigation}
           </div>
           <div className={`${cn("flex items-center gap-1.5", className)}`}>
             {headerActions}

@@ -11,6 +11,8 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+# Timestamped .env backups made by local tooling — these contain live secrets
+.env.bak.*
 
 # Testing
 coverage
@@ -54,3 +56,7 @@ compose.override.yml
 tests/e2e/.auth/
 tests/e2e/.artifacts/
 tests/e2e/.report/
+
+# Local one-off probe/diagnostic scripts
+.disconnect-probe.cjs
+.hermes-profile.cjs

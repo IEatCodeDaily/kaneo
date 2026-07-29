@@ -5,16 +5,16 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { integrationTable, boardTable } from "../database/schema";
+import { boardTable, integrationTable } from "../database/schema";
 import {
   type GitHubConfig,
   validateGitHubConfig,
 } from "../plugins/github/config";
 import { handleGitHubWebhook } from "../plugins/github/webhook-handler";
 import { githubIntegrationSchema } from "../schemas";
+import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
-import { organizationAccess } from "../utils/organization-access-middleware";
 import createGithubIntegration from "./controllers/create-github-integration";
 import deleteGithubIntegration from "./controllers/delete-github-integration";
 import getGithubIntegration from "./controllers/get-github-integration";

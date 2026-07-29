@@ -49,8 +49,7 @@ export function useDeleteGenericWebhookIntegration() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (boardId: string) =>
-      deleteGenericWebhookIntegration(boardId),
+    mutationFn: (boardId: string) => deleteGenericWebhookIntegration(boardId),
     onSuccess: (_, boardId) => {
       void queryClient.invalidateQueries({
         queryKey: ["generic-webhook-integration", boardId],

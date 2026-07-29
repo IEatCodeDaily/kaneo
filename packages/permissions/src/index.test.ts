@@ -13,7 +13,7 @@ import {
 
 describe("@kaneo/permissions statement surface", () => {
   it("exposes Kaneo's resource statements alongside better-auth defaults", () => {
-    expect(statement.project).toEqual([
+    expect(statement.board).toEqual([
       "create",
       "read",
       "update",
@@ -28,16 +28,16 @@ describe("@kaneo/permissions statement surface", () => {
       "assign",
     ]);
     expect(statement.label).toEqual(["create", "read", "update", "delete"]);
-    expect(statement.workspace).toEqual([
+    // Kaneo extends the organization statement with its own actions on top of
+    // the better-auth organization plugin defaults.
+    expect(statement.organization).toEqual([
       "read",
       "update",
       "delete",
       "manage_settings",
+      "manage_connections",
+      "manage_members",
     ]);
-    // The organization plugin's defaults must still be present so we can
-    // reuse them in member/admin/owner roles without breaking better-auth
-    // checks like organization:update.
-    expect(statement.organization).toBeDefined();
     expect(statement.member).toBeDefined();
   });
 
@@ -49,38 +49,38 @@ describe("@kaneo/permissions statement surface", () => {
 
 describe("built-in role privileges", () => {
   it("viewer can read but cannot create or modify", () => {
-    expect(viewer.statements.project).toEqual(["read"]);
+    expect(viewer.statements.board).toEqual(["read"]);
     expect(viewer.statements.task).toEqual(["read"]);
     expect(viewer.statements.label).toEqual(["read"]);
-    expect(viewer.statements.workspace).toEqual(["read"]);
+    expect(viewer.statements.organization).toEqual(["read"]);
   });
 
   it("member can create/read/update tasks but not delete or manage settings", () => {
     expect(member.statements.task).toContain("create");
     expect(member.statements.task).toContain("update");
     expect(member.statements.task).not.toContain("delete");
-    expect(member.statements.project).toContain("create");
-    expect(member.statements.project).not.toContain("delete");
-    expect(member.statements.workspace).toEqual(["read"]);
+    expect(member.statements.board).toContain("create");
+    expect(member.statements.board).not.toContain("delete");
+    expect(member.statements.organization).toEqual(["read"]);
   });
 
-  it("admin can delete tasks and manage workspace settings but cannot delete the workspace", () => {
+  it("admin can delete tasks and manage organization settings but cannot delete the organization", () => {
     expect(admin.statements.task).toContain("delete");
     expect(admin.statements.task).toContain("assign");
-    expect(admin.statements.project).toContain("delete");
-    expect(admin.statements.project).toContain("share");
-    expect(admin.statements.workspace).toContain("manage_settings");
-    expect(admin.statements.workspace).not.toContain("delete");
+    expect(admin.statements.board).toContain("delete");
+    expect(admin.statements.board).toContain("share");
+    expect(admin.statements.organization).toContain("manage_settings");
+    expect(admin.statements.organization).not.toContain("delete");
   });
 
-  it("owner has every Kaneo resource action including workspace:delete", () => {
+  it("owner has every Kaneo resource action including organization:delete", () => {
     expect(owner.statements.task).toEqual(
       expect.arrayContaining(["create", "read", "update", "delete", "assign"]),
     );
-    expect(owner.statements.project).toEqual(
+    expect(owner.statements.board).toEqual(
       expect.arrayContaining(["create", "read", "update", "delete", "share"]),
     );
-    expect(owner.statements.workspace).toEqual(
+    expect(owner.statements.organization).toEqual(
       expect.arrayContaining(["read", "update", "delete", "manage_settings"]),
     );
   });

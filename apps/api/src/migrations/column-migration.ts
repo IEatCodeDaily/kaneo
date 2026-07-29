@@ -1,9 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 import db from "../database";
 import {
+  boardTable,
   columnTable,
   integrationTable,
-  boardTable,
   taskTable,
   workflowRuleTable,
 } from "../database/schema";
@@ -143,9 +143,7 @@ export async function migrateColumns() {
     }
   }
 
-  console.log(
-    `✅ Column migration complete! Migrated ${boards.length} boards`,
-  );
+  console.log(`✅ Column migration complete! Migrated ${boards.length} boards`);
 }
 
 async function ensureMigrationWorkflowRule(

@@ -281,6 +281,34 @@
 			"when": 1785128400001,
 			"tag": "0039_github_user_delegation",
 			"breakpoints": true
+		},
+		{
+			"idx": 40,
+			"version": "7",
+			"when": 1785218400000,
+			"tag": "0040_organization_repos_feature",
+			"breakpoints": true
+		},
+		{
+			"idx": 41,
+			"version": "7",
+			"when": 1785231000000,
+			"tag": "0041_resource_visibility_grants",
+			"breakpoints": true
+		},
+		{
+			"idx": 42,
+			"version": "7",
+			"when": 1785232000000,
+			"tag": "0042_oidc_team_sync",
+			"breakpoints": true
+		},
+		{
+			"idx": 43,
+			"version": "7",
+			"when": 1785240000000,
+			"tag": "0043_repair_oidc_team_sync",
+			"breakpoints": true
 		}
 	]
 }

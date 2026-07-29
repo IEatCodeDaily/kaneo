@@ -25,6 +25,10 @@
 			"!**/.cache",
 			"!**/coverage",
 			"!**/.claude",
+			"!**/test-results",
+			"!tests/e2e/.report",
+			"!tests/e2e/.artifacts",
+			"!tests/e2e/.auth",
 			"!**/openapi.json"
 		]
 	},
