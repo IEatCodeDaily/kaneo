@@ -1,6 +1,10 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import db from "../database";
-import { integrationTable } from "../database/schema";
+import {
+  externalLinkTable,
+  integrationTable,
+  taskRepoItemLinkTable,
+} from "../database/schema";
 import { subscribeToEvent } from "../events";
 import type {
   IntegrationPlugin,
@@ -253,6 +257,64 @@ async function getActiveIntegrations(boardId: string) {
   });
 }
 
+/**
+ * Integrations that must hear about a change to this task.
+ *
+ * A task's own board is the obvious source, but a task can also *follow* a
+ * GitHub issue that lives on a different board (task_repo_item_link with
+ * sync_enabled). Scoping outbound sync to the task's board alone made those
+ * followers one-way: they accepted inbound GitHub changes but never pushed
+ * their own edits back, because the integration that owns the issue belongs to
+ * another board.
+ *
+ * Followed integrations are discovered through the task's external_link rows,
+ * which are what the outbound handlers look the issue number up in anyway.
+ */
+export async function resolveIntegrationsForTask(
+  taskId: string,
+  boardId: string,
+) {
+  const boardIntegrations = await getActiveIntegrations(boardId);
+
+  const [follower] = await db
+    .select({ id: taskRepoItemLinkTable.id })
+    .from(taskRepoItemLinkTable)
+    .where(
+      and(
+        eq(taskRepoItemLinkTable.taskId, taskId),
+        eq(taskRepoItemLinkTable.syncEnabled, true),
+      ),
+    )
+    .limit(1);
+
+  // Only followed tasks reach outside their own board.
+  if (!follower) return boardIntegrations;
+
+  const linkedIntegrationIds = await db
+    .select({ integrationId: externalLinkTable.integrationId })
+    .from(externalLinkTable)
+    .where(eq(externalLinkTable.taskId, taskId));
+
+  const seen = new Set(boardIntegrations.map((row) => row.id));
+  const missing = linkedIntegrationIds
+    .map((row) => row.integrationId)
+    .filter((id): id is string => Boolean(id) && !seen.has(id));
+
+  if (missing.length === 0) return boardIntegrations;
+
+  const followedIntegrations = await db.query.integrationTable.findMany({
+    where: and(
+      inArray(integrationTable.id, missing),
+      eq(integrationTable.isActive, true),
+    ),
+    with: {
+      board: true,
+    },
+  });
+
+  return [...boardIntegrations, ...followedIntegrations];
+}
+
 function createContext(integration: {
   id: string;
   boardId: string;
@@ -287,7 +349,10 @@ export async function broadcastTaskCreated(
 export async function broadcastTaskStatusChanged(
   event: TaskStatusChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.boardId);
+  const integrations = await resolveIntegrationsForTask(
+    event.taskId,
+    event.boardId,
+  );
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -331,7 +396,10 @@ export async function broadcastTaskPriorityChanged(
 export async function broadcastTaskTitleChanged(
   event: TaskTitleChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.boardId);
+  const integrations = await resolveIntegrationsForTask(
+    event.taskId,
+    event.boardId,
+  );
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -353,7 +421,10 @@ export async function broadcastTaskTitleChanged(
 export async function broadcastTaskDescriptionChanged(
   event: TaskDescriptionChangedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.boardId);
+  const integrations = await resolveIntegrationsForTask(
+    event.taskId,
+    event.boardId,
+  );
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
@@ -375,7 +446,10 @@ export async function broadcastTaskDescriptionChanged(
 export async function broadcastTaskCommentCreated(
   event: TaskCommentCreatedEvent,
 ): Promise<void> {
-  const integrations = await getActiveIntegrations(event.boardId);
+  const integrations = await resolveIntegrationsForTask(
+    event.taskId,
+    event.boardId,
+  );
 
   for (const integration of integrations) {
     const plugin = getPlugin(integration.type);
