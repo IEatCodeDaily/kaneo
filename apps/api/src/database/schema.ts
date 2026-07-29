@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -1360,16 +1361,34 @@ export const taskRepoItemLinkTable = pgTable(
       () => repoPullRequestTable.id,
       { onDelete: "cascade", onUpdate: "cascade" },
     ),
+    // A Synced Task follows a GitHub issue; ordinary task links remain
+    // references only. Pull requests are never syncable.
+    syncEnabled: boolean("sync_enabled").notNull().default(false),
+    // Keep a broken follower visible rather than silently deleting its task.
+    syncBrokenAt: timestamp("sync_broken_at", { mode: "date" }),
+    syncBrokenReason: text("sync_broken_reason"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [
     index("task_repo_item_link_task_idx").on(table.taskId),
     index("task_repo_item_link_issue_idx").on(table.repoIssueId),
     index("task_repo_item_link_pull_request_idx").on(table.repoPullRequestId),
-    unique("task_repo_item_link_task_issue_unique").on(table.taskId, table.repoIssueId),
+    unique("task_repo_item_link_task_issue_unique").on(
+      table.taskId,
+      table.repoIssueId,
+    ),
     unique("task_repo_item_link_task_pull_request_unique").on(
       table.taskId,
       table.repoPullRequestId,
+    ),
+    // A task has one unambiguous content source, while an issue can be followed
+    // by any number of tasks across boards.
+    uniqueIndex("task_single_synced_issue_idx")
+      .on(table.taskId)
+      .where(sql`${table.syncEnabled}`),
+    check(
+      "task_repo_item_link_sync_issue_only",
+      sql`not ${table.syncEnabled} or ${table.repoIssueId} is not null`,
     ),
   ],
 );

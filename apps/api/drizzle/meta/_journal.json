@@ -309,6 +309,13 @@
 			"when": 1785240000000,
 			"tag": "0043_repair_oidc_team_sync",
 			"breakpoints": true
+		},
+		{
+			"idx": 44,
+			"version": "7",
+			"when": 1785291000000,
+			"tag": "0044_task_synced_issue",
+			"breakpoints": true
 		}
 	]
 }

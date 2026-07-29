@@ -50,6 +50,12 @@ export type RepoContents = {
     | null;
 };
 
+export type RepoTree = {
+  entries: RepoContentEntry[];
+  ref: string;
+  truncated: boolean;
+};
+
 export type RepoIssueState = "open" | "closed";
 
 export type RepoIssueGithubActor = {
@@ -72,7 +78,7 @@ export type RepoIssueGithub = {
     state_reason?: string | null;
     actor?: RepoIssueGithubActor;
     assignee?: RepoIssueGithubActor;
-    label?: { name?: string | null };
+    label?: { name?: string | null; color?: string | null };
     milestone?: { title?: string | null };
   }>;
   linkedPullRequests?: Array<{
@@ -84,10 +90,19 @@ export type RepoIssueGithub = {
   }>;
   milestone?: { number: number; title: string } | null;
   stateReason?: string | null;
+  parent?: {
+    id?: number | string;
+    number?: number;
+    title?: string | null;
+    state?: string | null;
+    html_url?: string | null;
+  } | null;
+  parentSupported?: boolean;
   subIssues: Array<{
     id?: number | string;
     number?: number;
     title?: string | null;
+    state?: string | null;
     html_url?: string | null;
   }>;
   subIssuesSupported: boolean;
@@ -97,6 +112,9 @@ export type RepoTaskLink = {
   id: string;
   taskId: string;
   createdAt: string;
+  syncEnabled: boolean;
+  syncBrokenAt: string | null;
+  syncBrokenReason: string | null;
   task: {
     id: string;
     title: string;
@@ -170,4 +188,45 @@ export type RepoIssuesResponse = {
 export type RepoPullRequestsResponse = {
   data: RepoPullRequest[];
   pagination: RepoPagination;
+};
+
+export type RepoPullRequestFile = {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+  patch: string | null;
+};
+
+export type RepoPullRequestFiles = {
+  files: RepoPullRequestFile[];
+  totals: { additions: number; deletions: number; changedFiles: number };
+};
+
+export type RepoPullRequestCommit = {
+  sha: string;
+  message: string;
+  authorLogin: string | null;
+  authorAvatarUrl: string | null;
+  committedAt: string | null;
+  url: string;
+};
+
+export type RepoPullRequestCommits = { commits: RepoPullRequestCommit[] };
+
+export type RepoPullRequestCheck = {
+  name: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  url: string;
+};
+
+export type RepoPullRequestChecks = {
+  conclusion: string | null;
+  headSha: string;
+  checks: RepoPullRequestCheck[];
+  runs: RepoPullRequestCheck[];
 };

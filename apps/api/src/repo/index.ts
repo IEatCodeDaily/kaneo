@@ -239,6 +239,60 @@ const githubPackageSchema = v.object({
   versionCount: v.number(),
 });
 
+const pullRequestFilesSchema = v.object({
+  files: v.array(
+    v.object({
+      filename: v.string(),
+      status: v.string(),
+      additions: v.number(),
+      deletions: v.number(),
+      changes: v.number(),
+      patch: v.nullable(v.string()),
+    }),
+  ),
+  totals: v.object({
+    additions: v.number(),
+    deletions: v.number(),
+    changedFiles: v.number(),
+  }),
+});
+
+const pullRequestCommitsSchema = v.object({
+  commits: v.array(
+    v.object({
+      sha: v.string(),
+      message: v.string(),
+      authorLogin: v.nullable(v.string()),
+      authorAvatarUrl: v.nullable(v.string()),
+      committedAt: v.nullable(v.string()),
+      url: v.string(),
+    }),
+  ),
+});
+
+const pullRequestCheckEntrySchema = v.object({
+  name: v.string(),
+  status: v.string(),
+  conclusion: v.nullable(v.string()),
+  startedAt: v.nullable(v.string()),
+  completedAt: v.nullable(v.string()),
+  url: v.string(),
+});
+
+const pullRequestChecksSchema = v.object({
+  conclusion: v.nullable(v.string()),
+  headSha: v.string(),
+  checks: v.array(pullRequestCheckEntrySchema),
+  runs: v.array(pullRequestCheckEntrySchema),
+});
+
+// GitHub caps a PR's number at a positive integer; reject anything else before
+// spending an installation token on a request that cannot succeed.
+const pullRequestParamSchema = v.object({
+  id: v.string(),
+  number: v.pipe(v.string(), v.transform(Number), v.integer(), v.minValue(1)),
+});
+
 const repo = new Hono<{
   Variables: {
     userId: string;
@@ -637,6 +691,73 @@ const repo = new Hono<{
       return c.json(pullRequests);
     },
   )
+  .get(
+    "/:id/pull-requests/:number/files",
+    describeRoute({
+      operationId: "getRepoPullRequestFiles",
+      tags: ["Repos"],
+      description: "Get changed files and patches for a GitHub pull request",
+      responses: {
+        200: {
+          description: "Pull request files with aggregate change counts",
+          content: {
+            "application/json": { schema: resolver(pullRequestFilesSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", pullRequestParamSchema),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoPullRequestFiles({ repoId: id, number }));
+    },
+  )
+  .get(
+    "/:id/pull-requests/:number/commits",
+    describeRoute({
+      operationId: "getRepoPullRequestCommits",
+      tags: ["Repos"],
+      description: "Get the live commit history for a GitHub pull request",
+      responses: {
+        200: {
+          description: "Pull request commits",
+          content: {
+            "application/json": { schema: resolver(pullRequestCommitsSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", pullRequestParamSchema),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoPullRequestCommits({ repoId: id, number }));
+    },
+  )
+  .get(
+    "/:id/pull-requests/:number/checks",
+    describeRoute({
+      operationId: "getRepoPullRequestChecks",
+      tags: ["Repos"],
+      description:
+        "Get live GitHub check runs and Actions workflow runs for a pull request",
+      responses: {
+        200: {
+          description: "Pull request CI check and workflow run state",
+          content: {
+            "application/json": { schema: resolver(pullRequestChecksSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", pullRequestParamSchema),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoPullRequestChecks({ repoId: id, number }));
+    },
+  )
   .post(
     "/:id/:itemType/:number/task-links",
     validator(
@@ -693,6 +814,96 @@ const repo = new Hono<{
           number,
           taskId,
           itemType: itemType === "issues" ? "issue" : "pullRequest",
+          organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/synced-tasks",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({ boardId: v.string(), columnId: v.optional(v.string()) }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await addSyncedTask({
+          repoId: id,
+          number,
+          ...c.req.valid("json"),
+          organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/synced-tasks/:taskId/retry",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        taskId: v.string(),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, taskId } = c.req.valid("param");
+      return c.json(
+        await syncTaskFromIssue({
+          repoId: id,
+          number,
+          taskId,
+          organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .delete(
+    "/:id/issues/:number/synced-tasks/:taskId",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        taskId: v.string(),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, taskId } = c.req.valid("param");
+      return c.json(
+        await unsyncTaskFromIssue({
+          repoId: id,
+          number,
+          taskId,
           organizationId: c.get("organizationId"),
         }),
       );
