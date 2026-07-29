@@ -6,8 +6,8 @@ import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
 type CreateTaskBody = {
@@ -17,11 +17,11 @@ type CreateTaskBody = {
   status: string;
 };
 
-async function seedTask(projectId: string, columnId: string | null) {
+async function seedTask(boardId: string, columnId: string | null) {
   const [task] = await db
     .insert(schema.taskTable)
     .values({
-      projectId,
+      boardId,
       title: "Seeded task",
       description: "Existing",
       priority: "medium",
@@ -34,13 +34,13 @@ async function seedTask(projectId: string, columnId: string | null) {
   return task;
 }
 
-async function createWorkspaceRoleRow(
-  workspaceId: string,
+async function createOrganizationRoleRow(
+  organizationId: string,
   role: string,
   permission: Record<string, string[]> | string,
 ) {
-  await db.insert(schema.workspaceRoleTable).values({
-    workspaceId,
+  await db.insert(schema.organizationRoleTable).values({
+    organizationId,
     role,
     permission:
       typeof permission === "string" ? permission : JSON.stringify(permission),
@@ -49,10 +49,10 @@ async function createWorkspaceRoleRow(
 
 async function postCreateTask(
   app: ReturnType<typeof createApp>["app"],
-  projectId: string,
+  boardId: string,
   body: Partial<CreateTaskBody> = {},
 ) {
-  return app.request(`/api/task/${projectId}`, {
+  return app.request(`/api/task/${boardId}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -65,41 +65,41 @@ async function postCreateTask(
   });
 }
 
-describe("API integration: workspace RBAC enforcement", () => {
+describe("API integration: organization RBAC enforcement", () => {
   beforeEach(async () => {
     await resetTestDatabase();
   });
 
   describe("built-in roles", () => {
     it("allows a member to create a task (member role grants task:create)", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
 
     it("blocks a viewer from creating a task (viewer role lacks task:create)", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "viewer" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(403);
       await expect(response.text()).resolves.toBe("Insufficient permissions");
 
       const persisted = await db.query.taskTable.findFirst({
         where: and(
-          eq(schema.taskTable.projectId, project.id),
+          eq(schema.taskTable.boardId, board.id),
           eq(schema.taskTable.title, "RBAC probe"),
         ),
       });
@@ -107,11 +107,11 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("blocks a member from deleting a task (member role lacks task:delete)", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -128,11 +128,11 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("allows an admin to delete a task (admin role grants task:delete)", async () => {
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -149,11 +149,11 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("allows an owner to delete a task (owner role grants task:delete)", async () => {
-      const member = await createWorkspaceMember({ role: "owner" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "owner" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -164,10 +164,10 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(response.status).toBe(200);
     });
 
-    it("returns 403 when the user has no row in workspace_member for the workspace", async () => {
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("returns 403 when the user has no row in organization_member for the organization", async () => {
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       const outsiderId = `user-${randomUUID()}`;
@@ -184,28 +184,28 @@ describe("API integration: workspace RBAC enforcement", () => {
       mockAuthenticatedSession(outsider);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
-      // workspaceAccess.fromProject runs first and rejects with its own message
+      const response = await postCreateTask(app, board.id);
+      // organizationAccess.fromBoard runs first and rejects with its own message
       expect(response.status).toBe(403);
     });
 
-    it("does not authorize a project through a conflicting workspaceId query", async () => {
-      const attacker = await createWorkspaceMember({ role: "admin" });
-      const victim = await createWorkspaceMember({ role: "admin" });
-      const { project } = await createProjectFixture({
-        workspaceId: victim.workspace.id,
+    it("does not authorize a board through a conflicting organizationId query", async () => {
+      const attacker = await createOrganizationMember({ role: "admin" });
+      const victim = await createOrganizationMember({ role: "admin" });
+      const { board } = await createBoardFixture({
+        organizationId: victim.organization.id,
       });
 
       mockAuthenticatedSession(attacker.user);
       const { app } = createApp();
 
       const response = await app.request(
-        `/api/task/${project.id}?workspaceId=${attacker.workspace.id}`,
+        `/api/task/${board.id}?organizationId=${attacker.organization.id}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            title: "Cross-workspace probe",
+            title: "Cross-organization probe",
             description: "",
             priority: "low",
             status: "to-do",
@@ -217,90 +217,90 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
   });
 
-  describe("custom workspace roles", () => {
+  describe("custom organization roles", () => {
     it("blocks a custom role that only grants task:read from creating a task", async () => {
-      const member = await createWorkspaceMember({ role: "readonly" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "readonly" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      await createWorkspaceRoleRow(member.workspace.id, "readonly", {
+      await createOrganizationRoleRow(member.organization.id, "readonly", {
         task: ["read"],
-        project: ["read"],
+        board: ["read"],
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(403);
     });
 
     it("allows a custom role that grants task:create to create a task", async () => {
-      const member = await createWorkspaceMember({ role: "creator" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "creator" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      await createWorkspaceRoleRow(member.workspace.id, "creator", {
+      await createOrganizationRoleRow(member.organization.id, "creator", {
         task: ["create", "read"],
-        project: ["read"],
+        board: ["read"],
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
 
-    it("lets a workspace_role row override the built-in viewer permissions", async () => {
-      // viewer's compiled-in statements have no task:create. A workspace_role
+    it("lets an organization_role row override the built-in viewer permissions", async () => {
+      // viewer's compiled-in statements have no task:create. An organization_role
       // row for "viewer" with task:create should override and grant access.
-      const member = await createWorkspaceMember({ role: "viewer" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "viewer" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      await createWorkspaceRoleRow(member.workspace.id, "viewer", {
+      await createOrganizationRoleRow(member.organization.id, "viewer", {
         task: ["create", "read", "update"],
-        project: ["read"],
-        workspace: ["read"],
+        board: ["read"],
+        organization: ["read"],
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
 
-    it("returns 403 when the workspace_role permission JSON is malformed", async () => {
-      const member = await createWorkspaceMember({ role: "broken" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("returns 403 when the organization_role permission JSON is malformed", async () => {
+      const member = await createOrganizationMember({ role: "broken" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       // Malformed permission payload. The middleware should refuse rather than
       // crash; with no built-in fallback for "broken", access is denied.
-      await createWorkspaceRoleRow(member.workspace.id, "broken", "not-json");
+      await createOrganizationRoleRow(member.organization.id, "broken", "not-json");
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(403);
     });
 
     it("drops malformed permission entries instead of throwing", async () => {
-      const member = await createWorkspaceMember({ role: "partial" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "partial" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       // Some entries are valid string arrays, others are objects/strings/etc.
       // Middleware keeps the valid ones and ignores the rest.
-      await createWorkspaceRoleRow(
-        member.workspace.id,
+      await createOrganizationRoleRow(
+        member.organization.id,
         "partial",
         JSON.stringify({
           task: ["create"],
-          project: "not-an-array",
+          board: "not-an-array",
           weird: { nested: true },
         }),
       );
@@ -308,32 +308,32 @@ describe("API integration: workspace RBAC enforcement", () => {
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
 
-    it("falls back to built-in role when no workspace_role row exists for the name", async () => {
-      // No workspace_role row, role is the compiled-in "admin" — should work.
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("falls back to built-in role when no organization_role row exists for the name", async () => {
+      // No organization_role row, role is the compiled-in "admin" — should work.
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
   });
 
   describe("resource coverage: task:update", () => {
     it("allows a member to update a task", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -346,7 +346,7 @@ describe("API integration: workspace RBAC enforcement", () => {
           description: "edit",
           priority: "high",
           status: "to-do",
-          projectId: project.id,
+          boardId: board.id,
           position: 1,
         }),
       });
@@ -354,11 +354,11 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("blocks a viewer from updating a task", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "viewer" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -371,7 +371,7 @@ describe("API integration: workspace RBAC enforcement", () => {
           description: "nope",
           priority: "low",
           status: "to-do",
-          projectId: project.id,
+          boardId: board.id,
           position: 1,
         }),
       });
@@ -381,11 +381,11 @@ describe("API integration: workspace RBAC enforcement", () => {
 
   describe("resource coverage: task:assign", () => {
     it("blocks a member from assigning a task (assign is admin-tier)", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -399,11 +399,11 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("allows an admin to assign a task", async () => {
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -417,18 +417,18 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
   });
 
-  describe("resource coverage: project:create / update / delete", () => {
-    it("allows a member to create a project", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
+  describe("resource coverage: board:create / update / delete", () => {
+    it("allows a member to create a board", async () => {
+      const member = await createOrganizationMember({ role: "member" });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request("/api/project", {
+      const response = await app.request("/api/board", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: "Member-made",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           slug: "MEM",
           icon: "Folder",
         }),
@@ -436,17 +436,17 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(response.status).toBe(200);
     });
 
-    it("blocks a viewer from creating a project", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
+    it("blocks a viewer from creating a board", async () => {
+      const member = await createOrganizationMember({ role: "viewer" });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request("/api/project", {
+      const response = await app.request("/api/board", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: "Viewer attempt",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           slug: "VWR",
           icon: "Folder",
         }),
@@ -454,21 +454,21 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(response.status).toBe(403);
     });
 
-    it("blocks a member from updating a project (project:update is admin-tier)", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("blocks a member from updating a board (board:update is admin-tier)", async () => {
+      const member = await createOrganizationMember({ role: "member" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request(`/api/project/${project.id}`, {
+      const response = await app.request(`/api/board/${board.id}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: "Member-rename",
           icon: "Folder",
-          slug: project.slug,
+          slug: board.slug,
           description: "",
           isPublic: false,
         }),
@@ -476,21 +476,21 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(response.status).toBe(403);
     });
 
-    it("allows an admin to update a project", async () => {
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("allows an admin to update a board", async () => {
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request(`/api/project/${project.id}`, {
+      const response = await app.request(`/api/board/${board.id}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: "Admin-rename",
           icon: "Folder",
-          slug: project.slug,
+          slug: board.slug,
           description: "",
           isPublic: false,
         }),
@@ -498,29 +498,29 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(response.status).toBe(200);
     });
 
-    it("blocks a member from deleting a project (project:delete is admin-tier)", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("blocks a member from deleting a board (board:delete is admin-tier)", async () => {
+      const member = await createOrganizationMember({ role: "member" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request(`/api/project/${project.id}`, {
+      const response = await app.request(`/api/board/${board.id}`, {
         method: "DELETE",
       });
       expect(response.status).toBe(403);
     });
 
-    it("allows an admin to delete a project", async () => {
-      const member = await createWorkspaceMember({ role: "admin" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("allows an admin to delete a board", async () => {
+      const member = await createOrganizationMember({ role: "admin" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request(`/api/project/${project.id}`, {
+      const response = await app.request(`/api/board/${board.id}`, {
         method: "DELETE",
       });
       expect(response.status).toBe(200);
@@ -529,7 +529,7 @@ describe("API integration: workspace RBAC enforcement", () => {
 
   describe("resource coverage: label:create / delete", () => {
     it("allows a member to create a label", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
+      const member = await createOrganizationMember({ role: "member" });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
@@ -539,14 +539,14 @@ describe("API integration: workspace RBAC enforcement", () => {
         body: JSON.stringify({
           name: "bug",
           color: "#ff0000",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
         }),
       });
       expect(response.status).toBe(200);
     });
 
     it("blocks a viewer from creating a label", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
+      const member = await createOrganizationMember({ role: "viewer" });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
@@ -556,18 +556,18 @@ describe("API integration: workspace RBAC enforcement", () => {
         body: JSON.stringify({
           name: "nope",
           color: "#000000",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
         }),
       });
       expect(response.status).toBe(403);
     });
 
     it("allows a member to delete a label", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
       // deleteLabel requires the label to be attached to a task; without a
       // taskId the controller rejects with 400 before checking permissions.
       const [label] = await db
@@ -575,7 +575,7 @@ describe("API integration: workspace RBAC enforcement", () => {
         .values({
           name: "scratch",
           color: "#abcdef",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: task.id,
         })
         .returning();
@@ -590,17 +590,17 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("blocks a viewer from deleting a label", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "viewer" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
-      const task = await seedTask(project.id, columns.todo.id);
+      const task = await seedTask(board.id, columns.todo.id);
       const [label] = await db
         .insert(schema.labelTable)
         .values({
           name: "scratch",
           color: "#abcdef",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: task.id,
         })
         .returning();
@@ -615,20 +615,20 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
   });
 
-  describe("resource coverage: workspace:manage_settings", () => {
+  describe("resource coverage: organization:manage_settings", () => {
     // The integration endpoints (slack/discord/etc.) all gate on
-    // workspace:manage_settings. Use Slack as the canonical surface — the
+    // organization:manage_settings. Use Slack as the canonical surface — the
     // 403 fires in middleware before the handler ever tries to call out.
     it("blocks a member from creating a Slack integration", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
       const response = await app.request(
-        `/api/slack-integration/project/${project.id}`,
+        `/api/slack-integration/board/${board.id}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -641,15 +641,15 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("blocks a viewer from creating a Slack integration", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "viewer" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
       const response = await app.request(
-        `/api/slack-integration/project/${project.id}`,
+        `/api/slack-integration/board/${board.id}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -662,15 +662,15 @@ describe("API integration: workspace RBAC enforcement", () => {
     });
 
     it("blocks a member from deleting an integration", async () => {
-      const member = await createWorkspaceMember({ role: "member" });
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const member = await createOrganizationMember({ role: "member" });
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
       const response = await app.request(
-        `/api/slack-integration/project/${project.id}`,
+        `/api/slack-integration/board/${board.id}`,
         { method: "DELETE" },
       );
       expect(response.status).toBe(403);
@@ -678,16 +678,16 @@ describe("API integration: workspace RBAC enforcement", () => {
   });
 
   describe("instance admin bypass", () => {
-    it("bypasses the workspace permission check when user.role === 'admin'", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
+    it("bypasses the organization permission check when user.role === 'admin'", async () => {
+      const member = await createOrganizationMember({ role: "viewer" });
       // Promote the user to instance admin
       await db
         .update(schema.userTable)
         .set({ role: "admin" })
         .where(eq(schema.userTable.id, member.user.id));
 
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       // Reload the user so the mocked session reflects the admin role.
@@ -699,26 +699,26 @@ describe("API integration: workspace RBAC enforcement", () => {
       mockAuthenticatedSession(refreshedUser);
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(200);
     });
 
     it("does not bypass for users with no role set", async () => {
-      const member = await createWorkspaceMember({ role: "viewer" });
+      const member = await createOrganizationMember({ role: "viewer" });
       // Explicitly null role on the user table — should NOT bypass.
       await db
         .update(schema.userTable)
         .set({ role: null })
         .where(eq(schema.userTable.id, member.user.id));
 
-      const { project } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+      const { board } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       mockAuthenticatedSession({ ...member.user, role: null });
       const { app } = createApp();
 
-      const response = await postCreateTask(app, project.id);
+      const response = await postCreateTask(app, board.id);
       expect(response.status).toBe(403);
     });
   });

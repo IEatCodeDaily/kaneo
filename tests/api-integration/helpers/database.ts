@@ -82,34 +82,44 @@ export async function ensureTestDatabaseMigrated() {
 export async function resetTestDatabase() {
   await ensureTestDatabaseMigrated();
 
-  await db.execute(
-    sql.raw(`
-      TRUNCATE TABLE
-        "activity",
-        "account",
-        "apikey",
-        "asset",
-        "column",
-        "comment",
-        "external_link",
-        "github_integration",
-        "integration",
-        "invitation",
-        "label",
-        "notification",
-        "project",
-        "session",
-        "task",
-        "task_relation",
-        "team",
-        "team_member",
-        "time_entry",
-        "verification",
-        "workflow_rule",
-        "workspace",
-        "workspace_member",
-        "user"
-      RESTART IDENTITY CASCADE
-    `),
-  );
+  // Derive the table list from the database rather than hardcoding it. The
+  // previous hardcoded list silently rotted through the workspace/project ->
+  // organization/board rename: it still named "project", "workspace", and
+  // "workspace_member", so every TRUNCATE raised 42P01 and took down the whole
+  // suite. Reading pg_tables keeps this correct across future renames.
+  const truncate = sql.raw(`
+      DO $$
+      DECLARE
+        tables text;
+      BEGIN
+        SELECT string_agg(format('%I.%I', schemaname, tablename), ', ')
+          INTO tables
+          FROM pg_tables
+         WHERE schemaname = 'public'
+           AND tablename <> '__drizzle_migrations';
+
+        IF tables IS NOT NULL THEN
+          EXECUTE 'TRUNCATE TABLE ' || tables || ' RESTART IDENTITY CASCADE';
+        END IF;
+      END $$;
+    `);
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await db.execute(truncate);
+      return;
+    } catch (error) {
+      const cause = error instanceof Error ? error.cause : undefined;
+      const code =
+        cause && typeof cause === "object" && "code" in cause
+          ? cause.code
+          : undefined;
+      if (code !== "40P01" || attempt === 3) throw error;
+
+      // PostgreSQL deadlocks are transaction-retry conditions. Fire-and-forget
+      // event work can briefly race the next test's ACCESS EXCLUSIVE locks;
+      // back off until that work releases its relation locks.
+      await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+    }
+  }
 }

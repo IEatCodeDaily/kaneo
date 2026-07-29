@@ -1,21 +1,21 @@
 import { randomUUID } from "node:crypto";
+import { DEFAULT_PROJECT_COLUMNS } from "../../../apps/api/src/board/controllers/create-board";
 import db, { schema } from "../../../apps/api/src/database";
-import { DEFAULT_PROJECT_COLUMNS } from "../../../apps/api/src/project/controllers/create-project";
 
 export type SeededMemberContext = {
   user: typeof schema.userTable.$inferSelect;
-  workspace: typeof schema.workspaceTable.$inferSelect;
+  organization: typeof schema.organizationTable.$inferSelect;
 };
 
-export async function createWorkspaceMember(
+export async function createOrganizationMember(
   overrides?: Partial<{
     userName: string;
-    workspaceName: string;
+    organizationName: string;
     role: string;
   }>,
 ): Promise<SeededMemberContext> {
   const userId = `user-${randomUUID()}`;
-  const workspaceId = `workspace-${randomUUID()}`;
+  const organizationId = `organization-${randomUUID()}`;
 
   const [user] = await db
     .insert(schema.userTable)
@@ -27,41 +27,41 @@ export async function createWorkspaceMember(
     })
     .returning();
 
-  const [workspace] = await db
-    .insert(schema.workspaceTable)
+  const [organization] = await db
+    .insert(schema.organizationTable)
     .values({
-      id: workspaceId,
+      id: organizationId,
       createdAt: new Date(),
-      name: overrides?.workspaceName || "Integration Test Workspace",
-      slug: `workspace-${randomUUID()}`,
+      name: overrides?.organizationName || "Integration Test Organization",
+      slug: `organization-${randomUUID()}`,
     })
     .returning();
 
-  await db.insert(schema.workspaceUserTable).values({
-    workspaceId: workspace.id,
+  await db.insert(schema.organizationMemberTable).values({
+    organizationId: organization.id,
     userId: user.id,
     role: overrides?.role ?? "member",
     joinedAt: new Date(),
   });
 
-  return { user, workspace };
+  return { user, organization };
 }
 
-export async function createProjectFixture({
-  workspaceId,
-  name = "Integration Project",
+export async function createBoardFixture({
+  organizationId,
+  name = "Integration Board",
   icon = "Folder",
-  slug = `project-${randomUUID()}`,
+  slug = `board-${randomUUID()}`,
 }: {
-  workspaceId: string;
+  organizationId: string;
   name?: string;
   icon?: string;
   slug?: string;
 }) {
-  const [project] = await db
-    .insert(schema.projectTable)
+  const [board] = await db
+    .insert(schema.boardTable)
     .values({
-      workspaceId,
+      organizationId,
       name,
       icon,
       slug,
@@ -74,7 +74,7 @@ export async function createProjectFixture({
     const [inserted] = await db
       .insert(schema.columnTable)
       .values({
-        projectId: project.id,
+        boardId: board.id,
         name: col.name,
         slug: col.slug,
         position: col.position,
@@ -96,11 +96,11 @@ export async function createProjectFixture({
   const done = columnsBySlug.get("done");
 
   if (!todo || !inProgress || !inReview || !done) {
-    throw new Error("Failed to seed default project columns");
+    throw new Error("Failed to seed default board columns");
   }
 
   return {
-    project,
+    board,
     columns: {
       todo,
       inProgress,

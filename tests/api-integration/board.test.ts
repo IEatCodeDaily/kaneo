@@ -4,27 +4,27 @@ import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
-import { createWorkspaceMember } from "./helpers/fixtures";
+import { createOrganizationMember } from "./helpers/fixtures";
 
-describe("API integration: project creation", () => {
+describe("API integration: board creation", () => {
   beforeEach(async () => {
     await resetTestDatabase();
   });
 
-  it("rejects unauthenticated project creation requests", async () => {
+  it("rejects unauthenticated board creation requests", async () => {
     mockAnonymousSession();
     const { app } = createApp();
 
-    const response = await app.request("/api/project", {
+    const response = await app.request("/api/board", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        workspaceId: "workspace-missing",
-        name: "Unauthorized Project",
+        organizationId: "organization-missing",
+        name: "Unauthorized Board",
         icon: "Folder",
-        slug: "unauthorized-project",
+        slug: "unauthorized-board",
       }),
     });
 
@@ -32,18 +32,18 @@ describe("API integration: project creation", () => {
     await expect(response.text()).resolves.toBe("Unauthorized");
   });
 
-  it("creates a project for a workspace member and seeds default columns", async () => {
-    const member = await createWorkspaceMember();
+  it("creates a board for an organization member and seeds default columns", async () => {
+    const member = await createOrganizationMember();
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
-    const response = await app.request("/api/project", {
+    const response = await app.request("/api/board", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        workspaceId: member.workspace.id,
+        organizationId: member.organization.id,
         name: "Roadmap",
         icon: "FolderKanban",
         slug: "roadmap",
@@ -52,28 +52,28 @@ describe("API integration: project creation", () => {
 
     expect(response.status).toBe(200);
     const payload =
-      (await response.json()) as typeof schema.projectTable.$inferSelect;
+      (await response.json()) as typeof schema.boardTable.$inferSelect;
 
     expect(payload).toMatchObject({
-      workspaceId: member.workspace.id,
+      organizationId: member.organization.id,
       name: "Roadmap",
       icon: "FolderKanban",
       slug: "roadmap",
     });
 
-    const persistedProject = await db.query.projectTable.findFirst({
-      where: eq(schema.projectTable.id, payload.id),
+    const persistedBoard = await db.query.boardTable.findFirst({
+      where: eq(schema.boardTable.id, payload.id),
     });
 
-    expect(persistedProject).toMatchObject({
+    expect(persistedBoard).toMatchObject({
       id: payload.id,
-      workspaceId: member.workspace.id,
+      organizationId: member.organization.id,
       name: "Roadmap",
       slug: "roadmap",
     });
 
     const columns = await db.query.columnTable.findMany({
-      where: eq(schema.columnTable.projectId, payload.id),
+      where: eq(schema.columnTable.boardId, payload.id),
       orderBy: (column, { asc }) => [asc(column.position)],
     });
 
@@ -92,8 +92,8 @@ describe("API integration: project creation", () => {
     ]);
   });
 
-  it("rejects project creation for users outside the workspace", async () => {
-    const member = await createWorkspaceMember();
+  it("rejects board creation for users outside the organization", async () => {
+    const member = await createOrganizationMember();
     const outsiderId = "user-outsider";
 
     const [outsider] = await db
@@ -109,22 +109,22 @@ describe("API integration: project creation", () => {
     mockAuthenticatedSession(outsider);
     const { app } = createApp();
 
-    const response = await app.request("/api/project", {
+    const response = await app.request("/api/board", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        workspaceId: member.workspace.id,
-        name: "Forbidden Project",
+        organizationId: member.organization.id,
+        name: "Forbidden Board",
         icon: "Folder",
-        slug: "forbidden-project",
+        slug: "forbidden-board",
       }),
     });
 
     expect(response.status).toBe(403);
     await expect(response.text()).resolves.toBe(
-      "You don't have access to this workspace",
+      "You don't have access to this organization",
     );
   });
 });
