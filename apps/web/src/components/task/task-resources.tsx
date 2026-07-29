@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   CircleDot,
@@ -29,9 +29,9 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import getRepoIssues from "@/fetchers/repo/get-repo-issues";
+import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
-import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
-import useGetRepoPullRequests from "@/hooks/queries/repo/use-get-repo-pull-requests";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
@@ -130,19 +130,39 @@ export default function TaskResources({
   const { data: externalLinks = [] } = useExternalLinks(taskId);
   const { data: repos = [] } = useGetRepos({ organizationId });
 
-  // The command palette searches across every connected repo at once, so scope
-  // fetches to the first repo only when there is exactly one; otherwise the
-  // selected repo comes from the item the user picks.
-  const primaryRepoId = repos.length > 0 ? repos[0].id : "";
-  const { data: issues } = useGetRepoIssues({
-    repoId: primaryRepoId,
-    state: "all",
-    limit: 100,
+  // The command palette searches across every connected repo at once, so it
+  // must fetch from all of them. Scoping to `repos[0]` made the picker show
+  // "No issues found" whenever the first repository happened to have none,
+  // even though other repos in the organization did.
+  const RESOURCE_LIMIT = 100;
+  const repoIds = useMemo(() => repos.map((repo) => repo.id), [repos]);
+
+  const issueQueries = useQueries({
+    queries: repoIds.map((repoId) => ({
+      queryFn: () =>
+        getRepoIssues({
+          repoId,
+          state: "all" as const,
+          page: 1,
+          limit: RESOURCE_LIMIT,
+        }),
+      queryKey: ["repo-issues", repoId, "all", 1, RESOURCE_LIMIT],
+      enabled: commandOpen,
+    })),
   });
-  const { data: pullRequests } = useGetRepoPullRequests({
-    repoId: primaryRepoId,
-    state: "all",
-    limit: 100,
+
+  const pullRequestQueries = useQueries({
+    queries: repoIds.map((repoId) => ({
+      queryFn: () =>
+        getRepoPullRequests({
+          repoId,
+          state: "all" as const,
+          page: 1,
+          limit: RESOURCE_LIMIT,
+        }),
+      queryKey: ["repo-pull-requests", repoId, "all", 1, RESOURCE_LIMIT],
+      enabled: commandOpen,
+    })),
   });
 
   const link = useMutation({
@@ -189,8 +209,13 @@ export default function TaskResources({
     },
   });
 
+  // Keyed by repo as well as number: issue #13 in one repository has nothing to
+  // do with issue #13 in another, so an existing link must not hide it there.
   const linkedKeys = useMemo(
-    () => new Set(links.map((item) => `${item.itemType}-${item.number}`)),
+    () =>
+      new Set(
+        links.map((item) => `${item.repoId}-${item.itemType}-${item.number}`),
+      ),
     [links],
   );
 
@@ -228,34 +253,39 @@ export default function TaskResources({
   );
 
   // One group per repository, matching how Relations groups tasks by board.
+  // Repos with no matching items are omitted so the palette does not show
+  // empty headers.
   const commandGroups = useMemo<ResourceGroup[]>(() => {
-    const source =
-      resourceType === "issues" ? issues?.data : pullRequests?.data;
-    const repo = repos.find((candidate) => candidate.id === primaryRepoId);
-    if (!repo || !source) return [];
+    const sources =
+      resourceType === "issues" ? issueQueries : pullRequestQueries;
 
-    const items = source
-      .filter(
-        (resource) => !linkedKeys.has(`${resourceType}-${resource.number}`),
-      )
-      .map((resource) => ({
-        id: String(resource.id),
-        number: resource.number,
-        title: resource.title,
-        repoId: repo.id,
-        repoLabel: `${repo.owner}/${repo.name}`,
-      }));
+    return repos.flatMap((repo, index) => {
+      const source = sources[index]?.data?.data;
+      if (!source) return [];
 
-    return items.length > 0
-      ? [
-          {
-            value: repo.id,
-            label: `${repo.owner}/${repo.name}`,
-            items,
-          },
-        ]
-      : [];
-  }, [issues, linkedKeys, primaryRepoId, pullRequests, repos, resourceType]);
+      const repoLabel = `${repo.owner}/${repo.name}`;
+      const items = source
+        .filter(
+          (resource) =>
+            !linkedKeys.has(`${repo.id}-${resourceType}-${resource.number}`),
+        )
+        .map((resource) => ({
+          id: `${repo.id}-${resource.number}`,
+          number: resource.number,
+          title: resource.title,
+          repoId: repo.id,
+          repoLabel,
+        }));
+
+      return items.length > 0
+        ? [{ value: repo.id, label: repoLabel, items }]
+        : [];
+    });
+  }, [issueQueries, linkedKeys, pullRequestQueries, repos, resourceType]);
+
+  const isLoadingResources = (
+    resourceType === "issues" ? issueQueries : pullRequestQueries
+  ).some((query) => query.isLoading);
 
   const handleLink = (item: ResourceItem) => {
     link.mutate({
@@ -428,7 +458,9 @@ export default function TaskResources({
                   <p className="text-sm text-muted-foreground">
                     {repos.length === 0
                       ? "No repositories are connected to this organization yet."
-                      : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
+                      : isLoadingResources
+                        ? "Loading…"
+                        : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
                   </p>
                 </div>
               </CommandEmpty>
