@@ -60,3 +60,6 @@ tests/e2e/.report/
 # Local one-off probe/diagnostic scripts
 .disconnect-probe.cjs
 .hermes-profile.cjs
+
+# Agent working files (plans, scratch) — not part of the product
+.hermes/
