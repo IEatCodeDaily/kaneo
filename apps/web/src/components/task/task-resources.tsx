@@ -15,6 +15,15 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+} from "@/components/ui/combobox";
+import {
   Command,
   CommandCollection,
   CommandDialog,
@@ -420,17 +429,18 @@ export default function TaskResources({
                   <RepoLabel label={repoLabelById.get(item.repoId) as string} />
                 )}
               </Link>
+              {/* Button composes via `render`, not `asChild`. */}
               <Button
                 aria-label={`Open #${item.number} on GitHub`}
-                asChild
                 className="opacity-0 group-hover:opacity-100"
+                render={
+                  <a href={item.url} rel="noreferrer" target="_blank">
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                }
                 size="icon-xs"
                 variant="ghost"
-              >
-                <a href={item.url} rel="noreferrer" target="_blank">
-                  <ExternalLink className="size-3.5" />
-                </a>
-              </Button>
+              />
               <Button
                 aria-label={`Unlink #${item.number}`}
                 className="opacity-0 group-hover:opacity-100"
@@ -542,22 +552,34 @@ export default function TaskResources({
             </DialogDescription>
           </DialogHeader>
           <DialogPanel>
-            <label className="space-y-2 text-sm">
-              <span>Repository</span>
-              <select
-                aria-label="Repository for the new issue"
-                className="w-full rounded-md border bg-background px-3 py-2"
-                onChange={(event) => setCreateRepoId(event.target.value)}
-                value={createRepoId}
+            <div className="space-y-2 text-sm">
+              <label htmlFor="create-synced-issue-repository">Repository</label>
+              <Combobox
+                autoHighlight
+                itemToStringLabel={(repo) => `${repo.owner}/${repo.name}`}
+                items={repos}
+                onValueChange={(repo) => setCreateRepoId(repo?.id ?? "")}
+                value={repos.find((repo) => repo.id === createRepoId) ?? null}
               >
-                <option value="">Select a repository…</option>
-                {repos.map((repo) => (
-                  <option key={repo.id} value={repo.id}>
-                    {repo.owner}/{repo.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <ComboboxInput
+                  aria-label="Repository for the new issue"
+                  id="create-synced-issue-repository"
+                  placeholder="Search repositories…"
+                />
+                <ComboboxPopup>
+                  <ComboboxEmpty>No repositories found.</ComboboxEmpty>
+                  <ComboboxList>
+                    <ComboboxCollection>
+                      {(repo) => (
+                        <ComboboxItem key={repo.id} value={repo}>
+                          {repo.owner}/{repo.name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxCollection>
+                  </ComboboxList>
+                </ComboboxPopup>
+              </Combobox>
+            </div>
           </DialogPanel>
           <DialogFooter>
             <Button onClick={() => setCreateOpen(false)} variant="outline">

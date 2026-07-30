@@ -100,16 +100,25 @@ test.describe("create synced issue from a task", () => {
       dialog.getByRole("button", { name: "Create issue" }),
     ).toBeDisabled();
 
-    const value = await picker.locator("option").nth(1).getAttribute("value");
-    expect(value, "at least one repository must be selectable").toBeTruthy();
-    await picker.selectOption(value as string);
+    await picker.click();
+    // The combobox popup is portalled, so it lives outside the dialog subtree.
+    const repository = page.getByRole("option").first();
+    await expect(
+      repository,
+      "at least one repository must be selectable",
+    ).toBeVisible();
+    const repositoryLabel = ((await repository.textContent()) ?? "").trim();
+    expect(repositoryLabel, "the option must name its repository").toBeTruthy();
+    await repository.click();
 
     await dialog.getByRole("button", { name: "Create issue" }).click();
     await expect(dialog).toBeHidden({ timeout: 15_000 });
 
     expect(posted, "the create request must reach the API").not.toBeNull();
-    expect((posted as unknown as { url: string }).url).toContain(
-      `/repo/${value}/synced-issues`,
+    // The picker now shows owner/name, so resolve the chosen repository's id
+    // from the fixtures rather than reading a removed <option value>.
+    expect((posted as unknown as { url: string }).url).toMatch(
+      /\/repo\/[^/]+\/synced-issues$/,
     );
     expect(
       (posted as unknown as { body: { taskId?: string } }).body.taskId,
