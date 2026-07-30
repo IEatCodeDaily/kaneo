@@ -31,6 +31,7 @@ import {
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { useTargetRepoView } from "@/hooks/use-remembered-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export function NavRepos() {
@@ -70,11 +71,15 @@ export function NavRepos() {
   const isCurrentRepo = (repoId: string) =>
     currentRepoId === repoId && currentOrganizationId === organization?.id;
 
+  // Switching repos keeps the current repo view; arriving fresh uses the last
+  // repo view this user was in (persisted in localStorage).
+  const targetRepoView = useTargetRepoView();
+
   if (!organization || !reposEnabled) return null;
 
   const openRepo = (repoId: string) =>
     navigate({
-      to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
+      to: `/dashboard/organization/$organizationId/repo/$repoId/${targetRepoView}`,
       params: {
         organizationId: organization.id,
         repoId,

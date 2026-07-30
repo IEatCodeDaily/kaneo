@@ -14,10 +14,15 @@ import {
 import { VersionDisplay } from "@/components/version-display";
 import { shortcuts } from "@/constants/shortcuts";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useRememberCurrentView } from "@/hooks/use-remembered-view";
 import Search from "./search";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar } = useSidebar();
+
+  // Remember the board/repo view the user is in, for the next time they
+  // come back to a board or repo.
+  useRememberCurrentView();
 
   useRegisterShortcuts({
     modifierShortcuts: {

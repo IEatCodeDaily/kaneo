@@ -19,7 +19,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
 import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -371,19 +370,12 @@ function BacklogListView({
               items={tasks}
               strategy={verticalListSortingStrategy}
             >
-              <AnimatePresence initial={false} mode="popLayout">
-                {tasks.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    <BacklogTaskRow task={task} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              {/* No per-row motion wrapper — see list-view/index.tsx: one
+                  Framer Motion instance per row dominates mount cost on large
+                  boards. */}
+              {tasks.map((task) => (
+                <BacklogTaskRow key={task.id} task={task} />
+              ))}
             </SortableContext>
 
             {tasks.length === 0 && (

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { BoardView, RepoView } from "@/lib/board-view";
 
 export const WEEK_START_DAYS = [0, 1, 6] as const;
 export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
@@ -56,6 +57,12 @@ type UserPreferencesStore = {
 
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
+
+  /** Last view visited per resource type, so returning lands where you left. */
+  lastBoardView: BoardView;
+  setLastBoardView: (view: BoardView) => void;
+  lastRepoView: RepoView;
+  setLastRepoView: (view: RepoView) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -149,6 +156,11 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       weekStartsOn: 0,
       setWeekStartsOn: (weekStartsOn) => set({ weekStartsOn }),
+
+      lastBoardView: "board",
+      setLastBoardView: (lastBoardView) => set({ lastBoardView }),
+      lastRepoView: "issues",
+      setLastRepoView: (lastRepoView) => set({ lastRepoView }),
     }),
     {
       name: "user-preferences",

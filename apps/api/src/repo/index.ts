@@ -50,7 +50,7 @@ import {
 import { syncTaskFromIssue } from "./controllers/sync-task-from-issue";
 import updateRepoCtrl from "./controllers/update-repo";
 import { repoOrganizationAccess } from "./repo-organization-access";
-import { requireReposEnabled } from "./require-repos-enabled";
+import { areReposEnabled, requireReposEnabled } from "./require-repos-enabled";
 import { syncRepo } from "./services/sync-gitea-repo";
 
 // NOTE: the permission statement vocabulary in @kaneo/permissions is
@@ -319,9 +319,13 @@ const repo = new Hono<{
     }),
     validator("query", v.object({ organizationId: v.string() })),
     organizationAccess.fromQuery(),
-    requireReposEnabled,
     async (c) => {
       const organizationId = c.get("organizationId");
+      // A disabled feature is an empty list, not a missing resource. Mutating
+      // routes below still hard-fail via requireReposEnabled.
+      if (!(await areReposEnabled(organizationId))) {
+        return c.json([]);
+      }
       const repos = await listReposCtrl(organizationId);
       const accessibleIds = new Set(
         await listAccessibleResourceIds({

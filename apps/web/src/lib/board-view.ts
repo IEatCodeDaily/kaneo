@@ -2,13 +2,31 @@ export const BOARD_VIEWS = ["board", "gantt", "calendar", "backlog"] as const;
 
 export type BoardView = (typeof BOARD_VIEWS)[number];
 
+export const REPO_VIEWS = [
+  "issues",
+  "pulls",
+  "code",
+  "releases",
+  "packages",
+] as const;
+
+export type RepoView = (typeof REPO_VIEWS)[number];
+
 /**
- * The board view segment of a dashboard URL, defaulting to the kanban board.
- * Used so switching boards keeps whichever view the user is currently in.
+ * The board view segment of a dashboard URL, or null when the path isn't a
+ * board view. Used so switching boards keeps the current view.
  */
-export function boardViewFromPathname(pathname: string): BoardView {
+export function boardViewFromPathname(pathname: string): BoardView | null {
   const match = pathname.match(
     /\/board\/[^/]+\/(board|gantt|calendar|backlog)(?:\/|$)/,
   );
-  return (match?.[1] as BoardView) ?? "board";
+  return (match?.[1] as BoardView) ?? null;
+}
+
+/** The repo view segment of a dashboard URL, or null when not a repo view. */
+export function repoViewFromPathname(pathname: string): RepoView | null {
+  const match = pathname.match(
+    /\/repo\/[^/]+\/(issues|pulls|code|releases|packages)(?:\/|$)/,
+  );
+  return (match?.[1] as RepoView) ?? null;
 }

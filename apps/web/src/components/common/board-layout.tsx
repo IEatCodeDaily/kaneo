@@ -89,14 +89,7 @@ export default function BoardLayout({
 
   const handleBoardSwitch = (nextBoardId: string) => {
     navigate({
-      to:
-        resolvedView === "backlog"
-          ? "/dashboard/organization/$organizationId/board/$boardId/backlog"
-          : resolvedView === "gantt"
-            ? "/dashboard/organization/$organizationId/board/$boardId/gantt"
-            : resolvedView === "calendar"
-              ? "/dashboard/organization/$organizationId/board/$boardId/calendar"
-              : "/dashboard/organization/$organizationId/board/$boardId/board",
+      to: `/dashboard/organization/$organizationId/board/$boardId/${resolvedView}`,
       params: {
         organizationId,
         boardId: nextBoardId,

@@ -19,7 +19,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
 import { Archive, ChevronRight, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -356,19 +355,17 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
               items={column.tasks}
               strategy={verticalListSortingStrategy}
             >
-              <AnimatePresence initial={false} mode="popLayout">
-                {column.tasks.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    <TaskRow task={task} boardSlug={board?.slug ?? ""} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              {/* No AnimatePresence/motion wrapper here: one Framer Motion
+                  instance per row costs ~3s of main-thread blocking on a
+                  180-task board. The CSS starting-style fade on the container
+                  gives the same visual entry for free. */}
+              {column.tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  boardSlug={board?.slug ?? ""}
+                />
+              ))}
             </SortableContext>
 
             {column.tasks.length === 0 && (
