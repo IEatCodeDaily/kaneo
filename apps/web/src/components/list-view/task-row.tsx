@@ -28,7 +28,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
@@ -73,7 +72,9 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
   } = useUserPreferencesStore();
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   const { mutateAsync: deleteTask } = useDeleteTask();
-  const { data: externalLinks } = useExternalLinks(task.id);
+  // From the board payload — fetching per card cost one request + preflight
+  // each (186 on a 180-task board).
+  const externalLinks = task.externalLinks;
   const { toggleSelection, isSelected, isFocused } = useBulkSelectionStore();
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
@@ -226,7 +227,7 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
                   {task.title}
                 </span>
                 <div className="flex items-center gap-1">
-                  {showLabels && <TaskCardLabels taskId={task.id} />}
+                  {showLabels && <TaskCardLabels labels={task.labels} />}
 
                   {pullRequests.length === 1 && (
                     <HoverCard openDelay={200} closeDelay={100}>

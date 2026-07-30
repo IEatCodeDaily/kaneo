@@ -27,7 +27,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -71,7 +70,9 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
     showTaskNumbers,
   } = useUserPreferencesStore();
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
-  const { data: externalLinks } = useExternalLinks(task.id);
+  // From the board payload — fetching per card cost one request + preflight
+  // each (186 on a 180-task board).
+  const externalLinks = task.externalLinks;
   const { toggleSelection, isSelected, isFocused } = useBulkSelectionStore();
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
@@ -252,7 +253,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
 
             {showLabels && (
               <div className="mb-2.5">
-                <TaskCardLabels taskId={task.id} />
+                <TaskCardLabels labels={task.labels} />
               </div>
             )}
 

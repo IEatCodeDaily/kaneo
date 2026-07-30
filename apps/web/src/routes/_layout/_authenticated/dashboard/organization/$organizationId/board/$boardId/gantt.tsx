@@ -38,12 +38,14 @@ import {
 } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import { getInitials } from "@/lib/get-initials";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import {
   type DisplayConfig,
@@ -85,6 +87,7 @@ type ScheduledTask = {
   startDate: string | null;
   dueDate: string | null;
   assigneeName: string | null;
+  assigneeImage: string | null;
   boardId: string;
   scheduleStart: Date;
   scheduleEnd: Date;
@@ -275,8 +278,19 @@ const GanttRow = memo(function GanttRow({
                 {task.title}
               </span>
               {display.assignee && task.assigneeName ? (
-                <span className="shrink-0 truncate text-[9px] text-muted-foreground">
-                  @{task.assigneeName}
+                <span
+                  className="shrink-0"
+                  title={task.assigneeName ?? undefined}
+                >
+                  <Avatar className="size-4">
+                    <AvatarImage
+                      src={task.assigneeImage ?? ""}
+                      alt={task.assigneeName}
+                    />
+                    <AvatarFallback className="text-[8px] font-medium">
+                      {getInitials(task.assigneeName)}
+                    </AvatarFallback>
+                  </Avatar>
                 </span>
               ) : null}
             </button>
@@ -366,6 +380,7 @@ function RouteComponent() {
       userId: null,
       assigneeId: null,
       assigneeName: null,
+      assigneeImage: null,
       columnId: null,
       isForeign: true as const,
     }));

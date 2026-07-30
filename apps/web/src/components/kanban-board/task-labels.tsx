@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 
 const labelColors = [
   { value: "gray", label: "Stone", color: "var(--color-stone-500)" },
@@ -32,14 +31,23 @@ function validColor(value: string): string {
   return "var(--color-neutral-400)";
 }
 
-function TaskCardLabels({ taskId }: { taskId: string }) {
-  const { data: labels = [] } = useGetLabelsByTask(taskId);
+type TaskLabel = { id: string; name: string; color: string };
 
-  if (!labels.length) return null;
+/**
+ * Labels come from the task the caller already rendered.
+ *
+ * This used to fetch per task (`useGetLabelsByTask`) with `refetchOnMount`,
+ * which meant one GET plus a CORS preflight per card — 186 requests on a
+ * 180-task board, the last of them queued over a second deep. The board
+ * payload already includes `labels` on every task, so the fetch was pure
+ * duplication.
+ */
+function TaskCardLabels({ labels }: { labels: TaskLabel[] | undefined }) {
+  if (!labels?.length) return null;
 
   return (
     <div className="flex flex-wrap gap-1">
-      {labels.map((label: { id: string; name: string; color: string }) => (
+      {labels.map((label) => (
         <Badge
           key={label.id}
           variant="outline"

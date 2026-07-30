@@ -5,7 +5,7 @@ import {
   SquareKanban,
   SquircleDashed,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
@@ -23,6 +23,7 @@ import {
 import { shortcuts } from "@/constants/shortcuts";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
+import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
 import { cn } from "@/lib/cn";
 
 type BoardLayoutProps = {
@@ -49,45 +50,57 @@ export default function BoardLayout({
 
   useBoardWebSocket(boardId);
 
-  const resolvedView =
-    activeView ??
-    (location.pathname.includes("/backlog")
-      ? "backlog"
-      : location.pathname.includes("/gantt")
-        ? "gantt"
-        : location.pathname.includes("/calendar")
-          ? "calendar"
-          : "board");
+  const pathView: BoardView =
+    activeView ?? boardViewFromPathname(location.pathname) ?? "board";
 
-  const handleNavigateToBacklog = () => {
+  // Optimistic view switching.
+  //
+  // `location.pathname` only updates once React has committed the incoming
+  // route, and rendering a 180-task view takes long enough that the tab
+  // highlight used to stay on the old tab for the whole stall — the click
+  // looked ignored. Recording the intended target on click lets the switcher
+  // paint the new tab immediately; `isNavPending` drives the loading hint.
+  const [pendingView, setPendingView] = useState<BoardView | null>(null);
+  const [pendingBoardId, setPendingBoardId] = useState<string | null>(null);
+
+  // Drop the optimistic target once the URL agrees with it.
+  useEffect(() => {
+    if (pendingView && pathView === pendingView) setPendingView(null);
+  }, [pathView, pendingView]);
+  useEffect(() => {
+    if (pendingBoardId && boardId === pendingBoardId) setPendingBoardId(null);
+  }, [boardId, pendingBoardId]);
+
+  // Never strand the pending state if a navigation doesn't land.
+  useEffect(() => {
+    if (!pendingView && !pendingBoardId) return;
+    const timer = setTimeout(() => {
+      setPendingView(null);
+      setPendingBoardId(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [pendingView, pendingBoardId]);
+
+  const resolvedView = pendingView ?? pathView;
+  const isNavPending = pendingView !== null || pendingBoardId !== null;
+
+  const goToView = (view: BoardView) => {
+    if (view === resolvedView) return;
+    setPendingView(view);
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/backlog",
+      to: `/dashboard/organization/$organizationId/board/$boardId/${view}`,
       params: { organizationId, boardId },
     });
   };
 
-  const handleNavigateToBoard = () => {
-    navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/board",
-      params: { organizationId, boardId },
-    });
-  };
-
-  const handleNavigateToGantt = () => {
-    navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/gantt",
-      params: { organizationId, boardId },
-    });
-  };
-
-  const handleNavigateToCalendar = () => {
-    navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/calendar",
-      params: { organizationId, boardId },
-    });
-  };
+  const handleNavigateToBacklog = () => goToView("backlog");
+  const handleNavigateToBoard = () => goToView("board");
+  const handleNavigateToGantt = () => goToView("gantt");
+  const handleNavigateToCalendar = () => goToView("calendar");
 
   const handleBoardSwitch = (nextBoardId: string) => {
+    if (nextBoardId === boardId) return;
+    setPendingBoardId(nextBoardId);
     navigate({
       to: `/dashboard/organization/$organizationId/board/$boardId/${resolvedView}`,
       params: {
@@ -208,6 +221,18 @@ export default function BoardLayout({
           </div>
         </div>
       </Layout.Header>
+
+      {/* Navigation feedback: a click on a view/board always produces something
+          visible, even while the incoming view is still rendering. */}
+      {isNavPending ? (
+        <div
+          className="h-0.5 shrink-0 overflow-hidden bg-primary/15"
+          role="status"
+          aria-label="Loading view"
+        >
+          <div className="h-full w-1/3 animate-[nav-progress_1.1s_ease-in-out_infinite] bg-primary/70" />
+        </div>
+      ) : null}
 
       <Layout.Content>{children}</Layout.Content>
 

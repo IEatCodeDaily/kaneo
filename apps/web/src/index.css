@@ -119,6 +119,16 @@ input:-webkit-autofill:active {
       background-position: -200% 0;
     }
   }
+  /* Indeterminate bar for view/board navigation: the incoming view's render
+     time isn't measurable up front, so this reports "working", not progress. */
+  @keyframes nav-progress {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
+  }
 }
 
 :root {

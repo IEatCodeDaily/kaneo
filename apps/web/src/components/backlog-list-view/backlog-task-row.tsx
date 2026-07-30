@@ -181,7 +181,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
                 </span>
                 {showLabels && (
                   <div className="flex items-center gap-1">
-                    <TaskCardLabels taskId={task.id} />
+                    <TaskCardLabels labels={task.labels} />
                   </div>
                 )}
               </div>
