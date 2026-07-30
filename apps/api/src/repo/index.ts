@@ -35,6 +35,7 @@ import {
   listGitHubMilestones,
   markGitHubIssueDuplicate,
   removeGitHubSubIssue,
+  reopenGitHubIssue,
   unmarkGitHubIssueDuplicate,
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
@@ -1217,6 +1218,39 @@ const repo = new Hono<{
           repoId: id,
           number,
           reason: c.req.valid("json").reason,
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/reopen",
+    describeRoute({
+      operationId: "reopenRepoIssue",
+      tags: ["Repos"],
+      description:
+        "Reopen a closed GitHub issue as the authorized Kaneo member",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await reopenGitHubIssue({
+          repoId: id,
+          number,
+          userId: c.get("userId"),
         }),
       );
     },
