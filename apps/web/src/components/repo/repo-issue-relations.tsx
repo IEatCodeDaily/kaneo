@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { CircleDot, Plus, Workflow, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
+import useGetRepos from "@/hooks/queries/repo/use-get-repos";
+import { getRepoIssueRelationLink } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { RepoIssueGithub } from "@/types/repo";
 import RepoStateBadge from "./repo-state-badge";
@@ -14,10 +17,12 @@ type Relation = RepoIssueGithub["subIssues"][number];
 export default function RepoIssueRelations({
   github,
   number,
+  organizationId,
   repoId,
 }: {
   github?: RepoIssueGithub;
   number: number;
+  organizationId: string;
   repoId: string;
 }) {
   const queryClient = useQueryClient();
@@ -30,6 +35,7 @@ export default function RepoIssueRelations({
     state: "all",
     limit: 100,
   });
+  const { data: repos = [] } = useGetRepos({ organizationId });
   const request = async (path: string, init: RequestInit) => {
     const response = await fetch(getApiUrl(path), {
       credentials: "include",
@@ -70,34 +76,52 @@ export default function RepoIssueRelations({
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
   );
-  const row = (item: Relation, label: string, removable = false) => (
-    <div className="flex items-center gap-2" key={`${label}-${item.number}`}>
-      <CircleDot className="size-3.5 shrink-0 text-muted-foreground" />
-      <span className="w-14 shrink-0 text-xs text-muted-foreground">
-        {label}
-      </span>
-      <a
-        className="min-w-0 flex-1 truncate text-sm hover:text-primary"
-        href={item.html_url ?? undefined}
-        rel="noreferrer"
-        target="_blank"
-      >
-        #{item.number} {item.title}
-      </a>
-      <RepoStateBadge state={item.state ?? "open"} />
-      {removable && (
-        <Button
-          aria-label={`Remove sub-issue #${item.number}`}
-          disabled={remove.isPending}
-          onClick={() => item.number && remove.mutate(item.number)}
-          size="icon-xs"
-          variant="ghost"
-        >
-          <X className="size-3" />
-        </Button>
-      )}
-    </div>
-  );
+  const row = (item: Relation, label: string, removable = false) => {
+    const relationLink = getRepoIssueRelationLink(item, repos);
+
+    return (
+      <div className="flex items-center gap-2" key={`${label}-${item.number}`}>
+        <CircleDot className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="w-14 shrink-0 text-xs text-muted-foreground">
+          {label}
+        </span>
+        {relationLink ? (
+          <Link
+            className="min-w-0 flex-1 truncate text-sm hover:text-primary"
+            params={{
+              organizationId,
+              repoId: relationLink.repoId,
+              number: String(relationLink.number),
+            }}
+            to="/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
+          >
+            #{item.number} {item.title}
+          </Link>
+        ) : (
+          <a
+            className="min-w-0 flex-1 truncate text-sm hover:text-primary"
+            href={item.html_url ?? undefined}
+            rel="noreferrer"
+            target="_blank"
+          >
+            #{item.number} {item.title}
+          </a>
+        )}
+        <RepoStateBadge state={item.state === "closed" ? "closed" : "open"} />
+        {removable && (
+          <Button
+            aria-label={`Remove sub-issue #${item.number}`}
+            disabled={remove.isPending}
+            onClick={() => item.number && remove.mutate(item.number)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <X className="size-3" />
+          </Button>
+        )}
+      </div>
+    );
+  };
   const count = (github?.parent ? 1 : 0) + (github?.subIssues.length ?? 0);
   return (
     <section
