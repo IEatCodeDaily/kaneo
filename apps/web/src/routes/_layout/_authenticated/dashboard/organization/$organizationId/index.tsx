@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { LayoutGrid, Plus } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { formatDateMedium } from "@/lib/format";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/",
@@ -48,6 +50,9 @@ function RouteComponent() {
   });
   const { canCreateBoards } = useOrganizationPermission();
   const canCreate = canCreateBoards();
+  const { user } = useAuth();
+  const { hiddenBoardIds, setBoardSidebarVisibility } =
+    useUserPreferencesStore();
 
   const handleCreateBoard = () => {
     if (!canCreate) return;
@@ -273,9 +278,31 @@ function RouteComponent() {
                     </span>
                   </TableCell>
                   <TableCell className="py-3">
-                    <Badge variant={getStatusVariant()}>
-                      {getStatusText()}
-                    </Badge>
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant={getStatusVariant()}>
+                        {getStatusText()}
+                      </Badge>
+                      <Button
+                        aria-label={`${hiddenBoardIds.includes(`${user?.id}:${board.id}`) ? "Show" : "Hide"} ${board.name} in sidebar`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!user?.id) return;
+                          setBoardSidebarVisibility(
+                            user.id,
+                            board.id,
+                            hiddenBoardIds.includes(`${user.id}:${board.id}`),
+                          );
+                        }}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        {hiddenBoardIds.includes(`${user?.id}:${board.id}`) ? (
+                          <Eye className="size-4" />
+                        ) : (
+                          <EyeOff className="size-4" />
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
