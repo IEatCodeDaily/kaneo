@@ -7,6 +7,7 @@ import {
   Github,
   GitMerge,
   GitPullRequest,
+  GitPullRequestCreateArrow,
   Link2,
   Search,
   Trash2,
@@ -28,6 +29,15 @@ import {
   CommandPanel,
   CommandSeparator,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import getRepoIssues from "@/fetchers/repo/get-repo-issues";
 import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
@@ -118,17 +128,48 @@ async function linkResource({
   }
 }
 
+async function createSyncedIssue({
+  repoId,
+  taskId,
+}: {
+  repoId: string;
+  taskId: string;
+}) {
+  const response = await fetch(getApiUrl(`/repo/${repoId}/synced-issues`), {
+    body: JSON.stringify({ taskId }),
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      (await response.text()) || "Could not create the GitHub issue.",
+    );
+  }
+
+  return (await response.json()) as { number: number; htmlUrl: string };
+}
+
 export default function TaskResources({
   taskId,
   organizationId,
 }: TaskResourcesProps) {
   const [commandOpen, setCommandOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createRepoId, setCreateRepoId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [resourceType, setResourceType] = useState<ResourceType>("issues");
   const queryClient = useQueryClient();
   const { data: links = [] } = useGetTaskRepoLinks(taskId);
   const { data: externalLinks = [] } = useExternalLinks(taskId);
   const { data: repos = [] } = useGetRepos({ organizationId });
+
+  // A task can follow at most one GitHub issue (enforced by the API), so the
+  // create action is only offered while none exists.
+  const syncedIssue = (externalLinks as ExternalLinkType[]).find(
+    (link) => link.resourceType === "issue",
+  );
 
   // The command palette searches across every connected repo at once, so it
   // must fetch from all of them. Scoping to `repos[0]` made the picker show
@@ -178,6 +219,31 @@ export default function TaskResources({
       toast.success("GitHub resource linked.");
       setCommandOpen(false);
       setSearchQuery("");
+    },
+  });
+
+  const createIssue = useMutation({
+    mutationFn: createSyncedIssue,
+    onError: (error) =>
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not create the GitHub issue.",
+      ),
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["task-repo-links", taskId],
+        }),
+        // The create button keys off external links, so they must refresh too
+        // or the action would linger after the issue exists.
+        queryClient.invalidateQueries({
+          queryKey: ["external-links", taskId],
+        }),
+      ]);
+      setCreateOpen(false);
+      setCreateRepoId("");
+      toast.success(`Created and synced GitHub issue #${result.number}.`);
     },
   });
 
@@ -438,14 +504,76 @@ export default function TaskResources({
         </div>
       )}
 
-      <button
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-        onClick={() => setCommandOpen(true)}
-        type="button"
-      >
-        <Github className="size-4" />
-        <span>Link issue or pull request</span>
-      </button>
+      <div className="flex flex-wrap items-center gap-1">
+        <button
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          onClick={() => setCommandOpen(true)}
+          type="button"
+        >
+          <Github className="size-4" />
+          <span>Link issue or pull request</span>
+        </button>
+        {/*
+          Creating a synced issue is the inverse of linking an existing one, so
+          it sits beside the link action. Hidden once the task already follows
+          an issue: the API allows only one synced issue per task, so offering
+          it again could only ever produce a 409.
+        */}
+        {!syncedIssue && repos.length > 0 && (
+          <button
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => setCreateOpen(true)}
+            type="button"
+          >
+            <GitPullRequestCreateArrow className="size-4" />
+            <span>Create synced issue in repo</span>
+          </button>
+        )}
+      </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogPopup>
+          <DialogHeader>
+            <DialogTitle>Create synced issue in repo</DialogTitle>
+            <DialogDescription>
+              Opens a new GitHub issue seeded from this task's title and
+              description. Afterwards GitHub is authoritative — its updates
+              overwrite the task's title and description.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel>
+            <label className="space-y-2 text-sm">
+              <span>Repository</span>
+              <select
+                aria-label="Repository for the new issue"
+                className="w-full rounded-md border bg-background px-3 py-2"
+                onChange={(event) => setCreateRepoId(event.target.value)}
+                value={createRepoId}
+              >
+                <option value="">Select a repository…</option>
+                {repos.map((repo) => (
+                  <option key={repo.id} value={repo.id}>
+                    {repo.owner}/{repo.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </DialogPanel>
+          <DialogFooter>
+            <Button onClick={() => setCreateOpen(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              disabled={!createRepoId || createIssue.isPending}
+              onClick={() =>
+                createIssue.mutate({ repoId: createRepoId, taskId })
+              }
+            >
+              {createIssue.isPending ? "Creating…" : "Create issue"}
+            </Button>
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
 
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
         <CommandDialogPopup>

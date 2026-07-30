@@ -232,7 +232,7 @@ export async function updateGitHubItem({
  * them instead of the Kaneo App bot. Falls back to the installation token when
  * the user hasn't connected their GitHub account (or the grant was revoked).
  */
-async function getActingOctokit(
+export async function getActingOctokit(
   repoId: string,
   userId?: string,
 ): Promise<{

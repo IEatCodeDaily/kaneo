@@ -17,6 +17,70 @@ import { resolveInstallationId } from "../controllers/manage-github-repo";
  * boards or columns — repos are a separate domain by design.
  */
 
+/**
+ * Mirror a single GitHub issue into repo_issue.
+ *
+ * Split out of syncGitHubRepo() so callers that just created or touched one
+ * issue don't have to re-paginate every issue and pull request in the repo —
+ * that full mirror is slow enough on real repos to exceed an edge proxy's
+ * request timeout, which would leave a freshly created GitHub issue with no
+ * corresponding local row.
+ */
+export async function syncGitHubIssue(
+  repoId: string,
+  item: Record<string, unknown>,
+) {
+  const values = toRepoIssueValues(repoId, item);
+  await db
+    .insert(repoIssueTable)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [repoIssueTable.repoId, repoIssueTable.number],
+      set: {
+        title: values.title,
+        body: values.body,
+        state: values.state,
+        authorLogin: values.authorLogin,
+        authorAvatarUrl: values.authorAvatarUrl,
+        assigneeLogins: values.assigneeLogins,
+        labels: values.labels,
+        commentCount: values.commentCount,
+        url: values.url,
+        externalUpdatedAt: values.externalUpdatedAt,
+        closedAt: values.closedAt,
+        updatedAt: new Date(),
+      },
+    });
+  return values.number;
+}
+
+function toRepoIssueValues(repoId: string, item: Record<string, unknown>) {
+  return {
+    repoId,
+    number: item.number as number,
+    externalId: item.id != null ? String(item.id) : null,
+    title: (item.title as string) ?? "",
+    body: (item.body as string | null) ?? null,
+    state: (item.state as string) ?? "open",
+    authorLogin:
+      ((item.user as { login?: string } | null)?.login as string) ?? null,
+    authorAvatarUrl:
+      ((item.user as { avatar_url?: string } | null)?.avatar_url as string) ??
+      null,
+    assigneeLogins: Array.isArray(item.assignees)
+      ? (item.assignees as Array<{ login?: string }>)
+          .map((a) => a?.login)
+          .filter((x): x is string => Boolean(x))
+      : [],
+    labels: normalizeLabels(item.labels as GitHubLabel[] | undefined),
+    commentCount: (item.comments as number) ?? 0,
+    url: (item.html_url as string) ?? "",
+    externalCreatedAt: toDate(item.created_at as string),
+    externalUpdatedAt: toDate(item.updated_at as string),
+    closedAt: toDate(item.closed_at as string | null),
+  };
+}
+
 type RepoRow = typeof repoTable.$inferSelect;
 
 type GitHubLabel = string | { name?: string | null; color?: string | null };
@@ -74,31 +138,7 @@ export async function syncGitHubRepo(repoId: string): Promise<{
   for (const item of rawItems as Array<Record<string, unknown>>) {
     if (item.pull_request) continue;
 
-    const number = item.number as number;
-    const values = {
-      repoId: repo.id,
-      number,
-      externalId: item.id != null ? String(item.id) : null,
-      title: (item.title as string) ?? "",
-      body: (item.body as string | null) ?? null,
-      state: (item.state as string) ?? "open",
-      authorLogin:
-        ((item.user as { login?: string } | null)?.login as string) ?? null,
-      authorAvatarUrl:
-        ((item.user as { avatar_url?: string } | null)?.avatar_url as string) ??
-        null,
-      assigneeLogins: Array.isArray(item.assignees)
-        ? (item.assignees as Array<{ login?: string }>)
-            .map((a) => a?.login)
-            .filter((x): x is string => Boolean(x))
-        : [],
-      labels: normalizeLabels(item.labels as GitHubLabel[] | undefined),
-      commentCount: (item.comments as number) ?? 0,
-      url: (item.html_url as string) ?? "",
-      externalCreatedAt: toDate(item.created_at as string),
-      externalUpdatedAt: toDate(item.updated_at as string),
-      closedAt: toDate(item.closed_at as string | null),
-    };
+    const values = toRepoIssueValues(repo.id, item);
 
     await db
       .insert(repoIssueTable)

@@ -10,6 +10,7 @@ import {
 } from "./controllers/add-synced-task";
 import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
+import { createSyncedIssueForTask } from "./controllers/create-synced-issue-for-task";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import { getGitHubRepoContents } from "./controllers/get-github-repo-contents";
 import { getGitHubRepoTree } from "./controllers/get-github-repo-tree";
@@ -816,6 +817,34 @@ const repo = new Hono<{
           taskId,
           itemType: itemType === "issues" ? "issue" : "pullRequest",
           organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/synced-issues",
+    describeRoute({
+      operationId: "createSyncedIssueForTask",
+      tags: ["Repos"],
+      description:
+        "Create a GitHub issue from an existing Kaneo task and make the task follow it",
+      responses: {
+        200: { description: "Synced issue created" },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ taskId: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { taskId } = c.req.valid("json");
+      return c.json(
+        await createSyncedIssueForTask({
+          repoId: id,
+          taskId,
+          organizationId: c.get("organizationId"),
+          userId: c.get("userId"),
         }),
       );
     },
