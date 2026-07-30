@@ -43,6 +43,7 @@ import { KaneoIssueLink } from "@/components/task/extensions/kaneo-issue-link";
 import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
 import type { MentionMember } from "@/components/task/extensions/mention-list";
 import { MentionSuggestion } from "@/components/task/extensions/mention-suggestion";
+import { ReferenceSuggestion } from "@/components/task/extensions/reference-suggestion";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
   ShikiCodeBlock,
@@ -69,6 +70,7 @@ import {
   isYouTubeUrl,
   normalizeUrl,
 } from "@/lib/editor-url-utils";
+import { searchReferences } from "@/lib/search-references";
 import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
 import { toast } from "@/lib/toast";
 import { uploadTaskImage } from "@/lib/upload-task-image";
@@ -204,6 +206,10 @@ export default function CommentEditor({
     [organizationMembers],
   );
   const editorShellRef = useRef<HTMLDivElement | null>(null);
+  // Read through a ref so the extension always sees the current organization
+  // without the editor having to be rebuilt when it resolves.
+  const organizationIdRef = useRef("");
+  organizationIdRef.current = activeOrganization?.id ?? "";
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const isSyncingRef = useRef(false);
@@ -644,6 +650,13 @@ export default function CommentEditor({
         KaneoMention,
         MentionSuggestion.configure({
           getMembers: () => mentionMembersRef.current,
+        }),
+        ReferenceSuggestion.configure({
+          search: (query) =>
+            searchReferences({
+              query,
+              organizationId: organizationIdRef.current,
+            }),
         }),
         TaskList,
         Image.configure({
