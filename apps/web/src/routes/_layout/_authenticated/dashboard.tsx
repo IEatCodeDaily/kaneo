@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import AiChatBubble from "@/components/ai/ai-chat-bubble";
 import PageTitle from "@/components/page-title";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 
@@ -18,6 +19,7 @@ function DashboardLayoutComponent() {
         hideAppName={!organization?.name}
       />
       <Outlet />
+      <AiChatBubble />
     </>
   );
 }

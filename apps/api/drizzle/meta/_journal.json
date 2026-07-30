@@ -323,6 +323,13 @@
 			"when": 1785387000000,
 			"tag": "0045_repo_media_assets",
 			"breakpoints": true
+		},
+		{
+			"idx": 46,
+			"version": "7",
+			"when": 1785388000000,
+			"tag": "0046_organization_ai",
+			"breakpoints": true
 		}
 	]
 }

@@ -21,6 +21,7 @@ import * as v from "valibot";
 import accountAuthentication from "./account-authentication";
 import activity from "./activity";
 import admin from "./admin";
+import ai from "./ai";
 import { auth } from "./auth";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
@@ -600,6 +601,7 @@ export function createApp() {
   const oidcTeamSyncApi = api.route("/oidc-team-sync", oidcTeamSync);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
+  const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
   const labelApi = api.route("/label", label);
@@ -912,6 +914,7 @@ const {
   app,
   injectWebSocket,
   activityApi,
+  aiApi,
   columnApi,
   commentApi,
   configApi,
@@ -953,6 +956,7 @@ export type AppType =
   | typeof repoApi
   | typeof columnApi
   | typeof activityApi
+  | typeof aiApi
   | typeof commentApi
   | typeof timeEntryApi
   | typeof labelApi

@@ -174,6 +174,13 @@ export const organizationTable = pgTable("organization", {
   metadata: text("metadata"),
   description: text("description"),
   reposEnabled: boolean("repos_enabled").default(false).notNull(),
+  aiEnabled: boolean("ai_enabled").default(false).notNull(),
+  aiDefaultTokenLimit: integer("ai_default_token_limit")
+    .default(1024)
+    .notNull(),
+  aiDefaultCharacterLimit: integer("ai_default_character_limit")
+    .default(4000)
+    .notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
@@ -230,6 +237,8 @@ export const organizationMemberTable = pgTable(
         onDelete: "cascade",
       }),
     role: text("role").default("member").notNull(),
+    aiTokenLimit: integer("ai_token_limit"),
+    aiCharacterLimit: integer("ai_character_limit"),
     joinedAt: timestamp("joined_at", { mode: "date" }).notNull(),
   },
   (table) => [
