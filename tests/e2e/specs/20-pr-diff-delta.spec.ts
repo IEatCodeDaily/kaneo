@@ -50,6 +50,22 @@ test("pull request list and detail show the diff delta", async ({
   await expect(rowDelta).toBeVisible();
   await expect(rowDelta).toHaveText("+2520−2");
 
+  // Placement, not just presence: right-aligned on the metadata row, and
+  // vertically below the labels rather than beside the title.
+  const row = page.locator('[data-slot="repo-list-row"]').first();
+  const labels = row.locator('[data-slot="repo-label-list"]').first();
+  const rowBox = await row.boundingBox();
+  const deltaBox = await rowDelta.boundingBox();
+  const labelsBox = await labels.boundingBox();
+  if (!rowBox || !deltaBox || !labelsBox)
+    throw new Error("Missing pull request row bounding boxes");
+  // Right-aligned: hugs the row's trailing edge.
+  expect(rowBox.x + rowBox.width - (deltaBox.x + deltaBox.width)).toBeLessThan(
+    24,
+  );
+  // Below the labels: the delta's top clears the labels' bottom.
+  expect(deltaBox.y).toBeGreaterThanOrEqual(labelsBox.y + labelsBox.height - 2);
+
   await gotoAndSettle(
     page,
     `/dashboard/organization/${fixtures.organizationId}/repo/${fixtures.repoId}/pulls/${fixtures.pullNumber}`,
