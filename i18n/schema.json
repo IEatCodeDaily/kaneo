@@ -429,6 +429,9 @@
 								"createMore": {
 									"type": "string"
 								},
+								"discardDraft": {
+									"type": "string"
+								},
 								"createButton": {
 									"type": "string"
 								},
@@ -508,6 +511,7 @@
 								"labelCreated",
 								"labelCreateError",
 								"createMore",
+								"discardDraft",
 								"createButton",
 								"untitledTask",
 								"labelColors"
@@ -1484,6 +1488,48 @@
 						"organizationCardHint": {
 							"type": "string"
 						},
+						"organizationEnabledLabel": {
+							"type": "string"
+						},
+						"eventPreferencesTitle": {
+							"type": "string"
+						},
+						"eventPreferencesDescription": {
+							"type": "string"
+						},
+						"eventTaskAssignments": {
+							"type": "string"
+						},
+						"eventComments": {
+							"type": "string"
+						},
+						"eventCommentsHint": {
+							"type": "string"
+						},
+						"eventStatusChanges": {
+							"type": "string"
+						},
+						"eventDueDateReminders": {
+							"type": "string"
+						},
+						"reminderLeadTimeLabel": {
+							"type": "string"
+						},
+						"reminderLeadTimeHint": {
+							"type": "string"
+						},
+						"reminderLeadTimeUnitHours": {
+							"type": "string"
+						},
+						"reminderLeadTimeUnitDays": {
+							"type": "string"
+						},
+						"reminderLeadTimeInvalid": {
+							"type": "string"
+						},
+						"saveEventPreferences": {
+							"type": "string"
+						},
 						"organizationCardLabelEmail": {
 							"type": "string"
 						},
@@ -1658,6 +1704,20 @@
 						"organizationRulesTitle",
 						"organizationRulesDescription",
 						"organizationCardHint",
+						"organizationEnabledLabel",
+						"eventPreferencesTitle",
+						"eventPreferencesDescription",
+						"eventTaskAssignments",
+						"eventComments",
+						"eventCommentsHint",
+						"eventStatusChanges",
+						"eventDueDateReminders",
+						"reminderLeadTimeLabel",
+						"reminderLeadTimeHint",
+						"reminderLeadTimeUnitHours",
+						"reminderLeadTimeUnitDays",
+						"reminderLeadTimeInvalid",
+						"saveEventPreferences",
 						"organizationCardLabelEmail",
 						"organizationCardLabelNtfy",
 						"organizationCardLabelGotify",
@@ -1844,7 +1904,6 @@
 						"selectFirstDayOfWeek",
 						"weekStartsOnSunday",
 						"weekStartsOnMonday",
-						"weekStartsOnSaturday",
 						"defaultView",
 						"defaultViewDescription",
 						"selectViewMode",
@@ -1864,7 +1923,8 @@
 						"labels",
 						"labelsDescription",
 						"priority",
-						"priorityDescription"
+						"priorityDescription",
+						"weekStartsOnSaturday"
 					]
 				},
 				"developerPage": {
@@ -4323,6 +4383,24 @@
 								},
 								"taskCommentCreated": {
 									"type": "string"
+								},
+								"taskDeleted": {
+									"type": "string"
+								},
+								"taskMoved": {
+									"type": "string"
+								},
+								"taskDueDateChanged": {
+									"type": "string"
+								},
+								"taskAssigneeChanged": {
+									"type": "string"
+								},
+								"taskUnassigned": {
+									"type": "string"
+								},
+								"dueDateReminder": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -4331,8 +4409,17 @@
 								"taskPriorityChanged",
 								"taskTitleChanged",
 								"taskDescriptionChanged",
-								"taskCommentCreated"
+								"taskCommentCreated",
+								"taskDeleted",
+								"taskMoved",
+								"taskDueDateChanged",
+								"taskAssigneeChanged",
+								"taskUnassigned",
+								"dueDateReminder"
 							]
+						},
+						"reminderLeadTimeLabel": {
+							"type": "string"
 						},
 						"connect": {
 							"type": "string"
@@ -4361,6 +4448,7 @@
 						"eventsTitle",
 						"eventsHint",
 						"events",
+						"reminderLeadTimeLabel",
 						"connect",
 						"saveChanges",
 						"disconnect"
@@ -4957,6 +5045,9 @@
 						},
 						"backToBoard": {
 							"type": "string"
+						},
+						"repos": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -4965,7 +5056,8 @@
 						"members",
 						"invitations",
 						"more",
-						"backToBoard"
+						"backToBoard",
+						"repos"
 					]
 				},
 				"boardList": {
@@ -5290,6 +5382,18 @@
 						"categories",
 						"items"
 					]
+				},
+				"repoList": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"allRepos": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"allRepos"
+					]
 				}
 			},
 			"required": [
@@ -5303,7 +5407,8 @@
 				"organizationSwitcher",
 				"page",
 				"boardSettings",
-				"keyboardShortcuts"
+				"keyboardShortcuts",
+				"repoList"
 			]
 		},
 		"notifications": {
@@ -5344,6 +5449,38 @@
 					},
 					"required": [
 						"open"
+					]
+				},
+				"reminderLeadTime": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"minutes_one": {
+							"type": "string"
+						},
+						"minutes_other": {
+							"type": "string"
+						},
+						"hours_one": {
+							"type": "string"
+						},
+						"hours_other": {
+							"type": "string"
+						},
+						"days_one": {
+							"type": "string"
+						},
+						"days_other": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"minutes_one",
+						"minutes_other",
+						"hours_one",
+						"hours_other",
+						"days_one",
+						"days_other"
 					]
 				},
 				"events": {
@@ -5430,6 +5567,54 @@
 								"content"
 							]
 						},
+						"task_comment": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"content"
+							]
+						},
+						"due_date_reminder": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"content"
+							]
+						},
+						"task_overdue": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"content"
+							]
+						},
 						"time_entry_created": {
 							"type": "object",
 							"additionalProperties": false,
@@ -5457,6 +5642,9 @@
 						"task_status_changed",
 						"task_assignee_changed",
 						"task_mention",
+						"task_comment",
+						"due_date_reminder",
+						"task_overdue",
 						"time_entry_created"
 					]
 				}
@@ -5471,6 +5659,7 @@
 				"clearDialogTitle",
 				"clearDialogDescription",
 				"shortcuts",
+				"reminderLeadTime",
 				"events"
 			]
 		},
@@ -5537,6 +5726,12 @@
 							"type": "string"
 						},
 						"failedToUpdate": {
+							"type": "string"
+						},
+						"editHistory_one": {
+							"type": "string"
+						},
+						"editHistory_other": {
 							"type": "string"
 						},
 						"edit": {
@@ -5849,6 +6044,8 @@
 						"mustBeLoggedInToEdit",
 						"updated",
 						"failedToUpdate",
+						"editHistory_one",
+						"editHistory_other",
 						"edit",
 						"editPlaceholder",
 						"save",
@@ -6478,6 +6675,9 @@
 								"blocked_by",
 								"related"
 							]
+						},
+						"otherBoard": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -6492,7 +6692,8 @@
 						"related",
 						"blocks",
 						"selectTask",
-						"types"
+						"types",
+						"otherBoard"
 					]
 				},
 				"subtasks": {
@@ -6528,6 +6729,15 @@
 						},
 						"deleteAction": {
 							"type": "string"
+						},
+						"linkExisting": {
+							"type": "string"
+						},
+						"linkExistingHint": {
+							"type": "string"
+						},
+						"searchPlaceholder": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -6540,7 +6750,10 @@
 						"deleteError",
 						"deleteDialogTitle",
 						"deleteDialogDescription",
-						"deleteAction"
+						"deleteAction",
+						"linkExisting",
+						"linkExistingHint",
+						"searchPlaceholder"
 					]
 				},
 				"properties": {
@@ -7329,6 +7542,9 @@
 						"markAsPlanned": {
 							"type": "string"
 						},
+						"moveToBacklog": {
+							"type": "string"
+						},
 						"delete": {
 							"type": "string"
 						}
@@ -7336,6 +7552,7 @@
 					"required": [
 						"archive",
 						"markAsPlanned",
+						"moveToBacklog",
 						"delete"
 					]
 				},
@@ -7830,12 +8047,195 @@
 						"success",
 						"error"
 					]
+				},
+				"repos": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pageTitle": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"neverSynced": {
+							"type": "string"
+						},
+						"backToRepos": {
+							"type": "string"
+						},
+						"table": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"name": {
+									"type": "string"
+								},
+								"provider": {
+									"type": "string"
+								},
+								"openIssues": {
+									"type": "string"
+								},
+								"openPullRequests": {
+									"type": "string"
+								},
+								"lastSynced": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"name",
+								"provider",
+								"openIssues",
+								"openPullRequests",
+								"lastSynced"
+							]
+						},
+						"state": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"open": {
+									"type": "string"
+								},
+								"closed": {
+									"type": "string"
+								},
+								"merged": {
+									"type": "string"
+								},
+								"draft": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"open",
+								"closed",
+								"merged",
+								"draft"
+							]
+						},
+						"stateFilter": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"open": {
+									"type": "string"
+								},
+								"closed": {
+									"type": "string"
+								},
+								"merged": {
+									"type": "string"
+								},
+								"all": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"open",
+								"closed",
+								"merged",
+								"all"
+							]
+						},
+						"issues": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"pageTitle": {
+									"type": "string"
+								},
+								"tab": {
+									"type": "string"
+								},
+								"emptyTitle": {
+									"type": "string"
+								},
+								"emptyDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"pageTitle",
+								"tab",
+								"emptyTitle",
+								"emptyDescription"
+							]
+						},
+						"pullRequests": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"pageTitle": {
+									"type": "string"
+								},
+								"tab": {
+									"type": "string"
+								},
+								"emptyTitle": {
+									"type": "string"
+								},
+								"emptyDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"pageTitle",
+								"tab",
+								"emptyTitle",
+								"emptyDescription"
+							]
+						},
+						"add": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"button": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"submit": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"button",
+								"title",
+								"description",
+								"submit"
+							]
+						}
+					},
+					"required": [
+						"pageTitle",
+						"emptyTitle",
+						"emptyDescription",
+						"neverSynced",
+						"backToRepos",
+						"table",
+						"state",
+						"stateFilter",
+						"issues",
+						"pullRequests",
+						"add"
+					]
 				}
 			},
 			"required": [
 				"boards",
 				"search",
-				"create"
+				"create",
+				"repos"
 			]
 		},
 		"team": {
@@ -7875,11 +8275,31 @@
 						},
 						"inviteMember": {
 							"type": "string"
+						},
+						"you": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"pageTitle",
-						"inviteMember"
+						"inviteMember",
+						"you"
+					]
+				},
+				"invitations": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pendingBadge": {
+							"type": "string"
+						},
+						"expires": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"pendingBadge",
+						"expires"
 					]
 				},
 				"inviteModal": {
@@ -8019,6 +8439,7 @@
 			"required": [
 				"roles",
 				"members",
+				"invitations",
 				"inviteModal",
 				"membersTable"
 			]

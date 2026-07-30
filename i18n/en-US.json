@@ -1843,6 +1843,7 @@
 		"actions": {
 			"archive": "Archive",
 			"markAsPlanned": "Mark as planned",
+			"moveToBacklog": "Move to Backlog",
 			"delete": "Delete..."
 		},
 		"bulk": {
