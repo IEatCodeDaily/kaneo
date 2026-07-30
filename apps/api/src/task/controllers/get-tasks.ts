@@ -9,6 +9,7 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
@@ -16,10 +17,14 @@ import {
   columnTable,
   externalLinkTable,
   labelTable,
+  taskRelationTable,
   taskTable,
   teamTable,
   userTable,
 } from "../../database/schema";
+
+/** Self-join alias: the parent side of a subtask relation. */
+const parentTask = alias(taskTable, "parent_task");
 
 type GetTasksOptions = {
   assigneeId?: string;
@@ -225,6 +230,51 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     .where(eq(columnTable.boardId, boardId))
     .orderBy(asc(columnTable.position));
 
+  // A "subtask" relation points parent -> child, so a task's parent is the
+  // SOURCE of a relation that targets it. Board and list views need this to
+  // group children under their parent without a request per card.
+  const parentRelations =
+    taskIds.length > 0
+      ? await db
+          .select({
+            childId: taskRelationTable.targetTaskId,
+            parentId: parentTask.id,
+            parentNumber: parentTask.number,
+            parentTitle: parentTask.title,
+            parentStatus: parentTask.status,
+          })
+          .from(taskRelationTable)
+          .innerJoin(
+            parentTask,
+            eq(taskRelationTable.sourceTaskId, parentTask.id),
+          )
+          .where(
+            and(
+              eq(taskRelationTable.relationType, "subtask"),
+              inArray(taskRelationTable.targetTaskId, taskIds),
+            ),
+          )
+      : [];
+
+  const parentByChildId = new Map(
+    parentRelations.map((relation) => [
+      relation.childId,
+      {
+        id: relation.parentId,
+        number: relation.parentNumber,
+        title: relation.parentTitle,
+        status: relation.parentStatus,
+      },
+    ]),
+  );
+
+  const withRelations = (task: (typeof paginatedTasks)[number]) => ({
+    ...task,
+    labels: taskLabelsMap.get(task.id) || [],
+    externalLinks: taskExternalLinksMap.get(task.id) || [],
+    parentTask: parentByChildId.get(task.id) ?? null,
+  });
+
   const columns = boardColumns.map((column) => ({
     id: column.slug,
     slug: column.slug,
@@ -233,28 +283,16 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     isFinal: column.isFinal,
     tasks: paginatedTasks
       .filter((task) => task.status === column.slug)
-      .map((task) => ({
-        ...task,
-        labels: taskLabelsMap.get(task.id) || [],
-        externalLinks: taskExternalLinksMap.get(task.id) || [],
-      })),
+      .map(withRelations),
   }));
 
   const archivedTasks = paginatedTasks
     .filter((task) => task.status === "archived")
-    .map((task) => ({
-      ...task,
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(withRelations);
 
   const plannedTasks = paginatedTasks
     .filter((task) => task.status === "planned")
-    .map((task) => ({
-      ...task,
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(withRelations);
 
   return {
     data: {
