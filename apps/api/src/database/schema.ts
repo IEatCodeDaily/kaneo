@@ -526,7 +526,12 @@ export const taskTable = pgTable(
     description: text("description"),
     descriptionHistory: jsonb("description_history")
       .$type<
-        Array<{ content: string | null; editedAt: string; userId: string }>
+        Array<{
+          content: string | null;
+          editedAt: string;
+          userId: string;
+          sealed?: boolean;
+        }>
       >()
       .default([])
       .notNull(),

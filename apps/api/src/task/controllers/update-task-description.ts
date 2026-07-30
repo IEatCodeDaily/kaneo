@@ -6,6 +6,7 @@ import { publishEvent } from "../../events";
 import createNotification from "../../notification/controllers/create-notification";
 import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
 import { parseMentionIds } from "../../utils/parse-mentions";
+import { appendDescriptionRevision } from "../utils/description-history";
 
 async function updateTaskDescription({
   id,
@@ -33,14 +34,11 @@ async function updateTaskDescription({
       descriptionHistory:
         existingTask.description === description
           ? existingTask.descriptionHistory
-          : [
-              ...existingTask.descriptionHistory,
-              {
-                content: existingTask.description,
-                editedAt: new Date().toISOString(),
-                userId: currentUserId,
-              },
-            ],
+          : appendDescriptionRevision(existingTask.descriptionHistory, {
+              content: existingTask.description,
+              editedAt: new Date().toISOString(),
+              userId: currentUserId,
+            }),
     })
     .where(eq(taskTable.id, id))
     .returning();
