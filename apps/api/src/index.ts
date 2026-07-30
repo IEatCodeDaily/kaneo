@@ -307,10 +307,11 @@ export function createApp() {
           filename: schema.assetTable.filename,
           organizationId: schema.assetTable.organizationId,
           boardId: schema.assetTable.boardId,
+          repoId: schema.assetTable.repoId,
           isPublic: schema.boardTable.isPublic,
         })
         .from(schema.assetTable)
-        .innerJoin(
+        .leftJoin(
           schema.boardTable,
           eq(schema.assetTable.boardId, schema.boardTable.id),
         )
@@ -321,7 +322,15 @@ export function createApp() {
         throw new HTTPException(404, { message: "Asset not found" });
       }
 
-      const { userId, apiKeyId } = await resolveAssetBearerOrCookie(c);
+      let userId = "";
+      let apiKeyId: string | undefined;
+      try {
+        ({ userId, apiKeyId } = await resolveAssetBearerOrCookie(c));
+      } catch (error) {
+        if (!asset.repoId) throw error;
+        // Repo media must be fetchable by GitHub's image proxy. The asset ID is
+        // unguessable and the owning repo/organization still controls deletion.
+      }
 
       if (userId) {
         await validateOrganizationAccess(
@@ -329,16 +338,22 @@ export function createApp() {
           asset.organizationId,
           apiKeyId,
         );
-        const privilege = await getResourcePrivilege({
-          organizationId: asset.organizationId,
-          resourceType: "board",
-          resourceId: asset.boardId,
-          userId,
-        });
-        if (!privilegeAllows(privilege, "view")) {
+        if (asset.boardId) {
+          const privilege = await getResourcePrivilege({
+            organizationId: asset.organizationId,
+            resourceType: "board",
+            resourceId: asset.boardId,
+            userId,
+          });
+          if (!privilegeAllows(privilege, "view")) {
+            throw new HTTPException(404, { message: "Asset not found" });
+          }
+        } else if (!asset.repoId) {
           throw new HTTPException(404, { message: "Asset not found" });
         }
-      } else if (!asset.isPublic) {
+      } else if (!asset.repoId && !asset.isPublic) {
+        // Repository media is deliberately public-by-unguessable-URL so GitHub
+        // can render it in issue/PR Markdown. Task assets retain board privacy.
         throw new HTTPException(401, { message: "Unauthorized" });
       }
 

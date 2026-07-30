@@ -316,6 +316,13 @@
 			"when": 1785291000000,
 			"tag": "0044_task_synced_issue",
 			"breakpoints": true
+		},
+		{
+			"idx": 45,
+			"version": "7",
+			"when": 1785387000000,
+			"tag": "0045_repo_media_assets",
+			"breakpoints": true
 		}
 	]
 }

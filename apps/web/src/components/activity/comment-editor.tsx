@@ -94,6 +94,11 @@ type CommentEditorProps = {
   ensureTaskId?: () => Promise<string | null>;
   showQuickAttachButton?: boolean;
   onAttachActionChange?: (attach: (() => void) | null) => void;
+  /** Override task-scoped storage for editors backed by another resource. */
+  uploadFile?: (
+    file: File,
+    surface: "description" | "comment",
+  ) => Promise<Awaited<ReturnType<typeof uploadTaskImage>>>;
 };
 
 type SlashRange = { from: number; to: number };
@@ -187,6 +192,7 @@ export default function CommentEditor({
   ensureTaskId,
   showQuickAttachButton = true,
   onAttachActionChange,
+  uploadFile,
 }: CommentEditorProps) {
   const { t } = useTranslation();
   const resolvedPlaceholder =
@@ -219,6 +225,7 @@ export default function CommentEditor({
   const taskIdRef = useRef(taskId);
   const ensureTaskIdRef = useRef(ensureTaskId);
   const uploadSurfaceRef = useRef(uploadSurface);
+  const uploadFileRef = useRef(uploadFile);
   const onSubmitShortcutRef = useRef(onSubmitShortcut);
   const onCancelShortcutRef = useRef(onCancelShortcut);
   onSubmitShortcutRef.current = onSubmitShortcut;
@@ -292,7 +299,8 @@ export default function CommentEditor({
     taskIdRef.current = taskId;
     ensureTaskIdRef.current = ensureTaskId;
     uploadSurfaceRef.current = uploadSurface;
-  }, [ensureTaskId, taskId, uploadSurface]);
+    uploadFileRef.current = uploadFile;
+  }, [ensureTaskId, taskId, uploadFile, uploadSurface]);
 
   const insertUploadedAsset = useCallback(
     (
@@ -339,10 +347,12 @@ export default function CommentEditor({
   const handleAssetFileUpload = useCallback(
     async (file: File, targetEditor?: Editor | null, range?: SlashRange) => {
       const activeEditor = targetEditor || lastEditorRef.current;
-      const resolvedTaskId =
-        taskIdRef.current ?? (await ensureTaskIdRef.current?.());
+      const customUpload = uploadFileRef.current;
+      const resolvedTaskId = customUpload
+        ? null
+        : (taskIdRef.current ?? (await ensureTaskIdRef.current?.()));
 
-      if (!activeEditor || !resolvedTaskId) {
+      if (!activeEditor || (!customUpload && !resolvedTaskId)) {
         toast.error(t("activity:comment.editor.uploadsOnlyOnSavedTasks"));
         return;
       }
@@ -352,11 +362,13 @@ export default function CommentEditor({
       );
 
       try {
-        const uploadedAsset = await uploadTaskImage({
-          taskId: resolvedTaskId,
-          surface: uploadSurfaceRef.current,
-          file,
-        });
+        const uploadedAsset = customUpload
+          ? await customUpload(file, uploadSurfaceRef.current)
+          : await uploadTaskImage({
+              taskId: resolvedTaskId as string,
+              surface: uploadSurfaceRef.current,
+              file,
+            });
         insertUploadedAsset(activeEditor, uploadedAsset, range);
 
         toast.dismiss(loadingToast);

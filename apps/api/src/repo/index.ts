@@ -1,7 +1,15 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import db from "../database";
+import { assetTable } from "../database/schema";
 import { listAccessibleResourceIds } from "../resource-access";
+import {
+  assertRepoMediaKeyMatchesContext,
+  createRepoMediaUploadUrl,
+  isImageContentType,
+  validateTaskAssetUploadInput,
+} from "../storage/s3";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
@@ -819,6 +827,97 @@ const repo = new Hono<{
           organizationId: c.get("organizationId"),
         }),
       );
+    },
+  )
+  .put(
+    "/:id/media-upload",
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        filename: v.string(),
+        contentType: v.string(),
+        size: v.number(),
+        surface: v.picklist(["description", "comment"] as const),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const input = c.req.valid("json");
+      try {
+        validateTaskAssetUploadInput(input.contentType, input.size);
+        return c.json(
+          await createRepoMediaUploadUrl({
+            organizationId: c.get("organizationId"),
+            repoId: id,
+            surface: input.surface,
+            filename: input.filename,
+            contentType: input.contentType,
+          }),
+        );
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : "Invalid upload",
+        );
+      }
+    },
+  )
+  .post(
+    "/:id/media-upload/finalize",
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        key: v.string(),
+        filename: v.string(),
+        contentType: v.string(),
+        size: v.number(),
+        surface: v.picklist(["description", "comment"] as const),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const input = c.req.valid("json");
+      validateTaskAssetUploadInput(input.contentType, input.size);
+      if (
+        !assertRepoMediaKeyMatchesContext(input.key.trim(), {
+          organizationId: c.get("organizationId"),
+          repoId: id,
+          surface: input.surface,
+        })
+      ) {
+        return c.json(
+          { message: "Upload key does not match repo context" },
+          400,
+        );
+      }
+      const [asset] = await db
+        .insert(assetTable)
+        .values({
+          organizationId: c.get("organizationId"),
+          repoId: id,
+          boardId: null,
+          objectKey: input.key.trim(),
+          filename: input.filename,
+          mimeType: input.contentType,
+          size: input.size,
+          kind: isImageContentType(input.contentType) ? "image" : "attachment",
+          surface: input.surface,
+          createdBy: c.get("userId"),
+        })
+        .returning({ id: assetTable.id });
+      if (!asset) {
+        return c.json({ message: "Failed to create asset record" }, 500);
+      }
+      return c.json({
+        id: asset.id,
+        repoId: id,
+        url: `/api/asset/${asset.id}`,
+      });
     },
   )
   .post(

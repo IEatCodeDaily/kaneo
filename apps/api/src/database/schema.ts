@@ -646,12 +646,16 @@ export const assetTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    boardId: text("board_id")
-      .notNull()
-      .references(() => boardTable.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      }),
+    // Task media belongs to a board; repository media belongs to a repo. At
+    // least one context is required by the asset_owner_context_check migration.
+    boardId: text("board_id").references(() => boardTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    repoId: text("repo_id").references(() => repoTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     taskId: text("task_id").references(() => taskTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
@@ -675,6 +679,7 @@ export const assetTable = pgTable(
   (table) => [
     index("asset_organizationId_idx").on(table.organizationId),
     index("asset_boardId_idx").on(table.boardId),
+    index("asset_repoId_idx").on(table.repoId),
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_createdBy_idx").on(table.createdBy),

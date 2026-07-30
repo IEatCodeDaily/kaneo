@@ -284,6 +284,7 @@ function RepoItemDescription({
       body={body}
       isSaving={update.isPending}
       onSave={update.mutateAsync}
+      repoId={repoId}
     />
   );
 }
