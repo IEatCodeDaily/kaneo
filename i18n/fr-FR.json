@@ -112,6 +112,7 @@
 				"labelCreated": "Label créé",
 				"labelCreateError": "Échec de la création du label",
 				"createMore": "Créer plus",
+				"discardDraft": "Supprimer le brouillon",
 				"createButton": "Créer la tâche",
 				"untitledTask": "Tâche sans titre",
 				"labelColors": {

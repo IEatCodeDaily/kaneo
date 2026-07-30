@@ -112,6 +112,7 @@
 				"labelCreated": "Label created",
 				"labelCreateError": "Failed to create label",
 				"createMore": "Create more",
+				"discardDraft": "Discard draft",
 				"createButton": "Create Task",
 				"untitledTask": "Untitled task",
 				"labelColors": {

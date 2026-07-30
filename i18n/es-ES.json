@@ -111,6 +111,7 @@
 				"labelCreated": "Etiqueta creada",
 				"labelCreateError": "Error al crear la etiqueta",
 				"createMore": "Crear más",
+				"discardDraft": "Descartar borrador",
 				"createButton": "Crear tarea",
 				"untitledTask": "Tarea sin título",
 				"labelColors": {

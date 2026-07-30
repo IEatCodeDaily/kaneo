@@ -111,6 +111,7 @@
 				"labelCreated": "Label aangemaakt",
 				"labelCreateError": "Aanmaken van label mislukt",
 				"createMore": "Meer aanmaken",
+				"discardDraft": "Concept verwijderen",
 				"createButton": "Taak aanmaken",
 				"untitledTask": "Naamloze taak",
 				"labelColors": {

@@ -112,6 +112,7 @@
 				"labelCreated": "Мітку створено",
 				"labelCreateError": "Не вдалося створити мітку",
 				"createMore": "Створити ще",
+				"discardDraft": "Видалити чернетку",
 				"createButton": "Створити завдання",
 				"untitledTask": "Завдання без назви",
 				"labelColors": {

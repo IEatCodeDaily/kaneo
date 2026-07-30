@@ -112,6 +112,7 @@
 				"labelCreated": "Етикетата е креирана",
 				"labelCreateError": "Неуспешно креирање на етикета",
 				"createMore": "Креирај уште",
+				"discardDraft": "Отфрли нацрт",
 				"createButton": "Креирај задача",
 				"untitledTask": "Задача без наслов",
 				"labelColors": {
