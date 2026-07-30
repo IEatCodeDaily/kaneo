@@ -2,30 +2,27 @@ import { expect, gotoAndSettle, loadFixtures, test } from "../helpers";
 
 const fixtures = loadFixtures();
 
-test("board and list views mark a subtask with a clickable parent id", async ({
+test("board and list group same-column subtasks and collapse them", async ({
   page,
   pageErrors,
 }) => {
-  // Relations are real data; the board payload is stubbed so the assertion does
-  // not depend on a seeded relation surviving other tests.
+  let childTitle = "";
   await page.route(`**/api/task/tasks/${fixtures.boardId}*`, async (route) => {
     const response = await route.fetch();
     const body = await response.json();
     const columns = body.data?.columns ?? [];
-    let stamped = false;
-    for (const column of columns) {
-      for (const task of column.tasks ?? []) {
-        if (!stamped) {
-          task.parentTask = {
-            id: "parent-fixture",
-            number: 12,
-            title: "Parent fixture task",
-            status: "to-do",
-          };
-          stamped = true;
-        }
-      }
-    }
+    const column = columns.find(
+      (candidate: { tasks?: unknown[] }) => (candidate.tasks?.length ?? 0) >= 2,
+    );
+    if (!column) throw new Error("Fixture board needs two tasks in one column");
+    const [parent, child] = column.tasks;
+    childTitle = child.title;
+    child.parentTask = {
+      id: parent.id,
+      number: parent.number,
+      title: parent.title,
+      status: parent.status,
+    };
     await route.fulfill({ response, json: body });
   });
 
@@ -35,14 +32,36 @@ test("board and list views mark a subtask with a clickable parent id", async ({
     `/dashboard/organization/${fixtures.organizationId}/board/${fixtures.boardId}/board`,
   );
 
-  const badge = page.getByTestId("subtask-of-badge").first();
-  await expect(badge).toBeVisible();
+  const boardGroup = page.getByTestId("task-group").first();
+  await expect(boardGroup).toBeVisible();
+  // A parent may itself be a subtask, so a group can legitimately contain
+  // two relationship badges. The nested child's badge is the last one.
+  const badge = boardGroup.getByTestId("subtask-of-badge").last();
   await expect(badge).toContainText("Subtask of");
+  await expect(badge.getByRole("link")).toHaveAttribute("href", /\/task\//);
 
-  // The identifier is the link, not the whole label.
-  const parentLink = badge.getByRole("link");
-  await expect(parentLink).toHaveText(/-12$|#12/);
-  await expect(parentLink).toHaveAttribute("href", /\/task\/parent-fixture$/);
+  const boardToggle = boardGroup.getByRole("button", {
+    name: /collapse 1 subtask/i,
+  });
+  await boardToggle.click();
+  await expect(boardGroup.getByText(childTitle, { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    boardGroup.getByRole("button", { name: /expand 1 subtask/i }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  const listGroup = page.getByTestId("list-task-group").first();
+  await expect(listGroup).toBeVisible();
+  const listToggle = listGroup.getByRole("button", {
+    name: /collapse 1 subtask/i,
+  });
+  await listToggle.click();
+  await expect(listGroup.getByText(childTitle, { exact: true })).toHaveCount(0);
+  await expect(
+    listGroup.getByRole("button", { name: /expand 1 subtask/i }),
+  ).toBeVisible();
 
   expect(pageErrors).toEqual([]);
 });

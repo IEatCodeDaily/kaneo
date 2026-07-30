@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
-import { Archive, ChevronRight, Flag, Plus } from "lucide-react";
+import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
@@ -29,6 +29,10 @@ import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
+import {
+  collapseToggleLabel,
+  groupSameBucketSubtasks,
+} from "@/lib/group-subtasks";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
@@ -68,6 +72,9 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     }
     return sections;
   });
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
+    new Set(),
+  );
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
@@ -357,17 +364,71 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
               strategy={verticalListSortingStrategy}
             >
               <AnimatePresence initial={false} mode="popLayout">
-                {column.tasks.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    <TaskRow task={task} boardSlug={board?.slug ?? ""} />
-                  </motion.div>
-                ))}
+                {groupSameBucketSubtasks(column.tasks).map(
+                  ({ parent, children }) => {
+                    const collapsed = collapsedParents.has(parent.id);
+                    const visibleTasks = collapsed
+                      ? [parent]
+                      : [parent, ...children];
+                    return (
+                      <div
+                        data-testid={
+                          children.length ? "list-task-group" : undefined
+                        }
+                        key={parent.id}
+                      >
+                        {visibleTasks.map((task, index) => (
+                          <motion.div
+                            animate={{ opacity: 1 }}
+                            className={
+                              index > 0
+                                ? "ml-6 border-l-2 border-border"
+                                : undefined
+                            }
+                            exit={{ opacity: 0 }}
+                            initial={{ opacity: 0 }}
+                            key={task.id}
+                            transition={{
+                              duration: 0.15,
+                              ease: [0.23, 1, 0.32, 1],
+                            }}
+                          >
+                            <TaskRow
+                              task={task}
+                              boardSlug={board?.slug ?? ""}
+                            />
+                          </motion.div>
+                        ))}
+                        {children.length > 0 && (
+                          <button
+                            aria-expanded={!collapsed}
+                            className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() =>
+                              setCollapsedParents((current) => {
+                                const next = new Set(current);
+                                if (collapsed) next.delete(parent.id);
+                                else next.add(parent.id);
+                                return next;
+                              })
+                            }
+                            type="button"
+                          >
+                            {collapsed ? (
+                              <ChevronRight className="size-3" />
+                            ) : (
+                              <ChevronDown className="size-3" />
+                            )}
+                            {collapseToggleLabel({
+                              parentId: parent.id,
+                              childCount: children.length,
+                              collapsed,
+                            })}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
               </AnimatePresence>
             </SortableContext>
 
