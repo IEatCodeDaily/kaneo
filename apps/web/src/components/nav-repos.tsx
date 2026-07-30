@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   CircleDot,
@@ -31,6 +32,10 @@ import {
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import {
+  intentPrefetchHandlers,
+  prefetchRepoNavigation,
+} from "@/lib/navigation-prefetch";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export function NavRepos() {
@@ -51,6 +56,7 @@ export function NavRepos() {
     enabled: reposEnabled,
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { organizationId: currentOrganizationId, repoId: currentRepoId } =
     useParams({
       strict: false,
@@ -147,6 +153,9 @@ export function NavRepos() {
                     className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                     isActive={isCurrentRepo(repo.id)}
                     onClick={() => openRepo(repo.id)}
+                    {...intentPrefetchHandlers(() =>
+                      prefetchRepoNavigation(queryClient, repo.id),
+                    )}
                     size="default"
                   >
                     <span className="truncate">{repo.name}</span>
