@@ -82,7 +82,7 @@ function validatePermissions(value: unknown): Record<string, string[]> {
   return result;
 }
 
-const agent = new Hono();
+const agent = new Hono<{ Variables: { userId: string } }>();
 
 agent.get("/", async (c) => {
   const organizationId = c.req.query("organizationId");

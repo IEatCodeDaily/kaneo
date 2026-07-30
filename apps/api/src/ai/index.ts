@@ -336,8 +336,10 @@ const ai = new Hono<{ Variables: Variables }>()
           }
           await updateTaskAssignee({
             id: action.taskId,
-            userId: action.assigneeId ?? "",
+            userId: action.assigneeId ?? null,
+            teamId: null,
             currentUserId: userId,
+            organizationId,
           });
           executed.push(action);
         } else {
