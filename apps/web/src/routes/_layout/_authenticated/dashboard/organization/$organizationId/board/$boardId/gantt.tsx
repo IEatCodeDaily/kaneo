@@ -32,6 +32,8 @@ import {
   buildTimeline,
   dayOffsetRem,
   type GanttZoom,
+  gridLineGradient,
+  weekendTintGradient,
 } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
@@ -203,6 +205,8 @@ const GanttRow = memo(function GanttRow({
       className="grid items-stretch border-b border-border/60"
       style={{
         height: `${ROW_HEIGHT_PX}px`,
+        contentVisibility: "auto",
+        containIntrinsicSize: `auto ${ROW_HEIGHT_PX}px`,
         gridTemplateColumns: showTaskRail
           ? isMobile
             ? `${taskColumnWidthRem}rem max-content`
@@ -212,42 +216,34 @@ const GanttRow = memo(function GanttRow({
     >
       {showTaskRail ? (
         <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
+          {/* Chevron and label are siblings, not nested: a <button> inside a
+              <button> is invalid HTML and breaks hydration. */}
           <div
-            className="flex h-full w-full min-w-0 cursor-pointer items-center gap-1 pr-2 text-left transition-colors hover:bg-muted"
+            className="flex h-full w-full min-w-0 items-center gap-1 pr-2"
             style={{ paddingLeft: `${task.depth * INDENT_PX + 4}px` }}
-            onClick={() => onOpenTask(task)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onOpenTask(task);
-              }
-            }}
           >
             {task.hasChildren ? (
-              <span
-                className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-muted-foreground/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleCollapse(task.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    onToggleCollapse(task.id);
-                  }
-                }}
+              <button
+                type="button"
+                aria-expanded={!collapsed}
+                aria-label={collapsed ? "Expand subtasks" : "Collapse subtasks"}
+                className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted-foreground/10"
+                onClick={() => onToggleCollapse(task.id)}
               >
                 {collapsed ? (
                   <ChevronRight className="size-3" />
                 ) : (
                   <ChevronDown className="size-3" />
                 )}
-              </span>
+              </button>
             ) : (
               <span className="w-5 shrink-0" />
             )}
-            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <button
+              type="button"
+              className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left transition-colors hover:bg-muted"
+              onClick={() => onOpenTask(task)}
+            >
               <span className="shrink-0 rounded bg-secondary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
                 {getStatusLabel(task.status)}
               </span>
@@ -282,7 +278,7 @@ const GanttRow = memo(function GanttRow({
                   @{task.assigneeName}
                 </span>
               ) : null}
-            </div>
+            </button>
           </div>
         </div>
       ) : null}
@@ -309,7 +305,7 @@ function RouteComponent() {
   const { boardId, organizationId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data: board } = useGetTasks(boardId);
+  const { data: board, isPlaceholderData } = useGetTasks(boardId);
   const { data: relationData } = useGetBoardTaskRelations(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
@@ -622,7 +618,11 @@ function RouteComponent() {
         ) : (
           <div
             ref={scrollRef}
-            className="min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]"
+            className={cn(
+              "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+              // Showing the previous board's rows while the new ones load.
+              isPlaceholderData && "pointer-events-none opacity-50",
+            )}
           >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               {/* Sticky header: month row + day row */}
@@ -715,27 +715,29 @@ function RouteComponent() {
 
               {/* Body */}
               <div className="relative">
-                {/* Grid background */}
+                {/* Grid background: one gradient-painted div instead of one
+                    element per day. Day columns are a repeating gradient; the
+                    weekend tint is a second gradient with a 7-day period
+                    anchored to the first weekend in range. */}
                 <div
                   ref={timelineTrackRef}
-                  className="absolute inset-y-0 z-0 grid"
+                  aria-hidden="true"
+                  className="absolute inset-y-0 z-0"
                   style={{
                     left: timelineLeft,
-                    gridTemplateColumns: timeline.gridTemplateColumns,
                     width: `${timeline.timelineMinWidthRem}rem`,
+                    ...(zoom === "day"
+                      ? {
+                          backgroundImage: [
+                            weekendTintGradient(timeline),
+                            gridLineGradient(timeline),
+                          ]
+                            .filter(Boolean)
+                            .join(", "),
+                        }
+                      : {}),
                   }}
-                >
-                  {timeline.days.map((day) => (
-                    <div
-                      key={`bg-line-${day.toISOString()}`}
-                      className={cn(
-                        "h-full min-h-0",
-                        zoom === "day" && "border-r border-border/60",
-                        zoom === "day" && isWeekend(day) && "bg-muted/25",
-                      )}
-                    />
-                  ))}
-                </div>
+                />
 
                 {/* Today line */}
                 {todayInRange ? (

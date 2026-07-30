@@ -131,7 +131,17 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        // Skip layout/paint for off-screen rows; suppressed while dragging so
+        // dnd-kit can measure the row.
+        ...(isDragging
+          ? {}
+          : {
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 34px",
+            }),
+      }}
       className={cn(
         "border-b border-border/50 transition-colors duration-150",
         isDragging && "opacity-50",

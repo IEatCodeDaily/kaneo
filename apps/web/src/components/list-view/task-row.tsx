@@ -176,7 +176,18 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        // Skip layout/paint for rows scrolled out of view. contain-intrinsic-size
+        // reserves the row's height so the scrollbar stays accurate.
+        // Suppressed while dragging so dnd-kit can measure the row.
+        ...(isDragging
+          ? {}
+          : {
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 34px",
+            }),
+      }}
       className={cn(
         "border-b border-border/50 transition-colors duration-150",
         isDragging && "opacity-50",

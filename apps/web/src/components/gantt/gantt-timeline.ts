@@ -141,6 +141,34 @@ export function statusBarClasses(status: string): {
 }
 
 /** Left offset in rem of a date within the timeline, for overlays. */
+/**
+ * Weekend shading as a single CSS gradient instead of one tinted element per
+ * day. Weekends repeat every 7 days, so we find the first Saturday in range and
+ * paint a 2-day band with a 7-day period from there.
+ *
+ * The tint is `--muted` boosted via color-mix: the raw token is only ~4% alpha,
+ * which is invisible as a large flat band (the old per-day divs stacked it on
+ * an already-opaque surface). Returns null when the range has no weekend.
+ */
+export function weekendTintGradient(timeline: GanttTimeline): string | null {
+  const firstSaturday = timeline.days.findIndex((day) => day.getDay() === 6);
+  if (firstSaturday === -1) return null;
+
+  const w = timeline.dayWidthRem;
+  // Start the 7-day period one full week before the first Saturday so the band
+  // still renders when that Saturday sits at index 0.
+  const originRem = (firstSaturday - 7) * w;
+  const tint = "color-mix(in srgb, var(--foreground) 5%, transparent)";
+  return `repeating-linear-gradient(to right, transparent ${originRem}rem, transparent ${originRem + 7 * w}rem, ${tint} ${originRem + 7 * w}rem, ${tint} ${originRem + 9 * w}rem)`;
+}
+
+/** Day-column separator lines, as one gradient rather than a border per day. */
+export function gridLineGradient(timeline: GanttTimeline): string {
+  const w = timeline.dayWidthRem;
+  const line = "color-mix(in srgb, var(--foreground) 12%, transparent)";
+  return `repeating-linear-gradient(to right, transparent 0, transparent calc(${w}rem - 1px), ${line} calc(${w}rem - 1px), ${line} ${w}rem)`;
+}
+/** Left offset in rem of a date within the timeline, for overlays. */
 export function dayOffsetRem(date: Date, timeline: GanttTimeline) {
   return (
     differenceInCalendarDays(date, timeline.rangeStart) * timeline.dayWidthRem

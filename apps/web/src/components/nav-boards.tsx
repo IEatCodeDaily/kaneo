@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   EyeOff,
   Folder,
@@ -39,6 +39,7 @@ import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { boardViewFromPathname } from "@/lib/board-view";
 import { toast } from "@/lib/toast";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
@@ -79,6 +80,11 @@ export function NavBoards() {
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDeleteId, setBoardToDeleteID] = useState<string | null>(null);
 
+  // Switching boards keeps whichever view the user is looking at (board,
+  // gantt, calendar, backlog) instead of always dropping back to the kanban.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const currentBoardView = boardViewFromPathname(pathname);
+
   const isCurrentBoard = (boardId: string) => {
     return (
       currentBoardId === boardId && currentOrganizationId === organization?.id
@@ -87,7 +93,7 @@ export function NavBoards() {
 
   const handleBoardClick = (board: BoardWithTasks) => {
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/board",
+      to: `/dashboard/organization/$organizationId/board/$boardId/${currentBoardView}`,
       params: {
         organizationId: organization?.id || "",
         boardId: board.id,
