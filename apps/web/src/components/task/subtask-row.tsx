@@ -6,8 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
+import { getPriorityIcon } from "@/lib/priority";
 import type Task from "@/types/task";
 import SubtaskAssigneePopover from "./subtask-assignee-popover";
+import SubtaskPriorityPopover from "./subtask-priority-popover";
 import SubtaskStatusPopover from "./subtask-status-popover";
 
 type SubtaskRowProps = {
@@ -89,12 +91,33 @@ export default function SubtaskRow({
               className="flex-1 min-w-0 text-left outline-none"
               onClick={onNavigate}
             >
-              <span
-                className={`text-sm truncate block ${isCompleted ? "line-through text-muted-foreground" : "text-foreground/90"}`}
-              >
-                {task.title}
+              <span className="flex min-w-0 items-center gap-2">
+                {/* Task number, so a subtask can be referenced without opening
+                    it. Fixed width keeps titles aligned down the list. */}
+                {task.number != null && (
+                  <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                    #{task.number}
+                  </span>
+                )}
+                <span
+                  className={`min-w-0 flex-1 text-sm truncate ${isCompleted ? "line-through text-muted-foreground" : "text-foreground/90"}`}
+                >
+                  {task.title}
+                </span>
               </span>
             </button>
+
+            {/* Priority sits beside status so both are editable from the list
+                without opening the subtask. */}
+            <SubtaskPriorityPopover tasks={tasks}>
+              <button
+                type="button"
+                aria-label={t("tasks:priority.label")}
+                className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
+              >
+                {getPriorityIcon(task.priority ?? "no-priority")}
+              </button>
+            </SubtaskPriorityPopover>
 
             <SubtaskAssigneePopover
               tasks={tasks}

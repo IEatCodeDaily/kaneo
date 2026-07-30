@@ -23,6 +23,13 @@ export function useUpdateTaskPriority() {
       queryClient.invalidateQueries({
         queryKey: ["activities", variables.id],
       });
+      // Subtask and relation rows embed the related task, so they hold their
+      // own copy of the priority. Without this they keep showing the old value
+      // until something else refetches them — the status mutation already does
+      // this for the same reason.
+      queryClient.invalidateQueries({
+        queryKey: ["task-relations"],
+      });
     },
   });
 }
