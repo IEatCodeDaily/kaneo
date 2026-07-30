@@ -28,7 +28,20 @@ async function updateTaskDescription({
 
   const [updatedTask] = await db
     .update(taskTable)
-    .set({ description })
+    .set({
+      description,
+      descriptionHistory:
+        existingTask.description === description
+          ? existingTask.descriptionHistory
+          : [
+              ...existingTask.descriptionHistory,
+              {
+                content: existingTask.description,
+                editedAt: new Date().toISOString(),
+                userId: currentUserId,
+              },
+            ],
+    })
     .where(eq(taskTable.id, id))
     .returning();
 

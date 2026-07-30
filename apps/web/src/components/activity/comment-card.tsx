@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Github, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Github, History, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CommentEditor from "@/components/activity/comment-editor";
@@ -34,6 +34,7 @@ type CommentCardProps = {
     image?: string | null;
   } | null;
   createdAt: string;
+  editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
   externalSource?: string | null;
   externalUrl?: string | null;
 };
@@ -44,6 +45,7 @@ export default function CommentCard({
   content,
   user,
   createdAt,
+  editHistory = [],
   externalSource,
   externalUrl,
 }: CommentCardProps) {
@@ -254,6 +256,34 @@ export default function CommentCard({
             onCancelShortcut={isEditing ? handleCancel : undefined}
           />
         </div>
+
+        {editHistory.length > 0 && !isEditing && (
+          <details className="border-border/70 border-t px-3 py-2 text-xs">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-muted-foreground">
+              <History className="size-3" />
+              {t("activity:comment.editHistory", { count: editHistory.length })}
+            </summary>
+            <div className="mt-2 space-y-2">
+              {[...editHistory].reverse().map((revision) => (
+                <div
+                  key={`${revision.editedAt}-${revision.userId}`}
+                  className="rounded-md bg-muted/50 p-2"
+                >
+                  <div className="mb-1 text-muted-foreground">
+                    {formatDateTime(revision.editedAt)}
+                  </div>
+                  <CommentEditor
+                    value={revision.content}
+                    readOnly
+                    taskId={taskId}
+                    uploadSurface="comment"
+                    className="kaneo-comment-viewer"
+                  />
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         {isEditing && (
           <div className="flex items-center justify-end gap-2 border-border/70 border-t bg-card/60 px-3 py-2">

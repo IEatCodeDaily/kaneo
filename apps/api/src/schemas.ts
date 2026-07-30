@@ -27,8 +27,16 @@ export const taskSchema = v.object({
   position: v.nullable(v.number()),
   number: v.nullable(v.number()),
   userId: v.nullable(v.string()),
+  teamId: v.nullable(v.string()),
   title: v.string(),
   description: v.nullable(v.string()),
+  descriptionHistory: v.array(
+    v.object({
+      content: v.nullable(v.string()),
+      editedAt: v.string(),
+      userId: v.string(),
+    }),
+  ),
   status: v.string(),
   priority: v.picklist([
     "no-priority",
@@ -60,6 +68,9 @@ export const activitySchema = v.object({
   createdAt: v.date(),
   userId: v.nullable(v.string()),
   content: v.nullable(v.string()),
+  editHistory: v.array(
+    v.object({ content: v.string(), editedAt: v.string(), userId: v.string() }),
+  ),
   eventData: v.nullable(v.record(v.string(), v.unknown())),
   externalUserName: v.nullable(v.string()),
   externalUserAvatar: v.nullable(v.string()),

@@ -330,6 +330,20 @@
 			"when": 1785388000000,
 			"tag": "0046_organization_ai",
 			"breakpoints": true
+		},
+		{
+			"idx": 47,
+			"version": "7",
+			"when": 1785390000000,
+			"tag": "0047_edit_history",
+			"breakpoints": true
+		},
+		{
+			"idx": 48,
+			"version": "7",
+			"when": 1785391000000,
+			"tag": "0048_task_team_assignee",
+			"breakpoints": true
 		}
 	]
 }

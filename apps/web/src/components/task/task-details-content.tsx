@@ -12,6 +12,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import TaskDescription from "./task-description";
+import TaskDescriptionHistory from "./task-description-history";
 import TaskRelations from "./task-relations";
 import TaskResources from "./task-resources";
 import TaskSubtasks from "./task-subtasks";
@@ -75,6 +76,7 @@ export default function TaskDetailsContent({
         </p>
         <TaskTitle taskId={taskId} />
         <TaskDescription taskId={taskId} />
+        <TaskDescriptionHistory taskId={taskId} />
       </div>
       <div className="mt-4">
         <TaskSubtasks
