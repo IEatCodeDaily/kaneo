@@ -17,6 +17,7 @@ type AgentMetadata = {
   type: "agent";
   organizationId: string;
   createdBy: string;
+  agentUserId: string;
 };
 
 function metadata(row: { metadata: string | null }): AgentMetadata | null {
@@ -132,26 +133,45 @@ agent.post("/", async (c) => {
   const permissions = validatePermissions(body.permissions);
   const secret = `kaneo_agent_${randomBytes(32).toString("base64url")}`;
   const now = new Date();
-  const [created] = await db
-    .insert(schema.apikeyTable)
-    .values({
-      id: createId(),
+  const agentUserId = createId();
+  const created = await db.transaction(async (tx) => {
+    await tx.insert(schema.userTable).values({
+      id: agentUserId,
       name,
-      start: secret.slice(0, 16),
-      referenceId: userId,
-      key: createHash("sha256").update(secret).digest("base64url"),
-      enabled: true,
-      expiresAt,
-      createdAt: now,
-      updatedAt: now,
-      permissions: JSON.stringify(permissions),
-      metadata: JSON.stringify({
-        type: "agent",
-        organizationId,
-        createdBy: userId,
-      } satisfies AgentMetadata),
-    })
-    .returning();
+      email: `agent-${agentUserId}@agents.invalid`,
+      emailVerified: false,
+      role: "agent",
+    });
+    await tx.insert(schema.organizationMemberTable).values({
+      id: createId(),
+      organizationId,
+      userId: agentUserId,
+      role: "member",
+      joinedAt: now,
+    });
+    const [key] = await tx
+      .insert(schema.apikeyTable)
+      .values({
+        id: createId(),
+        name,
+        start: secret.slice(0, 16),
+        referenceId: agentUserId,
+        key: createHash("sha256").update(secret).digest("base64url"),
+        enabled: true,
+        expiresAt,
+        createdAt: now,
+        updatedAt: now,
+        permissions: JSON.stringify(permissions),
+        metadata: JSON.stringify({
+          type: "agent",
+          organizationId,
+          createdBy: userId,
+          agentUserId,
+        } satisfies AgentMetadata),
+      })
+      .returning();
+    return key;
+  });
   return c.json(
     {
       id: created.id,
@@ -176,7 +196,16 @@ agent.delete("/:id", async (c) => {
   if (!row || !agentMetadata)
     throw new HTTPException(404, { message: "Agent not found" });
   await requireAdmin(c.get("userId"), agentMetadata.organizationId);
-  await db.delete(schema.apikeyTable).where(eq(schema.apikeyTable.id, row.id));
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.apikeyTable)
+      .where(eq(schema.apikeyTable.id, row.id));
+    if (agentMetadata.agentUserId) {
+      await tx
+        .delete(schema.userTable)
+        .where(eq(schema.userTable.id, agentMetadata.agentUserId));
+    }
+  });
   return c.json({ success: true });
 });
 

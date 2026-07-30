@@ -515,10 +515,6 @@ export const taskTable = pgTable(
     position: integer("position").default(0),
     number: integer("number").default(1),
     userId: text("assignee_id").references(() => userTable.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    }),
-    teamId: text("team_assignee_id").references(() => teamTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
@@ -552,7 +548,6 @@ export const taskTable = pgTable(
     index("task_boardId_idx").on(table.boardId),
     index("task_dueDate_idx").on(table.dueDate),
     index("task_assigneeId_idx").on(table.userId),
-    index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_board_number_unique").on(table.boardId, table.number),
