@@ -122,6 +122,10 @@ export default function PullRequestLiveDetails({
   const [selectedFilename, setSelectedFilename] = useState<string>();
   const [split, setSplit] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  // The changed-files sidebar is persistent: it stays open across file jumps,
+  // so its open state lives here rather than inside a dismissing popover.
+  const [treeOpen, setTreeOpen] = useState(true);
+  const [fullscreenTreeOpen, setFullscreenTreeOpen] = useState(true);
   const fileNames = (files.data?.files ?? []).map((file) => file.filename);
   const selectedFile =
     files.data?.files.find((file) => file.filename === selectedFilename) ??
@@ -292,31 +296,33 @@ export default function PullRequestLiveDetails({
               </div>
             </div>
             <div className="min-w-0">
-              {/* Floating tree keeps the diff full width instead of losing a
-                  grid column to a flat file list. */}
-              <div className="mb-3">
+              {/* The tree floats beside the diff and stays open while the
+                  reader jumps between files. */}
+              <div className="flex min-w-0 items-start gap-3">
                 <PullRequestFileTree
                   filenames={fileNames}
                   idPrefix="inline"
+                  onOpenChange={setTreeOpen}
                   onSelect={(path) => {
                     setSelectedFilename(path);
                     document
                       .getElementById(`diff-file-${encodeURIComponent(path)}`)
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
+                  open={treeOpen}
                   selectedPath={selectedFile.filename}
                 />
-              </div>
-              <div className="min-w-0 space-y-4">
-                {files.data?.files.map((file) => (
-                  <section
-                    className="scroll-mt-4"
-                    id={`diff-file-${encodeURIComponent(file.filename)}`}
-                    key={file.filename}
-                  >
-                    <DiffView file={file} split={split} />
-                  </section>
-                ))}
+                <div className="min-w-0 flex-1 space-y-4">
+                  {files.data?.files.map((file) => (
+                    <section
+                      className="scroll-mt-4"
+                      id={`diff-file-${encodeURIComponent(file.filename)}`}
+                      key={file.filename}
+                    >
+                      <DiffView file={file} split={split} />
+                    </section>
+                  ))}
+                </div>
               </div>
             </div>
             <Dialog open={fullscreen} onOpenChange={setFullscreen}>
@@ -333,32 +339,36 @@ export default function PullRequestLiveDetails({
                   </DialogDescription>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
-                  <PullRequestFileTree
-                    filenames={fileNames}
-                    idPrefix="fullscreen"
-                    onSelect={(path) => {
-                      setSelectedFilename(path);
-                      document
-                        .getElementById(
-                          `fullscreen-diff-file-${encodeURIComponent(path)}`,
-                        )
-                        ?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        });
-                    }}
-                    selectedPath={selectedFilename}
-                  />
-                  <div className="min-w-0 space-y-4 overflow-auto">
-                    {files.data?.files.map((file) => (
-                      <section
-                        className="scroll-mt-2"
-                        id={`fullscreen-diff-file-${encodeURIComponent(file.filename)}`}
-                        key={file.filename}
-                      >
-                        <DiffView file={file} split={split} />
-                      </section>
-                    ))}
+                  <div className="flex min-h-0 flex-1 items-start gap-3 overflow-hidden">
+                    <PullRequestFileTree
+                      filenames={fileNames}
+                      idPrefix="fullscreen"
+                      onOpenChange={setFullscreenTreeOpen}
+                      onSelect={(path) => {
+                        setSelectedFilename(path);
+                        document
+                          .getElementById(
+                            `fullscreen-diff-file-${encodeURIComponent(path)}`,
+                          )
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                      }}
+                      open={fullscreenTreeOpen}
+                      selectedPath={selectedFilename}
+                    />
+                    <div className="min-w-0 flex-1 space-y-4 overflow-auto">
+                      {files.data?.files.map((file) => (
+                        <section
+                          className="scroll-mt-2"
+                          id={`fullscreen-diff-file-${encodeURIComponent(file.filename)}`}
+                          key={file.filename}
+                        >
+                          <DiffView file={file} split={split} />
+                        </section>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </DialogPopup>
