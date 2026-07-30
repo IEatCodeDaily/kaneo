@@ -4,7 +4,15 @@ import {
   Outlet,
   useLocation,
 } from "@tanstack/react-router";
-import { Bot, FlaskConical, Plug, Settings, Shield, Tag } from "lucide-react";
+import {
+  Bot,
+  FlaskConical,
+  Plug,
+  Settings,
+  Shield,
+  Sparkles,
+  Tag,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,6 +68,11 @@ function RouteComponent() {
       title: "AI agents",
       url: "/dashboard/settings/organization/agents",
       icon: Bot,
+    },
+    {
+      title: "AI",
+      url: "/dashboard/settings/organization/ai",
+      icon: Sparkles,
     },
   ];
   const isActivePath = (path: string) => location.pathname === path;

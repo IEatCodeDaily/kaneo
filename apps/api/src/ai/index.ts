@@ -16,6 +16,7 @@ import createLabel from "../label/controllers/create-label";
 import updateTaskAssignee from "../task/controllers/update-task-assignee";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { hasOrganizationPermission } from "../utils/require-organization-permission";
+import { decryptAiSecret, encryptAiSecret } from "./secrets";
 
 const commandSchema = v.object({
   message: v.string(),
@@ -45,12 +46,55 @@ type Variables = {
   apiKey?: { id: string };
 };
 
+type ProviderConfig = {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+};
+
+/**
+ * Organization configuration wins over the instance-wide env fallback so a
+ * self-hosted deployment can keep working without per-org setup.
+ */
+async function resolveProviderConfig(
+  organizationId: string,
+): Promise<ProviderConfig | null> {
+  const [row] = await db
+    .select({
+      baseUrl: organizationTable.aiProviderBaseUrl,
+      model: organizationTable.aiProviderModel,
+      apiKey: organizationTable.aiProviderApiKey,
+    })
+    .from(organizationTable)
+    .where(eq(organizationTable.id, organizationId))
+    .limit(1);
+
+  const apiKey =
+    (row?.apiKey ? decryptAiSecret(row.apiKey) : null) ||
+    process.env.AI_API_KEY ||
+    process.env.AIPROXY_API_KEY;
+  if (!apiKey) return null;
+
+  return {
+    apiKey,
+    baseUrl: (
+      row?.baseUrl ||
+      process.env.AI_API_URL ||
+      "https://aiproxy.entelechia.cloud/v1"
+    ).replace(/\/$/, ""),
+    model: row?.model || process.env.AI_MODEL || "gpt-4o-mini",
+  };
+}
+
 async function settings(organizationId: string, userId: string) {
   const [row] = await db
     .select({
       enabled: organizationTable.aiEnabled,
       defaultTokenLimit: organizationTable.aiDefaultTokenLimit,
       defaultCharacterLimit: organizationTable.aiDefaultCharacterLimit,
+      providerBaseUrl: organizationTable.aiProviderBaseUrl,
+      providerModel: organizationTable.aiProviderModel,
+      providerApiKey: organizationTable.aiProviderApiKey,
       memberTokenLimit: organizationMemberTable.aiTokenLimit,
       memberCharacterLimit: organizationMemberTable.aiCharacterLimit,
     })
@@ -65,12 +109,17 @@ async function settings(organizationId: string, userId: string) {
     .where(eq(organizationTable.id, organizationId))
     .limit(1);
   if (!row) throw new HTTPException(404, { message: "Organization not found" });
+  const { providerApiKey, ...rest } = row;
   return {
-    ...row,
+    ...rest,
     effectiveTokenLimit: row.memberTokenLimit ?? row.defaultTokenLimit,
     effectiveCharacterLimit:
       row.memberCharacterLimit ?? row.defaultCharacterLimit,
-    configured: Boolean(process.env.AI_API_KEY || process.env.AIPROXY_API_KEY),
+    // Never expose the stored key; only whether one is usable.
+    providerApiKeySet: Boolean(providerApiKey),
+    configured: Boolean(
+      providerApiKey || process.env.AI_API_KEY || process.env.AIPROXY_API_KEY,
+    ),
   };
 }
 
@@ -116,21 +165,16 @@ async function callProvider(
   message: string,
   context: unknown,
   tokenLimit: number,
+  provider: ProviderConfig,
 ) {
-  const apiKey = process.env.AI_API_KEY || process.env.AIPROXY_API_KEY;
-  if (!apiKey)
-    throw new HTTPException(503, { message: "AI is not configured" });
-  const base = (
-    process.env.AI_API_URL || "https://aiproxy.entelechia.cloud/v1"
-  ).replace(/\/$/, "");
-  const response = await fetch(`${base}/chat/completions`, {
+  const response = await fetch(`${provider.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${provider.apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.AI_MODEL || "glm",
+      model: provider.model,
       temperature: 0,
       max_tokens: tokenLimit,
       response_format: { type: "json_object" },
@@ -209,6 +253,10 @@ const ai = new Hono<{ Variables: Variables }>()
         defaultCharacterLimit: v.optional(
           v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100000)),
         ),
+        providerBaseUrl: v.optional(v.nullable(v.string())),
+        providerModel: v.optional(v.nullable(v.string())),
+        // null clears the stored key and falls back to instance env config.
+        providerApiKey: v.optional(v.nullable(v.string())),
       }),
     ),
     organizationAccess.fromParam("organizationId"),
@@ -220,16 +268,28 @@ const ai = new Hono<{ Variables: Variables }>()
       )
         throw new HTTPException(403, { message: "Forbidden" });
       const input = c.req.valid("json");
-      const [updated] = await db
+      const trimmedKey = input.providerApiKey?.trim();
+      await db
         .update(organizationTable)
         .set({
           aiEnabled: input.enabled,
           aiDefaultTokenLimit: input.defaultTokenLimit,
           aiDefaultCharacterLimit: input.defaultCharacterLimit,
+          ...(input.providerBaseUrl !== undefined && {
+            aiProviderBaseUrl: input.providerBaseUrl?.trim() || null,
+          }),
+          ...(input.providerModel !== undefined && {
+            aiProviderModel: input.providerModel?.trim() || null,
+          }),
+          ...(input.providerApiKey !== undefined && {
+            aiProviderApiKey: trimmedKey ? encryptAiSecret(trimmedKey) : null,
+          }),
         })
-        .where(eq(organizationTable.id, c.req.valid("param").organizationId))
-        .returning();
-      return c.json(updated);
+        .where(eq(organizationTable.id, c.req.valid("param").organizationId));
+      // Re-read through settings() so the response never carries the secret.
+      return c.json(
+        await settings(c.req.valid("param").organizationId, c.get("userId")),
+      );
     },
   )
   .patch(
@@ -301,11 +361,15 @@ const ai = new Hono<{ Variables: Variables }>()
         });
       let result: v.InferOutput<typeof commandSchema>;
       try {
+        const provider = await resolveProviderConfig(organizationId);
+        if (!provider)
+          throw new HTTPException(503, { message: "AI is not configured" });
         const context = await buildContext(organizationId, input.taskId);
         result = await callProvider(
           input.message,
           context,
           limits.effectiveTokenLimit,
+          provider,
         );
       } catch (error) {
         console.error("[ai-chat] failed", error);

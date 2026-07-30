@@ -181,6 +181,9 @@ export const organizationTable = pgTable("organization", {
   aiDefaultCharacterLimit: integer("ai_default_character_limit")
     .default(4000)
     .notNull(),
+  aiProviderBaseUrl: text("ai_provider_base_url"),
+  aiProviderModel: text("ai_provider_model"),
+  aiProviderApiKey: text("ai_provider_api_key"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
