@@ -290,13 +290,13 @@ export function GanttTaskBar({
   if (readOnly) {
     return (
       <div
-        className="pointer-events-none absolute inset-0 z-[1] grid items-center"
+        className="pointer-events-none absolute inset-0 z-[1] grid"
         style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
       >
         <div
           style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
           className={cn(
-            "pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-center overflow-hidden rounded-md border border-dashed bg-background/60 px-2 text-left text-sm font-medium leading-none text-muted-foreground sm:h-11 sm:min-h-0",
+            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded border border-dashed bg-background/60 px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
             colors.border,
           )}
         >
@@ -315,7 +315,7 @@ export function GanttTaskBar({
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[1] grid items-center"
+      className="pointer-events-none absolute inset-0 z-[1] grid"
       style={{
         gridTemplateColumns: timeline.gridTemplateColumns,
       }}
@@ -323,7 +323,7 @@ export function GanttTaskBar({
       <div
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
         className={cn(
-          "group pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors sm:h-11 sm:min-h-0",
+          "group pointer-events-auto relative mx-1 flex h-7 min-w-0 items-stretch overflow-hidden rounded border bg-background text-left text-xs font-medium leading-none text-foreground shadow-sm transition-colors",
           colors.border,
         )}
       >
@@ -334,14 +334,14 @@ export function GanttTaskBar({
           className={cn(
             "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-black/5 dark:border-white/10",
             colors.handle,
-            "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
+            "min-w-6 w-1.5",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
         />
         <button
           type="button"
           aria-label={t("tasks:gantt.taskAriaLabel", { title: task.title })}
-          className="relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5"
+          className="relative z-10 min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-1.5 text-left active:cursor-grabbing"
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -365,7 +365,7 @@ export function GanttTaskBar({
           className={cn(
             "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-black/5 dark:border-white/10",
             colors.handle,
-            "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
+            "min-w-6 w-1.5",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
         />

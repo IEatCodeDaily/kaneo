@@ -11,9 +11,9 @@ export type GanttRelation = {
 type Row = { id: string; scheduleStart: Date; scheduleEnd: Date };
 
 /**
- * Dependency arrows drawn as one SVG over the timeline: source bar end elbows
- * across to the target bar start. "related" edges are skipped — they carry no
- * ordering, so an arrow would imply a constraint that does not exist.
+ * Dependency arrows for blocks/related edges only. Subtask is structural
+ * (parent→child nesting), not a scheduling constraint — it's rendered as
+ * indentation, not an arrow.
  */
 export function GanttDependencyArrows({
   relations,
@@ -35,7 +35,7 @@ export function GanttDependencyArrows({
   const edges = relations.filter(
     (relation) =>
       (relation.relationType === "blocks" ||
-        relation.relationType === "subtask") &&
+        relation.relationType === "related") &&
       rowIndex.has(relation.sourceTaskId) &&
       rowIndex.has(relation.targetTaskId),
   );
@@ -66,40 +66,39 @@ export function GanttDependencyArrows({
         </marker>
       </defs>
       {edges.map((edge) => {
-        const from = rows[rowIndex.get(edge.sourceTaskId) as number];
-        const to = rows[rowIndex.get(edge.targetTaskId) as number];
-        const fromRow = rowIndex.get(edge.sourceTaskId) as number;
-        const toRow = rowIndex.get(edge.targetTaskId) as number;
+        const fromIdx = rowIndex.get(edge.sourceTaskId);
+        const toIdx = rowIndex.get(edge.targetTaskId);
+        if (fromIdx == null || toIdx == null) return null;
 
-        // Source bar's right edge (end day is inclusive) to target bar's left edge.
+        const from = rows[fromIdx];
+        const to = rows[toIdx];
+
         const x1 = dayToX(from.scheduleEnd) + pixelsPerDay - 4;
-        const y1 = fromRow * rowHeightPx + rowHeightPx / 2;
+        const y1 = fromIdx * rowHeightPx + rowHeightPx / 2;
         const x2 = dayToX(to.scheduleStart) + 2;
-        const y2 = toRow * rowHeightPx + rowHeightPx / 2;
+        const y2 = toIdx * rowHeightPx + rowHeightPx / 2;
 
-        // Horizontal travel happens in the gutter between the two rows, never at
-        // bar height, so a link can't be mistaken for touching an unrelated bar.
         const stub = 10;
-        const gutterY =
-          (toRow > fromRow ? toRow : fromRow) * rowHeightPx +
-          (toRow > fromRow ? 0 : rowHeightPx);
         const forward = x2 >= x1 + stub * 2;
-
         const path = forward
-          ? // Enough room ahead: one elbow straight into the target.
-            `M ${x1} ${y1} H ${(x1 + x2) / 2} V ${y2} H ${x2}`
-          : // Target starts before the source ends: out, into the gutter, back
-            // across, then down into the target's left edge.
-            `M ${x1} ${y1} H ${x1 + stub} V ${gutterY} H ${x2 - stub} V ${y2} H ${x2}`;
+          ? `M ${x1} ${y1} H ${(x1 + x2) / 2} V ${y2} H ${x2}`
+          : `M ${x1} ${y1} H ${x1 + stub} V ${Math.min(y1, y2) - stub} H ${x2 - stub} V ${y2} H ${x2}`;
 
         return (
           <path
             key={edge.id}
             d={path}
             fill="none"
-            className="stroke-muted-foreground/60"
+            className={
+              edge.relationType === "blocks"
+                ? "stroke-muted-foreground/60"
+                : "stroke-muted-foreground/40"
+            }
             strokeWidth={1.5}
             strokeLinejoin="round"
+            strokeDasharray={
+              edge.relationType === "related" ? "4 3" : undefined
+            }
             markerEnd="url(#gantt-arrowhead)"
           />
         );
