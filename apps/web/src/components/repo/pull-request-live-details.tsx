@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import PullRequestFileTree from "@/components/repo/pull-request-file-tree";
+import PullRequestReviews from "@/components/repo/pull-request-reviews";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -161,6 +162,9 @@ export default function PullRequestLiveDetails({
           <TabsTab aria-label="Checks" value="checks">
             Checks
           </TabsTab>
+          <TabsTab aria-label="Reviews" value="reviews">
+            Reviews
+          </TabsTab>
           <TabsTab aria-label="Diffs" value="diffs">
             Diffs{files.data ? ` (${files.data.totals.changedFiles})` : ""}
           </TabsTab>
@@ -168,6 +172,9 @@ export default function PullRequestLiveDetails({
       </div>
 
       <TabsPanel value="discussion">{discussion}</TabsPanel>
+      <TabsPanel className="px-4 py-5 sm:px-6" value="reviews">
+        <PullRequestReviews number={number} repoId={repoId} />
+      </TabsPanel>
       <TabsPanel className="px-4 py-5 sm:px-6" value="commits">
         {commits.isLoading ? (
           <Loading />

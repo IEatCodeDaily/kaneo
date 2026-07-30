@@ -39,6 +39,12 @@ import {
   unmarkGitHubIssueDuplicate,
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
+import {
+  createGitHubPullRequestReview,
+  listGitHubPullRequestReviews,
+  REVIEW_EVENTS,
+  replyToGitHubReviewComment,
+} from "./controllers/github-pull-request-reviews";
 import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
 import {
   listGitHubRepoPackages,
@@ -767,6 +773,100 @@ const repo = new Hono<{
     async (c) => {
       const { id, number } = c.req.valid("param");
       return c.json(await getRepoPullRequestChecks({ repoId: id, number }));
+    },
+  )
+  .get(
+    "/:id/pull-requests/:number/reviews",
+    describeRoute({
+      operationId: "getRepoPullRequestReviews",
+      tags: ["Repos"],
+      description:
+        "List submitted GitHub reviews and inline review comments for a pull request",
+    }),
+    validator("param", pullRequestParamSchema),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await listGitHubPullRequestReviews({
+          repoId: id,
+          number,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/reviews",
+    describeRoute({
+      operationId: "createRepoPullRequestReview",
+      tags: ["Repos"],
+      description:
+        "Submit an approval, change request, or review comment as the acting member",
+    }),
+    validator("param", pullRequestParamSchema),
+    validator(
+      "json",
+      v.object({
+        event: v.picklist(REVIEW_EVENTS),
+        body: v.optional(v.string()),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      const { event, body } = c.req.valid("json");
+      return c.json(
+        await createGitHubPullRequestReview({
+          repoId: id,
+          number,
+          event,
+          body,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/review-comments/:commentId/replies",
+    describeRoute({
+      operationId: "replyToRepoPullRequestReviewComment",
+      tags: ["Repos"],
+      description: "Reply to an inline GitHub review comment thread",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        commentId: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, commentId } = c.req.valid("param");
+      return c.json(
+        await replyToGitHubReviewComment({
+          repoId: id,
+          number,
+          commentId,
+          body: c.req.valid("json").body,
+          userId: c.get("userId"),
+        }),
+      );
     },
   )
   .post(
