@@ -70,7 +70,7 @@ function RouteComponent() {
                       title={pullRequest.title}
                     />
                   </div>
-                  {/* Same order as the issue header: state, then #number. */}
+                  {/* Same order as the issue header: state, #number, author. */}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <RepoStateBadge
                       state={
@@ -80,6 +80,10 @@ function RouteComponent() {
                       }
                     />
                     <span>#{pullRequest.number}</span>
+                    <RepoItemAuthor
+                      avatarUrl={pullRequest.authorAvatarUrl}
+                      login={pullRequest.authorLogin}
+                    />
                     {pullRequest.externalCreatedAt && (
                       <span>
                         opened {formatDateMedium(pullRequest.externalCreatedAt)}
@@ -108,13 +112,11 @@ function RouteComponent() {
                   />
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <RepoItemAuthor
-                  avatarUrl={pullRequest.authorAvatarUrl}
-                  login={pullRequest.authorLogin}
-                />
-                <RepoLabelList labels={pullRequest.labels} />
-              </div>
+              {pullRequest.labels.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <RepoLabelList labels={pullRequest.labels} />
+                </div>
+              )}
               {pullRequest.headBranch && pullRequest.baseBranch && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-md border bg-muted/40 px-2.5 py-1.5 font-mono text-xs">
                   <GitBranch className="size-3.5 text-muted-foreground" />
