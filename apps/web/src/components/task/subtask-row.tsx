@@ -28,6 +28,8 @@ type SubtaskRowProps = {
   onToggleComplete: () => void;
   onNavigate: () => void;
   onDeleteClick: () => void;
+  /** Removes the parent/subtask link without deleting the subtask itself. */
+  onUnlink: () => void;
 };
 
 export default function SubtaskRow({
@@ -44,6 +46,7 @@ export default function SubtaskRow({
   onToggleComplete,
   onNavigate,
   onDeleteClick,
+  onUnlink,
 }: SubtaskRowProps) {
   const reduceMotion = useReducedMotion();
   const { t } = useTranslation();
@@ -159,6 +162,8 @@ export default function SubtaskRow({
             worskpaceId: organizationId,
           }}
           onDeleteClick={onDeleteClick}
+          onUnlink={onUnlink}
+          unlinkLabel={t("tasks:actions.unlinkSubtask")}
         />
       </ContextMenu>
     </motion.div>

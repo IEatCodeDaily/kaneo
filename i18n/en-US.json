@@ -1642,6 +1642,8 @@
 			"createError": "Failed to create subtask",
 			"deleteSuccess": "Task deleted successfully",
 			"deleteError": "Failed to delete task",
+			"unlinkSuccess": "Subtask unlinked",
+			"unlinkError": "Failed to unlink subtask",
 			"deleteDialogTitle": "Delete Task?",
 			"deleteDialogDescription": "This will permanently remove the task and all its data. You can't undo this action.",
 			"deleteAction": "Delete Task",
@@ -1873,6 +1875,8 @@
 			"archive": "Archive",
 			"markAsPlanned": "Mark as planned",
 			"moveToBacklog": "Move to Backlog",
+			"unlink": "Unlink",
+			"unlinkSubtask": "Unlink subtask",
 			"delete": "Delete..."
 		},
 		"bulk": {

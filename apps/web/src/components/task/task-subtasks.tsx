@@ -46,6 +46,7 @@ import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -87,6 +88,7 @@ export default function TaskSubtasks({
   );
   const createTask = useCreateTask();
   const createRelation = useCreateTaskRelation();
+  const { mutateAsync: deleteTaskRelation } = useDeleteTaskRelation(taskId);
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { data: columns = [] } = useGetColumns(boardId);
@@ -415,6 +417,25 @@ export default function TaskSubtasks({
     }
   };
 
+  /**
+   * Removes the parent/subtask link only. The subtask itself is untouched and
+   * stays on its board — this is deliberately not a delete.
+   */
+  const handleUnlink = async (relationId: string) => {
+    try {
+      await deleteTaskRelation(relationId);
+      queryClient.invalidateQueries({ queryKey: ["task-relations", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
+      toast.success(t("tasks:subtasks.unlinkSuccess"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("tasks:subtasks.unlinkError"),
+      );
+    }
+  };
+
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -509,6 +530,7 @@ export default function TaskSubtasks({
                       })
                     }
                     onDeleteClick={() => setDeleteTaskId(subtask.task.id)}
+                    onUnlink={() => handleUnlink(subtask.relation.id)}
                   />
                 );
               })}
