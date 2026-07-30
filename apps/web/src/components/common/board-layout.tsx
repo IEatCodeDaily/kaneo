@@ -1,5 +1,10 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { CalendarDays, SquareKanban, SquircleDashed } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  SquareKanban,
+  SquircleDashed,
+} from "lucide-react";
 import { type ReactNode, useState } from "react";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
@@ -26,7 +31,7 @@ type BoardLayoutProps = {
   headerActions?: ReactNode;
   children: ReactNode;
   showViewSwitcher?: boolean;
-  activeView?: "backlog" | "board" | "gantt";
+  activeView?: "backlog" | "board" | "gantt" | "calendar";
 };
 
 export default function BoardLayout({
@@ -50,7 +55,9 @@ export default function BoardLayout({
       ? "backlog"
       : location.pathname.includes("/gantt")
         ? "gantt"
-        : "board");
+        : location.pathname.includes("/calendar")
+          ? "calendar"
+          : "board");
 
   const handleNavigateToBacklog = () => {
     navigate({
@@ -73,6 +80,13 @@ export default function BoardLayout({
     });
   };
 
+  const handleNavigateToCalendar = () => {
+    navigate({
+      to: "/dashboard/organization/$organizationId/board/$boardId/calendar",
+      params: { organizationId, boardId },
+    });
+  };
+
   const handleBoardSwitch = (nextBoardId: string) => {
     navigate({
       to:
@@ -80,7 +94,9 @@ export default function BoardLayout({
           ? "/dashboard/organization/$organizationId/board/$boardId/backlog"
           : resolvedView === "gantt"
             ? "/dashboard/organization/$organizationId/board/$boardId/gantt"
-            : "/dashboard/organization/$organizationId/board/$boardId/board",
+            : resolvedView === "calendar"
+              ? "/dashboard/organization/$organizationId/board/$boardId/calendar"
+              : "/dashboard/organization/$organizationId/board/$boardId/board",
       params: {
         organizationId,
         boardId: nextBoardId,
@@ -134,6 +150,7 @@ export default function BoardLayout({
                 onSelectBacklog={handleNavigateToBacklog}
                 onSelectBoardView={handleNavigateToBoard}
                 onSelectGantt={handleNavigateToGantt}
+                onSelectCalendar={handleNavigateToCalendar}
                 onSelectBoard={handleBoardSwitch}
                 onAddBoard={() => setIsCreateBoardModalOpen(true)}
               />
@@ -176,6 +193,18 @@ export default function BoardLayout({
                 >
                   <CalendarDays className="size-3.5" />
                   Gantt
+                </Button>
+                <Button
+                  variant={resolvedView === "calendar" ? "secondary" : "ghost"}
+                  size="xs"
+                  onClick={handleNavigateToCalendar}
+                  className={cn(
+                    "h-6 gap-1.5 rounded-md px-2 text-xs",
+                    resolvedView !== "calendar" && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarRange className="size-3.5" />
+                  Calendar
                 </Button>
               </div>
             )}

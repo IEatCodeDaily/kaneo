@@ -1785,7 +1785,20 @@
 			"updateDatesError": "Failed to update task dates",
 			"resizeStart": "Resize start date",
 			"resizeDue": "Resize due date",
-			"taskAriaLabel": "{{title}} — open or drag to move"
+			"taskAriaLabel": "{{title}} — open or drag to move",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			}
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Delete Task?",

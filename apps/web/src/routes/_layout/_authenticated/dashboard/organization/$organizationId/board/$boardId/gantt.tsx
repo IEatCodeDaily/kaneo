@@ -1,26 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  addDays,
-  eachDayOfInterval,
-  endOfWeek,
-  format,
-  isSameMonth,
-  isToday,
-  isWeekend,
-  parseISO,
-  startOfWeek,
-  subDays,
-} from "date-fns";
+import { format, isToday, isWeekend, parseISO, startOfDay } from "date-fns";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
+import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
 import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
+import {
+  buildTimeline,
+  dayOffsetRem,
+  type GanttZoom,
+} from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
@@ -29,6 +25,9 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 type GanttSearchParams = {
   taskId?: string;
 };
+
+const ZOOM_LEVELS: GanttZoom[] = ["day", "week", "month"];
+const ROW_HEIGHT_PX = 44;
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt",
@@ -51,15 +50,16 @@ function RouteComponent() {
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);
+  const { data: relationData } = useGetBoardTaskRelations(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
+  const [zoom, setZoom] = useState<GanttZoom>("day");
   const isMobile = useIsMobile();
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
 
-  // Wider day columns on small screens so dragging and reading dates is easier.
-  const dayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
+  const scrollRef = useRef<HTMLDivElement>(null);
   const timelineTrackRef = useRef<HTMLDivElement>(null);
   const [pixelsPerDay, setPixelsPerDay] = useState(44);
 
@@ -80,8 +80,24 @@ function RouteComponent() {
     [board],
   );
 
+  // Cross-board relatives (one parent per task, plus cross-board children) are
+  // shown as read-only rows so an arrow never points at nothing.
+  const foreignRows = useMemo(() => {
+    return (relationData?.foreignTasks ?? []).map((task) => ({
+      ...task,
+      description: null,
+      position: null,
+      createdAt: "",
+      userId: null,
+      assigneeId: null,
+      assigneeName: null,
+      columnId: null,
+      isForeign: true as const,
+    }));
+  }, [relationData]);
+
   const parsedTasks = useMemo(() => {
-    return allTasks
+    return [...allTasks, ...foreignRows]
       .map((task) => {
         const parsedStart =
           parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
@@ -104,7 +120,7 @@ function RouteComponent() {
         (left, right) =>
           left.scheduleStart.getTime() - right.scheduleStart.getTime(),
       );
-  }, [allTasks]);
+  }, [allTasks, foreignRows]);
 
   const scheduledTasks = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -135,22 +151,14 @@ function RouteComponent() {
       parsedTasks[0].scheduleEnd,
     );
 
-    // Week-aligned bounds around task dates, then pad with extra days so bars can
-    // be resized or moved past the current last task without running out of grid.
-    const weekStart = startOfWeek(earliest, { weekStartsOn });
-    const weekEnd = endOfWeek(latest, { weekStartsOn });
-    const rangeStart = subDays(weekStart, 7);
-    const rangeEnd = addDays(weekEnd, 28);
-
-    const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
-
-    return {
-      days,
-      rangeStart,
-      gridTemplateColumns: `repeat(${days.length}, minmax(${dayColumnWidthRem}rem, ${dayColumnWidthRem}rem))`,
-      timelineMinWidthRem: days.length * dayColumnWidthRem,
-    };
-  }, [parsedTasks, dayColumnWidthRem, weekStartsOn]);
+    return buildTimeline({
+      earliest,
+      latest,
+      zoom,
+      isMobile,
+      weekStartsOn,
+    });
+  }, [parsedTasks, zoom, isMobile, weekStartsOn]);
 
   useLayoutEffect(() => {
     const element = timelineTrackRef.current;
@@ -167,6 +175,35 @@ function RouteComponent() {
     observer.observe(element);
     return () => observer.disconnect();
   }, [timeline]);
+
+  // Land on today rather than the padded start of the range, so the first
+  // paint shows current work instead of empty lead-in columns.
+  const hasAutoScrolled = useRef(false);
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || !timeline || hasAutoScrolled.current || pixelsPerDay <= 0)
+      return;
+
+    const todayOffsetPx =
+      (dayOffsetRem(startOfDay(new Date()), timeline) / timeline.dayWidthRem) *
+      pixelsPerDay;
+    const railPx = showTaskRail
+      ? isMobile
+        ? taskColumnWidthRem * 16
+        : 320
+      : 0;
+    const target = todayOffsetPx + railPx - scroller.clientWidth / 3;
+    scroller.scrollLeft = Math.max(0, target);
+    hasAutoScrolled.current = true;
+  }, [timeline, pixelsPerDay, showTaskRail, isMobile, taskColumnWidthRem]);
+
+  const todayLeftRem = timeline
+    ? dayOffsetRem(startOfDay(new Date()), timeline)
+    : 0;
+  const todayInRange =
+    timeline &&
+    todayLeftRem >= 0 &&
+    todayLeftRem < timeline.timelineMinWidthRem;
 
   return (
     <BoardLayout
@@ -187,31 +224,54 @@ function RouteComponent() {
               </h1>
             </div>
 
-            <div className="relative w-full max-w-sm">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={t("tasks:gantt.searchPlaceholder")}
-                className="h-9 min-h-11 touch-manipulation sm:h-8 sm:min-h-0 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs"
-              />
-            </div>
+            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+              <div className="relative w-full max-w-sm">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={t("tasks:gantt.searchPlaceholder")}
+                  className="h-9 min-h-11 touch-manipulation sm:h-8 sm:min-h-0 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs"
+                />
+              </div>
 
-            <Button
-              variant="outline"
-              size="xs"
-              className="min-h-11 touch-manipulation sm:hidden"
-              onClick={() => setIsTaskRailOpen((current) => !current)}
-            >
-              {showTaskRail ? (
-                <ChevronLeft className="size-3.5" />
-              ) : (
-                <ChevronRight className="size-3.5" />
-              )}
-              {showTaskRail
-                ? t("tasks:gantt.hideTasks")
-                : t("tasks:gantt.showTasks")}
-            </Button>
+              <div className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
+                {ZOOM_LEVELS.map((level) => (
+                  <Button
+                    key={level}
+                    variant={zoom === level ? "secondary" : "ghost"}
+                    size="xs"
+                    onClick={() => {
+                      setZoom(level);
+                      // Re-centre on today at the new column width.
+                      hasAutoScrolled.current = false;
+                    }}
+                    className={cn(
+                      "h-6 rounded-md px-2 text-xs",
+                      zoom !== level && "text-muted-foreground",
+                    )}
+                  >
+                    {t(`tasks:gantt.zoom.${level}`)}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="xs"
+                className="min-h-11 shrink-0 touch-manipulation sm:hidden"
+                onClick={() => setIsTaskRailOpen((current) => !current)}
+              >
+                {showTaskRail ? (
+                  <ChevronLeft className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                {showTaskRail
+                  ? t("tasks:gantt.hideTasks")
+                  : t("tasks:gantt.showTasks")}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -238,7 +298,10 @@ function RouteComponent() {
             </div>
           </div>
         ) : (
-          <div className="min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]"
+          >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               <div className="sticky top-0 z-20 flex border-b border-border bg-background/95 backdrop-blur">
                 {showTaskRail ? (
@@ -260,30 +323,31 @@ function RouteComponent() {
                     minWidth: `${timeline.timelineMinWidthRem}rem`,
                   }}
                 >
-                  {timeline.days.map((day, index) => {
-                    const showMonth =
-                      index === 0 ||
-                      !isSameMonth(day, timeline.days[index - 1] ?? day);
-
+                  {timeline.headerCells.map((cell) => {
+                    const cellDate = new Date(cell.key);
                     return (
                       <div
-                        key={day.toISOString()}
+                        key={cell.key}
+                        style={{ gridColumn: `span ${cell.span}` }}
                         className={cn(
                           "border-r border-border/70 px-0.5 py-2 text-center sm:px-1",
-                          isWeekend(day) && "bg-muted/25",
+                          zoom === "day" &&
+                            isWeekend(cellDate) &&
+                            "bg-muted/25",
                         )}
                       >
-                        <div className="h-4 text-[10px] font-medium text-muted-foreground">
-                          {showMonth ? format(day, "MMM") : ""}
+                        <div className="h-4 truncate text-[10px] font-medium text-muted-foreground">
+                          {cell.label}
                         </div>
                         <div
                           className={cn(
-                            "mx-auto flex size-6 items-center justify-center rounded-full text-xs font-medium",
-                            isToday(day) &&
+                            "mx-auto flex h-6 min-w-6 items-center justify-center truncate rounded-full px-1 text-xs font-medium",
+                            zoom === "day" &&
+                              isToday(cellDate) &&
                               "bg-primary text-primary-foreground",
                           )}
                         >
-                          {format(day, "d")}
+                          {cell.sublabel}
                         </div>
                       </div>
                     );
@@ -309,11 +373,48 @@ function RouteComponent() {
                     <div
                       key={`bg-line-${day.toISOString()}`}
                       className={cn(
-                        "h-full min-h-0 border-r border-border/60",
-                        isWeekend(day) && "bg-muted/25",
+                        "h-full min-h-0",
+                        zoom === "day" && "border-r border-border/60",
+                        zoom === "day" && isWeekend(day) && "bg-muted/25",
                       )}
                     />
                   ))}
+                </div>
+
+                {todayInRange ? (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 z-[6] w-px bg-primary/70"
+                    style={{
+                      left: `calc(${
+                        showTaskRail
+                          ? isMobile
+                            ? `${taskColumnWidthRem}rem`
+                            : "20rem"
+                          : "0rem"
+                      } + ${todayLeftRem + timeline.dayWidthRem / 2}rem)`,
+                    }}
+                  />
+                ) : null}
+
+                <div
+                  className="pointer-events-none absolute inset-y-0 z-[5]"
+                  style={{
+                    left: showTaskRail
+                      ? isMobile
+                        ? `${taskColumnWidthRem}rem`
+                        : "20rem"
+                      : "0rem",
+                    width: `${timeline.timelineMinWidthRem}rem`,
+                  }}
+                >
+                  <GanttDependencyArrows
+                    relations={relationData?.relations ?? []}
+                    rows={scheduledTasks}
+                    timeline={timeline}
+                    rowHeightPx={ROW_HEIGHT_PX}
+                    pixelsPerDay={pixelsPerDay}
+                  />
                 </div>
 
                 <div className="relative z-10 flex flex-col">
@@ -336,11 +437,20 @@ function RouteComponent() {
                               type="button"
                               className="flex min-h-[44px] w-full min-w-0 flex-col items-start justify-center gap-0.5 px-2 py-2 text-left transition-colors hover:bg-muted sm:min-h-0 sm:px-3 sm:py-1.5"
                               onClick={() =>
-                                navigate({
-                                  to: ".",
-                                  search: { taskId: task.id },
-                                  replace: true,
-                                })
+                                "isForeign" in task
+                                  ? navigate({
+                                      to: "/dashboard/organization/$organizationId/board/$boardId/gantt",
+                                      params: {
+                                        organizationId,
+                                        boardId: task.boardId,
+                                      },
+                                      search: { taskId: task.id },
+                                    })
+                                  : navigate({
+                                      to: ".",
+                                      search: { taskId: task.id },
+                                      replace: true,
+                                    })
                               }
                             >
                               <div className="flex w-full items-center gap-1.5">
@@ -348,8 +458,15 @@ function RouteComponent() {
                                   {getStatusLabel(task.status)}
                                 </span>
                                 <span className="truncate text-[10px] text-muted-foreground">
-                                  {board?.slug}-{task.number}
+                                  {"boardSlug" in task
+                                    ? `${task.boardSlug}-${task.number}`
+                                    : `${board?.slug}-${task.number}`}
                                 </span>
+                                {"isForeign" in task ? (
+                                  <span className="shrink-0 rounded-full border border-dashed border-border px-1.5 py-px text-[10px] text-muted-foreground">
+                                    {task.boardName}
+                                  </span>
+                                ) : null}
                               </div>
                               <p className="w-full line-clamp-1 text-xs font-medium leading-tight text-foreground">
                                 {task.title}
@@ -376,12 +493,22 @@ function RouteComponent() {
                             timeline={timeline}
                             pixelsPerDay={pixelsPerDay}
                             isMobile={isMobile}
+                            readOnly={"isForeign" in task}
                             onOpenTask={() =>
-                              navigate({
-                                to: ".",
-                                search: { taskId: task.id },
-                                replace: true,
-                              })
+                              "isForeign" in task
+                                ? navigate({
+                                    to: "/dashboard/organization/$organizationId/board/$boardId/gantt",
+                                    params: {
+                                      organizationId,
+                                      boardId: task.boardId,
+                                    },
+                                    search: { taskId: task.id },
+                                  })
+                                : navigate({
+                                    to: ".",
+                                    search: { taskId: task.id },
+                                    replace: true,
+                                  })
                             }
                           />
                         </div>

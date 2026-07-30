@@ -5,6 +5,7 @@ import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
+import { statusBarClasses } from "./gantt-timeline";
 
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
@@ -16,6 +17,8 @@ type ScheduledTask = Task & {
 
 type GanttTaskBarProps = {
   task: ScheduledTask;
+  /** Tasks from another board are shown for context only — not editable here. */
+  readOnly?: boolean;
   timeline: {
     days: Date[];
     rangeStart: Date;
@@ -55,6 +58,7 @@ export function GanttTaskBar({
   timeline,
   pixelsPerDay,
   isMobile = false,
+  readOnly = false,
   onOpenTask,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
@@ -280,6 +284,35 @@ export function GanttTaskBar({
     return null;
   }
 
+  const colors = statusBarClasses(task.status);
+
+  // Foreign tasks render as a plain, non-interactive band with no drag handles.
+  if (readOnly) {
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] grid items-center"
+        style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
+      >
+        <div
+          style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
+          className={cn(
+            "pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-center overflow-hidden rounded-md border border-dashed bg-background/60 px-2 text-left text-sm font-medium leading-none text-muted-foreground sm:h-11 sm:min-h-0",
+            colors.border,
+          )}
+        >
+          <div className={cn("absolute inset-0 z-0 opacity-50", colors.fill)} />
+          <button
+            type="button"
+            onClick={onOpenTask}
+            className="relative z-10 min-w-0 flex-1 truncate text-left"
+          >
+            {task.title}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="pointer-events-none absolute inset-0 z-[1] grid items-center"
@@ -289,14 +322,18 @@ export function GanttTaskBar({
     >
       <div
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
-        className="group pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border border-primary/25 bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40 sm:h-11 sm:min-h-0"
+        className={cn(
+          "group pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors sm:h-11 sm:min-h-0",
+          colors.border,
+        )}
       >
         <button
           type="button"
           aria-label={t("tasks:gantt.resizeStart")}
           onPointerDown={handleResizeLeftPointerDown}
           className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-primary/15 bg-primary/8 hover:bg-primary/18",
+            "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-black/5 dark:border-white/10",
+            colors.handle,
             "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
@@ -313,7 +350,12 @@ export function GanttTaskBar({
             }
           }}
         >
-          <div className="absolute inset-0 z-0 bg-primary/12 transition-colors group-hover:bg-primary/18" />
+          <div
+            className={cn(
+              "absolute inset-0 z-0 transition-colors",
+              colors.fill,
+            )}
+          />
           <span className="relative z-10 block truncate">{task.title}</span>
         </button>
         <button
@@ -321,7 +363,8 @@ export function GanttTaskBar({
           aria-label={t("tasks:gantt.resizeDue")}
           onPointerDown={handleResizeRightPointerDown}
           className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-primary/15 bg-primary/8 hover:bg-primary/18",
+            "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-black/5 dark:border-white/10",
+            colors.handle,
             "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}

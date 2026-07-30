@@ -1,4 +1,11 @@
-import { CalendarDays, Check, Menu, Plus, SquareKanban } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  Check,
+  Menu,
+  Plus,
+  SquareKanban,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -12,10 +19,11 @@ import { cn } from "@/lib/cn";
 type MobileBoardNavProps = {
   organizationId: string;
   boardId: string;
-  activeView: "backlog" | "board" | "gantt";
+  activeView: "backlog" | "board" | "gantt" | "calendar";
   onSelectBoardView: () => void;
   onSelectBacklog: () => void;
   onSelectGantt: () => void;
+  onSelectCalendar: () => void;
   onSelectBoard: (boardId: string) => void;
   onAddBoard: () => void;
 };
@@ -27,6 +35,7 @@ export default function MobileBoardNav({
   onSelectBoardView,
   onSelectBacklog,
   onSelectGantt,
+  onSelectCalendar,
   onSelectBoard,
   onAddBoard,
 }: MobileBoardNavProps) {
@@ -51,7 +60,7 @@ export default function MobileBoardNav({
             <p className="px-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
               View
             </p>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-2 gap-1">
               <button
                 type="button"
                 onClick={onSelectBacklog}
@@ -89,6 +98,19 @@ export default function MobileBoardNav({
               >
                 <CalendarDays className="size-3.5" />
                 Gantt
+              </button>
+              <button
+                type="button"
+                onClick={onSelectCalendar}
+                className={cn(
+                  "flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                  activeView === "calendar"
+                    ? "border-border bg-secondary text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-accent",
+                )}
+              >
+                <CalendarRange className="size-3.5" />
+                Calendar
               </button>
             </div>
           </div>

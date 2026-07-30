@@ -10,6 +10,7 @@ import { requireOrganizationPermission } from "../utils/require-organization-per
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
 import createTaskRelation from "./controllers/create-task-relation";
 import deleteTaskRelation from "./controllers/delete-task-relation";
+import getBoardTaskRelations from "./controllers/get-board-task-relations";
 import getTaskRelations from "./controllers/get-task-relations";
 
 const taskRelationSchema = v.object({
@@ -26,6 +27,48 @@ const taskRelation = new Hono<{
     organizationId: string;
   };
 }>()
+  .get(
+    "/board/:boardId",
+    describeRoute({
+      operationId: "getBoardTaskRelations",
+      tags: ["Task Relations"],
+      description: "Get all relations between tasks on a board",
+      responses: {
+        200: {
+          description: "Task relations scoped to a single board",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({
+                  relations: v.array(
+                    v.object({
+                      id: v.string(),
+                      sourceTaskId: v.string(),
+                      targetTaskId: v.string(),
+                      relationType: v.string(),
+                    }),
+                  ),
+                  foreignTasks: v.array(v.any()),
+                }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    async (c) => {
+      const { boardId } = c.req.valid("param");
+      return c.json(
+        await getBoardTaskRelations(
+          boardId,
+          c.get("organizationId"),
+          c.get("userId"),
+        ),
+      );
+    },
+  )
   .get(
     "/:taskId",
     describeRoute({
