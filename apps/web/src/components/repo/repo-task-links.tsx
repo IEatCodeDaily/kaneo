@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import getTasks from "@/fetchers/task/get-tasks";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 import type { RepoTaskLink } from "@/types/repo";
 
@@ -64,6 +65,8 @@ export default function RepoTaskLinks({
   compact = false,
 }: Props) {
   const queryClient = useQueryClient();
+  const { canUpdateBoards } = useOrganizationPermission(organizationId);
+  const canManageSyncedTasks = canUpdateBoards();
   const [linkOpen, setLinkOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { data: boards, isLoading: boardsLoading } = useGetBoards({
@@ -265,7 +268,10 @@ export default function RepoTaskLinks({
     <section
       className={compact ? "space-y-3" : "border-b border-border/80 px-6 py-5"}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div
+        className="flex items-center justify-between gap-3"
+        data-testid="repo-linked-tasks"
+      >
         <div className="flex items-center gap-1.5 text-sm font-medium">
           <Link2 className="size-4" /> Linked Tasks{" "}
           {linked.length > 0 && (
@@ -337,51 +343,6 @@ export default function RepoTaskLinks({
               </DialogFooter>
             </DialogPopup>
           </Dialog>
-          {itemType === "issues" && (
-            <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
-              <DialogTrigger render={<Button size={compact ? "xs" : "sm"} />}>
-                <RefreshCw className="size-3.5" /> Add Synced Task
-              </DialogTrigger>
-              <DialogPopup>
-                <DialogHeader>
-                  <DialogTitle>Add Synced Task</DialogTitle>
-                  <DialogDescription>
-                    Create a new task that follows this GitHub issue. GitHub
-                    updates overwrite its title and description.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogPanel>
-                  <label className="space-y-2 text-sm">
-                    <span>Board</span>
-                    <select
-                      aria-label="Board for synced task"
-                      className="w-full rounded-md border bg-background px-3 py-2"
-                      onChange={(event) => setBoardId(event.target.value)}
-                      value={boardId}
-                    >
-                      <option value="">Select a board…</option>
-                      {(boards ?? []).map((board) => (
-                        <option key={board.id} value={board.id}>
-                          {board.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </DialogPanel>
-                <DialogFooter>
-                  <Button onClick={() => setSyncOpen(false)} variant="outline">
-                    Cancel
-                  </Button>
-                  <Button
-                    disabled={!boardId || addSynced.isPending}
-                    onClick={() => addSynced.mutate()}
-                  >
-                    {addSynced.isPending ? "Creating…" : "Create synced task"}
-                  </Button>
-                </DialogFooter>
-              </DialogPopup>
-            </Dialog>
-          )}
         </div>
       </div>
       {linked.length === 0 ? (
@@ -392,13 +353,74 @@ export default function RepoTaskLinks({
         </div>
       )}
       {itemType === "issues" && (
-        <div className="border-t pt-3">
-          <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-            <RefreshCw className="size-4" /> Synced Tasks{" "}
-            {synced.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {synced.length}
-              </span>
+        <div className="border-t pt-3" data-testid="repo-synced-tasks">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium">
+              <RefreshCw className="size-4 shrink-0" /> Synced Tasks{" "}
+              {synced.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {synced.length}
+                </span>
+              )}
+            </div>
+            {canManageSyncedTasks && (
+              <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+                <DialogTrigger
+                  render={
+                    <Button
+                      aria-label="Add Synced Task"
+                      size={compact ? "xs" : "sm"}
+                      variant="outline"
+                    />
+                  }
+                >
+                  <RefreshCw className="size-3.5" />
+                  <span className={compact ? "sr-only" : undefined}>
+                    Add Synced Task
+                  </span>
+                </DialogTrigger>
+                <DialogPopup>
+                  <DialogHeader>
+                    <DialogTitle>Add Synced Task</DialogTitle>
+                    <DialogDescription>
+                      Create a new task that follows this GitHub issue. GitHub
+                      updates overwrite its title and description.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogPanel>
+                    <label className="space-y-2 text-sm">
+                      <span>Board</span>
+                      <select
+                        aria-label="Board for synced task"
+                        className="w-full rounded-md border bg-background px-3 py-2"
+                        onChange={(event) => setBoardId(event.target.value)}
+                        value={boardId}
+                      >
+                        <option value="">Select a board…</option>
+                        {(boards ?? []).map((board) => (
+                          <option key={board.id} value={board.id}>
+                            {board.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </DialogPanel>
+                  <DialogFooter>
+                    <Button
+                      onClick={() => setSyncOpen(false)}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={!boardId || addSynced.isPending}
+                      onClick={() => addSynced.mutate()}
+                    >
+                      {addSynced.isPending ? "Creating…" : "Create synced task"}
+                    </Button>
+                  </DialogFooter>
+                </DialogPopup>
+              </Dialog>
             )}
           </div>
           {synced.length === 0 ? (
