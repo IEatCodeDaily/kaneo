@@ -1,6 +1,7 @@
 import {
   addDays,
   differenceInCalendarDays,
+  differenceInCalendarWeeks,
   eachDayOfInterval,
   endOfWeek,
   format,
@@ -20,6 +21,20 @@ const COLUMN_WIDTH_REM: Record<GanttZoom, { mobile: number; desktop: number }> =
     month: { mobile: 0.5, desktop: 0.375 },
   };
 
+/**
+ * Days of head/tail padding beyond the task extent, per zoom.
+ *
+ * A fixed 28-day tail is fine at day zoom but makes month zoom useless: the
+ * whole point of zooming out is planning past the last scheduled task, and the
+ * timeline used to just stop ~4 weeks after it. Wider zooms get a longer
+ * horizon so there is somewhere to drag a bar to.
+ */
+const PADDING_DAYS: Record<GanttZoom, { head: number; tail: number }> = {
+  day: { head: 7, tail: 28 },
+  week: { head: 14, tail: 120 },
+  month: { head: 31, tail: 366 },
+};
+
 export type GanttTimeline = {
   days: Date[];
   rangeStart: Date;
@@ -29,6 +44,28 @@ export type GanttTimeline = {
   /** Header cells spanning 1+ day columns, depending on zoom. */
   headerCells: { key: string; label: string; sublabel: string; span: number }[];
 };
+
+/**
+ * "W1".."W6" — which week of the month this column belongs to.
+ *
+ * A week column is keyed by its start day, which frequently falls in the
+ * previous month (e.g. a week starting Sun Aug 30 mostly covers September).
+ * Numbering off that start day would label most months "W2..W5" and never W1,
+ * so the week is attributed to whichever month holds its midpoint, then counted
+ * from that month's first day. Six is a real outcome for a long month whose
+ * first day sits late in a week.
+ */
+function weekOfMonthLabel(
+  weekStart: Date,
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+): string {
+  const midweek = addDays(weekStart, 3);
+  const firstOfMonth = new Date(midweek.getFullYear(), midweek.getMonth(), 1);
+  const weeksIn = differenceInCalendarWeeks(midweek, firstOfMonth, {
+    weekStartsOn,
+  });
+  return `W${weeksIn + 1}`;
+}
 
 /**
  * One day is always one grid column — zoom only changes how wide a day is and
@@ -48,10 +85,14 @@ export function buildTimeline({
   weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }): GanttTimeline {
   const dayWidthRem = COLUMN_WIDTH_REM[zoom][isMobile ? "mobile" : "desktop"];
+  const padding = PADDING_DAYS[zoom];
 
   // Week-aligned bounds, padded so bars can be dragged past the current extremes.
-  const rangeStart = subDays(startOfWeek(earliest, { weekStartsOn }), 7);
-  const rangeEnd = addDays(endOfWeek(latest, { weekStartsOn }), 28);
+  const rangeStart = subDays(
+    startOfWeek(earliest, { weekStartsOn }),
+    padding.head,
+  );
+  const rangeEnd = addDays(endOfWeek(latest, { weekStartsOn }), padding.tail);
   const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
   const headerCells: GanttTimeline["headerCells"] = [];
@@ -67,16 +108,19 @@ export function buildTimeline({
       });
       continue;
     }
+    // Week and month zoom both group by week; they differ in the label. Month
+    // zoom shows W1..W5 within the month (the month itself is already named by
+    // the span row above), week zoom shows the day-of-month.
     const groupStarts =
-      !previous ||
-      (zoom === "week"
-        ? !isSameWeek(day, previous, { weekStartsOn })
-        : !isSameMonth(day, previous));
+      !previous || !isSameWeek(day, previous, { weekStartsOn });
     if (groupStarts) {
       headerCells.push({
         key: day.toISOString(),
-        label: zoom === "week" ? format(day, "MMM") : format(day, "yyyy"),
-        sublabel: zoom === "week" ? format(day, "d") : format(day, "MMM"),
+        label:
+          zoom === "week"
+            ? format(day, "MMM")
+            : weekOfMonthLabel(day, weekStartsOn),
+        sublabel: zoom === "week" ? format(day, "d") : "",
         span: 1,
       });
     } else {

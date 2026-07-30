@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type GanttTimeline, weekendTintGradient } from "./gantt-timeline";
+import {
+  buildTimeline,
+  type GanttTimeline,
+  weekendTintGradient,
+} from "./gantt-timeline";
 
 /** Minimal timeline stub — the gradient only reads days + dayWidthRem. */
 function tl(startISO: string, count: number, dayWidthRem = 2): GanttTimeline {
@@ -66,5 +70,45 @@ describe("weekendTintGradient", () => {
       (css.match(/transparent (-?[\d.]+)rem/) as RegExpMatchArray)[1],
     );
     expect(origin).toBe(-4);
+  });
+});
+
+describe("buildTimeline horizon", () => {
+  const args = {
+    earliest: new Date("2026-07-20T00:00:00"),
+    latest: new Date("2026-08-10T00:00:00"),
+    isMobile: false,
+    weekStartsOn: 0 as const,
+  };
+
+  it("gives month zoom a horizon far past the last task", () => {
+    // The bug: month zoom used a fixed 28-day tail, so zooming out showed only
+    // a few months and there was nowhere to drag a bar to.
+    const day = buildTimeline({ ...args, zoom: "day" });
+    const month = buildTimeline({ ...args, zoom: "month" });
+
+    const lastDay = (t: GanttTimeline) => t.days[t.days.length - 1];
+    expect(lastDay(month).getTime()).toBeGreaterThan(lastDay(day).getTime());
+    // At least a year of runway past the final task.
+    const daysPastLatest =
+      (lastDay(month).getTime() - args.latest.getTime()) / 86_400_000;
+    expect(daysPastLatest).toBeGreaterThan(360);
+  });
+
+  it("labels month zoom by week-of-month, not by year", () => {
+    const month = buildTimeline({ ...args, zoom: "month" });
+    const labels = month.headerCells.map((c) => c.label);
+    // Every label is a W1..W6 marker, and W1 really occurs (the old
+    // start-day numbering skipped it for most months).
+    expect(labels.every((l) => /^W[1-6]$/.test(l))).toBe(true);
+    expect(labels).toContain("W1");
+    // Week groups, so cells span 7 days (except a clipped first/last).
+    expect(month.headerCells.some((c) => c.span === 7)).toBe(true);
+  });
+
+  it("keeps day zoom labelled by day number", () => {
+    const day = buildTimeline({ ...args, zoom: "day" });
+    expect(day.headerCells.every((c) => c.span === 1)).toBe(true);
+    expect(day.headerCells[0].sublabel).toMatch(/^\d+$/);
   });
 });

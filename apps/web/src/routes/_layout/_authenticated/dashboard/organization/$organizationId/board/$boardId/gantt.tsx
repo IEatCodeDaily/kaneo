@@ -17,6 +17,7 @@ import {
 import {
   memo,
   useCallback,
+  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -426,6 +427,13 @@ function RouteComponent() {
     });
   }, [visibleRows, searching, board?.slug, searchQuery]);
 
+  // Deferred so navigation into this view paints immediately. React renders the
+  // shell (toolbar, header, skeleton) with the previous/empty list, then renders
+  // the real rows in a low-priority pass — the click no longer blocks on 185
+  // rows of layout. `isStale` is what drives the skeleton below.
+  const deferredRows = useDeferredValue(scheduledTasks);
+  const rowsAreStale = deferredRows !== scheduledTasks;
+
   const timeline = useMemo(() => {
     if (parsedTasks.length === 0) return null;
     const earliest = parsedTasks.reduce(
@@ -760,16 +768,22 @@ function RouteComponent() {
                 >
                   <GanttDependencyArrows
                     relations={relationData?.relations ?? []}
-                    rows={scheduledTasks}
+                    rows={deferredRows}
                     timeline={timeline}
                     rowHeightPx={ROW_HEIGHT_PX}
                     pixelsPerDay={pixelsPerDay}
                   />
                 </div>
 
-                {/* Rows */}
-                <div className="relative z-10 flex flex-col">
-                  {scheduledTasks.map((task) => (
+                {/* Rows. Dimmed while a deferred render is in flight so the
+                    view reads as "working" instead of frozen. */}
+                <div
+                  className={cn(
+                    "relative z-10 flex flex-col",
+                    rowsAreStale && "opacity-60 transition-opacity",
+                  )}
+                >
+                  {deferredRows.map((task) => (
                     <GanttRow
                       key={task.id}
                       task={task}
