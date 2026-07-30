@@ -234,12 +234,23 @@ test.describe("repository issue and pull request list parity", () => {
     await expect(fileHeaders.nth(1)).toHaveText("src/second.ts");
     await expect(workspace.locator("diffs-container")).toHaveCount(2);
 
-    const secondFileButton = workspace.getByRole("button", {
-      name: "src/second.ts",
-      exact: true,
+    // The flat file list is now a floating @pierre/trees file tree, rendered in
+    // a portal so the diff renderer cannot paint over it.
+    const treeToggle = workspace.getByRole("button", {
+      name: "Toggle changed files tree",
     });
-    await secondFileButton.click();
-    await expect(secondFileButton).toHaveClass(/bg-muted/);
+    await expect(treeToggle).toHaveText(/2 files/);
+    await treeToggle.click();
+    const tree = page.getByTestId("inline-file-tree").getByRole("tree");
+    await expect(tree).toBeVisible();
+    // Folder nesting: both fixture files live under src/, so the tree renders a
+    // real collapsible directory rather than two flat rows.
+    const srcFolder = tree.getByRole("treeitem", { name: "src" }).first();
+    await expect(srcFolder).toBeVisible();
+    await srcFolder.click();
+    await expect(
+      tree.getByRole("treeitem", { name: "second.ts" }).first(),
+    ).toBeVisible();
 
     const unified = workspace.getByRole("button", { name: "Unified" });
     const split = workspace.getByRole("button", { name: "Side-by-side" });
@@ -267,13 +278,18 @@ test.describe("repository issue and pull request list parity", () => {
       2,
     );
     await expect(dialog.locator("diffs-container")).toHaveCount(2);
+    await dialog
+      .getByRole("button", { name: "Toggle changed files tree" })
+      .click();
     await expect(
-      dialog.getByRole("navigation", { name: "Changed files fullscreen" }),
+      page.getByTestId("fullscreen-file-tree").getByRole("tree"),
     ).toBeVisible();
 
+    // Escape closes the file-tree popover first, so dismiss it before the
+    // dialog: two Escapes, innermost layer first.
+    await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(secondFileButton).toHaveClass(/bg-muted/);
     await expect(workspace.locator("diffs-container")).toHaveCount(2);
     expect(pageErrors).toEqual([]);
   });

@@ -9,6 +9,7 @@ import {
   PanelsTopLeft,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import PullRequestFileTree from "@/components/repo/pull-request-file-tree";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +22,6 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import useGetPullRequestChecks from "@/hooks/queries/repo/use-get-pull-request-checks";
 import useGetPullRequestCommits from "@/hooks/queries/repo/use-get-pull-request-commits";
 import useGetPullRequestFiles from "@/hooks/queries/repo/use-get-pull-request-files";
-import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import type { RepoPullRequestCheck, RepoPullRequestFile } from "@/types/repo";
 
@@ -121,6 +121,7 @@ export default function PullRequestLiveDetails({
   const [selectedFilename, setSelectedFilename] = useState<string>();
   const [split, setSplit] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const fileNames = (files.data?.files ?? []).map((file) => file.filename);
   const selectedFile =
     files.data?.files.find((file) => file.filename === selectedFilename) ??
     files.data?.files[0];
@@ -283,41 +284,22 @@ export default function PullRequestLiveDetails({
                 </Button>
               </div>
             </div>
-            <div className="grid min-w-0 gap-3 xl:grid-cols-[15rem_minmax(0,1fr)]">
-              <nav
-                aria-label="Changed files"
-                className="max-h-[32rem] overflow-auto rounded-md border p-1"
-              >
-                {files.data?.files.map((file) => (
-                  <button
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-2 text-left font-mono text-xs hover:bg-muted",
-                      file.filename === selectedFile.filename &&
-                        "bg-muted font-medium",
-                    )}
-                    aria-label={file.filename}
-                    key={file.filename}
-                    onClick={() => {
-                      setSelectedFilename(file.filename);
-                      document
-                        .getElementById(
-                          `diff-file-${encodeURIComponent(file.filename)}`,
-                        )
-                        ?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        });
-                    }}
-                    type="button"
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {file.filename}
-                    </span>
-                    <span className="text-emerald-600">+{file.additions}</span>
-                    <span className="text-destructive">−{file.deletions}</span>
-                  </button>
-                ))}
-              </nav>
+            <div className="min-w-0">
+              {/* Floating tree keeps the diff full width instead of losing a
+                  grid column to a flat file list. */}
+              <div className="mb-3">
+                <PullRequestFileTree
+                  filenames={fileNames}
+                  idPrefix="inline"
+                  onSelect={(path) => {
+                    setSelectedFilename(path);
+                    document
+                      .getElementById(`diff-file-${encodeURIComponent(path)}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  selectedPath={selectedFile.filename}
+                />
+              </div>
               <div className="min-w-0 space-y-4">
                 {files.data?.files.map((file) => (
                   <section
@@ -343,45 +325,23 @@ export default function PullRequestLiveDetails({
                     Full-screen code comparison
                   </DialogDescription>
                 </div>
-                <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)] gap-3 overflow-hidden p-4">
-                  <nav
-                    aria-label="Changed files fullscreen"
-                    className="overflow-auto rounded-md border p-1"
-                  >
-                    {files.data?.files.map((file) => (
-                      <button
-                        aria-label={file.filename}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded px-2 py-2 text-left font-mono text-xs hover:bg-muted",
-                          file.filename === selectedFilename &&
-                            "bg-muted font-medium",
-                        )}
-                        key={file.filename}
-                        onClick={() => {
-                          setSelectedFilename(file.filename);
-                          document
-                            .getElementById(
-                              `fullscreen-diff-file-${encodeURIComponent(file.filename)}`,
-                            )
-                            ?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "start",
-                            });
-                        }}
-                        type="button"
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {file.filename}
-                        </span>
-                        <span className="text-emerald-600">
-                          +{file.additions}
-                        </span>
-                        <span className="text-destructive">
-                          −{file.deletions}
-                        </span>
-                      </button>
-                    ))}
-                  </nav>
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
+                  <PullRequestFileTree
+                    filenames={fileNames}
+                    idPrefix="fullscreen"
+                    onSelect={(path) => {
+                      setSelectedFilename(path);
+                      document
+                        .getElementById(
+                          `fullscreen-diff-file-${encodeURIComponent(path)}`,
+                        )
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                    }}
+                    selectedPath={selectedFilename}
+                  />
                   <div className="min-w-0 space-y-4 overflow-auto">
                     {files.data?.files.map((file) => (
                       <section
