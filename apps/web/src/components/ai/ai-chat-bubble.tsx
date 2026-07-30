@@ -1,8 +1,13 @@
 import { Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import {
+  clampAiChatSize,
+  DEFAULT_AI_CHAT_SIZE,
+  parseAiChatSize,
+} from "@/lib/ai-chat-size";
 
 type Settings = {
   enabled: boolean;
@@ -19,6 +24,12 @@ export function AiChatBubble() {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [history, setHistory] = useState<ChatEntry[]>([]);
+  const panelRef = useRef<HTMLElement>(null);
+  const storageKey = organization?.id
+    ? `kaneo:ai-chat-size:${organization.id}`
+    : null;
+  const [size, setSize] = useState(DEFAULT_AI_CHAT_SIZE);
+  const [sizeHydrated, setSizeHydrated] = useState(false);
 
   useEffect(() => {
     if (!organization?.id) return setSettings(null);
@@ -28,6 +39,40 @@ export function AiChatBubble() {
       .then((r) => (r.ok ? r.json() : null))
       .then(setSettings);
   }, [organization?.id]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setSizeHydrated(false);
+      return;
+    }
+    const saved = parseAiChatSize(window.localStorage.getItem(storageKey));
+    setSize(
+      clampAiChatSize(saved ?? DEFAULT_AI_CHAT_SIZE, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }),
+    );
+    setSizeHydrated(true);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!open || !panelRef.current || !storageKey || !sizeHydrated) return;
+    const panel = panelRef.current;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      // Inline width/height control the border box (global border-box sizing),
+      // so persisting contentRect would shave borders/padding on every cycle.
+      const bounds = panel.getBoundingClientRect();
+      const next = clampAiChatSize(
+        { width: bounds.width, height: bounds.height },
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+      setSize(next);
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    });
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, [open, sizeHydrated, storageKey]);
 
   if (!organization || !settings?.enabled || !settings.configured) return null;
   const over = message.length > settings.effectiveCharacterLimit;
@@ -84,8 +129,11 @@ export function AiChatBubble() {
     <div className="fixed bottom-5 right-5 z-50">
       {open ? (
         <section
-          className="flex h-[32rem] w-[min(24rem,calc(100vw-2rem))] flex-col rounded-xl border bg-background shadow-2xl"
+          className="flex max-h-[calc(100vh-2.5rem)] max-w-[calc(100vw-2rem)] resize flex-col overflow-hidden rounded-xl border bg-background shadow-2xl max-sm:h-[calc(100vh-2.5rem)] max-sm:w-[calc(100vw-2rem)] max-sm:resize-none"
           aria-label="Organization AI assistant"
+          data-testid="ai-chat-panel"
+          ref={panelRef}
+          style={{ width: size.width, height: size.height }}
         >
           <header className="flex items-center justify-between border-b p-3">
             <div className="flex items-center gap-2 font-medium">
