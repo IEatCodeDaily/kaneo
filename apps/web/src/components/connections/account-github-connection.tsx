@@ -33,6 +33,7 @@ import {
 import { useGithubDelegationStatus } from "@/hooks/queries/github-delegation/use-github-delegation-status";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
+import { getGithubPermissions } from "./github-permissions";
 
 function SectionHeading({
   description,
@@ -82,7 +83,7 @@ export function AccountGithubConnection() {
     }
   };
 
-  const permissions = status?.scope?.split(/[\s,]+/).filter(Boolean) ?? [];
+  const permissions = getGithubPermissions(status?.scope);
   const displayName = status?.githubLogin || "GitHub account";
 
   return (
@@ -161,19 +162,21 @@ export function AccountGithubConnection() {
               </CardDescription>
             </CardHeader>
             <CardPanel>
-              {permissions.length > 0 ? (
-                <ul className="grid gap-2 text-sm sm:grid-cols-2">
-                  {permissions.map((permission) => (
-                    <li className="flex items-center gap-2" key={permission}>
-                      <Check className="size-4 text-emerald-600" /> {permission}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  GitHub did not return a detailed permission list.
-                </p>
-              )}
+              <ul className="grid gap-3 text-sm sm:grid-cols-2">
+                {permissions.map((permission) => (
+                  <li className="flex items-start gap-2" key={permission.label}>
+                    <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                    <span>
+                      <span className="font-medium">{permission.label}</span>
+                      {permission.detail && (
+                        <span className="block text-muted-foreground">
+                          {permission.detail}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </CardPanel>
           </Card>
         </div>

@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
-import { Archive, ChevronRight, Flag, Plus } from "lucide-react";
+import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
@@ -28,6 +28,10 @@ import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
+import {
+  collapseToggleLabel,
+  groupSameBucketSubtasks,
+} from "@/lib/group-subtasks";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
@@ -67,6 +71,9 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     }
     return sections;
   });
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
+    new Set(),
+  );
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
@@ -355,17 +362,65 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
               items={column.tasks}
               strategy={verticalListSortingStrategy}
             >
-              {/* No AnimatePresence/motion wrapper here: one Framer Motion
-                  instance per row costs ~3s of main-thread blocking on a
-                  180-task board. The CSS starting-style fade on the container
-                  gives the same visual entry for free. */}
-              {column.tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  boardSlug={board?.slug ?? ""}
-                />
-              ))}
+              {/* Their grouping + collapse, without the per-row motion.div:
+                  one Framer Motion instance per row cost ~3s of main-thread
+                  blocking on a 180-task board. The CSS starting-style fade on
+                  the container gives the same visual entry for free. */}
+              {groupSameBucketSubtasks(column.tasks).map(
+                ({ parent, children }) => {
+                  const collapsed = collapsedParents.has(parent.id);
+                  const visibleTasks = collapsed
+                    ? [parent]
+                    : [parent, ...children];
+                  return (
+                    <div
+                      data-testid={
+                        children.length ? "list-task-group" : undefined
+                      }
+                      key={parent.id}
+                    >
+                      {visibleTasks.map((task, index) => (
+                        <div
+                          key={task.id}
+                          className={
+                            index > 0
+                              ? "ml-6 border-l-2 border-border"
+                              : undefined
+                          }
+                        >
+                          <TaskRow task={task} boardSlug={board?.slug ?? ""} />
+                        </div>
+                      ))}
+                      {children.length > 0 && (
+                        <button
+                          aria-expanded={!collapsed}
+                          className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                          onClick={() =>
+                            setCollapsedParents((current) => {
+                              const next = new Set(current);
+                              if (collapsed) next.delete(parent.id);
+                              else next.add(parent.id);
+                              return next;
+                            })
+                          }
+                          type="button"
+                        >
+                          {collapsed ? (
+                            <ChevronRight className="size-3" />
+                          ) : (
+                            <ChevronDown className="size-3" />
+                          )}
+                          {collapseToggleLabel({
+                            parentId: parent.id,
+                            childCount: children.length,
+                            collapsed,
+                          })}
+                        </button>
+                      )}
+                    </div>
+                  );
+                },
+              )}
             </SortableContext>
 
             {column.tasks.length === 0 && (

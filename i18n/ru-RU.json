@@ -112,6 +112,7 @@
 				"labelCreated": "Метка создана",
 				"labelCreateError": "Не удалось создать метку",
 				"createMore": "Создать ещё",
+				"discardDraft": "Удалить черновик",
 				"createButton": "Создать задачу",
 				"untitledTask": "Задача без названия",
 				"labelColors": {

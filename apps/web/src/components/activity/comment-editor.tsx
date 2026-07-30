@@ -36,13 +36,13 @@ import {
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Highlighter } from "shiki";
 import { AttachmentCard } from "@/components/task/extensions/attachment-card";
 import { EmbedBlock } from "@/components/task/extensions/embed-block";
 import { KaneoIssueLink } from "@/components/task/extensions/kaneo-issue-link";
 import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
 import type { MentionMember } from "@/components/task/extensions/mention-list";
 import { MentionSuggestion } from "@/components/task/extensions/mention-suggestion";
+import { ReferenceSuggestion } from "@/components/task/extensions/reference-suggestion";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
   ShikiCodeBlock,
@@ -69,6 +69,8 @@ import {
   isYouTubeUrl,
   normalizeUrl,
 } from "@/lib/editor-url-utils";
+import { searchReferences } from "@/lib/search-references";
+import type { Highlighter } from "@/lib/shiki-highlighter";
 import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
 import { toast } from "@/lib/toast";
 import { uploadTaskImage } from "@/lib/upload-task-image";
@@ -92,6 +94,11 @@ type CommentEditorProps = {
   ensureTaskId?: () => Promise<string | null>;
   showQuickAttachButton?: boolean;
   onAttachActionChange?: (attach: (() => void) | null) => void;
+  /** Override task-scoped storage for editors backed by another resource. */
+  uploadFile?: (
+    file: File,
+    surface: "description" | "comment",
+  ) => Promise<Awaited<ReturnType<typeof uploadTaskImage>>>;
 };
 
 type SlashRange = { from: number; to: number };
@@ -185,6 +192,7 @@ export default function CommentEditor({
   ensureTaskId,
   showQuickAttachButton = true,
   onAttachActionChange,
+  uploadFile,
 }: CommentEditorProps) {
   const { t } = useTranslation();
   const resolvedPlaceholder =
@@ -204,6 +212,10 @@ export default function CommentEditor({
     [organizationMembers],
   );
   const editorShellRef = useRef<HTMLDivElement | null>(null);
+  // Read through a ref so the extension always sees the current organization
+  // without the editor having to be rebuilt when it resolves.
+  const organizationIdRef = useRef("");
+  organizationIdRef.current = activeOrganization?.id ?? "";
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const isSyncingRef = useRef(false);
@@ -213,6 +225,7 @@ export default function CommentEditor({
   const taskIdRef = useRef(taskId);
   const ensureTaskIdRef = useRef(ensureTaskId);
   const uploadSurfaceRef = useRef(uploadSurface);
+  const uploadFileRef = useRef(uploadFile);
   const onSubmitShortcutRef = useRef(onSubmitShortcut);
   const onCancelShortcutRef = useRef(onCancelShortcut);
   onSubmitShortcutRef.current = onSubmitShortcut;
@@ -294,7 +307,8 @@ export default function CommentEditor({
     taskIdRef.current = taskId;
     ensureTaskIdRef.current = ensureTaskId;
     uploadSurfaceRef.current = uploadSurface;
-  }, [ensureTaskId, taskId, uploadSurface]);
+    uploadFileRef.current = uploadFile;
+  }, [ensureTaskId, taskId, uploadFile, uploadSurface]);
 
   const insertUploadedAsset = useCallback(
     (
@@ -341,10 +355,12 @@ export default function CommentEditor({
   const handleAssetFileUpload = useCallback(
     async (file: File, targetEditor?: Editor | null, range?: SlashRange) => {
       const activeEditor = targetEditor || lastEditorRef.current;
-      const resolvedTaskId =
-        taskIdRef.current ?? (await ensureTaskIdRef.current?.());
+      const customUpload = uploadFileRef.current;
+      const resolvedTaskId = customUpload
+        ? null
+        : (taskIdRef.current ?? (await ensureTaskIdRef.current?.()));
 
-      if (!activeEditor || !resolvedTaskId) {
+      if (!activeEditor || (!customUpload && !resolvedTaskId)) {
         toast.error(t("activity:comment.editor.uploadsOnlyOnSavedTasks"));
         return;
       }
@@ -354,11 +370,13 @@ export default function CommentEditor({
       );
 
       try {
-        const uploadedAsset = await uploadTaskImage({
-          taskId: resolvedTaskId,
-          surface: uploadSurfaceRef.current,
-          file,
-        });
+        const uploadedAsset = customUpload
+          ? await customUpload(file, uploadSurfaceRef.current)
+          : await uploadTaskImage({
+              taskId: resolvedTaskId as string,
+              surface: uploadSurfaceRef.current,
+              file,
+            });
         insertUploadedAsset(activeEditor, uploadedAsset, range);
 
         toast.dismiss(loadingToast);
@@ -652,6 +670,13 @@ export default function CommentEditor({
         KaneoMention,
         MentionSuggestion.configure({
           getMembers: () => mentionMembersRef.current,
+        }),
+        ReferenceSuggestion.configure({
+          search: (query) =>
+            searchReferences({
+              query,
+              organizationId: organizationIdRef.current,
+            }),
         }),
         TaskList,
         Image.configure({

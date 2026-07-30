@@ -21,6 +21,8 @@ import * as v from "valibot";
 import accountAuthentication from "./account-authentication";
 import activity from "./activity";
 import admin from "./admin";
+import agent from "./agent";
+import ai from "./ai";
 import { auth } from "./auth";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
@@ -102,6 +104,8 @@ type ApiKey = {
   userId: string;
   enabled: boolean;
   permissions: Record<string, string[]> | null;
+  name?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 type AppVariables = {
@@ -307,10 +311,11 @@ export function createApp() {
           filename: schema.assetTable.filename,
           organizationId: schema.assetTable.organizationId,
           boardId: schema.assetTable.boardId,
+          repoId: schema.assetTable.repoId,
           isPublic: schema.boardTable.isPublic,
         })
         .from(schema.assetTable)
-        .innerJoin(
+        .leftJoin(
           schema.boardTable,
           eq(schema.assetTable.boardId, schema.boardTable.id),
         )
@@ -321,7 +326,15 @@ export function createApp() {
         throw new HTTPException(404, { message: "Asset not found" });
       }
 
-      const { userId, apiKeyId } = await resolveAssetBearerOrCookie(c);
+      let userId = "";
+      let apiKeyId: string | undefined;
+      try {
+        ({ userId, apiKeyId } = await resolveAssetBearerOrCookie(c));
+      } catch (error) {
+        if (!asset.repoId) throw error;
+        // Repo media must be fetchable by GitHub's image proxy. The asset ID is
+        // unguessable and the owning repo/organization still controls deletion.
+      }
 
       if (userId) {
         await validateOrganizationAccess(
@@ -329,16 +342,22 @@ export function createApp() {
           asset.organizationId,
           apiKeyId,
         );
-        const privilege = await getResourcePrivilege({
-          organizationId: asset.organizationId,
-          resourceType: "board",
-          resourceId: asset.boardId,
-          userId,
-        });
-        if (!privilegeAllows(privilege, "view")) {
+        if (asset.boardId) {
+          const privilege = await getResourcePrivilege({
+            organizationId: asset.organizationId,
+            resourceType: "board",
+            resourceId: asset.boardId,
+            userId,
+          });
+          if (!privilegeAllows(privilege, "view")) {
+            throw new HTTPException(404, { message: "Asset not found" });
+          }
+        } else if (!asset.repoId) {
           throw new HTTPException(404, { message: "Asset not found" });
         }
-      } else if (!asset.isPublic) {
+      } else if (!asset.repoId && !asset.isPublic) {
+        // Repository media is deliberately public-by-unguessable-URL so GitHub
+        // can render it in issue/PR Markdown. Task assets retain board privacy.
         throw new HTTPException(401, { message: "Unauthorized" });
       }
 
@@ -561,7 +580,13 @@ export function createApp() {
 
     const windowId = c.req.header("X-Kaneo-Window-Id");
     const userId = c.get("userId");
-    const initiatorId = windowId ? `${userId}:${windowId}` : userId;
+    const apiKey = c.get("apiKey");
+    const initiatorId =
+      apiKey?.metadata?.type === "agent"
+        ? `agent:${apiKey.id}`
+        : windowId
+          ? `${userId}:${windowId}`
+          : userId;
 
     return eventContext.run({ initiatorId }, next);
   });
@@ -585,6 +610,7 @@ export function createApp() {
   const oidcTeamSyncApi = api.route("/oidc-team-sync", oidcTeamSync);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
+  const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
   const labelApi = api.route("/label", label);
@@ -612,6 +638,7 @@ export function createApp() {
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
+  const agentApi = api.route("/agent", agent);
   const organizationGithubApi = api.route(
     "/organization-github",
     organizationGithub,
@@ -897,6 +924,8 @@ const {
   app,
   injectWebSocket,
   activityApi,
+  agentApi,
+  aiApi,
   columnApi,
   commentApi,
   configApi,
@@ -932,12 +961,14 @@ if (isMainModule) {
 }
 
 export type AppType =
+  | typeof agentApi
   | typeof configApi
   | typeof boardApi
   | typeof taskApi
   | typeof repoApi
   | typeof columnApi
   | typeof activityApi
+  | typeof aiApi
   | typeof commentApi
   | typeof timeEntryApi
   | typeof labelApi

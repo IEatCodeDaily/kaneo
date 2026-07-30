@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskTable, userTable } from "../../database/schema";
+import { taskTable, teamTable, userTable } from "../../database/schema";
 
 async function getTask(taskId: string) {
   const task = await db
@@ -10,6 +10,7 @@ async function getTask(taskId: string) {
       title: taskTable.title,
       number: taskTable.number,
       description: taskTable.description,
+      descriptionHistory: taskTable.descriptionHistory,
       status: taskTable.status,
       priority: taskTable.priority,
       startDate: taskTable.startDate,
@@ -17,12 +18,15 @@ async function getTask(taskId: string) {
       position: taskTable.position,
       createdAt: taskTable.createdAt,
       userId: taskTable.userId,
+      teamId: taskTable.teamId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,
+      teamAssigneeName: teamTable.name,
       boardId: taskTable.boardId,
     })
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
+    .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
     .where(eq(taskTable.id, taskId))
     .limit(1);
 

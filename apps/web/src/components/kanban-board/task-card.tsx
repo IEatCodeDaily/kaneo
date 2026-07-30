@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -209,6 +210,18 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
               <div className="mb-2 text-[10px] font-mono text-muted-foreground/90">
                 {board?.slug}-{task.number}
               </div>
+            )}
+
+            {/* Sits above the title so a child card reads as belonging to its
+                parent before the reader parses the title. */}
+            {task.parentTask && organization?.id && (
+              <SubtaskOfBadge
+                boardId={task.boardId}
+                boardSlug={board?.slug}
+                className="mb-2"
+                organizationId={organization.id}
+                parent={task.parentTask}
+              />
             )}
 
             {showAssignees && (

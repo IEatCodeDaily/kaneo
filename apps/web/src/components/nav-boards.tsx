@@ -40,6 +40,10 @@ import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { useTargetBoardView } from "@/hooks/use-remembered-view";
+import {
+  intentPrefetchHandlers,
+  prefetchBoardNavigation,
+} from "@/lib/navigation-prefetch";
 import { toast } from "@/lib/toast";
 import { useNavigationStore } from "@/store/navigation";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -126,6 +130,9 @@ export function NavBoards() {
       },
     });
   };
+
+  const prefetchBoard = (boardId: string) =>
+    prefetchBoardNavigation(queryClient, organization?.id || "", boardId);
 
   const handleShareBoard = (board: BoardWithTasks) => {
     navigator.clipboard.writeText(
@@ -233,8 +240,11 @@ export function NavBoards() {
                       <SidebarMenuButton
                         isActive={isCurrentBoard(board.id)}
                         size="default"
-                        className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+                        className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                         onClick={() => handleBoardClick(board)}
+                        {...intentPrefetchHandlers(() =>
+                          prefetchBoard(board.id),
+                        )}
                       >
                         <span>{board.name}</span>
                       </SidebarMenuButton>

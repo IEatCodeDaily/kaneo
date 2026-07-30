@@ -45,6 +45,64 @@ test.describe("sidebar information architecture", () => {
     await expect(page).toHaveURL(/\/organization\/[^/]+$/);
   });
 
+  test("selected board and repository rows have an active highlight and shadow", async ({
+    page,
+  }) => {
+    const sidebar = page.locator('[data-slot="sidebar"]');
+    const boardRow = sidebar.getByRole("button", {
+      name: "Kaneo Feature List",
+    });
+    const repoRow = sidebar.getByRole("button", {
+      name: /^kaneo-test\s+\d+/i,
+    });
+
+    await boardRow.click();
+    await expect(boardRow).toHaveAttribute("data-active", "true");
+    await expect(repoRow).toHaveAttribute("data-active", "false");
+
+    const boardStyle = await boardRow.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        boxShadow: style.boxShadow,
+      };
+    });
+    const inactiveRepoBackground = await repoRow.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    expect(
+      boardStyle.backgroundColor,
+      "Selected board should have a distinct background highlight",
+    ).not.toBe(inactiveRepoBackground);
+    expect(
+      boardStyle.boxShadow,
+      "Selected board should have a visible shadow",
+    ).not.toBe("none");
+
+    await repoRow.click();
+    await expect(repoRow).toHaveAttribute("data-active", "true");
+    await expect(boardRow).toHaveAttribute("data-active", "false");
+
+    const repoStyle = await repoRow.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        boxShadow: style.boxShadow,
+      };
+    });
+    const inactiveBoardBackground = await boardRow.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    expect(
+      repoStyle.backgroundColor,
+      "Selected repository should have a distinct background highlight",
+    ).not.toBe(inactiveBoardBackground);
+    expect(
+      repoStyle.boxShadow,
+      "Selected repository should have a visible shadow",
+    ).not.toBe("none");
+  });
+
   test("section headers expose adjacent create controls", async ({ page }) => {
     const sidebar = page.locator('[data-slot="sidebar"]');
     await sidebar.getByRole("button", { name: /^Boards$/ }).hover();

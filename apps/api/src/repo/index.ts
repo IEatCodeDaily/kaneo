@@ -1,7 +1,15 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import db from "../database";
+import { assetTable } from "../database/schema";
 import { listAccessibleResourceIds } from "../resource-access";
+import {
+  assertRepoMediaKeyMatchesContext,
+  createRepoMediaUploadUrl,
+  isImageContentType,
+  validateTaskAssetUploadInput,
+} from "../storage/s3";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
@@ -10,6 +18,7 @@ import {
 } from "./controllers/add-synced-task";
 import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
+import { createSyncedIssueForTask } from "./controllers/create-synced-issue-for-task";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import { getGitHubRepoContents } from "./controllers/get-github-repo-contents";
 import { getGitHubRepoTree } from "./controllers/get-github-repo-tree";
@@ -26,9 +35,16 @@ import {
   listGitHubMilestones,
   markGitHubIssueDuplicate,
   removeGitHubSubIssue,
+  reopenGitHubIssue,
   unmarkGitHubIssueDuplicate,
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
+import {
+  createGitHubPullRequestReview,
+  listGitHubPullRequestReviews,
+  REVIEW_EVENTS,
+  replyToGitHubReviewComment,
+} from "./controllers/github-pull-request-reviews";
 import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
 import {
   listGitHubRepoPackages,
@@ -763,6 +779,100 @@ const repo = new Hono<{
       return c.json(await getRepoPullRequestChecks({ repoId: id, number }));
     },
   )
+  .get(
+    "/:id/pull-requests/:number/reviews",
+    describeRoute({
+      operationId: "getRepoPullRequestReviews",
+      tags: ["Repos"],
+      description:
+        "List submitted GitHub reviews and inline review comments for a pull request",
+    }),
+    validator("param", pullRequestParamSchema),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await listGitHubPullRequestReviews({
+          repoId: id,
+          number,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/reviews",
+    describeRoute({
+      operationId: "createRepoPullRequestReview",
+      tags: ["Repos"],
+      description:
+        "Submit an approval, change request, or review comment as the acting member",
+    }),
+    validator("param", pullRequestParamSchema),
+    validator(
+      "json",
+      v.object({
+        event: v.picklist(REVIEW_EVENTS),
+        body: v.optional(v.string()),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      const { event, body } = c.req.valid("json");
+      return c.json(
+        await createGitHubPullRequestReview({
+          repoId: id,
+          number,
+          event,
+          body,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/review-comments/:commentId/replies",
+    describeRoute({
+      operationId: "replyToRepoPullRequestReviewComment",
+      tags: ["Repos"],
+      description: "Reply to an inline GitHub review comment thread",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        commentId: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, commentId } = c.req.valid("param");
+      return c.json(
+        await replyToGitHubReviewComment({
+          repoId: id,
+          number,
+          commentId,
+          body: c.req.valid("json").body,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
   .post(
     "/:id/:itemType/:number/task-links",
     validator(
@@ -820,6 +930,125 @@ const repo = new Hono<{
           taskId,
           itemType: itemType === "issues" ? "issue" : "pullRequest",
           organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .put(
+    "/:id/media-upload",
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        filename: v.string(),
+        contentType: v.string(),
+        size: v.number(),
+        surface: v.picklist(["description", "comment"] as const),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const input = c.req.valid("json");
+      try {
+        validateTaskAssetUploadInput(input.contentType, input.size);
+        return c.json(
+          await createRepoMediaUploadUrl({
+            organizationId: c.get("organizationId"),
+            repoId: id,
+            surface: input.surface,
+            filename: input.filename,
+            contentType: input.contentType,
+          }),
+        );
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : "Invalid upload",
+        );
+      }
+    },
+  )
+  .post(
+    "/:id/media-upload/finalize",
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        key: v.string(),
+        filename: v.string(),
+        contentType: v.string(),
+        size: v.number(),
+        surface: v.picklist(["description", "comment"] as const),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const input = c.req.valid("json");
+      validateTaskAssetUploadInput(input.contentType, input.size);
+      if (
+        !assertRepoMediaKeyMatchesContext(input.key.trim(), {
+          organizationId: c.get("organizationId"),
+          repoId: id,
+          surface: input.surface,
+        })
+      ) {
+        return c.json(
+          { message: "Upload key does not match repo context" },
+          400,
+        );
+      }
+      const [asset] = await db
+        .insert(assetTable)
+        .values({
+          organizationId: c.get("organizationId"),
+          repoId: id,
+          boardId: null,
+          objectKey: input.key.trim(),
+          filename: input.filename,
+          mimeType: input.contentType,
+          size: input.size,
+          kind: isImageContentType(input.contentType) ? "image" : "attachment",
+          surface: input.surface,
+          createdBy: c.get("userId"),
+        })
+        .returning({ id: assetTable.id });
+      if (!asset) {
+        return c.json({ message: "Failed to create asset record" }, 500);
+      }
+      return c.json({
+        id: asset.id,
+        repoId: id,
+        url: `/api/asset/${asset.id}`,
+      });
+    },
+  )
+  .post(
+    "/:id/synced-issues",
+    describeRoute({
+      operationId: "createSyncedIssueForTask",
+      tags: ["Repos"],
+      description:
+        "Create a GitHub issue from an existing Kaneo task and make the task follow it",
+      responses: {
+        200: { description: "Synced issue created" },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ taskId: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { taskId } = c.req.valid("json");
+      return c.json(
+        await createSyncedIssueForTask({
+          repoId: id,
+          taskId,
+          organizationId: c.get("organizationId"),
+          userId: c.get("userId"),
         }),
       );
     },
@@ -1093,6 +1322,39 @@ const repo = new Hono<{
           repoId: id,
           number,
           reason: c.req.valid("json").reason,
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/reopen",
+    describeRoute({
+      operationId: "reopenRepoIssue",
+      tags: ["Repos"],
+      description:
+        "Reopen a closed GitHub issue as the authorized Kaneo member",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await reopenGitHubIssue({
+          repoId: id,
+          number,
+          userId: c.get("userId"),
         }),
       );
     },

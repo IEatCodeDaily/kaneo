@@ -1,10 +1,9 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import getTasks from "@/fetchers/task/get-tasks";
+import { tasksQueryOptions } from "@/lib/navigation-prefetch";
 
 export function useGetTasks(boardId: string) {
   return useQuery({
-    queryKey: ["tasks", boardId],
-    queryFn: () => getTasks(boardId),
+    ...tasksQueryOptions(boardId),
     refetchInterval: 30000,
     enabled: !!boardId,
     // Board switches render the previous board's rows until the new ones land,

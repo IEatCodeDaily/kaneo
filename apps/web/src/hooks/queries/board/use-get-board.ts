@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import getBoard from "@/fetchers/board/get-board";
+import { boardQueryOptions } from "@/lib/navigation-prefetch";
 
 function useGetBoard({
   id,
@@ -9,8 +9,7 @@ function useGetBoard({
   organizationId: string;
 }) {
   return useQuery({
-    queryFn: () => getBoard({ id, organizationId }),
-    queryKey: ["boards", organizationId, id],
+    ...boardQueryOptions(organizationId, id),
     enabled: !!id,
   });
 }

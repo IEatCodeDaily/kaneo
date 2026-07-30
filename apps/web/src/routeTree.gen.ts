@@ -49,6 +49,8 @@ import { Route as LayoutAuthenticatedDashboardSettingsAccountGithubRouteImport }
 import { Route as LayoutAuthenticatedDashboardSettingsAccountInformationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/information'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountNotificationsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/notifications'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountPreferencesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/preferences'
+import { Route as LayoutAuthenticatedDashboardSettingsOrganizationAgentsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/agents'
+import { Route as LayoutAuthenticatedDashboardSettingsOrganizationAiRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/ai'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/features'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/general'
@@ -310,6 +312,18 @@ const LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute =
     path: '/preferences',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsAccountRoute,
   } as any)
+const LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute =
+  LayoutAuthenticatedDashboardSettingsOrganizationAgentsRouteImport.update({
+    id: '/agents',
+    path: '/agents',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsOrganizationRoute,
+  } as any)
+const LayoutAuthenticatedDashboardSettingsOrganizationAiRoute =
+  LayoutAuthenticatedDashboardSettingsOrganizationAiRouteImport.update({
+    id: '/ai',
+    path: '/ai',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsOrganizationRoute,
+  } as any)
 const LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute =
   LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRouteImport.update(
     {
@@ -563,6 +577,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/dashboard/settings/organization/agents': typeof LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute
+  '/dashboard/settings/organization/ai': typeof LayoutAuthenticatedDashboardSettingsOrganizationAiRoute
   '/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/dashboard/settings/organization/features': typeof LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
@@ -627,6 +643,8 @@ export interface FileRoutesByTo {
   '/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/dashboard/settings/organization/agents': typeof LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute
+  '/dashboard/settings/organization/ai': typeof LayoutAuthenticatedDashboardSettingsOrganizationAiRoute
   '/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/dashboard/settings/organization/features': typeof LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
@@ -697,6 +715,8 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/account/information': typeof LayoutAuthenticatedDashboardSettingsAccountInformationRoute
   '/_layout/_authenticated/dashboard/settings/account/notifications': typeof LayoutAuthenticatedDashboardSettingsAccountNotificationsRoute
   '/_layout/_authenticated/dashboard/settings/account/preferences': typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRoute
+  '/_layout/_authenticated/dashboard/settings/organization/agents': typeof LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute
+  '/_layout/_authenticated/dashboard/settings/organization/ai': typeof LayoutAuthenticatedDashboardSettingsOrganizationAiRoute
   '/_layout/_authenticated/dashboard/settings/organization/connections': typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/organization/features': typeof LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute
   '/_layout/_authenticated/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
@@ -766,6 +786,8 @@ export interface FileRouteTypes {
     | '/dashboard/settings/account/information'
     | '/dashboard/settings/account/notifications'
     | '/dashboard/settings/account/preferences'
+    | '/dashboard/settings/organization/agents'
+    | '/dashboard/settings/organization/ai'
     | '/dashboard/settings/organization/connections'
     | '/dashboard/settings/organization/features'
     | '/dashboard/settings/organization/general'
@@ -830,6 +852,8 @@ export interface FileRouteTypes {
     | '/dashboard/settings/account/information'
     | '/dashboard/settings/account/notifications'
     | '/dashboard/settings/account/preferences'
+    | '/dashboard/settings/organization/agents'
+    | '/dashboard/settings/organization/ai'
     | '/dashboard/settings/organization/connections'
     | '/dashboard/settings/organization/features'
     | '/dashboard/settings/organization/general'
@@ -899,6 +923,8 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/account/information'
     | '/_layout/_authenticated/dashboard/settings/account/notifications'
     | '/_layout/_authenticated/dashboard/settings/account/preferences'
+    | '/_layout/_authenticated/dashboard/settings/organization/agents'
+    | '/_layout/_authenticated/dashboard/settings/organization/ai'
     | '/_layout/_authenticated/dashboard/settings/organization/connections'
     | '/_layout/_authenticated/dashboard/settings/organization/features'
     | '/_layout/_authenticated/dashboard/settings/organization/general'
@@ -1222,6 +1248,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsAccountPreferencesRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsAccountRoute
     }
+    '/_layout/_authenticated/dashboard/settings/organization/agents': {
+      id: '/_layout/_authenticated/dashboard/settings/organization/agents'
+      path: '/agents'
+      fullPath: '/dashboard/settings/organization/agents'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationAgentsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
+    }
+    '/_layout/_authenticated/dashboard/settings/organization/ai': {
+      id: '/_layout/_authenticated/dashboard/settings/organization/ai'
+      path: '/ai'
+      fullPath: '/dashboard/settings/organization/ai'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationAiRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
+    }
     '/_layout/_authenticated/dashboard/settings/organization/connections': {
       id: '/_layout/_authenticated/dashboard/settings/organization/connections'
       path: '/connections'
@@ -1472,6 +1512,8 @@ const LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren =
   )
 
 interface LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren {
+  LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute
+  LayoutAuthenticatedDashboardSettingsOrganizationAiRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationAiRoute
   LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute
   LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute
   LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
@@ -1483,6 +1525,10 @@ interface LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren {
 
 const LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren: LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren =
   {
+    LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute:
+      LayoutAuthenticatedDashboardSettingsOrganizationAgentsRoute,
+    LayoutAuthenticatedDashboardSettingsOrganizationAiRoute:
+      LayoutAuthenticatedDashboardSettingsOrganizationAiRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute:
       LayoutAuthenticatedDashboardSettingsOrganizationConnectionsRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRoute:

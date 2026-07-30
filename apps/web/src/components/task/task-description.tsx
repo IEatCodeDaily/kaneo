@@ -42,7 +42,6 @@ import {
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Highlighter } from "shiki";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -55,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
@@ -66,6 +66,8 @@ import {
   isYouTubeUrl,
   normalizeUrl,
 } from "@/lib/editor-url-utils";
+import { searchReferences } from "@/lib/search-references";
+import type { Highlighter } from "@/lib/shiki-highlighter";
 import {
   getSharedShikiHighlighter,
   SHIKI_LANGUAGES,
@@ -75,6 +77,7 @@ import { uploadTaskImage } from "@/lib/upload-task-image";
 import { AttachmentCard } from "./extensions/attachment-card";
 import { EmbedBlock } from "./extensions/embed-block";
 import { KaneoIssueLink } from "./extensions/kaneo-issue-link";
+import { ReferenceSuggestion } from "./extensions/reference-suggestion";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
   ShikiCodeBlock,
@@ -271,6 +274,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const canEdit = canManageTasks();
 
   const editorShellRef = useRef<HTMLDivElement | null>(null);
+  // Read through a ref so the extension always sees the current organization
+  // without the editor having to be rebuilt when it resolves.
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationIdRef = useRef("");
+  organizationIdRef.current = activeOrganization?.id ?? "";
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const taskRef = useRef(task);
@@ -588,6 +596,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         EmbedBlock,
         AttachmentCard,
         KaneoIssueLink,
+        ReferenceSuggestion.configure({
+          search: (query) =>
+            searchReferences({
+              query,
+              organizationId: organizationIdRef.current,
+            }),
+        }),
         TaskList,
         Image.configure({
           HTMLAttributes: {

@@ -55,6 +55,7 @@ function RouteComponent() {
             <RepoIssueRelations
               github={issue.github}
               number={issue.number}
+              organizationId={organizationId}
               repoId={repoId}
             />
           }

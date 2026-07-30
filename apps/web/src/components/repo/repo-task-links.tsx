@@ -65,7 +65,7 @@ export default function RepoTaskLinks({
   compact = false,
 }: Props) {
   const queryClient = useQueryClient();
-  const { canUpdateBoards } = useOrganizationPermission(organizationId);
+  const { canUpdateBoards } = useOrganizationPermission();
   const canManageSyncedTasks = canUpdateBoards();
   const [linkOpen, setLinkOpen] = useState(false);
   const [search, setSearch] = useState("");

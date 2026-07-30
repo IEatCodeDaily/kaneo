@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -223,8 +224,20 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
 
             <div className="flex-1 min-w-0 flex items-center gap-2">
               <div className="flex items-center gap-2 justify-between w-full">
-                <span className="text-sm text-foreground truncate">
-                  {task.title}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="text-sm text-foreground truncate">
+                    {task.title}
+                  </span>
+                  {/* Inline beside the title: a list row has no second line to
+                      spend, and the badge already reads as secondary. */}
+                  {task.parentTask && organization?.id && (
+                    <SubtaskOfBadge
+                      boardId={task.boardId}
+                      boardSlug={boardSlug}
+                      organizationId={organization.id}
+                      parent={task.parentTask}
+                    />
+                  )}
                 </span>
                 <div className="flex items-center gap-1">
                   {showLabels && <TaskCardLabels labels={task.labels} />}

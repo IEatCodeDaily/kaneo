@@ -16,6 +16,11 @@ type RepoListRowProps = {
   labels: RepoLabel[];
   /** Author, date, comment count — appended after #number on row 2. */
   meta?: ReactNode;
+  /**
+   * Right-aligned content on row 2, under the labels (pull request diff delta).
+   * Optional so the issue list keeps its existing two-line shape.
+   */
+  trailing?: ReactNode;
   to: string;
   params: Record<string, string>;
 };
@@ -41,6 +46,7 @@ export default function RepoListRow({
   state,
   labels,
   meta,
+  trailing,
   to,
   params,
 }: RepoListRowProps) {
@@ -75,6 +81,9 @@ export default function RepoListRow({
           <RepoStateBadge state={state} />
           <span data-slot="repo-list-row-number">#{number}</span>
           {meta}
+          {trailing && (
+            <span className="ml-auto shrink-0 pl-2">{trailing}</span>
+          )}
         </div>
       </div>
     </Link>

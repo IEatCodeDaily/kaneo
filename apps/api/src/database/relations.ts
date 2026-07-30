@@ -155,6 +155,10 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
     fields: [taskTable.userId],
     references: [userTable.id],
   }),
+  teamAssignee: one(teamTable, {
+    fields: [taskTable.teamId],
+    references: [teamTable.id],
+  }),
   column: one(columnTable, {
     fields: [taskTable.columnId],
     references: [columnTable.id],
@@ -296,6 +300,7 @@ export const teamTableRelations = relations(teamTable, ({ one, many }) => ({
     references: [organizationTable.id],
   }),
   teamMembers: many(teamMemberTable),
+  assignedTasks: many(taskTable),
 }));
 
 export const teamMemberTableRelations = relations(

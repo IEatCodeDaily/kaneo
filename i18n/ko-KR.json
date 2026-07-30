@@ -112,6 +112,7 @@
 				"labelCreated": "라벨이 생성되었습니다",
 				"labelCreateError": "라벨 생성에 실패했습니다",
 				"createMore": "계속 만들기",
+				"discardDraft": "임시 저장 삭제",
 				"createButton": "작업 만들기",
 				"untitledTask": "제목 없는 작업",
 				"labelColors": {

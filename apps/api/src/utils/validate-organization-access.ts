@@ -28,6 +28,24 @@ export async function validateOrganizationAccess(
         message: "Invalid API key for this organization",
       });
     }
+
+    try {
+      const metadata = JSON.parse(apiKey[0].metadata ?? "null") as {
+        type?: string;
+        organizationId?: string;
+      } | null;
+      if (
+        metadata?.type === "agent" &&
+        metadata.organizationId !== organizationId
+      ) {
+        throw new HTTPException(403, {
+          message: "Agent is not authorized for this organization",
+        });
+      }
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      // Legacy API keys may contain arbitrary metadata.
+    }
   }
 
   const [user] = await db

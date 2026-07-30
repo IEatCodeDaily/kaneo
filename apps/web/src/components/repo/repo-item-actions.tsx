@@ -7,6 +7,7 @@ import {
   GitMerge,
   LoaderCircle,
   MessageSquare,
+  RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -85,7 +86,6 @@ export function RepoItemHeaderActions({
   number,
   state,
 }: Omit<RepoItemActionProps, "title">) {
-  const _name = kind === "issue" ? "Issue" : "Pull Request";
   const { request, resourcePath, queryKey } = useItemRequest(
     kind,
     repoId,
@@ -98,6 +98,15 @@ export function RepoItemHeaderActions({
     mutationFn: (payload: Record<string, unknown>) =>
       request(resourcePath, { body: JSON.stringify(payload), method: "PATCH" }),
     onSuccess: invalidate,
+  });
+
+  const reopenIssue = useMutation({
+    mutationFn: () => request(`${resourcePath}/reopen`, { method: "POST" }),
+    onSuccess: async () => {
+      await invalidate();
+      toast.success("Issue reopened on GitHub.");
+    },
+    onError: () => toast.error("Could not reopen the issue."),
   });
 
   const merge = useMutation({
@@ -114,6 +123,22 @@ export function RepoItemHeaderActions({
     <div className="flex shrink-0 items-center gap-2">
       {/* Rename lives beside the title via RepoItemTitleAction, not here —
             an action belongs next to the thing it changes. */}
+      {kind === "issue" && state === "closed" && (
+        <Button
+          disabled={reopenIssue.isPending}
+          onClick={() => reopenIssue.mutate()}
+          size="sm"
+          variant="outline"
+        >
+          {reopenIssue.isPending ? (
+            <LoaderCircle className="size-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="size-3.5" />
+          )}
+          Reopen GitHub Issue
+        </Button>
+      )}
+
       {kind === "pull-request" && state !== "merged" && (
         <Button
           disabled={update.isPending}

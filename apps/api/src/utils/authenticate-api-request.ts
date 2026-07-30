@@ -75,6 +75,8 @@ export async function authenticateApiRequest(c: Context): Promise<void> {
       userId: key.userId,
       enabled: key.enabled,
       permissions: key.permissions,
+      name: key.name,
+      metadata: key.metadata,
     });
     return;
   }
@@ -92,6 +94,8 @@ export async function authenticateApiRequest(c: Context): Promise<void> {
         userId: key.userId,
         enabled: key.enabled,
         permissions: key.permissions,
+        name: key.name,
+        metadata: key.metadata,
       });
       return;
     }

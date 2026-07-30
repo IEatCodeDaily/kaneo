@@ -15,6 +15,13 @@ type TaskExternalLink = {
   metadata: Record<string, unknown> | null;
 };
 
+type TaskParent = {
+  id: string;
+  number: number | null;
+  title: string;
+  status: string;
+};
+
 type Task = {
   id: string;
   title: string;
@@ -28,13 +35,17 @@ type Task = {
   createdAt: string;
   updatedAt?: string;
   userId: string | null;
+  teamId?: string | null;
   assigneeId: string | null;
   assigneeName: string | null;
   assigneeImage?: string | null;
+  teamAssigneeName?: string | null;
   boardId: string;
   columnId?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
+  /** Parent of a `subtask` relation, when this task is a child. */
+  parentTask?: TaskParent | null;
 };
 
 export default Task;

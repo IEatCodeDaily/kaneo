@@ -46,6 +46,7 @@ import { mapCustomOAuthProfileToUser } from "./utils/custom-oauth-profile";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getInvitationEmailSubject } from "./utils/get-invitation-email-subject";
 import { getOrganizationInvitationEmailCopy } from "./utils/get-organization-invitation-email-copy";
+import getSettings from "./utils/get-settings";
 import { getGithubSsoOAuthCredentials } from "./utils/github-sso-env";
 import { isCloud } from "./utils/is-cloud";
 import { isDisposableEmail } from "./utils/is-disposable-email";
@@ -349,6 +350,20 @@ export const auth = betterAuth({
           const check = checkOrganizationName(organization.name ?? "");
           if (!check.ok) {
             throw new APIError("BAD_REQUEST", { message: check.reason });
+          }
+          // Single-org mode permits exactly one organization. Enforced here
+          // rather than in the UI so the API cannot be used to bypass it.
+          if (getSettings().singleOrgMode) {
+            const [existing] = await db
+              .select({ id: schema.organizationTable.id })
+              .from(schema.organizationTable)
+              .limit(1);
+            if (existing) {
+              throw new APIError("BAD_REQUEST", {
+                message:
+                  "This instance runs in single-organization mode and already has an organization",
+              });
+            }
           }
         },
         afterCreateOrganization: async ({ organization, user }) => {

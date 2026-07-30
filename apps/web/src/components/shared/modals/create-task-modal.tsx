@@ -50,6 +50,7 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
+import useTaskDraftStore from "@/store/task-draft";
 import type Task from "@/types/task";
 
 type CreateTaskModalProps = {
@@ -202,6 +203,12 @@ function CreateTaskModal({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const draftCreationPromiseRef = useRef<Promise<Task> | null>(null);
   const didSubmitRef = useRef(false);
+  const didDiscardRef = useRef(false);
+  const restoredForRef = useRef<string | null>(null);
+
+  const { saveDraft, clearDraft } = useTaskDraftStore();
+  // Keyed per board+column so two columns don't fight over one draft.
+  const draftKey = `${resolvedBoardId || "no-board"}:${status ?? "default"}`;
 
   const { mutateAsync: createTask } = useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
@@ -229,9 +236,7 @@ function CreateTaskModal({
       (label) => label.name.toLowerCase() === searchValue.toLowerCase(),
     );
 
-  const handleClose = () => {
-    const shouldDeleteDraft = draftTask && !didSubmitRef.current;
-
+  const clearFormState = () => {
     setTitle("");
     setDescription("");
     setPriority("no-priority");
@@ -247,10 +252,54 @@ function CreateTaskModal({
     draftCreationPromiseRef.current = null;
     didSubmitRef.current = false;
     setDraftTask(null);
-    onClose();
+  };
 
-    if (shouldDeleteDraft) {
-      void deleteTask(draftTask.id).catch(() => {
+  const hasDraftContent = Boolean(
+    title.trim() ||
+      description.trim() ||
+      assigneeId ||
+      startDate ||
+      dueDate ||
+      labels.length > 0 ||
+      priority !== "no-priority" ||
+      draftTask,
+  );
+
+  /**
+   * Closing preserves unsubmitted work instead of destroying it. The
+   * server-side `draftTask` is kept too — it owns any uploaded images, so
+   * deleting it would orphan them. Use "Discard draft" to throw it away.
+   */
+  const handleClose = () => {
+    if (!didSubmitRef.current && !didDiscardRef.current && hasDraftContent) {
+      saveDraft(draftKey, {
+        title,
+        description,
+        priority,
+        assigneeId,
+        startDate: startDate ? startDate.toISOString() : null,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        labels,
+        draftTask,
+        savedAt: Date.now(),
+      });
+    }
+
+    restoredForRef.current = null;
+    didDiscardRef.current = false;
+    clearFormState();
+    onClose();
+  };
+
+  /** Explicit user intent to throw the draft away, including its placeholder task. */
+  const handleDiscardDraft = () => {
+    const abandoned = draftTask;
+    didDiscardRef.current = true;
+    clearDraft(draftKey);
+    handleClose();
+
+    if (abandoned) {
+      void deleteTask(abandoned.id).catch(() => {
         // ignore cleanup failures for abandoned empty drafts
       });
     }
@@ -417,6 +466,8 @@ function CreateTaskModal({
 
       setDraftTask(savedTask);
       syncTaskIntoBoard(savedTask);
+      // The draft became a real task; it must not resurface on reopen.
+      clearDraft(draftKey);
       toast.success(
         draftTask
           ? t("common:modals.createTask.successUpdated")
@@ -450,6 +501,28 @@ function CreateTaskModal({
       );
     }
   };
+
+  useEffect(() => {
+    if (!open) {
+      restoredForRef.current = null;
+      return;
+    }
+    // Restore once per opening, and never clobber in-progress typing.
+    if (restoredForRef.current === draftKey) return;
+    restoredForRef.current = draftKey;
+
+    const saved = useTaskDraftStore.getState().getDraft(draftKey);
+    if (!saved) return;
+
+    setTitle(saved.title ?? "");
+    setDescription(saved.description ?? "");
+    setPriority((saved.priority as Priority) ?? "no-priority");
+    setAssigneeId(saved.assigneeId ?? "");
+    setStartDate(saved.startDate ? new Date(saved.startDate) : undefined);
+    setDueDate(saved.dueDate ? new Date(saved.dueDate) : undefined);
+    setLabels((saved.labels as Label[]) ?? []);
+    setDraftTask((saved.draftTask as Task | null) ?? null);
+  }, [open, draftKey]);
 
   const priorityOptions = useMemo(
     () =>
@@ -1039,6 +1112,17 @@ function CreateTaskModal({
             >
               {t("common:actions.cancel")}
             </Button>
+            {hasDraftContent && (
+              <Button
+                type="button"
+                onClick={handleDiscardDraft}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+              >
+                {t("common:modals.createTask.discardDraft")}
+              </Button>
+            )}
             <Button
               type="submit"
               disabled={!title.trim()}

@@ -112,6 +112,7 @@
 				"labelCreated": "Label created",
 				"labelCreateError": "Failed to create label",
 				"createMore": "Create more",
+				"discardDraft": "Discard draft",
 				"createButton": "Create Task",
 				"untitledTask": "Untitled task",
 				"labelColors": {
@@ -1399,6 +1400,8 @@
 			"mustBeLoggedInToEdit": "You must be logged in to edit comments",
 			"updated": "Comment updated",
 			"failedToUpdate": "Failed to update comment",
+			"editHistory_one": "1 previous version",
+			"editHistory_other": "{{count}} previous versions",
 			"edit": "Edit comment",
 			"editPlaceholder": "Edit comment...",
 			"save": "Save",

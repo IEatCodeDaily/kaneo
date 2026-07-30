@@ -3,9 +3,9 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   activityTable,
+  boardTable,
   integrationTable,
   labelTable,
-  boardTable,
   taskTable,
 } from "../../database/schema";
 import type { GitHubConfig } from "../../plugins/github/config";

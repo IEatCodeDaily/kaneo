@@ -112,6 +112,7 @@
 				"labelCreated": "Label erstellt",
 				"labelCreateError": "Label konnte nicht erstellt werden",
 				"createMore": "Weitere erstellen",
+				"discardDraft": "Entwurf verwerfen",
 				"createButton": "Aufgabe erstellen",
 				"untitledTask": "Unbenannte Aufgabe",
 				"labelColors": {

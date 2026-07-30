@@ -112,6 +112,7 @@
 				"labelCreated": "Label dibuat",
 				"labelCreateError": "Gagal membuat label",
 				"createMore": "Buat lagi",
+				"discardDraft": "Buang draf",
 				"createButton": "Buat Tugas",
 				"untitledTask": "Tugas tanpa judul",
 				"labelColors": {

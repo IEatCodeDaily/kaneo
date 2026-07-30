@@ -19,7 +19,13 @@ async function optionalGitHubRelation<T>(request: Promise<T>) {
     });
 }
 
-type GitHubIssueRelation = Record<string, unknown>;
+type GitHubIssueRelation = {
+  html_url?: string;
+  number?: number;
+  repository_url?: string;
+  state?: string;
+  title?: string;
+};
 type GitHubTimelineEvent = {
   source?: {
     issue?: {

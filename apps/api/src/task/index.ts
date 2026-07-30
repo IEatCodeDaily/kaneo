@@ -551,7 +551,7 @@ const task = new Hono<{
     describeRoute({
       operationId: "updateTaskAssignee",
       tags: ["Tasks"],
-      description: "Assign or unassign a task to a user",
+      description: "Assign or unassign a task to a user or team",
       responses: {
         200: {
           description: "Task assignee updated successfully",
@@ -562,15 +562,27 @@ const task = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    validator("json", v.object({ userId: v.nullable(v.string()) })),
+    validator(
+      "json",
+      v.object({
+        userId: v.optional(v.nullable(v.string())),
+        teamId: v.optional(v.nullable(v.string())),
+      }),
+    ),
     organizationAccess.fromTask(),
     requireOrganizationPermission({ task: ["assign"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { userId } = c.req.valid("json");
+      const { userId = null, teamId = null } = c.req.valid("json");
       const currentUserId = c.get("userId");
 
-      const task = await updateTaskAssignee({ id, userId, currentUserId });
+      const task = await updateTaskAssignee({
+        id,
+        userId,
+        teamId,
+        currentUserId,
+        organizationId: c.get("organizationId"),
+      });
 
       return c.json(task);
     },

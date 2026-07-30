@@ -1,9 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CircleDot, Github, GitPullRequest, Plus } from "lucide-react";
+import {
+  CircleDot,
+  Eye,
+  EyeOff,
+  Github,
+  GitPullRequest,
+  Plus,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { formatDateMedium } from "@/lib/format";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/",
@@ -37,6 +46,8 @@ function RouteComponent() {
   const { organizationId } = Route.useParams();
   const navigate = useNavigate();
   const { data: repos, isLoading } = useGetRepos({ organizationId });
+  const { user } = useAuth();
+  const { hiddenRepoIds, setRepoSidebarVisibility } = useUserPreferencesStore();
   const headerActions = (
     <Button variant="outline" size="xs" onClick={() => setAddOpen(true)}>
       <Plus className="size-3" />
@@ -205,11 +216,33 @@ function RouteComponent() {
                   </span>
                 </TableCell>
                 <TableCell className="py-3">
-                  <span className="text-sm text-muted-foreground">
-                    {repo.lastSyncedAt
-                      ? formatDateMedium(repo.lastSyncedAt)
-                      : t("organization:repos.neverSynced")}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {repo.lastSyncedAt
+                        ? formatDateMedium(repo.lastSyncedAt)
+                        : t("organization:repos.neverSynced")}
+                    </span>
+                    <Button
+                      aria-label={`${hiddenRepoIds.includes(`${user?.id}:${repo.id}`) ? "Show" : "Hide"} ${repo.owner}/${repo.name} in sidebar`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!user?.id) return;
+                        setRepoSidebarVisibility(
+                          user.id,
+                          repo.id,
+                          hiddenRepoIds.includes(`${user.id}:${repo.id}`),
+                        );
+                      }}
+                      size="icon"
+                      variant="ghost"
+                    >
+                      {hiddenRepoIds.includes(`${user?.id}:${repo.id}`) ? (
+                        <Eye className="size-4" />
+                      ) : (
+                        <EyeOff className="size-4" />
+                      )}
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

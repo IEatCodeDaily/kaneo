@@ -284,6 +284,7 @@ function RepoItemDescription({
       body={body}
       isSaving={update.isPending}
       onSave={update.mutateAsync}
+      repoId={repoId}
     />
   );
 }
@@ -297,7 +298,10 @@ export function RepoItemAuthor({
 }) {
   if (!login) return null;
   return (
-    <span className="flex items-center gap-2 text-sm text-muted-foreground">
+    <span
+      className="flex items-center gap-2 text-sm text-muted-foreground"
+      data-testid="repo-item-author"
+    >
       <Avatar className="size-6">
         {avatarUrl && <AvatarImage src={avatarUrl} />}
         <AvatarFallback className="text-[9px]">

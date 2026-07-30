@@ -112,6 +112,7 @@
 				"labelCreated": "Etiket oluşturuldu",
 				"labelCreateError": "Etiket oluşturulamadı",
 				"createMore": "Daha fazla oluştur",
+				"discardDraft": "Taslağı sil",
 				"createButton": "Talep Oluştur",
 				"untitledTask": "Başlıksız talep",
 				"labelColors": {

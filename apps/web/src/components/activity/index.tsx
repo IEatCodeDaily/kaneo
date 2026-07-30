@@ -19,6 +19,7 @@ type ActivityItem = {
   type: string;
   content: string | null;
   eventData?: unknown;
+  editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
   id: string;
   createdAt: string;
   userId: string | null;
@@ -460,6 +461,7 @@ function Activity({
             content={activity.content || ""}
             user={commentUser}
             createdAt={activity.createdAt}
+            editHistory={activity.editHistory}
             externalSource={activity.externalSource}
             externalUrl={activity.externalUrl}
           />

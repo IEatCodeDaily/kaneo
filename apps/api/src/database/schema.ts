@@ -174,6 +174,16 @@ export const organizationTable = pgTable("organization", {
   metadata: text("metadata"),
   description: text("description"),
   reposEnabled: boolean("repos_enabled").default(false).notNull(),
+  aiEnabled: boolean("ai_enabled").default(false).notNull(),
+  aiDefaultTokenLimit: integer("ai_default_token_limit")
+    .default(1024)
+    .notNull(),
+  aiDefaultCharacterLimit: integer("ai_default_character_limit")
+    .default(4000)
+    .notNull(),
+  aiProviderBaseUrl: text("ai_provider_base_url"),
+  aiProviderModel: text("ai_provider_model"),
+  aiProviderApiKey: text("ai_provider_api_key"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
@@ -230,6 +240,8 @@ export const organizationMemberTable = pgTable(
         onDelete: "cascade",
       }),
     role: text("role").default("member").notNull(),
+    aiTokenLimit: integer("ai_token_limit"),
+    aiCharacterLimit: integer("ai_character_limit"),
     joinedAt: timestamp("joined_at", { mode: "date" }).notNull(),
   },
   (table) => [
@@ -506,11 +518,26 @@ export const taskTable = pgTable(
     position: integer("position").default(0),
     number: integer("number").default(1),
     userId: text("assignee_id").references(() => userTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    teamId: text("team_assignee_id").references(() => teamTable.id, {
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
     title: text("title").notNull(),
     description: text("description"),
+    descriptionHistory: jsonb("description_history")
+      .$type<
+        Array<{
+          content: string | null;
+          editedAt: string;
+          userId: string;
+          sealed?: boolean;
+        }>
+      >()
+      .default([])
+      .notNull(),
     status: text("status").notNull().default("to-do"),
     columnId: text("column_id").references(() => columnTable.id, {
       onDelete: "set null",
@@ -529,6 +556,7 @@ export const taskTable = pgTable(
     index("task_boardId_idx").on(table.boardId),
     index("task_dueDate_idx").on(table.dueDate),
     index("task_assigneeId_idx").on(table.userId),
+    index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_board_number_unique").on(table.boardId, table.number),
   ],
@@ -617,6 +645,10 @@ export const activityTable = pgTable(
       onUpdate: "cascade",
     }),
     content: text("content"),
+    editHistory: jsonb("edit_history")
+      .$type<Array<{ content: string; editedAt: string; userId: string }>>()
+      .default([])
+      .notNull(),
     eventData: jsonb("event_data"),
     externalUserName: text("external_user_name"),
     externalUserAvatar: text("external_user_avatar"),
@@ -646,12 +678,16 @@ export const assetTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    boardId: text("board_id")
-      .notNull()
-      .references(() => boardTable.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      }),
+    // Task media belongs to a board; repository media belongs to a repo. At
+    // least one context is required by the asset_owner_context_check migration.
+    boardId: text("board_id").references(() => boardTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    repoId: text("repo_id").references(() => repoTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     taskId: text("task_id").references(() => taskTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
@@ -675,6 +711,7 @@ export const assetTable = pgTable(
   (table) => [
     index("asset_organizationId_idx").on(table.organizationId),
     index("asset_boardId_idx").on(table.boardId),
+    index("asset_repoId_idx").on(table.repoId),
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_createdBy_idx").on(table.createdBy),
@@ -1318,6 +1355,12 @@ export const repoPullRequestTable = pgTable(
     baseBranch: text("base_branch"),
     labels: jsonb("labels").$type<Array<{ name: string; color?: string }>>(),
     commentCount: integer("comment_count").default(0).notNull(),
+    // GitHub's pull-request LIST endpoint omits diff counts; they exist only on
+    // the single-pull-request resource. Persist them so the list can render a
+    // delta without an extra request per row.
+    additions: integer("additions"),
+    deletions: integer("deletions"),
+    changedFiles: integer("changed_files"),
     url: text("url").notNull(),
     externalCreatedAt: timestamp("external_created_at", { mode: "date" }),
     externalUpdatedAt: timestamp("external_updated_at", { mode: "date" }),

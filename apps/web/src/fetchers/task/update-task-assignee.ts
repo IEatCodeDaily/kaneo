@@ -1,7 +1,7 @@
 import { client } from "@kaneo/libs";
 import type Task from "@/types/task";
 
-type UpdateTaskAssigneePayload = Pick<Task, "userId">;
+type UpdateTaskAssigneePayload = Pick<Task, "userId" | "teamId">;
 
 async function updateTaskAssignee(
   taskId: string,
@@ -11,6 +11,7 @@ async function updateTaskAssignee(
     param: { id: taskId },
     json: {
       userId: task.userId || "",
+      teamId: task.teamId || "",
     },
   });
 

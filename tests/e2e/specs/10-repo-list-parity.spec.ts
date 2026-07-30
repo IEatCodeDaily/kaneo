@@ -228,16 +228,28 @@ test.describe("repository issue and pull request list parity", () => {
 
     await tabs.getByRole("tab", { name: "Diffs" }).click();
     const workspace = page.getByTestId("pull-request-diff-workspace");
-    const selectedFile = workspace.getByTestId("pull-request-selected-file");
-    await expect(selectedFile).toHaveText("src/first.ts");
-    await expect(workspace.locator("diffs-container")).toHaveCount(1);
+    const fileHeaders = workspace.getByTestId("pull-request-selected-file");
+    await expect(fileHeaders).toHaveCount(2);
+    await expect(fileHeaders.nth(0)).toHaveText("src/first.ts");
+    await expect(fileHeaders.nth(1)).toHaveText("src/second.ts");
+    await expect(workspace.locator("diffs-container")).toHaveCount(2);
 
-    await workspace
-      .getByRole("button", { name: "src/second.ts", exact: true })
-      .click();
-    await expect(selectedFile).toHaveText("src/second.ts");
+    // The flat file list is now a floating @pierre/trees file tree, rendered in
+    // a portal so the diff renderer cannot paint over it.
+    const treeToggle = workspace.getByRole("button", {
+      name: "Toggle changed files tree",
+    });
+    await expect(treeToggle).toHaveText(/2 files/);
+    await treeToggle.click();
+    const tree = page.getByTestId("inline-file-tree").getByRole("tree");
+    await expect(tree).toBeVisible();
+    // Folder nesting: both fixture files live under src/, so the tree renders a
+    // real collapsible directory rather than two flat rows.
+    const srcFolder = tree.getByRole("treeitem", { name: "src" }).first();
+    await expect(srcFolder).toBeVisible();
+    await srcFolder.click();
     await expect(
-      workspace.getByText("src/first.ts", { exact: true }),
+      tree.getByRole("treeitem", { name: "second.ts" }).first(),
     ).toBeVisible();
 
     const unified = workspace.getByRole("button", { name: "Unified" });
@@ -246,24 +258,39 @@ test.describe("repository issue and pull request list parity", () => {
     await split.click();
     await expect(split).toHaveAttribute("aria-pressed", "true");
     await expect(unified).toHaveAttribute("aria-pressed", "false");
-    await expect(
-      workspace.getByTestId("pull-request-diff-renderer"),
-    ).toHaveAttribute("data-diff-style", "split");
+    const diffRenderers = workspace.getByTestId("pull-request-diff-renderer");
+    await expect(diffRenderers).toHaveCount(2);
+    await expect(diffRenderers.nth(0)).toHaveAttribute(
+      "data-diff-style",
+      "split",
+    );
+    await expect(diffRenderers.nth(1)).toHaveAttribute(
+      "data-diff-style",
+      "split",
+    );
 
     await workspace
       .getByRole("button", { name: "Open diff fullscreen" })
       .click();
     const dialog = page.getByRole("dialog", { name: "Pull request diff" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByTestId("pull-request-selected-file")).toHaveText(
-      "src/second.ts",
+    await expect(dialog.getByTestId("pull-request-selected-file")).toHaveCount(
+      2,
     );
-    await expect(dialog.locator("diffs-container")).toHaveCount(1);
+    await expect(dialog.locator("diffs-container")).toHaveCount(2);
+    await dialog
+      .getByRole("button", { name: "Toggle changed files tree" })
+      .click();
+    await expect(
+      page.getByTestId("fullscreen-file-tree").getByRole("tree"),
+    ).toBeVisible();
 
+    // Escape closes the file-tree popover first, so dismiss it before the
+    // dialog: two Escapes, innermost layer first.
+    await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(selectedFile).toHaveText("src/second.ts");
-    await expect(workspace.locator("diffs-container")).toHaveCount(1);
+    await expect(workspace.locator("diffs-container")).toHaveCount(2);
     expect(pageErrors).toEqual([]);
   });
 
