@@ -25,6 +25,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
+import TaskViewControls from "@/components/common/task-view-controls";
 import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
 import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
 import {
@@ -41,6 +42,13 @@ import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-boar
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
+import {
+  type DisplayConfig,
+  type GroupField,
+  groupTasks,
+  type SortConfig,
+  sortTasks,
+} from "@/lib/sort-tasks";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type GanttSearchParams = {
@@ -173,6 +181,7 @@ type RowProps = {
   taskColumnWidthRem: number;
   boardSlug: string | undefined;
   collapsed: boolean;
+  display: DisplayConfig;
   onToggleCollapse: (id: string) => void;
   onOpenTask: (task: FlatRow) => void;
 };
@@ -186,6 +195,7 @@ const GanttRow = memo(function GanttRow({
   taskColumnWidthRem,
   boardSlug,
   collapsed,
+  display,
   onToggleCollapse,
   onOpenTask,
 }: RowProps) {
@@ -231,6 +241,19 @@ const GanttRow = memo(function GanttRow({
               <span className="shrink-0 rounded bg-secondary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
                 {getStatusLabel(task.status)}
               </span>
+              {display.priority && task.priority ? (
+                <span
+                  className={cn(
+                    "shrink-0 rounded px-1 py-px text-[9px] font-medium",
+                    task.priority === "urgent" && "text-destructive-foreground",
+                    task.priority === "high" && "text-warning-foreground",
+                    task.priority === "medium" && "text-warning-foreground/85",
+                    task.priority === "low" && "text-info-foreground",
+                  )}
+                >
+                  {task.priority}
+                </span>
+              ) : null}
               <span className="shrink-0 truncate text-[9px] text-muted-foreground">
                 {task.isForeign
                   ? `${task.boardSlug}-${task.number}`
@@ -244,6 +267,11 @@ const GanttRow = memo(function GanttRow({
               <span className="min-w-0 truncate text-xs font-medium text-foreground">
                 {task.title}
               </span>
+              {display.assignee && task.assigneeName ? (
+                <span className="shrink-0 truncate text-[9px] text-muted-foreground">
+                  @{task.assigneeName}
+                </span>
+              ) : null}
             </div>
           </button>
         </div>
@@ -276,6 +304,17 @@ function RouteComponent() {
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
   const [zoom, setZoom] = useState<GanttZoom>("day");
+  const [sort, setSort] = useState<SortConfig>({
+    field: "position",
+    direction: "asc",
+  });
+  const [group, setGroup] = useState<GroupField>("none");
+  const [display, setDisplay] = useState<DisplayConfig>({
+    assignee: true,
+    priority: false,
+    labels: false,
+    dates: true,
+  });
   const isMobile = useIsMobile();
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -343,10 +382,21 @@ function RouteComponent() {
           left.scheduleStart.getTime() - right.scheduleStart.getTime(),
       );
   }, [allTasks, foreignRows]);
+  // Sort the flat task list before building the tree so parents/children
+  // respect the selected sort within their subtree.
+  const sortedParsed = useMemo(
+    () =>
+      sortTasks(
+        parsedTasks as unknown as Task[],
+        sort,
+      ) as unknown as typeof parsedTasks,
+    [parsedTasks, sort],
+  );
 
+  // Nest subtasks under parents; flatten with depth.
   const nestedRows = useMemo(
-    () => buildNestedRows(parsedTasks, relationData?.relations ?? []),
-    [parsedTasks, relationData?.relations],
+    () => buildNestedRows(sortedParsed, relationData?.relations ?? []),
+    [sortedParsed, relationData?.relations],
   );
 
   // When searching, expand all (ignore collapse) so results are visible.
@@ -480,20 +530,25 @@ function RouteComponent() {
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
         <div className="border-b border-border/80 px-3 py-2 sm:px-4">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <h1 className="text-xs font-semibold text-foreground">
-              {t("tasks:gantt.title")}
-            </h1>
-            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-              <div className="relative w-full max-w-sm">
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={t("tasks:gantt.searchPlaceholder")}
-                  className="h-8 min-h-9 touch-manipulation sm:min-h-0 [&_[data-slot=input]]:pl-7 [&_[data-slot=input]]:text-xs"
-                />
-              </div>
+          <div className="flex items-center gap-3">
+            <TaskViewControls
+              sort={sort}
+              onSortChange={setSort}
+              group={group}
+              onGroupChange={setGroup}
+              display={display}
+              onDisplayChange={setDisplay}
+            />
+            <div className="relative w-full max-w-[14rem]">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={t("tasks:gantt.searchPlaceholder")}
+                className="h-7 min-h-0 [&_[data-slot=input]]:pl-7 [&_[data-slot=input]]:text-xs"
+              />
+            </div>
+            <div className="ml-auto flex items-center gap-2">
               <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
                 {ZOOM_LEVELS.map((level) => (
                   <Button
@@ -713,6 +768,7 @@ function RouteComponent() {
                       taskColumnWidthRem={taskColumnWidthRem}
                       boardSlug={board?.slug}
                       collapsed={collapsedIds.has(task.id)}
+                      display={display}
                       onToggleCollapse={toggleCollapse}
                       onOpenTask={openTask}
                     />

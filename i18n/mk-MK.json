@@ -1544,6 +1544,22 @@
 				"number": "Број на задача"
 			}
 		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
+		},
 		"boardFilters": {
 			"filterBy": "Филтрирај по",
 			"allStatuses": "Сите статуси",

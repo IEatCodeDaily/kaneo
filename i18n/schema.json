@@ -7174,6 +7174,70 @@
 						"fields"
 					]
 				},
+				"group": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"by": {
+							"type": "string"
+						},
+						"none": {
+							"type": "string"
+						},
+						"status": {
+							"type": "string"
+						},
+						"priority": {
+							"type": "string"
+						},
+						"assignee": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"by",
+						"none",
+						"status",
+						"priority",
+						"assignee"
+					]
+				},
+				"display": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"show": {
+							"type": "string"
+						},
+						"assignee": {
+							"type": "string"
+						},
+						"priority": {
+							"type": "string"
+						},
+						"labels": {
+							"type": "string"
+						},
+						"dates": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"show",
+						"assignee",
+						"priority",
+						"labels",
+						"dates"
+					]
+				},
 				"boardFilters": {
 					"type": "object",
 					"additionalProperties": false,
@@ -7737,6 +7801,8 @@
 				"popover",
 				"backlog",
 				"sort",
+				"group",
+				"display",
 				"boardFilters",
 				"gantt",
 				"calendar",

@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
+  addDays,
   addMonths,
+  addWeeks,
+  endOfWeek as dateFnsEndOfWeek,
+  startOfWeek as dateFnsStartOfWeek,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -20,12 +24,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
+import TaskViewControls from "@/components/common/task-view-controls";
 import { statusBarClasses } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { cn } from "@/lib/cn";
+import {
+  type DisplayConfig,
+  type GroupField,
+  type SortConfig,
+  sortTasks,
+} from "@/lib/sort-tasks";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type CalendarSearchParams = {
@@ -54,7 +65,19 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
-  const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const [calView, setCalView] = useState<"month" | "week" | "day">("month");
+  const [cursor, setCursor] = useState(() => new Date());
+  const [sort, setSort] = useState<SortConfig>({
+    field: "position",
+    direction: "asc",
+  });
+  const [group, setGroup] = useState<GroupField>("none");
+  const [display, setDisplay] = useState<DisplayConfig>({
+    assignee: true,
+    priority: true,
+    labels: false,
+    dates: true,
+  });
 
   const openTask = (id: string) =>
     navigate({ to: ".", search: { taskId: id }, replace: true });
@@ -64,15 +87,13 @@ function RouteComponent() {
       ...(board?.columns.flatMap((column) => column.tasks) ?? []),
       ...(board?.plannedTasks ?? []),
     ];
-
-    return tasks
+    return sortTasks(tasks, sort)
       .map((task) => {
         const parsedStart =
           parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
         const parsedEnd =
           parseTaskDate(task.dueDate) ?? parseTaskDate(task.startDate);
         if (!parsedStart || !parsedEnd) return null;
-
         return {
           ...task,
           scheduleStart: parsedStart <= parsedEnd ? parsedStart : parsedEnd,
@@ -80,17 +101,22 @@ function RouteComponent() {
         };
       })
       .filter((task): task is NonNullable<typeof task> => task !== null);
-  }, [board]);
+  }, [board, sort]);
 
-  // Full weeks around the month, so the grid is always rectangular.
-  const gridDays = useMemo(
-    () =>
-      eachDayOfInterval({
-        start: startOfWeek(startOfMonth(month), { weekStartsOn }),
-        end: endOfWeek(endOfMonth(month), { weekStartsOn }),
-      }),
-    [month, weekStartsOn],
-  );
+  // Grid days depend on the selected view mode.
+  const gridDays = useMemo(() => {
+    if (calView === "day") return [startOfDay(cursor)];
+    if (calView === "week") {
+      return eachDayOfInterval({
+        start: dateFnsStartOfWeek(cursor, { weekStartsOn }),
+        end: dateFnsEndOfWeek(cursor, { weekStartsOn }),
+      });
+    }
+    return eachDayOfInterval({
+      start: startOfWeek(startOfMonth(cursor), { weekStartsOn }),
+      end: endOfWeek(endOfMonth(cursor), { weekStartsOn }),
+    });
+  }, [calView, cursor, weekStartsOn]);
 
   const weekdayLabels = useMemo(
     () => gridDays.slice(0, 7).map((day) => format(day, "EEEEEE")),
@@ -124,39 +150,80 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex items-center justify-between gap-3 border-b border-border/80 px-3 py-3 sm:px-4">
-          <h1 className="text-sm font-semibold text-foreground">
-            {format(month, "MMMM yyyy")}
-          </h1>
-
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon-xs"
-              aria-label={t("tasks:calendar.previousMonth")}
-              onClick={() => setMonth((current) => subMonths(current, 1))}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => setMonth(startOfMonth(new Date()))}
-            >
-              {t("tasks:calendar.today")}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-xs"
-              aria-label={t("tasks:calendar.nextMonth")}
-              onClick={() => setMonth((current) => addMonths(current, 1))}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
+        <div className="flex items-center justify-between gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon-xs"
+                onClick={() => {
+                  if (calView === "day") setCursor((c) => addDays(c, -1));
+                  else if (calView === "week")
+                    setCursor((c) => addWeeks(c, -1));
+                  else setCursor((c) => subMonths(c, 1));
+                }}
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setCursor(new Date())}
+              >
+                {t("tasks:calendar.today")}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon-xs"
+                onClick={() => {
+                  if (calView === "day") setCursor((c) => addDays(c, 1));
+                  else if (calView === "week") setCursor((c) => addWeeks(c, 1));
+                  else setCursor((c) => addMonths(c, 1));
+                }}
+              >
+                <ChevronRight className="size-3.5" />
+              </Button>
+            </div>
+            <h1 className="text-xs font-semibold text-foreground">
+              {calView === "day"
+                ? format(cursor, "EEEE, MMM d yyyy")
+                : calView === "week"
+                  ? `${format(dateFnsStartOfWeek(cursor, { weekStartsOn }), "MMM d")} - ${format(dateFnsEndOfWeek(cursor, { weekStartsOn }), "MMM d yyyy")}`
+                  : format(cursor, "MMMM yyyy")}
+            </h1>
+            <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
+              {(["day", "week", "month"] as const).map((v) => (
+                <Button
+                  key={v}
+                  variant={calView === v ? "secondary" : "ghost"}
+                  size="xs"
+                  onClick={() => setCalView(v)}
+                  className={cn(
+                    "h-5 rounded-md px-2 text-xs capitalize",
+                    calView !== v && "text-muted-foreground",
+                  )}
+                >
+                  {v}
+                </Button>
+              ))}
+            </div>
           </div>
+          <TaskViewControls
+            sort={sort}
+            onSortChange={setSort}
+            group={group}
+            onGroupChange={setGroup}
+            display={display}
+            onDisplayChange={setDisplay}
+          />
         </div>
 
-        <div className="grid shrink-0 grid-cols-7 border-b border-border/80">
+        <div
+          className="grid shrink-0 border-b border-border/80"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(gridDays.length, 7)}, minmax(0, 1fr))`,
+          }}
+        >
           {weekdayLabels.map((label) => (
             <div
               key={label}
@@ -167,10 +234,16 @@ function RouteComponent() {
           ))}
         </div>
 
-        <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-7 overflow-auto">
+        <div
+          className="grid min-h-0 flex-1 auto-rows-fr overflow-auto"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(gridDays.length, 7)}, minmax(0, 1fr))`,
+          }}
+        >
           {gridDays.map((day) => {
             const dayTasks = tasksByDay.get(day.toDateString()) ?? [];
-            const outsideMonth = !isSameMonth(day, month);
+            const outsideMonth =
+              calView === "month" && !isSameMonth(day, cursor);
 
             return (
               <div
@@ -202,9 +275,6 @@ function RouteComponent() {
                   const colors = statusBarClasses(task.status);
                   const isStart = isSameDay(day, task.scheduleStart);
                   const isEnd = isSameDay(day, task.scheduleEnd);
-                  // Show the title on the first day and again at each week wrap,
-                  // so a long band stays identifiable on every row it appears in.
-                  const showLabel = isStart || day.getDay() === weekStartsOn;
 
                   return (
                     <button
@@ -229,7 +299,9 @@ function RouteComponent() {
                       )}
                     >
                       <span className="truncate">
-                        {showLabel ? task.title : ""}
+                        {isStart || day.getDay() === weekStartsOn
+                          ? `${display.priority && task.priority ? `[${task.priority}] ` : ""}${task.title}${display.assignee && task.assigneeName ? ` @${task.assigneeName}` : ""}`
+                          : ""}
                       </span>
                     </button>
                   );

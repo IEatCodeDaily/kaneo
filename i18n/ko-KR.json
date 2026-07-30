@@ -1546,6 +1546,22 @@
 				"number": "작업 번호"
 			}
 		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
+		},
 		"boardFilters": {
 			"filterBy": "필터 기준",
 			"allStatuses": "모든 상태",
