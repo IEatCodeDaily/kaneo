@@ -1,7 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { isToday, isWeekend, parseISO, startOfDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  format,
+  isSameMonth,
+  isToday,
+  isWeekend,
+  parseISO,
+  startOfDay,
+} from "date-fns";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronRight as ChevronRightIcon,
+  Search,
+} from "lucide-react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
 import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
@@ -62,18 +83,23 @@ type ScheduledTask = {
   boardSlug?: string;
 };
 
-type FlatRow = ScheduledTask & { depth: number };
+type FlatRow = ScheduledTask & {
+  depth: number;
+  hasChildren: boolean;
+  parentId: string | null;
+};
+
+type Relation = {
+  sourceTaskId: string;
+  targetTaskId: string;
+  relationType: string;
+};
 
 /** Build a tree from subtask edges, then flatten with depth for rendering. */
 function buildNestedRows(
   tasks: ScheduledTask[],
-  relations: {
-    sourceTaskId: string;
-    targetTaskId: string;
-    relationType: string;
-  }[],
+  relations: Relation[],
 ): FlatRow[] {
-  // subtask: source=parent, target=child
   const childrenOf = new Map<string, string[]>();
   const parentOf = new Map<string, string>();
   const taskSet = new Set(tasks.map((t) => t.id));
@@ -88,7 +114,6 @@ function buildNestedRows(
     parentOf.set(rel.targetTaskId, rel.sourceTaskId);
   }
 
-  // Roots: tasks that have no parent, or whose parent is foreign (not in this set).
   const roots = tasks.filter((t) => !parentOf.has(t.id));
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
   const rows: FlatRow[] = [];
@@ -99,25 +124,147 @@ function buildNestedRows(
     visited.add(taskId);
     const task = taskMap.get(taskId);
     if (!task) return;
-    rows.push({ ...task, depth });
-    for (const childId of childrenOf.get(taskId) ?? []) {
-      walk(childId, depth + 1);
-    }
+    const kids = childrenOf.get(taskId) ?? [];
+    rows.push({
+      ...task,
+      depth,
+      hasChildren: kids.length > 0,
+      parentId: parentOf.get(taskId) ?? null,
+    });
+    for (const childId of kids) walk(childId, depth + 1);
   };
 
-  for (const root of roots) {
-    walk(root.id, 0);
-  }
-
-  // Orphans (visited guard missed them due to cycles or missing parents)
+  for (const root of roots) walk(root.id, 0);
   for (const task of tasks) {
-    if (!visited.has(task.id)) {
-      rows.push({ ...task, depth: 0 });
-    }
+    if (!visited.has(task.id))
+      rows.push({ ...task, depth: 0, hasChildren: false, parentId: null });
   }
 
   return rows;
 }
+
+/** Filter flat rows by collapsed state — hide rows whose ancestor is collapsed. */
+function applyCollapsed(rows: FlatRow[], collapsed: Set<string>): FlatRow[] {
+  if (collapsed.size === 0) return rows;
+  // O(n): pre-build parentId map instead of linear search per ancestor.
+  const parentMap = new Map(rows.map((r) => [r.id, r.parentId]));
+  const hidden = new Set<string>();
+  for (const row of rows) {
+    let ancestor = row.parentId;
+    while (ancestor) {
+      if (collapsed.has(ancestor)) {
+        hidden.add(row.id);
+        break;
+      }
+      ancestor = parentMap.get(ancestor) ?? null;
+    }
+  }
+  return rows.filter((r) => !hidden.has(r.id));
+}
+
+// --- Row component (memoized for render perf) ---
+
+type RowProps = {
+  task: FlatRow;
+  timeline: NonNullable<ReturnType<typeof buildTimeline>>;
+  pixelsPerDay: number;
+  isMobile: boolean;
+  showTaskRail: boolean;
+  taskColumnWidthRem: number;
+  boardSlug: string | undefined;
+  collapsed: boolean;
+  onToggleCollapse: (id: string) => void;
+  onOpenTask: (task: FlatRow) => void;
+};
+
+const GanttRow = memo(function GanttRow({
+  task,
+  timeline,
+  pixelsPerDay,
+  isMobile,
+  showTaskRail,
+  taskColumnWidthRem,
+  boardSlug,
+  collapsed,
+  onToggleCollapse,
+  onOpenTask,
+}: RowProps) {
+  return (
+    <div
+      className="grid items-stretch border-b border-border/60"
+      style={{
+        height: `${ROW_HEIGHT_PX}px`,
+        gridTemplateColumns: showTaskRail
+          ? isMobile
+            ? `${taskColumnWidthRem}rem max-content`
+            : "20rem max-content"
+          : "max-content",
+      }}
+    >
+      {showTaskRail ? (
+        <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
+          <button
+            type="button"
+            className="flex h-full w-full min-w-0 items-center gap-1 pr-2 text-left transition-colors hover:bg-muted"
+            style={{ paddingLeft: `${task.depth * INDENT_PX + 4}px` }}
+            onClick={() => onOpenTask(task)}
+          >
+            {task.hasChildren ? (
+              <button
+                type="button"
+                className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted-foreground/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleCollapse(task.id);
+                }}
+              >
+                {collapsed ? (
+                  <ChevronRight className="size-3" />
+                ) : (
+                  <ChevronDown className="size-3" />
+                )}
+              </button>
+            ) : (
+              <span className="w-5 shrink-0" />
+            )}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="shrink-0 rounded bg-secondary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
+                {getStatusLabel(task.status)}
+              </span>
+              <span className="shrink-0 truncate text-[9px] text-muted-foreground">
+                {task.isForeign
+                  ? `${task.boardSlug}-${task.number}`
+                  : `${boardSlug}-${task.number}`}
+              </span>
+              {task.isForeign ? (
+                <span className="shrink-0 rounded border border-dashed border-border px-1 py-px text-[9px] text-muted-foreground">
+                  {task.boardName}
+                </span>
+              ) : null}
+              <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                {task.title}
+              </span>
+            </div>
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        className="relative shrink-0 select-none"
+        style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
+      >
+        <GanttTaskBar
+          task={task}
+          timeline={timeline}
+          pixelsPerDay={pixelsPerDay}
+          isMobile={isMobile}
+          readOnly={task.isForeign}
+          onOpenTask={() => onOpenTask(task)}
+        />
+      </div>
+    </div>
+  );
+});
 
 function RouteComponent() {
   const { t } = useTranslation();
@@ -131,6 +278,7 @@ function RouteComponent() {
   const [zoom, setZoom] = useState<GanttZoom>("day");
   const isMobile = useIsMobile();
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
@@ -145,6 +293,15 @@ function RouteComponent() {
     }
     setIsTaskRailOpen(false);
   }, [isMobile]);
+
+  const toggleCollapse = useCallback((id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const allTasks = useMemo(
     () => [
@@ -178,11 +335,7 @@ function RouteComponent() {
         if (!parsedStart || !parsedEnd) return null;
         const start = parsedStart <= parsedEnd ? parsedStart : parsedEnd;
         const end = parsedEnd >= parsedStart ? parsedEnd : parsedStart;
-        return {
-          ...task,
-          scheduleStart: start,
-          scheduleEnd: end,
-        };
+        return { ...task, scheduleStart: start, scheduleEnd: end };
       })
       .filter((task): task is NonNullable<typeof task> => task !== null)
       .sort(
@@ -191,17 +344,22 @@ function RouteComponent() {
       );
   }, [allTasks, foreignRows]);
 
-  // Nest subtasks under parents; flatten with depth.
   const nestedRows = useMemo(
     () => buildNestedRows(parsedTasks, relationData?.relations ?? []),
     [parsedTasks, relationData?.relations],
   );
 
-  const scheduledTasks = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) return nestedRows;
+  // When searching, expand all (ignore collapse) so results are visible.
+  const searching = searchQuery.trim().length > 0;
+  const visibleRows = useMemo(() => {
+    if (searching) return nestedRows;
+    return applyCollapsed(nestedRows, collapsedIds);
+  }, [nestedRows, collapsedIds, searching]);
 
-    return nestedRows.filter((task) => {
+  const scheduledTasks = useMemo(() => {
+    if (!searching) return visibleRows;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    return visibleRows.filter((task) => {
       return (
         task.title.toLowerCase().includes(normalizedQuery) ||
         `${board?.slug ?? ""}-${task.number ?? ""}`
@@ -210,7 +368,7 @@ function RouteComponent() {
         task.status.toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [nestedRows, board?.slug, searchQuery]);
+  }, [visibleRows, searching, board?.slug, searchQuery]);
 
   const timeline = useMemo(() => {
     if (parsedTasks.length === 0) return null;
@@ -276,17 +434,39 @@ function RouteComponent() {
   const railWidthRem = isMobile ? taskColumnWidthRem : 20;
   const timelineLeft = showTaskRail ? `${railWidthRem}rem` : "0rem";
 
-  const openTask = (task: FlatRow) => {
-    if (task.isForeign) {
-      navigate({
-        to: "/dashboard/organization/$organizationId/board/$boardId/gantt",
-        params: { organizationId, boardId: task.boardId },
-        search: { taskId: task.id },
-      });
-    } else {
-      navigate({ to: ".", search: { taskId: task.id }, replace: true });
+  const openTask = useCallback(
+    (task: FlatRow) => {
+      if (task.isForeign) {
+        navigate({
+          to: "/dashboard/organization/$organizationId/board/$boardId/gantt",
+          params: { organizationId, boardId: task.boardId },
+          search: { taskId: task.id },
+        });
+      } else {
+        navigate({ to: ".", search: { taskId: task.id }, replace: true });
+      }
+    },
+    [navigate, organizationId],
+  );
+
+  // Month header: group timeline.days into month spans for a row above the day numbers.
+  const monthSpans = useMemo(() => {
+    if (!timeline) return [];
+    const spans: { label: string; span: number; key: string }[] = [];
+    for (const [i, day] of timeline.days.entries()) {
+      const prev = timeline.days[i - 1];
+      if (!prev || !isSameMonth(day, prev)) {
+        spans.push({
+          label: format(day, "MMMM yyyy"),
+          span: 1,
+          key: day.toISOString(),
+        });
+      } else {
+        spans[spans.length - 1].span += 1;
+      }
     }
-  };
+    return spans;
+  }, [timeline]);
 
   return (
     <BoardLayout
@@ -342,7 +522,7 @@ function RouteComponent() {
                 {showTaskRail ? (
                   <ChevronLeft className="size-3" />
                 ) : (
-                  <ChevronRight className="size-3" />
+                  <ChevronRightIcon className="size-3" />
                 )}
                 {showTaskRail
                   ? t("tasks:gantt.hideTasks")
@@ -380,56 +560,91 @@ function RouteComponent() {
             className="min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]"
           >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
-              {/* Sticky header */}
-              <div className="sticky top-0 z-20 flex border-b border-border bg-background/95 backdrop-blur">
-                {showTaskRail ? (
+              {/* Sticky header: month row + day row */}
+              <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
+                <div className="flex border-b border-border">
+                  {showTaskRail ? (
+                    <div
+                      className="sticky left-0 z-30 shrink-0 border-r border-border bg-background px-2 py-1 sm:w-80 sm:px-3"
+                      style={{
+                        width: isMobile
+                          ? `${taskColumnWidthRem}rem`
+                          : undefined,
+                      }}
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {t("tasks:gantt.taskHeader")}
+                      </p>
+                    </div>
+                  ) : null}
+                  {/* Month span row */}
                   <div
-                    className="sticky left-0 z-30 shrink-0 border-r border-border bg-background px-2 py-1.5 sm:w-80 sm:px-3"
+                    className="grid shrink-0"
                     style={{
-                      width: isMobile ? `${taskColumnWidthRem}rem` : undefined,
+                      gridTemplateColumns: timeline.gridTemplateColumns,
+                      minWidth: `${timeline.timelineMinWidthRem}rem`,
                     }}
                   >
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {t("tasks:gantt.taskHeader")}
-                    </p>
-                  </div>
-                ) : null}
-                <div
-                  className="grid shrink-0"
-                  style={{
-                    gridTemplateColumns: timeline.gridTemplateColumns,
-                    minWidth: `${timeline.timelineMinWidthRem}rem`,
-                  }}
-                >
-                  {timeline.headerCells.map((cell) => {
-                    const cellDate = new Date(cell.key);
-                    return (
+                    {monthSpans.map((ms) => (
                       <div
-                        key={cell.key}
-                        style={{ gridColumn: `span ${cell.span}` }}
-                        className={cn(
-                          "border-r border-border/70 px-0.5 py-1 text-center sm:px-1",
-                          zoom === "day" &&
-                            isWeekend(cellDate) &&
-                            "bg-muted/25",
-                        )}
+                        key={ms.key}
+                        style={{ gridColumn: `span ${ms.span}` }}
+                        className="border-r border-border/50 px-1 py-0.5 text-[10px] font-semibold text-muted-foreground"
                       >
-                        <div className="h-3 truncate text-[10px] font-medium text-muted-foreground">
-                          {cell.label}
-                        </div>
+                        {ms.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Day row */}
+                <div className="flex border-b border-border">
+                  {showTaskRail ? (
+                    <div
+                      className="sticky left-0 z-30 shrink-0 border-r border-border bg-background sm:w-80"
+                      style={{
+                        width: isMobile
+                          ? `${taskColumnWidthRem}rem`
+                          : undefined,
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="grid shrink-0"
+                    style={{
+                      gridTemplateColumns: timeline.gridTemplateColumns,
+                      minWidth: `${timeline.timelineMinWidthRem}rem`,
+                    }}
+                  >
+                    {timeline.headerCells.map((cell) => {
+                      const cellDate = new Date(cell.key);
+                      return (
                         <div
+                          key={cell.key}
+                          style={{ gridColumn: `span ${cell.span}` }}
                           className={cn(
-                            "mx-auto flex h-5 min-w-5 items-center justify-center truncate rounded-full px-1 text-[11px] font-medium",
+                            "border-r border-border/70 px-0.5 py-0.5 text-center sm:px-1",
                             zoom === "day" &&
-                              isToday(cellDate) &&
-                              "bg-primary text-primary-foreground",
+                              isWeekend(cellDate) &&
+                              "bg-muted/25",
                           )}
                         >
-                          {cell.sublabel}
+                          <div className="h-3 truncate text-[10px] font-medium text-muted-foreground">
+                            {cell.label}
+                          </div>
+                          <div
+                            className={cn(
+                              "mx-auto flex h-4 min-w-4 items-center justify-center truncate rounded-full px-1 text-[10px] font-medium",
+                              zoom === "day" &&
+                                isToday(cellDate) &&
+                                "bg-primary text-primary-foreground",
+                            )}
+                          >
+                            {cell.sublabel}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -488,66 +703,19 @@ function RouteComponent() {
                 {/* Rows */}
                 <div className="relative z-10 flex flex-col">
                   {scheduledTasks.map((task) => (
-                    <div
+                    <GanttRow
                       key={task.id}
-                      className="grid items-stretch border-b border-border/60"
-                      style={{
-                        height: `${ROW_HEIGHT_PX}px`,
-                        gridTemplateColumns: showTaskRail
-                          ? isMobile
-                            ? `${taskColumnWidthRem}rem max-content`
-                            : "20rem max-content"
-                          : "max-content",
-                      }}
-                    >
-                      {showTaskRail ? (
-                        <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
-                          <button
-                            type="button"
-                            className="flex h-full w-full min-w-0 items-center gap-1.5 pl-2 pr-2 text-left transition-colors hover:bg-muted sm:pl-3"
-                            style={{
-                              paddingLeft: `${task.depth * INDENT_PX + 8}px`,
-                            }}
-                            onClick={() => openTask(task)}
-                          >
-                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                              <span className="shrink-0 rounded bg-secondary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
-                                {getStatusLabel(task.status)}
-                              </span>
-                              <span className="shrink-0 truncate text-[9px] text-muted-foreground">
-                                {task.isForeign
-                                  ? `${task.boardSlug}-${task.number}`
-                                  : `${board?.slug}-${task.number}`}
-                              </span>
-                              {task.isForeign ? (
-                                <span className="shrink-0 rounded border border-dashed border-border px-1 py-px text-[9px] text-muted-foreground">
-                                  {task.boardName}
-                                </span>
-                              ) : null}
-                              <span className="min-w-0 truncate text-xs font-medium text-foreground">
-                                {task.title}
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-                      ) : null}
-
-                      <div
-                        className="relative shrink-0 select-none"
-                        style={{
-                          minWidth: `${timeline.timelineMinWidthRem}rem`,
-                        }}
-                      >
-                        <GanttTaskBar
-                          task={task}
-                          timeline={timeline}
-                          pixelsPerDay={pixelsPerDay}
-                          isMobile={isMobile}
-                          readOnly={task.isForeign}
-                          onOpenTask={() => openTask(task)}
-                        />
-                      </div>
-                    </div>
+                      task={task}
+                      timeline={timeline}
+                      pixelsPerDay={pixelsPerDay}
+                      isMobile={isMobile}
+                      showTaskRail={showTaskRail}
+                      taskColumnWidthRem={taskColumnWidthRem}
+                      boardSlug={board?.slug}
+                      collapsed={collapsedIds.has(task.id)}
+                      onToggleCollapse={toggleCollapse}
+                      onOpenTask={openTask}
+                    />
                   ))}
                 </div>
               </div>
