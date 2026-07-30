@@ -1902,6 +1902,9 @@
 			"searchActions": "Search actions...",
 			"noActionsFound": "No actions found.",
 			"changeStatus": "Change Status"
+		},
+		"column": {
+			"empty": "No tasks"
 		}
 	},
 	"invitations": {

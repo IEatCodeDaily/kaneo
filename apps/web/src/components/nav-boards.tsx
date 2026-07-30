@@ -9,7 +9,7 @@ import {
   Settings,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
@@ -41,6 +41,7 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { useTargetBoardView } from "@/hooks/use-remembered-view";
 import { toast } from "@/lib/toast";
+import { useNavigationStore } from "@/store/navigation";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
 import CreateBoardModal from "./shared/modals/create-board-modal";
@@ -84,13 +85,39 @@ export function NavBoards() {
   // last board view this user was in (persisted in localStorage).
   const currentBoardView = useTargetBoardView();
 
+  // Optimistic selection: useParams only updates once React commits the
+  // incoming route, and rendering a large board takes long enough that the
+  // sidebar highlight used to stay on the old board for the whole stall — the
+  // click looked ignored.
+  // Shared with BoardLayout so it can blank the outgoing board's content the
+  // moment a switch is clicked.
+  const pendingBoardId = useNavigationStore((s) => s.pendingBoardId);
+  const setPendingBoardId = useNavigationStore((s) => s.setPendingBoardId);
+
+  useEffect(() => {
+    if (pendingBoardId && currentBoardId === pendingBoardId) {
+      setPendingBoardId(null);
+    }
+  }, [currentBoardId, pendingBoardId, setPendingBoardId]);
+
+  // Don't strand the highlight if the navigation never lands.
+  useEffect(() => {
+    if (!pendingBoardId) return;
+    const timer = setTimeout(() => setPendingBoardId(null), 5000);
+    return () => clearTimeout(timer);
+  }, [pendingBoardId, setPendingBoardId]);
+
+  const selectedBoardId = pendingBoardId ?? currentBoardId;
+
   const isCurrentBoard = (boardId: string) => {
     return (
-      currentBoardId === boardId && currentOrganizationId === organization?.id
+      selectedBoardId === boardId && currentOrganizationId === organization?.id
     );
   };
 
   const handleBoardClick = (board: BoardWithTasks) => {
+    if (board.id === selectedBoardId) return;
+    setPendingBoardId(board.id);
     navigate({
       to: `/dashboard/organization/$organizationId/board/$boardId/${currentBoardView}`,
       params: {

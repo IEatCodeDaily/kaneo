@@ -1,4 +1,8 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  useLocation,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import {
   CalendarDays,
   CalendarRange,
@@ -6,6 +10,7 @@ import {
   SquircleDashed,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { BoardSkeleton } from "@/components/common/board-skeleton";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
@@ -25,6 +30,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
 import { cn } from "@/lib/cn";
+import { useNavigationStore } from "@/store/navigation";
 
 type BoardLayoutProps = {
   boardId: string;
@@ -61,7 +67,8 @@ export default function BoardLayout({
   // looked ignored. Recording the intended target on click lets the switcher
   // paint the new tab immediately; `isNavPending` drives the loading hint.
   const [pendingView, setPendingView] = useState<BoardView | null>(null);
-  const [pendingBoardId, setPendingBoardId] = useState<string | null>(null);
+  const pendingBoardId = useNavigationStore((s) => s.pendingBoardId);
+  const setPendingBoardId = useNavigationStore((s) => s.setPendingBoardId);
 
   // Drop the optimistic target once the URL agrees with it.
   useEffect(() => {
@@ -69,7 +76,7 @@ export default function BoardLayout({
   }, [pathView, pendingView]);
   useEffect(() => {
     if (pendingBoardId && boardId === pendingBoardId) setPendingBoardId(null);
-  }, [boardId, pendingBoardId]);
+  }, [boardId, pendingBoardId, setPendingBoardId]);
 
   // Never strand the pending state if a navigation doesn't land.
   useEffect(() => {
@@ -79,10 +86,17 @@ export default function BoardLayout({
       setPendingBoardId(null);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [pendingView, pendingBoardId]);
+  }, [pendingView, pendingBoardId, setPendingBoardId]);
 
   const resolvedView = pendingView ?? pathView;
-  const isNavPending = pendingView !== null || pendingBoardId !== null;
+  // Router-level pending state covers navigations started elsewhere (the
+  // sidebar board list, command palette), which don't go through goToView and
+  // so wouldn't otherwise show any feedback.
+  const isRouterLoading = useRouterState({
+    select: (s) => s.status === "pending",
+  });
+  const isNavPending =
+    pendingView !== null || pendingBoardId !== null || isRouterLoading;
 
   const goToView = (view: BoardView) => {
     if (view === resolvedView) return;
@@ -234,7 +248,13 @@ export default function BoardLayout({
         </div>
       ) : null}
 
-      <Layout.Content>{children}</Layout.Content>
+      {/* On a board switch the outgoing route is still mounted (React hasn't
+          committed the new one yet), so its cards would otherwise sit under the
+          new board's name for the whole render. Drop them the moment the click
+          lands and let the incoming view's own skeleton take over. */}
+      <Layout.Content>
+        {pendingBoardId ? <BoardSkeleton /> : children}
+      </Layout.Content>
 
       <CreateBoardModal
         open={isCreateBoardModalOpen}

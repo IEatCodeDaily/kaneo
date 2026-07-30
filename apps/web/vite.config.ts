@@ -1,9 +1,26 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import packageJson from "../../package.json";
+
+/**
+ * Serve the dev server over TLS so the browser negotiates HTTP/2.
+ *
+ * Vite serves every source module as its own request in dev (~250 on the board
+ * route). Over HTTP/1.1 the browser only opens 6 connections per origin, so most
+ * of those modules sit in a queue: measured 121 of 250 requests waiting, ~16s of
+ * cumulative queue time, each module stalling ~330ms before its request was even
+ * sent. HTTP/2 multiplexes them over one connection and the queue disappears.
+ *
+ * Opt-in via KANEO_DEV_HTTPS=1 because the k8s ingress in front of this server
+ * (kaneo.entelechia.cloud) terminates TLS itself and talks plain HTTP upstream —
+ * turning this on unconditionally would break that path. The certificate is
+ * self-signed, so the browser shows a one-time warning on localhost.
+ */
+const useDevHttps = process.env.KANEO_DEV_HTTPS === "1";
 
 export default defineConfig({
   define: {
@@ -18,6 +35,7 @@ export default defineConfig({
         plugins: [["babel-plugin-react-compiler"]],
       },
     }),
+    ...(useDevHttps ? [basicSsl()] : []),
   ],
   server: {
     host: true,
@@ -68,7 +86,14 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["better-auth"],
+    // `@pierre/diffs` imports `codeToHtml` from shiki's top-level entry, which
+    // statically re-exports every bundled language grammar. Prebundling it made
+    // the dev server eagerly build ~80 language chunks (emacs-lisp 764K, cpp
+    // 612K, wasm 608K, ...) into node_modules/.vite/deps, so a cold reload
+    // downloaded them all — hundreds of requests and tens of MB before the app
+    // rendered anything. It is only used on the repo routes, so leaving it
+    // unbundled keeps it off the startup path.
+    exclude: ["better-auth", "@pierre/diffs", "@pierre/diffs/react"],
   },
   ssr: {
     noExternal: ["better-auth"],

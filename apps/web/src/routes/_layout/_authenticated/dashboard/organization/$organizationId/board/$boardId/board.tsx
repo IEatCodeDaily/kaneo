@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
+import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
@@ -34,52 +35,16 @@ export const Route = createFileRoute(
   }),
 });
 
-const skeletonColumns = [
-  { key: "col-todo", cards: 3 },
-  { key: "col-progress", cards: 4 },
-  { key: "col-review", cards: 2 },
-  { key: "col-done", cards: 1 },
-];
-
-function BoardSkeleton() {
-  return (
-    <div className="flex h-full w-full gap-4 p-4 overflow-hidden">
-      {skeletonColumns.map((col) => (
-        <div key={col.key} className="flex w-72 shrink-0 flex-col gap-3">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-3 w-3 rounded-full bg-muted animate-pulse" />
-            <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-5 rounded bg-muted animate-pulse" />
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {Array.from({ length: col.cards }, (_, i) => `${col.key}-${i}`).map(
-              (cardKey) => (
-                <div
-                  key={cardKey}
-                  className="rounded-lg border border-border bg-card p-3 space-y-2.5"
-                >
-                  <div className="h-3.5 w-4/5 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-3/5 rounded bg-muted animate-pulse" />
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
-                    <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RouteComponent() {
   const { t } = useTranslation();
   const { boardId, organizationId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data } = useGetTasks(boardId);
+  // isPlaceholderData is true while the incoming board's tasks are still in
+  // flight and react-query is serving the previous board's data (keepPreviousData).
+  // Showing the skeleton then means a board switch never displays the OLD
+  // board's cards under the NEW board's name.
+  const { data, isPlaceholderData } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -217,7 +182,14 @@ function RouteComponent() {
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
         hideAppName
       />
-      <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
+      {/* Keyed by board so the content fades in on every board switch. Without
+          the key React reuses this subtree across boards, and `starting:`
+          styles only apply on first mount — so switching boards swapped the
+          cards in with no transition at all. */}
+      <div
+        key={boardId}
+        className="relative flex flex-col h-full min-h-0 overflow-hidden transition-opacity duration-200 ease-out starting:opacity-0"
+      >
         <BoardToolbar
           board={board}
           filters={filters}
@@ -234,7 +206,7 @@ function RouteComponent() {
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
-          {sortedBoard ? (
+          {sortedBoard && !isPlaceholderData ? (
             viewMode === "board" ? (
               <KanbanBoard
                 board={sortedBoard}

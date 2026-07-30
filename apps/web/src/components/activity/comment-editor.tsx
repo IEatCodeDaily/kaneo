@@ -36,7 +36,7 @@ import {
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { bundledLanguages, type Highlighter } from "shiki";
+import type { Highlighter } from "shiki";
 import { AttachmentCard } from "@/components/task/extensions/attachment-card";
 import { EmbedBlock } from "@/components/task/extensions/embed-block";
 import { KaneoIssueLink } from "@/components/task/extensions/kaneo-issue-link";
@@ -251,8 +251,16 @@ export default function CommentEditor({
       })),
     [t],
   );
+  // Only the languages this editor actually offers are valid targets.
+  //
+  // This used to check membership against `Object.keys(bundledLanguages)` from
+  // shiki. Every entry in that map holds a live `import()` for its grammar, so
+  // merely touching the module pulled all ~200 language chunks (~15 MB on disk:
+  // emacs-lisp, cpp, wolfram, wasm, vue-vine, angular-ts, ...) into the graph
+  // behind the statically-imported comment editor. The picker can only produce
+  // the 18 values below, so a wider check bought nothing.
   const availableShikiLanguages = useMemo(
-    () => new Set(Object.keys(bundledLanguages)),
+    () => new Set<string>(CODE_LANG_VALUES),
     [],
   );
   const toShikiLanguage = useCallback(

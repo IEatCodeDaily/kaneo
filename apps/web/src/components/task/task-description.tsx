@@ -42,7 +42,7 @@ import {
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { bundledLanguages, type Highlighter } from "shiki";
+import type { Highlighter } from "shiki";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,10 @@ import {
   isYouTubeUrl,
   normalizeUrl,
 } from "@/lib/editor-url-utils";
-import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
+import {
+  getSharedShikiHighlighter,
+  SHIKI_LANGUAGES,
+} from "@/lib/shiki-highlighter";
 import { toast } from "@/lib/toast";
 import { uploadTaskImage } from "@/lib/upload-task-image";
 import { AttachmentCard } from "./extensions/attachment-card";
@@ -308,8 +311,14 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     updateTaskRef.current = updateTaskDescription;
   }, [task, updateTaskDescription]);
 
+  // Checked against the languages the shared highlighter actually loads.
+  //
+  // This used to be `Object.keys(bundledLanguages)` from shiki. Each entry in
+  // that map is a live `import()` for a grammar, so referencing it pulled every
+  // language chunk (~200 files, ~15 MB on disk) into the bundle even though the
+  // picker only offers CODE_LANGUAGE_OPTIONS.
   const shikiSupportedLanguages = useMemo(
-    () => new Set([...Object.keys(bundledLanguages), "text"]),
+    () => new Set<string>([...SHIKI_LANGUAGES, "text"]),
     [],
   );
   const toShikiLanguage = useCallback(
