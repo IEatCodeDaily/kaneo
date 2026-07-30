@@ -7,18 +7,25 @@ import { defineConfig } from "vite";
 import packageJson from "../../package.json";
 
 /**
- * Serve the dev server over TLS so the browser negotiates HTTP/2.
+ * Optionally serve the dev server over TLS to get HTTP/2 multiplexing.
  *
  * Vite serves every source module as its own request in dev (~250 on the board
  * route). Over HTTP/1.1 the browser only opens 6 connections per origin, so most
- * of those modules sit in a queue: measured 121 of 250 requests waiting, ~16s of
- * cumulative queue time, each module stalling ~330ms before its request was even
- * sent. HTTP/2 multiplexes them over one connection and the queue disappears.
+ * of those modules queue: measured 121 of 250 requests waiting, ~16s cumulative
+ * queue time, each stalling ~330ms before its request was even sent. Over HTTP/2
+ * the same 48 warm module requests took 1.17s instead of 8.61s.
  *
- * Opt-in via KANEO_DEV_HTTPS=1 because the k8s ingress in front of this server
- * (kaneo.entelechia.cloud) terminates TLS itself and talks plain HTTP upstream —
- * turning this on unconditionally would break that path. The certificate is
- * self-signed, so the browser shows a one-time warning on localhost.
+ * OFF by default, because `basicSsl()` issues a self-signed certificate and
+ * module scripts fail closed on certificate errors — the browser lets you click
+ * through the warning for the top-level document, then every `import` dies with
+ * "Loading failed for the module with source ...". A blank app is worse than a
+ * slow one.
+ *
+ * To actually use this you need a certificate the browser trusts:
+ *   mkcert -install && mkcert localhost
+ * then point server.https at the generated key/cert instead of basicSsl().
+ * On WSL that also means installing the CA into the Windows/Firefox trust store,
+ * which is why it isn't the default.
  */
 const useDevHttps = process.env.KANEO_DEV_HTTPS === "1";
 

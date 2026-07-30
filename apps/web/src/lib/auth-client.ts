@@ -16,6 +16,11 @@ import { ac, admin, member, owner, viewer } from "./permissions";
 
 const getBaseURL = () => {
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337";
+  // A relative value (e.g. "/api") means "same origin as the page" — used in dev
+  // so the Vite proxy handles /api and the page protocol is irrelevant. Better
+  // Auth resolves an empty baseURL against the current origin, which is exactly
+  // what we want; handing it "/api" would yield "/api" + basePath = "/api/api/auth".
+  if (apiUrl.startsWith("/")) return "";
   try {
     const url = new URL(apiUrl);
     return `${url.protocol}//${url.host}`;

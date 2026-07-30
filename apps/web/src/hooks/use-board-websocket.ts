@@ -1,13 +1,13 @@
 import { windowId } from "@kaneo/libs";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { getApiUrl } from "@/fetchers/get-api-url";
+import { apiWebSocketUrl } from "@/fetchers/get-ws-url";
 import { authClient } from "@/lib/auth-client";
 
 export function getWsUrl(boardId: string) {
-  const base = getApiUrl("ws");
-  const wsBase = base.replace(/^http/, "ws");
-  return `${wsBase}/${encodeURIComponent(boardId)}?windowId=${encodeURIComponent(windowId)}`;
+  return apiWebSocketUrl(
+    `${encodeURIComponent(boardId)}?windowId=${encodeURIComponent(windowId)}`,
+  );
 }
 
 const MAX_RETRIES = 5;
