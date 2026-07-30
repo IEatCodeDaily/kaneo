@@ -75,11 +75,13 @@ export function AgentManager() {
       </p>
       <div className="flex gap-2">
         <Input
+          aria-label="Agent name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Agent name"
         />
         <Input
+          aria-label="Agent expiry"
           type="datetime-local"
           value={expiry}
           onChange={(e) => setExpiry(e.target.value)}

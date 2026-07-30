@@ -3,7 +3,6 @@ import { KeyRound, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
-import { AgentManager } from "@/components/settings/agent-manager";
 import { ApiKeyCreatedModal } from "@/components/settings/api-key-created-modal";
 import { ApiKeyTable } from "@/components/settings/api-key-table";
 import { CreateApiKeyDialog } from "@/components/settings/create-api-key-dialog";
@@ -84,14 +83,6 @@ function RouteComponent() {
           <Card className="!rounded-none">
             <CardPanel className="p-4">
               <ApiKeyTable apiKeys={apiKeys} isLoading={isLoading} />
-            </CardPanel>
-          </Card>
-        </CardFrame>
-
-        <CardFrame>
-          <Card className="!rounded-none !border-t-0">
-            <CardPanel className="p-4">
-              <AgentManager />
             </CardPanel>
           </Card>
         </CardFrame>
