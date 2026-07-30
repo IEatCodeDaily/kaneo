@@ -144,7 +144,7 @@ export function NavRepos() {
               <ContextMenuTrigger asChild>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+                    className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                     isActive={isCurrentRepo(repo.id)}
                     onClick={() => openRepo(repo.id)}
                     size="default"

@@ -201,7 +201,7 @@ export function NavBoards() {
                       <SidebarMenuButton
                         isActive={isCurrentBoard(board.id)}
                         size="default"
-                        className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+                        className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                         onClick={() => handleBoardClick(board)}
                       >
                         <span>{board.name}</span>
