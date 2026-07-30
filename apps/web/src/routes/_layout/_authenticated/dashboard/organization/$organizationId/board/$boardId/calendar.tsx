@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  addDays,
   addMonths,
   addWeeks,
+  addYears,
   endOfWeek as dateFnsEndOfWeek,
   startOfWeek as dateFnsStartOfWeek,
   eachDayOfInterval,
@@ -65,7 +65,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
-  const [calView, setCalView] = useState<"month" | "week" | "day">("month");
+  const [calView, setCalView] = useState<"week" | "month" | "year">("month");
   const [cursor, setCursor] = useState(() => new Date());
   const [sort, setSort] = useState<SortConfig>({
     field: "position",
@@ -105,13 +105,13 @@ function RouteComponent() {
 
   // Grid days depend on the selected view mode.
   const gridDays = useMemo(() => {
-    if (calView === "day") return [startOfDay(cursor)];
     if (calView === "week") {
       return eachDayOfInterval({
         start: dateFnsStartOfWeek(cursor, { weekStartsOn }),
         end: dateFnsEndOfWeek(cursor, { weekStartsOn }),
       });
     }
+    if (calView === "year") return [];
     return eachDayOfInterval({
       start: startOfWeek(startOfMonth(cursor), { weekStartsOn }),
       end: endOfWeek(endOfMonth(cursor), { weekStartsOn }),
@@ -176,8 +176,8 @@ function RouteComponent() {
                 variant="outline"
                 size="icon-xs"
                 onClick={() => {
-                  if (calView === "day") setCursor((c) => addDays(c, 1));
-                  else if (calView === "week") setCursor((c) => addWeeks(c, 1));
+                  if (calView === "week") setCursor((c) => addWeeks(c, 1));
+                  else if (calView === "year") setCursor((c) => addYears(c, 1));
                   else setCursor((c) => addMonths(c, 1));
                 }}
               >
@@ -185,14 +185,14 @@ function RouteComponent() {
               </Button>
             </div>
             <h1 className="text-xs font-semibold text-foreground">
-              {calView === "day"
-                ? format(cursor, "EEEE, MMM d yyyy")
-                : calView === "week"
-                  ? `${format(dateFnsStartOfWeek(cursor, { weekStartsOn }), "MMM d")} - ${format(dateFnsEndOfWeek(cursor, { weekStartsOn }), "MMM d yyyy")}`
+              {calView === "week"
+                ? `${format(dateFnsStartOfWeek(cursor, { weekStartsOn }), "MMM d")} - ${format(dateFnsEndOfWeek(cursor, { weekStartsOn }), "MMM d yyyy")}`
+                : calView === "year"
+                  ? format(cursor, "yyyy")
                   : format(cursor, "MMMM yyyy")}
             </h1>
             <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
-              {(["day", "week", "month"] as const).map((v) => (
+              {(["week", "month", "year"] as const).map((v) => (
                 <Button
                   key={v}
                   variant={calView === v ? "secondary" : "ghost"}

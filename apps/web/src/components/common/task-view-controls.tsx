@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -118,39 +119,41 @@ export default function TaskViewControls({
             : t("tasks:sort.label")}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
-            {t("tasks:sort.by")}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {sortFields.map(({ field, label }) => (
-            <DropdownMenuItem
-              key={field}
-              onClick={() => handleSortFieldChange(field)}
-              className="h-8 rounded-md text-sm"
-            >
-              <CheckSlot checked={sort.field === field} />
-              {label}
-            </DropdownMenuItem>
-          ))}
-          {sort.field !== "position" && (
-            <>
-              <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+              {t("tasks:sort.by")}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {sortFields.map(({ field, label }) => (
               <DropdownMenuItem
-                onClick={() => onSortChange({ ...sort, direction: "asc" })}
+                key={field}
+                onClick={() => handleSortFieldChange(field)}
                 className="h-8 rounded-md text-sm"
               >
-                <CheckSlot checked={sort.direction === "asc"} />
-                {t("tasks:sort.ascending")}
+                <CheckSlot checked={sort.field === field} />
+                {label}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onSortChange({ ...sort, direction: "desc" })}
-                className="h-8 rounded-md text-sm"
-              >
-                <CheckSlot checked={sort.direction === "desc"} />
-                {t("tasks:sort.descending")}
-              </DropdownMenuItem>
-            </>
-          )}
+            ))}
+            {sort.field !== "position" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onSortChange({ ...sort, direction: "asc" })}
+                  className="h-8 rounded-md text-sm"
+                >
+                  <CheckSlot checked={sort.direction === "asc"} />
+                  {t("tasks:sort.ascending")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onSortChange({ ...sort, direction: "desc" })}
+                  className="h-8 rounded-md text-sm"
+                >
+                  <CheckSlot checked={sort.direction === "desc"} />
+                  {t("tasks:sort.descending")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -174,20 +177,22 @@ export default function TaskViewControls({
             : t("tasks:group.label")}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
-            {t("tasks:group.by")}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {groupFields.map(({ field, label }) => (
-            <DropdownMenuItem
-              key={field}
-              onClick={() => onGroupChange(field)}
-              className="h-8 rounded-md text-sm"
-            >
-              <CheckSlot checked={group === field} />
-              {label}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+              {t("tasks:group.by")}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {groupFields.map(({ field, label }) => (
+              <DropdownMenuItem
+                key={field}
+                onClick={() => onGroupChange(field)}
+                className="h-8 rounded-md text-sm"
+              >
+                <CheckSlot checked={group === field} />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -205,20 +210,22 @@ export default function TaskViewControls({
           {t("tasks:display.label")}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
-          <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
-            {t("tasks:display.show")}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {displayFields.map(({ field, label }) => (
-            <DropdownMenuItem
-              key={field}
-              onClick={() => toggleDisplay(field)}
-              className="h-8 rounded-md text-sm"
-            >
-              <CheckSlot checked={display[field]} />
-              {label}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+              {t("tasks:display.show")}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {displayFields.map(({ field, label }) => (
+              <DropdownMenuItem
+                key={field}
+                onClick={() => toggleDisplay(field)}
+                className="h-8 rounded-md text-sm"
+              >
+                <CheckSlot checked={display[field]} />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 

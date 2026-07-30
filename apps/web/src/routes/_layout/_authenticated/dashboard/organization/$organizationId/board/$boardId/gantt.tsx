@@ -45,7 +45,6 @@ import { getStatusLabel } from "@/lib/i18n/domain";
 import {
   type DisplayConfig,
   type GroupField,
-  groupTasks,
   type SortConfig,
   sortTasks,
 } from "@/lib/sort-tasks";
@@ -213,19 +212,30 @@ const GanttRow = memo(function GanttRow({
     >
       {showTaskRail ? (
         <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
-          <button
-            type="button"
-            className="flex h-full w-full min-w-0 items-center gap-1 pr-2 text-left transition-colors hover:bg-muted"
+          <div
+            className="flex h-full w-full min-w-0 cursor-pointer items-center gap-1 pr-2 text-left transition-colors hover:bg-muted"
             style={{ paddingLeft: `${task.depth * INDENT_PX + 4}px` }}
             onClick={() => onOpenTask(task)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenTask(task);
+              }
+            }}
           >
             {task.hasChildren ? (
-              <button
-                type="button"
-                className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted-foreground/10"
+              <span
+                className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-muted-foreground/10"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCollapse(task.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onToggleCollapse(task.id);
+                  }
                 }}
               >
                 {collapsed ? (
@@ -233,7 +243,7 @@ const GanttRow = memo(function GanttRow({
                 ) : (
                   <ChevronDown className="size-3" />
                 )}
-              </button>
+              </span>
             ) : (
               <span className="w-5 shrink-0" />
             )}
@@ -273,7 +283,7 @@ const GanttRow = memo(function GanttRow({
                 </span>
               ) : null}
             </div>
-          </button>
+          </div>
         </div>
       ) : null}
 
