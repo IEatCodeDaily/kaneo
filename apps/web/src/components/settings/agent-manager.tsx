@@ -68,6 +68,9 @@ export function AgentManager() {
       <div className="flex items-center gap-2 font-medium">
         <Bot className="size-4" />
         Organization AI Agents
+        <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+          Alpha
+        </span>
       </div>
       <p className="text-sm text-muted-foreground">
         Non-interactive identities. New agents receive only board read and task

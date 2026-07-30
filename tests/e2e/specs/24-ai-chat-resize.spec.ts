@@ -20,19 +20,16 @@ test("AI chat resizes and preserves its dimensions", async ({
   const before = await panel.boundingBox();
   if (!before) throw new Error("AI chat panel has no bounding box");
 
-  // Chromium exposes CSS `resize` from the bottom-right corner.
-  await page.mouse.move(
-    before.x + before.width - 2,
-    before.y + before.height - 2,
-  );
+  await expect(panel).toContainText("Alpha");
+  const handle = page.getByRole("button", { name: "Resize AI assistant" });
+  const handleBox = await handle.boundingBox();
+  if (!handleBox) throw new Error("AI chat resize handle has no bounding box");
+  expect(handleBox.x - before.x).toBeLessThanOrEqual(2);
+  expect(handleBox.y - before.y).toBeLessThanOrEqual(2);
+
+  await handle.hover();
   await page.mouse.down();
-  await page.mouse.move(
-    before.x + before.width + 120,
-    before.y + before.height + 80,
-    {
-      steps: 8,
-    },
-  );
+  await page.mouse.move(handleBox.x - 120, handleBox.y - 80, { steps: 8 });
   await page.mouse.up();
 
   await expect
@@ -40,6 +37,13 @@ test("AI chat resizes and preserves its dimensions", async ({
     .toBeGreaterThan(before.width + 80);
   const resized = await panel.boundingBox();
   if (!resized) throw new Error("Resized AI chat panel has no bounding box");
+
+  // No observer should feed measurements back into state after the drag ends.
+  await page.waitForTimeout(500);
+  const settled = await panel.boundingBox();
+  if (!settled) throw new Error("Settled AI chat panel has no bounding box");
+  expect(settled.width).toBeCloseTo(resized.width, 0);
+  expect(settled.height).toBeCloseTo(resized.height, 0);
 
   await page.reload();
   await page

@@ -1,5 +1,5 @@
-import { Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Grip, Sparkles, X } from "lucide-react";
+import { type PointerEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -24,12 +24,11 @@ export function AiChatBubble() {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [history, setHistory] = useState<ChatEntry[]>([]);
-  const panelRef = useRef<HTMLElement>(null);
+
   const storageKey = organization?.id
     ? `kaneo:ai-chat-size:${organization.id}`
     : null;
   const [size, setSize] = useState(DEFAULT_AI_CHAT_SIZE);
-  const [sizeHydrated, setSizeHydrated] = useState(false);
 
   useEffect(() => {
     if (!organization?.id) return setSettings(null);
@@ -42,7 +41,6 @@ export function AiChatBubble() {
 
   useEffect(() => {
     if (!storageKey) {
-      setSizeHydrated(false);
       return;
     }
     const saved = parseAiChatSize(window.localStorage.getItem(storageKey));
@@ -52,27 +50,38 @@ export function AiChatBubble() {
         height: window.innerHeight,
       }),
     );
-    setSizeHydrated(true);
   }, [storageKey]);
 
-  useEffect(() => {
-    if (!open || !panelRef.current || !storageKey || !sizeHydrated) return;
-    const panel = panelRef.current;
-    const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      // Inline width/height control the border box (global border-box sizing),
-      // so persisting contentRect would shave borders/padding on every cycle.
-      const bounds = panel.getBoundingClientRect();
+  const startResize = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    const start = { x: event.clientX, y: event.clientY, size };
+
+    const move = (moveEvent: globalThis.PointerEvent) => {
       const next = clampAiChatSize(
-        { width: bounds.width, height: bounds.height },
+        {
+          width: start.size.width + start.x - moveEvent.clientX,
+          height: start.size.height + start.y - moveEvent.clientY,
+        },
         { width: window.innerWidth, height: window.innerHeight },
       );
       setSize(next);
-      window.localStorage.setItem(storageKey, JSON.stringify(next));
-    });
-    observer.observe(panel);
-    return () => observer.disconnect();
-  }, [open, sizeHydrated, storageKey]);
+    };
+    const stop = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", stop);
+      handle.removeEventListener("pointercancel", stop);
+      setSize((current) => {
+        if (storageKey)
+          window.localStorage.setItem(storageKey, JSON.stringify(current));
+        return current;
+      });
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", stop);
+    handle.addEventListener("pointercancel", stop);
+  };
 
   if (!organization || !settings?.enabled || !settings.configured) return null;
   const over = message.length > settings.effectiveCharacterLimit;
@@ -129,15 +138,26 @@ export function AiChatBubble() {
     <div className="fixed bottom-5 right-5 z-50">
       {open ? (
         <section
-          className="flex max-h-[calc(100vh-2.5rem)] max-w-[calc(100vw-2rem)] resize flex-col overflow-hidden rounded-xl border bg-background shadow-2xl max-sm:h-[calc(100vh-2.5rem)] max-sm:w-[calc(100vw-2rem)] max-sm:resize-none"
+          className="relative flex max-h-[calc(100vh-2.5rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl max-sm:h-[calc(100vh-2.5rem)] max-sm:w-[calc(100vw-2rem)]"
           aria-label="Organization AI assistant"
           data-testid="ai-chat-panel"
-          ref={panelRef}
           style={{ width: size.width, height: size.height }}
         >
+          <button
+            aria-label="Resize AI assistant"
+            className="absolute left-0 top-0 z-10 flex size-7 cursor-nwse-resize touch-none items-center justify-center rounded-br-md text-muted-foreground hover:bg-muted hover:text-foreground max-sm:hidden"
+            data-testid="ai-chat-resize-handle"
+            onPointerDown={startResize}
+            type="button"
+          >
+            <Grip className="size-3.5 rotate-90" />
+          </button>
           <header className="flex items-center justify-between border-b p-3">
-            <div className="flex items-center gap-2 font-medium">
+            <div className="flex items-center gap-2 pl-5 font-medium">
               <Sparkles className="size-4" /> {organization.name} AI
+              <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                Alpha
+              </span>
             </div>
             <Button
               aria-label="Close organization AI assistant"
