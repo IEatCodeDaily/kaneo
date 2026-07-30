@@ -709,9 +709,23 @@ input:-webkit-autofill:active {
     overflow: hidden;
   }
 
+  /*
+   * The create-task modal is a fixed-height dialog, so a pasted image competes
+   * with the typing area for the same vertical space. Cap it well below the
+   * editor height and always leave a clickable, visible line after it —
+   * otherwise the image fills the body and there is nowhere to type.
+   */
   .kaneo-create-task-modal .kaneo-comment-editor-prose img.kaneo-editor-image {
-    max-height: min(50vh, 28rem);
-    width: 100%;
+    max-height: min(32vh, 16rem);
+    width: auto;
+  }
+
+  .kaneo-create-task-modal
+    .kaneo-comment-editor-content
+    .ProseMirror
+    > p:last-child {
+    min-height: 1.5rem;
+    scroll-margin-bottom: 1.5rem;
   }
 
   .kaneo-tiptap-content .ProseMirror .is-editor-empty:first-child::before {
