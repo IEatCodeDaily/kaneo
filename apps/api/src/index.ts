@@ -21,6 +21,7 @@ import * as v from "valibot";
 import accountAuthentication from "./account-authentication";
 import activity from "./activity";
 import admin from "./admin";
+import agent from "./agent";
 import ai from "./ai";
 import { auth } from "./auth";
 import board from "./board";
@@ -103,6 +104,8 @@ type ApiKey = {
   userId: string;
   enabled: boolean;
   permissions: Record<string, string[]> | null;
+  name?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 type AppVariables = {
@@ -577,7 +580,13 @@ export function createApp() {
 
     const windowId = c.req.header("X-Kaneo-Window-Id");
     const userId = c.get("userId");
-    const initiatorId = windowId ? `${userId}:${windowId}` : userId;
+    const apiKey = c.get("apiKey");
+    const initiatorId =
+      apiKey?.metadata?.type === "agent"
+        ? `agent:${apiKey.id}`
+        : windowId
+          ? `${userId}:${windowId}`
+          : userId;
 
     return eventContext.run({ initiatorId }, next);
   });
@@ -629,6 +638,7 @@ export function createApp() {
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
+  const agentApi = api.route("/agent", agent);
   const organizationGithubApi = api.route(
     "/organization-github",
     organizationGithub,
@@ -914,6 +924,7 @@ const {
   app,
   injectWebSocket,
   activityApi,
+  agentApi,
   aiApi,
   columnApi,
   commentApi,
@@ -950,6 +961,7 @@ if (isMainModule) {
 }
 
 export type AppType =
+  | typeof agentApi
   | typeof configApi
   | typeof boardApi
   | typeof taskApi
