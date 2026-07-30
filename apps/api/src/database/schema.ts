@@ -1347,6 +1347,12 @@ export const repoPullRequestTable = pgTable(
     baseBranch: text("base_branch"),
     labels: jsonb("labels").$type<Array<{ name: string; color?: string }>>(),
     commentCount: integer("comment_count").default(0).notNull(),
+    // GitHub's pull-request LIST endpoint omits diff counts; they exist only on
+    // the single-pull-request resource. Persist them so the list can render a
+    // delta without an extra request per row.
+    additions: integer("additions"),
+    deletions: integer("deletions"),
+    changedFiles: integer("changed_files"),
     url: text("url").notNull(),
     externalCreatedAt: timestamp("external_created_at", { mode: "date" }),
     externalUpdatedAt: timestamp("external_updated_at", { mode: "date" }),

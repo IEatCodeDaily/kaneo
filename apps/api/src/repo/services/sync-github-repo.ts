@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
   repoIssueTable,
@@ -176,6 +176,63 @@ export async function syncGitHubRepo(repoId: string): Promise<{
     // GitHub reports merged PRs as state "closed"; surface "merged" explicitly.
     const state = mergedAt ? "merged" : ((item.state as string) ?? "open");
 
+    // The list payload carries no diff counts, so read them from the stored row
+    // and only spend a detail request when they are missing or the PR changed
+    // upstream. Re-fetching every PR on every sync would burn rate limit.
+    const externalUpdatedAt = toDate(item.updated_at as string);
+    const [existing] = await db
+      .select({
+        additions: repoPullRequestTable.additions,
+        deletions: repoPullRequestTable.deletions,
+        changedFiles: repoPullRequestTable.changedFiles,
+        externalUpdatedAt: repoPullRequestTable.externalUpdatedAt,
+      })
+      .from(repoPullRequestTable)
+      .where(
+        and(
+          eq(repoPullRequestTable.repoId, repo.id),
+          eq(repoPullRequestTable.number, item.number as number),
+        ),
+      )
+      .limit(1);
+
+    let delta = {
+      additions: existing?.additions ?? null,
+      deletions: existing?.deletions ?? null,
+      changedFiles: existing?.changedFiles ?? null,
+    };
+    const deltaMissing =
+      delta.additions === null ||
+      delta.deletions === null ||
+      delta.changedFiles === null;
+    const changedUpstream =
+      externalUpdatedAt !== null &&
+      existing?.externalUpdatedAt?.getTime() !== externalUpdatedAt.getTime();
+    if (deltaMissing || changedUpstream) {
+      try {
+        const detail = await octokit.request(
+          "GET /repos/{owner}/{repo}/pulls/{pull_number}",
+          {
+            owner: repo.owner,
+            repo: repo.name,
+            pull_number: item.number as number,
+          },
+        );
+        delta = {
+          additions: detail.data.additions ?? null,
+          deletions: detail.data.deletions ?? null,
+          changedFiles: detail.data.changed_files ?? null,
+        };
+      } catch (error) {
+        // A single unreadable pull request must not abort the whole sync; the
+        // list still renders, just without a delta for this row.
+        console.error(
+          `Failed to read diff counts for pull request #${item.number}:`,
+          error,
+        );
+      }
+    }
+
     const values = {
       repoId: repo.id,
       number: item.number as number,
@@ -195,9 +252,12 @@ export async function syncGitHubRepo(repoId: string): Promise<{
         ((item.base as { ref?: string } | null)?.ref as string) ?? null,
       labels: normalizeLabels(item.labels as GitHubLabel[] | undefined),
       commentCount: (item.comments as number) ?? 0,
+      additions: delta.additions,
+      deletions: delta.deletions,
+      changedFiles: delta.changedFiles,
       url: (item.html_url as string) ?? "",
       externalCreatedAt: toDate(item.created_at as string),
-      externalUpdatedAt: toDate(item.updated_at as string),
+      externalUpdatedAt,
       mergedAt,
       closedAt: toDate(item.closed_at as string | null),
     };
@@ -218,6 +278,9 @@ export async function syncGitHubRepo(repoId: string): Promise<{
           baseBranch: values.baseBranch,
           labels: values.labels,
           commentCount: values.commentCount,
+          additions: values.additions,
+          deletions: values.deletions,
+          changedFiles: values.changedFiles,
           url: values.url,
           externalUpdatedAt: values.externalUpdatedAt,
           mergedAt: values.mergedAt,

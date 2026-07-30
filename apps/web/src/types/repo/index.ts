@@ -96,6 +96,7 @@ export type RepoIssueGithub = {
     title?: string | null;
     state?: string | null;
     html_url?: string | null;
+    repository_url?: string | null;
   } | null;
   parentSupported?: boolean;
   subIssues: Array<{
@@ -104,6 +105,7 @@ export type RepoIssueGithub = {
     title?: string | null;
     state?: string | null;
     html_url?: string | null;
+    repository_url?: string | null;
   }>;
   subIssuesSupported: boolean;
 };
@@ -160,6 +162,9 @@ export type RepoPullRequest = {
   baseBranch: string | null;
   labels: RepoLabel[];
   commentCount: number;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: number | null;
   url: string;
   externalCreatedAt: string | null;
   mergedAt: string | null;

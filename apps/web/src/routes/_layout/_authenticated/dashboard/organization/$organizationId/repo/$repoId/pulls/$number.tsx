@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ExternalLink, GitBranch } from "lucide-react";
 import PageTitle from "@/components/page-title";
 import PullRequestLiveDetails from "@/components/repo/pull-request-live-details";
+import RepoDiffDelta from "@/components/repo/repo-diff-delta";
 import { RepoItemTitleAction } from "@/components/repo/repo-item-actions";
 import {
   RepoItemAuthor,
@@ -86,15 +87,26 @@ function RouteComponent() {
                     )}
                   </div>
                 </div>
-                <a
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-                  href={pullRequest.url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Open externally
-                  <ExternalLink className="size-3.5" />
-                </a>
+                {/* GitHub places the diff delta at the bottom right of the
+                    title area, beneath the external link. */}
+                <div className="flex flex-col items-end gap-2">
+                  <a
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                    href={pullRequest.url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Open externally
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                  <RepoDiffDelta
+                    additions={pullRequest.additions}
+                    changedFiles={pullRequest.changedFiles}
+                    deletions={pullRequest.deletions}
+                    showChangedFiles
+                    testId="pull-request-diff-delta"
+                  />
+                </div>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <RepoItemAuthor

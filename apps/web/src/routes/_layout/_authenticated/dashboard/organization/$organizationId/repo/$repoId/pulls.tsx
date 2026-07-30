@@ -8,6 +8,7 @@ import { GitPullRequest, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import RepoLayout from "@/components/common/repo-layout";
 import PageTitle from "@/components/page-title";
+import RepoDiffDelta from "@/components/repo/repo-diff-delta";
 import RepoListRow, {
   repoListRowIconClassName,
 } from "@/components/repo/repo-list-row";
@@ -172,6 +173,12 @@ function RouteComponent() {
                       }
                       title={pullRequest.title}
                       to="/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
+                      trailing={
+                        <RepoDiffDelta
+                          additions={pullRequest.additions}
+                          deletions={pullRequest.deletions}
+                        />
+                      }
                     />
                   ))}
                 </div>
