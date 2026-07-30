@@ -17,6 +17,7 @@ import {
   externalLinkTable,
   labelTable,
   taskTable,
+  teamTable,
   userTable,
 } from "../../database/schema";
 
@@ -132,9 +133,11 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     position: taskTable.position,
     createdAt: taskTable.createdAt,
     userId: taskTable.userId,
+    teamId: taskTable.teamId,
     assigneeName: userTable.name,
     assigneeId: userTable.id,
     assigneeImage: userTable.image,
+    teamAssigneeName: teamTable.name,
     boardId: taskTable.boardId,
   };
 
@@ -142,6 +145,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     .select(taskSelection)
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
+    .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
     .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(whereClause)
     .orderBy(orderByClause);

@@ -522,6 +522,10 @@ export const taskTable = pgTable(
       onDelete: "set null",
       onUpdate: "cascade",
     }),
+    teamId: text("team_assignee_id").references(() => teamTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     title: text("title").notNull(),
     description: text("description"),
     descriptionHistory: jsonb("description_history")
@@ -548,6 +552,7 @@ export const taskTable = pgTable(
     index("task_boardId_idx").on(table.boardId),
     index("task_dueDate_idx").on(table.dueDate),
     index("task_assigneeId_idx").on(table.userId),
+    index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_board_number_unique").on(table.boardId, table.number),

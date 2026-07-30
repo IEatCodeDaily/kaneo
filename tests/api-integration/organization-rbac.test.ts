@@ -279,7 +279,11 @@ describe("API integration: organization RBAC enforcement", () => {
       });
       // Malformed permission payload. The middleware should refuse rather than
       // crash; with no built-in fallback for "broken", access is denied.
-      await createOrganizationRoleRow(member.organization.id, "broken", "not-json");
+      await createOrganizationRoleRow(
+        member.organization.id,
+        "broken",
+        "not-json",
+      );
 
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
@@ -414,6 +418,61 @@ describe("API integration: organization RBAC enforcement", () => {
         body: JSON.stringify({ userId: member.user.id }),
       });
       expect(response.status).toBe(200);
+    });
+
+    it("assigns an organization team and rejects a team from another organization", async () => {
+      const member = await createOrganizationMember({ role: "admin" });
+      const other = await createOrganizationMember({ role: "admin" });
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
+      });
+      const task = await seedTask(board.id, columns.todo.id);
+      const [[team], [otherTeam]] = await Promise.all([
+        db
+          .insert(schema.teamTable)
+          .values({
+            id: randomUUID(),
+            name: "Platform",
+            organizationId: member.organization.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning(),
+        db
+          .insert(schema.teamTable)
+          .values({
+            id: randomUUID(),
+            name: "Outsiders",
+            organizationId: other.organization.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning(),
+      ]);
+      mockAuthenticatedSession(member.user);
+      const { app } = createApp();
+
+      const assigned = await app.request(`/api/task/assignee/${task.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ teamId: team.id }),
+      });
+      expect(assigned.status).toBe(200);
+      expect(await assigned.json()).toMatchObject({
+        teamId: team.id,
+        userId: null,
+      });
+
+      const rejected = await app.request(`/api/task/assignee/${task.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ teamId: otherTeam.id }),
+      });
+      expect(rejected.status).toBe(400);
+      const persisted = await db.query.taskTable.findFirst({
+        where: eq(schema.taskTable.id, task.id),
+      });
+      expect(persisted?.teamId).toBe(team.id);
     });
   });
 
