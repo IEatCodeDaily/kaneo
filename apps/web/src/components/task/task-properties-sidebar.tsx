@@ -190,6 +190,7 @@ export default function TaskPropertiesSidebar({
               {task && (
                 <TaskStatusPopover task={task}>
                   <Button
+                    data-testid="task-status-trigger"
                     variant="ghost"
                     size="sm"
                     className="justify-start h-7 px-1.5 gap-1.5"
@@ -381,6 +382,7 @@ export default function TaskPropertiesSidebar({
                 {task && (
                   <TaskStatusPopover task={task}>
                     <Button
+                      data-testid="task-status-trigger"
                       variant="ghost"
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5"
@@ -575,6 +577,7 @@ export default function TaskPropertiesSidebar({
                 {task && (
                   <TaskStatusPopover task={task}>
                     <Button
+                      data-testid="task-status-trigger"
                       variant="ghost"
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"

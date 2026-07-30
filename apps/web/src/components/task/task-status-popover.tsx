@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Archive, Check, CircleDashed } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,24 @@ export default function TaskStatusPopover({
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
+
+  /**
+   * Backlog and archive are virtual statuses, not board columns, so they are
+   * offered as explicit actions below a divider rather than mixed in with the
+   * column list. `planned` is the status the Backlog view reads.
+   */
+  const virtualActions = [
+    {
+      value: "planned",
+      label: t("tasks:actions.moveToBacklog"),
+      icon: <CircleDashed className="size-4 text-muted-foreground" />,
+    },
+    {
+      value: "archived",
+      label: t("tasks:actions.archive"),
+      icon: <Archive className="size-4 text-muted-foreground" />,
+    },
+  ];
 
   const handleStatusChange = useCallback(
     async (newStatus: string) => {
@@ -88,25 +106,46 @@ export default function TaskStatusPopover({
               {t("common:error.title")}
             </div>
           ) : (
-            statusOptions.map((status, index) => (
-              <Button
-                key={status.value}
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2 h-8 px-2 rounded-none first:rounded-t-md last:rounded-b-md"
-                onClick={() => handleStatusChange(status.value)}
-              >
-                {getColumnIcon(status.value, status.isFinal, status.icon)}
-                <span className="text-sm">
-                  {getStatusDisplayLabel(status.value, status.label)}
-                </span>
-                {task.status === status.value ? (
-                  <Check className="ml-auto h-4 w-4" />
-                ) : (
-                  <ShortcutNumber number={index + 1} />
-                )}
-              </Button>
-            ))
+            <>
+              {statusOptions.map((status, index) => (
+                <Button
+                  key={status.value}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 h-8 px-2 rounded-none first:rounded-t-md"
+                  onClick={() => handleStatusChange(status.value)}
+                >
+                  {getColumnIcon(status.value, status.isFinal, status.icon)}
+                  <span className="text-sm">
+                    {getStatusDisplayLabel(status.value, status.label)}
+                  </span>
+                  {task.status === status.value ? (
+                    <Check className="ml-auto h-4 w-4" />
+                  ) : (
+                    <ShortcutNumber number={index + 1} />
+                  )}
+                </Button>
+              ))}
+              <div
+                className="my-1 h-px bg-border"
+                data-testid="status-divider"
+              />
+              {virtualActions.map((action) => (
+                <Button
+                  key={action.value}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
+                  onClick={() => handleStatusChange(action.value)}
+                >
+                  {action.icon}
+                  <span className="text-sm">{action.label}</span>
+                  {task.status === action.value && (
+                    <Check className="ml-auto h-4 w-4" />
+                  )}
+                </Button>
+              ))}
+            </>
           )}
         </div>
       </PopoverContent>
