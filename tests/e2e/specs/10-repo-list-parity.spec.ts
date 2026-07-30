@@ -228,17 +228,18 @@ test.describe("repository issue and pull request list parity", () => {
 
     await tabs.getByRole("tab", { name: "Diffs" }).click();
     const workspace = page.getByTestId("pull-request-diff-workspace");
-    const selectedFile = workspace.getByTestId("pull-request-selected-file");
-    await expect(selectedFile).toHaveText("src/first.ts");
-    await expect(workspace.locator("diffs-container")).toHaveCount(1);
+    const fileHeaders = workspace.getByTestId("pull-request-selected-file");
+    await expect(fileHeaders).toHaveCount(2);
+    await expect(fileHeaders.nth(0)).toHaveText("src/first.ts");
+    await expect(fileHeaders.nth(1)).toHaveText("src/second.ts");
+    await expect(workspace.locator("diffs-container")).toHaveCount(2);
 
-    await workspace
-      .getByRole("button", { name: "src/second.ts", exact: true })
-      .click();
-    await expect(selectedFile).toHaveText("src/second.ts");
-    await expect(
-      workspace.getByText("src/first.ts", { exact: true }),
-    ).toBeVisible();
+    const secondFileButton = workspace.getByRole("button", {
+      name: "src/second.ts",
+      exact: true,
+    });
+    await secondFileButton.click();
+    await expect(secondFileButton).toHaveClass(/bg-muted/);
 
     const unified = workspace.getByRole("button", { name: "Unified" });
     const split = workspace.getByRole("button", { name: "Side-by-side" });
@@ -246,24 +247,34 @@ test.describe("repository issue and pull request list parity", () => {
     await split.click();
     await expect(split).toHaveAttribute("aria-pressed", "true");
     await expect(unified).toHaveAttribute("aria-pressed", "false");
-    await expect(
-      workspace.getByTestId("pull-request-diff-renderer"),
-    ).toHaveAttribute("data-diff-style", "split");
+    const diffRenderers = workspace.getByTestId("pull-request-diff-renderer");
+    await expect(diffRenderers).toHaveCount(2);
+    await expect(diffRenderers.nth(0)).toHaveAttribute(
+      "data-diff-style",
+      "split",
+    );
+    await expect(diffRenderers.nth(1)).toHaveAttribute(
+      "data-diff-style",
+      "split",
+    );
 
     await workspace
       .getByRole("button", { name: "Open diff fullscreen" })
       .click();
     const dialog = page.getByRole("dialog", { name: "Pull request diff" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByTestId("pull-request-selected-file")).toHaveText(
-      "src/second.ts",
+    await expect(dialog.getByTestId("pull-request-selected-file")).toHaveCount(
+      2,
     );
-    await expect(dialog.locator("diffs-container")).toHaveCount(1);
+    await expect(dialog.locator("diffs-container")).toHaveCount(2);
+    await expect(
+      dialog.getByRole("navigation", { name: "Changed files fullscreen" }),
+    ).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(selectedFile).toHaveText("src/second.ts");
-    await expect(workspace.locator("diffs-container")).toHaveCount(1);
+    await expect(secondFileButton).toHaveClass(/bg-muted/);
+    await expect(workspace.locator("diffs-container")).toHaveCount(2);
     expect(pageErrors).toEqual([]);
   });
 

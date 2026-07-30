@@ -297,7 +297,17 @@ export default function PullRequestLiveDetails({
                     )}
                     aria-label={file.filename}
                     key={file.filename}
-                    onClick={() => setSelectedFilename(file.filename)}
+                    onClick={() => {
+                      setSelectedFilename(file.filename);
+                      document
+                        .getElementById(
+                          `diff-file-${encodeURIComponent(file.filename)}`,
+                        )
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                    }}
                     type="button"
                   >
                     <span className="min-w-0 flex-1 truncate">
@@ -308,7 +318,17 @@ export default function PullRequestLiveDetails({
                   </button>
                 ))}
               </nav>
-              <DiffView file={selectedFile} split={split} />
+              <div className="min-w-0 space-y-4">
+                {files.data?.files.map((file) => (
+                  <section
+                    className="scroll-mt-4"
+                    id={`diff-file-${encodeURIComponent(file.filename)}`}
+                    key={file.filename}
+                  >
+                    <DiffView file={file} split={split} />
+                  </section>
+                ))}
+              </div>
             </div>
             <Dialog open={fullscreen} onOpenChange={setFullscreen}>
               <DialogPopup
@@ -323,8 +343,56 @@ export default function PullRequestLiveDetails({
                     Full-screen code comparison
                   </DialogDescription>
                 </div>
-                <div className="min-h-0 flex-1 overflow-auto p-4">
-                  <DiffView file={selectedFile} split={split} />
+                <div className="grid min-h-0 flex-1 grid-cols-[16rem_minmax(0,1fr)] gap-3 overflow-hidden p-4">
+                  <nav
+                    aria-label="Changed files fullscreen"
+                    className="overflow-auto rounded-md border p-1"
+                  >
+                    {files.data?.files.map((file) => (
+                      <button
+                        aria-label={file.filename}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded px-2 py-2 text-left font-mono text-xs hover:bg-muted",
+                          file.filename === selectedFilename &&
+                            "bg-muted font-medium",
+                        )}
+                        key={file.filename}
+                        onClick={() => {
+                          setSelectedFilename(file.filename);
+                          document
+                            .getElementById(
+                              `fullscreen-diff-file-${encodeURIComponent(file.filename)}`,
+                            )
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                        }}
+                        type="button"
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {file.filename}
+                        </span>
+                        <span className="text-emerald-600">
+                          +{file.additions}
+                        </span>
+                        <span className="text-destructive">
+                          −{file.deletions}
+                        </span>
+                      </button>
+                    ))}
+                  </nav>
+                  <div className="min-w-0 space-y-4 overflow-auto">
+                    {files.data?.files.map((file) => (
+                      <section
+                        className="scroll-mt-2"
+                        id={`fullscreen-diff-file-${encodeURIComponent(file.filename)}`}
+                        key={file.filename}
+                      >
+                        <DiffView file={file} split={split} />
+                      </section>
+                    ))}
+                  </div>
                 </div>
               </DialogPopup>
             </Dialog>
