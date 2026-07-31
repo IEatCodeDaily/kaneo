@@ -54,6 +54,10 @@ type UserPreferencesStore = {
     repoId: string,
     visible: boolean,
   ) => void;
+  boardSidebarOrders: Record<string, string[]>;
+  setBoardSidebarOrder: (userId: string, ids: string[]) => void;
+  repoSidebarOrders: Record<string, string[]>;
+  setRepoSidebarOrder: (userId: string, ids: string[]) => void;
 
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
@@ -153,6 +157,16 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
               : Array.from(new Set([...state.hiddenRepoIds, key])),
           };
         }),
+      boardSidebarOrders: {},
+      setBoardSidebarOrder: (userId, ids) =>
+        set((state) => ({
+          boardSidebarOrders: { ...state.boardSidebarOrders, [userId]: ids },
+        })),
+      repoSidebarOrders: {},
+      setRepoSidebarOrder: (userId, ids) =>
+        set((state) => ({
+          repoSidebarOrders: { ...state.repoSidebarOrders, [userId]: ids },
+        })),
 
       weekStartsOn: 0,
       setWeekStartsOn: (weekStartsOn) => set({ weekStartsOn }),

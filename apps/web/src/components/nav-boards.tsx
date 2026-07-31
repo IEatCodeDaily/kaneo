@@ -51,6 +51,11 @@ import type { BoardWithTasks } from "@/types/board";
 import { NavHiddenItems } from "./nav-hidden-items";
 import CreateBoardModal from "./shared/modals/create-board-modal";
 import {
+  reconcileSidebarOrder,
+  SidebarSortableItem,
+  SidebarSortableList,
+} from "./sidebar-sort";
+import {
   AlertDialog,
   AlertDialogClose,
   AlertDialogContent,
@@ -74,8 +79,12 @@ export function NavBoards() {
   const { canCreateBoards, canDeleteBoards } = useOrganizationPermission();
   const canCreate = canCreateBoards();
   const canDeleteBoard = canDeleteBoards();
-  const { hiddenBoardIds, setBoardSidebarVisibility } =
-    useUserPreferencesStore();
+  const {
+    hiddenBoardIds,
+    setBoardSidebarVisibility,
+    boardSidebarOrders,
+    setBoardSidebarOrder,
+  } = useUserPreferencesStore();
   const navigate = useNavigate();
   const { organizationId: currentOrganizationId, boardId: currentBoardId } =
     useParams({
@@ -160,10 +169,14 @@ export function NavBoards() {
     boards?.filter((board) =>
       hiddenBoardIds.includes(`${user?.id}:${board.id}`),
     ) ?? [];
-  const visibleBoards =
+  const unsortedVisibleBoards =
     boards?.filter(
       (board) => !hiddenBoardIds.includes(`${user?.id}:${board.id}`),
     ) ?? [];
+  const visibleBoards = reconcileSidebarOrder(
+    unsortedVisibleBoards,
+    boardSidebarOrders[user?.id ?? ""] ?? [],
+  );
 
   return (
     <>
@@ -233,137 +246,154 @@ export function NavBoards() {
         </div>
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
-            {visibleBoards.map((board) => {
-              return (
-                <ContextMenu key={board.id}>
-                  <ContextMenuTrigger asChild>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        isActive={isCurrentBoard(board.id)}
-                        size="default"
-                        className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
-                        onClick={() => handleBoardClick(board)}
-                        {...intentPrefetchHandlers(() =>
-                          prefetchBoard(board.id),
-                        )}
-                      >
-                        <span>{board.name}</span>
-                      </SidebarMenuButton>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <button
-                              type="button"
-                              className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
-                            />
-                          }
-                        >
-                          <MoreHorizontal />
-                          <span className="sr-only">
-                            {t("navigation:sidebar.more")}
-                          </span>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="w-44 rounded-lg"
-                          side={isMobile ? "bottom" : "right"}
-                          align={isMobile ? "end" : "start"}
-                        >
-                          <DropdownMenuItem
-                            className="h-7 items-start cursor-pointer text-sm"
+            <SidebarSortableList
+              ids={visibleBoards.map((board) => board.id)}
+              onReorder={(ids) => setBoardSidebarOrder(user?.id ?? "", ids)}
+            >
+              {visibleBoards.map((board) => {
+                return (
+                  <SidebarSortableItem id={board.id} key={board.id}>
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            isActive={isCurrentBoard(board.id)}
+                            size="default"
+                            className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                             onClick={() => handleBoardClick(board)}
+                            {...intentPrefetchHandlers(() =>
+                              prefetchBoard(board.id),
+                            )}
                           >
-                            <Folder className="text-muted-foreground" />
-                            <span>{t("navigation:boardList.viewBoard")}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="h-7 items-start cursor-pointer text-sm"
-                            onClick={() => handleShareBoard(board)}
-                          >
-                            <Forward className="text-muted-foreground" />
-                            <span>{t("navigation:boardList.shareBoard")}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="h-7 items-start cursor-pointer text-sm"
-                            onClick={() => handleBoardSettings(board)}
-                          >
-                            <Settings className="text-muted-foreground" />
-                            <span>
-                              {t("navigation:boardList.boardSettings")}
-                            </span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="h-7 items-start cursor-pointer text-sm"
-                            onClick={() =>
-                              setBoardSidebarVisibility(
-                                user?.id ?? "",
-                                board.id,
-                                false,
-                              )
-                            }
-                          >
-                            <EyeOff className="text-muted-foreground" />
-                            <span>Hide from sidebar</span>
-                          </DropdownMenuItem>
-                          {canDeleteBoard && (
-                            <>
-                              <DropdownMenuSeparator />
+                            <span>{board.name}</span>
+                          </SidebarMenuButton>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
+                                />
+                              }
+                            >
+                              <MoreHorizontal />
+                              <span className="sr-only">
+                                {t("navigation:sidebar.more")}
+                              </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              className="w-44 rounded-lg"
+                              side={isMobile ? "bottom" : "right"}
+                              align={isMobile ? "end" : "start"}
+                            >
                               <DropdownMenuItem
-                                className="h-7 items-start text-destructive cursor-pointer text-sm"
-                                onClick={() => handleDeleteBoard(board)}
+                                className="h-7 items-start cursor-pointer text-sm"
+                                onClick={() => handleBoardClick(board)}
                               >
-                                <Trash2 className="text-destructive" />
+                                <Folder className="text-muted-foreground" />
                                 <span>
-                                  {t("navigation:boardList.deleteBoard")}
+                                  {t("navigation:boardList.viewBoard")}
                                 </span>
                               </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </SidebarMenuItem>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-44">
-                    <ContextMenuItem onClick={() => handleBoardClick(board)}>
-                      <Folder className="text-muted-foreground" />
-                      {t("navigation:boardList.viewBoard")}
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={() => handleShareBoard(board)}>
-                      <Forward className="text-muted-foreground" />
-                      {t("navigation:boardList.shareBoard")}
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={() => handleBoardSettings(board)}>
-                      <Settings className="text-muted-foreground" />
-                      {t("navigation:boardList.boardSettings")}
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() =>
-                        setBoardSidebarVisibility(
-                          user?.id ?? "",
-                          board.id,
-                          false,
-                        )
-                      }
-                    >
-                      <EyeOff className="text-muted-foreground" />
-                      Hide from sidebar
-                    </ContextMenuItem>
-                    {canDeleteBoard && (
-                      <>
-                        <ContextMenuSeparator />
+                              <DropdownMenuItem
+                                className="h-7 items-start cursor-pointer text-sm"
+                                onClick={() => handleShareBoard(board)}
+                              >
+                                <Forward className="text-muted-foreground" />
+                                <span>
+                                  {t("navigation:boardList.shareBoard")}
+                                </span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="h-7 items-start cursor-pointer text-sm"
+                                onClick={() => handleBoardSettings(board)}
+                              >
+                                <Settings className="text-muted-foreground" />
+                                <span>
+                                  {t("navigation:boardList.boardSettings")}
+                                </span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="h-7 items-start cursor-pointer text-sm"
+                                onClick={() =>
+                                  setBoardSidebarVisibility(
+                                    user?.id ?? "",
+                                    board.id,
+                                    false,
+                                  )
+                                }
+                              >
+                                <EyeOff className="text-muted-foreground" />
+                                <span>Hide from sidebar</span>
+                              </DropdownMenuItem>
+                              {canDeleteBoard && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="h-7 items-start text-destructive cursor-pointer text-sm"
+                                    onClick={() => handleDeleteBoard(board)}
+                                  >
+                                    <Trash2 className="text-destructive" />
+                                    <span>
+                                      {t("navigation:boardList.deleteBoard")}
+                                    </span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </SidebarMenuItem>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="w-44">
                         <ContextMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDeleteBoard(board)}
+                          onClick={() => handleBoardClick(board)}
                         >
-                          <Trash2 className="text-destructive" />
-                          {t("navigation:boardList.deleteBoard")}
+                          <Folder className="text-muted-foreground" />
+                          {t("navigation:boardList.viewBoard")}
                         </ContextMenuItem>
-                      </>
-                    )}
-                  </ContextMenuContent>
-                </ContextMenu>
-              );
-            })}
+                        <ContextMenuItem
+                          onClick={() => handleShareBoard(board)}
+                        >
+                          <Forward className="text-muted-foreground" />
+                          {t("navigation:boardList.shareBoard")}
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() => handleBoardSettings(board)}
+                        >
+                          <Settings className="text-muted-foreground" />
+                          {t("navigation:boardList.boardSettings")}
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          onClick={() =>
+                            setBoardSidebarVisibility(
+                              user?.id ?? "",
+                              board.id,
+                              false,
+                            )
+                          }
+                        >
+                          <EyeOff className="text-muted-foreground" />
+                          Hide from sidebar
+                        </ContextMenuItem>
+                        {canDeleteBoard && (
+                          <>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDeleteBoard(board)}
+                            >
+                              <Trash2 className="text-destructive" />
+                              {t("navigation:boardList.deleteBoard")}
+                            </ContextMenuItem>
+                          </>
+                        )}
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  </SidebarSortableItem>
+                );
+              })}
+            </SidebarSortableList>
             <NavHiddenItems
               isActive={(boardId) => isCurrentBoard(boardId)}
               items={hiddenBoards.map((board) => ({
