@@ -1923,6 +1923,24 @@
 		},
 		"column": {
 			"empty": "No tasks"
+		},
+		"milestone": {
+			"title": "Milestone",
+			"none": "No milestone",
+			"clear": "No milestone",
+			"empty": "No milestones on this board",
+			"loading": "Loading milestones…",
+			"searchPlaceholder": "Search milestones...",
+			"assigned": "Milestone updated",
+			"cleared": "Milestone removed",
+			"assignFailed": "Failed to update milestone",
+			"badgeTooltip": "Milestone: {{name}} ({{status}})",
+			"status": {
+				"planned": "Planned",
+				"active": "Active",
+				"completed": "Completed",
+				"archived": "Archived"
+			}
 		}
 	},
 	"invitations": {

@@ -6,12 +6,14 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { groupTasks } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
 import {
   collapseToggleLabel,
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
 import type { BoardWithTasks } from "@/types/board";
+import { useBoardGroupBy } from "../board-view-context";
 import TaskCard from "../task-card";
 
 type ColumnDropzoneProps = {
@@ -54,6 +56,7 @@ export function ColumnDropzone({
   onIsOverChange,
 }: ColumnDropzoneProps) {
   const { t } = useTranslation();
+  const groupBy = useBoardGroupBy();
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: { type: "column", column },
@@ -130,6 +133,14 @@ export function ColumnDropzone({
     [groups, mountCount],
   );
 
+  // Board-level "group by": buckets this column's tasks under a heading.
+  // Only used when grouping is on, so the ungrouped path keeps its
+  // progressive-mount behaviour untouched.
+  const taskGroups = useMemo(
+    () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
+    [column.tasks, groupBy],
+  );
+
   // Reserve height for not-yet-mounted groups so the scrollbar doesn't jump as
   // chunks land.
   const pendingCards = useMemo(
@@ -174,68 +185,94 @@ export function ColumnDropzone({
         items={column.tasks}
         strategy={verticalListSortingStrategy}
       >
-        <div
-          className={cn(
-            "flex flex-col gap-2",
-            // Container-level entry animation, replacing the old per-card
-            // motion.div: one CSS transition on the wrapper reads the same but
-            // costs nothing per card.
-            "transition-[translate,opacity] duration-150 ease-out",
-            "starting:-translate-y-1 starting:opacity-0",
-            "motion-reduce:starting:translate-y-0",
-          )}
-        >
-          {visibleGroups.map(({ parent, children }) => {
-            const collapsed = collapsedParents.has(parent.id);
-            return (
-              <div
+        {groupBy !== "none" ? (
+          <div className="flex flex-col gap-3" data-slot="task-group-list">
+            {taskGroups.map((group) => (
+              <section
                 className="flex flex-col gap-2"
-                data-testid={children.length ? "task-group" : undefined}
-                key={parent.id}
+                data-slot="task-group"
+                key={group.key || "unset"}
               >
-                {renderCard(parent)}
-                {children.length > 0 && (
-                  <button
-                    aria-expanded={!collapsed}
-                    className="flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={() =>
-                      setCollapsedParents((current) => {
-                        const next = new Set(current);
-                        if (collapsed) next.delete(parent.id);
-                        else next.add(parent.id);
-                        return next;
-                      })
-                    }
-                    type="button"
-                  >
-                    {collapsed ? (
-                      <ChevronRight className="size-3" />
-                    ) : (
-                      <ChevronDown className="size-3" />
-                    )}
-                    {collapseToggleLabel({
-                      parentId: parent.id,
-                      childCount: children.length,
-                      collapsed,
-                    })}
-                  </button>
-                )}
-                {!collapsed && children.map((child) => renderCard(child, true))}
+                <h3 className="px-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
+                  {group.labelKey ? t(group.labelKey) : group.label}
+                  <span className="ml-1.5 text-muted-foreground/70">
+                    {group.tasks.length}
+                  </span>
+                </h3>
+                {group.tasks.map((task) => renderCard(task))}
+              </section>
+            ))}
+            {taskGroups.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
+                {t("tasks:column.empty")}
               </div>
-            );
-          })}
-          {pendingCards > 0 ? (
-            <div
-              aria-hidden="true"
-              style={{ height: `${pendingCards * CARD_HEIGHT_PX}px` }}
-            />
-          ) : null}
-          {totalGroups === 0 ? (
-            <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
-              {t("tasks:column.empty")}
-            </div>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "flex flex-col gap-2",
+              // Container-level entry animation, replacing the old per-card
+              // motion.div: one CSS transition on the wrapper reads the same but
+              // costs nothing per card.
+              "transition-[translate,opacity] duration-150 ease-out",
+              "starting:-translate-y-1 starting:opacity-0",
+              "motion-reduce:starting:translate-y-0",
+            )}
+          >
+            {visibleGroups.map(({ parent, children }) => {
+              const collapsed = collapsedParents.has(parent.id);
+              return (
+                <div
+                  className="flex flex-col gap-2"
+                  data-testid={children.length ? "task-group" : undefined}
+                  key={parent.id}
+                >
+                  {renderCard(parent)}
+                  {children.length > 0 && (
+                    <button
+                      aria-expanded={!collapsed}
+                      className="flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() =>
+                        setCollapsedParents((current) => {
+                          const next = new Set(current);
+                          if (collapsed) next.delete(parent.id);
+                          else next.add(parent.id);
+                          return next;
+                        })
+                      }
+                      type="button"
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="size-3" />
+                      ) : (
+                        <ChevronDown className="size-3" />
+                      )}
+                      {collapseToggleLabel({
+                        parentId: parent.id,
+                        childCount: children.length,
+                        collapsed,
+                      })}
+                    </button>
+                  )}
+                  {!collapsed &&
+                    children.map((child) => renderCard(child, true))}
+                </div>
+              );
+            })}
+            {pendingCards > 0 ? (
+              <div
+                aria-hidden="true"
+                style={{ height: `${pendingCards * CARD_HEIGHT_PX}px` }}
+              />
+            ) : null}
+            {totalGroups === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
+                {t("tasks:column.empty")}
+              </div>
+            ) : null}
+          </div>
+        )}
       </SortableContext>
     </div>
   );

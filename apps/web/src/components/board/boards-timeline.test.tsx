@@ -193,16 +193,31 @@ describe("BoardsTimeline", () => {
     render(
       <BoardsTimeline
         boards={[
-          board("not-started", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z", {
-            totalTasks: 0,
-            completionPercentage: 0,
-          }),
-          board("in-progress", "2026-06-05T00:00:00.000Z", "2026-06-20T00:00:00.000Z", {
-            completionPercentage: 50,
-          }),
-          board("complete", "2026-06-10T00:00:00.000Z", "2026-06-25T00:00:00.000Z", {
-            completionPercentage: 100,
-          }),
+          board(
+            "not-started",
+            "2026-06-01T00:00:00.000Z",
+            "2026-06-10T00:00:00.000Z",
+            {
+              totalTasks: 0,
+              completionPercentage: 0,
+            },
+          ),
+          board(
+            "in-progress",
+            "2026-06-05T00:00:00.000Z",
+            "2026-06-20T00:00:00.000Z",
+            {
+              completionPercentage: 50,
+            },
+          ),
+          board(
+            "complete",
+            "2026-06-10T00:00:00.000Z",
+            "2026-06-25T00:00:00.000Z",
+            {
+              completionPercentage: 100,
+            },
+          ),
         ]}
         onBoardClick={vi.fn()}
         zoom="week"
@@ -216,7 +231,9 @@ describe("BoardsTimeline", () => {
     expect(screen.queryByTestId("boards-timeline-bar-in-progress")).toBeNull();
     expect(screen.queryByTestId("boards-timeline-bar-not-started")).toBeNull();
     expect(
-      screen.getByTestId("boards-timeline-zoom-month").getAttribute("aria-pressed"),
+      screen
+        .getByTestId("boards-timeline-zoom-month")
+        .getAttribute("aria-pressed"),
     ).toBe("true");
 
     for (const element of [

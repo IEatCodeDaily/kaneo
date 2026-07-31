@@ -23,6 +23,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
+import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { cn } from "@/lib/cn";
@@ -33,9 +34,11 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
+import MilestoneBadge from "./milestone-badge";
 import TaskAssigneePopover from "./task-assignee-popover";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
+import TaskMilestonePicker from "./task-milestone-picker";
 import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
 import TaskStartDatePopover from "./task-start-date-popover";
@@ -87,6 +90,14 @@ export default function TaskPropertiesSidebar({
     useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
+  // task.milestoneId lives on the task row; the name comes from the board's
+  // milestone list so the badge stays correct after a rename.
+  const taskMilestoneId =
+    (task as { milestoneId?: string | null } | undefined)?.milestoneId ?? null;
+  const { data: boardMilestones = [] } = useGetMilestonesByBoard(boardId);
+  const selectedMilestone = boardMilestones.find(
+    (milestone) => milestone.id === taskMilestoneId,
+  );
   const canMoveTask =
     Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
   const statusColumn = columns.find(
@@ -710,6 +721,21 @@ export default function TaskPropertiesSidebar({
         )}
 
         <div className="hidden lg:flex px-3 flex-col gap-3 p-2">
+          {task && taskId && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-foreground/70 px-2">
+                {t("tasks:milestone.title")}
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5 px-2">
+                <TaskMilestonePicker
+                  taskId={taskId}
+                  boardId={task.boardId ?? boardId}
+                  milestoneId={taskMilestoneId}
+                />
+                <MilestoneBadge milestone={selectedMilestone} />
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-foreground/70 px-2">
               {t("tasks:properties.labels")}

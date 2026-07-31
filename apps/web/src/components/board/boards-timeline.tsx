@@ -3,6 +3,13 @@ import { CalendarRange, Filter } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  buildTimeline,
+  dayOffsetRem,
+  type GanttZoom,
+  gridLineGradient,
+  weekendTintGradient,
+} from "@/components/gantt/gantt-timeline";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -11,13 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import {
-  buildTimeline,
-  dayOffsetRem,
-  type GanttZoom,
-  gridLineGradient,
-  weekendTintGradient,
-} from "@/components/gantt/gantt-timeline";
 import icons from "@/constants/board-icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
@@ -62,11 +62,12 @@ const DEFAULT_ZOOM: GanttZoom = ZOOM_OPTIONS[1].zoom;
 
 type BoardStatus = "notStarted" | "inProgress" | "complete";
 
-const STATUS_OPTIONS: { status: BoardStatus; key: string; fallback: string }[] = [
-  { status: "notStarted", key: "not-started", fallback: "Not started" },
-  { status: "inProgress", key: "in-progress", fallback: "In progress" },
-  { status: "complete", key: "complete", fallback: "Complete" },
-];
+const STATUS_OPTIONS: { status: BoardStatus; key: string; fallback: string }[] =
+  [
+    { status: "notStarted", key: "not-started", fallback: "Not started" },
+    { status: "inProgress", key: "in-progress", fallback: "In progress" },
+    { status: "complete", key: "complete", fallback: "Complete" },
+  ];
 
 function getBoardStatus(board: TimelineBoard): BoardStatus {
   const total = board.statistics?.totalTasks ?? 0;
@@ -184,7 +185,9 @@ export default function BoardsTimeline({
           <DropdownMenuTrigger
             render={
               <button
-                aria-label={t("common:actions.filter", { defaultValue: "Filter" })}
+                aria-label={t("common:actions.filter", {
+                  defaultValue: "Filter",
+                })}
                 className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
                 data-testid="boards-timeline-filter"
                 type="button"
@@ -240,25 +243,25 @@ export default function BoardsTimeline({
           className="inline-flex h-7 w-fit shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5"
           data-testid="boards-timeline-zoom"
         >
-        {ZOOM_OPTIONS.map((option) => (
-          <button
-            aria-pressed={zoom === option.zoom}
-            className={cn(
-              "h-5 rounded-md px-2 text-xs",
-              zoom === option.zoom
-                ? "bg-accent font-medium"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            data-testid={`boards-timeline-zoom-${option.key}`}
-            key={option.key}
-            onClick={() => setZoom(option.zoom)}
-            type="button"
-          >
-            {t(`organization:boards.timeline.zoom.${option.key}`, {
-              defaultValue: option.fallback,
-            })}
-          </button>
-        ))}
+          {ZOOM_OPTIONS.map((option) => (
+            <button
+              aria-pressed={zoom === option.zoom}
+              className={cn(
+                "h-5 rounded-md px-2 text-xs",
+                zoom === option.zoom
+                  ? "bg-accent font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              data-testid={`boards-timeline-zoom-${option.key}`}
+              key={option.key}
+              onClick={() => setZoom(option.zoom)}
+              type="button"
+            >
+              {t(`organization:boards.timeline.zoom.${option.key}`, {
+                defaultValue: option.fallback,
+              })}
+            </button>
+          ))}
         </div>
       </div>
       <div className="overflow-x-auto" data-testid="boards-timeline">
