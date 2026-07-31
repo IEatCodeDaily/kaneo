@@ -74,6 +74,15 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
     [debouncedUpdate],
   );
 
+  useEffect(
+    () => () => {
+      // Navigation can unmount the title before the 800ms timer fires. Flush
+      // the last keystroke rather than silently discarding it.
+      void debouncedUpdate.flush();
+    },
+    [debouncedUpdate],
+  );
+
   return (
     <Form {...form}>
       <FormField

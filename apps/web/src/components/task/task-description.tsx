@@ -561,6 +561,15 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     [],
   );
 
+  useEffect(
+    () => () => {
+      // A route change can destroy this editor before the debounce expires.
+      // Flush the latest markdown so drafts keep their final keystrokes.
+      void debouncedUpdate.flush();
+    },
+    [debouncedUpdate],
+  );
+
   const editor = useEditor(
     {
       immediatelyRender: false,
