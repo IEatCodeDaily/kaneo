@@ -4,14 +4,7 @@ import {
   Outlet,
   useLocation,
 } from "@tanstack/react-router";
-import {
-  FlaskConical,
-  Plug,
-  Settings,
-  Shield,
-  Sparkles,
-  Tag,
-} from "lucide-react";
+import { FlaskConical, Plug, Settings, Shield, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -62,12 +55,6 @@ function RouteComponent() {
       title: "Features",
       url: "/dashboard/settings/organization/features",
       icon: FlaskConical,
-    },
-
-    {
-      title: "AI",
-      url: "/dashboard/settings/organization/ai",
-      icon: Sparkles,
     },
   ];
   const isActivePath = (path: string) => location.pathname === path;
