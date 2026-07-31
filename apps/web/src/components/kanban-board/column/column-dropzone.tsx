@@ -32,6 +32,22 @@ const CHUNK = 40;
 /** Approximate rendered height of one card, for the pending-space reservation. */
 const CARD_HEIGHT_PX = 102;
 
+/**
+ * Measured rendered heights of a task card, used as the contain-intrinsic-size
+ * placeholder for cards whose layout the browser is skipping.
+ *
+ * These must match reality or the column visibly jitters: content-visibility
+ * skips layout for off-screen cards, and the browser then sizes them from
+ * contain-intrinsic-size instead. Understating it makes total column height
+ * shrink as cards scroll out and snap back as they scroll in — measured at
+ * ~600px of scrollHeight thrash on a 77-task board when this was a flat 92px
+ * against cards that actually render 101px/121px.
+ *
+ * A card with labels is one label row (plus its 10px margin) taller.
+ */
+const CARD_INTRINSIC_HEIGHT_PX = 101;
+const CARD_WITH_LABELS_INTRINSIC_HEIGHT_PX = 121;
+
 export function ColumnDropzone({
   column,
   disableDragDrop = false,
@@ -138,7 +154,14 @@ export function ColumnDropzone({
       className={nested ? "ml-4 border-l-2 border-border pl-2" : undefined}
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: `auto ${CARD_HEIGHT_PX - 10}px`,
+        // `auto` height alone is not enough: until a card has been rendered once
+        // the browser has no last-known size and falls back to the fixed value,
+        // so it has to be the real card height or the column jitters on scroll.
+        containIntrinsicSize: `auto ${
+          task.labels?.length
+            ? CARD_WITH_LABELS_INTRINSIC_HEIGHT_PX
+            : CARD_INTRINSIC_HEIGHT_PX
+        }px`,
       }}
     >
       <TaskCard task={task} disableDragDrop={disableDragDrop} />
