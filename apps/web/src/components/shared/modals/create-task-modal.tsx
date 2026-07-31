@@ -36,6 +36,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { shortcuts } from "@/constants/shortcuts";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
@@ -83,6 +84,35 @@ type Label = {
 };
 
 type PopoverStep = "select" | "color";
+
+export function focusTaskTitleFromShortcut(
+  event: KeyboardEvent,
+  titleInput: HTMLInputElement | null,
+  open: boolean,
+) {
+  if (!open) return false;
+
+  const target = event.target;
+  const isTyping =
+    target instanceof Element &&
+    (target.closest('input, textarea, [contenteditable="true"]') !== null ||
+      (target instanceof HTMLElement && target.isContentEditable));
+
+  if (
+    event.key.toLowerCase() !== shortcuts.task.focusTitle ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey ||
+    isTyping
+  ) {
+    return false;
+  }
+
+  event.preventDefault();
+  titleInput?.focus();
+  return true;
+}
 
 function normalizeTask(
   task: Partial<Task> &
@@ -201,6 +231,7 @@ function CreateTaskModal({
   const resolvedBoardId = boardId || board?.id || routeBoardId || "";
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const draftCreationPromiseRef = useRef<Promise<Task> | null>(null);
   const didSubmitRef = useRef(false);
   const didDiscardRef = useRef(false);
@@ -557,6 +588,8 @@ function CreateTaskModal({
     (e: KeyboardEvent) => {
       if (!open) return;
 
+      if (focusTaskTitleFromShortcut(e, titleInputRef.current, open)) return;
+
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         if (title.trim() && board?.id && organization?.id) {
@@ -692,6 +725,7 @@ function CreateTaskModal({
         >
           <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6">
             <Input
+              ref={titleInputRef}
               unstyled
               value={title}
               onChange={(e) => setTitle(e.target.value)}

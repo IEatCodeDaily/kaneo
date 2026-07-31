@@ -62,6 +62,10 @@ function useShortcutCategories(): ShortcutCategory[] {
             description: t("navigation:keyboardShortcuts.items.createTask"),
           },
           {
+            keys: [shortcuts.task.focusTitle],
+            description: "Focus task title (when creating a task)",
+          },
+          {
             keys: [shortcuts.board.prefix, shortcuts.board.create],
             description: t("navigation:keyboardShortcuts.items.createBoard"),
           },
