@@ -3,6 +3,15 @@ import columnIcons, {
   DEFAULT_COLUMN_ICON_NAMES,
 } from "@/constants/column-icons";
 
+const COLUMN_ICON_COLORS: Record<string, string> = {
+  "to-do": "text-slate-500 dark:text-slate-400",
+  "in-progress": "text-sky-600 dark:text-sky-400",
+  "in-review": "text-amber-600 dark:text-amber-400",
+  done: "text-emerald-600 dark:text-emerald-400",
+  archived: "text-violet-600 dark:text-violet-400",
+  planned: "text-rose-600 dark:text-rose-400",
+};
+
 /**
  * Icon for a final ("done") column.
  *
@@ -35,6 +44,7 @@ export const getColumnIcon = (
   isFinal?: boolean,
   iconName?: string | null,
 ) => {
+  const className = `w-4 h-4 ${COLUMN_ICON_COLORS[columnId] ?? "text-muted-foreground"}`;
   const resolvedIconName =
     iconName ||
     DEFAULT_COLUMN_ICON_NAMES[
@@ -44,7 +54,7 @@ export const getColumnIcon = (
   // CheckCircle2 is the done marker everywhere it appears, default or
   // explicitly configured, so it resolves to the filled circle instead.
   if (resolvedIconName === "CheckCircle2") {
-    return <ColumnDoneIcon className="w-4 h-4 text-muted-foreground" />;
+    return <ColumnDoneIcon className={className} />;
   }
 
   const Icon =
@@ -52,12 +62,12 @@ export const getColumnIcon = (
     columnIcons[resolvedIconName as keyof typeof columnIcons];
 
   if (Icon) {
-    return <Icon className="w-4 h-4 text-muted-foreground" />;
+    return <Icon className={className} />;
   }
 
   return isFinal ? (
-    <ColumnDoneIcon className="w-4 h-4 text-muted-foreground" />
+    <ColumnDoneIcon className={className} />
   ) : (
-    <Circle className="w-4 h-4 text-muted-foreground" />
+    <Circle className={className} />
   );
 };

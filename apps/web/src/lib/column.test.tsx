@@ -17,6 +17,31 @@ const svgOf = (node: HTMLElement) => {
   return svg;
 };
 
+const expectClassTokens = (element: Element, tokens: string[]) => {
+  for (const token of tokens) expect(element.classList.contains(token)).toBe(true);
+};
+
+describe("getColumnIcon status colors", () => {
+  it.each([
+    ["to-do", "text-slate-500", "dark:text-slate-400"],
+    ["in-progress", "text-sky-600", "dark:text-sky-400"],
+    ["in-review", "text-amber-600", "dark:text-amber-400"],
+    ["done", "text-emerald-600", "dark:text-emerald-400"],
+    ["archived", "text-violet-600", "dark:text-violet-400"],
+    ["planned", "text-rose-600", "dark:text-rose-400"],
+  ])("colors %s distinctly", (columnId, lightColor, darkColor) => {
+    const { container } = render(getColumnIcon(columnId, columnId === "done", null));
+
+    expectClassTokens(svgOf(container), [lightColor, darkColor]);
+  });
+
+  it("keeps the neutral color for an unknown status", () => {
+    const { container } = render(getColumnIcon("custom", false, null));
+
+    expectClassTokens(svgOf(container), ["text-muted-foreground"]);
+  });
+});
+
 /**
  * The done column used a check-in-a-circle, which at 16px did not read as
  * "complete" (#64). It is now the in-progress dot taken nearly all the way: a
