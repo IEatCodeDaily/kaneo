@@ -799,7 +799,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   // menus, paste handlers, and toolbar buttons all become no-ops because
   // the editor refuses content mutations.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     editor.setEditable(canEdit);
   }, [editor, canEdit]);
 
@@ -983,7 +983,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   );
 
   useEffect(() => {
-    if (!editor) return;
+    // A destroyed editor is still truthy but its commandManager is null, so a
+    // `!editor` check alone is not enough: navigating between a parent task and
+    // its subtask tears the editor down while this effect is still scheduled,
+    // and touching `.commands` then throws "can't access property commands".
+    if (!editor || editor.isDestroyed) return;
     if (lastEditorRef.current !== editor) {
       hasHydratedRef.current = false;
       lastEditorRef.current = editor;
@@ -1026,7 +1030,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   }, [editor, taskId, task?.description]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
 
     syncSlashMenu(editor);
     const onSelection = () => syncSlashMenu(editor);

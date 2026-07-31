@@ -963,7 +963,8 @@ export default function CommentEditor({
   }, [editor, onAttachActionChange, openImagePicker]);
 
   useEffect(() => {
-    if (!editor || !shikiHighlighter) return;
+    // `editor.view` is torn down on destroy; see the setContent effect below.
+    if (!editor || editor.isDestroyed || !shikiHighlighter) return;
     editor.view.dispatch(
       editor.state.tr.setMeta(SHIKI_CODEBLOCK_REFRESH_META, true),
     );
@@ -1083,12 +1084,16 @@ export default function CommentEditor({
   }, [editor, updateSlashMenu]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     editor.setEditable(!readOnly && !disabled);
   }, [disabled, editor, readOnly]);
 
   useEffect(() => {
-    if (!editor) return;
+    // A destroyed editor is still truthy but its commandManager is null, so a
+    // `!editor` check alone is not enough: navigating between a parent task and
+    // its subtask tears the editor down while this effect is still scheduled,
+    // and touching `.commands` then throws "can't access property commands".
+    if (!editor || editor.isDestroyed) return;
     if (lastEditorRef.current !== editor) {
       hasHydratedRef.current = false;
       lastEditorRef.current = editor;
