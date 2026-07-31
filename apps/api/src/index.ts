@@ -45,6 +45,7 @@ import githubIntegration, {
 } from "./github-integration";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
+import flag from "./flag";
 import label from "./label";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
@@ -614,6 +615,7 @@ export function createApp() {
   const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
+  const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
   const milestoneApi = api.route("/milestone", milestone);
   const notificationApi = api.route("/notification", notification);
@@ -814,6 +816,7 @@ export function createApp() {
     genericWebhookIntegrationApi,
     invitationApi,
     invitationPublicApi,
+    flagApi,
     labelApi,
     milestoneApi,
     notificationApi,
@@ -937,6 +940,7 @@ const {
   genericWebhookIntegrationApi,
   invitationApi,
   invitationPublicApi,
+  flagApi,
   labelApi,
   milestoneApi,
   notificationApi,
@@ -975,6 +979,7 @@ export type AppType =
   | typeof aiApi
   | typeof commentApi
   | typeof timeEntryApi
+  | typeof flagApi
   | typeof labelApi
   | typeof milestoneApi
   | typeof notificationApi
