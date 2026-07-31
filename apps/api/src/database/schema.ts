@@ -602,6 +602,88 @@ export const taskTable = pgTable(
   ],
 );
 
+export const flagTypeTable = pgTable(
+  "flag_type",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    color: text("color"),
+    icon: text("icon"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("flag_type_boardId_idx").on(table.boardId),
+    unique("flag_type_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
+export const taskFlagTable = pgTable(
+  "task_flag",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    flagTypeId: text("flag_type_id")
+      .notNull()
+      .references(() => flagTypeTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Who raised the flag.
+    flaggedBy: text("flagged_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    // Flags are aimed at a user OR a team; exactly one target is expected.
+    targetUserId: text("target_user_id").references(() => userTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    targetTeamId: text("target_team_id").references(() => teamTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    note: text("note"),
+    // Unflagging keeps the row and records who resolved it.
+    resolvedAt: timestamp("resolved_at", { mode: "date" }),
+    resolvedBy: text("resolved_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("task_flag_taskId_idx").on(table.taskId),
+    index("task_flag_flagTypeId_idx").on(table.flagTypeId),
+    index("task_flag_targetUserId_idx").on(table.targetUserId),
+    index("task_flag_targetTeamId_idx").on(table.targetTeamId),
+    index("task_flag_resolvedAt_idx").on(table.resolvedAt),
+  ],
+);
+
 export const taskReminderSentTable = pgTable(
   "task_reminder_sent",
   {
