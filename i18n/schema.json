@@ -8531,12 +8531,24 @@
 						},
 						"you": {
 							"type": "string"
+						},
+						"people": {
+							"type": "string"
+						},
+						"agents": {
+							"type": "string"
+						},
+						"agentsManagedByAdmins": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"pageTitle",
 						"inviteMember",
-						"you"
+						"you",
+						"people",
+						"agents",
+						"agentsManagedByAdmins"
 					]
 				},
 				"invitations": {

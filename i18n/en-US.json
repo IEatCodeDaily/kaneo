@@ -2077,7 +2077,10 @@
 		"members": {
 			"pageTitle": "Members",
 			"inviteMember": "Invite member",
-			"you": "You"
+			"you": "You",
+			"people": "People",
+			"agents": "Agents",
+			"agentsManagedByAdmins": "Organization agents are managed by owners and administrators."
 		},
 		"invitations": {
 			"pendingBadge": "pending",

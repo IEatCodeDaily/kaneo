@@ -5,7 +5,6 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import {
-  Bot,
   FlaskConical,
   Plug,
   Settings,
@@ -64,11 +63,7 @@ function RouteComponent() {
       url: "/dashboard/settings/organization/features",
       icon: FlaskConical,
     },
-    {
-      title: "AI agents",
-      url: "/dashboard/settings/organization/agents",
-      icon: Bot,
-    },
+
     {
       title: "AI",
       url: "/dashboard/settings/organization/ai",
