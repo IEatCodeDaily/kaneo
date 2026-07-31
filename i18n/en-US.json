@@ -1229,6 +1229,8 @@
 		"sidebar": {
 			"overview": "Overview",
 			"boards": "Boards",
+			"myTasks": "My Tasks",
+			"inbox": "Inbox",
 			"members": "Members",
 			"invitations": "Invitations",
 			"more": "More",
@@ -2174,5 +2176,24 @@
 		"branding": {
 			"poweredBy": "Powered by"
 		}
+	},
+	"myTasks": {
+		"title": "My Tasks",
+		"loading": "Loading your tasks…",
+		"empty": "Nothing assigned to you right now.",
+		"count": "{{count}} tasks",
+		"includeCompleted": "Include completed",
+		"relation": {
+			"all": "All",
+			"assigned": "Assigned",
+			"created": "Created",
+			"team": "Team"
+		}
+	},
+	"inbox": {
+		"title": "Inbox",
+		"loading": "Loading your inbox…",
+		"empty": "No updates yet.",
+		"count": "{{count}} updates"
 	}
 }

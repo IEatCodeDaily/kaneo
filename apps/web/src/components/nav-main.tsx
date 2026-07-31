@@ -31,11 +31,37 @@ export function NavMain() {
   if (!organization) return null;
 
   const membersUrl = `/dashboard/organization/${organization.id}/members`;
+  const myTasksUrl = `/dashboard/organization/${organization.id}/my-tasks`;
+  const inboxUrl = `/dashboard/organization/${organization.id}/inbox`;
 
   return (
     <SidebarGroup className="gap-1 p-2 pb-0">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
+          {/* Cross-board, user-scoped views (#58) sit above Members: they are
+              the operator's own work, not organization administration. */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+              isActive={location.pathname === inboxUrl}
+              onClick={() => navigate({ to: inboxUrl })}
+              size="default"
+              tooltip={t("navigation:sidebar.inbox")}
+            >
+              <span>{t("navigation:sidebar.inbox")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+              isActive={location.pathname === myTasksUrl}
+              onClick={() => navigate({ to: myTasksUrl })}
+              size="default"
+              tooltip={t("navigation:sidebar.myTasks")}
+            >
+              <span>{t("navigation:sidebar.myTasks")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
