@@ -1,7 +1,16 @@
 import { differenceInCalendarDays, format, isToday, parseISO } from "date-fns";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Filter } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import {
   buildTimeline,
   dayOffsetRem,
@@ -51,6 +60,21 @@ const STICKY_NAME_COLUMN = "sticky left-0 z-20 w-56 shrink-0 bg-background";
 
 const DEFAULT_ZOOM: GanttZoom = ZOOM_OPTIONS[1].zoom;
 
+type BoardStatus = "notStarted" | "inProgress" | "complete";
+
+const STATUS_OPTIONS: { status: BoardStatus; key: string; fallback: string }[] = [
+  { status: "notStarted", key: "not-started", fallback: "Not started" },
+  { status: "inProgress", key: "in-progress", fallback: "In progress" },
+  { status: "complete", key: "complete", fallback: "Complete" },
+];
+
+function getBoardStatus(board: TimelineBoard): BoardStatus {
+  const total = board.statistics?.totalTasks ?? 0;
+  const percent = board.statistics?.completionPercentage ?? 0;
+  if (total === 0) return "notStarted";
+  return percent === 100 ? "complete" : "inProgress";
+}
+
 /** Mirrors the boards table: icon is a lucide name, with Layout as fallback. */
 function BoardIcon({ icon }: { icon?: string | null }) {
   const Icon = icons[icon as keyof typeof icons] ?? icons.Layout;
@@ -87,6 +111,7 @@ export default function BoardsTimeline({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [zoom, setZoom] = useState<GanttZoom>(initialZoom);
+  const [statusFilters, setStatusFilters] = useState<BoardStatus[]>([]);
 
   const scheduled = useMemo<ScheduledBoard[]>(() => {
     return boards
@@ -103,6 +128,16 @@ export default function BoardsTimeline({
       .filter((entry): entry is ScheduledBoard => entry !== null)
       .sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [boards]);
+
+  const filteredScheduled = useMemo(
+    () =>
+      statusFilters.length === 0
+        ? scheduled
+        : scheduled.filter(({ board }) =>
+            statusFilters.includes(getBoardStatus(board)),
+          ),
+    [scheduled, statusFilters],
+  );
 
   const timeline = useMemo(() => {
     if (scheduled.length === 0) return null;
@@ -144,11 +179,67 @@ export default function BoardsTimeline({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Zoom lives with the timeline itself, so any caller gets the control. */}
-      <div
-        className="inline-flex h-7 w-fit shrink-0 items-center gap-0.5 self-end rounded-lg border border-border/80 bg-background p-0.5"
-        data-testid="boards-timeline-zoom"
-      >
+      <div className="flex items-center justify-end gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                aria-label={t("common:actions.filter", { defaultValue: "Filter" })}
+                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
+                data-testid="boards-timeline-filter"
+                type="button"
+              />
+            }
+          >
+            <Filter className="size-3" />
+            {t("common:actions.filter", { defaultValue: "Filter" })}
+            {statusFilters.length > 0 ? ` (${statusFilters.length})` : null}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+                {t("tasks:boardFilters.subjects.status", {
+                  defaultValue: "Status",
+                })}
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              data-testid="boards-timeline-filter-all"
+              onClick={() => setStatusFilters([])}
+            >
+              All statuses
+            </DropdownMenuItem>
+            {STATUS_OPTIONS.map((option) => {
+              const selected = statusFilters.includes(option.status);
+              return (
+                <DropdownMenuItem
+                  data-testid={`boards-timeline-filter-${option.key}`}
+                  key={option.status}
+                  onClick={() =>
+                    setStatusFilters((current) =>
+                      selected
+                        ? current.filter((status) => status !== option.status)
+                        : [...current, option.status],
+                    )
+                  }
+                >
+                  <span aria-hidden="true" className="w-4 text-center">
+                    {selected ? "✓" : null}
+                  </span>
+                  {t(`organization:boards.timeline.status.${option.status}`, {
+                    defaultValue: option.fallback,
+                  })}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/* Zoom lives with the timeline itself, so any caller gets the control. */}
+        <div
+          className="inline-flex h-7 w-fit shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5"
+          data-testid="boards-timeline-zoom"
+        >
         {ZOOM_OPTIONS.map((option) => (
           <button
             aria-pressed={zoom === option.zoom}
@@ -168,6 +259,7 @@ export default function BoardsTimeline({
             })}
           </button>
         ))}
+        </div>
       </div>
       <div className="overflow-x-auto" data-testid="boards-timeline">
         <div style={{ minWidth: `${timeline.timelineMinWidthRem + 14}rem` }}>
@@ -217,7 +309,7 @@ export default function BoardsTimeline({
               />
             )}
 
-            {scheduled.map(({ board, start, end }) => {
+            {filteredScheduled.map(({ board, start, end }) => {
               const startIndex = differenceInCalendarDays(
                 start,
                 timeline.rangeStart,
