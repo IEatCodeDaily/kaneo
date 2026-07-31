@@ -25,12 +25,15 @@ vi.mock("@pierre/trees/react", () => ({
 }));
 
 /**
- * The tree must FLOAT over the diff, not take a column from it.
+ * Layout contract for the changed-files tree, pinned after three user-reported
+ * regressions:
  *
- * A previous version docked it as an in-flow flex child. That both stole width
- * from the diff and, in the fullscreen dialog, left the diff column sized to its
- * content so it could never scroll. Both regressions were user-reported, so
- * these assertions pin the layout contract.
+ * 1. A dismissing Popover closed on every file jump.
+ * 2. An absolutely-positioned overlay floated on top of the code.
+ * 3. In fullscreen, the diff column sized to its content so it never scrolled.
+ *
+ * The shape that works is GitHub's: a hideable in-flow column on the LEFT with
+ * the diff beside it, and a resolved height so the virtualizer renders.
  */
 describe("PullRequestFileTree layout", () => {
   const baseProps = {
@@ -41,30 +44,45 @@ describe("PullRequestFileTree layout", () => {
     onOpenChange: vi.fn(),
   };
 
-  it("floats the open panel as an absolute overlay", () => {
+  it("renders as an in-flow left column, never an overlay", () => {
     render(<PullRequestFileTree {...baseProps} open={true} />);
 
     const sidebar = screen.getByTestId("inline-file-tree-sidebar");
-    // Absolute positioning is what makes it float over the diff. `shrink-0` in
-    // normal flow (the old behaviour) reserved a column instead.
-    expect(hasAbsoluteToken(sidebar.className)).toBe(true);
-    expect(sidebar.className).not.toContain("shrink-0");
+    // An absolutely-positioned panel floated on top of the code. It must be a
+    // real column the diff sits beside.
+    expect(hasAbsoluteToken(sidebar.className)).toBe(false);
+    expect(sidebar.className).toContain("shrink-0");
     expect(within(sidebar).getByTestId("pierre-file-tree")).toBeTruthy();
   });
 
-  it("floats the collapsed toggle too, so collapsing does not shift the diff", () => {
+  it("gives the tree a resolved height so the virtualizer can render", () => {
+    render(<PullRequestFileTree {...baseProps} open={true} />);
+    // With only max-height the virtualized tree collapses to zero and blanks.
+    expect(screen.getByTestId("inline-file-tree").className).toMatch(
+      /h-\[|flex-1/,
+    );
+  });
+
+  it("stretches to its parent in fullscreen instead of using viewport height", () => {
+    render(<PullRequestFileTree {...baseProps} fillHeight open={true} />);
+    const sidebar = screen.getByTestId("inline-file-tree-sidebar");
+    expect(sidebar.className).toContain("h-full");
+    expect(screen.getByTestId("inline-file-tree").className).toContain(
+      "flex-1",
+    );
+  });
+
+  it("collapses to a toggle that hides the tree body", () => {
     render(<PullRequestFileTree {...baseProps} open={false} />);
 
-    const toggle = screen.getByTestId("inline-file-tree-toggle");
-    expect(hasAbsoluteToken(toggle.className)).toBe(true);
-    // Collapsed state must not render the tree body.
+    expect(screen.getByTestId("inline-file-tree-toggle")).toBeTruthy();
     expect(screen.queryByTestId("inline-file-tree")).toBeNull();
   });
 
-  it("reports file count on the collapsed toggle", () => {
+  it("reports the file count for screen readers when collapsed", () => {
     render(<PullRequestFileTree {...baseProps} open={false} />);
-    expect(screen.getByTestId("inline-file-tree-toggle").textContent).toContain(
-      "2 files",
-    );
+    expect(
+      screen.getByTestId("inline-file-tree-toggle").getAttribute("title"),
+    ).toContain("2 files");
   });
 });

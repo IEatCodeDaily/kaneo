@@ -111,10 +111,16 @@ export default function PullRequestLiveDetails({
   repoId,
   number,
   discussion,
+  onTabChange,
 }: {
   repoId: string;
   number: number;
   discussion: ReactNode;
+  /**
+   * Reports the active tab so the surrounding layout can react — the metadata
+   * sidebar is hidden on the Diffs tab to give the diff full width.
+   */
+  onTabChange?: (tab: string) => void;
 }) {
   const files = useGetPullRequestFiles(repoId, number);
   const commits = useGetPullRequestCommits(repoId, number);
@@ -149,6 +155,7 @@ export default function PullRequestLiveDetails({
     <Tabs
       className="gap-0"
       defaultValue="discussion"
+      onValueChange={(value) => onTabChange?.(String(value))}
       data-testid="pull-request-live-details"
     >
       <div className="overflow-x-auto border-b px-4 sm:px-6">
@@ -296,10 +303,9 @@ export default function PullRequestLiveDetails({
               </div>
             </div>
             <div className="min-w-0">
-              {/* The tree overlays the diff rather than taking a column, so the
-                  diff keeps full width. `relative` is the positioning context
-                  the floating panel anchors to. */}
-              <div className="relative min-w-0">
+              {/* GitHub-style: hideable tree column on the left, diff to its
+                  right. Not an overlay — an overlay covered the code. */}
+              <div className="flex min-w-0 items-start gap-4">
                 <PullRequestFileTree
                   filenames={fileNames}
                   idPrefix="inline"
@@ -313,7 +319,7 @@ export default function PullRequestLiveDetails({
                   open={treeOpen}
                   selectedPath={selectedFile.filename}
                 />
-                <div className="min-w-0 space-y-4">
+                <div className="min-w-0 flex-1 space-y-4">
                   {files.data?.files.map((file) => (
                     <section
                       className="scroll-mt-4"
@@ -340,11 +346,12 @@ export default function PullRequestLiveDetails({
                   </DialogDescription>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
-                  {/* `relative` anchors the floating tree; the scroll container
-                      below must stretch to full height (no items-start) or it
-                      shrinks to content and never scrolls. */}
-                  <div className="relative min-h-0 flex-1 overflow-hidden">
+                  {/* Tree column left, diff right. The diff wrapper must be a
+                      full-height flex child (NOT items-start) or it sizes to its
+                      content and the dialog never scrolls. */}
+                  <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
                     <PullRequestFileTree
+                      fillHeight
                       filenames={fileNames}
                       idPrefix="fullscreen"
                       onOpenChange={setFullscreenTreeOpen}
@@ -362,7 +369,7 @@ export default function PullRequestLiveDetails({
                       open={fullscreenTreeOpen}
                       selectedPath={selectedFilename}
                     />
-                    <div className="h-full min-w-0 space-y-4 overflow-y-auto">
+                    <div className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto">
                       {files.data?.files.map((file) => (
                         <section
                           className="scroll-mt-2"

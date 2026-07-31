@@ -88,6 +88,11 @@ type RepoItemDetailLayoutProps = {
   mergedAt?: string | null;
   management: RepoItemManagementProps;
   taskLinks?: RepoTaskLink[];
+  /**
+   * Drops the metadata sidebar and collapses the grid to one column. The PR
+   * diff view uses this so the diff gets the full width, matching GitHub.
+   */
+  hideSidebar?: boolean;
 };
 
 export function RepoItemDetailLayout({
@@ -105,6 +110,7 @@ export function RepoItemDetailLayout({
   mergedAt,
   management,
   taskLinks,
+  hideSidebar = false,
 }: RepoItemDetailLayoutProps) {
   const copy = REPO_ITEM_COPY[kind];
 
@@ -130,7 +136,12 @@ export function RepoItemDetailLayout({
             <RepoItemHeaderActions {...management} />
           </div>
         </header>
-        <div className="grid flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div
+          className={cn(
+            "grid flex-1 grid-cols-1",
+            !hideSidebar && "lg:grid-cols-[minmax(0,1fr)_18rem]",
+          )}
+        >
           {/* Main body column. Every section below uses the same px-6 py-5
               rhythm so the left edge and vertical spacing stay consistent. */}
           <div className="flex min-w-0 flex-col">
@@ -163,18 +174,21 @@ export function RepoItemDetailLayout({
               />
             )}
           </div>
-          {/* Right sidebar: metadata only */}
-          <ErrorBoundary
-            className="m-4"
-            fallbackDescription={`${copy.nounTitle} metadata could not be rendered.`}
-            fallbackTitle="Sidebar unavailable"
-          >
-            <RepoIssueSidebar
-              {...management}
-              organizationId={organizationId}
-              taskLinks={taskLinks}
-            />
-          </ErrorBoundary>
+          {/* Right sidebar: metadata only. Omitted entirely on the diff view so
+              the diff column is not competing with it for width. */}
+          {!hideSidebar && (
+            <ErrorBoundary
+              className="m-4"
+              fallbackDescription={`${copy.nounTitle} metadata could not be rendered.`}
+              fallbackTitle="Sidebar unavailable"
+            >
+              <RepoIssueSidebar
+                {...management}
+                organizationId={organizationId}
+                taskLinks={taskLinks}
+              />
+            </ErrorBoundary>
+          )}
         </div>
       </article>
     </main>
