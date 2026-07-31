@@ -8,7 +8,7 @@ import {
   ListTree,
   PanelsTopLeft,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import PullRequestFileTree from "@/components/repo/pull-request-file-tree";
 import PullRequestReviews from "@/components/repo/pull-request-reviews";
 import { Button } from "@/components/ui/button";
@@ -132,6 +132,28 @@ export default function PullRequestLiveDetails({
   // so its open state lives here rather than inside a dismissing popover.
   const [treeOpen, setTreeOpen] = useState(true);
   const [fullscreenTreeOpen, setFullscreenTreeOpen] = useState(true);
+  // The article header above us is `md:sticky md:top-0`, so the tab strip has to
+  // park directly BELOW it rather than at top:0 (otherwise the two overlap).
+  // Its height is content-driven (title wraps, labels, branch chip), so measure
+  // it instead of hard-coding an offset.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [tabsHeight, setTabsHeight] = useState(0);
+
+  useEffect(() => {
+    const tabs = tabsRef.current;
+    if (!tabs) return;
+    const header = tabs.closest("article")?.querySelector(":scope > header");
+    const measure = () => {
+      setHeaderHeight(header ? header.getBoundingClientRect().height : 0);
+      setTabsHeight(tabs.getBoundingClientRect().height);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (header) observer.observe(header);
+    observer.observe(tabs);
+    return () => observer.disconnect();
+  }, []);
   const fileNames = (files.data?.files ?? []).map((file) => file.filename);
   const selectedFile =
     files.data?.files.find((file) => file.filename === selectedFilename) ??
@@ -158,28 +180,43 @@ export default function PullRequestLiveDetails({
       onValueChange={(value) => onTabChange?.(String(value))}
       data-testid="pull-request-live-details"
     >
-      <div className="overflow-x-auto border-b px-4 sm:px-6">
-        <TabsList
-          aria-label="Pull request sections"
-          className="min-w-max"
-          variant="underline"
-        >
-          <TabsTab aria-label="Discussions" value="discussion">
-            Discussions
-          </TabsTab>
-          <TabsTab aria-label="Commits" value="commits">
-            Commits{commits.data ? ` (${commits.data.commits.length})` : ""}
-          </TabsTab>
-          <TabsTab aria-label="Checks" value="checks">
-            Checks
-          </TabsTab>
-          <TabsTab aria-label="Reviews" value="reviews">
-            Reviews
-          </TabsTab>
-          <TabsTab aria-label="Diffs" value="diffs">
-            Diffs{files.data ? ` (${files.data.totals.changedFiles})` : ""}
-          </TabsTab>
-        </TabsList>
+      {/* Sticky tab strip. Two nested elements on purpose: the OUTER div is the
+          sticky one and must NOT create a scroll container (an `overflow-*`
+          value other than `visible` on the sticky element itself makes the
+          strip clip its own contents), while the INNER div keeps the
+          horizontal overflow scrolling for narrow viewports. `top` is the
+          measured height of the `md:sticky md:top-0` article header so the two
+          stack instead of overlapping, and z-10 keeps it under the header's
+          z-20. */}
+      <div
+        className="sticky z-10 border-b bg-background/95 backdrop-blur"
+        data-testid="pull-request-tabs-strip"
+        ref={tabsRef}
+        style={{ top: headerHeight }}
+      >
+        <div className="overflow-x-auto px-4 sm:px-6">
+          <TabsList
+            aria-label="Pull request sections"
+            className="min-w-max"
+            variant="underline"
+          >
+            <TabsTab aria-label="Discussions" value="discussion">
+              Discussions
+            </TabsTab>
+            <TabsTab aria-label="Commits" value="commits">
+              Commits{commits.data ? ` (${commits.data.commits.length})` : ""}
+            </TabsTab>
+            <TabsTab aria-label="Checks" value="checks">
+              Checks
+            </TabsTab>
+            <TabsTab aria-label="Reviews" value="reviews">
+              Reviews
+            </TabsTab>
+            <TabsTab aria-label="Diffs" value="diffs">
+              Diffs{files.data ? ` (${files.data.totals.changedFiles})` : ""}
+            </TabsTab>
+          </TabsList>
+        </div>
       </div>
 
       <TabsPanel value="discussion">{discussion}</TabsPanel>
@@ -264,7 +301,19 @@ export default function PullRequestLiveDetails({
           <ErrorState />
         ) : selectedFile ? (
           <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            {/* Floating diff properties bar. It was previously a plain
+                `mb-3` row that scrolled away, and giving it a background is
+                what stops the diff rows from showing through / clipping it.
+                It sticks below BOTH the article header and the tab strip, so
+                the offset is the sum of the two measured heights. Negative
+                horizontal margins + matching padding let the opaque
+                background span the panel's full width instead of leaving a
+                transparent gutter the diff bleeds into. */}
+            <div
+              className="-mx-4 sticky z-[9] mb-3 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
+              data-testid="pull-request-diff-properties"
+              style={{ top: headerHeight + tabsHeight }}
+            >
               <div className="text-xs text-muted-foreground">
                 <span className="text-emerald-600">
                   +{files.data?.totals.additions}
