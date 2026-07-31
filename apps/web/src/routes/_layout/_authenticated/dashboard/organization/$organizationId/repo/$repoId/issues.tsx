@@ -151,6 +151,9 @@ function RouteComponent() {
                       state={issue.state}
                       title={issue.title}
                       to="/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
+                      // Carry the active filter across, or the detail route's
+                      // validateSearch falls back to "open" and the list resets.
+                      search={{ state }}
                     />
                   ))}
                 </div>
