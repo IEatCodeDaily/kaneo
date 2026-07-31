@@ -247,9 +247,18 @@ async function globalSearch(params: SearchParams): Promise<{
       }
     }
 
-    // Also run text search for tasks
+    // Also run text search for tasks. `searchedNumber` is set when the query is
+    // a bare number or "#78", which lets users find a task by the number shown
+    // in the UI. It stays undefined for non-numeric queries like "abc" so plain
+    // text search is unaffected.
+    const taskNumberMatch =
+      searchedNumber === undefined
+        ? undefined
+        : eq(taskTable.number, searchedNumber);
+
     const taskRelevanceScore = sql<number>`
       CASE
+        ${taskNumberMatch ? sql`WHEN ${taskTable.number} = ${searchedNumber} THEN 4` : sql``}
         WHEN LOWER(${taskTable.title}) LIKE ${searchPattern} THEN 3
         WHEN LOWER(${taskTable.description}) LIKE ${searchPattern} THEN 2
         ELSE 1
@@ -288,6 +297,7 @@ async function globalSearch(params: SearchParams): Promise<{
           or(
             ilike(taskTable.title, searchPattern),
             ilike(taskTable.description, searchPattern),
+            taskNumberMatch,
           ),
         ),
       )
