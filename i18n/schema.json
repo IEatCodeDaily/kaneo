@@ -8060,13 +8060,34 @@
 								},
 								"emptyDescription": {
 									"type": "string"
+								},
+								"zoom": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"week": {
+											"type": "string"
+										},
+										"month": {
+											"type": "string"
+										},
+										"year": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"week",
+										"month",
+										"year"
+									]
 								}
 							},
 							"required": [
 								"boardColumn",
 								"barLabel",
 								"emptyTitle",
-								"emptyDescription"
+								"emptyDescription",
+								"zoom"
 							]
 						},
 						"pageTitle": {

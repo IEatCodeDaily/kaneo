@@ -455,7 +455,7 @@
 			"selectViewMode": "Select a view mode",
 			"board": "Board",
 			"list": "List",
-			"gantt": "Gantt",
+			"gantt": "Timeline",
 			"sidebarDefault": "Sidebar Default",
 			"sidebarDefaultDescription": "Keep sidebar expanded on startup",
 			"displayOptions": "Display options",
@@ -1793,8 +1793,8 @@
 			}
 		},
 		"gantt": {
-			"pageTitle": "{{name}} — Gantt",
-			"title": "Gantt Timeline",
+			"pageTitle": "{{name}} — Timeline",
+			"title": "Timeline",
 			"searchPlaceholder": "Search scheduled tickets...",
 			"hideTasks": "Hide tasks",
 			"showTasks": "Show tasks",
@@ -1963,7 +1963,12 @@
 				"boardColumn": "Board",
 				"barLabel": "{{percent}}% · {{count}} tasks",
 				"emptyTitle": "No scheduled boards",
-				"emptyDescription": "Boards appear here once their tasks have start or due dates."
+				"emptyDescription": "Boards appear here once their tasks have start or due dates.",
+				"zoom": {
+					"week": "Week",
+					"month": "Month",
+					"year": "Year"
+				}
 			},
 			"pageTitle": "Boards",
 			"createBoard": "Create board",

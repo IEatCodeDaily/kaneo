@@ -54,6 +54,7 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
+import { useSectionOpenState } from "@/lib/use-section-open-state";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
 import SubtaskRow from "./subtask-row";
@@ -71,7 +72,6 @@ export default function TaskSubtasks({
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
@@ -81,7 +81,8 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const { data: relations = [], isSuccess: relationsLoaded } =
+    useGetTaskRelations(taskId);
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id ?? "",
@@ -123,6 +124,13 @@ export default function TaskSubtasks({
   ).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
+
+  // Empty sections default to collapsed so a fresh task is not padded out by
+  // two empty accordions (#73). Latched off the first loaded payload.
+  const [isOpen, setIsOpen] = useSectionOpenState(
+    totalCount > 0,
+    relationsLoaded,
+  );
 
   useEffect(() => {
     if (!linkOpen) {

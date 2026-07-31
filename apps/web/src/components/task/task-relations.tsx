@@ -49,6 +49,7 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
+import { useSectionOpenState } from "@/lib/use-section-open-state";
 import type Task from "@/types/task";
 import SubtaskAssigneePopover from "./subtask-assignee-popover";
 import SubtaskStatusPopover from "./subtask-status-popover";
@@ -82,14 +83,14 @@ export default function TaskRelations({
 }: TaskRelationsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRelationType, setSelectedRelationType] = useState<
     "blocks" | "related"
   >("related");
 
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const { data: relations = [], isSuccess: relationsLoaded } =
+    useGetTaskRelations(taskId);
   const { data: boardData } = useGetTasks(boardId);
   // Relations are organization-scoped server-side, so the picker offers tasks
   // from every board in the organization, not just the current one.
@@ -323,6 +324,12 @@ export default function TaskRelations({
   });
 
   const totalCount = nonSubtaskRelations.length;
+
+  // Empty sections default to collapsed (#73), latched off the first payload.
+  const [isOpen, setIsOpen] = useSectionOpenState(
+    totalCount > 0,
+    relationsLoaded,
+  );
 
   return (
     <>
