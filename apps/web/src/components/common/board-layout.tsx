@@ -176,6 +176,8 @@ export default function BoardLayout({
               />
             </div>
 
+            {headerActions}
+
             {showViewSwitcher && (
               <div className="hidden h-8 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5 sm:inline-flex">
                 <Button
@@ -228,10 +230,6 @@ export default function BoardLayout({
                 </Button>
               </div>
             )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1.5">
-            {headerActions}
           </div>
         </div>
       </Layout.Header>

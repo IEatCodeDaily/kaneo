@@ -79,9 +79,14 @@ export function useTaskFiltersWithLabelsSupport(
         if (normalizedTextQuery) {
           const title = task.title?.toLowerCase() ?? "";
           const description = task.description?.toLowerCase() ?? "";
+          // Match the global search's task-number semantics: a bare number or
+          // a hash-prefixed number resolves to that task number.
+          const searchedNumber = /^#?(\d+)$/.exec(normalizedTextQuery)?.[1];
           const matchesText =
             title.includes(normalizedTextQuery) ||
-            description.includes(normalizedTextQuery);
+            description.includes(normalizedTextQuery) ||
+            (searchedNumber !== undefined &&
+              task.number === Number(searchedNumber));
 
           if (!matchesText) {
             return false;
