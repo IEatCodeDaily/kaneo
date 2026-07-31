@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   activityTable,
@@ -220,6 +220,7 @@ async function globalSearch(params: SearchParams): Promise<{
             boardId ? eq(taskTable.boardId, boardId) : undefined,
             ilike(boardTable.slug, slug),
             eq(taskTable.number, taskNumber),
+            isNull(taskTable.deletedAt),
           ),
         )
         .limit(1);
@@ -294,6 +295,7 @@ async function globalSearch(params: SearchParams): Promise<{
         and(
           organizationFilter,
           boardId ? eq(taskTable.boardId, boardId) : undefined,
+          isNull(taskTable.deletedAt),
           or(
             ilike(taskTable.title, searchPattern),
             ilike(taskTable.description, searchPattern),

@@ -27,8 +27,11 @@ import deleteTask from "./controllers/delete-task";
 import exportTasks from "./controllers/export-tasks";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
+import getTrashedTasks from "./controllers/get-trashed-tasks";
 import importTasks from "./controllers/import-tasks";
 import moveTask from "./controllers/move-task";
+import permanentlyDeleteTask from "./controllers/permanently-delete-task";
+import restoreTask from "./controllers/restore-task";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
 import updateTaskDescription from "./controllers/update-task-description";
@@ -461,12 +464,115 @@ const task = new Hono<{
       return c.json(result);
     },
   )
+  .get(
+    "/trash/board/:boardId",
+    describeRoute({
+      operationId: "listTrashedBoardTasks",
+      tags: ["Tasks"],
+      description: "List soft-deleted (trashed) tasks for a board",
+      responses: {
+        200: {
+          description: "Trashed tasks for the board",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    async (c) => {
+      const { boardId } = c.req.valid("param");
+
+      const tasks = await getTrashedTasks({ boardId });
+
+      return c.json(tasks);
+    },
+  )
+  .get(
+    "/trash/organization/:organizationId",
+    describeRoute({
+      operationId: "listTrashedOrganizationTasks",
+      tags: ["Tasks"],
+      description: "List soft-deleted (trashed) tasks for an organization",
+      responses: {
+        200: {
+          description: "Trashed tasks for the organization",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+
+      const tasks = await getTrashedTasks({ organizationId });
+
+      return c.json(tasks);
+    },
+  )
+  .post(
+    "/trash/:id/restore",
+    describeRoute({
+      operationId: "restoreTask",
+      tags: ["Tasks"],
+      description: "Restore a soft-deleted task from the recycle bin",
+      responses: {
+        200: {
+          description: "Task restored successfully",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["delete"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+
+      const task = await restoreTask(id, c.get("userId"));
+
+      return c.json(task);
+    },
+  )
+  .delete(
+    "/trash/:id",
+    describeRoute({
+      operationId: "permanentlyDeleteTask",
+      tags: ["Tasks"],
+      description:
+        "Permanently delete a trashed task. This cannot be undone and removes all attached assets.",
+      responses: {
+        200: {
+          description: "Task permanently deleted",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["delete"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+
+      const task = await permanentlyDeleteTask(id, c.get("userId"));
+
+      return c.json(task);
+    },
+  )
   .delete(
     "/:id",
     describeRoute({
       operationId: "deleteTask",
       tags: ["Tasks"],
-      description: "Delete a task by ID",
+      description: "Move a task to the trash (soft delete)",
       responses: {
         200: {
           description: "Task deleted successfully",

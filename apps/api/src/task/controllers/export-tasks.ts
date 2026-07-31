@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { boardTable, taskTable, userTable } from "../../database/schema";
@@ -32,7 +32,7 @@ async function exportTasks(boardId: string) {
     })
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
-    .where(eq(taskTable.boardId, boardId))
+    .where(and(eq(taskTable.boardId, boardId), isNull(taskTable.deletedAt)))
     .orderBy(taskTable.position);
 
   return {
