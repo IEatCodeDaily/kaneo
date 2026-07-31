@@ -74,18 +74,6 @@ export function AiSettings() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">AI chat</h2>
-          <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-            Alpha
-          </span>
-        </div>
-        <p className="text-muted-foreground">
-          Enable the organization AI chat and point it at your own provider.
-        </p>
-      </div>
-
       <section className="rounded-xl border border-border bg-background">
         <div className="flex items-start justify-between gap-6 px-4 py-4">
           <div className="flex min-w-0 items-start gap-3">
@@ -93,7 +81,12 @@ export function AiSettings() {
               <Sparkles aria-hidden="true" className="size-4" />
             </div>
             <div className="space-y-1">
-              <h2 className="font-medium">AI chat</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-medium">AI chat</h2>
+                <span className="rounded-full border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
+                  Alpha
+                </span>
+              </div>
               <p className="max-w-xl text-sm text-muted-foreground">
                 Shows the assistant bubble to members of this organization.
                 {settings && !settings.configured
