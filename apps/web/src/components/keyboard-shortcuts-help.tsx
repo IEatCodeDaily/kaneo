@@ -126,6 +126,20 @@ function useShortcutCategories(): ShortcutCategory[] {
   );
 }
 
+const KEYBOARD_SHORTCUTS_HELP_EVENT = "kaneo:open-keyboard-shortcuts-help";
+
+/**
+ * Opens the keyboard shortcuts help dialog.
+ *
+ * Callers must NOT fake this by dispatching a synthetic `keydown` on
+ * `document`: such an event has a non-Element target, which breaks every
+ * document/window-level handler that narrows `event.target` to an Element,
+ * and it re-enters the "?" shortcut handler (infinite recursion).
+ */
+export function openKeyboardShortcutsHelp() {
+  window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_HELP_EVENT));
+}
+
 export function KeyboardShortcutsHelp() {
   const { t } = useTranslation();
   const shortcutCategories = useShortcutCategories();
@@ -134,11 +148,12 @@ export function KeyboardShortcutsHelp() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target;
       const isTyping =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true";
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
 
       if (e.key === "?" && !isTyping) {
         e.preventDefault();
@@ -146,8 +161,17 @@ export function KeyboardShortcutsHelp() {
       }
     };
 
+    const handleOpenRequest = () => setOpen(true);
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener(KEYBOARD_SHORTCUTS_HELP_EVENT, handleOpenRequest);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        KEYBOARD_SHORTCUTS_HELP_EVENT,
+        handleOpenRequest,
+      );
+    };
   }, []);
 
   const filteredCategories = shortcutCategories

@@ -112,13 +112,12 @@ function SidebarProvider({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
 
-      const target = event.target as HTMLElement | null;
-      const isEditableTarget = Boolean(
-        target &&
-          (target.isContentEditable ||
-            ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
-            target.closest('[contenteditable="true"]')),
-      );
+      const target = event.target;
+      const isEditableTarget =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          target.closest('[contenteditable="true"]') !== null);
       if (isEditableTarget) return;
 
       if (
