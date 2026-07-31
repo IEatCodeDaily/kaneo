@@ -3,9 +3,15 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardToolbar from "@/components/board/board-toolbar";
+import BoardViewOptions from "@/components/board/board-view-options";
 import BoardLayout from "@/components/common/board-layout";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
+import {
+  type BoardDensity,
+  BoardDensityProvider,
+} from "@/components/kanban-board/board-density";
+import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
@@ -17,7 +23,10 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardSort } from "@/hooks/use-board-sort";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
+import {
+  type BoardGroupBy,
+  useTaskFiltersWithLabelsSupport,
+} from "@/hooks/use-task-filters-with-labels-support";
 import { sortTasks } from "@/lib/sort-tasks";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -48,6 +57,8 @@ function RouteComponent() {
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
+  const [density, setDensity] = useState<BoardDensity>("comfortable");
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const [isBoardSearchMounted, setIsBoardSearchMounted] = useState(false);
   const [isBoardSearchVisible, setIsBoardSearchVisible] = useState(false);
@@ -171,12 +182,24 @@ function RouteComponent() {
     </div>
   ) : null;
 
+  const boardHeaderActions = (
+    <div className="flex items-center gap-1.5">
+      {boardHeaderSearch}
+      <BoardViewOptions
+        groupBy={groupBy}
+        onGroupByChange={setGroupBy}
+        density={density}
+        onDensityChange={setDensity}
+      />
+    </div>
+  );
+
   return (
     <BoardLayout
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
-      headerActions={boardHeaderSearch}
+      headerActions={boardHeaderActions}
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
@@ -207,17 +230,21 @@ function RouteComponent() {
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
           {sortedBoard && !isPlaceholderData ? (
-            viewMode === "board" ? (
-              <KanbanBoard
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
-            ) : (
-              <ListView
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
-            )
+            <BoardGroupByProvider groupBy={groupBy}>
+              <BoardDensityProvider density={density}>
+                {viewMode === "board" ? (
+                  <KanbanBoard
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                  />
+                ) : (
+                  <ListView
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                  />
+                )}
+              </BoardDensityProvider>
+            </BoardGroupByProvider>
           ) : (
             <BoardSkeleton />
           )}
