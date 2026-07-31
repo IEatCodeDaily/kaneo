@@ -48,6 +48,7 @@ import invitation from "./invitation";
 import label from "./label";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
+import milestone from "./milestone";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -614,6 +615,7 @@ export function createApp() {
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
   const labelApi = api.route("/label", label);
+  const milestoneApi = api.route("/milestone", milestone);
   const notificationApi = api.route("/notification", notification);
   const notificationPreferencesApi = api.route(
     "/notification-preferences",
@@ -813,6 +815,7 @@ export function createApp() {
     invitationApi,
     invitationPublicApi,
     labelApi,
+    milestoneApi,
     notificationApi,
     notificationPreferencesApi,
     boardApi,
@@ -935,6 +938,7 @@ const {
   invitationApi,
   invitationPublicApi,
   labelApi,
+  milestoneApi,
   notificationApi,
   notificationPreferencesApi,
   boardApi,
@@ -972,6 +976,7 @@ export type AppType =
   | typeof commentApi
   | typeof timeEntryApi
   | typeof labelApi
+  | typeof milestoneApi
   | typeof notificationApi
   | typeof notificationPreferencesApi
   | typeof searchApi
