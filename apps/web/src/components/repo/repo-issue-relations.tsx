@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
-import { getRepoIssueRelationLink } from "@/lib/repo-issue-relation-link";
+import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { RepoIssueGithub } from "@/types/repo";
 import RepoStateBadge from "./repo-state-badge";
@@ -77,7 +77,7 @@ export default function RepoIssueRelations({
         .includes(search.trim().toLowerCase()),
   );
   const row = (item: Relation, label: string, removable = false) => {
-    const relationLink = getRepoIssueRelationLink(item, repos);
+    const target = getRepoIssueRelationTarget(item, repos, organizationId);
 
     return (
       <div className="flex items-center gap-2" key={`${label}-${item.number}`}>
@@ -85,22 +85,20 @@ export default function RepoIssueRelations({
         <span className="w-14 shrink-0 text-xs text-muted-foreground">
           {label}
         </span>
-        {relationLink ? (
+        {target.internal ? (
           <Link
             className="min-w-0 flex-1 truncate text-sm hover:text-primary"
-            params={{
-              organizationId,
-              repoId: relationLink.repoId,
-              number: String(relationLink.number),
-            }}
-            to="/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
+            data-testid={`relation-link-${item.number}`}
+            params={target.params}
+            to={target.to}
           >
             #{item.number} {item.title}
           </Link>
         ) : (
           <a
             className="min-w-0 flex-1 truncate text-sm hover:text-primary"
-            href={item.html_url ?? undefined}
+            data-testid={`relation-link-${item.number}`}
+            href={target.href ?? undefined}
             rel="noreferrer"
             target="_blank"
           >

@@ -1944,6 +1944,17 @@
 				"completed": "Completed",
 				"archived": "Archived"
 			}
+		},
+		"parentTask": {
+			"title": "Parent task",
+			"none": "No parent task",
+			"clear": "No parent task",
+			"empty": "No tasks on this board",
+			"searchPlaceholder": "Search tasks..."
+		},
+		"access": {
+			"title": "Board access",
+			"team": "Team"
 		}
 	},
 	"invitations": {

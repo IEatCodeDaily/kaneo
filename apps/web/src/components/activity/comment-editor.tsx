@@ -62,6 +62,7 @@ import {
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
+import { toReferenceSearchQuery } from "@/lib/editor-reference-query";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
   extractIssueKeyFromUrl,
@@ -674,7 +675,9 @@ export default function CommentEditor({
         ReferenceSuggestion.configure({
           search: (query) =>
             searchReferences({
-              query,
+              // `#` alone already lists tasks; the search API rejects an empty
+              // `q`, so an untyped query becomes a match-all pattern.
+              query: toReferenceSearchQuery(query),
               organizationId: organizationIdRef.current,
             }),
         }),

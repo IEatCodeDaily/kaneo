@@ -45,3 +45,46 @@ export function getRepoIssueRelationLink(
 
   return repo ? { number: relation.number, repoId: repo.id } : null;
 }
+
+export const REPO_ISSUE_ROUTE =
+  "/dashboard/organization/$organizationId/repo/$repoId/issues/$number";
+
+export type RepoIssueRelationTarget =
+  | {
+      internal: true;
+      href: string;
+      to: typeof REPO_ISSUE_ROUTE;
+      params: { organizationId: string; repoId: string; number: string };
+    }
+  | { internal: false; href: string | null };
+
+/**
+ * Decides where a GitHub issue relation should navigate.
+ *
+ * When the related repository is synced into this Kaneo organization the link
+ * must stay in-app (#30); otherwise it falls back to the GitHub URL. Returning
+ * a concrete `href` for both branches keeps the decision testable without a
+ * router.
+ */
+export function getRepoIssueRelationTarget(
+  relation: GitHubIssueRelation,
+  repos: Repo[],
+  organizationId: string,
+): RepoIssueRelationTarget {
+  const link = getRepoIssueRelationLink(relation, repos);
+
+  if (!link) return { internal: false, href: relation.html_url ?? null };
+
+  const params = {
+    organizationId,
+    repoId: link.repoId,
+    number: String(link.number),
+  };
+
+  return {
+    internal: true,
+    href: `/dashboard/organization/${organizationId}/repo/${link.repoId}/issues/${link.number}`,
+    to: REPO_ISSUE_ROUTE,
+    params,
+  };
+}

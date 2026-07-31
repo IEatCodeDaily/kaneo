@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { Milestone as MilestoneRow } from "@/fetchers/milestone/get-milestones-by-board";
 import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { cn } from "@/lib/cn";
@@ -41,13 +42,16 @@ export default function TaskMilestonePicker({
     useAssignMilestoneToTask();
 
   const selected = useMemo(
-    () => milestones.find((milestone) => milestone.id === milestoneId),
+    () =>
+      milestones.find(
+        (milestone: MilestoneRow) => milestone.id === milestoneId,
+      ),
     [milestones, milestoneId],
   );
 
   const assignableMilestones = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return milestones.filter((milestone) => {
+    return milestones.filter((milestone: MilestoneRow) => {
       if (milestone.status === "archived" && milestone.id !== milestoneId) {
         return false;
       }
@@ -123,7 +127,7 @@ export default function TaskMilestonePicker({
               {t("tasks:milestone.empty")}
             </p>
           )}
-          {assignableMilestones.map((milestone) => {
+          {assignableMilestones.map((milestone: MilestoneRow) => {
             const isSelected = milestone.id === milestoneId;
             return (
               <button

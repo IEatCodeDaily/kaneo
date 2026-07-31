@@ -59,6 +59,7 @@ import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import debounce from "@/lib/debounce";
+import { toReferenceSearchQuery } from "@/lib/editor-reference-query";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
   extractIssueKeyFromUrl,
@@ -606,7 +607,9 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         ReferenceSuggestion.configure({
           search: (query) =>
             searchReferences({
-              query,
+              // `#` with nothing typed still lists tasks; the search API
+              // rejects an empty `q`, so it gets a match-all pattern.
+              query: toReferenceSearchQuery(query),
               organizationId: organizationIdRef.current,
             }),
         }),

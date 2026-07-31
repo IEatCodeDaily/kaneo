@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import TaskCrumbSelect from "@/components/common/header/task-crumb-select";
 import Layout from "@/components/common/layout";
+import BoardAccessAvatars from "@/components/presence/board-access-avatars";
+import TaskTopbarMilestone from "@/components/task/task-topbar-milestone";
 import { KbdSequence } from "@/components/ui/kbd";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -103,6 +105,12 @@ export default function TaskLayout({
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
+              <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
+              <BoardAccessAvatars
+                organizationId={organizationId}
+                resourceId={boardId}
+                resourceType="board"
+              />
               {headerActions}
             </div>
           </div>

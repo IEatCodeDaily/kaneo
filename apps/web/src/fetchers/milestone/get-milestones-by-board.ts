@@ -21,4 +21,15 @@ async function getMilestonesByBoard({ boardId }: GetMilestonesByBoardRequest) {
   return data;
 }
 
+/**
+ * A single milestone row as returned by the board-scoped list endpoint.
+ *
+ * Exported because several components map over these rows; without a named
+ * type each callback parameter fell back to implicit `any` and tripped
+ * noImplicitAny under tsconfig.app.json.
+ */
+export type Milestone = Awaited<
+  ReturnType<typeof getMilestonesByBoard>
+>[number];
+
 export default getMilestonesByBoard;

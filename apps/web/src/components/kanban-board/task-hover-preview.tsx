@@ -45,7 +45,6 @@ function TaskHoverPreview({
     <HoverCard
       openDelay={TASK_PREVIEW_OPEN_DELAY}
       closeDelay={TASK_PREVIEW_CLOSE_DELAY}
-      delay={TASK_PREVIEW_OPEN_DELAY}
     >
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
       <HoverCardContent

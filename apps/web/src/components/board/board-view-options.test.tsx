@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BoardDensity } from "@/components/kanban-board/board-density";
+import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
 import BoardViewOptions from "./board-view-options";
 
 afterEach(cleanup);
@@ -19,9 +21,9 @@ vi.mock("react-i18next", () => ({
  */
 describe("BoardViewOptions", () => {
   const baseProps = {
-    groupBy: "none" as const,
+    groupBy: "none" as BoardGroupBy,
     onGroupByChange: vi.fn(),
-    density: "comfortable" as const,
+    density: "comfortable" as BoardDensity,
     onDensityChange: vi.fn(),
   };
 

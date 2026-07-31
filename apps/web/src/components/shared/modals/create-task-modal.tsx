@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CreateTaskTopbar from "@/components/task/create-task-topbar";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
 import { formatTaskMarkdown } from "@/components/task/task-markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,9 +40,11 @@ import {
 } from "@/components/ui/popover";
 import { shortcuts } from "@/constants/shortcuts";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
+import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -220,6 +223,8 @@ function CreateTaskModal({
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [createMore, setCreateMore] = useState(false);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [milestoneId, setMilestoneId] = useState<string | null>(null);
+  const [parentTaskId, setParentTaskId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
 
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -245,6 +250,8 @@ function CreateTaskModal({
   const { mutateAsync: createTask } = useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTask } = useDeleteTask();
+  const { mutateAsync: assignMilestone } = useAssignMilestoneToTask();
+  const { mutateAsync: createRelation } = useCreateTaskRelation();
 
   const filteredLabels = (() => {
     const searchFiltered = organizationLabels.filter((label) =>
@@ -281,6 +288,8 @@ function CreateTaskModal({
     setSearchValue("");
     setSelectedColor("gray");
     setNewLabelName("");
+    setMilestoneId(null);
+    setParentTaskId(null);
     draftCreationPromiseRef.current = null;
     didSubmitRef.current = false;
     setDraftTask(null);
@@ -496,6 +505,32 @@ function CreateTaskModal({
         }
       }
 
+      // Milestone and parent task are chosen before the task exists, so both
+      // are applied right after creation.
+      if (milestoneId) {
+        try {
+          await assignMilestone({
+            boardId: resolvedBoardId,
+            taskId: savedTask.id,
+            milestoneId,
+          });
+        } catch (error) {
+          console.error("Failed to assign milestone:", error);
+        }
+      }
+
+      if (parentTaskId) {
+        try {
+          await createRelation({
+            sourceTaskId: parentTaskId,
+            targetTaskId: savedTask.id,
+            relationType: "subtask",
+          });
+        } catch (error) {
+          console.error("Failed to link parent task:", error);
+        }
+      }
+
       setDraftTask(savedTask);
       syncTaskIntoBoard(savedTask);
       // The draft became a real task; it must not resurface on reopen.
@@ -518,6 +553,8 @@ function CreateTaskModal({
         setSearchValue("");
         setSelectedColor("gray");
         setNewLabelName("");
+        setMilestoneId(null);
+        setParentTaskId(null);
         draftCreationPromiseRef.current = null;
         didSubmitRef.current = false;
         setDraftTask(null);
@@ -725,6 +762,15 @@ function CreateTaskModal({
           className="flex flex-col flex-1 min-h-0 space-y-6"
         >
           <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6">
+            {resolvedBoardId && (
+              <CreateTaskTopbar
+                boardId={resolvedBoardId}
+                milestoneId={milestoneId}
+                onMilestoneChange={setMilestoneId}
+                parentTaskId={parentTaskId}
+                onParentTaskChange={setParentTaskId}
+              />
+            )}
             <Input
               ref={titleInputRef}
               unstyled

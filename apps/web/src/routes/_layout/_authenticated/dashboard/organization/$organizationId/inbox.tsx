@@ -28,7 +28,10 @@ function InboxComponent() {
   const { organizationId } = Route.useParams();
   const { data, isLoading } = useGetNotifications();
 
-  const notifications = data ?? [];
+  // Derive the row type from the query rather than restating it; an untyped
+  // callback param trips noImplicitAny under tsconfig.app.json.
+  type InboxNotification = NonNullable<typeof data>[number];
+  const notifications: InboxNotification[] = data ?? [];
 
   return (
     <OrganizationLayout title={t("inbox:title")}>

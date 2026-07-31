@@ -39,9 +39,13 @@ function MyTasksComponent() {
     includeCompleted,
   });
 
-  const tasks = data ?? [];
+  // `data` is the fetcher's json() result, so derive the row type from it
+  // rather than restating the shape — an untyped Map value widened `task` to
+  // `any` and tripped noImplicitAny under tsconfig.app.json.
+  type MyTask = NonNullable<typeof data>[number];
+  const tasks: MyTask[] = data ?? [];
 
-  const byBoard = new Map<string, typeof tasks>();
+  const byBoard = new Map<string, MyTask[]>();
   for (const task of tasks) {
     const key = task.boardId;
     const existing = byBoard.get(key);

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getRepoIssueRelationLink } from "./repo-issue-relation-link";
+import {
+  getRepoIssueRelationLink,
+  getRepoIssueRelationTarget,
+} from "./repo-issue-relation-link";
 
 const repos = [
   {
@@ -53,5 +56,39 @@ describe("getRepoIssueRelationLink", () => {
         repos,
       ),
     ).toEqual({ number: 42, repoId: "repo-synced" });
+  });
+});
+
+describe("getRepoIssueRelationTarget", () => {
+  it("routes a relation in a synced repo to the internal Kaneo issue page", () => {
+    const target = getRepoIssueRelationTarget(
+      {
+        number: 42,
+        repository_url: "https://api.github.com/repos/acme/widget",
+        html_url: "https://github.com/acme/widget/issues/42",
+      },
+      repos,
+      "org-1",
+    );
+
+    expect(target.internal).toBe(true);
+    expect(target.href).toBe(
+      "/dashboard/organization/org-1/repo/repo-synced/issues/42",
+    );
+  });
+
+  it("keeps a relation in an unsynced repo pointed at github.com", () => {
+    const target = getRepoIssueRelationTarget(
+      {
+        number: 7,
+        repository_url: "https://api.github.com/repos/acme/external",
+        html_url: "https://github.com/acme/external/issues/7",
+      },
+      repos,
+      "org-1",
+    );
+
+    expect(target.internal).toBe(false);
+    expect(target.href).toBe("https://github.com/acme/external/issues/7");
   });
 });
