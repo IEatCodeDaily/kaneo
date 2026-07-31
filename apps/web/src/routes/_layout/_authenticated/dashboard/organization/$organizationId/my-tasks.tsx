@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
@@ -75,11 +75,19 @@ function MyTasksComponent() {
           <Button
             type="button"
             size="xs"
-            variant={includeCompleted ? "secondary" : "ghost"}
+            variant={includeCompleted ? "secondary" : "outline"}
             aria-pressed={includeCompleted}
             onClick={() => setIncludeCompleted((previous) => !previous)}
-            className="h-7 rounded-md px-2 text-xs"
+            className="h-7 gap-1.5 rounded-md px-2 text-xs"
           >
+            {/* An explicit check mark, so the on/off state is legible without
+                relying on a subtle background shade alone. */}
+            <Check
+              aria-hidden
+              className={`size-3.5 ${
+                includeCompleted ? "opacity-100" : "opacity-30"
+              }`}
+            />
             {t("myTasks:includeCompleted")}
           </Button>
 
@@ -120,7 +128,17 @@ function MyTasksComponent() {
                           search={{ taskId: task.id }}
                           className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/40"
                         >
-                          <span className="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">
+                          {/* Board-scoped ids can be long (slug + number), so
+                              this column is fixed-width and clips instead of
+                              wrapping into several ragged lines. */}
+                          <span
+                            className="w-28 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
+                            title={
+                              task.boardSlug
+                                ? `${task.boardSlug}-${task.number}`
+                                : `#${task.number}`
+                            }
+                          >
                             {task.boardSlug
                               ? `${task.boardSlug}-${task.number}`
                               : `#${task.number}`}
