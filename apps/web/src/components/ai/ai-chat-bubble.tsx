@@ -31,12 +31,27 @@ export function AiChatBubble() {
   const [size, setSize] = useState(DEFAULT_AI_CHAT_SIZE);
 
   useEffect(() => {
-    if (!organization?.id) return setSettings(null);
+    // Clear first: without this the previous organization's settings stay in
+    // state while the new organization's request is in flight, so switching
+    // from an AI-enabled org to an AI-disabled one kept the bubble on screen.
+    setSettings(null);
+    if (!organization?.id) return;
+    let active = true;
     void fetch(getApiUrl(`/ai/organization/${organization.id}/settings`), {
       credentials: "include",
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then(setSettings);
+      .then((next) => {
+        // Ignore a late response for an organization we already navigated away
+        // from, which could otherwise re-show a disabled org's bubble.
+        if (active) setSettings(next);
+      })
+      .catch(() => {
+        if (active) setSettings(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [organization?.id]);
 
   useEffect(() => {
