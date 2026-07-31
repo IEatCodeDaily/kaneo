@@ -12,6 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
+import { formatTaskMarkdown } from "@/components/task/task-markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -409,7 +410,7 @@ function CreateTaskModal({
     const draftStatus = "planned";
     const draftPromise = createTask({
       title: title.trim() || t("common:modals.createTask.untitledTask"),
-      description: description.trim() || "",
+      description: formatTaskMarkdown(description),
       userId: assigneeId,
       priority,
       boardId: resolvedBoardId,
@@ -460,7 +461,7 @@ function CreateTaskModal({
             await updateTask({
               ...draftTask,
               title: title.trim(),
-              description: description.trim() || "",
+              description: formatTaskMarkdown(description),
               userId: assigneeId || null,
               status: taskStatus,
               priority,
@@ -472,7 +473,7 @@ function CreateTaskModal({
         : normalizeTask(
             await createTask({
               title: title.trim(),
-              description: description.trim() || "",
+              description: formatTaskMarkdown(description),
               userId: assigneeId,
               priority,
               boardId: resolvedBoardId,

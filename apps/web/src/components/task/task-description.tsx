@@ -83,6 +83,7 @@ import {
   ShikiCodeBlock,
 } from "./extensions/shiki-code-block";
 import { TaskItemWithCheckbox } from "./extensions/task-item-with-checkbox";
+import { formatTaskMarkdown } from "./task-markdown";
 import "tippy.js/dist/tippy.css";
 
 type TaskDescriptionProps = {
@@ -117,10 +118,7 @@ type SlashMenuState = {
 };
 
 function formatMarkdown(markdown: string) {
-  return markdown
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/\n{2,}$/g, "\n");
+  return formatTaskMarkdown(markdown);
 }
 
 type EmbedComposerState = {
