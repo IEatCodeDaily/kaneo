@@ -1233,7 +1233,9 @@
 			"invitations": "Invitations",
 			"more": "More",
 			"backToBoard": "Back to board",
-			"repos": "Repos"
+			"repos": "Repos",
+			"moreBoards": "More Boards",
+			"moreRepos": "More Repos"
 		},
 		"boardList": {
 			"viewBoard": "View Board",

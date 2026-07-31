@@ -5048,6 +5048,12 @@
 						},
 						"repos": {
 							"type": "string"
+						},
+						"moreBoards": {
+							"type": "string"
+						},
+						"moreRepos": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -5057,7 +5063,9 @@
 						"invitations",
 						"more",
 						"backToBoard",
-						"repos"
+						"repos",
+						"moreBoards",
+						"moreRepos"
 					]
 				},
 				"boardList": {

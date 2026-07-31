@@ -48,6 +48,7 @@ import { toast } from "@/lib/toast";
 import { useNavigationStore } from "@/store/navigation";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
+import { NavHiddenItems } from "./nav-hidden-items";
 import CreateBoardModal from "./shared/modals/create-board-modal";
 import {
   AlertDialog,
@@ -363,6 +364,20 @@ export function NavBoards() {
                 </ContextMenu>
               );
             })}
+            <NavHiddenItems
+              isActive={(boardId) => isCurrentBoard(boardId)}
+              items={hiddenBoards.map((board) => ({
+                id: board.id,
+                name: board.name,
+              }))}
+              label={t("navigation:sidebar.moreBoards")}
+              onIntent={(boardId) => prefetchBoard(boardId)}
+              onSelect={(boardId) => {
+                const board = hiddenBoards.find((item) => item.id === boardId);
+                if (board) handleBoardClick(board);
+              }}
+              testIdPrefix="boards"
+            />
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

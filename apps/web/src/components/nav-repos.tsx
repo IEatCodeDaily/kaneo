@@ -38,6 +38,7 @@ import {
   prefetchRepoNavigation,
 } from "@/lib/navigation-prefetch";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import { NavHiddenItems } from "./nav-hidden-items";
 
 export function NavRepos() {
   const { t } = useTranslation();
@@ -243,6 +244,17 @@ export function NavRepos() {
               </ContextMenuContent>
             </ContextMenu>
           ))}
+          <NavHiddenItems
+            isActive={(repoId) => isCurrentRepo(repoId)}
+            items={hiddenRepos.map((repo) => ({
+              id: repo.id,
+              name: repo.name,
+            }))}
+            label={t("navigation:sidebar.moreRepos")}
+            onIntent={(repoId) => prefetchRepoNavigation(queryClient, repoId)}
+            onSelect={(repoId) => openRepo(repoId)}
+            testIdPrefix="repos"
+          />
         </SidebarMenu>
       </SidebarGroupContent>
       {canCreateRepo && (
