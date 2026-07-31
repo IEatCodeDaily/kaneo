@@ -25,6 +25,7 @@ import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";
 import exportTasks from "./controllers/export-tasks";
+import getMyTasks from "./controllers/get-my-tasks";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import getTrashedTasks from "./controllers/get-trashed-tasks";
@@ -46,6 +47,47 @@ const task = new Hono<{
     userId: string;
   };
 }>()
+  .get(
+    "/my-tasks",
+    describeRoute({
+      operationId: "getMyTasks",
+      tags: ["Tasks"],
+      description:
+        "Cross-board list of tasks related to the current user (assigned, created, or assigned to one of their teams)",
+      responses: {
+        200: {
+          description: "Tasks related to the current user",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator(
+      "query",
+      v.object({
+        organizationId: v.optional(v.string()),
+        relation: v.optional(
+          v.picklist(["assigned", "created", "team", "all"]),
+        ),
+        includeCompleted: v.optional(v.picklist(["true", "false"])),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get("userId");
+      const { organizationId, relation, includeCompleted } =
+        c.req.valid("query");
+
+      const tasks = await getMyTasks({
+        userId,
+        organizationId,
+        relation: relation ?? "all",
+        includeCompleted: includeCompleted === "true",
+      });
+
+      return c.json(tasks);
+    },
+  )
   .get(
     "/tasks/:boardId",
     describeRoute({
