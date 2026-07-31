@@ -97,7 +97,7 @@ export default function MobileBoardNav({
                 )}
               >
                 <CalendarDays className="size-3.5" />
-                Gantt
+                Timeline
               </button>
               <button
                 type="button"

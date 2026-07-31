@@ -212,7 +212,7 @@ export default function BoardLayout({
                   )}
                 >
                   <CalendarDays className="size-3.5" />
-                  Gantt
+                  Timeline
                 </Button>
                 <Button
                   variant={resolvedView === "calendar" ? "secondary" : "ghost"}
