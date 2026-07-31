@@ -55,6 +55,7 @@ import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
+import { ResourceSyncBadge } from "./resource-sync-badge";
 
 type ResourceType = "issues" | "pull-requests";
 
@@ -506,6 +507,7 @@ export default function TaskResources({
                 <span className="min-w-0 flex-1 truncate">
                   {link.title || link.externalId}
                 </span>
+                <ResourceSyncBadge resourceType={link.resourceType} />
                 {repoLabel && <RepoLabel label={repoLabel} />}
                 <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
               </a>
