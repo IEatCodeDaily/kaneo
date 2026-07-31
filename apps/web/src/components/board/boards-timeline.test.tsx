@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BoardsTimeline, { type TimelineBoard } from "./boards-timeline";
 
@@ -137,5 +137,112 @@ describe("BoardsTimeline", () => {
     // put a bar somewhere misleading, so it is omitted like an undated board.
     expect(screen.queryByTestId("boards-timeline-bar-inverted")).toBeNull();
     expect(screen.getByTestId("boards-timeline-empty")).toBeTruthy();
+  });
+
+  /**
+   * The board names sit in a fixed 14rem left column next to a horizontally
+   * scrolling grid, so without `position: sticky` they slide out of view and
+   * every row becomes an anonymous bar. Class tokens are compared whole:
+   * substring checks pass on unrelated classes (e.g. "left-0" contains "left",
+   * "w-56" contains "5"), which is exactly how a broken sticky column would
+   * still look tested.
+   */
+  const classTokens = (element: Element) =>
+    element.className.split(/\s+/).filter(Boolean);
+
+  it("pins the board-name header cell during horizontal scroll", () => {
+    render(
+      <BoardsTimeline
+        boards={[
+          board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+        ]}
+        onBoardClick={vi.fn()}
+        zoom="week"
+      />,
+    );
+
+    const tokens = classTokens(
+      screen.getByTestId("boards-timeline-name-header"),
+    );
+    expect(tokens).toContain("sticky");
+    expect(tokens).toContain("left-0");
+  });
+
+  it("pins every board-name row cell so rows stay aligned with the header", () => {
+    render(
+      <BoardsTimeline
+        boards={[
+          board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+          board("b", "2026-06-05T00:00:00.000Z", "2026-06-20T00:00:00.000Z"),
+        ]}
+        onBoardClick={vi.fn()}
+        zoom="week"
+      />,
+    );
+
+    for (const id of ["a", "b"]) {
+      const tokens = classTokens(
+        screen.getByTestId(`boards-timeline-name-${id}`),
+      );
+      expect(tokens).toContain("sticky");
+      expect(tokens).toContain("left-0");
+    }
+  });
+
+  it("offers Week, Month and Year zoom options with Month selected by default", () => {
+    render(
+      <BoardsTimeline
+        boards={[
+          board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+        ]}
+        onBoardClick={vi.fn()}
+      />,
+    );
+
+    const control = screen.getByTestId("boards-timeline-zoom");
+    expect(
+      Array.from(control.querySelectorAll("button")).map((b) => b.textContent),
+    ).toEqual(["Week", "Month", "Year"]);
+    // Middle option is the default, so the view opens neither cramped nor tiny.
+    expect(
+      screen
+        .getByTestId("boards-timeline-zoom-month")
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it("rebuilds the timeline when the zoom control changes", () => {
+    render(
+      <BoardsTimeline
+        boards={[
+          board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+        ]}
+        onBoardClick={vi.fn()}
+      />,
+    );
+
+    // Header cells are grouped per zoom and the column template is derived from
+    // the padded day range, so both must move when the level changes.
+    const header = () =>
+      screen.getByTestId("boards-timeline").querySelectorAll("[style*='span']")
+        .length;
+    const columns = () =>
+      screen.getByTestId("boards-timeline-bar-a").parentElement?.style
+        .gridTemplateColumns;
+
+    const monthCells = header();
+    const monthColumns = columns();
+
+    fireEvent.click(screen.getByTestId("boards-timeline-zoom-week"));
+    expect(columns()).not.toBe(monthColumns);
+    expect(header()).not.toBe(monthCells);
+
+    fireEvent.click(screen.getByTestId("boards-timeline-zoom-year"));
+    expect(columns()).not.toBe(monthColumns);
+    expect(
+      screen
+        .getByTestId("boards-timeline-zoom-year")
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
   });
 });

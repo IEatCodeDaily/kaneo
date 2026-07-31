@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, format, isToday, parseISO } from "date-fns";
 import { CalendarRange } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   buildTimeline,
@@ -32,6 +32,25 @@ type ScheduledBoard = {
   end: Date;
 };
 
+/**
+ * The user-facing zoom levels, coarsest last. The labels describe the span a
+ * screenful covers, which is not the same thing as the underlying column
+ * grouping: `GanttZoom` names its levels after how days are *grouped*
+ * ("day" columns, week-grouped, month-grouped), so the finest level shows about
+ * a week at a time and is labelled "Week". Mapping is kept here rather than
+ * renaming anything in gantt-timeline.ts, which the board Gantt shares.
+ */
+const ZOOM_OPTIONS: { zoom: GanttZoom; key: string; fallback: string }[] = [
+  { zoom: "day", key: "week", fallback: "Week" },
+  { zoom: "week", key: "month", fallback: "Month" },
+  { zoom: "month", key: "year", fallback: "Year" },
+];
+
+/** Keeps the board-name column pinned while the timeline scrolls sideways. */
+const STICKY_NAME_COLUMN = "sticky left-0 z-20 w-56 shrink-0 bg-background";
+
+const DEFAULT_ZOOM: GanttZoom = ZOOM_OPTIONS[1].zoom;
+
 /** Mirrors the boards table: icon is a lucide name, with Layout as fallback. */
 function BoardIcon({ icon }: { icon?: string | null }) {
   const Icon = icons[icon as keyof typeof icons] ?? icons.Layout;
@@ -55,17 +74,19 @@ function toDate(value: string | Date | null | undefined): Date | null {
  */
 export default function BoardsTimeline({
   boards,
-  zoom,
+  zoom: initialZoom = DEFAULT_ZOOM,
   weekStartsOn = 1,
   onBoardClick,
 }: {
   boards: TimelineBoard[];
-  zoom: GanttZoom;
+  /** Starting zoom; the control below owns it from the first click onwards. */
+  zoom?: GanttZoom;
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   onBoardClick: (boardId: string) => void;
 }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const [zoom, setZoom] = useState<GanttZoom>(initialZoom);
 
   const scheduled = useMemo<ScheduledBoard[]>(() => {
     return boards
@@ -122,116 +143,154 @@ export default function BoardsTimeline({
     : null;
 
   return (
-    <div className="overflow-x-auto" data-testid="boards-timeline">
-      <div style={{ minWidth: `${timeline.timelineMinWidthRem + 14}rem` }}>
-        {/* Header: same grouped cells as the board Gantt. */}
-        <div className="flex border-b border-border">
-          <div className="w-56 shrink-0 px-3 py-2 text-xs font-medium text-muted-foreground">
-            {t("organization:boards.timeline.boardColumn", {
-              defaultValue: "Board",
-            })}
-          </div>
-          <div
-            className="grid flex-1"
-            style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
+    <div className="flex flex-col gap-2">
+      {/* Zoom lives with the timeline itself, so any caller gets the control. */}
+      <div
+        className="inline-flex h-7 w-fit shrink-0 items-center gap-0.5 self-end rounded-lg border border-border/80 bg-background p-0.5"
+        data-testid="boards-timeline-zoom"
+      >
+        {ZOOM_OPTIONS.map((option) => (
+          <button
+            aria-pressed={zoom === option.zoom}
+            className={cn(
+              "h-5 rounded-md px-2 text-xs",
+              zoom === option.zoom
+                ? "bg-accent font-medium"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            data-testid={`boards-timeline-zoom-${option.key}`}
+            key={option.key}
+            onClick={() => setZoom(option.zoom)}
+            type="button"
           >
-            {timeline.headerCells.map((cell) => (
-              <div
-                className="border-l border-border/60 px-1 py-2 text-center"
-                key={cell.key}
-                style={{ gridColumn: `span ${cell.span}` }}
-              >
-                <div className="truncate text-[11px] font-medium">
-                  {cell.label}
-                </div>
-                <div className="truncate text-[10px] text-muted-foreground">
-                  {cell.sublabel}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative">
-          {/* Today marker spans every row, like the board Gantt. */}
-          {todayOffset !== null && (
+            {t(`organization:boards.timeline.zoom.${option.key}`, {
+              defaultValue: option.fallback,
+            })}
+          </button>
+        ))}
+      </div>
+      <div className="overflow-x-auto" data-testid="boards-timeline">
+        <div style={{ minWidth: `${timeline.timelineMinWidthRem + 14}rem` }}>
+          {/* Header: same grouped cells as the board Gantt. */}
+          <div className="flex border-b border-border">
+            {/* Sticky so the names stay readable while the bars scroll sideways. */}
             <div
-              aria-hidden="true"
-              className="pointer-events-none absolute top-0 bottom-0 z-10 w-px bg-primary/70"
-              data-testid="boards-timeline-today"
-              style={{ left: `calc(14rem + ${todayOffset}rem)` }}
-            />
-          )}
-
-          {scheduled.map(({ board, start, end }) => {
-            const startIndex = differenceInCalendarDays(
-              start,
-              timeline.rangeStart,
-            );
-            const daySpan = differenceInCalendarDays(end, start) + 1;
-            const total = board.statistics?.totalTasks ?? 0;
-            const percent = board.statistics?.completionPercentage ?? 0;
-
-            return (
-              <div
-                className="flex border-b border-border/60 last:border-b-0 hover:bg-accent/30"
-                key={board.id}
-              >
-                <button
-                  className="w-56 shrink-0 truncate px-3 py-2 text-left text-sm outline-none hover:underline"
-                  onClick={() => onBoardClick(board.id)}
-                  title={board.name}
-                  type="button"
-                >
-                  {/* Boards store a lucide icon name, matching the table view. */}
-                  <BoardIcon icon={board.icon} />
-                  {board.name}
-                </button>
+              className={cn(
+                STICKY_NAME_COLUMN,
+                "px-3 py-2 text-xs font-medium text-muted-foreground",
+              )}
+              data-testid="boards-timeline-name-header"
+            >
+              {t("organization:boards.timeline.boardColumn", {
+                defaultValue: "Board",
+              })}
+            </div>
+            <div
+              className="grid flex-1"
+              style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
+            >
+              {timeline.headerCells.map((cell) => (
                 <div
-                  className="relative grid flex-1 items-center py-2"
-                  style={{
-                    backgroundImage: [weekendTint, gridLineGradient(timeline)]
-                      .filter(Boolean)
-                      .join(", "),
-                    gridTemplateColumns: timeline.gridTemplateColumns,
-                  }}
+                  className="border-l border-border/60 px-1 py-2 text-center"
+                  key={cell.key}
+                  style={{ gridColumn: `span ${cell.span}` }}
+                >
+                  <div className="truncate text-[11px] font-medium">
+                    {cell.label}
+                  </div>
+                  <div className="truncate text-[10px] text-muted-foreground">
+                    {cell.sublabel}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative">
+            {/* Today marker spans every row, like the board Gantt. */}
+            {todayOffset !== null && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 bottom-0 z-10 w-px bg-primary/70"
+                data-testid="boards-timeline-today"
+                style={{ left: `calc(14rem + ${todayOffset}rem)` }}
+              />
+            )}
+
+            {scheduled.map(({ board, start, end }) => {
+              const startIndex = differenceInCalendarDays(
+                start,
+                timeline.rangeStart,
+              );
+              const daySpan = differenceInCalendarDays(end, start) + 1;
+              const total = board.statistics?.totalTasks ?? 0;
+              const percent = board.statistics?.completionPercentage ?? 0;
+
+              return (
+                <div
+                  className="flex border-b border-border/60 last:border-b-0 hover:bg-accent/30"
+                  key={board.id}
                 >
                   <button
                     className={cn(
-                      "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded px-2.5",
-                      "bg-primary/25 ring-1 ring-inset ring-primary/40 hover:bg-primary/35",
+                      STICKY_NAME_COLUMN,
+                      "truncate px-3 py-2 text-left text-sm outline-none hover:underline",
                     )}
-                    data-testid={`boards-timeline-bar-${board.id}`}
+                    data-testid={`boards-timeline-name-${board.id}`}
                     onClick={() => onBoardClick(board.id)}
-                    style={{
-                      gridColumn: `${Math.max(1, startIndex + 1)} / span ${Math.max(1, daySpan)}`,
-                    }}
-                    title={`${board.name} · ${format(start, "MMM d")} → ${format(end, "MMM d, yyyy")}`}
+                    title={board.name}
                     type="button"
                   >
-                    {/* Completion fill: progress is inferred from the board's
-                        tasks, so it belongs on the bar itself. */}
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-y-0 left-0 bg-primary/35"
-                      style={{ width: `${percent}%` }}
-                    />
-                    {/* Sits above the completion fill, so it needs full
-                        foreground contrast rather than muted. */}
-                    <span className="relative truncate text-[11px] font-semibold text-foreground">
-                      {total > 0
-                        ? t("organization:boards.timeline.barLabel", {
-                            defaultValue: "{{percent}}% · {{count}} tasks",
-                            count: total,
-                            percent,
-                          })
-                        : board.name}
-                    </span>
+                    {/* Boards store a lucide icon name, matching the table view. */}
+                    <BoardIcon icon={board.icon} />
+                    {board.name}
                   </button>
+                  <div
+                    className="relative grid flex-1 items-center py-2"
+                    style={{
+                      backgroundImage: [weekendTint, gridLineGradient(timeline)]
+                        .filter(Boolean)
+                        .join(", "),
+                      gridTemplateColumns: timeline.gridTemplateColumns,
+                    }}
+                  >
+                    <button
+                      className={cn(
+                        "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded px-2.5",
+                        "bg-primary/25 ring-1 ring-inset ring-primary/40 hover:bg-primary/35",
+                      )}
+                      data-testid={`boards-timeline-bar-${board.id}`}
+                      onClick={() => onBoardClick(board.id)}
+                      style={{
+                        gridColumn: `${Math.max(1, startIndex + 1)} / span ${Math.max(1, daySpan)}`,
+                      }}
+                      title={`${board.name} · ${format(start, "MMM d")} → ${format(end, "MMM d, yyyy")}`}
+                      type="button"
+                    >
+                      {/* Completion fill: progress is inferred from the board's
+                        tasks, so it belongs on the bar itself. */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-0 left-0 bg-primary/35"
+                        style={{ width: `${percent}%` }}
+                      />
+                      {/* Sits above the completion fill, so it needs full
+                        foreground contrast rather than muted. */}
+                      <span className="relative truncate text-[11px] font-semibold text-foreground">
+                        {total > 0
+                          ? t("organization:boards.timeline.barLabel", {
+                              defaultValue: "{{percent}}% · {{count}} tasks",
+                              count: total,
+                              percent,
+                            })
+                          : board.name}
+                      </span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
