@@ -503,6 +503,37 @@ export const workflowRuleTable = pgTable(
   ],
 );
 
+export const milestoneTable = pgTable(
+  "milestone",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    description: text("description"),
+    dueDate: timestamp("due_date", { mode: "date" }),
+    status: text("status").notNull().default("planned"),
+    position: integer("position").notNull().default(0),
+    completedAt: timestamp("completed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("milestone_boardId_idx").on(table.boardId),
+    index("milestone_dueDate_idx").on(table.dueDate),
+    unique("milestone_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
 export const taskTable = pgTable(
   "task",
   {
@@ -544,6 +575,15 @@ export const taskTable = pgTable(
       onUpdate: "cascade",
     }),
     priority: text("priority").default("low"),
+    milestoneId: text("milestone_id").references(() => milestoneTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
+    deletedBy: text("deleted_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

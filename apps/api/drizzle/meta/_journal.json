@@ -358,6 +358,20 @@
       "when": 1785395000000,
       "tag": "0050_organization_ai_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1785397000000,
+      "tag": "0051_task_soft_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1785399000000,
+      "tag": "0052_board_milestone",
+      "breakpoints": true
     }
   ]
 }
