@@ -7996,6 +7996,46 @@
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
+						"view": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"table": {
+									"type": "string"
+								},
+								"timeline": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"table",
+								"timeline"
+							]
+						},
+						"timeline": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"boardColumn": {
+									"type": "string"
+								},
+								"barLabel": {
+									"type": "string"
+								},
+								"emptyTitle": {
+									"type": "string"
+								},
+								"emptyDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"boardColumn",
+								"barLabel",
+								"emptyTitle",
+								"emptyDescription"
+							]
+						},
 						"pageTitle": {
 							"type": "string"
 						},
@@ -8051,6 +8091,8 @@
 						}
 					},
 					"required": [
+						"view",
+						"timeline",
 						"pageTitle",
 						"createBoard",
 						"title",

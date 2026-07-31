@@ -1947,6 +1947,16 @@
 	},
 	"organization": {
 		"boards": {
+			"view": {
+				"table": "Table view",
+				"timeline": "Timeline view"
+			},
+			"timeline": {
+				"boardColumn": "Board",
+				"barLabel": "{{percent}}% · {{count}} tasks",
+				"emptyTitle": "No scheduled boards",
+				"emptyDescription": "Boards appear here once their tasks have start or due dates."
+			},
 			"pageTitle": "Boards",
 			"createBoard": "Create board",
 			"title": "Title",

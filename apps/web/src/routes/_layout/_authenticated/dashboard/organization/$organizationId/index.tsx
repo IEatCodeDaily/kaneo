@@ -1,7 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, LayoutGrid, Plus } from "lucide-react";
+import {
+  CalendarRange,
+  Eye,
+  EyeOff,
+  LayoutGrid,
+  List,
+  Plus,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import BoardsTimeline from "@/components/board/boards-timeline";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
@@ -53,6 +61,8 @@ function RouteComponent() {
   const { user } = useAuth();
   const { hiddenBoardIds, setBoardSidebarVisibility } =
     useUserPreferencesStore();
+  // Table stays the default; the timeline is the opt-in planning view.
+  const [view, setView] = useState<"table" | "timeline">("table");
 
   const handleCreateBoard = () => {
     if (!canCreate) return;
@@ -195,120 +205,157 @@ function RouteComponent() {
       <OrganizationLayout
         title={t("organization:boards.pageTitle")}
         headerActions={
-          canCreate ? (
+          <div className="flex items-center gap-1">
+            {/* Table vs timeline. Icon-only to keep the header compact. */}
             <Button
-              variant="outline"
-              size="xs"
-              onClick={handleCreateBoard}
-              className="gap-1"
+              aria-label={t("organization:boards.view.table", {
+                defaultValue: "Table view",
+              })}
+              aria-pressed={view === "table"}
+              data-testid="boards-view-table"
+              onClick={() => setView("table")}
+              size="icon-sm"
+              variant={view === "table" ? "secondary" : "ghost"}
             >
-              <Plus className="w-3 h-3" />
-              {t("organization:boards.createBoard")}
+              <List className="w-3 h-3" />
             </Button>
-          ) : null
+            <Button
+              aria-label={t("organization:boards.view.timeline", {
+                defaultValue: "Timeline view",
+              })}
+              aria-pressed={view === "timeline"}
+              data-testid="boards-view-timeline"
+              onClick={() => setView("timeline")}
+              size="icon-sm"
+              variant={view === "timeline" ? "secondary" : "ghost"}
+            >
+              <CalendarRange className="w-3 h-3" />
+            </Button>
+            {canCreate ? (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleCreateBoard}
+                className="ml-1 gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                {t("organization:boards.createBoard")}
+              </Button>
+            ) : null}
+          </div>
         }
       >
-        <Table>
-          <TableHeader className="p-4">
-            <TableRow>
-              <TableHead className="text-foreground font-medium">
-                {t("organization:boards.title")}
-              </TableHead>
-              <TableHead className="text-foreground font-medium">
-                {t("organization:boards.progress")}
-              </TableHead>
-              <TableHead className="text-foreground font-medium">
-                {t("organization:boards.dueDate")}
-              </TableHead>
-              <TableHead className="text-foreground font-medium">
-                {t("organization:boards.status")}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {boards?.map((board) => {
-              if (!board?.id || !board.statistics) return null;
+        {view === "timeline" ? (
+          <BoardsTimeline
+            boards={boards ?? []}
+            onBoardClick={handleBoardClick}
+            zoom="week"
+          />
+        ) : (
+          <Table>
+            <TableHeader className="p-4">
+              <TableRow>
+                <TableHead className="text-foreground font-medium">
+                  {t("organization:boards.title")}
+                </TableHead>
+                <TableHead className="text-foreground font-medium">
+                  {t("organization:boards.progress")}
+                </TableHead>
+                <TableHead className="text-foreground font-medium">
+                  {t("organization:boards.dueDate")}
+                </TableHead>
+                <TableHead className="text-foreground font-medium">
+                  {t("organization:boards.status")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {boards?.map((board) => {
+                if (!board?.id || !board.statistics) return null;
 
-              const IconComponent =
-                icons[board.icon as keyof typeof icons] || icons.Layout;
+                const IconComponent =
+                  icons[board.icon as keyof typeof icons] || icons.Layout;
 
-              const getStatusText = () => {
-                if (board.statistics.totalTasks === 0)
-                  return t("organization:boards.boardStatus.notStarted");
-                if (board.statistics.completionPercentage === 100)
-                  return t("organization:boards.boardStatus.complete");
-                return t("organization:boards.boardStatus.inProgress");
-              };
+                const getStatusText = () => {
+                  if (board.statistics.totalTasks === 0)
+                    return t("organization:boards.boardStatus.notStarted");
+                  if (board.statistics.completionPercentage === 100)
+                    return t("organization:boards.boardStatus.complete");
+                  return t("organization:boards.boardStatus.inProgress");
+                };
 
-              const getStatusVariant = () => {
-                if (board.statistics.totalTasks === 0) return "secondary";
-                if (board.statistics.completionPercentage === 100)
-                  return "default";
-                return "outline";
-              };
+                const getStatusVariant = () => {
+                  if (board.statistics.totalTasks === 0) return "secondary";
+                  if (board.statistics.completionPercentage === 100)
+                    return "default";
+                  return "outline";
+                };
 
-              return (
-                <TableRow
-                  key={board.id}
-                  className="cursor-pointer"
-                  onClick={() => handleBoardClick(board.id)}
-                >
-                  <TableCell className="py-3">
-                    <div className="flex items-center gap-3">
-                      <IconComponent className="w-5 h-5 text-muted-foreground" />
-                      <span className="font-medium">{board.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={board.statistics.completionPercentage}
-                        className="w-16 h-2"
-                      />
+                return (
+                  <TableRow
+                    key={board.id}
+                    className="cursor-pointer"
+                    onClick={() => handleBoardClick(board.id)}
+                  >
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-3">
+                        <IconComponent className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-medium">{board.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={board.statistics.completionPercentage}
+                          className="w-16 h-2"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {board.statistics.completionPercentage}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3">
                       <span className="text-sm text-muted-foreground">
-                        {board.statistics.completionPercentage}%
+                        {board.statistics.dueDate
+                          ? formatDateMedium(board.statistics.dueDate)
+                          : t("organization:boards.noDueDate")}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <span className="text-sm text-muted-foreground">
-                      {board.statistics.dueDate
-                        ? formatDateMedium(board.statistics.dueDate)
-                        : t("organization:boards.noDueDate")}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant={getStatusVariant()}>
-                        {getStatusText()}
-                      </Badge>
-                      <Button
-                        aria-label={`${hiddenBoardIds.includes(`${user?.id}:${board.id}`) ? "Show" : "Hide"} ${board.name} in sidebar`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          if (!user?.id) return;
-                          setBoardSidebarVisibility(
-                            user.id,
-                            board.id,
-                            hiddenBoardIds.includes(`${user.id}:${board.id}`),
-                          );
-                        }}
-                        size="icon"
-                        variant="ghost"
-                      >
-                        {hiddenBoardIds.includes(`${user?.id}:${board.id}`) ? (
-                          <Eye className="size-4" />
-                        ) : (
-                          <EyeOff className="size-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant={getStatusVariant()}>
+                          {getStatusText()}
+                        </Badge>
+                        <Button
+                          aria-label={`${hiddenBoardIds.includes(`${user?.id}:${board.id}`) ? "Show" : "Hide"} ${board.name} in sidebar`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!user?.id) return;
+                            setBoardSidebarVisibility(
+                              user.id,
+                              board.id,
+                              hiddenBoardIds.includes(`${user.id}:${board.id}`),
+                            );
+                          }}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          {hiddenBoardIds.includes(
+                            `${user?.id}:${board.id}`,
+                          ) ? (
+                            <Eye className="size-4" />
+                          ) : (
+                            <EyeOff className="size-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
       </OrganizationLayout>
 
       <CreateBoardModal
