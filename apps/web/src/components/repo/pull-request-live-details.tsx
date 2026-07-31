@@ -296,9 +296,10 @@ export default function PullRequestLiveDetails({
               </div>
             </div>
             <div className="min-w-0">
-              {/* The tree floats beside the diff and stays open while the
-                  reader jumps between files. */}
-              <div className="flex min-w-0 items-start gap-3">
+              {/* The tree overlays the diff rather than taking a column, so the
+                  diff keeps full width. `relative` is the positioning context
+                  the floating panel anchors to. */}
+              <div className="relative min-w-0">
                 <PullRequestFileTree
                   filenames={fileNames}
                   idPrefix="inline"
@@ -312,7 +313,7 @@ export default function PullRequestLiveDetails({
                   open={treeOpen}
                   selectedPath={selectedFile.filename}
                 />
-                <div className="min-w-0 flex-1 space-y-4">
+                <div className="min-w-0 space-y-4">
                   {files.data?.files.map((file) => (
                     <section
                       className="scroll-mt-4"
@@ -339,7 +340,10 @@ export default function PullRequestLiveDetails({
                   </DialogDescription>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
-                  <div className="flex min-h-0 flex-1 items-start gap-3 overflow-hidden">
+                  {/* `relative` anchors the floating tree; the scroll container
+                      below must stretch to full height (no items-start) or it
+                      shrinks to content and never scrolls. */}
+                  <div className="relative min-h-0 flex-1 overflow-hidden">
                     <PullRequestFileTree
                       filenames={fileNames}
                       idPrefix="fullscreen"
@@ -358,7 +362,7 @@ export default function PullRequestLiveDetails({
                       open={fullscreenTreeOpen}
                       selectedPath={selectedFilename}
                     />
-                    <div className="min-w-0 flex-1 space-y-4 overflow-auto">
+                    <div className="h-full min-w-0 space-y-4 overflow-y-auto">
                       {files.data?.files.map((file) => (
                         <section
                           className="scroll-mt-2"

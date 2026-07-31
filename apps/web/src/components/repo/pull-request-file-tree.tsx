@@ -74,7 +74,8 @@ export default function PullRequestFileTree({
       <Button
         aria-expanded={false}
         aria-label="Show changed files"
-        className="gap-1.5"
+        // Floats over the diff so collapsing does not shift the diff layout.
+        className="absolute right-2 top-2 z-20 gap-1.5 shadow-md"
         data-testid={`${idPrefix}-file-tree-toggle`}
         onClick={() => onOpenChange(true)}
         size="sm"
@@ -89,7 +90,10 @@ export default function PullRequestFileTree({
   return (
     <aside
       aria-label="Changed files"
-      className="w-72 shrink-0 rounded-md border border-border bg-popover shadow-md"
+      // Floating overlay: absolutely positioned over the diff surface so the
+      // diff keeps full width and its own scrolling. Docking it in flow (an
+      // earlier attempt) both stole a column and broke fullscreen scrolling.
+      className="absolute right-2 top-2 z-20 w-72 rounded-md border border-border bg-popover shadow-lg"
       data-testid={`${idPrefix}-file-tree-sidebar`}
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
