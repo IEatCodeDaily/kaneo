@@ -6,9 +6,11 @@ import {
   ExternalLink,
   GitCommitHorizontal,
   ListTree,
+  Loader2,
   PanelsTopLeft,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import PullRequestFileTree from "@/components/repo/pull-request-file-tree";
 import PullRequestReviews from "@/components/repo/pull-request-reviews";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,45 @@ const Loading = () => (
     <Skeleton className="h-4 w-1/2" />
   </div>
 );
+
+/**
+ * #89: clicking a tab must land on the tab instantly, so the panel never waits
+ * on the network before painting. Three states, in priority order:
+ *   - no data yet  -> skeleton (`isLoading`)
+ *   - cached data  -> render it and mark it stale (`isFetching`), never blank it
+ *   - error        -> error state
+ * The strip also carries a thin indeterminate progress bar while the *active*
+ * tab is fetching, which is the only affordance visible when the panel is
+ * showing cached rows.
+ */
+const RefreshingHint = () => {
+  const { t } = useTranslation();
+  return (
+    <p
+      aria-live="polite"
+      className="flex items-center gap-1.5 pb-2 text-muted-foreground text-xs"
+      data-testid="pull-request-refreshing-hint"
+      role="status"
+    >
+      <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+      {t("organization:repos.pullRequests.refreshing")}
+    </p>
+  );
+};
+
+function TabProgress({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"
+      data-testid="pull-request-tab-progress"
+    >
+      <div className="h-full w-full animate-pulse bg-primary/70" />
+    </div>
+  );
+}
+
 const ErrorState = () => (
   <p className="text-sm text-destructive">
     Could not load this section. Reload to try again.
@@ -127,6 +168,12 @@ export default function PullRequestLiveDetails({
   const checks = useGetPullRequestChecks(repoId, number);
   const [selectedFilename, setSelectedFilename] = useState<string>();
   const [split, setSplit] = useState(false);
+  // #89: the tab strip is CONTROLLED here so a click switches the visible panel
+  // in the same render as the click, independent of any in-flight query. The
+  // panels below key their skeleton off `isLoading` (no data yet) and their
+  // "refreshing" hint off `isFetching` (cached data being revalidated), so the
+  // switch is never gated on the network.
+  const [activeTab, setActiveTab] = useState("discussion");
   const [fullscreen, setFullscreen] = useState(false);
   // The changed-files sidebar is persistent: it stays open across file jumps,
   // so its open state lives here rather than inside a dismissing popover.
@@ -176,8 +223,11 @@ export default function PullRequestLiveDetails({
   return (
     <Tabs
       className="gap-0"
-      defaultValue="discussion"
-      onValueChange={(value) => onTabChange?.(String(value))}
+      onValueChange={(value) => {
+        setActiveTab(String(value));
+        onTabChange?.(String(value));
+      }}
+      value={activeTab}
       data-testid="pull-request-live-details"
     >
       {/* Sticky tab strip. Two nested elements on purpose: the OUTER div is the
@@ -194,7 +244,14 @@ export default function PullRequestLiveDetails({
         ref={tabsRef}
         style={{ top: headerHeight }}
       >
-        <div className="overflow-x-auto px-4 sm:px-6">
+        <div className="relative overflow-x-auto px-4 sm:px-6">
+          <TabProgress
+            active={
+              (activeTab === "commits" && commits.isFetching) ||
+              (activeTab === "checks" && checks.isFetching) ||
+              (activeTab === "diffs" && files.isFetching)
+            }
+          />
           <TabsList
             aria-label="Pull request sections"
             className="min-w-max"
@@ -224,6 +281,7 @@ export default function PullRequestLiveDetails({
         <PullRequestReviews number={number} repoId={repoId} />
       </TabsPanel>
       <TabsPanel className="px-4 py-5 sm:px-6" value="commits">
+        {commits.isFetching && commits.data ? <RefreshingHint /> : null}
         {commits.isLoading ? (
           <Loading />
         ) : commits.isError ? (
@@ -262,6 +320,7 @@ export default function PullRequestLiveDetails({
       </TabsPanel>
 
       <TabsPanel className="px-4 py-5 sm:px-6" value="checks">
+        {checks.isFetching && checks.data ? <RefreshingHint /> : null}
         {checks.isLoading ? (
           <Loading />
         ) : checks.isError ? (
@@ -295,6 +354,7 @@ export default function PullRequestLiveDetails({
         data-testid="pull-request-diff-workspace"
         value="diffs"
       >
+        {files.isFetching && files.data ? <RefreshingHint /> : null}
         {files.isLoading ? (
           <Loading />
         ) : files.isError ? (

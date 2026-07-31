@@ -38,12 +38,23 @@ vi.mock("@/components/ui/sidebar", () => ({
     children,
     isActive,
     onClick,
+    tooltip,
   }: {
     children: React.ReactNode;
     isActive?: boolean;
     onClick?: () => void;
+    tooltip?: string;
   }) => (
-    <button type="button" aria-current={isActive} onClick={onClick}>
+    // The real primitive renders `tooltip` into a Tooltip popup that is only
+    // visible when the sidebar is collapsed to icons. In jsdom we surface it as
+    // the accessible name + a title, which is what a hover tooltip exposes.
+    <button
+      type="button"
+      aria-current={isActive}
+      aria-label={typeof tooltip === "string" ? tooltip : undefined}
+      onClick={onClick}
+      title={typeof tooltip === "string" ? tooltip : undefined}
+    >
       {children}
     </button>
   ),
@@ -110,5 +121,62 @@ describe("NavMain cross-board entries (#58)", () => {
     expect(
       screen.getByRole("button", { name: "navigation:sidebar.members" }),
     ).toBeTruthy();
+  });
+});
+
+/**
+ * #93: the sidebar can be minimized to an icon-only rail, so every nav entry
+ * needs (a) an icon that survives the collapse and (b) its name exposed as a
+ * hover tooltip, which is the only label left once the text is hidden.
+ */
+describe("NavMain icons and minimized tooltips (#93)", () => {
+  const entries = [
+    "navigation:sidebar.inbox",
+    "navigation:sidebar.myTasks",
+    "navigation:sidebar.members",
+  ];
+  // Trash (#53) is owned by another change; assert it separately so this suite
+  // does not fail if that entry is not present in the tree yet.
+  const optionalEntries = ["navigation:sidebar.trash"];
+
+  it("gives any additional nav entry an icon too", () => {
+    render(<NavMain />);
+
+    for (const name of optionalEntries) {
+      const button = screen.queryByRole("button", { name });
+      if (!button) continue;
+      expect(button.querySelector("svg")).not.toBeNull();
+      expect(button.getAttribute("title")).toBe(name);
+    }
+  });
+
+  it("renders an icon inside every nav entry", () => {
+    render(<NavMain />);
+
+    for (const name of entries) {
+      const button = screen.getByRole("button", { name });
+      expect(button.querySelector("svg")).not.toBeNull();
+    }
+  });
+
+  it("exposes each nav item name as a tooltip for the icon-only state", () => {
+    render(<NavMain />);
+
+    for (const name of entries) {
+      // `tooltip` is what the sidebar primitive shows on hover while collapsed.
+      expect(screen.getByRole("button", { name }).getAttribute("title")).toBe(
+        name,
+      );
+    }
+  });
+
+  it("keeps every entry clickable when only icons are visible", () => {
+    render(<NavMain />);
+
+    fireEvent.click(screen.getByRole("button", { name: entries[0] }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dashboard/organization/org-1/inbox",
+    });
   });
 });

@@ -1236,6 +1236,7 @@
 			"more": "More",
 			"backToBoard": "Back to board",
 			"repos": "Repos",
+			"trash": "Trash",
 			"moreBoards": "More Boards",
 			"moreRepos": "More Repos"
 		},
@@ -2074,6 +2075,7 @@
 				"emptyDescription": "There are no issues matching this filter."
 			},
 			"pullRequests": {
+				"refreshing": "Refreshing…",
 				"pageTitle": "Pull requests",
 				"tab": "Pull requests",
 				"emptyTitle": "No pull requests",
@@ -2190,10 +2192,59 @@
 			"team": "Team"
 		}
 	},
+	"flags": {
+		"title": "Flags",
+		"actions": {
+			"flag": "Flag"
+		},
+		"badge": {
+			"targeted": "Flagged to {{target}}"
+		},
+		"dialog": {
+			"title": "Flag this task",
+			"type": "Flag type",
+			"selectType": "Select a flag type",
+			"targetUser": "Flag to user",
+			"noUser": "No user",
+			"targetTeam": "Flag to team",
+			"noTeam": "No team",
+			"note": "Note",
+			"submit": "Raise flag",
+			"unflag": "Unflag",
+			"activeTitle": "Active flags",
+			"noneActive": "No active flags on this task.",
+			"historyTitle": "Flag history",
+			"raisedBy": "Raised by {{who}} for {{target}}",
+			"resolvedBy": "Unflagged by {{who}}",
+			"errors": {
+				"noType": "Pick a flag type.",
+				"bothTargets": "Pick either a user or a team, not both.",
+				"noTarget": "Pick a user or a team to flag this to."
+			}
+		}
+	},
 	"inbox": {
 		"title": "Inbox",
 		"loading": "Loading your inbox…",
 		"empty": "No updates yet.",
 		"count": "{{count}} updates"
+	},
+	"trash": {
+		"title": "Recycle Bin",
+		"loading": "Loading deleted tasks…",
+		"empty": "The recycle bin is empty.",
+		"count": "{{count}} deleted tasks",
+		"restore": "Restore",
+		"deletePermanently": "Delete permanently",
+		"deletedMeta": "Deleted {{when}} by {{who}}",
+		"unknownBoard": "Unknown board",
+		"unknownUser": "an unknown user",
+		"unknownWhen": "at an unknown time",
+		"confirmDelete": {
+			"title": "Delete this task permanently?",
+			"description": "\"{{title}}\" and its attachments will be removed for good. You can't undo this action.",
+			"cancel": "Cancel",
+			"confirm": "Delete permanently"
+		}
 	}
 }

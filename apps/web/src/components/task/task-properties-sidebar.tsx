@@ -8,6 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import TaskFlagSection from "@/components/flag/task-flag-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -721,6 +722,13 @@ export default function TaskPropertiesSidebar({
         )}
 
         <div className="hidden lg:flex px-3 flex-col gap-3 p-2">
+          {task && taskId && (
+            <TaskFlagSection
+              taskId={taskId}
+              boardId={task.boardId ?? boardId}
+              organizationId={organizationId}
+            />
+          )}
           {task && taskId && (
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium text-foreground/70 px-2">

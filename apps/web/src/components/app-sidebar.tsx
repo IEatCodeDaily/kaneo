@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar
-      collapsible="offcanvas"
+      collapsible="icon"
       variant="inset"
       className="border-none pt-1.5"
       {...props}

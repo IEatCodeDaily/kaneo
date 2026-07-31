@@ -18,7 +18,8 @@ const svgOf = (node: HTMLElement) => {
 };
 
 const expectClassTokens = (element: Element, tokens: string[]) => {
-  for (const token of tokens) expect(element.classList.contains(token)).toBe(true);
+  for (const token of tokens)
+    expect(element.classList.contains(token)).toBe(true);
 };
 
 describe("getColumnIcon status colors", () => {
@@ -30,7 +31,9 @@ describe("getColumnIcon status colors", () => {
     ["archived", "text-violet-600", "dark:text-violet-400"],
     ["planned", "text-rose-600", "dark:text-rose-400"],
   ])("colors %s distinctly", (columnId, lightColor, darkColor) => {
-    const { container } = render(getColumnIcon(columnId, columnId === "done", null));
+    const { container } = render(
+      getColumnIcon(columnId, columnId === "done", null),
+    );
 
     expectClassTokens(svgOf(container), [lightColor, darkColor]);
   });

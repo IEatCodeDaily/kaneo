@@ -44,6 +44,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRou
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/members'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/search'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/trash'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountAuthenticationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/authentication'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountDeveloperRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/developer'
@@ -286,6 +287,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute =
     {
       id: '/search',
       path: '/search',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+    } as any,
+  )
+const LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport.update(
+    {
+      id: '/trash',
+      path: '/trash',
       getParentRoute: () =>
         LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
     } as any,
@@ -592,6 +602,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -660,6 +671,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
   '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -734,6 +746,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
   '/_layout/_authenticated/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/_layout/_authenticated/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -807,6 +820,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/my-tasks'
     | '/dashboard/organization/$organizationId/search'
+    | '/dashboard/organization/$organizationId/trash'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -875,6 +889,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/my-tasks'
     | '/dashboard/organization/$organizationId/search'
+    | '/dashboard/organization/$organizationId/trash'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -948,6 +963,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/$organizationId/members'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/search'
+    | '/_layout/_authenticated/dashboard/organization/$organizationId/trash'
     | '/_layout/_authenticated/dashboard/settings/account/authentication'
     | '/_layout/_authenticated/dashboard/settings/account/connections'
     | '/_layout/_authenticated/dashboard/settings/account/developer'
@@ -1243,6 +1259,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/dashboard/organization/$organizationId/search'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    }
+    '/_layout/_authenticated/dashboard/organization/$organizationId/trash': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationId/trash'
+      path: '/trash'
+      fullPath: '/dashboard/organization/$organizationId/trash'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
     }
     '/_layout/_authenticated/dashboard/settings/account/authentication': {
@@ -1673,6 +1696,7 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren {
   LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
@@ -1699,6 +1723,8 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren: Layou
       LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute:

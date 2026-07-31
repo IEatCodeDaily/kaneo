@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TaskFlagBadges from "@/components/flag/task-flag-badges";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import {
   AlertDialog,
@@ -269,6 +270,10 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
                 <TaskCardLabels labels={task.labels} />
               </div>
             )}
+
+            <div className="mb-2.5">
+              <TaskFlagBadges taskId={task.id} />
+            </div>
 
             <div className="flex items-center gap-1.5">
               {showPriority && (
