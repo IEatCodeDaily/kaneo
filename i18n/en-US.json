@@ -1871,6 +1871,14 @@
 			"copyLink": "Copy link",
 			"copyLinkSuccess": "Task link copied!"
 		},
+		"attachment": {
+			"fallbackName": "Attachment",
+			"copyImageAddress": "Copy image address",
+			"copyFileAddress": "Copy file address",
+			"openInNewTab": "Open in new tab",
+			"download": "Download",
+			"copyMarkdown": "Copy markdown"
+		},
 		"actions": {
 			"archive": "Archive",
 			"markAsPlanned": "Mark as planned",

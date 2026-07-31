@@ -7657,6 +7657,38 @@
 						"copyLinkSuccess"
 					]
 				},
+				"attachment": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"fallbackName": {
+							"type": "string"
+						},
+						"copyImageAddress": {
+							"type": "string"
+						},
+						"copyFileAddress": {
+							"type": "string"
+						},
+						"openInNewTab": {
+							"type": "string"
+						},
+						"download": {
+							"type": "string"
+						},
+						"copyMarkdown": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"fallbackName",
+						"copyImageAddress",
+						"copyFileAddress",
+						"openInNewTab",
+						"download",
+						"copyMarkdown"
+					]
+				},
 				"actions": {
 					"type": "object",
 					"additionalProperties": false,
@@ -7860,6 +7892,7 @@
 				"labels",
 				"update",
 				"contextMenu",
+				"attachment",
 				"actions",
 				"bulk",
 				"column"

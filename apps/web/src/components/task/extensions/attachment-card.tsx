@@ -2,6 +2,7 @@ import { mergeAttributes, Node } from "@tiptap/core";
 import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import { FileText } from "lucide-react";
+import { AttachmentContextMenu } from "@/components/task/attachment-context-menu";
 
 function formatBytes(size: number) {
   if (!Number.isFinite(size) || size <= 0) return "";
@@ -12,7 +13,8 @@ function formatBytes(size: number) {
   return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-function AttachmentCardView({ node }: NodeViewProps) {
+/** Exported for tests: proves the card is wrapped in the context menu. */
+export function AttachmentCardView({ node }: NodeViewProps) {
   const url = String(node.attrs.url || "");
   const filename = String(node.attrs.filename || "Attachment");
   const mimeType = String(node.attrs.mimeType || "");
@@ -20,24 +22,30 @@ function AttachmentCardView({ node }: NodeViewProps) {
 
   return (
     <NodeViewWrapper as="span" className="kaneo-attachment-node">
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="kaneo-attachment-card"
-        title={filename}
+      <AttachmentContextMenu
+        url={url}
+        filename={filename}
+        isImage={mimeType.startsWith("image/")}
       >
-        <span className="kaneo-attachment-card-icon">
-          <FileText className="size-4" />
-        </span>
-        <span className="kaneo-attachment-card-content">
-          <span className="kaneo-attachment-card-title">{filename}</span>
-          <span className="kaneo-attachment-card-meta">
-            {formatBytes(size)}
-            {mimeType ? ` · ${mimeType}` : ""}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="kaneo-attachment-card"
+          title={filename}
+        >
+          <span className="kaneo-attachment-card-icon">
+            <FileText className="size-4" />
           </span>
-        </span>
-      </a>
+          <span className="kaneo-attachment-card-content">
+            <span className="kaneo-attachment-card-title">{filename}</span>
+            <span className="kaneo-attachment-card-meta">
+              {formatBytes(size)}
+              {mimeType ? ` · ${mimeType}` : ""}
+            </span>
+          </span>
+        </a>
+      </AttachmentContextMenu>
     </NodeViewWrapper>
   );
 }
