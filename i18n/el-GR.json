@@ -454,7 +454,9 @@
 			"labelsDescription": "Εμφάνιση ετικετών και tags εργασιών",
 			"priority": "Προτεραιότητα",
 			"priorityDescription": "Εμφάνιση ενδείξεων προτεραιότητας",
-			"weekStartsOnSaturday": "Σάββατο"
+			"weekStartsOnSaturday": "Σάββατο",
+			"reduceOverlayBlur": "Μείωση θολώματος επικάλυψης",
+			"reduceOverlayBlurDescription": "Αφαίρεση του θολού φόντου πίσω από διαλόγους, φύλλα και την παλέτα εντολών."
 		},
 		"developerPage": {
 			"pageTitle": "Ρυθμίσεις προγραμματιστή",

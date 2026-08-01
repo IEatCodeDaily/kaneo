@@ -5,7 +5,6 @@ import { MobileUserFab } from "@/components/common/mobile-user-fab";
 import { DemoAlert } from "@/components/demo-alert";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { isDemoMode } from "@/constants/urls";
-import { useUserPreferencesEffects } from "@/hooks/use-user-preferences-effects";
 import { cn } from "@/lib/cn";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
@@ -49,7 +48,8 @@ function Layout({ children, className }: LayoutProps) {
   const { sidebarDefaultOpen, setSidebarDefaultOpen } =
     useUserPreferencesStore();
 
-  useUserPreferencesEffects();
+  // #125: preference effects moved to the router root so they also apply on
+  // routes that do not render <Layout> (Settings in particular).
 
   return (
     <div className="flex w-full bg-background">

@@ -454,7 +454,9 @@
 			"labelsDescription": "Показывать метки и теги задач",
 			"priority": "Приоритет",
 			"priorityDescription": "Показывать индикаторы приоритета",
-			"weekStartsOnSaturday": "Суббота"
+			"weekStartsOnSaturday": "Суббота",
+			"reduceOverlayBlur": "Уменьшить размытие",
+			"reduceOverlayBlurDescription": "Убрать размытый фон за диалогами, панелями и палитрой команд."
 		},
 		"developerPage": {
 			"pageTitle": "Настройки разработчика",

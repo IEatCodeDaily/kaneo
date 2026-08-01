@@ -364,7 +364,9 @@
 			"labelsDescription": "Toon taaklabels en tags",
 			"priority": "Prioriteit",
 			"priorityDescription": "Toon prioriteitsindicatoren",
-			"weekStartsOnSaturday": "Zaterdag"
+			"weekStartsOnSaturday": "Zaterdag",
+			"reduceOverlayBlur": "Minder overlay-vervaging",
+			"reduceOverlayBlurDescription": "Verwijder de vervaagde achtergrond achter dialogen, sheets en het opdrachtpalet."
 		},
 		"developerPage": {
 			"pageTitle": "Ontwikkelaarsinstellingen",

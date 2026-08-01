@@ -454,7 +454,9 @@
 			"labelsDescription": "작업 라벨과 태그를 표시합니다",
 			"priority": "우선순위",
 			"priorityDescription": "우선순위 표시기를 표시합니다",
-			"weekStartsOnSaturday": "토요일"
+			"weekStartsOnSaturday": "토요일",
+			"reduceOverlayBlur": "오버레이 흐림 줄이기",
+			"reduceOverlayBlurDescription": "대화 상자, 시트, 명령 팔레트 뒤의 흐린 배경을 제거합니다."
 		},
 		"developerPage": {
 			"pageTitle": "개발자 설정",

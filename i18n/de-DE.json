@@ -468,7 +468,9 @@
 			"labelsDescription": "Aufgabenlabels und Tags anzeigen",
 			"priority": "Priorität",
 			"priorityDescription": "Prioritätsindikatoren anzeigen",
-			"weekStartsOnSaturday": "Samstag"
+			"weekStartsOnSaturday": "Samstag",
+			"reduceOverlayBlur": "Overlay-Unschärfe reduzieren",
+			"reduceOverlayBlurDescription": "Den unscharfen Hintergrund hinter Dialogen, Sheets und der Befehlspalette entfernen."
 		},
 		"developerPage": {
 			"pageTitle": "Entwicklereinstellungen",

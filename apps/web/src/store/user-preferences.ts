@@ -22,6 +22,14 @@ type UserPreferencesStore = {
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
 
+  /**
+   * #125: drops the backdrop blur behind modals, sheets and command dialogs.
+   * The blur is expensive to composite on large viewports and several users
+   * find it visually noisy, so it is opt-out rather than removed outright.
+   */
+  reduceOverlayBlur: boolean;
+  setReduceOverlayBlur: (reduce: boolean) => void;
+
   showTaskNumbers: boolean;
   setShowTaskNumbers: (show: boolean) => void;
   toggleTaskNumbers: () => void;
@@ -105,6 +113,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       compactMode: false,
       setCompactMode: (compact) => set({ compactMode: compact }),
+
+      reduceOverlayBlur: false,
+      setReduceOverlayBlur: (reduce) => set({ reduceOverlayBlur: reduce }),
 
       showTaskNumbers: true,
       setShowTaskNumbers: (show) => set({ showTaskNumbers: show }),

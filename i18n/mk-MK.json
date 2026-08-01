@@ -454,7 +454,9 @@
 			"labelsDescription": "Прикажи етикети и тагови на задачите",
 			"priority": "Приоритет",
 			"priorityDescription": "Прикажи индикатори за приоритет",
-			"weekStartsOnSaturday": "Сабота"
+			"weekStartsOnSaturday": "Сабота",
+			"reduceOverlayBlur": "Намали заматување",
+			"reduceOverlayBlurDescription": "Отстрани ја заматената позадина зад дијалозите, листовите и палетата со команди."
 		},
 		"developerPage": {
 			"pageTitle": "Програмерски поставки",

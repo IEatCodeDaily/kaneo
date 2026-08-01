@@ -455,7 +455,9 @@
 			"labelsDescription": "Talep etiketlerini ve etiketleri göster",
 			"priority": "Öncelik",
 			"priorityDescription": "Öncelik göstergelerini görüntüle",
-			"weekStartsOnSaturday": "Cumartesi"
+			"weekStartsOnSaturday": "Cumartesi",
+			"reduceOverlayBlur": "Bulanıklığı azalt",
+			"reduceOverlayBlurDescription": "İletişim kutuları, sayfalar ve komut paleti arkasındaki bulanık arka planı kaldır."
 		},
 		"developerPage": {
 			"pageTitle": "Geliştirici Ayarları",

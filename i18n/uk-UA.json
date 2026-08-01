@@ -454,7 +454,9 @@
 			"labelsDescription": "Показувати мітки та теґи завдань",
 			"priority": "Пріоритет",
 			"priorityDescription": "Відображати індикатори пріоритету",
-			"weekStartsOnSaturday": "Субота"
+			"weekStartsOnSaturday": "Субота",
+			"reduceOverlayBlur": "Зменшити розмиття",
+			"reduceOverlayBlurDescription": "Прибрати розмитий фон за діалогами, панелями та палітрою команд."
 		},
 		"developerPage": {
 			"pageTitle": "Налаштування розробника",

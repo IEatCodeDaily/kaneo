@@ -456,7 +456,9 @@
 			"labelsDescription": "Afficher les labels et tags des tâches",
 			"priority": "Priorité",
 			"priorityDescription": "Afficher les indicateurs de priorité",
-			"weekStartsOnSaturday": "Samedi"
+			"weekStartsOnSaturday": "Samedi",
+			"reduceOverlayBlur": "Réduire le flou",
+			"reduceOverlayBlurDescription": "Supprime l'arrière-plan flou derrière les dialogues, les panneaux et la palette de commandes."
 		},
 		"developerPage": {
 			"pageTitle": "Paramètres développeur",

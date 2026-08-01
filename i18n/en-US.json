@@ -470,7 +470,9 @@
       "labelsDescription": "Show task labels and tags",
       "priority": "Priority",
       "priorityDescription": "Display priority indicators",
-      "weekStartsOnSaturday": "Saturday"
+      "weekStartsOnSaturday": "Saturday",
+      "reduceOverlayBlur": "Reduce overlay blur",
+      "reduceOverlayBlurDescription": "Remove the blurred backdrop behind dialogs, sheets and the command palette."
     },
     "developerPage": {
       "pageTitle": "Developer Settings",

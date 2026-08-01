@@ -456,7 +456,9 @@
 			"labelsDescription": "Tampilkan label dan tag tugas",
 			"priority": "Prioritas",
 			"priorityDescription": "Tampilkan indikator prioritas",
-			"weekStartsOnSaturday": "Sabtu"
+			"weekStartsOnSaturday": "Sabtu",
+			"reduceOverlayBlur": "Kurangi efek blur",
+			"reduceOverlayBlurDescription": "Hapus latar buram di belakang dialog, sheet, dan command palette."
 		},
 		"developerPage": {
 			"pageTitle": "Pengaturan Pengembang",

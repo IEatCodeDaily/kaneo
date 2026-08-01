@@ -364,7 +364,9 @@
 			"labelsDescription": "Mostrar descripción y etiquetas de las tareas",
 			"priority": "Prioridad",
 			"priorityDescription": "Mostrar indicador de prioridad",
-			"weekStartsOnSaturday": "Sábado"
+			"weekStartsOnSaturday": "Sábado",
+			"reduceOverlayBlur": "Reducir el desenfoque",
+			"reduceOverlayBlurDescription": "Quita el fondo desenfocado detrás de los diálogos, paneles y la paleta de comandos."
 		},
 		"developerPage": {
 			"pageTitle": "Ajustes de Desarrollador",

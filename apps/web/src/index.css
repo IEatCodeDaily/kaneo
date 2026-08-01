@@ -1394,3 +1394,26 @@ input:-webkit-autofill:active {
   }
 
 }
+
+/*
+ * #125: opt-out for the backdrop blur behind overlays.
+ *
+ * The blur is set by the overlay primitives (dialog, sheet, alert-dialog,
+ * command) via Tailwind's `backdrop-blur-*`. Rather than threading a
+ * preference through each of them, the root class switches the filter off
+ * everywhere at once. The dimming layer is kept, so overlays still read as
+ * modal — only the (expensive, visually noisy) blur is removed.
+ */
+.reduce-overlay-blur [data-slot="dialog-backdrop"],
+.reduce-overlay-blur [data-slot="sheet-backdrop"],
+.reduce-overlay-blur [data-slot="alert-dialog-backdrop"],
+.reduce-overlay-blur [data-slot="command-dialog-backdrop"] {
+  /*
+   * Tailwind v4 composes `backdrop-filter` from custom properties, so
+   * overriding the shorthand alone loses to the utility: the blur length must
+   * be zeroed at its source variable as well.
+   */
+  --tw-backdrop-blur: ;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
