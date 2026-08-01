@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Mail, Settings, Shield } from "lucide-react";
+import { LogOut, Mail, Settings, Shield, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OrganizationMenuSection } from "@/components/organization-switcher";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import useSignOut from "@/hooks/mutations/use-sign-out";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
 import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -33,6 +34,7 @@ export function UserAvatar() {
   const { setBoard } = useBoardStore();
   const navigate = useNavigate();
   const { data: invitations = [] } = usePendingInvitations();
+  const { data: organization } = useActiveOrganization();
 
   if (!user) {
     return null;
@@ -154,6 +156,25 @@ export function UserAvatar() {
               </span>
             )}
           </DropdownMenuItem>
+          {/*
+            #145: Trash moved out of the main sidebar nav into this menu. It is
+            a recovery surface visited occasionally, so it does not need a
+            permanent nav slot — but it stays reachable here. Organization
+            -scoped, so it only renders once an organization is resolved.
+          */}
+          {organization && (
+            <DropdownMenuItem
+              onClick={() =>
+                navigate({
+                  to: `/dashboard/organization/${organization.id}/trash`,
+                })
+              }
+              className="h-7 gap-2 px-2 text-sm font-normal"
+            >
+              <Trash2 className="size-3.5" />
+              {t("navigation:sidebar.trash")}
+            </DropdownMenuItem>
+          )}
           {user.role === "admin" && (
             <DropdownMenuItem
               onClick={() => navigate({ to: "/dashboard/admin" })}
