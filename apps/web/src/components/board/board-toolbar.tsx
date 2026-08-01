@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import BoardViewOptions from "@/components/board/board-view-options";
 import SortControl from "@/components/common/sort-control";
 import type { BoardDensity } from "@/components/kanban-board/board-density";
-import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
@@ -687,19 +686,6 @@ export default function BoardToolbar({
           </div>
 
           <div className="inline-flex items-center gap-1">
-            {/*
-              #91: "The access avatars should be on the board view topbar, not
-              task detail drawer." Board-level information belongs with the
-              board's own controls, shown once instead of on every ticket.
-            */}
-            {board?.organizationId && board?.id && (
-              <BoardAccessAvatars
-                className="mr-1"
-                organizationId={board.organizationId}
-                resourceId={board.id}
-                resourceType="board"
-              />
-            )}
             <button
               type="button"
               className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
