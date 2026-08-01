@@ -12,7 +12,10 @@ import {
 import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskFlagBadges from "@/components/flag/task-flag-badges";
-import TaskHoverPreview from "@/components/kanban-board/task-hover-preview";
+import TaskHoverPreview, {
+  TASK_PREVIEW_CLOSE_DELAY,
+  TASK_PREVIEW_OPEN_DELAY,
+} from "@/components/kanban-board/task-hover-preview";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import {
   AlertDialog,
@@ -311,7 +314,10 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
                 )}
 
                 {pullRequests.length === 1 && (
-                  <HoverCard openDelay={200} closeDelay={100}>
+                  <HoverCard
+                    closeDelay={TASK_PREVIEW_CLOSE_DELAY}
+                    openDelay={TASK_PREVIEW_OPEN_DELAY}
+                  >
                     <HoverCardTrigger asChild>
                       <button
                         type="button"
@@ -361,7 +367,10 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
                         : "text-muted-foreground";
 
                     return (
-                      <HoverCard openDelay={200} closeDelay={100}>
+                      <HoverCard
+                        closeDelay={TASK_PREVIEW_CLOSE_DELAY}
+                        openDelay={TASK_PREVIEW_OPEN_DELAY}
+                      >
                         <HoverCardTrigger asChild>
                           <button
                             type="button"

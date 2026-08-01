@@ -13,8 +13,12 @@ import type Task from "@/types/task";
 /**
  * Hover-intent delay. Long enough that sweeping the pointer across a dense
  * column doesn't strobe previews open, short enough to still feel intentional.
+ *
+ * #110: these constants existed but never reached Base UI — the preview-card
+ * wrapper dropped them, so the real open delay was the library's 600ms default.
+ * The wrapper now forwards them; keep the open delay snappy (~150ms).
  */
-export const TASK_PREVIEW_OPEN_DELAY = 160;
+export const TASK_PREVIEW_OPEN_DELAY = 150;
 export const TASK_PREVIEW_CLOSE_DELAY = 80;
 
 type TaskHoverPreviewProps = {
