@@ -39,7 +39,13 @@ type KanbanBoardProps = {
 
 const pointerThenCorners: CollisionDetection = (args) => {
   const collisions = pointerWithin(args);
-  return collisions.length > 0 ? collisions : closestCorners(args);
+  if (collisions.length > 0) {
+    const cards = collisions.filter(
+      ({ data }) => data?.droppableContainer.data.current?.type !== "column",
+    );
+    return cards.length > 0 ? cards : collisions;
+  }
+  return closestCorners(args);
 };
 
 function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {

@@ -13,7 +13,7 @@ import {
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
 import type { BoardWithTasks } from "@/types/board";
-import { useBoardGroupBy } from "../board-view-context";
+import { useBoardDragging, useBoardGroupBy } from "../board-view-context";
 import TaskCard from "../task-card";
 
 type ColumnDropzoneProps = {
@@ -41,6 +41,7 @@ export function ColumnDropzone({
 }: ColumnDropzoneProps) {
   const { t } = useTranslation();
   const groupBy = useBoardGroupBy();
+  const boardDragging = useBoardDragging();
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: { type: "column", column },
@@ -118,8 +119,8 @@ export function ColumnDropzone({
   }, [mountCount, totalGroups]);
 
   const visibleGroups = useMemo(
-    () => groups.slice(0, mountCount),
-    [groups, mountCount],
+    () => groups.slice(0, boardDragging ? totalGroups : mountCount),
+    [boardDragging, groups, mountCount, totalGroups],
   );
 
   // Board-level "group by": buckets this column's tasks under a heading.
@@ -130,23 +131,23 @@ export function ColumnDropzone({
     [column.tasks, groupBy],
   );
   const visibleTaskGroups = useMemo(() => {
-    let remaining = mountCount;
+    let remaining = boardDragging ? totalGroups : mountCount;
     return taskGroups.flatMap((group) => {
       if (remaining <= 0) return [];
       const tasks = group.tasks.slice(0, remaining);
       remaining -= tasks.length;
       return [{ ...group, tasks }];
     });
-  }, [mountCount, taskGroups]);
+  }, [boardDragging, mountCount, taskGroups, totalGroups]);
 
   // Reserve height for not-yet-mounted groups so the scrollbar doesn't jump as
   // chunks land.
   const pendingCards = useMemo(
     () =>
       groups
-        .slice(mountCount)
+        .slice(boardDragging ? totalGroups : mountCount)
         .reduce((sum, group) => sum + 1 + group.children.length, 0),
-    [groups, mountCount],
+    [boardDragging, groups, mountCount, totalGroups],
   );
 
   /** Per-card Framer Motion cost ~1s on a 180-task column. Keep this plain. */
@@ -160,7 +161,7 @@ export function ColumnDropzone({
   );
 
   return (
-    <div className="min-h-0 flex-1" ref={setNodeRef}>
+    <div className="min-h-0 flex-1" data-column-id={column.id} ref={setNodeRef}>
       <SortableContext
         items={column.tasks}
         strategy={verticalListSortingStrategy}

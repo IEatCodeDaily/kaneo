@@ -174,7 +174,13 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      data-task-id={task.id}
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       {/* The menu content is mounted eagerly on purpose. Base UI reads the
           menu's children synchronously when the contextmenu event fires, so
           deferring it via onOpenChange means the first right-click opens
