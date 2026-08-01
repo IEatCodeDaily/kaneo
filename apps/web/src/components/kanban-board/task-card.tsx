@@ -45,6 +45,7 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 import { Button } from "../ui/button";
 import { ContextMenu, ContextMenuTrigger } from "../ui/context-menu";
+import { useBoardDragging } from "./board-view-context";
 import TaskCardContextMenuContent from "./task-card-context-menu/task-card-context-menu-content";
 import TaskCardLabels from "./task-labels";
 
@@ -63,6 +64,8 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
     transition,
     isDragging,
   } = useSortable({ id: task.id, disabled: disableDragDrop });
+  // #131: any drag on the board suppresses hover previews, not just this card's.
+  const boardDragging = useBoardDragging();
   const { board } = useBoardStore();
   const { data: organization } = useActiveOrganization();
   const { mutateAsync: deleteTask } = useDeleteTask();
@@ -185,6 +188,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
             assigneeImage={undefined}
             assigneeName={task.assigneeName ?? undefined}
             boardSlug={board?.slug}
+            isDragging={isDragging || boardDragging}
             task={task}
           >
             {/** biome-ignore lint/a11y/noStaticElementInteractions: false positive for onClick and onKeyDown */}

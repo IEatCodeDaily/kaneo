@@ -27,6 +27,12 @@ type TaskHoverPreviewProps = {
   assigneeName?: string;
   assigneeImage?: string;
   children: ReactElement;
+  /**
+   * #131: while a card is being dragged its hover preview must disappear —
+   * otherwise the popover follows the pointer around the board, covering the
+   * drop targets you are aiming at.
+   */
+  isDragging?: boolean;
 };
 
 /**
@@ -40,10 +46,21 @@ function TaskHoverPreview({
   assigneeName,
   assigneeImage,
   children,
+  isDragging = false,
 }: TaskHoverPreviewProps) {
   const { t } = useTranslation();
 
   const labels = task.labels ?? [];
+
+  // #131: pinned closed while dragging. `open` is controlled only in that
+  // state, so normal hover behaviour is untouched the rest of the time.
+  if (isDragging) {
+    return (
+      <HoverCard open={false}>
+        <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      </HoverCard>
+    );
+  }
 
   return (
     <HoverCard
