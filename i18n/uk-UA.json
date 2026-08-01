@@ -1271,7 +1271,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Чернетку збережено",
+			"deleteDraft": "Видалити чернетку"
 		}
 	},
 	"tasks": {

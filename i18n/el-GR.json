@@ -1272,7 +1272,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Το πρόχειρο αποθηκεύτηκε",
+			"deleteDraft": "Διαγραφή προχείρου"
 		}
 	},
 	"tasks": {

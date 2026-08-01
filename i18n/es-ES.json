@@ -1057,7 +1057,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Borrador guardado",
+			"deleteDraft": "Eliminar borrador"
 		}
 	},
 	"tasks": {

@@ -1280,7 +1280,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Brouillon enregistré",
+			"deleteDraft": "Supprimer le brouillon"
 		}
 	},
 	"tasks": {

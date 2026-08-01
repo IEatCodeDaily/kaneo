@@ -1493,7 +1493,9 @@
           "typescript": "TypeScript",
           "yaml": "YAML"
         }
-      }
+      },
+      "draftSaved": "Draft saved",
+      "deleteDraft": "Delete draft"
     },
     "flagRaised": "flagged",
     "flagResolved": "unflagged",
