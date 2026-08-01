@@ -412,12 +412,14 @@ export default function TaskResources({
                 </span>
                 <span className="min-w-0 flex-1 truncate">{item.title}</span>
                 {/*
-                  #75: these rows are *Linked* items — "this ticket mentions
-                  this issue". They deliberately carry NO [Synced] badge, which
-                  means "the content of this ticket is synced to this issue".
-                  Linked and Synced are different relationships; badging a
-                  linked issue as Synced overstates the coupling.
+                  #75: Linked vs Synced.
+                    Linked  — "this ticket mentions this issue" (no badge).
+                    Synced  — "this ticket's content is synced to this issue".
+                  The distinction is the row's own `syncEnabled` flag, which
+                  "Create synced issue in repo" sets. Badging by item type
+                  instead labelled every linked issue as Synced.
                 */}
+                {item.syncEnabled && <ResourceSyncBadge resourceType="issue" />}
                 {repoLabelById.has(item.repoId) && (
                   <RepoLabel label={repoLabelById.get(item.repoId) as string} />
                 )}

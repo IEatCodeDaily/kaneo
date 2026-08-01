@@ -1,5 +1,6 @@
 import { Github } from "lucide-react";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
+import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import type { ExternalLink } from "@/types/external-link";
 
 function repositoryLabel(url: string) {
@@ -16,17 +17,17 @@ function repositoryLabel(url: string) {
  * status bar (#75).
  *
  * Synced is not the same relationship as Linked:
- *   - **Synced** — the content of this ticket flows to and from that issue.
- *     That is the bidirectional issue in `externalLinks` with
- *     `resourceType === "issue"`, and it is what this component renders.
- *   - **Linked** — "this ticket mentions that issue". Those live in
- *     `repo-links` and appear in the Resources list *without* a Synced badge.
+ *   - **Synced** — this ticket's content flows to and from that issue.
+ *   - **Linked** — "this ticket mentions that issue".
  *
- * History: this was rendered in three places at once (status bar, a block under
- * the label list, and Resources), which read as chaos, so the duplicate block
- * under the labels was removed. It was then briefly stubbed out entirely, which
- * went too far and dropped the remark from the status bar as well — the one
- * place that was explicitly meant to keep it.
+ * A synced issue can arrive by either of two routes, and both must be honoured:
+ *   1. the board↔GitHub integration, which writes an `externalLink` row of
+ *      `resourceType: "issue"`; and
+ *   2. "Create synced issue in repo", which writes a `task_repo_item_link`
+ *      with `syncEnabled: true` and NO externalLink at all.
+ *
+ * Reading only (1) is why a freshly created synced issue showed nothing here
+ * and appeared as a plain link in Resources.
  */
 export default function TaskSyncedIssueProperty({
   taskId,
@@ -38,14 +39,33 @@ export default function TaskSyncedIssueProperty({
   showLabel?: boolean;
 }) {
   const { data: externalLinks = [] } = useExternalLinks(taskId);
-  const issue = (externalLinks as ExternalLink[]).find(
+  const { data: repoLinks = [] } = useGetTaskRepoLinks(taskId);
+
+  const integrationIssue = (externalLinks as ExternalLink[]).find(
     (link) => link.resourceType === "issue",
   );
+  const syncedRepoLink = repoLinks.find(
+    (link) => link.itemType === "issues" && link.syncEnabled,
+  );
+
+  const issue = integrationIssue
+    ? {
+        url: integrationIssue.url,
+        number: integrationIssue.externalId,
+        title: integrationIssue.title,
+      }
+    : syncedRepoLink
+      ? {
+          url: syncedRepoLink.url,
+          number: String(syncedRepoLink.number),
+          title: syncedRepoLink.title,
+        }
+      : null;
 
   if (!issue) return null;
 
   const repo = repositoryLabel(issue.url);
-  const label = `${repo ? `${repo} ` : ""}#${issue.externalId}`;
+  const label = `${repo ? `${repo} ` : ""}#${issue.number}`;
 
   const link = (
     <a

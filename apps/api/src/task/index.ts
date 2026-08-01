@@ -345,6 +345,9 @@ const task = new Hono<{
                 v.array(
                   v.object({
                     id: v.string(),
+                    // #75: lets the client distinguish a synced issue from a
+                    // merely linked one.
+                    syncEnabled: v.boolean(),
                     itemType: v.picklist(["issues", "pull-requests"] as const),
                     repoId: v.string(),
                     number: v.number(),
