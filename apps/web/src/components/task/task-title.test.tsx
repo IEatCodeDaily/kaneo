@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TASK_TITLE_SAVE_DELAY_MS } from "@/lib/task-title-save";
 import TaskTitle from "./task-title";
 
 const mocks = vi.hoisted(() => ({
@@ -9,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+  initReactI18next: { type: "3rdParty", init: () => {} },
 }));
 
 vi.mock("@/hooks/queries/task/use-get-task", () => ({
@@ -52,5 +54,55 @@ describe("TaskTitle persistence", () => {
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ id: "task-1", title: "Final title" }),
     );
+  });
+
+  it("sends one update for a burst of keystrokes instead of one per character", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    for (const value of ["Old titleA", "Old titleAB", "Old titleABC"]) {
+      fireEvent.change(input, { target: { value } });
+      await vi.advanceTimersByTimeAsync(60);
+    }
+
+    // Mid-typing: the API must not have been touched yet.
+    expect(mocks.update).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS);
+
+    expect(mocks.update).toHaveBeenCalledOnce();
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "task-1", title: "Old titleABC" }),
+    );
+  });
+
+  it("saves immediately on blur without waiting out the debounce", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.change(input, { target: { value: "Blurred title" } });
+    expect(mocks.update).not.toHaveBeenCalled();
+
+    fireEvent.blur(input);
+    await Promise.resolve();
+
+    expect(mocks.update).toHaveBeenCalledOnce();
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "task-1", title: "Blurred title" }),
+    );
+
+    // The blur already saved; the cancelled timer must not duplicate it.
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+    expect(mocks.update).toHaveBeenCalledOnce();
+  });
+
+  it("does not save when the title never changed", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.blur(input);
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });

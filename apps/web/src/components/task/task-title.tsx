@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -6,7 +6,7 @@ import { Form, FormField } from "@/components/ui/form";
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
-import debounce from "@/lib/debounce";
+import { createTaskTitleSaver } from "@/lib/task-title-save";
 
 type TaskTitleProps = {
   taskId: string;
@@ -44,43 +44,59 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
     if (task?.title !== undefined) isInitializedRef.current = true;
   }, [task?.title]);
 
-  const debouncedUpdate = useCallback(
-    debounce(async (title: string) => {
-      if (!isInitializedRef.current) return;
+  // One saver per task: it owns the debounce window and remembers which value
+  // is already persisted, so a burst of keystrokes becomes a single write
+  // instead of one request (and one activity entry) per character.
+  const saver = useMemo(
+    () =>
+      createTaskTitleSaver({
+        initialTitle: taskRef.current?.title ?? "",
+        save: async (title: string) => {
+          const currentTask = taskRef.current;
+          const updateTaskFn = updateTaskRef.current;
 
-      const currentTask = taskRef.current;
-      const updateTaskFn = updateTaskRef.current;
+          if (!currentTask || !updateTaskFn) return;
+          // A late flush must never write this title onto the task the drawer
+          // has since navigated to.
+          if (currentTask.id !== taskId) return;
 
-      if (!currentTask || !updateTaskFn) return;
-
-      try {
-        await updateTaskFn({
-          ...currentTask,
-          title,
-        });
-      } catch (error) {
-        console.error("Failed to update title:", error);
-      }
-    }, 350),
-    [],
+          await updateTaskFn({ ...currentTask, title });
+        },
+        onError: (error) => {
+          console.error("Failed to update title:", error);
+        },
+      }),
+    [taskId],
   );
+
+  // Adopt server-side titles (initial load, rename from elsewhere) as the
+  // baseline so they are not echoed back as a user edit.
+  useEffect(() => {
+    if (task?.title === undefined) return;
+    if (saver.pending()) return;
+    if (task.title === saver.saved()) return;
+    saver.reset(task.title);
+  }, [task?.title, saver]);
 
   const handleTitleChange = useCallback(
     (value: string) => {
       if (!isInitializedRef.current) return;
-
-      debouncedUpdate(value);
+      saver.change(value);
     },
-    [debouncedUpdate],
+    [saver],
   );
+
+  const flushTitle = useCallback(() => {
+    void saver.flush();
+  }, [saver]);
 
   useEffect(
     () => () => {
-      // Navigation can unmount the title before the save timer fires. Flush
-      // the last keystroke rather than silently discarding it.
-      void debouncedUpdate.flush();
+      // Unmount or navigation to another task can happen before the debounce
+      // expires. Flush the last keystroke rather than discarding it.
+      void saver.flush();
     },
-    [debouncedUpdate],
+    [saver],
   );
 
   return (
@@ -102,6 +118,12 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
             onChange={(e) => {
               field.onChange(e);
               handleTitleChange(e.target.value);
+            }}
+            onBlur={() => {
+              field.onBlur();
+              // Leaving the field means the user is done: save now instead of
+              // waiting out the remaining debounce.
+              flushTitle();
             }}
           />
         )}
