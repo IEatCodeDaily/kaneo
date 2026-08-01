@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskFlagTable, taskTable } from "../../database/schema";
+import { flagTypeTable, taskFlagTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 
 /**
@@ -45,6 +45,19 @@ async function resolveTaskFlag(id: string, resolvedBy: string) {
     .where(eq(taskTable.id, resolved.taskId))
     .limit(1);
 
+  // #107: the activity feed renders flag entries with the flag type's own
+  // colour and icon. flag_resolved used to publish only the id, so a resolved
+  // entry rendered as a colourless generic row next to its own flag_raised.
+  const [flagType] = await db
+    .select({
+      name: flagTypeTable.name,
+      color: flagTypeTable.color,
+      icon: flagTypeTable.icon,
+    })
+    .from(flagTypeTable)
+    .where(eq(flagTypeTable.id, resolved.flagTypeId))
+    .limit(1);
+
   await publishEvent("task.flag_resolved", {
     boardId: task?.boardId,
     taskId: resolved.taskId,
@@ -52,6 +65,9 @@ async function resolveTaskFlag(id: string, resolvedBy: string) {
     type: "flag_resolved",
     flagId: resolved.id,
     flagTypeId: resolved.flagTypeId,
+    flagTypeName: flagType?.name,
+    flagTypeColor: flagType?.color ?? null,
+    flagTypeIcon: flagType?.icon ?? null,
     resolvedBy,
     targetUserId: resolved.targetUserId,
     targetTeamId: resolved.targetTeamId,

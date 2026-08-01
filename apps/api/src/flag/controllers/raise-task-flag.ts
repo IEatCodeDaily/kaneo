@@ -51,7 +51,12 @@ async function raiseTaskFlag({
   }
 
   const [flagType] = await db
-    .select({ id: flagTypeTable.id, name: flagTypeTable.name })
+    .select({
+      id: flagTypeTable.id,
+      name: flagTypeTable.name,
+      color: flagTypeTable.color,
+      icon: flagTypeTable.icon,
+    })
     .from(flagTypeTable)
     .where(
       and(
@@ -113,6 +118,8 @@ async function raiseTaskFlag({
     flagId: flag.id,
     flagTypeId,
     flagTypeName: flagType.name,
+    flagTypeColor: flagType.color ?? null,
+    flagTypeIcon: flagType.icon ?? null,
     targetUserId: flag.targetUserId,
     targetTeamId: flag.targetTeamId,
     note: flag.note,

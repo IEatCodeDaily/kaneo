@@ -294,6 +294,8 @@ type TaskFlagActivityEvent = {
   flagId: string;
   flagTypeId: string;
   flagTypeName?: string;
+  flagTypeColor?: string | null;
+  flagTypeIcon?: string | null;
   targetUserId: string | null;
   targetTeamId: string | null;
   note?: string | null;
@@ -306,6 +308,8 @@ for (const eventName of ["task.flag_raised", "task.flag_resolved"] as const) {
       flagId: data.flagId,
       flagTypeId: data.flagTypeId,
       flagTypeName: data.flagTypeName,
+      flagTypeColor: data.flagTypeColor,
+      flagTypeIcon: data.flagTypeIcon,
       targetUserId: data.targetUserId,
       targetTeamId: data.targetTeamId,
       note: data.note,

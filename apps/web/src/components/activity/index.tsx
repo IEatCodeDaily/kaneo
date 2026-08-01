@@ -1,5 +1,6 @@
-import { Ban, Calendar, CircleAlert, History, UserRound } from "lucide-react";
+import { Calendar, CircleAlert, Flag, History, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getFlagColor, getFlagIcon } from "@/components/flag/flag-icon";
 import useResolveTaskFlag from "@/hooks/mutations/flag/use-resolve-task-flag";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
@@ -64,10 +65,33 @@ function getActivityTypeIcon(type: string) {
       return <UserRound className={iconClass} />;
     case "flag_raised":
     case "flag_resolved":
-      return <Ban className={iconClass} />;
+      // Colour/icon for the specific flag type is rendered in the chip; the
+      // gutter keeps a neutral marker so the row still scans as an activity.
+      return <Flag className={iconClass} />;
     default:
       return <History className={iconClass} />;
   }
+}
+
+/**
+ * #107: a flag entry has to say who it was raised FOR, not just its type.
+ * targetTeamId has no member lookup, so fall back to the stored team name.
+ */
+function resolveTargetName(
+  eventData: Record<string, unknown> | null | undefined,
+  organizationMembers: OrganizationMember[] | undefined,
+) {
+  if (typeof eventData?.targetUserId === "string") {
+    const member = organizationMembers?.find(
+      (organizationMember) =>
+        organizationMember.user?.id === eventData.targetUserId,
+    );
+    return member?.user?.name || member?.user?.email || null;
+  }
+  if (typeof eventData?.targetTeamName === "string") {
+    return eventData.targetTeamName;
+  }
+  return null;
 }
 
 function formatActivityDateText(value: string) {
@@ -411,11 +435,45 @@ function renderActivityContent({
   }
 
   if (activity.type === "flag_raised" || activity.type === "flag_resolved") {
+    // #107: the feed should read "flagged Blocked for Ada", with the flag
+    // type's own colour and icon, not a colourless "Flags: Blocked".
+    const FlagTypeIcon = getFlagIcon(
+      typeof eventData?.flagTypeIcon === "string"
+        ? eventData.flagTypeIcon
+        : null,
+    );
+    const flagColor = getFlagColor(
+      typeof eventData?.flagTypeColor === "string"
+        ? eventData.flagTypeColor
+        : null,
+    );
+    const flagTypeName = String(eventData?.flagTypeName ?? "");
+    const targetName = resolveTargetName(eventData, organizationMembers);
+
     return (
-      <span className="text-sm text-muted-foreground">
-        {activity.type === "flag_raised"
-          ? `${t("flags:title")}: ${String(eventData?.flagTypeName ?? "")}`
-          : `${t("flags:dialog.unflag")}: ${String(eventData?.flagTypeName ?? "")}`}
+      <span className="inline-flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+        <span>
+          {activity.type === "flag_raised"
+            ? t("activity:flagRaised")
+            : t("activity:flagResolved")}
+        </span>
+        <span
+          data-testid="activity-flag-chip"
+          className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-xs"
+          style={{
+            color: flagColor,
+            borderColor: flagColor,
+            backgroundColor: `${flagColor}1f`,
+          }}
+        >
+          <FlagTypeIcon className="size-3" />
+          {flagTypeName}
+        </span>
+        {targetName && (
+          <span data-testid="activity-flag-target">
+            {t("activity:flagTarget", { target: targetName })}
+          </span>
+        )}
       </span>
     );
   }
