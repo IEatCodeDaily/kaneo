@@ -1,7 +1,9 @@
 import { Grip, Sparkles, X } from "lucide-react";
-import { type PointerEvent, useEffect, useState } from "react";
+import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import useGetAiSettings from "@/hooks/queries/ai/use-get-ai-settings";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import {
   clampAiChatSize,
@@ -9,17 +11,15 @@ import {
   parseAiChatSize,
 } from "@/lib/ai-chat-size";
 
-type Settings = {
-  enabled: boolean;
-  configured: boolean;
-  effectiveTokenLimit: number;
-  effectiveCharacterLimit: number;
-};
-type ChatEntry = { role: "user" | "assistant"; text: string };
+type ChatEntry = { id: string; role: "user" | "assistant"; text: string };
+
+/** Entries are append-only, so a creation-time id is a stable React key. */
+const entryId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
 export function AiChatBubble() {
   const { data: organization } = useActiveOrganization();
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const { data: settings } = useGetAiSettings(organization?.id);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -30,14 +30,11 @@ export function AiChatBubble() {
     : null;
   const [size, setSize] = useState(DEFAULT_AI_CHAT_SIZE);
 
-  useEffect(() => {
-    if (!organization?.id) return setSettings(null);
-    void fetch(getApiUrl(`/ai/organization/${organization.id}/settings`), {
-      credentials: "include",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setSettings);
-  }, [organization?.id]);
+  // Drag listeners are registered imperatively in startResize. Without an
+  // unmount cleanup they outlive the component whenever it disappears
+  // mid-drag (organization switch, navigation), keeping the handle alive.
+  const dragCleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanup.current?.(), []);
 
   useEffect(() => {
     if (!storageKey) {
@@ -57,30 +54,49 @@ export function AiChatBubble() {
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
     const start = { x: event.clientX, y: event.clientY, size };
+    const controller = new AbortController();
+
+    // Pointer events fire faster than frames; committing each one re-renders
+    // the whole panel (including chat history) several times per frame.
+    // Coalesce to one setSize per animation frame.
+    let frame = 0;
+    let latest = start.size;
 
     const move = (moveEvent: globalThis.PointerEvent) => {
-      const next = clampAiChatSize(
+      latest = clampAiChatSize(
         {
           width: start.size.width + start.x - moveEvent.clientX,
           height: start.size.height + start.y - moveEvent.clientY,
         },
         { width: window.innerWidth, height: window.innerHeight },
       );
-      setSize(next);
-    };
-    const stop = () => {
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", stop);
-      handle.removeEventListener("pointercancel", stop);
-      setSize((current) => {
-        if (storageKey)
-          window.localStorage.setItem(storageKey, JSON.stringify(current));
-        return current;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setSize(latest);
       });
     };
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", stop);
-    handle.addEventListener("pointercancel", stop);
+
+    const stop = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      controller.abort();
+      dragCleanup.current = null;
+      setSize(latest);
+      if (storageKey) {
+        window.localStorage.setItem(storageKey, JSON.stringify(latest));
+      }
+    };
+
+    const { signal } = controller;
+    handle.addEventListener("pointermove", move, { signal });
+    handle.addEventListener("pointerup", stop, { signal });
+    handle.addEventListener("pointercancel", stop, { signal });
+
+    dragCleanup.current = () => {
+      if (frame) cancelAnimationFrame(frame);
+      controller.abort();
+    };
   };
 
   if (!organization || !settings?.enabled || !settings.configured) return null;
@@ -90,7 +106,7 @@ export function AiChatBubble() {
     const text = message.trim();
     if (!text || over || pending) return;
     setMessage("");
-    setHistory((old) => [...old, { role: "user", text }]);
+    setHistory((old) => [...old, { id: entryId(), role: "user", text }]);
     setPending(true);
     try {
       const taskId = window.location.pathname.match(/\/task\/([^/]+)/)?.[1];
@@ -117,6 +133,7 @@ export function AiChatBubble() {
       setHistory((old) => [
         ...old,
         {
+          id: entryId(),
           role: "assistant",
           text: [payload.message, actionText].filter(Boolean).join("\n"),
         },
@@ -125,6 +142,7 @@ export function AiChatBubble() {
       setHistory((old) => [
         ...old,
         {
+          id: entryId(),
           role: "assistant",
           text: error instanceof Error ? error.message : "AI request failed",
         },
@@ -143,21 +161,22 @@ export function AiChatBubble() {
           data-testid="ai-chat-panel"
           style={{ width: size.width, height: size.height }}
         >
-          <button
+          <Button
             aria-label="Resize AI assistant"
-            className="absolute left-0 top-0 z-10 flex size-7 cursor-nwse-resize touch-none items-center justify-center rounded-br-md text-muted-foreground hover:bg-muted hover:text-foreground max-sm:hidden"
+            className="absolute left-0 top-0 z-10 size-7 cursor-nwse-resize touch-none rounded-br-md text-muted-foreground max-sm:hidden"
             data-testid="ai-chat-resize-handle"
             onPointerDown={startResize}
-            type="button"
+            size="icon"
+            variant="ghost"
           >
             <Grip className="size-3.5 rotate-90" />
-          </button>
+          </Button>
           <header className="flex items-center justify-between border-b p-3">
             <div className="flex items-center gap-2 pl-5 font-medium">
               <Sparkles className="size-4" /> {organization.name} AI
-              <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+              <Badge variant="warning" size="sm">
                 Alpha
-              </span>
+              </Badge>
             </div>
             <Button
               aria-label="Close organization AI assistant"
@@ -178,10 +197,10 @@ export function AiChatBubble() {
                 label.
               </p>
             )}
-            {history.map((entry, index) => (
+            {history.map((entry) => (
               <div
                 className={`rounded-lg p-2 text-sm ${entry.role === "user" ? "ml-8 bg-primary text-primary-foreground" : "mr-8 bg-muted"}`}
-                key={`${entry.role}-${index}`}
+                key={entry.id}
               >
                 {entry.text}
               </div>

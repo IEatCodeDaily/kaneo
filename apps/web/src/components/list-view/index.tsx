@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -282,6 +282,19 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     setColumnToArchive(null);
   };
 
+  /**
+   * Declared inside ListView on purpose — it closes over a dozen pieces of
+   * parent state (activeId, overColumnId, collapsedParents, modal setters).
+   * Hoisting it would mean threading all of those through props.
+   *
+   * The cost is that it is a fresh component identity on every ListView
+   * render, so React remounts each column subtree and dnd-kit re-registers
+   * every droppable. That is why the grouping below must be memoized per
+   * column: it is the one piece of real work in here.
+   *
+   * ponytail: hoist this to a top-level memo() component if column remounts
+   * ever show up in a profile; it needs a props object first.
+   */
   function ColumnSection({
     column,
   }: {
@@ -294,6 +307,12 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
         column,
       },
     });
+
+    // Without this, every ListView render re-groups every column's tasks.
+    const groups = useMemo(
+      () => groupSameBucketSubtasks(column.tasks),
+      [column.tasks],
+    );
 
     const showDropIndicator = activeId && overColumnId === column.id;
 
@@ -366,61 +385,59 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
                   one Framer Motion instance per row cost ~3s of main-thread
                   blocking on a 180-task board. The CSS starting-style fade on
                   the container gives the same visual entry for free. */}
-              {groupSameBucketSubtasks(column.tasks).map(
-                ({ parent, children }) => {
-                  const collapsed = collapsedParents.has(parent.id);
-                  const visibleTasks = collapsed
-                    ? [parent]
-                    : [parent, ...children];
-                  return (
-                    <div
-                      data-testid={
-                        children.length ? "list-task-group" : undefined
-                      }
-                      key={parent.id}
-                    >
-                      {visibleTasks.map((task, index) => (
-                        <div
-                          key={task.id}
-                          className={
-                            index > 0
-                              ? "ml-6 border-l-2 border-border"
-                              : undefined
-                          }
-                        >
-                          <TaskRow task={task} boardSlug={board?.slug ?? ""} />
-                        </div>
-                      ))}
-                      {children.length > 0 && (
-                        <button
-                          aria-expanded={!collapsed}
-                          className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                          onClick={() =>
-                            setCollapsedParents((current) => {
-                              const next = new Set(current);
-                              if (collapsed) next.delete(parent.id);
-                              else next.add(parent.id);
-                              return next;
-                            })
-                          }
-                          type="button"
-                        >
-                          {collapsed ? (
-                            <ChevronRight className="size-3" />
-                          ) : (
-                            <ChevronDown className="size-3" />
-                          )}
-                          {collapseToggleLabel({
-                            parentId: parent.id,
-                            childCount: children.length,
-                            collapsed,
-                          })}
-                        </button>
-                      )}
-                    </div>
-                  );
-                },
-              )}
+              {groups.map(({ parent, children }) => {
+                const collapsed = collapsedParents.has(parent.id);
+                const visibleTasks = collapsed
+                  ? [parent]
+                  : [parent, ...children];
+                return (
+                  <div
+                    data-testid={
+                      children.length ? "list-task-group" : undefined
+                    }
+                    key={parent.id}
+                  >
+                    {visibleTasks.map((task, index) => (
+                      <div
+                        key={task.id}
+                        className={
+                          index > 0
+                            ? "ml-6 border-l-2 border-border"
+                            : undefined
+                        }
+                      >
+                        <TaskRow task={task} boardSlug={board?.slug ?? ""} />
+                      </div>
+                    ))}
+                    {children.length > 0 && (
+                      <button
+                        aria-expanded={!collapsed}
+                        className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={() =>
+                          setCollapsedParents((current) => {
+                            const next = new Set(current);
+                            if (collapsed) next.delete(parent.id);
+                            else next.add(parent.id);
+                            return next;
+                          })
+                        }
+                        type="button"
+                      >
+                        {collapsed ? (
+                          <ChevronRight className="size-3" />
+                        ) : (
+                          <ChevronDown className="size-3" />
+                        )}
+                        {collapseToggleLabel({
+                          parentId: parent.id,
+                          childCount: children.length,
+                          collapsed,
+                        })}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </SortableContext>
 
             {column.tasks.length === 0 && (

@@ -81,7 +81,7 @@ export default function PullRequestFileTree({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-1">
-        <div
+        <section
           aria-label="Changed files"
           // The tree virtualizes against its own box, so it needs a resolved
           // height: with only max-height it collapses to zero and renders blank.
@@ -89,7 +89,7 @@ export default function PullRequestFileTree({
           data-testid={`${idPrefix}-file-tree`}
         >
           <FileTree className="h-full" model={model} />
-        </div>
+        </section>
       </PopoverContent>
     </Popover>
   );

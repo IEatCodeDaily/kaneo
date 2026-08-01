@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageTitle from "@/components/page-title";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -32,7 +33,9 @@ function RouteComponent() {
   const [pending, setPending] = useState(false);
   const readOnly = !canManageOrganization();
 
-  const load = async (organizationId: string) => {
+  // useCallback so the effect below can depend on it honestly; without it the
+  // function is a new identity every render and listing it would loop.
+  const load = useCallback(async (organizationId: string) => {
     const response = await fetch(
       getApiUrl(`/ai/organization/${organizationId}/settings`),
       { credentials: "include" },
@@ -42,11 +45,11 @@ function RouteComponent() {
     setSettings(data);
     setBaseUrl(data.providerBaseUrl ?? "");
     setModel(data.providerModel ?? "");
-  };
+  }, []);
 
   useEffect(() => {
     if (organization?.id) void load(organization.id);
-  }, [organization?.id]);
+  }, [organization?.id, load]);
 
   const patch = async (body: Record<string, unknown>, success: string) => {
     if (!organization?.id) return;
@@ -85,9 +88,9 @@ function RouteComponent() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">AI</h1>
-            <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+            <Badge variant="warning" size="sm">
               Alpha
-            </span>
+            </Badge>
           </div>
           <p className="text-muted-foreground">
             Enable the organization AI chat and point it at your own provider.
@@ -134,9 +137,10 @@ function RouteComponent() {
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1 text-sm">
+            <label className="space-y-1 text-sm" htmlFor="ai-base-url">
               <span className="text-muted-foreground">Base URL</span>
               <Input
+                id="ai-base-url"
                 aria-label="AI provider base URL"
                 disabled={readOnly || pending}
                 onChange={(event) => setBaseUrl(event.target.value)}
@@ -144,9 +148,10 @@ function RouteComponent() {
                 value={baseUrl}
               />
             </label>
-            <label className="space-y-1 text-sm">
+            <label className="space-y-1 text-sm" htmlFor="ai-model">
               <span className="text-muted-foreground">Model</span>
               <Input
+                id="ai-model"
                 aria-label="AI provider model"
                 disabled={readOnly || pending}
                 onChange={(event) => setModel(event.target.value)}
@@ -155,7 +160,7 @@ function RouteComponent() {
               />
             </label>
           </div>
-          <label className="block space-y-1 text-sm">
+          <label className="block space-y-1 text-sm" htmlFor="ai-api-key">
             <span className="text-muted-foreground">
               API key{" "}
               {settings?.providerApiKeySet ? (
@@ -165,6 +170,7 @@ function RouteComponent() {
               )}
             </span>
             <Input
+              id="ai-api-key"
               aria-label="AI provider API key"
               autoComplete="off"
               disabled={readOnly || pending}
