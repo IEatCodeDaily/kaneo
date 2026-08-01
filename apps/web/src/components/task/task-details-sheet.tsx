@@ -2,7 +2,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Maximize2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -166,12 +165,11 @@ export default function TaskDetailsSheet({
             )}
           </div>
           <div className="flex items-center gap-1">
-            <BoardAccessAvatars
-              organizationId={organizationId}
-              resourceId={boardId}
-              resourceType="board"
-              className="mr-1"
-            />
+            {/*
+              #146 / #91: board access avatars belong on the BOARD topbar, not
+              on every ticket. They describe who can see the board, which is
+              board-level information repeated on each ticket drawer.
+            */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

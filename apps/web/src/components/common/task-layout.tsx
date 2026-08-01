@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import TaskCrumbSelect from "@/components/common/header/task-crumb-select";
 import Layout from "@/components/common/layout";
-import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import TaskTopbarMilestone from "@/components/task/task-topbar-milestone";
 import { KbdSequence } from "@/components/ui/kbd";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -106,11 +105,11 @@ export default function TaskLayout({
 
             <div className="flex shrink-0 items-center gap-1.5">
               <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
-              <BoardAccessAvatars
-                organizationId={organizationId}
-                resourceId={boardId}
-                resourceType="board"
-              />
+              {/*
+                #146 / #91: board access avatars moved to the BOARD topbar.
+                They describe who can see the board, so repeating them on every
+                ticket header was duplicated, misplaced information.
+              */}
               {headerActions}
             </div>
           </div>
