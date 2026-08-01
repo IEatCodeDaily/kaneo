@@ -97,12 +97,13 @@ describe("TaskFlagPicker (#107)", () => {
     expect(document.querySelector("select")).toBeNull();
   });
 
-  it("targets a team through the shared principal selector", () => {
+  it("targets a team through the shared principal picker", () => {
     open();
 
     fireEvent.click(screen.getByTestId("flag-type-type-blocked"));
-    fireEvent.click(screen.getByLabelText("flags:dialog.targetUser"));
-    fireEvent.click(screen.getByRole("option", { name: /Team One/ }));
+    // #107: the target is now the same compact list the assignment selector
+    // uses — options are rows in place, not a nested combobox to open first.
+    fireEvent.click(screen.getByTestId("principal-option-team-team-1"));
     fireEvent.click(screen.getByText("flags:dialog.submit"));
 
     expect(createTaskFlagMock).toHaveBeenCalledWith({

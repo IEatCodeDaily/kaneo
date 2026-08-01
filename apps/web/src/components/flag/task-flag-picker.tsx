@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  type PrincipalOption,
-  PrincipalSelector,
-} from "@/components/principal-selector";
+import PrincipalPickerList, {
+  type PrincipalPickerOption,
+} from "@/components/principal-picker-list";
+import type { PrincipalOption } from "@/components/principal-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +49,17 @@ export default function TaskFlagPicker({
   const { data: flagTypes = [] } = useGetBoardFlagTypes(boardId);
   const { data: flags = [] } = useGetTaskFlags(taskId);
   const { mutate: createTaskFlag, isPending: isRaising } = useCreateTaskFlag();
+
+  // Map the shared PrincipalOption shape onto the compact picker's options.
+  const pickerOptions = useMemo<PrincipalPickerOption[]>(
+    () =>
+      principals.map((principal) => ({
+        type: principal.kind === "team" ? ("team" as const) : ("user" as const),
+        value: principal.id,
+        label: principal.name,
+      })),
+    [principals],
+  );
 
   const activeFlags = useMemo(
     () => (flags as TaskFlag[]).filter((flag) => !flag.resolvedAt),
@@ -166,14 +177,36 @@ export default function TaskFlagPicker({
           <span className="mt-1 text-xs font-medium text-foreground/70">
             {t("flags:dialog.targetUser")}
           </span>
-          <PrincipalSelector
-            aria-label={t("flags:dialog.targetUser")}
-            className="h-8 w-full"
+          {/*
+            #107: this was the bulky PrincipalSelector combobox. It now uses the
+            same compact list as the assignment selector, so the whole app has
+            one member/team picker.
+          */}
+          <PrincipalPickerList
             loading={principalsLoading}
-            options={principals}
-            value={target}
-            onValueChange={setTarget}
-            placeholder={t("flags:dialog.noUser")}
+            onSelect={(option) =>
+              setTarget(
+                option
+                  ? [
+                      {
+                        id: option.value,
+                        kind: option.type === "team" ? "team" : "member",
+                        name: option.label,
+                      },
+                    ]
+                  : [],
+              )
+            }
+            options={pickerOptions}
+            searchAriaLabel={t("flags:dialog.targetUser")}
+            selected={
+              target[0]
+                ? {
+                    type: target[0].kind === "team" ? "team" : "user",
+                    value: target[0].id,
+                  }
+                : null
+            }
           />
 
           <Input
