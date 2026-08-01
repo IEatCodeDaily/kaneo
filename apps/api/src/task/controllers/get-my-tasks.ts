@@ -118,6 +118,9 @@ async function getMyTasks({
       organizationId: boardTable.organizationId,
       columnId: taskTable.columnId,
       columnName: columnTable.name,
+      // #120: My Tasks renders the column's status icon, which honours a
+      // per-column custom icon when one is configured.
+      columnIcon: columnTable.icon,
       isFinal: columnTable.isFinal,
       assigneeId: taskTable.userId,
       assigneeName: userTable.name,

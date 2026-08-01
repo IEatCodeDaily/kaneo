@@ -7,6 +7,7 @@ import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
 import useGetMyTasks from "@/hooks/queries/task/use-get-my-tasks";
+import { getColumnIcon } from "@/lib/column";
 import { getPriorityIcon } from "@/lib/priority";
 
 export const Route = createFileRoute(
@@ -156,9 +157,28 @@ function MyTasksComponent() {
                           >
                             {task.title}
                           </span>
+                          {/*
+                            #120: status was muted text, which reads as
+                            "extra information". The board's own status icon
+                            (colour + shape) is far faster to scan; the name
+                            stays as the tooltip rather than a second label.
+                          */}
                           {task.columnName ? (
-                            <span className="shrink-0 text-muted-foreground text-xs">
-                              {task.columnName}
+                            <span
+                              className="inline-flex size-4 shrink-0 items-center justify-center"
+                              data-testid="my-task-status-icon"
+                              title={task.columnName}
+                            >
+                              {getColumnIcon(
+                                // Colour and default-icon lookup is keyed on
+                                // the column SLUG ("to-do", "in-review"), which
+                                // lives on `status`. `columnId` is a CUID and
+                                // matches nothing, so passing it renders every
+                                // status the same muted grey.
+                                task.status ?? "",
+                                task.isFinal ?? false,
+                                task.columnIcon ?? null,
+                              )}
                             </span>
                           ) : null}
                         </Link>
