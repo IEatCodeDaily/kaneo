@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useEffect, useState } from "react";
+import { BoardSkeleton } from "@/components/common/board-skeleton";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import useBoardStore from "@/store/board";
@@ -184,52 +185,11 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     setActiveId(null);
   };
 
+  // #111: one board-shaped skeleton, shared with the route and BoardLayout.
+  // This used to be a second, flat placeholder (four bare boxes with two grey
+  // bars each) — the exact "nothing has loaded" look the ticket rejected.
   if (!board?.columns) {
-    return (
-      <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/25 to-background">
-        <header className="mb-6 mt-6 space-y-6 shrink-0 px-6">
-          <div className="flex items-center justify-between">
-            <div className="w-48 h-8 bg-muted/50 rounded-md animate-pulse" />
-          </div>
-        </header>
-
-        <div className="relative min-h-0 flex-1">
-          <div className="flex h-full flex-1 gap-4 overflow-x-auto px-4 pb-4 md:px-5">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={`kanban-column-skeleton-${
-                  // biome-ignore lint/suspicious/noArrayIndexKey: It's a skeleton
-                  i
-                }`}
-                className="h-full min-w-80 w-full flex-1 rounded-xl border border-border/70 bg-card"
-              >
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="w-24 h-5 bg-muted/50 rounded animate-pulse" />
-                  <div className="w-8 h-5 bg-muted/50 rounded animate-pulse" />
-                </div>
-
-                <div className="px-2 pb-4 flex flex-col gap-3 flex-1">
-                  {[...Array(3)].map((_, j) => (
-                    <div
-                      key={`kanban-task-skeleton-${
-                        // biome-ignore lint/suspicious/noArrayIndexKey: It's a skeleton
-                        j
-                      }`}
-                      className="p-4 bg-card rounded-lg border border-border/50 animate-pulse"
-                    >
-                      <div className="space-y-3">
-                        <div className="w-2/3 h-4 bg-muted/70 rounded" />
-                        <div className="w-1/2 h-3 bg-muted/70 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
   const activeTask = activeId
