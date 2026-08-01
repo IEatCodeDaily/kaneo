@@ -26,7 +26,9 @@ const GROUP_BY_LABEL_KEYS: Record<BoardGroupBy, string> = {
   none: "tasks:groupBy.none",
   assignee: "tasks:groupBy.assignee",
   priority: "tasks:groupBy.priority",
-  label: "tasks:groupBy.label",
+  // Not `groupBy.label` — that key is the section heading ("Group by"), so the
+  // option itself would have rendered as "Group by" instead of "Label".
+  label: "tasks:groupBy.byLabel",
 };
 
 /**

@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import {
+  assertBoardPermission,
+  assertTaskPermission,
+  type McpPermissionMap,
+} from "./permissions";
 
 class ApiClient {
   constructor(
@@ -177,8 +182,25 @@ export function registerMcpTools(
   server: McpServer,
   baseUrl: string,
   token: string,
+  userId?: string,
 ): void {
   const client = new ApiClient(baseUrl, token);
+
+  /**
+   * Permission gate for task tools (#38). When the MCP session knows which
+   * user it acts for, every task tool re-checks that user's organization
+   * permissions with the same rules the HTTP API enforces, before any request
+   * is issued. Without this a tool would inherit the raw bearer token and
+   * bypass role checks entirely.
+   */
+  const guardTask = (taskId: string, permissions: McpPermissionMap) =>
+    userId
+      ? assertTaskPermission(userId, taskId, permissions)
+      : Promise.resolve("");
+  const guardBoard = (boardId: string, permissions: McpPermissionMap) =>
+    userId
+      ? assertBoardPermission(userId, boardId, permissions)
+      : Promise.resolve("");
 
   server.registerTool(
     "whoami",
@@ -360,11 +382,12 @@ export function registerMcpTools(
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
-      run(() =>
-        client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
+      run(async () => {
+        await guardTask(args.taskId, { task: ["read"] });
+        return client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
           method: "GET",
-        }),
-      ),
+        });
+      }),
   );
 
   server.registerTool(
@@ -392,13 +415,41 @@ export function registerMcpTools(
       if (args.startDate !== undefined) body.startDate = args.startDate;
       if (args.dueDate !== undefined) body.dueDate = args.dueDate;
       if (args.userId !== undefined) body.userId = args.userId;
-      return run(() =>
-        client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
+      return run(async () => {
+        await guardBoard(args.boardId, { task: ["create"] });
+        return client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
           method: "POST",
           body: JSON.stringify(body),
-        }),
-      );
+        });
+      });
     },
+  );
+
+  server.registerTool(
+    "assign_task",
+    {
+      description:
+        "Assign a task to a user (or unassign by omitting userId). Requires task:update in the task's organization.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        userId: nullableOptionalNonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTask(args.taskId, { task: ["update"] });
+        const existing = (await client.json(
+          `/api/task/${encodeURIComponent(args.taskId)}`,
+          { method: "GET" },
+        )) as Record<string, unknown>;
+        const body = buildFullTaskUpdateBody(existing, {
+          userId: args.userId === undefined ? null : args.userId,
+        });
+        return client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        });
+      }),
   );
 
   server.registerTool(
@@ -422,6 +473,7 @@ export function registerMcpTools(
     async (args) => {
       const { taskId, ...patch } = args;
       return run(async () => {
+        await guardTask(taskId, { task: ["update"] });
         const existing = (await client.json(
           `/api/task/${encodeURIComponent(taskId)}`,
           { method: "GET" },

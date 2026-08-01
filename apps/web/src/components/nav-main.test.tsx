@@ -21,6 +21,18 @@ vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "u-1", role: "member" } }),
 }));
 
+// The Inbox entry now renders InboxUnreadBadge, which calls useGetNotifications
+// (a real useQuery). This suite renders without a QueryClientProvider, so the
+// hook must be mocked or every case dies with "No QueryClient set".
+vi.mock("@/hooks/queries/notification/use-get-notifications", () => ({
+  default: () => ({
+    data: [
+      { id: "n-1", isRead: false },
+      { id: "n-2", isRead: true },
+    ],
+  }),
+}));
+
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>

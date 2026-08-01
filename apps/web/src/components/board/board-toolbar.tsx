@@ -1,8 +1,11 @@
-import { Filter, PanelsTopLeft, Rows3, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { Filter, PanelsTopLeft, Rows3, Search, X } from "lucide-react";
+import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
+import BoardViewOptions from "@/components/board/board-view-options";
 import SortControl from "@/components/common/sort-control";
+import type { BoardDensity } from "@/components/kanban-board/board-density";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +23,7 @@ import {
   type BoardFilters,
   DUE_DATE_FILTER_VALUES,
 } from "@/hooks/use-task-filters";
+import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
@@ -59,6 +63,18 @@ type BoardToolbarProps = {
   setViewMode: (mode: "board" | "list") => void;
   sort: SortConfig;
   onSortChange: (sort: SortConfig) => void;
+  /**
+   * Board search + view options live in this toolbar (#61 rework): the user
+   * rejected having them stranded up in the page header, away from Filter and
+   * Sort. Timeline keeps every view control on one row; so does this.
+   */
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
+  searchInputRef?: Ref<HTMLInputElement>;
+  groupBy: BoardGroupBy;
+  onGroupByChange: (groupBy: BoardGroupBy) => void;
+  density: BoardDensity;
+  onDensityChange: (density: BoardDensity) => void;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -143,6 +159,13 @@ export default function BoardToolbar({
   setViewMode,
   sort,
   onSortChange,
+  searchQuery,
+  onSearchQueryChange,
+  searchInputRef,
+  groupBy,
+  onGroupByChange,
+  density,
+  onDensityChange,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -529,6 +552,25 @@ export default function BoardToolbar({
             </DropdownMenu>
 
             <SortControl sort={sort} onSortChange={onSortChange} />
+
+            <BoardViewOptions
+              groupBy={groupBy}
+              onGroupByChange={onGroupByChange}
+              density={density}
+              onDensityChange={onDensityChange}
+            />
+
+            <div className="relative w-[200px]">
+              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+                placeholder={t("tasks:boardSearchPlaceholder")}
+                aria-label={t("tasks:boardSearchPlaceholder")}
+                className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
+              />
+            </div>
 
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip

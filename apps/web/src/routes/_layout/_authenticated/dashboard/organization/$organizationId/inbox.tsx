@@ -1,9 +1,30 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Inbox as InboxIcon } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
+import {
+  getNotificationContent,
+  getNotificationTitle,
+} from "@/components/notification/notification-dropdown";
 import PageTitle from "@/components/page-title";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import useClearNotifications from "@/hooks/mutations/notification/use-clear-notifications";
+import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
+import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
+import { cn } from "@/lib/cn";
+import { formatRelativeTime } from "@/lib/format";
+import type { Notification } from "@/types/notification";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/inbox",
@@ -11,27 +32,71 @@ export const Route = createFileRoute(
   component: InboxComponent,
 });
 
-type NotificationEventData = {
-  boardId?: string | null;
-  organizationId?: string | null;
-};
+function getEventDataRecord(
+  eventData: unknown,
+): Record<string, unknown> | null {
+  if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) {
+    return null;
+  }
+  return eventData as Record<string, unknown>;
+}
 
 /**
  * User Inbox (#58): every update on tasks related to the signed-in user,
  * across boards.
  *
- * Reuses the existing /api/notification endpoint, which is already
- * user-scoped and cross-board — no new backend was needed for this half.
+ * The bell dropdown is going away with the sidebar overhaul, so the Inbox is
+ * now the full surface: same item rendering (title/content resolution comes
+ * from the dropdown module so the two never drift), read/unread affordance,
+ * mark-as-read on click, mark-all-read and clear-all.
  */
 function InboxComponent() {
   const { t } = useTranslation();
-  const { organizationId } = Route.useParams();
+  const navigate = useNavigate();
   const { data, isLoading } = useGetNotifications();
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
-  // Derive the row type from the query rather than restating it; an untyped
-  // callback param trips noImplicitAny under tsconfig.app.json.
-  type InboxNotification = NonNullable<typeof data>[number];
-  const notifications: InboxNotification[] = data ?? [];
+  const { mutate: markAsRead } = useMarkNotificationAsRead();
+  const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
+  const { mutate: clearAll } = useClearNotifications();
+
+  const notifications: Notification[] = data ?? [];
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleNotificationClick = useCallback(
+    (notification: Notification) => {
+      if (!notification.isRead) {
+        markAsRead(notification.id);
+      }
+
+      const eventData = getEventDataRecord(notification.eventData);
+      const organizationId =
+        typeof eventData?.organizationId === "string"
+          ? eventData.organizationId
+          : null;
+      const boardId =
+        typeof eventData?.boardId === "string" ? eventData.boardId : null;
+      const taskId = notification.resourceId ?? null;
+
+      if (
+        notification.resourceType === "task" &&
+        organizationId &&
+        boardId &&
+        taskId
+      ) {
+        navigate({
+          to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+          params: { organizationId, boardId, taskId },
+        });
+      }
+    },
+    [markAsRead, navigate],
+  );
+
+  const handleClearAll = () => {
+    clearAll();
+    setShowClearDialog(false);
+  };
 
   return (
     <OrganizationLayout title={t("inbox:title")}>
@@ -39,9 +104,31 @@ function InboxComponent() {
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border/80 px-4 py-3">
           <h1 className="font-medium text-sm">{t("inbox:title")}</h1>
-          <span className="ml-auto text-muted-foreground text-xs">
+          <span className="text-muted-foreground text-xs">
             {t("inbox:count", { count: notifications.length })}
           </span>
+          <div className="ml-auto flex items-center gap-1">
+            {unreadCount > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground text-xs"
+                onClick={() => markAllAsRead()}
+              >
+                {t("common:actions.markAllRead")}
+              </Button>
+            ) : null}
+            {notifications.length > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground text-xs"
+                onClick={() => setShowClearDialog(true)}
+              >
+                {t("notifications:clearAll")}
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -50,60 +137,79 @@ function InboxComponent() {
               {t("inbox:loading")}
             </p>
           ) : notifications.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("inbox:empty")}</p>
+            <div className="flex flex-col items-center gap-1 py-10 text-center">
+              <InboxIcon className="mb-1 size-5 text-muted-foreground/40" />
+              <p className="text-muted-foreground text-sm">
+                {t("notifications:emptyTitle")}
+              </p>
+              <p className="text-muted-foreground/60 text-xs">
+                {t("notifications:emptySubtitle")}
+              </p>
+            </div>
           ) : (
             <ul className="flex flex-col divide-y divide-border/60 rounded-md border border-border/80">
               {notifications.map((notification) => {
-                const eventData = (notification.eventData ??
-                  {}) as NotificationEventData;
-                const boardId = eventData.boardId ?? undefined;
-                const isUnread = !notification.isRead;
-
-                const row = (
-                  <div className="flex items-start gap-2.5 px-3 py-2.5 text-sm">
-                    {/* Unread marker is a dot rather than a bold row, so long
-                        titles are not re-flowed when a row is read. */}
-                    <span
-                      aria-hidden
-                      className={`mt-1.5 size-1.5 shrink-0 rounded-full ${
-                        isUnread ? "bg-primary" : "bg-transparent"
-                      }`}
-                    />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="truncate" title={notification.title}>
-                        {notification.title}
-                      </span>
-                      {notification.content ? (
-                        <span
-                          className="truncate text-muted-foreground text-xs"
-                          title={notification.content}
-                        >
-                          {notification.content}
-                        </span>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      {formatDistanceToNow(new Date(notification.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-                );
-
+                const content = getNotificationContent(notification, t);
                 return (
                   <li key={notification.id}>
-                    {boardId && notification.resourceId ? (
-                      <Link
-                        to="/dashboard/organization/$organizationId/board/$boardId/board"
-                        params={{ organizationId, boardId }}
-                        search={{ taskId: notification.resourceId }}
-                        className="block hover:bg-muted/40"
-                      >
-                        {row}
-                      </Link>
-                    ) : (
-                      row
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleNotificationClick(notification)}
+                      className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-muted/40"
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "mt-1.5 size-1.5 shrink-0 rounded-full",
+                          notification.isRead ? "bg-transparent" : "bg-info",
+                        )}
+                      />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            "truncate",
+                            notification.isRead
+                              ? "text-muted-foreground"
+                              : "font-medium text-foreground",
+                          )}
+                        >
+                          {getNotificationTitle(notification, t)}
+                        </span>
+                        {content ? (
+                          <span className="truncate text-muted-foreground text-xs">
+                            {content}
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="shrink-0 text-muted-foreground text-xs">
+                        {formatRelativeTime(notification.createdAt)}
+                      </span>
+                      {notification.isRead ? null : (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0 text-muted-foreground text-xs"
+                        >
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.stopPropagation();
+                                markAsRead(notification.id);
+                              }
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              markAsRead(notification.id);
+                            }}
+                          >
+                            {t("inbox:markAsRead")}
+                          </span>
+                        </Button>
+                      )}
+                    </button>
                   </li>
                 );
               })}
@@ -111,6 +217,31 @@ function InboxComponent() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("notifications:clearDialogTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("notifications:clearDialogDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose>
+              <Button variant="outline" size="sm">
+                {t("common:actions.cancel")}
+              </Button>
+            </AlertDialogClose>
+            <AlertDialogClose onClick={handleClearAll}>
+              <Button variant="destructive" size="sm">
+                {t("common:actions.clearAll")}
+              </Button>
+            </AlertDialogClose>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </OrganizationLayout>
   );
 }

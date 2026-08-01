@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Inbox, ListChecks, Trash2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import InboxUnreadBadge from "@/components/inbox-unread-badge";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   SidebarGroup,
@@ -52,6 +53,7 @@ export function NavMain() {
             >
               <Inbox aria-hidden="true" />
               <span>{t("navigation:sidebar.inbox")}</span>
+              <InboxUnreadBadge />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

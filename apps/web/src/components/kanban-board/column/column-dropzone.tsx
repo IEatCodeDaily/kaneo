@@ -64,6 +64,11 @@ export function ColumnDropzone({
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
     new Set(),
   );
+  // Board-level group-by sections the user has hidden (#61 rework). Keyed by
+  // group key so toggling one group never touches another's state.
+  const [collapsedTaskGroups, setCollapsedTaskGroups] = useState<Set<string>>(
+    new Set(),
+  );
   const groups = useMemo(
     () => groupSameBucketSubtasks(column.tasks),
     [column.tasks],
@@ -187,21 +192,50 @@ export function ColumnDropzone({
       >
         {groupBy !== "none" ? (
           <div className="flex flex-col gap-3" data-slot="task-group-list">
-            {taskGroups.map((group) => (
-              <section
-                className="flex flex-col gap-2"
-                data-slot="task-group"
-                key={group.key || "unset"}
-              >
-                <h3 className="px-1 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
-                  {group.labelKey ? t(group.labelKey) : group.label}
-                  <span className="ml-1.5 text-muted-foreground/70">
-                    {group.tasks.length}
-                  </span>
-                </h3>
-                {group.tasks.map((task) => renderCard(task))}
-              </section>
-            ))}
+            {taskGroups.map((group) => {
+              const groupKey = group.key || "unset";
+              const groupCollapsed = collapsedTaskGroups.has(groupKey);
+              const groupTitle = group.labelKey
+                ? t(group.labelKey)
+                : group.label;
+              return (
+                <section
+                  className="flex flex-col gap-2"
+                  data-slot="task-group"
+                  key={groupKey}
+                >
+                  {/* The whole heading is the show/hide affordance: the user
+                      asked for each grouping to be a collapsible section, not
+                      a flat separator line. */}
+                  <button
+                    aria-expanded={!groupCollapsed}
+                    className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-medium text-[11px] text-muted-foreground uppercase tracking-wide hover:bg-muted hover:text-foreground"
+                    data-slot="task-group-toggle"
+                    onClick={() =>
+                      setCollapsedTaskGroups((current) => {
+                        const next = new Set(current);
+                        if (groupCollapsed) next.delete(groupKey);
+                        else next.add(groupKey);
+                        return next;
+                      })
+                    }
+                    type="button"
+                  >
+                    {groupCollapsed ? (
+                      <ChevronRight className="size-3" />
+                    ) : (
+                      <ChevronDown className="size-3" />
+                    )}
+                    <span>{groupTitle}</span>
+                    <span className="ml-1.5 text-muted-foreground/70">
+                      {group.tasks.length}
+                    </span>
+                  </button>
+                  {!groupCollapsed &&
+                    group.tasks.map((task) => renderCard(task))}
+                </section>
+              );
+            })}
             {taskGroups.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
                 {t("tasks:column.empty")}

@@ -1776,6 +1776,8 @@
 		},
 		"display": {
 			"label": "Display",
+			"comfortable": "Comfortable",
+			"compact": "Compact",
 			"show": "Show",
 			"assignee": "Assignee",
 			"priority": "Priority",
@@ -1932,6 +1934,16 @@
 		"column": {
 			"empty": "No tasks"
 		},
+		"viewOptions": {
+			"label": "View options"
+		},
+		"groupBy": {
+			"label": "Group by",
+			"none": "None",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"byLabel": "Label"
+		},
 		"preview": {
 			"assignee": "Assignee",
 			"priority": "Priority",
@@ -1951,6 +1963,16 @@
 			"cleared": "Milestone removed",
 			"assignFailed": "Failed to update milestone",
 			"badgeTooltip": "Milestone: {{name}} ({{status}})",
+			"manage": {
+				"title": "Milestones",
+				"namePlaceholder": "Milestone name",
+				"created": "Milestone created",
+				"updated": "Milestone updated",
+				"deleted": "Milestone deleted",
+				"saveFailed": "Failed to save milestone",
+				"deleteFailed": "Failed to delete milestone",
+				"noDates": "No dates yet"
+			},
 			"status": {
 				"planned": "Planned",
 				"active": "Active",
@@ -2002,6 +2024,18 @@
 	},
 	"organization": {
 		"boards": {
+			"properties": {
+				"title": "Board properties",
+				"open": "Board properties",
+				"close": "Close properties panel",
+				"name": "Name",
+				"description": "Description",
+				"members": "Members",
+				"noMembers": "No members yet",
+				"save": "Save changes",
+				"saved": "Board updated",
+				"saveFailed": "Failed to update board"
+			},
 			"view": {
 				"table": "Table view",
 				"timeline": "Timeline view"

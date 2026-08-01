@@ -47,7 +47,7 @@ describe("BoardViewOptions", () => {
       "tasks:groupBy.none",
       "tasks:groupBy.assignee",
       "tasks:groupBy.priority",
-      "tasks:groupBy.label",
+      "tasks:groupBy.byLabel",
     ]) {
       expect(values.some((value) => value.includes(key))).toBe(true);
     }
