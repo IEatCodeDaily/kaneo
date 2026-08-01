@@ -1273,7 +1273,12 @@
 			"unnamedUser": "User",
 			"settings": "Settings",
 			"signingOut": "Signing out...",
+			"theme": "Theme",
 			"logOut": "Log out"
+		},
+		"teamView": {
+			"label": "Team view",
+			"all": "All"
 		},
 		"organizationSwitcher": {
 			"organizations": "Organizations",
