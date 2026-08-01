@@ -207,6 +207,7 @@ export default function CommentInput({ taskId }: CommentInputProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    data-testid="comment-submit"
                     size="xs"
                     variant="default"
                     onClick={handleSubmit}

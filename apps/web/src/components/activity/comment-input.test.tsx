@@ -63,6 +63,16 @@ function type(text: string) {
   fireEvent.change(editor(), { target: { value: text } });
 }
 
+/**
+ * The submit control, addressed explicitly.
+ *
+ * Previously these tests clicked "the first enabled button", which silently
+ * became the Delete-draft button once #100 added it ahead of submit.
+ */
+function submitButton() {
+  return screen.getByTestId("comment-submit");
+}
+
 describe("CommentInput draft persistence", () => {
   beforeEach(() => {
     createCommentMock.mockReset().mockResolvedValue({});
@@ -111,10 +121,9 @@ describe("CommentInput draft persistence", () => {
     render(<CommentInput taskId="task-1" />);
     type("ready to send");
 
-    const submit = screen
-      .getAllByRole("button")
-      .find((button) => !button.hasAttribute("disabled")) as HTMLElement;
-    fireEvent.click(submit);
+    // Target the submit control explicitly. "first enabled button" broke as
+    // soon as #100 added a Delete-draft button ahead of it in the DOM.
+    fireEvent.click(submitButton());
     await waitFor(() =>
       expect(createCommentMock).toHaveBeenCalledWith({
         taskId: "task-1",
@@ -136,10 +145,9 @@ describe("CommentInput draft persistence", () => {
     render(<CommentInput taskId="task-1" />);
     type("should survive a failure");
 
-    const submit = screen
-      .getAllByRole("button")
-      .find((button) => !button.hasAttribute("disabled")) as HTMLElement;
-    fireEvent.click(submit);
+    // Target the submit control explicitly. "first enabled button" broke as
+    // soon as #100 added a Delete-draft button ahead of it in the DOM.
+    fireEvent.click(submitButton());
     await waitFor(() => expect(createCommentMock).toHaveBeenCalled());
 
     expect(
