@@ -102,21 +102,11 @@ describe("FlagDialog target rules", () => {
     });
   }
 
-  it("refuses to submit when both a user AND a team are targeted", () => {
+  it("uses one combined target selector for users and teams", () => {
     renderDialog();
-    chooseType();
-    fireEvent.change(screen.getByLabelText("flags:dialog.targetUser"), {
-      target: { value: "user-b" },
-    });
-    fireEvent.change(screen.getByLabelText("flags:dialog.targetTeam"), {
-      target: { value: "team-1" },
-    });
-    fireEvent.click(screen.getByText("flags:dialog.submit"));
 
-    expect(createTaskFlagMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert").textContent).toBe(
-      "flags:dialog.errors.bothTargets",
-    );
+    expect(screen.getAllByRole("combobox")).toHaveLength(2);
+    expect(screen.queryByLabelText("flags:dialog.targetTeam")).toBeNull();
   });
 
   it("refuses to submit when neither a user nor a team is targeted", () => {
@@ -133,9 +123,8 @@ describe("FlagDialog target rules", () => {
   it("submits a user-targeted flag with exactly one target", () => {
     renderDialog();
     chooseType();
-    fireEvent.change(screen.getByLabelText("flags:dialog.targetUser"), {
-      target: { value: "user-b" },
-    });
+    fireEvent.click(screen.getByLabelText("flags:dialog.targetUser"));
+    fireEvent.click(screen.getByRole("option", { name: /User B/ }));
     fireEvent.click(screen.getByText("flags:dialog.submit"));
 
     expect(createTaskFlagMock).toHaveBeenCalledWith({

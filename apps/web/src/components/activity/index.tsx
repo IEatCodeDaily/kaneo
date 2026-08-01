@@ -1,5 +1,6 @@
-import { Calendar, CircleAlert, History, UserRound } from "lucide-react";
+import { Ban, Calendar, CircleAlert, History, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import useResolveTaskFlag from "@/hooks/mutations/flag/use-resolve-task-flag";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
 import { formatDateMedium, formatRelativeTime } from "@/lib/format";
@@ -61,6 +62,9 @@ function getActivityTypeIcon(type: string) {
     case "assignee_changed":
     case "unassigned":
       return <UserRound className={iconClass} />;
+    case "flag_raised":
+    case "flag_resolved":
+      return <Ban className={iconClass} />;
     default:
       return <History className={iconClass} />;
   }
@@ -406,6 +410,16 @@ function renderActivityContent({
     }
   }
 
+  if (activity.type === "flag_raised" || activity.type === "flag_resolved") {
+    return (
+      <span className="text-sm text-muted-foreground">
+        {activity.type === "flag_raised"
+          ? `${t("flags:title")}: ${String(eventData?.flagTypeName ?? "")}`
+          : `${t("flags:dialog.unflag")}: ${String(eventData?.flagTypeName ?? "")}`}
+      </span>
+    );
+  }
+
   return (
     <span className="text-sm text-muted-foreground">
       {content || toDisplayCase(activity.type)}
@@ -427,6 +441,8 @@ function Activity({
   const { data: organizationMembers } = useGetOrganizationMembers({
     organizationId: organization?.id,
   });
+  const resolveFlag = useResolveTaskFlag();
+  const eventData = getEventDataRecord(activity.eventData);
 
   const user = activity.userId
     ? organizationMembers?.find(
@@ -493,6 +509,22 @@ function Activity({
             | undefined,
           t,
         })}{" "}
+        {activity.type === "flag_raised" &&
+          typeof eventData?.flagId === "string" && (
+            <button
+              className="rounded border border-border px-1.5 py-0.5 text-xs"
+              disabled={resolveFlag.isPending}
+              onClick={() =>
+                resolveFlag.mutate({
+                  flagId: eventData.flagId as string,
+                  taskId: activity.taskId,
+                })
+              }
+              type="button"
+            >
+              {t("flags:dialog.unflag")}
+            </button>
+          )}{" "}
         <span className="whitespace-nowrap text-muted-foreground/70 text-xs">
           {formatRelativeTime(activity.createdAt)}
         </span>

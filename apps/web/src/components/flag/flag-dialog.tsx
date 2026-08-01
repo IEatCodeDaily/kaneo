@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PrincipalSelector, type PrincipalOption } from "@/components/principal-selector";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { TaskFlag } from "@/fetchers/flag/get-task-flags";
 import useCreateTaskFlag from "@/hooks/mutations/flag/use-create-task-flag";
 import useResolveTaskFlag from "@/hooks/mutations/flag/use-resolve-task-flag";
@@ -35,8 +38,7 @@ export function FlagDialog({
 }: FlagDialogProps) {
   const { t } = useTranslation();
   const [flagTypeId, setFlagTypeId] = useState("");
-  const [targetUserId, setTargetUserId] = useState("");
-  const [targetTeamId, setTargetTeamId] = useState("");
+  const [target, setTarget] = useState<PrincipalOption[]>([]);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -58,15 +60,9 @@ export function FlagDialog({
       return;
     }
 
-    const hasUser = Boolean(targetUserId);
-    const hasTeam = Boolean(targetTeamId);
+    const selectedTarget = target[0];
 
-    if (hasUser && hasTeam) {
-      setError(t("flags:dialog.errors.bothTargets"));
-      return;
-    }
-
-    if (!hasUser && !hasTeam) {
+    if (!selectedTarget) {
       setError(t("flags:dialog.errors.noTarget"));
       return;
     }
@@ -74,14 +70,13 @@ export function FlagDialog({
     createTaskFlag({
       taskId,
       flagTypeId,
-      targetUserId: hasUser ? targetUserId : null,
-      targetTeamId: hasTeam ? targetTeamId : null,
+      targetUserId: selectedTarget.kind === "member" ? selectedTarget.id : null,
+      targetTeamId: selectedTarget.kind === "team" ? selectedTarget.id : null,
       note: note || null,
     });
 
     setFlagTypeId("");
-    setTargetUserId("");
-    setTargetTeamId("");
+    setTarget([]);
     setNote("");
     onClose?.();
   };
@@ -106,47 +101,28 @@ export function FlagDialog({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs">
-          {t("flags:dialog.targetUser")}
-          <select
+        <div className="flex flex-col gap-1 text-xs font-medium">
+          <span>{t("flags:dialog.targetUser")}</span>
+          <PrincipalSelector
             aria-label={t("flags:dialog.targetUser")}
-            value={targetUserId}
-            onChange={(event) => setTargetUserId(event.target.value)}
-            className="rounded border border-border bg-background px-2 py-1 text-sm"
-          >
-            <option value="">{t("flags:dialog.noUser")}</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1 text-xs">
-          {t("flags:dialog.targetTeam")}
-          <select
-            aria-label={t("flags:dialog.targetTeam")}
-            value={targetTeamId}
-            onChange={(event) => setTargetTeamId(event.target.value)}
-            className="rounded border border-border bg-background px-2 py-1 text-sm"
-          >
-            <option value="">{t("flags:dialog.noTeam")}</option>
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            className="h-9 w-full"
+            options={[
+              ...users.map((item) => ({ ...item, kind: "member" as const })),
+              ...teams.map((item) => ({ ...item, kind: "team" as const })),
+            ]}
+            value={target}
+            onValueChange={setTarget}
+            placeholder={t("flags:dialog.noUser")}
+          />
+        </div>
 
         <label className="flex flex-col gap-1 text-xs">
           {t("flags:dialog.note")}
-          <input
+          <Input
             aria-label={t("flags:dialog.note")}
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            className="rounded border border-border bg-background px-2 py-1 text-sm"
+            className="h-9"
           />
         </label>
 
@@ -156,12 +132,9 @@ export function FlagDialog({
           </p>
         )}
 
-        <button
-          type="submit"
-          className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground"
-        >
+        <Button type="submit">
           {t("flags:dialog.submit")}
-        </button>
+        </Button>
       </form>
 
       <div className="flex flex-col gap-2">

@@ -287,4 +287,31 @@ subscribeToEvent<{
   });
 });
 
+type TaskFlagActivityEvent = {
+  taskId: string;
+  userId: string;
+  type: "flag_raised" | "flag_resolved";
+  flagId: string;
+  flagTypeId: string;
+  flagTypeName?: string;
+  targetUserId: string | null;
+  targetTeamId: string | null;
+  note?: string | null;
+  resolvedBy?: string;
+};
+
+for (const eventName of ["task.flag_raised", "task.flag_resolved"] as const) {
+  subscribeToEvent<TaskFlagActivityEvent>(eventName, async (data) => {
+    await createActivity(data.taskId, data.type, data.userId, null, {
+      flagId: data.flagId,
+      flagTypeId: data.flagTypeId,
+      flagTypeName: data.flagTypeName,
+      targetUserId: data.targetUserId,
+      targetTeamId: data.targetTeamId,
+      note: data.note,
+      resolvedBy: data.resolvedBy,
+    });
+  });
+}
+
 export default activity;

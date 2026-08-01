@@ -12,6 +12,9 @@ function useResolveTaskFlag() {
         void queryClient.invalidateQueries({
           queryKey: ["task-flags", variables.taskId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["activities", variables.taskId],
+        });
       }
       void queryClient.invalidateQueries({ queryKey: ["my-flags"] });
     },
