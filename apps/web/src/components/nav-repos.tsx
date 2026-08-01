@@ -37,6 +37,7 @@ import {
   intentPrefetchHandlers,
   prefetchRepoNavigation,
 } from "@/lib/navigation-prefetch";
+import { useTeamViewStore } from "@/store/team-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { NavHiddenItems } from "./nav-hidden-items";
 import {
@@ -50,6 +51,7 @@ export function NavRepos() {
   const { user } = useAuth();
   const { data: organization } = useActiveOrganization();
   const { canCreateBoards } = useOrganizationPermission();
+  const teamId = useTeamViewStore((state) => state.teamId);
   const canCreateRepo = canCreateBoards();
   const reposEnabled = Boolean(
     (
@@ -61,6 +63,7 @@ export function NavRepos() {
   const { data: repos = [] } = useGetRepos({
     organizationId: organization?.id || "",
     enabled: reposEnabled,
+    teamId,
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();

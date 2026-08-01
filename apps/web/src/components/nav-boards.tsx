@@ -46,6 +46,7 @@ import {
 } from "@/lib/navigation-prefetch";
 import { toast } from "@/lib/toast";
 import { useNavigationStore } from "@/store/navigation";
+import { useTeamViewStore } from "@/store/team-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
 import { NavHiddenItems } from "./nav-hidden-items";
@@ -71,8 +72,10 @@ export function NavBoards() {
   const { user } = useAuth();
   const { isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
+  const teamId = useTeamViewStore((state) => state.teamId);
   const { data: boards } = useGetBoards({
     organizationId: organization?.id || "",
+    teamId,
   });
   const queryClient = useQueryClient();
   const { mutateAsync: deleteBoard } = useDeleteBoard();
