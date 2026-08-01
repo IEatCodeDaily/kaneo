@@ -23,6 +23,7 @@ import { produce } from "immer";
 import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -45,7 +46,8 @@ function BacklogListView({
   disableDragDrop = false,
 }: BacklogListViewProps) {
   const { t } = useTranslation();
-  const { mutate: reorderTasks } = useReorderTasks();
+  const { isPending: isReorderPending, mutate: reorderTasks } =
+    useReorderTasks();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -452,6 +454,7 @@ function BacklogListView({
       />
 
       <BacklogBulkToolbar />
+      <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );
 }

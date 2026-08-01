@@ -23,6 +23,7 @@ import { produce } from "immer";
 import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -215,7 +216,8 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const { mutate: updateTask } = useUpdateTask();
-  const { mutate: reorderTasks } = useReorderTasks();
+  const { isPending: isReorderPending, mutate: reorderTasks } =
+    useReorderTasks();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
@@ -481,6 +483,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
       />
 
       <BulkToolbar />
+      <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );
 }

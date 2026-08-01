@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import reorderTasks from "@/fetchers/task/reorder-tasks";
 import type { TaskOrderUpdate } from "@/lib/reorder-board-task";
+import { toast } from "@/lib/toast";
 import type { BoardWithTasks } from "@/types/board";
 
 type ReorderVariables = {
@@ -11,7 +12,7 @@ type ReorderVariables = {
 
 export function useReorderTasks() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ boardId, tasks }: ReorderVariables) =>
       reorderTasks(boardId, tasks),
     onMutate: async ({ boardId, board }) => {
@@ -27,10 +28,12 @@ export function useReorderTasks() {
       if (context?.previous) {
         queryClient.setQueryData(["tasks", boardId], context.previous);
       }
+      toast.error("The move could not be saved. Your task order was restored.");
     },
     onSettled: (_, _error, { boardId }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
       queryClient.invalidateQueries({ queryKey: ["boards"] });
     },
   });
+  return mutation;
 }

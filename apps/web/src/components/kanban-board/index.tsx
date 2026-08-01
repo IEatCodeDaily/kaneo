@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { reorderBoardTask } from "@/lib/reorder-board-task";
@@ -41,7 +42,8 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const { mutate: reorderTasks } = useReorderTasks();
+  const { isPending: isReorderPending, mutate: reorderTasks } =
+    useReorderTasks();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -181,6 +183,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       </DragOverlay>
 
       <BulkToolbar />
+      <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );
 }
