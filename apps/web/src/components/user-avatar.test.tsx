@@ -79,3 +79,64 @@ describe("UserAvatar menu (#96)", () => {
     expect(screen.queryByLabelText(/notification/i)).toBeNull();
   });
 });
+
+/**
+ * #113: the organization rows ran straight into the theme row with no visual
+ * break between the two sections.
+ */
+describe("UserAvatar organization/theme separator (#113)", () => {
+  it("renders a separator between the organization and theme sections", () => {
+    openMenu();
+
+    expect(screen.getByTestId("user-menu-theme-separator")).toBeTruthy();
+  });
+
+  it("places the separator after the organization section and before the theme row", () => {
+    openMenu();
+
+    const separator = screen.getByTestId("user-menu-theme-separator");
+    const organization = screen.getByTestId("organization-selector");
+    const themeRow = screen.getByTestId("user-menu-theme-toggle");
+
+    expect(
+      organization.compareDocumentPosition(separator) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      separator.compareDocumentPosition(themeRow) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("styles the separator as a menu rule", () => {
+    openMenu();
+
+    const classes = Array.from(
+      screen.getByTestId("user-menu-theme-separator").classList,
+    );
+    expect(classes).toContain("h-px");
+    expect(classes).toContain("bg-border");
+  });
+
+  /**
+   * Negative control: proves the ordering assertion is real by checking that a
+   * separator placed *before* the organization section fails the same check.
+   */
+  it("negative control: a separator before the organization section is not between the sections", () => {
+    render(
+      <div>
+        <hr data-testid="control-separator" />
+        <div data-testid="control-organization" />
+        <div data-testid="control-theme" />
+      </div>,
+    );
+
+    const separator = screen.getByTestId("control-separator");
+    const organization = screen.getByTestId("control-organization");
+
+    expect(
+      organization.compareDocumentPosition(separator) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeFalsy();
+  });
+});

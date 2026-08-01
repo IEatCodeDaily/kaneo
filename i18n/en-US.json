@@ -1274,6 +1274,9 @@
       "settings": "Settings",
       "signingOut": "Signing out...",
       "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeAuto": "Auto",
       "logOut": "Log out"
     },
     "teamView": {
@@ -1818,6 +1821,8 @@
       "noTasksFound": "No tasks found",
       "noTasksMatch": "No scheduled tasks match \"{{query}}\"",
       "taskHeader": "Task",
+      "unscheduledGroup": "Unscheduled",
+      "unscheduledHint": "No dates - click to schedule",
       "updateDatesError": "Failed to update task dates",
       "resizeStart": "Resize start date",
       "resizeDue": "Resize due date",

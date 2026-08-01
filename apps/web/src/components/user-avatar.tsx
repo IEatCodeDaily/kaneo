@@ -107,6 +107,16 @@ export function UserAvatar() {
         */}
         <div className="p-0.5">
           <OrganizationMenuSection />
+        </div>
+
+        {/*
+          #113: the organization rows and the theme control read as one
+          undifferentiated block without a rule between them. Separate the
+          organization section from the theme section.
+        */}
+        <DropdownMenuSeparator data-testid="user-menu-theme-separator" />
+
+        <div className="p-0.5">
           <div
             className="flex h-7 items-center justify-between gap-2 px-2 text-sm font-normal"
             data-testid="user-menu-theme-toggle"
