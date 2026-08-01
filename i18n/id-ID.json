@@ -1295,7 +1295,7 @@
 		"events": {
 			"task_created": {
 				"title": "Tugas Baru Dibuat",
-				"content": "Tugas \"{{taskTitle}}\" dibuat"
+				"content": "Tiket \"{{taskTitle}}\" dibuat"
 			},
 			"organization_created": {
 				"title": "Ruang kerja dibuat",
@@ -1303,11 +1303,11 @@
 			},
 			"task_status_changed": {
 				"title": "Status tugas berubah",
-				"content": "Status tugas \"{{taskTitle}}\" berubah dari \"{{oldStatus}}\" menjadi \"{{newStatus}}\""
+				"content": "Status tiket \"{{taskTitle}}\" berubah dari \"{{oldStatus}}\" menjadi \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Tugas ditugaskan kepada Anda",
-				"content": "Anda ditugaskan ke tugas: {{taskTitle}}"
+				"content": "Anda ditugaskan ke tiket: {{taskTitle}}"
 			},
 			"task_mention": {
 				"title": "{{mentionerName}} menyebut Anda",
@@ -1315,7 +1315,7 @@
 			},
 			"time_entry_created": {
 				"title": "Pelacakan waktu dimulai",
-				"contentWithTask": "Pelacakan waktu dimulai pada tugas: {{taskTitle}}",
+				"contentWithTask": "Pelacakan waktu dimulai pada tiket: {{taskTitle}}",
 				"contentWithoutTask": "Pelacakan waktu dimulai pada sebuah tugas"
 			}
 		}
@@ -1976,7 +1976,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

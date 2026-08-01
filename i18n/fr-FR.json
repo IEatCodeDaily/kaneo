@@ -746,8 +746,8 @@
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
-				"commentOnDisabled": "Task link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
+				"commentOnDisabled": "Ticket link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Copied",
 				"unableToCopySecret": "Unable to copy secret"
@@ -763,7 +763,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1158,7 +1158,7 @@
 		"events": {
 			"task_created": {
 				"title": "Nouvelle tâche créée",
-				"content": "La tâche \"{{taskTitle}}\" a été créée"
+				"content": "Le ticket \"{{taskTitle}}\" a été créé"
 			},
 			"organization_created": {
 				"title": "Espace de travail créé",
@@ -1166,11 +1166,11 @@
 			},
 			"task_status_changed": {
 				"title": "Statut de la tâche modifié",
-				"content": "Le statut de la tâche \"{{taskTitle}}\" est passé de \"{{oldStatus}}\" à \"{{newStatus}}\""
+				"content": "Le statut du ticket \"{{taskTitle}}\" est passé de \"{{oldStatus}}\" à \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Une tâche vous est assignée",
-				"content": "Vous avez été assigné à la tâche : {{taskTitle}}"
+				"content": "Vous avez été assigné au ticket : {{taskTitle}}"
 			},
 			"task_mention": {
 				"title": "{{mentionerName}} vous a mentionné",
@@ -1178,7 +1178,7 @@
 			},
 			"time_entry_created": {
 				"title": "Suivi du temps démarré",
-				"contentWithTask": "Le suivi du temps a démarré sur la tâche : {{taskTitle}}",
+				"contentWithTask": "Le suivi du temps a démarré sur le ticket : {{taskTitle}}",
 				"contentWithoutTask": "Le suivi du temps a démarré sur une tâche"
 			}
 		}
@@ -1839,7 +1839,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

@@ -744,8 +744,8 @@
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
-				"commentOnDisabled": "Task link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
+				"commentOnDisabled": "Ticket link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Copied",
 				"unableToCopySecret": "Unable to copy secret"
@@ -761,7 +761,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1154,7 +1154,7 @@
 		"events": {
 			"task_created": {
 				"title": "Δημιουργήθηκε νέα εργασία",
-				"content": "Η εργασία \"{{taskTitle}}\" δημιουργήθηκε"
+				"content": "Η τικέτα \"{{taskTitle}}\" δημιουργήθηκε"
 			},
 			"organization_created": {
 				"title": "Ο χώρος εργασίας δημιουργήθηκε",
@@ -1162,15 +1162,15 @@
 			},
 			"task_status_changed": {
 				"title": "Η κατάσταση της εργασίας άλλαξε",
-				"content": "Η κατάσταση της εργασίας \"{{taskTitle}}\" άλλαξε από \"{{oldStatus}}\" σε \"{{newStatus}}\""
+				"content": "Η κατάσταση της τικέτας \"{{taskTitle}}\" άλλαξε από \"{{oldStatus}}\" σε \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Σας ανατέθηκε εργασία",
-				"content": "Σας ανατέθηκε η εργασία: {{taskTitle}}"
+				"content": "Σας ανατέθηκε η τικέτα: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Η χρονομέτρηση ξεκίνησε",
-				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την εργασία: {{taskTitle}}",
+				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την τικέτα: {{taskTitle}}",
 				"contentWithoutTask": "Η χρονομέτρηση ξεκίνησε για μια εργασία"
 			}
 		}
@@ -1829,7 +1829,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
