@@ -1,4 +1,4 @@
-import { Copy, Download, ExternalLink, Link2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Link2, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,6 +13,7 @@ export type AttachmentContextMenuProps = {
   url: string;
   filename?: string;
   isImage?: boolean;
+  onRemove?: () => void;
   children: ReactNode;
 };
 
@@ -44,6 +45,7 @@ export function AttachmentContextMenu({
   filename,
   isImage = false,
   children,
+  onRemove,
 }: AttachmentContextMenuProps) {
   const { t } = useTranslation();
   const absoluteUrl = toAbsoluteUrl(url);
@@ -105,6 +107,19 @@ export function AttachmentContextMenu({
           <Copy className="size-4" />
           {t("tasks:attachment.copyMarkdown")}
         </ContextMenuItem>
+        {onRemove ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              className="text-destructive focus:text-destructive"
+              data-testid="attachment-remove"
+              onClick={onRemove}
+            >
+              <Trash2 className="size-4" />
+              {t("tasks:attachment.remove")}
+            </ContextMenuItem>
+          </>
+        ) : null}
       </ContextMenuContent>
     </ContextMenu>
   );

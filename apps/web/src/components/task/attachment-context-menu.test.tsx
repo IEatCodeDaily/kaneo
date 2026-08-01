@@ -25,12 +25,17 @@ Object.defineProperty(window, "open", {
   value: openSpy,
 });
 
-function renderMenu(props?: { isImage?: boolean; filename?: string }) {
+function renderMenu(props?: {
+  isImage?: boolean;
+  filename?: string;
+  onRemove?: () => void;
+}) {
   render(
     <AttachmentContextMenu
       url="/api/asset/asset-1"
       filename={props?.filename ?? "diagram.png"}
       isImage={props?.isImage ?? true}
+      onRemove={props?.onRemove}
     >
       <button type="button" data-testid="attachment-target">
         diagram.png
@@ -76,6 +81,19 @@ describe("AttachmentContextMenu", () => {
     expect(screen.getByTestId("attachment-copy-markdown")).toHaveTextContent(
       "tasks:attachment.copyMarkdown",
     );
+  });
+
+  it("only offers remove for removable attachments and invokes it", () => {
+    const onRemove = vi.fn();
+    renderMenu({ onRemove });
+    openContextMenu();
+    selectItem("attachment-remove");
+    expect(onRemove).toHaveBeenCalledOnce();
+
+    cleanup();
+    renderMenu();
+    openContextMenu();
+    expect(screen.queryByTestId("attachment-remove")).not.toBeInTheDocument();
   });
 
   it("copies the absolute attachment address", () => {

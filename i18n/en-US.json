@@ -1889,7 +1889,8 @@
 			"copyFileAddress": "Copy file address",
 			"openInNewTab": "Open in new tab",
 			"download": "Download",
-			"copyMarkdown": "Copy markdown"
+			"copyMarkdown": "Copy markdown",
+			"remove": "Remove attachment"
 		},
 		"actions": {
 			"archive": "Archive",

@@ -14,7 +14,7 @@ function formatBytes(size: number) {
 }
 
 /** Exported for tests: proves the card is wrapped in the context menu. */
-export function AttachmentCardView({ node }: NodeViewProps) {
+export function AttachmentCardView({ node, editor, getPos }: NodeViewProps) {
   const url = String(node.attrs.url || "");
   const filename = String(node.attrs.filename || "Attachment");
   const mimeType = String(node.attrs.mimeType || "");
@@ -26,6 +26,15 @@ export function AttachmentCardView({ node }: NodeViewProps) {
         url={url}
         filename={filename}
         isImage={mimeType.startsWith("image/")}
+        onRemove={() => {
+          const pos = typeof getPos === "function" ? getPos() : null;
+          if (pos === null || pos === undefined) return;
+          editor
+            .chain()
+            .focus()
+            .deleteRange({ from: pos, to: pos + node.nodeSize })
+            .run();
+        }}
       >
         <a
           href={url}
