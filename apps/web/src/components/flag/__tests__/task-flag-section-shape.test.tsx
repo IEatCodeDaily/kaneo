@@ -34,6 +34,10 @@ vi.mock("@/hooks/queries/flag/use-get-board-flag-types", () => ({
   default: () => ({ data: [] }),
 }));
 
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({ data: [], isPending: false }),
+}));
+
 vi.mock("@/hooks/mutations/flag/use-create-task-flag", () => ({
   default: () => ({ mutate: vi.fn() }),
 }));
@@ -44,22 +48,6 @@ vi.mock("@/hooks/mutations/flag/use-resolve-task-flag", () => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
-}));
-
-// TaskFlagSection imports the dialog primitive, which transitively boots the
-// real i18n instance and blows up under vitest. Stub the primitives; this
-// suite is about the member payload shape, not the dialog chrome.
-vi.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  DialogContent: ({ children }: { children?: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogHeader: ({ children }: { children?: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  DialogTitle: ({ children }: { children?: React.ReactNode }) => (
-    <h2>{children}</h2>
-  ),
 }));
 
 import TaskFlagSection from "@/components/flag/task-flag-section";
@@ -80,10 +68,9 @@ describe("TaskFlagSection member shape (#69)", () => {
       ),
     ).not.toThrow();
 
-    expect(screen.getByText("flags:title")).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /flags:actions\.flag/ }),
-    ).toBeTruthy();
+    // #107: one topbar control, opened as a popover — never a modal.
+    expect(screen.getByTestId("task-flag-trigger")).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("survives an undefined payload while the query is in flight", () => {

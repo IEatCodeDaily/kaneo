@@ -1,15 +1,9 @@
-import { Flag } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import FlagDialog from "@/components/flag/flag-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import type { PrincipalOption } from "@/components/principal-selector";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
-import TaskFlagBadges from "./task-flag-badges";
+import { authClient } from "@/lib/auth-client";
+import TaskFlagPicker from "./task-flag-picker";
 
 type TaskFlagSectionProps = {
   taskId: string;
@@ -18,61 +12,67 @@ type TaskFlagSectionProps = {
 };
 
 /**
- * Task-detail surface: the active flag chips plus a "Flag" action that opens
- * the raise/resolve dialog.
+ * #107: the task-detail flag surface. This is a single topbar control that
+ * opens a milestone-style popover; there is no separate flag modal and no
+ * bespoke user/team dropdown — targets come from the same member/team
+ * selector used by board visibility settings.
  */
 export function TaskFlagSection({
   taskId,
   boardId,
   organizationId,
 }: TaskFlagSectionProps) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const { data: memberData } = useGetActiveOrganizationMembers(organizationId);
+  const { data: memberData, isPending: membersPending } =
+    useGetActiveOrganizationMembers(organizationId);
+
+  const { data: teams = [], isPending: teamsPending } = useQuery({
+    queryKey: ["organization-teams", organizationId, "task-flags"],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const result = await authClient.organization.listTeams({
+        query: { organizationId },
+      });
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to load teams");
+      }
+      return result.data ?? [];
+    },
+  });
 
   // authClient.organization.listMembers resolves to { members, total }, NOT an
   // array. Treating it as an array crashed the whole task detail route with
   // "l.map is not a function" — every other call site reads `.members`.
-  const users = (memberData?.members ?? []).map(
-    (member: {
-      userId?: string;
-      user?: { name?: string; email?: string };
-    }) => ({
-      id: member.userId ?? "",
-      name: member.user?.name ?? member.user?.email ?? "",
-    }),
+  const principals: PrincipalOption[] = useMemo(
+    () => [
+      ...(memberData?.members ?? []).map(
+        (member: {
+          userId?: string;
+          user?: { name?: string; email?: string };
+        }) => ({
+          id: member.userId ?? "",
+          kind: "member" as const,
+          name: member.user?.name ?? member.user?.email ?? "",
+          detail: member.user?.email,
+        }),
+      ),
+      ...teams.map((team: { id: string; name: string }) => ({
+        id: team.id,
+        kind: "team" as const,
+        name: team.name,
+        detail: "Team",
+      })),
+    ],
+    [memberData, teams],
   );
 
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-foreground/70 px-2">
-        {t("flags:title")}
-      </span>
-      <div className="flex flex-wrap items-center gap-1.5 px-2">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px]"
-        >
-          <Flag className="w-2.5 h-2.5" />
-          {t("flags:actions.flag")}
-        </button>
-        <TaskFlagBadges taskId={taskId} />
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("flags:dialog.title")}</DialogTitle>
-          </DialogHeader>
-          <FlagDialog
-            taskId={taskId}
-            boardId={boardId}
-            users={users}
-            teams={[]}
-            onClose={() => setOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+    <div data-testid="task-flag-section" className="flex min-w-0 items-center">
+      <TaskFlagPicker
+        taskId={taskId}
+        boardId={boardId}
+        principals={principals}
+        principalsLoading={membersPending || teamsPending}
+      />
     </div>
   );
 }
