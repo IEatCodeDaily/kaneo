@@ -33,7 +33,6 @@ vi.mock("../task-card", () => ({
 
 const groupByMock = vi.fn(() => "priority");
 vi.mock("../board-view-context", () => ({
-  useBoardDragging: () => false,
   useBoardGroupBy: () => groupByMock(),
 }));
 

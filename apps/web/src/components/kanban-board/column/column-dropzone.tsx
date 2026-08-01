@@ -13,13 +13,12 @@ import {
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
 import type { BoardWithTasks } from "@/types/board";
-import { useBoardDragging, useBoardGroupBy } from "../board-view-context";
+import { useBoardGroupBy } from "../board-view-context";
 import TaskCard from "../task-card";
 
 type ColumnDropzoneProps = {
   column: BoardWithTasks["columns"][number];
   disableDragDrop?: boolean;
-  onIsOverChange?: (isOver: boolean) => void;
 };
 
 /**
@@ -37,11 +36,10 @@ const CARD_HEIGHT_PX = 102;
 export function ColumnDropzone({
   column,
   disableDragDrop = false,
-  onIsOverChange,
 }: ColumnDropzoneProps) {
   const { t } = useTranslation();
   const groupBy = useBoardGroupBy();
-  const boardDragging = useBoardDragging();
+
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: { type: "column", column },
@@ -59,9 +57,6 @@ export function ColumnDropzone({
     [column.tasks],
   );
 
-  useEffect(() => {
-    onIsOverChange?.(isOver);
-  }, [isOver, onIsOverChange]);
 
   const totalGroups = groupBy === "none" ? groups.length : column.tasks.length;
 
@@ -119,8 +114,8 @@ export function ColumnDropzone({
   }, [mountCount, totalGroups]);
 
   const visibleGroups = useMemo(
-    () => groups.slice(0, boardDragging ? totalGroups : mountCount),
-    [boardDragging, groups, mountCount, totalGroups],
+    () => groups.slice(0, mountCount),
+    [groups, mountCount],
   );
 
   // Board-level "group by": buckets this column's tasks under a heading.
@@ -131,23 +126,23 @@ export function ColumnDropzone({
     [column.tasks, groupBy],
   );
   const visibleTaskGroups = useMemo(() => {
-    let remaining = boardDragging ? totalGroups : mountCount;
+    let remaining = mountCount;
     return taskGroups.flatMap((group) => {
       if (remaining <= 0) return [];
       const tasks = group.tasks.slice(0, remaining);
       remaining -= tasks.length;
       return [{ ...group, tasks }];
     });
-  }, [boardDragging, mountCount, taskGroups, totalGroups]);
+  }, [mountCount, taskGroups]);
 
   // Reserve height for not-yet-mounted groups so the scrollbar doesn't jump as
   // chunks land.
   const pendingCards = useMemo(
     () =>
       groups
-        .slice(boardDragging ? totalGroups : mountCount)
+        .slice(mountCount)
         .reduce((sum, group) => sum + 1 + group.children.length, 0),
-    [boardDragging, groups, mountCount, totalGroups],
+    [groups, mountCount],
   );
 
   /** Per-card Framer Motion cost ~1s on a 180-task column. Keep this plain. */
@@ -161,7 +156,14 @@ export function ColumnDropzone({
   );
 
   return (
-    <div className="min-h-0 flex-1" data-column-id={column.id} ref={setNodeRef}>
+    <div
+      className={cn(
+        "min-h-0 flex-1 rounded-lg transition-colors duration-100",
+        isOver && "bg-accent/25",
+      )}
+      data-column-id={column.id}
+      ref={setNodeRef}
+    >
       <SortableContext
         items={column.tasks}
         strategy={verticalListSortingStrategy}

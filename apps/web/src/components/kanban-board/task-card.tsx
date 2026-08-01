@@ -9,7 +9,7 @@ import {
   GitMerge,
   GitPullRequest,
 } from "lucide-react";
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskFlagBadges from "@/components/flag/task-flag-badges";
 import TaskHoverPreview, {
@@ -45,7 +45,7 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 import { Button } from "../ui/button";
 import { ContextMenu, ContextMenuTrigger } from "../ui/context-menu";
-import { useBoardDragging } from "./board-view-context";
+
 import TaskCardContextMenuContent from "./task-card-context-menu/task-card-context-menu-content";
 import TaskCardLabels from "./task-labels";
 
@@ -54,36 +54,38 @@ type TaskCardProps = {
   disableDragDrop?: boolean;
 };
 
-function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
+const TaskCardContent = memo(function TaskCardContent({
+  task,
+  disableDragDrop = false,
+  isDragging,
+}: TaskCardProps & { isDragging: boolean }) {
   const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id, disabled: disableDragDrop });
-  // #131: any drag on the board suppresses hover previews, not just this card's.
-  const boardDragging = useBoardDragging();
-  const { board } = useBoardStore();
+
+  const boardId = useBoardStore((state) => state.board?.id);
+  const boardSlug = useBoardStore((state) => state.board?.slug);
   const { data: organization } = useActiveOrganization();
   const { mutateAsync: deleteTask } = useDeleteTask();
   const navigate = useNavigate();
-  const {
-    showAssignees,
-    showPriority,
-    showDueDates,
-    showLabels,
-    showTaskNumbers,
-  } = useUserPreferencesStore();
+  const showAssignees = useUserPreferencesStore((state) => state.showAssignees);
+  const showPriority = useUserPreferencesStore((state) => state.showPriority);
+  const showDueDates = useUserPreferencesStore((state) => state.showDueDates);
+  const showLabels = useUserPreferencesStore((state) => state.showLabels);
+  const showTaskNumbers = useUserPreferencesStore(
+    (state) => state.showTaskNumbers,
+  );
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   // From the board payload — fetching per card cost one request + preflight
   // each (186 on a 180-task board).
   const externalLinks = task.externalLinks;
-  const { toggleSelection, isSelected, isFocused } = useBulkSelectionStore();
-  const isTaskSelected = isSelected(task.id);
-  const isTaskFocused = isFocused(task.id);
+  const toggleSelection = useBulkSelectionStore(
+    (state) => state.toggleSelection,
+  );
+  const isTaskSelected = useBulkSelectionStore((state) =>
+    state.selectedTaskIds.has(task.id),
+  );
+  const isTaskFocused = useBulkSelectionStore(
+    (state) => state.focusedTaskId === task.id,
+  );
 
   const pullRequests = useMemo(() => {
     if (!externalLinks) return [];
@@ -117,19 +119,10 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
     };
   };
 
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition:
-      transition || "transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-    opacity: isDragging ? 0.6 : 1,
-    touchAction: isDragging ? "none" : "auto",
-    zIndex: isDragging ? 999 : "auto",
-  };
-
   function handleTaskCardClick(
     e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>,
   ) {
-    if (!board || !task || !organization) return;
+    if (!boardId || !task || !organization) return;
 
     if ((e as React.MouseEvent).metaKey || (e as React.KeyboardEvent).ctrlKey) {
       toggleSelection(task.id);
@@ -162,7 +155,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
     try {
       await deleteTask(task.id);
       queryClient.invalidateQueries({
-        queryKey: ["tasks", board?.id],
+        queryKey: ["tasks", boardId],
       });
     } catch (error) {
       toast.error(
@@ -174,13 +167,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
   };
 
   return (
-    <div
-      data-task-id={task.id}
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-    >
+    <>
       {/* The menu content is mounted eagerly on purpose. Base UI reads the
           menu's children synchronously when the contextmenu event fires, so
           deferring it via onOpenChange means the first right-click opens
@@ -193,8 +180,8 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
           <TaskHoverPreview
             assigneeImage={undefined}
             assigneeName={task.assigneeName ?? undefined}
-            boardSlug={board?.slug}
-            isDragging={isDragging || boardDragging}
+            boardSlug={boardSlug}
+            isDragging={isDragging}
             task={task}
           >
             {/** biome-ignore lint/a11y/noStaticElementInteractions: false positive for onClick and onKeyDown */}
@@ -221,7 +208,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
             >
               {showTaskNumbers && (
                 <div className="mb-2 text-[10px] font-mono text-muted-foreground/90">
-                  {board?.slug}-{task.number}
+                  {boardSlug}-{task.number}
                 </div>
               )}
 
@@ -230,7 +217,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
               {task.parentTask && organization?.id && (
                 <SubtaskOfBadge
                   boardId={task.boardId}
-                  boardSlug={board?.slug}
+                  boardSlug={boardSlug}
                   className="mb-2"
                   organizationId={organization.id}
                   parent={task.parentTask}
@@ -433,11 +420,11 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
           </TaskHoverPreview>
         </ContextMenuTrigger>
 
-        {board && organization && (
+        {boardId && organization && (
           <TaskCardContextMenuContent
             task={task}
             taskCardContext={{
-              boardId: board.id,
+              boardId,
               worskpaceId: organization.id,
             }}
             onDeleteClick={() => setIsDeleteTaskModalOpen(true)}
@@ -474,6 +461,41 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
           </AlertDialogContent>
         </AlertDialog>
       )}
+    </>
+  );
+});
+
+function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, disabled: disableDragDrop });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition:
+      transition || "transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    opacity: isDragging ? 0.6 : 1,
+    touchAction: isDragging ? "none" : "auto",
+    zIndex: isDragging ? 999 : "auto",
+  };
+
+  return (
+    <div
+      data-task-id={task.id}
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      <TaskCardContent
+        disableDragDrop={disableDragDrop}
+        isDragging={isDragging}
+        task={task}
+      />
     </div>
   );
 }

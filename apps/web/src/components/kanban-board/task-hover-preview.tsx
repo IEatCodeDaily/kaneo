@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { ReactElement } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -49,18 +49,18 @@ function TaskHoverPreview({
   isDragging = false,
 }: TaskHoverPreviewProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
   const labels = task.labels ?? [];
 
-  // #131: pinned closed while dragging. `open` is controlled only in that
-  // state. Do not switch one Base UI root between controlled and uncontrolled:
-  // it can retain the forced-closed state after a cross-column drop.
-  if (isDragging) {
-    return children;
-  }
+  useEffect(() => {
+    if (isDragging) setOpen(false);
+  }, [isDragging]);
 
   return (
     <HoverCard
+      open={open}
+      onOpenChange={setOpen}
       openDelay={TASK_PREVIEW_OPEN_DELAY}
       closeDelay={TASK_PREVIEW_CLOSE_DELAY}
     >

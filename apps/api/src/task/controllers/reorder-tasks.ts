@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
@@ -45,20 +45,22 @@ export default async function reorderTasks(
     throw new HTTPException(400, { message: "Invalid task status" });
   }
 
-  await db.transaction(async (tx) => {
-    for (const update of updates) {
-      await tx
-        .update(taskTable)
-        .set({
-          columnId: columnIds.get(update.status),
-          position: update.position,
-          status: update.status,
-        })
-        .where(
-          and(eq(taskTable.id, update.id), eq(taskTable.boardId, boardId)),
-        );
-    }
-  });
+  const values = updates.map(
+    (update) =>
+      sql`(${update.id}::text, ${columnIds.get(update.status)}::text, ${update.position}::integer, ${update.status}::text)`,
+  );
+  await db.execute(sql`
+    UPDATE ${taskTable} AS task
+    SET
+      column_id = incoming.column_id,
+      position = incoming.position,
+      status = incoming.status,
+      updated_at = NOW()
+    FROM (VALUES ${sql.join(values, sql`, `)})
+      AS incoming(id, column_id, position, status)
+    WHERE task.id = incoming.id
+      AND task.board_id = ${boardId}
+  `);
 
   await publishEvent("task-relation.refresh", { boardId, userId });
   return { success: true, updatedCount: updates.length };
