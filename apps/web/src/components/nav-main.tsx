@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Inbox, ListChecks, Trash2, Users } from "lucide-react";
+import { Inbox, ListChecks, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
+import MyTasksCountBadge from "@/components/my-tasks-count-badge";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   SidebarGroup,
@@ -21,6 +22,10 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
  * account-scoped so it moved to the profile dropdown. That left a collapsible
  * group wrapping a single item, so the group itself is gone and Members is
  * rendered directly.
+ *
+ * Trash (#145) also moved to the profile dropdown: it is a recovery surface
+ * users reach occasionally, not a daily navigation target, so it no longer
+ * earns a slot in the main nav.
  */
 export function NavMain() {
   const { t } = useTranslation();
@@ -35,7 +40,6 @@ export function NavMain() {
   const membersUrl = `/dashboard/organization/${organization.id}/members`;
   const myTasksUrl = `/dashboard/organization/${organization.id}/my-tasks`;
   const inboxUrl = `/dashboard/organization/${organization.id}/inbox`;
-  const trashUrl = `/dashboard/organization/${organization.id}/trash`;
 
   return (
     <SidebarGroup className="gap-1 p-2 pb-0">
@@ -66,20 +70,7 @@ export function NavMain() {
             >
               <ListChecks aria-hidden="true" />
               <span>{t("navigation:sidebar.myTasks")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          {/* Recycle bin (#53): soft-deleted tasks, restorable until the
-              organization's retention window expires. */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-              isActive={location.pathname === trashUrl}
-              onClick={() => navigate({ to: trashUrl })}
-              size="default"
-              tooltip={t("navigation:sidebar.trash")}
-            >
-              <Trash2 aria-hidden="true" />
-              <span>{t("navigation:sidebar.trash")}</span>
+              <MyTasksCountBadge organizationId={organization.id} />
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
