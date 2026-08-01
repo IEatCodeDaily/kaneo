@@ -159,6 +159,21 @@ describe("#72 title token picker", () => {
     );
   });
 
+  /**
+   * #72 (second round): "make the popup an overlay and not an inline
+   * component. right now when the popup shows up it increases the size of the
+   * ticket creation modal."
+   */
+  it("overlays instead of taking part in layout", () => {
+    setup("Fix #b");
+    const panel = screen.getByTestId("title-token-suggestions");
+    const classes = Array.from(panel.classList);
+    // Whole tokens, not substrings: absolute removes it from flow, and it
+    // needs a stacking context to sit above the modal body.
+    expect(classes).toContain("absolute");
+    expect(classes.some((c) => c.startsWith("z-"))).toBe(true);
+  });
+
   it("does not open for a sigil inside a word", () => {
     setup("Port to C#");
     expect(screen.queryByTestId("title-token-suggestions")).toBeNull();
@@ -171,9 +186,15 @@ describe("#72 discoverability hint", () => {
     expect(screen.getByTestId("title-token-hint")).toBeInTheDocument();
   });
 
-  // The picker itself is the affordance once open; two stacked panels is noise.
-  it("gets out of the way while a picker is open", () => {
+  /**
+   * #72: hidden, but the line stays reserved. Unmounting it made the modal
+   * shrink the instant the picker opened — the same resize complaint.
+   */
+  it("hides its text without collapsing its line", () => {
     render(<TitleTokenHint hidden />);
     expect(screen.queryByTestId("title-token-hint")).toBeNull();
+    const reserved = screen.getByTestId("title-token-hint-hidden");
+    expect(Array.from(reserved.classList)).toContain("invisible");
+    expect(reserved).toHaveAttribute("aria-hidden", "true");
   });
 });
