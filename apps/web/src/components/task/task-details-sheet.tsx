@@ -77,7 +77,10 @@ export default function TaskDetailsSheet({
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <SheetContent
         side="right"
-        className="w-full max-w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl p-0 gap-0 [&>button]:hidden"
+        // #103: the drawer was `lg:max-w-4xl` — 896px, ~62% of a 1440px
+        // viewport — which buried the board behind it. One step down keeps
+        // the description readable while leaving the board visible.
+        className="w-full max-w-full sm:max-w-md md:max-w-xl lg:max-w-3xl p-0 gap-0 [&>button]:hidden"
       >
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-background shrink-0">
           <div className="flex items-center gap-2">

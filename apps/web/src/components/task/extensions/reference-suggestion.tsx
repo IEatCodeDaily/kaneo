@@ -3,7 +3,10 @@ import { PluginKey } from "@tiptap/pm/state";
 import { ReactRenderer } from "@tiptap/react";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { shouldRepositionOverlay } from "@/lib/editor-overlay-position";
-import { shouldShowReferenceMenu } from "@/lib/editor-reference-query";
+import {
+  canOpenReferenceMenu,
+  shouldShowReferenceMenu,
+} from "@/lib/editor-reference-query";
 import ReferenceList, {
   type ReferenceItem,
   type ReferenceListRef,
@@ -41,6 +44,10 @@ export const ReferenceSuggestion = Extension.create<ReferenceSuggestionOptions>(
         char: "#",
         pluginKey: new PluginKey("kaneoReferenceSuggestion"),
         allowSpaces: false,
+        // #103: only a focused, editable editor may open the menu. Without
+        // this, hydrating a task whose description contains `#3` popped the
+        // reference dropdown open over the drawer on load.
+        allow: ({ editor }) => canOpenReferenceMenu(editor),
         // An empty query is a valid state: typing `#` alone must already list
         // referenceable tasks instead of waiting for a first search character.
         items: ({ query }) =>

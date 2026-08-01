@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TaskDetailsSheet from "./task-details-sheet";
 
-const useGetTask = vi.fn(() => ({ data: { number: 104 } }));
+const useGetTask = vi.fn((_taskId?: string) => ({ data: { number: 104 } }));
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("react-i18next", async (importOriginal) => ({
