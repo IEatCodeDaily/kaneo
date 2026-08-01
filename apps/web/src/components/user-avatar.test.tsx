@@ -10,11 +10,13 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+const navigate = vi.fn();
+
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ clear: vi.fn() }),
 }));
 vi.mock("@tanstack/react-router", () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
@@ -31,6 +33,12 @@ vi.mock("@/hooks/queries/config/use-get-config", () => ({
 vi.mock("@/hooks/queries/invitation/use-pending-invitations", () => ({
   usePendingInvitations: () => ({ data: [] }),
 }));
+const mocks = { organization: { id: "org-1", name: "Org" } as
+  | { id: string; name: string }
+  | undefined };
+vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
+  default: () => ({ data: mocks.organization }),
+}));
 vi.mock("@/store/board", () => ({
   default: () => ({ setBoard: vi.fn() }),
 }));
@@ -44,7 +52,11 @@ vi.mock("@/components/theme-toggle-dropdown", () => ({
 
 import { UserAvatar } from "./user-avatar";
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  navigate.mockClear();
+  mocks.organization = { id: "org-1", name: "Org" };
+});
 
 function openMenu() {
   render(<UserAvatar />);
@@ -77,6 +89,51 @@ describe("UserAvatar menu (#96)", () => {
 
     expect(screen.queryByTestId("notification-bell")).toBeNull();
     expect(screen.queryByLabelText(/notification/i)).toBeNull();
+  });
+});
+
+/**
+ * #145: Trash left the main sidebar nav and now lives in this profile menu.
+ * These cases pin the entry here so the trash page cannot become unreachable.
+ */
+describe("UserAvatar trash entry (#145)", () => {
+  it("renders the Trash entry in the profile menu", () => {
+    openMenu();
+
+    expect(
+      screen.getByRole("menuitem", { name: "navigation:sidebar.trash" }),
+    ).toBeTruthy();
+  });
+
+  it("navigates to the organization trash page", () => {
+    openMenu();
+
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "navigation:sidebar.trash" }),
+    );
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dashboard/organization/org-1/trash",
+    });
+  });
+
+  it("gives the Trash entry an icon like its sibling menu items", () => {
+    openMenu();
+
+    expect(
+      screen
+        .getByRole("menuitem", { name: "navigation:sidebar.trash" })
+        .querySelector("svg"),
+    ).not.toBeNull();
+  });
+
+  it("omits the Trash entry when no organization is resolved", () => {
+    mocks.organization = undefined;
+    openMenu();
+
+    expect(
+      screen.queryByRole("menuitem", { name: "navigation:sidebar.trash" }),
+    ).toBeNull();
   });
 });
 

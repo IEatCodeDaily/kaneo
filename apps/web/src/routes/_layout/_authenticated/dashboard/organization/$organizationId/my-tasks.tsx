@@ -155,24 +155,28 @@ function MyTasksComponent() {
                             icon (colour + shape) is far faster to scan and the
                             name stays as the tooltip, not a second label.
                           */}
-                          {task.columnName ? (
-                            <span
-                              className="inline-flex size-4 shrink-0 items-center justify-center"
-                              data-testid="my-task-status-icon"
-                              title={task.columnName}
-                            >
-                              {getColumnIcon(
-                                // Colour and default-icon lookup is keyed on
-                                // the column SLUG ("to-do", "in-review"), which
-                                // lives on `status`. `columnId` is a CUID and
-                                // matches nothing, so passing it renders every
-                                // status the same muted grey.
-                                task.status ?? "",
-                                task.isFinal ?? false,
-                                task.columnIcon ?? null,
-                              )}
-                            </span>
-                          ) : null}
+                          {/*
+                            #120 (round 3): the slot is ALWAYS rendered, even
+                            for planned/archived tickets that carry no column —
+                            skipping it collapsed the row and broke the column
+                            alignment against its neighbours.
+                          */}
+                          <span
+                            className="inline-flex size-4 shrink-0 items-center justify-center"
+                            data-testid="my-task-status-icon"
+                            title={task.columnName ?? task.status ?? undefined}
+                          >
+                            {getColumnIcon(
+                              // Colour and default-icon lookup is keyed on the
+                              // column SLUG ("to-do", "in-review"), which lives
+                              // on `status`. `columnId` is a CUID and matches
+                              // nothing, so passing it renders every status the
+                              // same muted grey.
+                              task.status ?? "",
+                              task.isFinal ?? false,
+                              task.columnIcon ?? null,
+                            )}
+                          </span>
                           {getPriorityIcon(task.priority ?? "")}
                           {/* Long titles clip rather than overflowing the row;
                               the full value stays available as a tooltip. */}

@@ -1231,7 +1231,7 @@
     "sidebar": {
       "overview": "Overview",
       "boards": "Boards",
-      "myTasks": "My Tasks",
+      "myTasks": "My Tickets",
       "inbox": "Inbox",
       "members": "Members",
       "invitations": "Invitations",
@@ -2273,7 +2273,7 @@
     }
   },
   "myTasks": {
-    "title": "My Tasks",
+    "title": "My Tickets",
     "loading": "Loading your tasks…",
     "empty": "Nothing assigned to you right now.",
     "count": "{{count}} tasks",

@@ -853,6 +853,15 @@ export const labelTable = pgTable(
       .primaryKey(),
     name: text("name").notNull(),
     color: text("color").notNull(),
+    /**
+     * Where the label came from. `kaneo` is a label a user created in Kaneo,
+     * `repo` is one that arrived with an issue imported from a linked
+     * repository. Defaults to `kaneo` so pre-existing rows stay valid.
+     */
+    source: text("source")
+      .$type<"kaneo" | "repo">()
+      .notNull()
+      .default("kaneo"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()

@@ -15,6 +15,7 @@ import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
 import Layout from "@/components/common/layout";
+import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
 import { Button } from "@/components/ui/button";
 import { KbdSequence } from "@/components/ui/kbd";
@@ -229,6 +230,19 @@ export default function BoardLayout({
                   Calendar
                 </Button>
               </div>
+            )}
+            {/*
+              #91 / #146: board access avatars live in the HEADER, at the same
+              level as the breadcrumb and view selector — not in the board
+              toolbar below it, and not on every ticket.
+            */}
+            {organizationId && boardId && (
+              <BoardAccessAvatars
+                className="ml-1"
+                organizationId={organizationId}
+                resourceId={boardId}
+                resourceType="board"
+              />
             )}
           </div>
         </div>

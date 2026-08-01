@@ -33,6 +33,12 @@ vi.mock("@/hooks/queries/notification/use-get-notifications", () => ({
   }),
 }));
 
+// Same story for the My Tasks entry, which renders MyTasksCountBadge on top of
+// useGetMyTasks (KFL-141).
+vi.mock("@/hooks/queries/task/use-get-my-tasks", () => ({
+  default: () => ({ data: [{ id: "t-1" }, { id: "t-2" }, { id: "t-3" }] }),
+}));
+
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -137,6 +143,21 @@ describe("NavMain cross-board entries (#58)", () => {
 });
 
 /**
+ * #145: Trash moved out of the sidebar into the profile popup menu. The
+ * counterpart assertion — that the entry exists there and routes to the trash
+ * page — lives in user-avatar.test.tsx.
+ */
+describe("NavMain trash entry moved to the profile menu (#145)", () => {
+  it("no longer renders a Trash entry in the sidebar nav", () => {
+    render(<NavMain />);
+
+    expect(
+      screen.queryByRole("button", { name: "navigation:sidebar.trash" }),
+    ).toBeNull();
+  });
+});
+
+/**
  * #93: the sidebar can be minimized to an icon-only rail, so every nav entry
  * needs (a) an icon that survives the collapse and (b) its name exposed as a
  * hover tooltip, which is the only label left once the text is hidden.
@@ -147,20 +168,8 @@ describe("NavMain icons and minimized tooltips (#93)", () => {
     "navigation:sidebar.myTasks",
     "navigation:sidebar.members",
   ];
-  // Trash (#53) is owned by another change; assert it separately so this suite
-  // does not fail if that entry is not present in the tree yet.
-  const optionalEntries = ["navigation:sidebar.trash"];
-
-  it("gives any additional nav entry an icon too", () => {
-    render(<NavMain />);
-
-    for (const name of optionalEntries) {
-      const button = screen.queryByRole("button", { name });
-      if (!button) continue;
-      expect(button.querySelector("svg")).not.toBeNull();
-      expect(button.getAttribute("title")).toBe(name);
-    }
-  });
+  // Trash (#53) used to be listed here as an optional entry; it now lives in
+  // the profile popup menu (#145) and is covered by user-avatar.test.tsx.
 
   it("renders an icon inside every nav entry", () => {
     render(<NavMain />);
