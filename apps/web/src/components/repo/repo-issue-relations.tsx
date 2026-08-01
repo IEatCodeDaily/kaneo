@@ -35,7 +35,9 @@ export default function RepoIssueRelations({
     state: "all",
     limit: 100,
   });
-  const { data: repos = [] } = useGetRepos({ organizationId });
+  const { data: repos = [], isPending: reposPending } = useGetRepos({
+    organizationId,
+  });
   const request = async (path: string, init: RequestInit) => {
     const response = await fetch(getApiUrl(path), {
       credentials: "include",
@@ -85,7 +87,14 @@ export default function RepoIssueRelations({
         <span className="w-14 shrink-0 text-xs text-muted-foreground">
           {label}
         </span>
-        {target.internal ? (
+        {reposPending ? (
+          <span
+            className="min-w-0 flex-1 truncate text-sm text-muted-foreground"
+            data-testid={`relation-link-${item.number}`}
+          >
+            #{item.number} {item.title}
+          </span>
+        ) : target.internal ? (
           <Link
             className="min-w-0 flex-1 truncate text-sm hover:text-primary"
             data-testid={`relation-link-${item.number}`}
