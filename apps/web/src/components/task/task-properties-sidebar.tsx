@@ -8,7 +8,6 @@ import {
   Plus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import TaskFlagSection from "@/components/flag/task-flag-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,7 @@ import { toast } from "@/lib/toast";
 import TaskAssigneePopover from "./task-assignee-popover";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
+import TaskLabelsRow from "./task-labels-row";
 import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
 import TaskStartDatePopover from "./task-start-date-popover";
@@ -88,8 +88,7 @@ export default function TaskPropertiesSidebar({
     useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
-  // The milestone control now lives in the task-detail topbar
-  // (components/task/task-topbar-milestone.tsx), not this sidebar.
+  // Milestone and flag controls live together in the task-detail topbar.
   const canMoveTask =
     Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
   const statusColumn = columns.find(
@@ -712,62 +711,50 @@ export default function TaskPropertiesSidebar({
           </>
         )}
 
-        <div className="hidden lg:flex px-3 flex-col gap-3 p-2">
-          {task && taskId && (
-            <TaskFlagSection
-              taskId={taskId}
-              boardId={task.boardId ?? boardId}
-              organizationId={organizationId}
-            />
-          )}
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-foreground/70 px-2">
-              {t("tasks:properties.labels")}
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5 px-2">
-              {task &&
-                taskLabels.length > 0 &&
-                taskLabels.map(
-                  (label: { id: string; name: string; color: string }) => (
-                    <TaskLabelsPopover
-                      key={`edit-${label.id}`}
-                      task={task}
-                      organizationId={organizationId}
-                      triggerNativeButton={false}
-                    >
-                      <Badge
-                        variant="outline"
-                        className="flex items-center gap-1 px-1.5 py-0.5 cursor-pointer hover:bg-accent/50 transition-colors text-[10px]"
-                      >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor:
-                              labelColors.find((c) => c.value === label.color)
-                                ?.color || "var(--color-neutral-400)",
-                          }}
-                        />
-                        <span className="truncate max-w-[60px]">
-                          {label.name}
-                        </span>
-                      </Badge>
-                    </TaskLabelsPopover>
-                  ),
-                )}
-
-              {task && (
-                <TaskLabelsPopover task={task} organizationId={organizationId}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0 rounded-full"
+        <div className="hidden lg:flex min-w-0 flex-col gap-3 p-2">
+          <TaskLabelsRow label={t("tasks:properties.labels")}>
+            {task &&
+              taskLabels.length > 0 &&
+              taskLabels.map(
+                (label: { id: string; name: string; color: string }) => (
+                  <TaskLabelsPopover
+                    key={`edit-${label.id}`}
+                    task={task}
+                    organizationId={organizationId}
+                    triggerNativeButton={false}
                   >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </TaskLabelsPopover>
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1 px-1.5 py-0.5 cursor-pointer hover:bg-accent/50 transition-colors text-[10px]"
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{
+                          backgroundColor:
+                            labelColors.find((c) => c.value === label.color)
+                              ?.color || "var(--color-neutral-400)",
+                        }}
+                      />
+                      <span className="truncate max-w-[60px]">
+                        {label.name}
+                      </span>
+                    </Badge>
+                  </TaskLabelsPopover>
+                ),
               )}
-            </div>
-          </div>
+
+            {task && (
+              <TaskLabelsPopover task={task} organizationId={organizationId}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 rounded-full"
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </TaskLabelsPopover>
+            )}
+          </TaskLabelsRow>
           {taskId && <TaskSyncedIssueProperty showLabel taskId={taskId} />}
         </div>
       </div>
