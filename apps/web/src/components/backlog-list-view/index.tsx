@@ -24,7 +24,7 @@ import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
@@ -45,7 +45,7 @@ function BacklogListView({
   disableDragDrop = false,
 }: BacklogListViewProps) {
   const { t } = useTranslation();
-  const { mutate: updateTask } = useUpdateTask();
+  const { mutate: reorderTasks } = useReorderTasks();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -229,18 +229,6 @@ function BacklogListView({
         } else {
           draft.archivedTasks?.splice(destinationIndex, 0, task);
         }
-
-        const finalTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
-
-        finalTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            position: index,
-          });
-        });
       } else {
         task.status = targetSection;
 
@@ -249,35 +237,28 @@ function BacklogListView({
         } else {
           draft.archivedTasks = [...(draft.archivedTasks || []), task];
         }
-
-        const updatedTasks =
-          targetSection === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
-
-        updatedTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            status: targetSection,
-            position: index,
-          });
-        });
-
-        const sourceTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
-
-        sourceTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            position: index,
-          });
-        });
       }
     });
 
     setBoard(updatedBoard);
+    const affected =
+      activeTask.status === targetSection
+        ? [
+            targetSection === "planned"
+              ? updatedBoard.plannedTasks || []
+              : updatedBoard.archivedTasks || [],
+          ]
+        : [updatedBoard.plannedTasks || [], updatedBoard.archivedTasks || []];
+    reorderTasks({
+      boardId: board.id,
+      tasks: affected.flatMap((tasks) =>
+        tasks.map((task, position) => ({
+          id: task.id,
+          position,
+          status: task.status,
+        })),
+      ),
+    });
   };
 
   const toggleSection = (sectionId: string) => {

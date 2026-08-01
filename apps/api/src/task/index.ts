@@ -32,6 +32,7 @@ import getTrashedTasks from "./controllers/get-trashed-tasks";
 import importTasks from "./controllers/import-tasks";
 import moveTask from "./controllers/move-task";
 import permanentlyDeleteTask from "./controllers/permanently-delete-task";
+import reorderTasks from "./controllers/reorder-tasks";
 import restoreTask from "./controllers/restore-task";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
@@ -137,6 +138,49 @@ const task = new Hono<{
       const tasks = await getTasks(boardId, filters);
 
       return c.json(tasks);
+    },
+  )
+  .patch(
+    "/reorder/:boardId",
+    describeRoute({
+      operationId: "reorderTasks",
+      tags: ["Tasks"],
+      description: "Atomically update task positions after drag and drop",
+      responses: {
+        200: {
+          description: "Task order updated successfully",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({ success: v.boolean(), updatedCount: v.number() }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        tasks: v.pipe(
+          v.array(
+            v.object({
+              id: v.string(),
+              position: v.pipe(v.number(), v.integer(), v.minValue(0)),
+              status: v.string(),
+            }),
+          ),
+          v.minLength(1),
+        ),
+      }),
+    ),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { boardId } = c.req.valid("param");
+      const { tasks } = c.req.valid("json");
+      return c.json(await reorderTasks(boardId, tasks, c.get("userId")));
     },
   )
   .patch(

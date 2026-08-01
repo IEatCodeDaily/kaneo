@@ -3,7 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -18,7 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
@@ -64,16 +63,6 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
     useBacklogBulkSelectionStore();
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
-
-  const { data: organizationMembers } = useGetActiveOrganizationMembers(
-    organization?.id ?? "",
-  );
-
-  const assignee = useMemo(() => {
-    return organizationMembers?.members?.find(
-      (member) => member.userId === task.userId,
-    );
-  }, [organizationMembers, task.userId]);
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -210,11 +199,11 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
                 {task.userId ? (
                   <Avatar className="h-6 w-6">
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={task.assigneeImage ?? ""}
+                      alt={task.assigneeName ?? ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (

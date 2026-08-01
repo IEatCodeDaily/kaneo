@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
@@ -79,16 +78,6 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
   const { toggleSelection, isSelected, isFocused } = useBulkSelectionStore();
   const isTaskSelected = isSelected(task.id);
   const isTaskFocused = isFocused(task.id);
-
-  const { data: organizationMembers } = useGetActiveOrganizationMembers(
-    organization?.id ?? "",
-  );
-
-  const assignee = useMemo(() => {
-    return organizationMembers?.members?.find(
-      (member) => member.userId === task.userId,
-    );
-  }, [organizationMembers, task.userId]);
 
   const pullRequests = useMemo(() => {
     if (!externalLinks) return [];
@@ -379,11 +368,11 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
                 {task.userId ? (
                   <Avatar className="h-6 w-6">
                     <AvatarImage
-                      src={assignee?.user?.image ?? ""}
-                      alt={assignee?.user?.name || ""}
+                      src={task.assigneeImage ?? ""}
+                      alt={task.assigneeName ?? ""}
                     />
                     <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(assignee?.user?.name)}
+                      {getInitials(task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
                 ) : (

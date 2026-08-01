@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
@@ -123,16 +122,6 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
     touchAction: isDragging ? "none" : "auto",
     zIndex: isDragging ? 999 : "auto",
   };
-
-  const { data: organizationMembers } = useGetActiveOrganizationMembers(
-    organization?.id ?? "",
-  );
-
-  const assignee = useMemo(() => {
-    return organizationMembers?.members?.find(
-      (member) => member.userId === task.userId,
-    );
-  }, [organizationMembers, task.userId]);
 
   function handleTaskCardClick(
     e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>,
@@ -243,11 +232,11 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
                   {task.userId ? (
                     <Avatar className="h-5 w-5">
                       <AvatarImage
-                        src={assignee?.user?.image ?? ""}
-                        alt={assignee?.user?.name || ""}
+                        src={task.assigneeImage ?? ""}
+                        alt={task.assigneeName ?? ""}
                       />
                       <AvatarFallback className="text-xs font-medium border border-border/30">
-                        {getInitials(assignee?.user?.name)}
+                        {getInitials(task.assigneeName)}
                       </AvatarFallback>
                     </Avatar>
                   ) : (
@@ -285,7 +274,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
               )}
 
               <div className="mb-2.5">
-                <TaskFlagBadges taskId={task.id} />
+                <TaskFlagBadges flags={task.flags} />
               </div>
 
               <div className="flex items-center gap-1.5">

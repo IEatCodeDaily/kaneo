@@ -4,7 +4,6 @@ import { tasksQueryOptions } from "@/lib/navigation-prefetch";
 export function useGetTasks(boardId: string) {
   return useQuery({
     ...tasksQueryOptions(boardId),
-    refetchInterval: 30000,
     enabled: !!boardId,
     // Board switches render the previous board's rows until the new ones land,
     // instead of flashing the empty state. `isPlaceholderData` tells the view

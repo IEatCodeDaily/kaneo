@@ -40,8 +40,8 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
 }));
 
-vi.mock("@/hooks/mutations/task/use-update-task", () => ({
-  useUpdateTask: () => ({ mutate: vi.fn() }),
+vi.mock("@/hooks/mutations/task/use-reorder-tasks", () => ({
+  useReorderTasks: () => ({ mutate: vi.fn() }),
 }));
 
 vi.mock("@/hooks/use-keyboard-shortcuts", () => ({

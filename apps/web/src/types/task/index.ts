@@ -44,8 +44,11 @@ type Task = {
   columnId?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
+  flags?: TaskFlag[];
   /** Parent of a `subtask` relation, when this task is a child. */
   parentTask?: TaskParent | null;
 };
 
 export default Task;
+
+import type { TaskFlag } from "@/fetchers/flag/get-task-flags";

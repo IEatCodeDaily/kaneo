@@ -23,6 +23,7 @@ import {
   teamTable,
   userTable,
 } from "../../database/schema";
+import getTaskFlags from "../../flag/controllers/get-task-flags";
 
 /** Self-join alias: the parent side of a subtask relation. */
 const parentTask = alias(taskTable, "parent_task");
@@ -165,26 +166,25 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
 
   const taskIds = paginatedTasks.map((task) => task.id);
 
-  const labelsData =
+  const [labelsData, externalLinksData, activeFlags] =
     taskIds.length > 0
-      ? await db
-          .select({
-            id: labelTable.id,
-            name: labelTable.name,
-            color: labelTable.color,
-            taskId: labelTable.taskId,
-          })
-          .from(labelTable)
-          .where(inArray(labelTable.taskId, taskIds))
-      : [];
-
-  const externalLinksData =
-    taskIds.length > 0
-      ? await db
-          .select()
-          .from(externalLinkTable)
-          .where(inArray(externalLinkTable.taskId, taskIds))
-      : [];
+      ? await Promise.all([
+          db
+            .select({
+              id: labelTable.id,
+              name: labelTable.name,
+              color: labelTable.color,
+              taskId: labelTable.taskId,
+            })
+            .from(labelTable)
+            .where(inArray(labelTable.taskId, taskIds)),
+          db
+            .select()
+            .from(externalLinkTable)
+            .where(inArray(externalLinkTable.taskId, taskIds)),
+          getTaskFlags(taskIds),
+        ])
+      : [[], [], []];
 
   const taskLabelsMap = new Map<
     string,
@@ -226,6 +226,13 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
         ? JSON.parse(externalLink.metadata)
         : null,
     });
+  }
+
+  const taskFlagsMap = new Map<string, typeof activeFlags>();
+  for (const flag of activeFlags) {
+    const flags = taskFlagsMap.get(flag.taskId) ?? [];
+    flags.push(flag);
+    taskFlagsMap.set(flag.taskId, flags);
   }
 
   const boardColumns = await db
@@ -276,6 +283,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     ...task,
     labels: taskLabelsMap.get(task.id) || [],
     externalLinks: taskExternalLinksMap.get(task.id) || [],
+    flags: taskFlagsMap.get(task.id) || [],
     parentTask: parentByChildId.get(task.id) ?? null,
   });
 

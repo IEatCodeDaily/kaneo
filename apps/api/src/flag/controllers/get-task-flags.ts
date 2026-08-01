@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import db from "../../database";
 import {
@@ -18,8 +18,15 @@ const target = alias(userTable, "flag_target_user");
  * flags as if the task were still flagged, so the isNull condition is the
  * guard this endpoint lives or dies by.
  */
-async function getTaskFlags(taskId: string, includeResolved = false) {
-  const conditions = [eq(taskFlagTable.taskId, taskId)];
+async function getTaskFlags(
+  taskId: string | string[],
+  includeResolved = false,
+) {
+  const conditions = [
+    Array.isArray(taskId)
+      ? inArray(taskFlagTable.taskId, taskId)
+      : eq(taskFlagTable.taskId, taskId),
+  ];
 
   if (!includeResolved) {
     conditions.push(isNull(taskFlagTable.resolvedAt));

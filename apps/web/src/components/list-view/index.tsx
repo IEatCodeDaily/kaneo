@@ -24,6 +24,7 @@ import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
@@ -32,6 +33,7 @@ import {
   collapseToggleLabel,
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
+import { reorderBoardTask } from "@/lib/reorder-board-task";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
@@ -213,6 +215,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const { mutate: updateTask } = useUpdateTask();
+  const { mutate: reorderTasks } = useReorderTasks();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
@@ -332,69 +335,10 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedBoard = produce(board, (draft) => {
-      const sourceColumn = draft?.columns?.find((col) =>
-        col.tasks.some((task) => task.id === activeTaskId),
-      );
-      const destinationColumn = draft?.columns?.find(
-        (col) =>
-          col.id === overId || col.tasks.some((task) => task.id === overId),
-      );
-
-      if (!sourceColumn || !destinationColumn) return;
-
-      const sourceTaskIndex = sourceColumn.tasks.findIndex(
-        (task) => task.id === activeTaskId,
-      );
-      const task = sourceColumn.tasks[sourceTaskIndex];
-
-      sourceColumn.tasks = sourceColumn.tasks.filter(
-        (t) => t.id !== activeTaskId,
-      );
-
-      if (sourceColumn.id === destinationColumn.id) {
-        let destinationIndex = destinationColumn.tasks.findIndex(
-          (t) => t.id === overId,
-        );
-        if (sourceTaskIndex <= destinationIndex) {
-          destinationIndex += 1;
-        }
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            status: destinationColumn.id,
-            position: index,
-          });
-        });
-      } else {
-        task.status = destinationColumn.id;
-        const destinationIndex =
-          overId === destinationColumn.id
-            ? destinationColumn.tasks.length
-            : destinationColumn.tasks.findIndex((t) => t.id === overId) + 1;
-
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            status: destinationColumn.id,
-            position: index,
-          });
-        });
-
-        sourceColumn.tasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            position: index,
-          });
-        });
-      }
-    });
-
-    setBoard(updatedBoard);
+    const result = reorderBoardTask(board, activeTaskId, overId);
+    if (!result) return;
+    setBoard(result.board);
+    reorderTasks({ boardId: board.id, tasks: result.updates });
   };
 
   const toggleSection = (sectionId: string) => {

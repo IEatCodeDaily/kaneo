@@ -13,13 +13,12 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { produce } from "immer";
 import { useEffect, useState } from "react";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { reorderBoardTask } from "@/lib/reorder-board-task";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import type { BoardWithTasks } from "@/types/board";
@@ -33,7 +32,6 @@ type KanbanBoardProps = {
 };
 
 function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
-  const queryClient = useQueryClient();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -43,7 +41,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const { mutate: updateTask } = useUpdateTask();
+  const { mutate: reorderTasks } = useReorderTasks();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,61 +126,10 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedBoard = produce(board, (draft) => {
-      const sourceColumn = draft?.columns?.find((col) =>
-        col.tasks.some((task) => task.id === activeId),
-      );
-      const destinationColumn = draft?.columns?.find(
-        (col) =>
-          col.id === overId || col.tasks.some((task) => task.id === overId),
-      );
-
-      if (!sourceColumn || !destinationColumn) return;
-
-      const sourceTaskIndex = sourceColumn.tasks.findIndex(
-        (task) => task.id === activeId,
-      );
-      const task = sourceColumn.tasks[sourceTaskIndex];
-
-      sourceColumn.tasks = sourceColumn.tasks.filter((t) => t.id !== activeId);
-
-      if (sourceColumn.id === destinationColumn.id) {
-        let destinationIndex = destinationColumn.tasks.findIndex(
-          (t) => t.id === overId,
-        );
-        if (sourceTaskIndex <= destinationIndex) {
-          destinationIndex += 1;
-        }
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, position: index });
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["boards", board.organizationId],
-        });
-      } else {
-        task.status = destinationColumn.id;
-        const destinationIndex =
-          overId === destinationColumn.id
-            ? destinationColumn.tasks.length
-            : destinationColumn.tasks.findIndex((t) => t.id === overId) + 1;
-
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, status: destinationColumn.id, position: index });
-        });
-
-        sourceColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, position: index });
-        });
-      }
-    });
-
-    setBoard(updatedBoard);
-    setActiveId(null);
+    const result = reorderBoardTask(board, activeId, overId);
+    if (!result) return;
+    setBoard(result.board);
+    reorderTasks({ boardId: board.id, tasks: result.updates });
   };
 
   // #111: one board-shaped skeleton, shared with the route and BoardLayout.
