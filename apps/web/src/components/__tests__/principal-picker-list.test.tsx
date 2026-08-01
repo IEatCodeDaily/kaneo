@@ -110,4 +110,30 @@ describe("PrincipalPickerList (#107)", () => {
 
     expect(screen.getByText("No people or teams found")).toBeTruthy();
   });
+
+  /**
+   * #107 (fourth round), verbatim: "Bound the user/team selector. make it
+   * scrollable. right now it'll extend infinitely."
+   *
+   * With 60 members the row container must scroll rather than grow, otherwise
+   * the popover hosting it runs off the viewport.
+   */
+  it("bounds the option list and scrolls instead of growing", () => {
+    const many = Array.from({ length: 60 }, (_, index) => ({
+      type: "user" as const,
+      value: `user-${index}`,
+      label: `Member ${index}`,
+    }));
+
+    render(<PrincipalPickerList onSelect={vi.fn()} options={many} />);
+
+    const row = screen.getByTestId("principal-option-user-user-0");
+    const list = row.parentElement as HTMLElement;
+    const classes = Array.from(list.classList);
+
+    // Assert the whole tokens: a max height AND overflow handling. Either one
+    // alone still lets the container stretch or clip.
+    expect(classes).toContain("overflow-y-auto");
+    expect(classes.some((token) => token.startsWith("max-h-"))).toBe(true);
+  });
 });

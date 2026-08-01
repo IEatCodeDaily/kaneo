@@ -70,7 +70,13 @@ export function PrincipalPickerList({
           value={search}
         />
       </div>
-      <div className="max-h-80 space-y-1 overflow-y-auto">
+      {/*
+        #107: capped so the list scrolls instead of stretching its container.
+        Sized for ~6 rows: tall enough to browse, short enough that a host with
+        other controls (the flag popover stacks types, notes and actions around
+        it) still fits on screen.
+      */}
+      <div className="max-h-56 space-y-1 overflow-y-auto">
         {clearLabel ? (
           <Button
             className="w-full justify-start gap-2"

@@ -138,7 +138,16 @@ export default function TaskFlagPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-3">
+        {/*
+          #107: the popover is height-capped and scrolls. Flag types, the
+          member/team list, the notes field and the activity all stack inside
+          it, so without a bound the panel grew past the viewport on boards with
+          many flag types or members.
+        */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex max-h-[min(28rem,70vh)] flex-col gap-2 overflow-y-auto p-3"
+        >
           <span className="text-xs font-medium text-foreground/70">
             {t("flags:dialog.type")}
           </span>
