@@ -124,6 +124,18 @@ describe("BoardSkeleton", () => {
     expect(withLabels.length).toBeLessThan(cards.length);
   });
 
+  it("gives every card a ticket-reference bar like a real task card", () => {
+    render(<BoardSkeleton />);
+
+    // Real cards lead with a muted ticket id (KFL-30) above the title.
+    const cards = screen.getAllByTestId("board-skeleton-card");
+    for (const card of cards) {
+      expect(
+        card.querySelector('[data-testid="board-skeleton-card-ref"]'),
+      ).not.toBeNull();
+    }
+  });
+
   it("sizes column tracks like the real board so content does not jump", () => {
     render(<BoardSkeleton />);
 
@@ -133,6 +145,12 @@ describe("BoardSkeleton", () => {
       expect(hasClass(column, "min-w-80")).toBe(true);
       expect(hasClass(column, "max-w-96")).toBe(true);
       expect(hasClass(column, "flex-1")).toBe(true);
+      // Measured against the loaded board: a real column settles at 368px
+      // because `min-w-max` sizes it to its widest card. Placeholder bars use
+      // percentage widths and have no intrinsic width, so without an explicit
+      // track the skeleton collapsed to the 320px floor and every column
+      // jumped 48px wider when the real cards landed.
+      expect(hasClass(column, "w-92")).toBe(true);
     }
   });
 

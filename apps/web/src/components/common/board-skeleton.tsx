@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  * placeholder-data renders this component sits behind on a board switch.
  */
 type CardShape = {
+  /** Small muted ticket reference (KFL-30) above the title on a real card. */
+  ref: string;
   /** One entry per wrapped title line. */
   title: string[];
   /** Label chips; empty for cards that stand in for unlabelled tasks. */
@@ -34,13 +36,19 @@ const columnShapes: ColumnShape[] = [
     nameWidth: "w-14",
     cards: [
       {
+        ref: "w-10",
         title: ["w-full", "w-4/5"],
         labels: ["w-14", "w-10"],
         meta: ["w-8", "w-14"],
       },
-      { title: ["w-11/12"], labels: ["w-16"], meta: ["w-8"] },
-      { title: ["w-full", "w-3/5"], labels: [], meta: ["w-8", "w-12"] },
-      { title: ["w-5/6"], labels: ["w-12"], meta: ["w-8"] },
+      { ref: "w-10", title: ["w-11/12"], labels: ["w-16"], meta: ["w-8"] },
+      {
+        ref: "w-10",
+        title: ["w-full", "w-3/5"],
+        labels: [],
+        meta: ["w-8", "w-12"],
+      },
+      { ref: "w-10", title: ["w-5/6"], labels: ["w-12"], meta: ["w-8"] },
     ],
   },
   {
@@ -48,28 +56,44 @@ const columnShapes: ColumnShape[] = [
     nameWidth: "w-24",
     cards: [
       {
+        ref: "w-10",
         title: ["w-full", "w-2/3"],
         labels: ["w-12", "w-16"],
         meta: ["w-8", "w-14"],
       },
-      { title: ["w-4/5"], labels: ["w-14"], meta: ["w-8", "w-12"] },
-      { title: ["w-full", "w-3/4"], labels: [], meta: ["w-8"] },
+      {
+        ref: "w-10",
+        title: ["w-4/5"],
+        labels: ["w-14"],
+        meta: ["w-8", "w-12"],
+      },
+      { ref: "w-10", title: ["w-full", "w-3/4"], labels: [], meta: ["w-8"] },
     ],
   },
   {
     key: "in-review",
     nameWidth: "w-20",
     cards: [
-      { title: ["w-11/12", "w-1/2"], labels: ["w-16"], meta: ["w-8", "w-12"] },
-      { title: ["w-3/4"], labels: [], meta: ["w-8"] },
+      {
+        ref: "w-10",
+        title: ["w-11/12", "w-1/2"],
+        labels: ["w-16"],
+        meta: ["w-8", "w-12"],
+      },
+      { ref: "w-10", title: ["w-3/4"], labels: [], meta: ["w-8"] },
     ],
   },
   {
     key: "done",
     nameWidth: "w-12",
     cards: [
-      { title: ["w-5/6"], labels: ["w-12"], meta: ["w-8", "w-14"] },
-      { title: ["w-full", "w-2/5"], labels: [], meta: ["w-8"] },
+      {
+        ref: "w-10",
+        title: ["w-5/6"],
+        labels: ["w-12"],
+        meta: ["w-8", "w-14"],
+      },
+      { ref: "w-10", title: ["w-full", "w-2/5"], labels: [], meta: ["w-8"] },
     ],
   },
 ];
@@ -93,6 +117,7 @@ const skeletonColumns = columnShapes.map((column) => ({
 
     return {
       id: cardId,
+      ref: card.ref,
       title: bars(card.title, "title"),
       labels: bars(card.labels, "label"),
       meta: bars(card.meta, "meta"),
@@ -109,10 +134,14 @@ const skeletonColumns = columnShapes.map((column) => ({
  * board's name for the whole render.
  *
  * Because it stands in for the board mid-navigation, it has to occupy the space
- * the board is about to: the outer scroller, the column track widths
- * (`min-w-80`/`max-w-96`/`flex-1`), the column chrome and the card padding all
- * mirror `KanbanBoard` → `Column` → `TaskCard`, so nothing jumps when the real
- * content lands.
+ * the board is about to: the outer scroller, the column track widths and the
+ * column/card chrome all mirror `KanbanBoard` → `Column` → `TaskCard`.
+ *
+ * The explicit `w-92` matters. The real track is `min-w-80 max-w-96 flex-1`
+ * inside a `min-w-max` row, so a loaded column sizes to its widest card and
+ * measures 368px — while placeholder bars (percentage widths) have no intrinsic
+ * width and collapse the track to the 320px floor. Without `w-92` every column
+ * jumped 48px wider the moment real cards landed.
  */
 export function BoardSkeleton() {
   return (
@@ -130,7 +159,7 @@ export function BoardSkeleton() {
             <div
               key={column.key}
               data-testid="board-skeleton-column"
-              className="h-full max-w-96 min-w-80 shrink-0 flex-1"
+              className="h-full w-92 max-w-96 min-w-80 shrink-0 flex-1"
             >
               {/* Column chrome from kanban-board/column/index.tsx. */}
               <div className="flex h-full min-h-0 w-full flex-col rounded-xl border border-border/70 bg-muted/40 shadow-xs/5 dark:bg-card/90">
@@ -168,6 +197,11 @@ export function BoardSkeleton() {
                         <Skeleton
                           data-testid="board-skeleton-card-avatar"
                           className="absolute top-3 right-3 h-5 w-5 rounded-full"
+                        />
+
+                        <Skeleton
+                          data-testid="board-skeleton-card-ref"
+                          className={`mb-1.5 h-2.5 ${card.ref} rounded`}
                         />
 
                         <div className="mb-2.5 flex flex-col gap-1.5 pr-6">
