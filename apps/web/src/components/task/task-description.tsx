@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/menu";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
@@ -78,6 +79,9 @@ import { uploadTaskImage } from "@/lib/upload-task-image";
 import { AttachmentCard } from "./extensions/attachment-card";
 import { EmbedBlock } from "./extensions/embed-block";
 import { KaneoIssueLink } from "./extensions/kaneo-issue-link";
+import { KaneoMention } from "./extensions/kaneo-mention";
+import type { MentionMember } from "./extensions/mention-list";
+import { MentionSuggestion } from "./extensions/mention-suggestion";
 import { ReferenceSuggestion } from "./extensions/reference-suggestion";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
@@ -278,6 +282,22 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const { data: activeOrganization } = useActiveOrganization();
   const organizationIdRef = useRef("");
   organizationIdRef.current = activeOrganization?.id ?? "";
+  // #114: `@` mentions of organization members. Read through a ref for the
+  // same reason as the organization id — the member list resolves after the
+  // editor is created and must not force it to be rebuilt.
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    activeOrganization?.id ?? "",
+  );
+  const mentionMembersRef = useRef<MentionMember[]>([]);
+  mentionMembersRef.current = useMemo(
+    () =>
+      (organizationMembers?.members ?? []).map((member) => ({
+        id: member.userId,
+        label: member.user?.name ?? member.user?.email ?? "",
+        image: member.user?.image ?? null,
+      })),
+    [organizationMembers],
+  );
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const taskRef = useRef(task);
@@ -604,6 +624,10 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         EmbedBlock,
         AttachmentCard,
         KaneoIssueLink,
+        KaneoMention,
+        MentionSuggestion.configure({
+          getMembers: () => mentionMembersRef.current,
+        }),
         ReferenceSuggestion.configure({
           search: (query) =>
             searchReferences({
