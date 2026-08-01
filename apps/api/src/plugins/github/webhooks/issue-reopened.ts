@@ -10,7 +10,7 @@ import {
 } from "../services/task-service";
 import { resolveTargetStatus } from "../utils/resolve-column";
 
-type IssueClosedPayload = {
+type IssueReopenedPayload = {
   action: string;
   issue: {
     number: number;
@@ -25,12 +25,16 @@ type IssueClosedPayload = {
   };
 };
 
-export async function handleIssueClosed(payload: IssueClosedPayload) {
+/**
+ * #2: reopening an issue had NO handler at all — `issues.reopened` was never
+ * subscribed, so a task closed by `issues.closed` could never come back.
+ *
+ * Mirrors handleIssueClosed: board-synced tasks resolve through external_link,
+ * then task-level followers (links with no integration) are synced directly.
+ */
+export async function handleIssueReopened(payload: IssueReopenedPayload) {
   const { issue, repository } = payload;
 
-  // #2: tasks linked directly to this issue must sync even when their board
-  // has no repo integration at all. Track what the integration path already
-  // updated so a board-synced task isn't touched twice.
   const handledTaskIds: string[] = [];
 
   const integrations = await findAllIntegrationsByRepo(
@@ -63,17 +67,10 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
       ? JSON.parse(externalLink.metadata)
       : {};
 
-    if (existingMetadata.createdFrom === "kaneo") {
-      continue;
-    }
-
-    // Was `task.projectId`, which does not exist on the task row — the board
-    // rename left this reading `undefined`, so resolveTargetStatus never found
-    // the board's columns and silently fell back for every close.
     const targetStatus = await resolveTargetStatus(
       task.boardId,
-      "issue_closed",
-      "done",
+      "issue_reopened",
+      "to-do",
     );
 
     const statusResult = await updateTaskStatus(task.id, targetStatus);
@@ -96,7 +93,7 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
     await updateExternalLink(externalLink.id, {
       metadata: {
         ...existingMetadata,
-        state: "closed",
+        state: "open",
       },
     });
 
@@ -108,8 +105,10 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
     owner: repository.owner.login,
     repo: repository.name,
     issueNumber: issue.number,
-    eventType: "issue_closed",
-    fallbackStatus: "done",
+    eventType: "issue_reopened",
+    fallbackStatus: "to-do",
     alreadyHandledTaskIds: handledTaskIds,
   });
 }
+
+export default handleIssueReopened;

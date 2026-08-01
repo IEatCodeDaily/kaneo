@@ -5,6 +5,7 @@ import { handleIssueDeleted } from "./webhooks/issue-deleted";
 import { handleIssueEdited } from "./webhooks/issue-edited";
 import { handleIssueLabeled } from "./webhooks/issue-labeled";
 import { handleIssueOpened } from "./webhooks/issue-opened";
+import { handleIssueReopened } from "./webhooks/issue-reopened";
 import { handleIssueTransferred } from "./webhooks/issue-transferred";
 import { handleLabelCreated } from "./webhooks/label-created";
 import { handlePullRequestClosed } from "./webhooks/pull-request-closed";
@@ -84,6 +85,21 @@ export function setupWebhookHandlers() {
       console.log("[GitHub Webhook] issues.closed handled successfully");
     } catch (error) {
       console.error("[GitHub Webhook] issues.closed handler error:", error);
+      throw error;
+    }
+  });
+
+  // #2: reopening had no subscription at all, so a task closed by
+  // issues.closed could never be reopened from GitHub.
+  githubApp.webhooks.on("issues.reopened", async ({ payload }) => {
+    console.log("[GitHub Webhook] Handling issues.reopened");
+    try {
+      await handleIssueReopened(
+        payload as Parameters<typeof handleIssueReopened>[0],
+      );
+      console.log("[GitHub Webhook] issues.reopened handled successfully");
+    } catch (error) {
+      console.error("[GitHub Webhook] issues.reopened handler error:", error);
       throw error;
     }
   });
