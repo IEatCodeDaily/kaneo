@@ -3,6 +3,7 @@ import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
 import { TeamViewSelector } from "@/components/team-view-selector";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +15,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { VersionDisplay } from "@/components/version-display";
 import { shortcuts } from "@/constants/shortcuts";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useRememberCurrentView } from "@/hooks/use-remembered-view";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
@@ -32,7 +34,14 @@ import Search from "./search";
  * Inbox. The version number is a discreet marker in the bottom-left corner.
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, state } = useSidebar();
+  const { data: organization } = useActiveOrganization();
+  const organizationInitials = organization?.name
+    ?.split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join("");
 
   // Remember the board/repo view the user is in, for the next time they
   // come back to a board or repo.
@@ -76,8 +85,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavRepos />
       </SidebarContent>
       <SidebarFooter data-testid="sidebar-footer">
-        <div className="flex items-center justify-between gap-2">
-          <VersionDisplay />
+        <div className="flex items-center gap-2">
+          <div
+            className="flex min-w-0 flex-1 items-center gap-2"
+            data-testid="sidebar-organization-identity"
+          >
+            <Avatar className="size-7 shrink-0 rounded-md">
+              <AvatarImage
+                alt={organization?.name ?? ""}
+                src={organization?.logo ?? ""}
+              />
+              <AvatarFallback className="rounded-md text-[10px] font-semibold">
+                {organizationInitials || "OR"}
+              </AvatarFallback>
+            </Avatar>
+            {state !== "collapsed" && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">
+                  {organization?.name ?? "Organization"}
+                </p>
+                <VersionDisplay />
+              </div>
+            )}
+          </div>
           <div className="h-8 w-8 shrink-0">
             <UserAvatar />
           </div>

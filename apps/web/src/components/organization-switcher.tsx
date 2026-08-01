@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -70,36 +71,41 @@ export function OrganizationMenuSection() {
 
   return (
     <div data-testid="organization-selector">
-      <DropdownMenuLabel>
-        {t("navigation:organizationSwitcher.organizations")}
-      </DropdownMenuLabel>
-      {organizations?.map((ws: Organization, index: number) => (
+      {/* Base UI's MenuGroupLabel requires MenuGroup context. Rendering this
+          label directly caused production error #31 whenever the profile menu
+          opened; mocked unit primitives hid the invalid tree. */}
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>
+          {t("navigation:organizationSwitcher.organizations")}
+        </DropdownMenuLabel>
+        {organizations?.map((ws: Organization, index: number) => (
+          <DropdownMenuItem
+            className="h-7 text-sm"
+            disabled={isSwitching || ws.id === organization?.id}
+            key={ws.id}
+            onClick={() => {
+              if (!isSwitching && ws.id !== organization?.id) {
+                handleOrganizationChange(ws);
+              }
+            }}
+          >
+            <span className="flex-1 text-left">
+              {isSwitching && ws.id === organization?.id
+                ? t("navigation:organizationSwitcher.switching")
+                : ws.name}
+            </span>
+            <DropdownMenuShortcut>
+              {getModifierKeyText()} {index > 8 ? "0" : index + 1}
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuItem
           className="h-7 text-sm"
-          disabled={isSwitching || ws.id === organization?.id}
-          key={ws.id}
-          onClick={() => {
-            if (!isSwitching && ws.id !== organization?.id) {
-              handleOrganizationChange(ws);
-            }
-          }}
+          onClick={() => setIsCreateOrganizationModalOpen(true)}
         >
-          <span className="flex-1 text-left">
-            {isSwitching && ws.id === organization?.id
-              ? t("navigation:organizationSwitcher.switching")
-              : ws.name}
-          </span>
-          <DropdownMenuShortcut>
-            {getModifierKeyText()} {index > 8 ? "0" : index + 1}
-          </DropdownMenuShortcut>
+          <span>{t("navigation:organizationSwitcher.addOrganization")}</span>
         </DropdownMenuItem>
-      ))}
-      <DropdownMenuItem
-        className="h-7 text-sm"
-        onClick={() => setIsCreateOrganizationModalOpen(true)}
-      >
-        <span>{t("navigation:organizationSwitcher.addOrganization")}</span>
-      </DropdownMenuItem>
+      </DropdownMenuGroup>
       <DropdownMenuSeparator />
 
       <CreateOrganizationModal

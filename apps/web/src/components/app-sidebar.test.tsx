@@ -26,6 +26,11 @@ vi.mock("@/hooks/use-remembered-view", () => ({
 vi.mock("@/hooks/use-user-websocket", () => ({
   useUserWebSocket: () => undefined,
 }));
+vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
+  default: () => ({
+    data: { id: "org-1", name: "NevrLabs", logo: null },
+  }),
+}));
 vi.mock("@/hooks/use-keyboard-shortcuts", () => ({
   useRegisterShortcuts: () => undefined,
   getModifierKeyText: () => "Ctrl",
