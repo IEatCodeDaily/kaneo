@@ -56,7 +56,10 @@ import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 import { ResourceSyncBadge } from "./resource-sync-badge";
-import { selectResourceAutoLinks } from "./task-resource-links";
+import {
+  repoLinkSyncResourceType,
+  selectResourceAutoLinks,
+} from "./task-resource-links";
 
 type ResourceType = "issues" | "pull-requests";
 
@@ -411,6 +414,15 @@ export default function TaskResources({
                   #{item.number}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                {/*
+                  #75: a manually linked *issue* is the task's bidirectionally
+                  synced issue, so it carries the same [Synced] badge as an
+                  auto-linked one. Previously the badge only rendered for
+                  externalLinks, so repo-linked issues showed no badge at all.
+                */}
+                <ResourceSyncBadge
+                  resourceType={repoLinkSyncResourceType(item.itemType)}
+                />
                 {repoLabelById.has(item.repoId) && (
                   <RepoLabel label={repoLabelById.get(item.repoId) as string} />
                 )}
