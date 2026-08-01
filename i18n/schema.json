@@ -8214,6 +8214,70 @@
 						"agentsManagedByAdmins"
 					]
 				},
+				"agentManager": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"alphaBadge": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"nameLabel": {
+							"type": "string"
+						},
+						"namePlaceholder": {
+							"type": "string"
+						},
+						"create": {
+							"type": "string"
+						},
+						"expiryHint": {
+							"type": "string"
+						},
+						"secretWarning": {
+							"type": "string"
+						},
+						"copy": {
+							"type": "string"
+						},
+						"agentBadge": {
+							"type": "string"
+						},
+						"agentMeta": {
+							"type": "string"
+						},
+						"revoke": {
+							"type": "string"
+						},
+						"createError": {
+							"type": "string"
+						},
+						"deleteError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"alphaBadge",
+						"description",
+						"nameLabel",
+						"namePlaceholder",
+						"create",
+						"expiryHint",
+						"secretWarning",
+						"copy",
+						"agentBadge",
+						"agentMeta",
+						"revoke",
+						"createError",
+						"deleteError"
+					]
+				},
 				"invitations": {
 					"type": "object",
 					"additionalProperties": false,
@@ -8359,6 +8423,7 @@
 			"required": [
 				"roles",
 				"members",
+				"agentManager",
 				"invitations",
 				"inviteModal",
 				"membersTable"

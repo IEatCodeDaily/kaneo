@@ -29,7 +29,7 @@ export function OrganizationMembersGroups({
         <div className="flex items-center gap-2 px-1">
           <Users className="size-4 text-muted-foreground" />
           <h2 id="people-heading" className="text-sm font-semibold">
-            {t("team.members.people")}
+            {t("team:members.people")}
           </h2>
         </div>
         <MembersTable
@@ -46,14 +46,14 @@ export function OrganizationMembersGroups({
         <div className="flex items-center gap-2 px-1">
           <Bot className="size-4 text-muted-foreground" />
           <h2 id="agents-heading" className="text-sm font-semibold">
-            {t("team.members.agents")}
+            {t("team:members.agents")}
           </h2>
         </div>
         {canManageAgents ? (
           <AgentManager />
         ) : (
           <p className="px-1 text-sm text-muted-foreground">
-            {t("team.members.agentsManagedByAdmins")}
+            {t("team:members.agentsManagedByAdmins")}
           </p>
         )}
       </section>
