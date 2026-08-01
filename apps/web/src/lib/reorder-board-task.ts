@@ -7,6 +7,15 @@ export type TaskOrderUpdate = {
   status: string;
 };
 
+export const taskOrderUpdates = (board: BoardWithTasks): TaskOrderUpdate[] =>
+  board.columns.flatMap((column) =>
+    column.tasks.map((task, position) => ({
+      id: task.id,
+      position,
+      status: column.id,
+    })),
+  );
+
 type ReorderResult = {
   board: BoardWithTasks;
   updates: TaskOrderUpdate[];
@@ -17,6 +26,7 @@ export function reorderBoardTask(
   activeId: string,
   overId: string,
 ): ReorderResult | null {
+  if (activeId === overId) return null;
   let updates: TaskOrderUpdate[] = [];
   let moved = false;
   const next = produce(board, (draft) => {

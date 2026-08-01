@@ -2,7 +2,9 @@ import {
   type CollisionDetection,
   closestCorners,
   DndContext,
+  type DragCancelEvent,
   type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   type DropAnimation,
@@ -16,12 +18,12 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { reorderBoardTask } from "@/lib/reorder-board-task";
+import { reorderBoardTask, taskOrderUpdates } from "@/lib/reorder-board-task";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import type { BoardWithTasks } from "@/types/board";
@@ -50,6 +52,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const boardBeforeDrag = useRef<BoardWithTasks | null>(null);
   const { isPending: isReorderPending, mutate: reorderTasks } =
     useReorderTasks();
   const navigate = useNavigate();
@@ -124,7 +127,32 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
+    boardBeforeDrag.current = board;
     setActiveId(event.active.id);
+  };
+
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (!over) return;
+
+    const activeTaskId = active.id.toString();
+    const overId = over.id.toString();
+    const source = board.columns.find((column) =>
+      column.tasks.some((task) => task.id === activeTaskId),
+    );
+    const destination = board.columns.find(
+      (column) =>
+        column.id === overId || column.tasks.some((task) => task.id === overId),
+    );
+    if (!source || !destination || source.id === destination.id) return;
+
+    const result = reorderBoardTask(board, activeTaskId, overId);
+    if (result) setBoard(result.board);
+  };
+
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    if (boardBeforeDrag.current) setBoard(boardBeforeDrag.current);
+    boardBeforeDrag.current = null;
+    setActiveId(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -137,13 +165,32 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     const overId = over.id.toString();
 
     const result = reorderBoardTask(board, activeId, overId);
-    if (!result) return;
+    if (!result) {
+      if (
+        boardBeforeDrag.current &&
+        boardBeforeDrag.current.columns.find((column) =>
+          column.tasks.some((task) => task.id === activeId),
+        )?.id !==
+          board.columns.find((column) =>
+            column.tasks.some((task) => task.id === activeId),
+          )?.id
+      ) {
+        reorderTasks({
+          boardId: board.id,
+          board,
+          tasks: taskOrderUpdates(board),
+        });
+      }
+      boardBeforeDrag.current = null;
+      return;
+    }
     setBoard(result.board);
     reorderTasks({
       boardId: board.id,
       board: result.board,
-      tasks: result.updates,
+      tasks: taskOrderUpdates(result.board),
     });
+    boardBeforeDrag.current = null;
   };
 
   // #111: one board-shaped skeleton, shared with the route and BoardLayout.
@@ -163,7 +210,9 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     <DndContext
       sensors={sensors}
       collisionDetection={pointerThenCorners}
+      onDragCancel={handleDragCancel}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       {/* #131: hover previews stay hidden for as long as a card is in flight. */}
