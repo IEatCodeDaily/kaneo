@@ -72,6 +72,12 @@ type CreateTaskModalProps = {
   onClose: () => void;
   status?: string;
   boardId?: string;
+  /**
+   * Pre-selects a parent task so the created task becomes its subtask.
+   * Subtask creation reuses this modal instead of a bespoke inline input and
+   * passes the ticket it was opened from (KFL-126).
+   */
+  initialParentTaskId?: string | null;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -153,6 +159,7 @@ function CreateTaskModal({
   onClose,
   status,
   boardId,
+  initialParentTaskId = null,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const { board, setBoard } = useBoardStore();
@@ -233,7 +240,9 @@ function CreateTaskModal({
   const [createMore, setCreateMore] = useState(false);
   const [labels, setLabels] = useState<Label[]>([]);
   const [milestoneId, setMilestoneId] = useState<string | null>(null);
-  const [parentTaskId, setParentTaskId] = useState<string | null>(null);
+  const [parentTaskId, setParentTaskId] = useState<string | null>(
+    initialParentTaskId,
+  );
   const [draftTask, setDraftTask] = useState<Task | null>(null);
 
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -256,10 +265,17 @@ function CreateTaskModal({
   const didSubmitRef = useRef(false);
   const didDiscardRef = useRef(false);
   const restoredForRef = useRef<string | null>(null);
+  // Tracks which seeded parent the current opening already applied, so
+  // reopening re-seeds but clearing the parent mid-edit is not undone.
+  const seededParentRef = useRef<string | null | undefined>(undefined);
 
   const { saveDraft, clearDraft } = useTaskDraftStore();
-  // Keyed per board+column so two columns don't fight over one draft.
-  const draftKey = `${resolvedBoardId || "no-board"}:${status ?? "default"}`;
+  // Keyed per board+column so two columns don't fight over one draft. Subtask
+  // creation adds the parent, so a half-typed subtask never resurfaces in the
+  // plain "New task" modal (and vice versa).
+  const draftKey = `${resolvedBoardId || "no-board"}:${status ?? "default"}${
+    initialParentTaskId ? `:parent:${initialParentTaskId}` : ""
+  }`;
 
   const { mutateAsync: createTask } = useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
@@ -303,7 +319,7 @@ function CreateTaskModal({
     setSelectedColor("gray");
     setNewLabelName("");
     setMilestoneId(null);
-    setParentTaskId(null);
+    setParentTaskId(initialParentTaskId);
     draftCreationPromiseRef.current = null;
     didSubmitRef.current = false;
     setDraftTask(null);
@@ -568,7 +584,9 @@ function CreateTaskModal({
         setSelectedColor("gray");
         setNewLabelName("");
         setMilestoneId(null);
-        setParentTaskId(null);
+        // "Create more" keeps the seeded parent so a run of subtasks all land
+        // under the same ticket.
+        setParentTaskId(initialParentTaskId);
         draftCreationPromiseRef.current = null;
         didSubmitRef.current = false;
         setDraftTask(null);
@@ -606,6 +624,22 @@ function CreateTaskModal({
     setLabels((saved.labels as Label[]) ?? []);
     setDraftTask((saved.draftTask as Task | null) ?? null);
   }, [open, draftKey]);
+
+  /**
+   * Seeds the parent-task selector when the modal is opened from a ticket's
+   * Sub-tasks section. The modal instance is usually kept mounted, so the
+   * initial `useState` value alone would not pick up a parent chosen after
+   * mount. Seeded once per opening so the user can still clear the parent.
+   */
+  useEffect(() => {
+    if (!open) {
+      seededParentRef.current = undefined;
+      return;
+    }
+    if (seededParentRef.current === initialParentTaskId) return;
+    seededParentRef.current = initialParentTaskId;
+    setParentTaskId(initialParentTaskId);
+  }, [open, initialParentTaskId]);
 
   const priorityOptions = useMemo(
     () =>
@@ -895,12 +929,11 @@ function CreateTaskModal({
               required
             />
             {/*
-              #72: the picker is positioned against this wrapper so it floats
-              over the modal body. Previously it sat inline and pushed the
-              description and footer down, resizing the modal on every open.
-              The wrapper has zero height of its own, so nothing shifts.
+              #72: zero-height anchor directly under the title input, so the
+              picker floats over the modal body without shifting it AND opens
+              flush against the title rather than below the hint line.
             */}
-            <div className="relative">
+            <div className="relative h-0">
               <TitleTokenSuggestions
                 onCommit={handleTitleTokenCommit}
                 onDismiss={() => setTitleToken(null)}

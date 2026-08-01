@@ -54,7 +54,9 @@ describe("MyTasksCountBadge", () => {
   });
 
   it("caps the displayed count at 99+", () => {
-    withTasks(Array.from({ length: 120 }, (_, index) => ({ id: String(index) })));
+    withTasks(
+      Array.from({ length: 120 }, (_, index) => ({ id: String(index) })),
+    );
 
     render(<MyTasksCountBadge organizationId="org-1" />);
 

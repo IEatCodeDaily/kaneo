@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -41,8 +42,6 @@ import {
   CommandPanel,
   CommandSeparator,
 } from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
@@ -72,8 +71,9 @@ export default function TaskSubtasks({
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isAdding, setIsAdding] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  // KFL-126: subtask creation uses the shared Create Task modal, seeded with
+  // this ticket as the parent, instead of a bespoke inline title input.
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkQuery, setLinkQuery] = useState("");
@@ -87,7 +87,6 @@ export default function TaskSubtasks({
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id ?? "",
   );
-  const createTask = useCreateTask();
   const createRelation = useCreateTaskRelation();
   const { mutateAsync: deleteTaskRelation } = useDeleteTaskRelation(taskId);
   const { mutateAsync: deleteTask } = useDeleteTask();
@@ -298,31 +297,6 @@ export default function TaskSubtasks({
     toggleSelection,
   ]);
 
-  const handleAddSubtask = async () => {
-    if (!newTitle.trim()) return;
-
-    try {
-      const newTask = await createTask.mutateAsync({
-        title: newTitle.trim(),
-        description: "",
-        boardId,
-        status: "to-do",
-        priority: "no-priority",
-      });
-
-      await createRelation.mutateAsync({
-        sourceTaskId: taskId,
-        targetTaskId: newTask.id,
-        relationType: "subtask",
-      });
-
-      setNewTitle("");
-      setIsAdding(false);
-    } catch {
-      toast.error(t("tasks:subtasks.createError"));
-    }
-  };
-
   // Tasks eligible to become a subtask: every task in the organization except
   // this task, its existing subtasks, and tasks already related to it.
   const linkCandidates = useMemo(() => {
@@ -489,7 +463,9 @@ export default function TaskSubtasks({
                 variant="ghost"
                 size="xs"
                 className="text-muted-foreground"
-                onClick={() => setIsAdding(true)}
+                data-testid="subtask-create-trigger"
+                title={t("tasks:subtasks.addAction")}
+                onClick={() => setIsCreateModalOpen(true)}
               >
                 <Plus className="size-3.5" />
               </Button>
@@ -545,51 +521,26 @@ export default function TaskSubtasks({
             </AnimatePresence>
           </div>
 
-          {isAdding && (
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                size="sm"
-                placeholder={t("tasks:subtasks.inputPlaceholder")}
-                value={newTitle}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTitle(e.target.value)
-                }
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                  if (e.key === "Enter") handleAddSubtask();
-                  if (e.key === "Escape") {
-                    setIsAdding(false);
-                    setNewTitle("");
-                  }
-                }}
-                autoFocus
-              />
-              <Button
-                size="xs"
-                onClick={handleAddSubtask}
-                disabled={!newTitle.trim() || createTask.isPending}
-              >
-                {t("tasks:subtasks.addAction")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewTitle("");
-                }}
-              >
-                {t("common:actions.cancel")}
-              </Button>
-            </div>
-          )}
-
-          {!isAdding && totalCount === 0 && (
+          {totalCount === 0 && (
             <p className="text-xs text-muted-foreground px-2 py-1">
               {t("tasks:subtasks.empty")}
             </p>
           )}
         </CollapsibleContent>
       </Collapsible>
+
+      {/*
+        KFL-126: the same Create Task modal used from the board/list views,
+        with this ticket seeded as the parent. The modal itself creates the
+        `subtask` relation on submit, so the child really lands under this
+        ticket.
+      */}
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        boardId={boardId}
+        initialParentTaskId={taskId}
+      />
 
       <AlertDialog
         open={!!deleteTaskId}
