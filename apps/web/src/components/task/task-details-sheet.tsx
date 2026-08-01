@@ -15,7 +15,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import TaskDetailsContent from "./task-details-content";
 import TaskPropertiesSidebar from "./task-properties-sidebar";
-import TaskTopbarMilestone from "./task-topbar-milestone";
+import TaskTopbarControls from "./task-topbar-controls";
 
 type TaskDetailsSheetProps = {
   taskId: string | undefined;
@@ -35,6 +35,7 @@ export default function TaskDetailsSheet({
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(
     taskId,
   );
+  const [isOpen, setIsOpen] = useState(Boolean(taskId));
 
   const { data: task } = useGetTask(currentTaskId ?? "");
   const { data: board } = useGetBoard({ id: boardId, organizationId });
@@ -43,6 +44,7 @@ export default function TaskDetailsSheet({
     if (taskId) {
       // Update taskId immediately without closing/reopening
       setCurrentTaskId(taskId);
+      setIsOpen(true);
     } else {
       // Delay clearing to allow exit animation
       const timer = setTimeout(() => {
@@ -51,6 +53,13 @@ export default function TaskDetailsSheet({
       return () => clearTimeout(timer);
     }
   }, [taskId]);
+
+  const handleClose = useCallback(() => {
+    // Do not keep the drawer visually open while the router processes removal
+    // of the taskId search param (which can trigger route/query work).
+    setIsOpen(false);
+    onClose();
+  }, [onClose]);
 
   const handleOpenFullPage = useCallback(() => {
     if (!currentTaskId) return;
@@ -65,7 +74,7 @@ export default function TaskDetailsSheet({
   }, [navigate, organizationId, boardId, currentTaskId]);
 
   return (
-    <Sheet open={!!taskId} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <SheetContent
         side="right"
         className="w-full max-w-full sm:max-w-lg md:max-w-2xl lg:max-w-4xl p-0 gap-0 [&>button]:hidden"
@@ -76,7 +85,11 @@ export default function TaskDetailsSheet({
               {board?.slug}-{task?.number}
             </span>
             {currentTaskId && (
-              <TaskTopbarMilestone taskId={currentTaskId} boardId={boardId} />
+              <TaskTopbarControls
+                taskId={currentTaskId}
+                boardId={boardId}
+                organizationId={organizationId}
+              />
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -106,7 +119,8 @@ export default function TaskDetailsSheet({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              aria-label={t("tasks:detail.close")}
+              onClick={handleClose}
               className="text-foreground"
             >
               <X className="size-4" />
