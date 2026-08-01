@@ -1744,7 +1744,8 @@
 		"titleTokens": {
 			"labels": "Labels",
 			"members": "Mitglieder",
-			"priority": "Priorität"
+			"priority": "Priorität",
+			"hint": "# für Labels, @ für Mitglieder, ! für Priorität"
 		}
 	},
 	"invitations": {

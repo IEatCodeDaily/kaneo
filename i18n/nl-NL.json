@@ -1477,7 +1477,8 @@
 		"titleTokens": {
 			"labels": "Labels",
 			"members": "Leden",
-			"priority": "Prioriteit"
+			"priority": "Prioriteit",
+			"hint": "Typ # voor labels, @ voor leden, ! voor prioriteit"
 		}
 	},
 	"invitations": {

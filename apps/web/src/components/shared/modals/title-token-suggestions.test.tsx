@@ -8,6 +8,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { findActiveTitleToken } from "@/lib/title-token-autocomplete";
 import {
+  TitleTokenHint,
   type TitleTokenOption,
   TitleTokenSuggestions,
 } from "./title-token-suggestions";
@@ -143,7 +144,7 @@ describe("#72 title token picker", () => {
     expect(onCommit).toHaveBeenCalledWith(labels[1]);
   });
 
-  it("reports the user and priority kinds for @ and >", () => {
+  it("reports the user and priority kinds for @ and !", () => {
     const users = [{ id: "u1", name: "Ada" }];
     setup("Ship @a", users);
     expect(screen.getByTestId("title-token-suggestions")).toHaveAttribute(
@@ -151,7 +152,7 @@ describe("#72 title token picker", () => {
       "user",
     );
     cleanup();
-    setup("Ship >u", [{ id: "urgent", name: "Urgent" }]);
+    setup("Ship !u", [{ id: "urgent", name: "Urgent" }]);
     expect(screen.getByTestId("title-token-suggestions")).toHaveAttribute(
       "data-token-kind",
       "priority",
@@ -161,5 +162,18 @@ describe("#72 title token picker", () => {
   it("does not open for a sigil inside a word", () => {
     setup("Port to C#");
     expect(screen.queryByTestId("title-token-suggestions")).toBeNull();
+  });
+});
+
+describe("#72 discoverability hint", () => {
+  it("tells the user the shortcuts exist", () => {
+    render(<TitleTokenHint />);
+    expect(screen.getByTestId("title-token-hint")).toBeInTheDocument();
+  });
+
+  // The picker itself is the affordance once open; two stacked panels is noise.
+  it("gets out of the way while a picker is open", () => {
+    render(<TitleTokenHint hidden />);
+    expect(screen.queryByTestId("title-token-hint")).toBeNull();
   });
 });

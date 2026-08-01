@@ -1710,7 +1710,8 @@
 		"titleTokens": {
 			"labels": "Etiketler",
 			"members": "Üyeler",
-			"priority": "Öncelik"
+			"priority": "Öncelik",
+			"hint": "Etiket için #, üye için @, öncelik için ! yazın"
 		}
 	},
 	"invitations": {
