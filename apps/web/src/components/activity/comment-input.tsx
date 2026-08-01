@@ -44,7 +44,14 @@ export default function CommentInput({ taskId }: CommentInputProps) {
   const queryClient = useQueryClient();
   const saveDraft = useCommentDraftStore((state) => state.saveDraft);
   const clearDraft = useCommentDraftStore((state) => state.clearDraft);
-  const restoredForRef = useRef<string | null>(draftKey);
+  /**
+   * Which draft key has already been restored into this composer.
+   *
+   * Starts null: seeding it with `draftKey` made the restore effect return on
+   * its very first run, so a draft that was present in the store was never
+   * applied — the composer opened empty while localStorage still held the text.
+   */
+  const restoredForRef = useRef<string | null>(null);
   /**
    * Whether the user has typed in THIS composer instance.
    *
@@ -54,36 +61,47 @@ export default function CommentInput({ taskId }: CommentInputProps) {
    */
   const hasHadContentRef = useRef(false);
 
-  // Restore an unsent comment when the task is (re)opened. Guarded per task so
-  // typing never gets clobbered by a re-render of the same composer.
+  // Restore an unsent comment when the task is (re)opened.
+  //
+  // #100: subscribed rather than read once. `persist` may rehydrate from
+  // localStorage AFTER this component first renders, in which case a one-shot
+  // `getState()` read (in an effect or a lazy useState) sees an empty store and
+  // the draft is silently dropped. Subscribing means the restore also fires if
+  // the draft arrives late.
+  const storedDraft = useCommentDraftStore(
+    (state) => state.drafts[draftKey]?.content,
+  );
+
   useEffect(() => {
+    // Never clobber what the user is actively typing.
+    if (hasHadContentRef.current) return;
     if (restoredForRef.current === draftKey) return;
+    if (!storedDraft) return;
     restoredForRef.current = draftKey;
-    const saved = useCommentDraftStore.getState().getDraft(draftKey);
-    setContent(saved?.content ?? "");
-  }, [draftKey]);
+    setContent(storedDraft);
+  }, [draftKey, storedDraft]);
 
   const handleChange = useCallback(
     (next: string) => {
-      setContent(next);
       /*
-       * #100: the editor emits an empty onChange while it hydrates its
-       * document. `saveDraft` deletes the entry for empty content, so that
-       * spurious event wiped the stored draft before the user typed anything —
-       * which is why the draft vanished even though saving "worked".
+       * #100: the editor reports an empty document while it hydrates. That
+       * arrives AFTER the draft has been restored into state, so accepting it
+       * blindly overwrote the restored text with "" — the draft stayed in
+       * localStorage while the composer rendered empty.
        *
-       * Only let an empty value clear the draft once the composer has actually
-       * held content in this session; a genuine "user deleted everything"
-       * always follows a non-empty state.
+       * Until the user has actually typed here, an empty report is hydration
+       * noise: ignore it entirely, for both state and storage.
        */
-      if (isPersistableCommentDraft(next)) {
-        hasHadContentRef.current = true;
-        saveDraft(draftKey, next);
+      if (!isPersistableCommentDraft(next) && !hasHadContentRef.current) {
         return;
       }
-      if (hasHadContentRef.current) {
-        saveDraft(draftKey, next);
+
+      setContent(next);
+
+      if (isPersistableCommentDraft(next)) {
+        hasHadContentRef.current = true;
       }
+      saveDraft(draftKey, next);
     },
     [draftKey, saveDraft],
   );

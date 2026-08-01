@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import useCommentDraftStore, {
   commentDraftKey,
@@ -63,6 +69,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("#100 comment draft restore", () => {
+  /**
+   * Covers the restore EFFECT specifically, not the lazy useState seed.
+   *
+   * A draft that lands in the store after mount (zustand persist rehydrates
+   * asynchronously in the browser) must still reach the editor. Without this,
+   * pre-seeding the restore guard passes every other test while the live app
+   * never restores.
+   */
+  it("restores a draft that arrives after the composer mounted", async () => {
+    render(<CommentInput taskId={TASK} />);
+    expect(screen.getByTestId("comment-editor")).toHaveValue("");
+
+    await act(async () => {
+      useCommentDraftStore
+        .getState()
+        .saveDraft(commentDraftKey(TASK), "late draft");
+    });
+
+    expect(screen.getByTestId("comment-editor")).toHaveValue("late draft");
+  });
+
   it("hands the persisted draft to the editor on the FIRST render", () => {
     useCommentDraftStore
       .getState()
@@ -118,6 +145,32 @@ describe("#100 comment draft restore", () => {
     expect(
       useCommentDraftStore.getState().getDraft(commentDraftKey(TASK)),
     ).toBeUndefined();
+  });
+
+  /**
+   * The failure that survived two earlier fixes.
+   *
+   * The draft WAS restored into state, then the editor's hydration reported an
+   * empty document and `handleChange("")` overwrote it. Storage kept the text
+   * while the composer rendered blank — which is exactly what was reported.
+   */
+  it("survives the editor reporting an empty document after restore", () => {
+    useCommentDraftStore
+      .getState()
+      .saveDraft(commentDraftKey(TASK), "restored text");
+
+    render(<CommentInput taskId={TASK} />);
+    expect(screen.getByTestId("comment-editor")).toHaveValue("restored text");
+
+    // Hydration blank arrives after the restore.
+    fireEvent.change(screen.getByTestId("comment-editor"), {
+      target: { value: "" },
+    });
+
+    expect(screen.getByTestId("comment-editor")).toHaveValue("restored text");
+    expect(
+      useCommentDraftStore.getState().getDraft(commentDraftKey(TASK))?.content,
+    ).toBe("restored text");
   });
 
   it("persists what the user types", () => {
