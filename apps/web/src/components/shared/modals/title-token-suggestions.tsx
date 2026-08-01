@@ -117,8 +117,14 @@ export function TitleTokenSuggestions({
   if (!token || matches.length === 0) return null;
 
   return (
+    /*
+      #72: absolutely positioned so it OVERLAYS the modal instead of taking
+      part in its layout. As an inline block it pushed the description and
+      footer down, visibly resizing the Create Task modal every time the
+      picker opened.
+    */
     <div
-      className="-mt-1 max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+      className="absolute left-0 top-full z-50 mt-1 max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
       data-testid="title-token-suggestions"
       data-token-kind={token.kind}
     >
@@ -165,12 +171,18 @@ export function TitleTokenSuggestions({
 export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
   const { t } = useTranslation();
 
-  if (hidden) return null;
-
+  /*
+   * #72: the line is always reserved, only its text is hidden. Unmounting it
+   * shrank the modal the moment the picker opened — the same "modal resizes"
+   * complaint, just in the other direction.
+   */
   return (
     <p
-      className="mt-1 px-0.5 text-[11px] text-muted-foreground"
-      data-testid="title-token-hint"
+      aria-hidden={hidden}
+      className={`mt-1 px-0.5 text-[11px] text-muted-foreground ${
+        hidden ? "invisible" : ""
+      }`}
+      data-testid={hidden ? "title-token-hint-hidden" : "title-token-hint"}
     >
       {t("tasks:titleTokens.hint")}
     </p>

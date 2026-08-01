@@ -894,15 +894,23 @@ function CreateTaskModal({
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-3 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
               required
             />
-            <TitleTokenSuggestions
-              onCommit={handleTitleTokenCommit}
-              onDismiss={() => setTitleToken(null)}
-              onRegisterKeyHandler={(handler) => {
-                titleTokenKeyHandlerRef.current = handler;
-              }}
-              options={titleTokenOptions}
-              token={titleToken}
-            />
+            {/*
+              #72: the picker is positioned against this wrapper so it floats
+              over the modal body. Previously it sat inline and pushed the
+              description and footer down, resizing the modal on every open.
+              The wrapper has zero height of its own, so nothing shifts.
+            */}
+            <div className="relative">
+              <TitleTokenSuggestions
+                onCommit={handleTitleTokenCommit}
+                onDismiss={() => setTitleToken(null)}
+                onRegisterKeyHandler={(handler) => {
+                  titleTokenKeyHandlerRef.current = handler;
+                }}
+                options={titleTokenOptions}
+                token={titleToken}
+              />
+            </div>
             {/* #72: tells the user the shortcuts exist. */}
             <TitleTokenHint hidden={titleToken !== null} />
 
