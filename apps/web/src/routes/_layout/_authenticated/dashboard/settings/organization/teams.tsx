@@ -7,6 +7,7 @@ import {
   type PrincipalOption,
   PrincipalSelector,
 } from "@/components/principal-selector";
+import TeamMemberCount from "@/components/team/team-member-count";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -335,7 +336,17 @@ function TeamCard({
     },
     onSuccess: async () => {
       setMemberId("");
-      await queryClient.invalidateQueries({ queryKey });
+      // #121: a removed member lingered until a manual refresh. Awaiting the
+      // refetch (not just marking stale) means the row is gone by the time the
+      // success toast appears. The organization-members list is invalidated
+      // too because `availableMembers` is derived from it — otherwise the
+      // add-dropdown keeps offering someone who is already back in the pool.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey, refetchType: "active" }),
+        queryClient.invalidateQueries({
+          queryKey: ["organization-members", organizationId],
+        }),
+      ]);
       toast.success("Team members updated");
     },
     onError: (error) =>
@@ -348,7 +359,10 @@ function TeamCard({
         <div>
           <h2 className="text-sm font-medium">{team.name}</h2>
           <p className="text-xs text-muted-foreground">
-            {membership.length} {membership.length === 1 ? "member" : "members"}
+            <TeamMemberCount
+              isPending={teamMembersQuery.isPending}
+              memberCount={membership.length}
+            />
           </p>
         </div>
         <div className="flex gap-1">
