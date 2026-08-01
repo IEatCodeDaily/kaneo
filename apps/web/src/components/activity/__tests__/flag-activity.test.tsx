@@ -126,6 +126,30 @@ describe("flag activity entries (#107)", () => {
     });
   });
 
+  it("degrades to a plain verb for legacy entries with no flag type name", () => {
+    // flag_resolved rows written before the API carried the type name have no
+    // name/colour. Rendering the chip regardless produced an empty red box in
+    // the live feed.
+    const legacy = {
+      ...baseActivity,
+      id: "act-legacy",
+      type: "flag_resolved",
+      eventData: {
+        flagId: "flag-9",
+        flagTypeId: "type-x",
+        resolvedBy: "user-a",
+        targetUserId: "user-b",
+        targetTeamId: null,
+      },
+    };
+
+    renderActivity(legacy);
+
+    expect(screen.queryByTestId("activity-flag-chip")).toBeNull();
+    expect(screen.getByText("activity:flagResolved")).toBeTruthy();
+    expect(screen.getByTestId("activity-flag-target")).toBeTruthy();
+  });
+
   it("renders a resolved entry with its own colour and no unflag button", () => {
     const resolved = {
       ...baseActivity,

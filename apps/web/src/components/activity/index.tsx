@@ -457,18 +457,23 @@ function renderActivityContent({
             ? t("activity:flagRaised")
             : t("activity:flagResolved")}
         </span>
-        <span
-          data-testid="activity-flag-chip"
-          className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-xs"
-          style={{
-            color: flagColor,
-            borderColor: flagColor,
-            backgroundColor: `${flagColor}1f`,
-          }}
-        >
-          <FlagTypeIcon className="size-3" />
-          {flagTypeName}
-        </span>
+        {/* Entries written before flag_resolved carried the type name have no
+            name/colour to show. Rendering the chip anyway produced an empty
+            red box, so fall back to the plain verb for those legacy rows. */}
+        {flagTypeName && (
+          <span
+            data-testid="activity-flag-chip"
+            className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-xs"
+            style={{
+              color: flagColor,
+              borderColor: flagColor,
+              backgroundColor: `${flagColor}1f`,
+            }}
+          >
+            <FlagTypeIcon className="size-3" />
+            {flagTypeName}
+          </span>
+        )}
         {targetName && (
           <span data-testid="activity-flag-target">
             {t("activity:flagTarget", { target: targetName })}
