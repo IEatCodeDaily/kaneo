@@ -53,13 +53,10 @@ function TaskHoverPreview({
   const labels = task.labels ?? [];
 
   // #131: pinned closed while dragging. `open` is controlled only in that
-  // state, so normal hover behaviour is untouched the rest of the time.
+  // state. Do not switch one Base UI root between controlled and uncontrolled:
+  // it can retain the forced-closed state after a cross-column drop.
   if (isDragging) {
-    return (
-      <HoverCard open={false}>
-        <HoverCardTrigger asChild>{children}</HoverCardTrigger>
-      </HoverCard>
-    );
+    return children;
   }
 
   return (

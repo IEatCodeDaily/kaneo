@@ -1,4 +1,5 @@
 import {
+  type CollisionDetection,
   closestCorners,
   DndContext,
   type DragEndEvent,
@@ -8,6 +9,7 @@ import {
   defaultDropAnimationSideEffects,
   KeyboardSensor,
   MouseSensor,
+  pointerWithin,
   TouchSensor,
   type UniqueIdentifier,
   useSensor,
@@ -31,6 +33,11 @@ import TaskCard from "./task-card";
 type KanbanBoardProps = {
   board: BoardWithTasks;
   disableDragDrop?: boolean;
+};
+
+const pointerThenCorners: CollisionDetection = (args) => {
+  const collisions = pointerWithin(args);
+  return collisions.length > 0 ? collisions : closestCorners(args);
 };
 
 function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
@@ -155,7 +162,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={pointerThenCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >

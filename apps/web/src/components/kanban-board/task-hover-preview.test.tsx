@@ -9,18 +9,8 @@ import TaskHoverPreview from "./task-hover-preview";
  *
  * SCOPE NOTE, deliberately narrow.
  *
- * The visible behaviour is NOT unit-testable here. Base UI's preview card only
- * opens after a real pointer-hover sequence that jsdom does not produce, so the
- * dragging and non-dragging branches render byte-identical markup:
- *
- *   <div data-testid="card" data-slot="preview-card-trigger">card</div>
- *
- * A test asserting "no preview while dragging" therefore passes even with the
- * suppression removed — verified: deleting the guard left such a test green.
- * Rather than ship that false confidence, these cover the piece that IS
- * observable — the drag flag propagation the fix depends on — and the visible
- * outcome is proven in the browser instead (preview count 1 on hover, 0 while
- * dragging, 1 after drop; recorded on the ticket).
+ * Base UI hover itself needs a browser, but its trigger marker lets this test
+ * prove the root unmounts during drag and remounts uncontrolled after drop.
  */
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -91,5 +81,27 @@ describe("#131 board-wide drag flag", () => {
     );
     // Only the preview is suppressed; the card stays draggable.
     expect(screen.getByTestId("card")).toBeInTheDocument();
+    expect(screen.getByTestId("card")).not.toHaveAttribute(
+      "data-slot",
+      "preview-card-trigger",
+    );
+  });
+
+  it("remounts a fresh hover preview after drop", () => {
+    const { rerender } = render(
+      <BoardDraggingProvider isDragging>
+        <DragAwareCard />
+      </BoardDraggingProvider>,
+    );
+
+    rerender(
+      <BoardDraggingProvider isDragging={false}>
+        <DragAwareCard />
+      </BoardDraggingProvider>,
+    );
+    expect(screen.getByTestId("card")).toHaveAttribute(
+      "data-slot",
+      "preview-card-trigger",
+    );
   });
 });
