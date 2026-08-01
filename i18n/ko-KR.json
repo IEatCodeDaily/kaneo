@@ -1274,7 +1274,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "임시 저장됨",
+			"deleteDraft": "임시 저장 삭제"
 		}
 	},
 	"tasks": {

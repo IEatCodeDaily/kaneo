@@ -1314,7 +1314,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Entwurf gespeichert",
+			"deleteDraft": "Entwurf löschen"
 		}
 	},
 	"tasks": {

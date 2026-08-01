@@ -1417,7 +1417,9 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
+			},
+			"draftSaved": "Draf tersimpan",
+			"deleteDraft": "Hapus draf"
 		}
 	},
 	"tasks": {
