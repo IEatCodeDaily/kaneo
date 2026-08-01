@@ -435,6 +435,9 @@ export const boardTable = pgTable(
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     lastTaskNumber: integer("last_task_number").notNull().default(0),
+    // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
+    // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
+    subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
   },
   (table) => [
     unique("board_organization_id_id_unique").on(
