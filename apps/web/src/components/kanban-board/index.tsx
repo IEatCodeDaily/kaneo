@@ -24,6 +24,7 @@ import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
+import { BoardDraggingProvider } from "./board-view-context";
 import Column from "./column";
 import TaskCard from "./task-card";
 
@@ -158,31 +159,34 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
-        <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
-          <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {board.columns?.map((column) => (
-              <div
-                key={column.id}
-                className="h-full max-w-96 min-w-80 shrink-0 flex-1"
-              >
-                <Column column={column} disableDragDrop={disableDragDrop} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <DragOverlay dropAnimation={dropAnimation}>
-        {activeTask ? (
-          <div className="transform rotate-1 scale-[1.03] shadow-lg">
-            <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} />
+      {/* #131: hover previews stay hidden for as long as a card is in flight. */}
+      <BoardDraggingProvider isDragging={activeId !== null}>
+        <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
+          <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
+            <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
+              {board.columns?.map((column) => (
+                <div
+                  key={column.id}
+                  className="h-full max-w-96 min-w-80 shrink-0 flex-1"
+                >
+                  <Column column={column} disableDragDrop={disableDragDrop} />
+                </div>
+              ))}
             </div>
           </div>
-        ) : null}
-      </DragOverlay>
+        </div>
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeTask ? (
+            <div className="transform rotate-1 scale-[1.03] shadow-lg">
+              <div className="ring-2 ring-ring/35 rounded-lg">
+                <TaskCard task={activeTask} />
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
 
-      <BulkToolbar />
+        <BulkToolbar />
+      </BoardDraggingProvider>
       <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );

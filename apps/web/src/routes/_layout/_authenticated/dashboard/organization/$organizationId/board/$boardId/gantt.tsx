@@ -42,6 +42,7 @@ import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import {
@@ -247,8 +248,18 @@ const GanttRow = memo(function GanttRow({
               className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left transition-colors hover:bg-muted"
               onClick={() => onOpenTask(task)}
             >
-              <span className="shrink-0 rounded bg-secondary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
-                {getStatusLabel(task.status)}
+              {/*
+                #129: the status was an uppercase text chip, which is noisy in
+                a dense timeline row and inconsistent with every other surface.
+                Now the same coloured icon the board, toolbar and My Tasks use,
+                with the name kept as a tooltip rather than repeated as text.
+              */}
+              <span
+                className="flex size-3.5 shrink-0 items-center justify-center"
+                data-testid="gantt-status-icon"
+                title={getStatusLabel(task.status)}
+              >
+                {getColumnIcon(task.status)}
               </span>
               {display.priority && task.priority ? (
                 <span
