@@ -61,7 +61,7 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
       } catch (error) {
         console.error("Failed to update title:", error);
       }
-    }, 800),
+    }, 350),
     [],
   );
 
@@ -76,7 +76,7 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
 
   useEffect(
     () => () => {
-      // Navigation can unmount the title before the 800ms timer fires. Flush
+      // Navigation can unmount the title before the save timer fires. Flush
       // the last keystroke rather than silently discarding it.
       void debouncedUpdate.flush();
     },

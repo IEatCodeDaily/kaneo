@@ -14,8 +14,8 @@ import type Task from "@/types/task";
  * Hover-intent delay. Long enough that sweeping the pointer across a dense
  * column doesn't strobe previews open, short enough to still feel intentional.
  */
-export const TASK_PREVIEW_OPEN_DELAY = 450;
-export const TASK_PREVIEW_CLOSE_DELAY = 120;
+export const TASK_PREVIEW_OPEN_DELAY = 160;
+export const TASK_PREVIEW_CLOSE_DELAY = 80;
 
 type TaskHoverPreviewProps = {
   task: Task;

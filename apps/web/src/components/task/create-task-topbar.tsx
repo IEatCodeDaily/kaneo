@@ -99,11 +99,11 @@ export default function CreateTaskTopbar({
             <Button
               type="button"
               data-testid="create-task-milestone-trigger"
-              variant="outline"
+              variant="ghost"
               size="sm"
               disabled={disabled}
               aria-label={t("tasks:milestone.title")}
-              className="h-7 gap-1.5 px-2"
+              className="h-7 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
             >
               <Milestone className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="max-w-32 truncate text-xs font-medium">
@@ -169,11 +169,11 @@ export default function CreateTaskTopbar({
             <Button
               type="button"
               data-testid="create-task-parent-trigger"
-              variant="outline"
+              variant="ghost"
               size="sm"
               disabled={disabled}
               aria-label={t("tasks:parentTask.title")}
-              className="h-7 gap-1.5 px-2"
+              className="h-7 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
             >
               <Workflow className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="max-w-40 truncate text-xs font-medium">
