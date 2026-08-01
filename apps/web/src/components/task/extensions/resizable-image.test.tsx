@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ResizableImageView } from "./resizable-image";
 
@@ -24,14 +25,14 @@ describe("ResizableImageView integration", () => {
       attrs: { src: "/api/asset/image-1", alt: "Architecture", width: 320 },
       nodeSize: 1,
     };
-    render(
-      <ResizableImageView
-        editor={editor as any}
-        getPos={() => 11}
-        node={node as any}
-        selected={false}
-      />,
-    );
+    type ImageViewProps = ComponentProps<typeof ResizableImageView>;
+    const props = {
+      editor,
+      getPos: () => 11,
+      node,
+      selected: false,
+    } as unknown as ImageViewProps;
+    render(<ResizableImageView {...props} />);
     fireEvent.contextMenu(screen.getByAltText("Architecture"));
     expect(screen.getByTestId("attachment-context-menu")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("attachment-remove"));
