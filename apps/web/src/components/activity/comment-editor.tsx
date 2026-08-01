@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/core";
-import Image from "@tiptap/extension-image";
+
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
@@ -43,6 +43,7 @@ import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
 import type { MentionMember } from "@/components/task/extensions/mention-list";
 import { MentionSuggestion } from "@/components/task/extensions/mention-suggestion";
 import { ReferenceSuggestion } from "@/components/task/extensions/reference-suggestion";
+import { ResizableImage } from "@/components/task/extensions/resizable-image";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
   ShikiCodeBlock,
@@ -682,7 +683,7 @@ export default function CommentEditor({
             }),
         }),
         TaskList,
-        Image.configure({
+        ResizableImage.configure({
           HTMLAttributes: {
             class: "kaneo-editor-image",
             loading: "lazy",
