@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import db from "./database";
 import {
   organizationMemberTable,
@@ -101,11 +101,99 @@ export function privilegeAllows(
   return (rank.get(actual) ?? 0) >= (rank.get(required) ?? 0);
 }
 
+export type ResourceGrantRow = {
+  resourceId: string;
+  teamId: string | null;
+  userId: string | null;
+  privilege: ResourcePrivilege;
+};
+
+/**
+ * #122: the pure rule behind the team-view selector.
+ *
+ * The selector scopes the sidebar to one team ("All" means no scope at all).
+ * When a team is selected the listing must answer "what can *this team* see",
+ * not "what can the current user see" — a user who is in three teams should
+ * get three different board lists, not the same union three times.
+ *
+ * The privilege is therefore resolved with the team as the principal:
+ *   - grants addressed to this team count;
+ *   - grants addressed to a *user* (including the caller) do not — that is the
+ *     "regardless of user permission" part of the ticket;
+ *   - a resource with no grants at all stays visible, because the API's
+ *     additive-rollout rule (see getResourcePrivilege) means an ungranted
+ *     resource is open to the whole organization, this team included.
+ *
+ * `grants` must be every grant row for the resources under consideration (both
+ * user- and team-addressed), otherwise the ungranted case cannot be detected.
+ *
+ * This narrows a list the caller can already see; it never widens one. Callers
+ * intersect the result with the user's own access so team scoping can never
+ * become a way to read a board the user has no grant for.
+ */
+export function filterResourceIdsForTeam(input: {
+  resourceIds: readonly string[];
+  grants: readonly ResourceGrantRow[];
+  teamId: string;
+}): string[] {
+  const resourcesWithAnyGrant = new Set<string>();
+  const teamPrivileges = new Map<string, ResourcePrivilege[]>();
+
+  for (const grant of input.grants) {
+    resourcesWithAnyGrant.add(grant.resourceId);
+    if (grant.teamId !== null && grant.teamId === input.teamId) {
+      const privileges = teamPrivileges.get(grant.resourceId) ?? [];
+      privileges.push(grant.privilege);
+      teamPrivileges.set(grant.resourceId, privileges);
+    }
+  }
+
+  return input.resourceIds.filter((resourceId) => {
+    if (!resourcesWithAnyGrant.has(resourceId)) return true;
+    const privilege = highestPrivilege(teamPrivileges.get(resourceId) ?? []);
+    return privilegeAllows(privilege, "view");
+  });
+}
+
+async function listTeamAccessibleResourceIds(input: {
+  organizationId: string;
+  resourceType: ResourceType;
+  teamId: string;
+  resourceIds: string[];
+}) {
+  const grants = await db
+    .select({
+      resourceId: resourceGrantTable.resourceId,
+      teamId: resourceGrantTable.teamId,
+      userId: resourceGrantTable.userId,
+      privilege: resourceGrantTable.privilege,
+    })
+    .from(resourceGrantTable)
+    .where(
+      and(
+        eq(resourceGrantTable.organizationId, input.organizationId),
+        eq(resourceGrantTable.resourceType, input.resourceType),
+        inArray(resourceGrantTable.resourceId, input.resourceIds),
+      ),
+    );
+
+  return filterResourceIdsForTeam({
+    resourceIds: input.resourceIds,
+    grants: grants as ResourceGrantRow[],
+    teamId: input.teamId,
+  });
+}
+
 export async function listAccessibleResourceIds(input: {
   organizationId: string;
   resourceType: ResourceType;
   userId: string;
   resourceIds: string[];
+  /**
+   * #122: optional team scope from the team-view selector. Omitted (or null)
+   * is the "All" view and keeps the previous user-only behaviour.
+   */
+  teamId?: string | null;
 }) {
   if (input.resourceIds.length === 0) return [];
   const results = await Promise.all(
@@ -114,9 +202,19 @@ export async function listAccessibleResourceIds(input: {
       privilege: await getResourcePrivilege({ ...input, resourceId }),
     })),
   );
-  return results
+  const userAccessible = results
     .filter(({ privilege }) => privilegeAllows(privilege, "view"))
     .map(({ resourceId }) => resourceId);
+
+  if (!input.teamId) return userAccessible;
+
+  // Team scope narrows what the user can already see — never widens it.
+  return listTeamAccessibleResourceIds({
+    organizationId: input.organizationId,
+    resourceType: input.resourceType,
+    teamId: input.teamId,
+    resourceIds: userAccessible,
+  });
 }
 
 export const _resourceAccessTest = { rank };

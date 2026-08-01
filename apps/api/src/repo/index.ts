@@ -333,10 +333,14 @@ const repo = new Hono<{
         },
       },
     }),
-    validator("query", v.object({ organizationId: v.string() })),
+    validator(
+      "query",
+      v.object({ organizationId: v.string(), teamId: v.optional(v.string()) }),
+    ),
     organizationAccess.fromQuery(),
     async (c) => {
       const organizationId = c.get("organizationId");
+      const { teamId } = c.req.valid("query");
       // A disabled feature is an empty list, not a missing resource. Mutating
       // routes below still hard-fail via requireReposEnabled.
       if (!(await areReposEnabled(organizationId))) {
@@ -349,6 +353,7 @@ const repo = new Hono<{
           resourceType: "repo",
           userId: c.get("userId"),
           resourceIds: repos.map((repo) => repo.id),
+          teamId,
         }),
       );
       return c.json(

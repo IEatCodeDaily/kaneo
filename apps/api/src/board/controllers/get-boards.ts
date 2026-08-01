@@ -7,6 +7,7 @@ async function getBoards(
   organizationId: string,
   userId: string,
   includeArchived = false,
+  teamId?: string | null,
 ) {
   const boards = await db.query.boardTable.findMany({
     where: includeArchived
@@ -26,6 +27,7 @@ async function getBoards(
       resourceType: "board",
       userId,
       resourceIds: boards.map((board) => board.id),
+      teamId,
     }),
   );
 

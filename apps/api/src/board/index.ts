@@ -38,17 +38,19 @@ const board = new Hono<{
       v.object({
         organizationId: v.string(),
         includeArchived: v.optional(v.string()),
+        teamId: v.optional(v.string()),
       }),
     ),
     organizationAccess.fromQuery(),
     async (c) => {
       const organizationId = c.get("organizationId");
       const userId = c.get("userId");
-      const { includeArchived } = c.req.valid("query");
+      const { includeArchived, teamId } = c.req.valid("query");
       const boards = await getBoardsCtrl(
         organizationId,
         userId,
         includeArchived === "true",
+        teamId,
       );
       return c.json(boards);
     },
