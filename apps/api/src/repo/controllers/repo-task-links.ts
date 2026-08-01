@@ -85,6 +85,12 @@ export async function getTaskRepoItemLinks(
     .select({
       id: taskRepoItemLinkTable.id,
       createdAt: taskRepoItemLinkTable.createdAt,
+      // #75: whether this link is a two-way *sync* or a plain mention. The
+      // column was always written (createSyncedIssueForTask sets it true) but
+      // never selected, so the UI could not tell Synced from Linked and
+      // rendered every row — including freshly created synced issues — as a
+      // plain link.
+      syncEnabled: taskRepoItemLinkTable.syncEnabled,
       issue: {
         id: repoIssueTable.id,
         number: repoIssueTable.number,
@@ -125,6 +131,7 @@ export async function getTaskRepoItemLinks(
     return {
       id: row.id,
       createdAt: row.createdAt,
+      syncEnabled: row.syncEnabled ?? false,
       itemType: row.issue?.id
         ? ("issues" as const)
         : ("pull-requests" as const),

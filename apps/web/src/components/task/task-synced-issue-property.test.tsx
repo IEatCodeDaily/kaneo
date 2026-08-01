@@ -21,8 +21,15 @@ vi.mock("@/hooks/queries/external-link/use-external-links", () => ({
   default: () => ({ data: externalLinks }),
 }));
 
+/** #75: a synced issue can also arrive as a repo-link with syncEnabled. */
+const repoLinks: Array<Record<string, unknown>> = [];
+vi.mock("@/hooks/queries/task/use-get-task-repo-links", () => ({
+  default: () => ({ data: repoLinks }),
+}));
+
 afterEach(() => {
   externalLinks.length = 0;
+  repoLinks.length = 0;
   cleanup();
 });
 
@@ -49,6 +56,46 @@ describe("#75 synced issue in the drawer status bar", () => {
   // NEGATIVE CONTROL: without this the component could render anything and the
   // assertion above would still pass on a hardcoded string.
   it("renders nothing when the task has no synced issue", () => {
+    render(<TaskSyncedIssueProperty compact taskId="task-1" />);
+    expect(screen.queryByTestId("task-synced-issue")).toBeNull();
+  });
+
+  /**
+   * The regression you hit: "Create synced issue in repo" writes a repo-link
+   * with syncEnabled and NO externalLink, so reading only externalLinks showed
+   * nothing and Resources rendered it as a plain link.
+   */
+  it("shows a synced issue created via Create-synced-issue (repo link)", () => {
+    repoLinks.push({
+      id: "r1",
+      itemType: "issues",
+      syncEnabled: true,
+      repoId: "repo-1",
+      number: 27,
+      title: "Created from Kaneo",
+      state: "open",
+      url: "https://github.com/acme/widgets/issues/27",
+    });
+
+    render(<TaskSyncedIssueProperty compact taskId="task-1" />);
+
+    const link = screen.getByTestId("task-synced-issue");
+    expect(link.textContent).toContain("acme/widgets #27");
+  });
+
+  // NEGATIVE CONTROL: a plain LINKED issue is not the synced issue.
+  it("ignores a repo link that is not synced", () => {
+    repoLinks.push({
+      id: "r2",
+      itemType: "issues",
+      syncEnabled: false,
+      repoId: "repo-1",
+      number: 5,
+      title: "Merely mentioned",
+      state: "open",
+      url: "https://github.com/acme/widgets/issues/5",
+    });
+
     render(<TaskSyncedIssueProperty compact taskId="task-1" />);
     expect(screen.queryByTestId("task-synced-issue")).toBeNull();
   });
