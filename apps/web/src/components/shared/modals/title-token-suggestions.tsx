@@ -124,7 +124,7 @@ export function TitleTokenSuggestions({
       picker opened.
     */
     <div
-      className="absolute left-0 top-full z-50 mt-1 max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
+      className="absolute left-0 top-0 z-50 max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
       data-testid="title-token-suggestions"
       data-token-kind={token.kind}
     >
