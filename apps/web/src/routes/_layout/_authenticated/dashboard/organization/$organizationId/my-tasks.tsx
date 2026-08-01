@@ -148,20 +148,12 @@ function MyTasksComponent() {
                               ? `${task.boardSlug}-${task.number}`
                               : `#${task.number}`}
                           </span>
-                          {getPriorityIcon(task.priority ?? "")}
-                          {/* Long titles clip rather than overflowing the row;
-                              the full value stays available as a tooltip. */}
-                          <span
-                            className="min-w-0 flex-1 truncate"
-                            title={task.title}
-                          >
-                            {task.title}
-                          </span>
                           {/*
-                            #120: status was muted text, which reads as
-                            "extra information". The board's own status icon
-                            (colour + shape) is far faster to scan; the name
-                            stays as the tooltip rather than a second label.
+                            #120: status icon sits to the LEFT of priority, so
+                            the row reads id -> status -> priority -> title.
+                            Muted text was "extra information"; the board's own
+                            icon (colour + shape) is far faster to scan and the
+                            name stays as the tooltip, not a second label.
                           */}
                           {task.columnName ? (
                             <span
@@ -181,6 +173,15 @@ function MyTasksComponent() {
                               )}
                             </span>
                           ) : null}
+                          {getPriorityIcon(task.priority ?? "")}
+                          {/* Long titles clip rather than overflowing the row;
+                              the full value stays available as a tooltip. */}
+                          <span
+                            className="min-w-0 flex-1 truncate"
+                            title={task.title}
+                          >
+                            {task.title}
+                          </span>
                         </Link>
                       </li>
                     ))}
