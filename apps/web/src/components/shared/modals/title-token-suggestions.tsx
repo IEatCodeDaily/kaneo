@@ -179,7 +179,15 @@ export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
   return (
     <p
       aria-hidden={hidden}
-      className={`mt-1 px-0.5 text-[11px] text-muted-foreground ${
+      /*
+       * #72 (third round): "it takes too much space. make it hug the title
+       * more, significantly reduce the line spacing, and text should be
+       * smaller and fainter. it's a hint, not an announcement."
+       *
+       * -mt-2 pulls it up under the title's own padding, leading-none kills
+       * the line box, 10px/50% opacity makes it recede.
+       */
+      className={`-mt-2 px-0.5 text-[10px] leading-none text-muted-foreground/50 ${
         hidden ? "invisible" : ""
       }`}
       data-testid={hidden ? "title-token-hint-hidden" : "title-token-hint"}
