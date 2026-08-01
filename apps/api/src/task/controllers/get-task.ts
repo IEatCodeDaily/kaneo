@@ -22,6 +22,7 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
       dueDate: taskTable.dueDate,
       position: taskTable.position,
       createdAt: taskTable.createdAt,
+      updatedAt: taskTable.updatedAt,
       userId: taskTable.userId,
       teamId: taskTable.teamId,
       assigneeName: userTable.name,

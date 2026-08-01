@@ -78,7 +78,7 @@ export function ColumnDropzone({
     onIsOverChange?.(isOver);
   }, [isOver, onIsOverChange]);
 
-  const totalGroups = groups.length;
+  const totalGroups = groupBy === "none" ? groups.length : column.tasks.length;
 
   /**
    * Progressive mount.
@@ -145,6 +145,15 @@ export function ColumnDropzone({
     () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
     [column.tasks, groupBy],
   );
+  const visibleTaskGroups = useMemo(() => {
+    let remaining = mountCount;
+    return taskGroups.flatMap((group) => {
+      if (remaining <= 0) return [];
+      const tasks = group.tasks.slice(0, remaining);
+      remaining -= tasks.length;
+      return [{ ...group, tasks }];
+    });
+  }, [mountCount, taskGroups]);
 
   // Reserve height for not-yet-mounted groups so the scrollbar doesn't jump as
   // chunks land.
@@ -192,7 +201,7 @@ export function ColumnDropzone({
       >
         {groupBy !== "none" ? (
           <div className="flex flex-col gap-3" data-slot="task-group-list">
-            {taskGroups.map((group) => {
+            {visibleTaskGroups.map((group) => {
               const groupKey = group.key || "unset";
               const groupCollapsed = collapsedTaskGroups.has(groupKey);
               const groupTitle = group.labelKey

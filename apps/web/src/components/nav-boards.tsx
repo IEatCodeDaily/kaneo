@@ -147,6 +147,44 @@ export function NavBoards() {
   const prefetchBoard = (boardId: string) =>
     prefetchBoardNavigation(queryClient, organization?.id || "", boardId);
 
+  useEffect(() => {
+    if (!organization?.id || !boards?.length) return;
+    const boardIds = boards
+      .filter(
+        (board) =>
+          board.id !== currentBoardId &&
+          !hiddenBoardIds.includes(`${user?.id}:${board.id}`) &&
+          !queryClient.getQueryData(["tasks", board.id]),
+      )
+      .slice(0, 2)
+      .map((board) => board.id);
+    if (boardIds.length === 0) return;
+
+    const warm = () => {
+      for (const boardId of boardIds) {
+        void prefetchBoardNavigation(queryClient, organization.id, boardId);
+      }
+    };
+    const handle =
+      typeof requestIdleCallback === "function"
+        ? requestIdleCallback(warm, { timeout: 2000 })
+        : setTimeout(warm, 500);
+    return () => {
+      if (typeof cancelIdleCallback === "function") {
+        cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
+      }
+    };
+  }, [
+    boards,
+    currentBoardId,
+    hiddenBoardIds,
+    organization?.id,
+    queryClient,
+    user?.id,
+  ]);
+
   const handleShareBoard = (board: BoardWithTasks) => {
     navigator.clipboard.writeText(
       `${window.location.origin}/dashboard/organization/${organization?.id}/board/${board.id}`,

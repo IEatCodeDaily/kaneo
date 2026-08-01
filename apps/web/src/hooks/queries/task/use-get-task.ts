@@ -6,8 +6,7 @@ function useGetTask(taskId: string) {
     queryKey: ["task", taskId],
     queryFn: () => getTask(taskId),
     enabled: Boolean(taskId),
-    refetchOnMount: "always",
-    staleTime: 0,
+    staleTime: 5 * 60_000,
   });
 }
 

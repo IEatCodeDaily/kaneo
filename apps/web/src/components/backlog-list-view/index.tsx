@@ -251,6 +251,7 @@ function BacklogListView({
         : [updatedBoard.plannedTasks || [], updatedBoard.archivedTasks || []];
     reorderTasks({
       boardId: board.id,
+      board: updatedBoard,
       tasks: affected.flatMap((tasks) =>
         tasks.map((task, position) => ({
           id: task.id,

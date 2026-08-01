@@ -26,7 +26,8 @@ type Task = {
   id: string;
   title: string;
   number: number | null;
-  description: string | null;
+  description?: string | null;
+  detailVersion?: string;
   status: string;
   priority: string | null;
   startDate: string | null;

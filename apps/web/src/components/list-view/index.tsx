@@ -338,7 +338,11 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     const result = reorderBoardTask(board, activeTaskId, overId);
     if (!result) return;
     setBoard(result.board);
-    reorderTasks({ boardId: board.id, tasks: result.updates });
+    reorderTasks({
+      boardId: board.id,
+      board: result.board,
+      tasks: result.updates,
+    });
   };
 
   const toggleSection = (sectionId: string) => {

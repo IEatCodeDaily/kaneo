@@ -135,13 +135,14 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     id: taskTable.id,
     title: taskTable.title,
     number: taskTable.number,
-    description: taskTable.description,
+
     status: taskTable.status,
     priority: taskTable.priority,
     startDate: taskTable.startDate,
     dueDate: taskTable.dueDate,
     position: taskTable.position,
     createdAt: taskTable.createdAt,
+    detailVersion: taskTable.updatedAt,
     userId: taskTable.userId,
     teamId: taskTable.teamId,
     assigneeName: userTable.name,
@@ -179,7 +180,16 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
             .from(labelTable)
             .where(inArray(labelTable.taskId, taskIds)),
           db
-            .select()
+            .select({
+              id: externalLinkTable.id,
+              taskId: externalLinkTable.taskId,
+              integrationId: externalLinkTable.integrationId,
+              resourceType: externalLinkTable.resourceType,
+              externalId: externalLinkTable.externalId,
+              url: externalLinkTable.url,
+              title: externalLinkTable.title,
+              metadata: externalLinkTable.metadata,
+            })
             .from(externalLinkTable)
             .where(inArray(externalLinkTable.taskId, taskIds)),
           getTaskFlags(taskIds),

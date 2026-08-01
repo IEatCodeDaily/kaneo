@@ -129,7 +129,11 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     const result = reorderBoardTask(board, activeId, overId);
     if (!result) return;
     setBoard(result.board);
-    reorderTasks({ boardId: board.id, tasks: result.updates });
+    reorderTasks({
+      boardId: board.id,
+      board: result.board,
+      tasks: result.updates,
+    });
   };
 
   // #111: one board-shaped skeleton, shared with the route and BoardLayout.
