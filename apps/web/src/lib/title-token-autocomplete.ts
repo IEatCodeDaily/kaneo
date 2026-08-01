@@ -17,7 +17,7 @@ export type TitleTokenKind = "label" | "user" | "priority";
 export const TITLE_TOKEN_SIGILS: Record<string, TitleTokenKind> = {
   "#": "label",
   "@": "user",
-  ">": "priority",
+  "!": "priority",
 };
 
 /** How many suggestions the inline list shows at once. */

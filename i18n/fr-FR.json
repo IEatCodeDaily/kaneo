@@ -1711,7 +1711,8 @@
 		"titleTokens": {
 			"labels": "Étiquettes",
 			"members": "Membres",
-			"priority": "Priorité"
+			"priority": "Priorité",
+			"hint": "Tapez # pour les étiquettes, @ pour les membres, ! pour la priorité"
 		}
 	},
 	"invitations": {

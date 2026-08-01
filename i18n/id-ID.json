@@ -1848,7 +1848,8 @@
 		"titleTokens": {
 			"labels": "Label",
 			"members": "Anggota",
-			"priority": "Prioritas"
+			"priority": "Prioritas",
+			"hint": "Ketik # untuk label, @ untuk anggota, ! untuk prioritas"
 		}
 	},
 	"invitations": {

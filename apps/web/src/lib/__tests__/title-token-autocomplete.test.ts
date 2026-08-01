@@ -16,7 +16,7 @@ describe("#72 findActiveTitleToken", () => {
 
   it("opens the user picker on @ and the priority picker on >", () => {
     expect(at("Ship @ad")).toMatchObject({ kind: "user", query: "ad" });
-    expect(at("Ship >hi")).toMatchObject({ kind: "priority", query: "hi" });
+    expect(at("Ship !hi")).toMatchObject({ kind: "priority", query: "hi" });
   });
 
   it("opens immediately on a bare sigil with an empty query", () => {
@@ -40,7 +40,7 @@ describe("#72 findActiveTitleToken", () => {
   it("does not trigger when the sigil is inside a word", () => {
     expect(at("Port to C#")).toBeNull();
     expect(at("mail me@example")).toBeNull();
-    expect(at("5>3")).toBeNull();
+    expect(at("5!3")).toBeNull();
   });
 
   it("uses the caret, not the end of the string", () => {
@@ -55,6 +55,13 @@ describe("#72 findActiveTitleToken", () => {
   it("returns null for an out-of-range caret", () => {
     expect(findActiveTitleToken("Fix #bug", -1)).toBeNull();
     expect(findActiveTitleToken("Fix #bug", 99)).toBeNull();
+  });
+
+  // NEGATIVE CONTROL for the sigil change: ">" was the old priority trigger and
+  // must now be ordinary text (it is common in quoted titles like "a > b").
+  it("does not treat > as a trigger any more", () => {
+    expect(at("Ship >hi")).toBeNull();
+    expect(at("a > b")).toBeNull();
   });
 
   it("picks the sigil nearest the caret", () => {

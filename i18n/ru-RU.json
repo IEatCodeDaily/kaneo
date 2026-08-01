@@ -1743,7 +1743,8 @@
 		"titleTokens": {
 			"labels": "Метки",
 			"members": "Участники",
-			"priority": "Приоритет"
+			"priority": "Приоритет",
+			"hint": "# — метки, @ — участники, ! — приоритет"
 		}
 	},
 	"invitations": {

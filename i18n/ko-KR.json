@@ -1704,7 +1704,8 @@
 		"titleTokens": {
 			"labels": "라벨",
 			"members": "멤버",
-			"priority": "우선순위"
+			"priority": "우선순위",
+			"hint": "# 라벨, @ 멤버, ! 우선순위"
 		}
 	},
 	"invitations": {

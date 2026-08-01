@@ -1701,7 +1701,8 @@
 		"titleTokens": {
 			"labels": "Мітки",
 			"members": "Учасники",
-			"priority": "Пріоритет"
+			"priority": "Пріоритет",
+			"hint": "# — мітки, @ — учасники, ! — пріоритет"
 		}
 	},
 	"invitations": {

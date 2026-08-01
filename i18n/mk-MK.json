@@ -1702,7 +1702,8 @@
 		"titleTokens": {
 			"labels": "Ознаки",
 			"members": "Членови",
-			"priority": "Приоритет"
+			"priority": "Приоритет",
+			"hint": "# за ознаки, @ за членови, ! за приоритет"
 		}
 	},
 	"invitations": {

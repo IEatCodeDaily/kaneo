@@ -75,10 +75,10 @@ test.describe("#72 create-task title token autocomplete", () => {
     await expect(title).toHaveValue("Release # ");
   });
 
-  test("> opens the priority picker", async ({ page }) => {
+  test("! opens the priority picker", async ({ page }) => {
     const title = await openCreateTask(page);
     await title.fill("Priority probe ");
-    await title.press(">");
+    await title.press("!");
     const picker = page.getByTestId("title-token-suggestions");
     await expect(picker).toBeVisible();
     await expect(picker).toHaveAttribute("data-token-kind", "priority");

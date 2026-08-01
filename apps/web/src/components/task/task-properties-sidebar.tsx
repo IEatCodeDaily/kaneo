@@ -755,7 +755,11 @@ export default function TaskPropertiesSidebar({
               </TaskLabelsPopover>
             )}
           </TaskLabelsRow>
-          {taskId && <TaskSyncedIssueProperty showLabel taskId={taskId} />}
+          {/*
+            #75: no synced-issue block under the label list. You asked for it in
+            the status bar and the Resources list only — repeating it here was
+            the "way too many repeated info" the ticket opened with.
+          */}
         </div>
       </div>
     </div>

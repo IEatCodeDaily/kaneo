@@ -12,6 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TitleTokenSuggestions, {
+  TitleTokenHint,
   type TitleTokenOption,
 } from "@/components/shared/modals/title-token-suggestions";
 import CreateTaskTopbar from "@/components/task/create-task-topbar";
@@ -902,6 +903,8 @@ function CreateTaskModal({
               options={titleTokenOptions}
               token={titleToken}
             />
+            {/* #72: tells the user the shortcuts exist. */}
+            <TitleTokenHint hidden={titleToken !== null} />
 
             <div className="min-h-[200px]">
               <TaskDescriptionEditor

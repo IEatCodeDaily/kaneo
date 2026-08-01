@@ -155,4 +155,26 @@ export function TitleTokenSuggestions({
   );
 }
 
+/**
+ * #72: a one-line hint so the `#`/`@`/`!` shortcuts are discoverable — nobody
+ * finds an inline autocomplete they were never told about.
+ *
+ * Hidden while a picker is open, because the picker itself is the affordance at
+ * that point and two stacked panels under the title is noise.
+ */
+export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
+  const { t } = useTranslation();
+
+  if (hidden) return null;
+
+  return (
+    <p
+      className="mt-1 px-0.5 text-[11px] text-muted-foreground"
+      data-testid="title-token-hint"
+    >
+      {t("tasks:titleTokens.hint")}
+    </p>
+  );
+}
+
 export default TitleTokenSuggestions;
