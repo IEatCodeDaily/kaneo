@@ -6,11 +6,15 @@ afterEach(cleanup);
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
+    // #109: these were keyed on the dotted form (`team.members.people`), which
+    // i18next never resolves — the separator is ":". The component was fixed to
+    // use `team:members.people`, so this mock has to follow. The dotted keys
+    // here were a mirror of the production bug, not a deliberate fixture.
     t: (key: string) =>
       ({
-        "team.members.people": "People",
-        "team.members.agents": "Agents",
-        "team.members.agentsManagedByAdmins":
+        "team:members.people": "People",
+        "team:members.agents": "Agents",
+        "team:members.agentsManagedByAdmins":
           "Organization agents are managed by owners and administrators.",
       })[key] ?? key,
   }),

@@ -1,12 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  format,
-  isSameMonth,
-  isToday,
-  isWeekend,
-  parseISO,
-  startOfDay,
-} from "date-fns";
+import { format, isSameMonth, isToday, isWeekend, startOfDay } from "date-fns";
 import {
   ChevronDown,
   ChevronLeft,
@@ -28,6 +21,10 @@ import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
+import {
+  matchesTaskQuery,
+  partitionTasksBySchedule,
+} from "@/components/gantt/gantt-scheduling";
 import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
 import {
   buildTimeline,
@@ -54,6 +51,7 @@ import {
   sortTasks,
 } from "@/lib/sort-tasks";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type Task from "@/types/task";
 
 type GanttSearchParams = {
   taskId?: string;
@@ -72,12 +70,6 @@ export const Route = createFileRoute(
   }),
 });
 
-function parseTaskDate(value: string | null) {
-  if (!value) return null;
-  const parsed = parseISO(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
 type ScheduledTask = {
   id: string;
   title: string;
@@ -89,8 +81,8 @@ type ScheduledTask = {
   assigneeName: string | null;
   assigneeImage: string | null;
   boardId: string;
-  scheduleStart: Date;
-  scheduleEnd: Date;
+  scheduleStart?: Date;
+  scheduleEnd?: Date;
   isForeign?: boolean;
   boardName?: string;
   boardSlug?: string;
@@ -101,6 +93,9 @@ type FlatRow = ScheduledTask & {
   hasChildren: boolean;
   parentId: string | null;
 };
+
+/** A row that has dates and can therefore be drawn as a bar. */
+type ScheduledFlatRow = FlatRow & { scheduleStart: Date; scheduleEnd: Date };
 
 type Relation = {
   sourceTaskId: string;
@@ -187,6 +182,8 @@ type RowProps = {
   boardSlug: string | undefined;
   collapsed: boolean;
   display: DisplayConfig;
+  /** Copy shown in the track for a task with no dates. */
+  unscheduledHint: string;
   onToggleCollapse: (id: string) => void;
   onOpenTask: (task: FlatRow) => void;
 };
@@ -201,9 +198,11 @@ const GanttRow = memo(function GanttRow({
   boardSlug,
   collapsed,
   display,
+  unscheduledHint,
   onToggleCollapse,
   onOpenTask,
 }: RowProps) {
+  const isScheduled = Boolean(task.scheduleStart && task.scheduleEnd);
   return (
     <div
       className="grid items-stretch border-b border-border/60"
@@ -302,14 +301,35 @@ const GanttRow = memo(function GanttRow({
         className="relative shrink-0 select-none"
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
       >
-        <GanttTaskBar
-          task={task}
-          timeline={timeline}
-          pixelsPerDay={pixelsPerDay}
-          isMobile={isMobile}
-          readOnly={task.isForeign}
-          onOpenTask={() => onOpenTask(task)}
-        />
+        {isScheduled ? (
+          <GanttTaskBar
+            // GanttTaskBar types its task as the full Task shape; these rows
+            // are the timeline's narrower projection of the same records.
+            task={
+              task as unknown as Task & {
+                scheduleStart: Date;
+                scheduleEnd: Date;
+              }
+            }
+            timeline={timeline}
+            pixelsPerDay={pixelsPerDay}
+            isMobile={isMobile}
+            readOnly={task.isForeign}
+            onOpenTask={() => onOpenTask(task)}
+          />
+        ) : (
+          // No dates means no bar to place. Keep the row present with a muted
+          // hint pinned to the left of the track so the task is visible and
+          // one click away from being scheduled.
+          <button
+            type="button"
+            onClick={() => onOpenTask(task)}
+            className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded border border-dashed border-border bg-background/80 px-2 text-[10px] text-muted-foreground transition-colors hover:bg-muted"
+            style={{ width: "max-content" }}
+          >
+            {unscheduledHint}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -365,7 +385,9 @@ function RouteComponent() {
 
   const allTasks = useMemo(
     () => [
-      ...(board?.columns.flatMap((column) => column.tasks) ?? []),
+      ...(board?.columns.flatMap(
+        (column: { tasks: ScheduledTask[] }) => column.tasks,
+      ) ?? []),
       ...(board?.plannedTasks ?? []),
     ],
     [board],
@@ -386,26 +408,17 @@ function RouteComponent() {
     }));
   }, [relationData]);
 
-  const parsedTasks = useMemo(() => {
-    return [...allTasks, ...foreignRows]
-      .map((task) => {
-        const parsedStart =
-          parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
-        const parsedEnd =
-          parseTaskDate(task.dueDate) ?? parseTaskDate(task.startDate);
-        if (!parsedStart || !parsedEnd) return null;
-        const start = parsedStart <= parsedEnd ? parsedStart : parsedEnd;
-        const end = parsedEnd >= parsedStart ? parsedEnd : parsedStart;
-        return { ...task, scheduleStart: start, scheduleEnd: end };
-      })
-      .filter((task): task is NonNullable<typeof task> => task !== null)
-      .sort(
-        (left, right) =>
-          left.scheduleStart.getTime() - right.scheduleStart.getTime(),
-      );
-  }, [allTasks, foreignRows]);
+  // Tasks with no usable dates can't be drawn as a bar, but dropping them made
+  // them invisible in this view (KFL-117). Split instead of filter: bars for
+  // the scheduled ones, an "Unscheduled" group for the rest.
+  const { scheduled: parsedTasks, unscheduled: unscheduledTasks } = useMemo(
+    () => partitionTasksBySchedule([...allTasks, ...foreignRows]),
+    [allTasks, foreignRows],
+  );
   // Sort the flat task list before building the tree so parents/children
   // respect the selected sort within their subtree.
+  // sortTasks() only reads shared fields (status/priority/dates/title), but is
+  // typed against the full Task shape; these rows are a narrower projection.
   const sortedParsed = useMemo(
     () =>
       sortTasks(
@@ -430,27 +443,61 @@ function RouteComponent() {
 
   const scheduledTasks = useMemo(() => {
     if (!searching) return visibleRows;
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    return visibleRows.filter((task) => {
-      return (
-        task.title.toLowerCase().includes(normalizedQuery) ||
-        `${board?.slug ?? ""}-${task.number ?? ""}`
-          .toLowerCase()
-          .includes(normalizedQuery) ||
-        task.status.toLowerCase().includes(normalizedQuery)
-      );
-    });
+    return visibleRows.filter((task) =>
+      matchesTaskQuery(task, searchQuery, board?.slug),
+    );
   }, [visibleRows, searching, board?.slug, searchQuery]);
+
+  // Unscheduled tasks are a flat lane — no nesting, no collapse, they have no
+  // bars to relate to. They obey sort and search like every other row.
+  const unscheduledRows = useMemo<FlatRow[]>(() => {
+    const sorted = sortTasks(
+      unscheduledTasks as unknown as Task[],
+      sort,
+    ) as unknown as ScheduledTask[];
+    return sorted
+      .filter((task) => matchesTaskQuery(task, searchQuery, board?.slug))
+      .map((task) => ({
+        ...task,
+        depth: 0,
+        hasChildren: false,
+        parentId: null,
+      }));
+  }, [unscheduledTasks, sort, searchQuery, board?.slug]);
 
   // Deferred so navigation into this view paints immediately. React renders the
   // shell (toolbar, header, skeleton) with the previous/empty list, then renders
   // the real rows in a low-priority pass — the click no longer blocks on 185
   // rows of layout. `isStale` is what drives the skeleton below.
   const deferredRows = useDeferredValue(scheduledTasks);
+  // Dependency arrows are drawn between bars, so only rows that actually have
+  // both dates can participate. Narrow with a guard instead of casting: the
+  // unscheduled lane deliberately carries rows with no dates at all.
+  const arrowRows = useMemo(
+    () =>
+      deferredRows.filter(
+        (row): row is ScheduledFlatRow =>
+          row.scheduleStart instanceof Date && row.scheduleEnd instanceof Date,
+      ),
+    [deferredRows],
+  );
   const rowsAreStale = deferredRows !== scheduledTasks;
 
   const timeline = useMemo(() => {
-    if (parsedTasks.length === 0) return null;
+    // A board of only-unscheduled tasks still needs a grid to hang rows off,
+    // otherwise the whole view falls back to the empty state and the tasks
+    // disappear again. Anchor that grid on today.
+    if (parsedTasks.length === 0) {
+      if (unscheduledTasks.length === 0) return null;
+      const today = startOfDay(new Date());
+      return buildTimeline({
+        earliest: today,
+        latest: today,
+        zoom,
+        isMobile,
+        weekStartsOn,
+      });
+    }
     const earliest = parsedTasks.reduce(
       (current, task) =>
         task.scheduleStart < current ? task.scheduleStart : current,
@@ -468,7 +515,7 @@ function RouteComponent() {
       isMobile,
       weekStartsOn,
     });
-  }, [parsedTasks, zoom, isMobile, weekStartsOn]);
+  }, [parsedTasks, unscheduledTasks.length, zoom, isMobile, weekStartsOn]);
 
   useLayoutEffect(() => {
     const element = timelineTrackRef.current;
@@ -616,7 +663,8 @@ function RouteComponent() {
           </div>
         </div>
 
-        {!timeline || parsedTasks.length === 0 ? (
+        {!timeline ||
+        (parsedTasks.length === 0 && unscheduledTasks.length === 0) ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -627,7 +675,7 @@ function RouteComponent() {
               </p>
             </div>
           </div>
-        ) : scheduledTasks.length === 0 ? (
+        ) : scheduledTasks.length === 0 && unscheduledRows.length === 0 ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -783,7 +831,7 @@ function RouteComponent() {
                 >
                   <GanttDependencyArrows
                     relations={relationData?.relations ?? []}
-                    rows={deferredRows}
+                    rows={arrowRows}
                     timeline={timeline}
                     rowHeightPx={ROW_HEIGHT_PX}
                     pixelsPerDay={pixelsPerDay}
@@ -810,10 +858,47 @@ function RouteComponent() {
                       boardSlug={board?.slug}
                       collapsed={collapsedIds.has(task.id)}
                       display={display}
+                      unscheduledHint={t("tasks:gantt.unscheduledHint")}
                       onToggleCollapse={toggleCollapse}
                       onOpenTask={openTask}
                     />
                   ))}
+
+                  {/* Unscheduled lane. Same rows, no bars — a labelled divider
+                      keeps them from reading as an unexplained gap at the top
+                      of the grid. */}
+                  {unscheduledRows.length > 0 ? (
+                    <>
+                      <div
+                        className="sticky left-0 z-[12] flex items-center gap-2 border-y border-border bg-muted/40 px-3 py-1"
+                        style={{ width: showTaskRail ? undefined : "100%" }}
+                      >
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {t("tasks:gantt.unscheduledGroup")}
+                        </span>
+                        <span className="rounded bg-secondary px-1 py-px text-[9px] font-medium text-secondary-foreground">
+                          {unscheduledRows.length}
+                        </span>
+                      </div>
+                      {unscheduledRows.map((task) => (
+                        <GanttRow
+                          key={task.id}
+                          task={task}
+                          timeline={timeline}
+                          pixelsPerDay={pixelsPerDay}
+                          isMobile={isMobile}
+                          showTaskRail={showTaskRail}
+                          taskColumnWidthRem={taskColumnWidthRem}
+                          boardSlug={board?.slug}
+                          collapsed={false}
+                          display={display}
+                          unscheduledHint={t("tasks:gantt.unscheduledHint")}
+                          onToggleCollapse={toggleCollapse}
+                          onOpenTask={openTask}
+                        />
+                      ))}
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>
