@@ -41,4 +41,23 @@ describe("reorderBoardTask", () => {
       "a",
     ]);
   });
+
+  it("preserves every card exactly once after a longer downward move", () => {
+    const longBoard = {
+      ...board,
+      columns: [
+        {
+          id: "todo",
+          tasks: ["a", "b", "c", "d"].map((id, position) =>
+            task(id, "todo", position),
+          ),
+        },
+      ],
+    } as BoardWithTasks;
+
+    const result = reorderBoardTask(longBoard, "a", "c");
+    const ids = result?.board.columns[0].tasks.map((item) => item.id);
+    expect(ids).toEqual(["b", "c", "a", "d"]);
+    expect(new Set(ids).size).toBe(4);
+  });
 });
