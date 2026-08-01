@@ -1,5 +1,4 @@
 import type { Editor } from "@tiptap/core";
-import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
@@ -42,6 +41,7 @@ import {
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ResizableImage } from "@/components/task/extensions/resizable-image";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -403,6 +403,10 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
           .setImage({
             src: asset.url,
             alt: asset.alt,
+            // #54: keep the uploaded filename on the node. Markdown carries
+            // only `![image](url)`, so without this the hover tooltip degrades
+            // to the word "image" or an opaque asset id.
+            title: asset.filename || asset.alt,
           })
           .run();
         return;
@@ -638,7 +642,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
             }),
         }),
         TaskList,
-        Image.configure({
+        // #54: must be the ResizableImage node view, not plain
+        // `@tiptap/extension-image`. The plain extension renders a bare <img>
+        // with no node view, so right-click has no context menu and the
+        // selected image shows no tooltip — the bug reported on this ticket.
+        ResizableImage.configure({
           HTMLAttributes: {
             class: "kaneo-editor-image",
             loading: "lazy",
