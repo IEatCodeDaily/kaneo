@@ -1695,6 +1695,11 @@
 			"searchActions": "Пошук дій...",
 			"noActionsFound": "Дій не знайдено.",
 			"changeStatus": "Змінити статус"
+		},
+		"titleTokens": {
+			"labels": "Мітки",
+			"members": "Учасники",
+			"priority": "Пріоритет"
 		}
 	},
 	"invitations": {

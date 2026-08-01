@@ -1737,6 +1737,11 @@
 			"searchActions": "Поиск действий...",
 			"noActionsFound": "Действия не найдены.",
 			"changeStatus": "Изменить статус"
+		},
+		"titleTokens": {
+			"labels": "Метки",
+			"members": "Участники",
+			"priority": "Приоритет"
 		}
 	},
 	"invitations": {

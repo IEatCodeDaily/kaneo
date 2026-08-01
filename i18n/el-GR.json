@@ -1696,6 +1696,11 @@
 			"searchActions": "Αναζήτηση ενεργειών...",
 			"noActionsFound": "Δεν βρέθηκαν ενέργειες.",
 			"changeStatus": "Αλλαγή κατάστασης"
+		},
+		"titleTokens": {
+			"labels": "Ετικέτες",
+			"members": "Μέλη",
+			"priority": "Προτεραιότητα"
 		}
 	},
 	"invitations": {

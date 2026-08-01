@@ -1696,6 +1696,11 @@
 			"searchActions": "Пребарај акции...",
 			"noActionsFound": "Не се пронајдени акции.",
 			"changeStatus": "Промени статус"
+		},
+		"titleTokens": {
+			"labels": "Ознаки",
+			"members": "Членови",
+			"priority": "Приоритет"
 		}
 	},
 	"invitations": {

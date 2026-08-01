@@ -1738,6 +1738,11 @@
 			"searchActions": "Aktionen suchen...",
 			"noActionsFound": "Keine Aktionen gefunden.",
 			"changeStatus": "Status ändern"
+		},
+		"titleTokens": {
+			"labels": "Labels",
+			"members": "Mitglieder",
+			"priority": "Priorität"
 		}
 	},
 	"invitations": {

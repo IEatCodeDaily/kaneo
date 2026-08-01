@@ -1842,6 +1842,11 @@
 			"searchActions": "Cari aksi...",
 			"noActionsFound": "Tidak ada aksi ditemukan.",
 			"changeStatus": "Ubah Status"
+		},
+		"titleTokens": {
+			"labels": "Label",
+			"members": "Anggota",
+			"priority": "Prioritas"
 		}
 	},
 	"invitations": {

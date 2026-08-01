@@ -1704,6 +1704,11 @@
 			"searchActions": "İşlem ara...",
 			"noActionsFound": "İşlem bulunamadı.",
 			"changeStatus": "Durumu Değiştir"
+		},
+		"titleTokens": {
+			"labels": "Etiketler",
+			"members": "Üyeler",
+			"priority": "Öncelik"
 		}
 	},
 	"invitations": {

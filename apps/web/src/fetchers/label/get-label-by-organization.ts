@@ -5,6 +5,20 @@ export type GetLabelsByTaskRequest = InferRequestType<
   (typeof client)["label"]["organization"][":organizationId"]["$get"]
 >["param"];
 
+/**
+ * A label row as the organization endpoint actually returns it. The route's
+ * response schema is narrower than the runtime row, which otherwise leaves
+ * every consumer inferring `any` for its callback parameters.
+ */
+export type OrganizationLabel = {
+  id: string;
+  name: string;
+  color: string;
+  taskId: string | null;
+  organizationId: string;
+  createdAt: string;
+};
+
 async function getLabelsByTask({ organizationId }: GetLabelsByTaskRequest) {
   const response = await client.label.organization[":organizationId"].$get({
     param: {
@@ -18,7 +32,7 @@ async function getLabelsByTask({ organizationId }: GetLabelsByTaskRequest) {
   }
 
   const data = await response.json();
-  return data;
+  return data as OrganizationLabel[];
 }
 
 export default getLabelsByTask;

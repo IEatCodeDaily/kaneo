@@ -1470,6 +1470,11 @@
 			"searchActions": "Buscar acciones...",
 			"noActionsFound": "No se han encontrado acciones.",
 			"changeStatus": "Cambiar estado"
+		},
+		"titleTokens": {
+			"labels": "Etiquetas",
+			"members": "Miembros",
+			"priority": "Prioridad"
 		}
 	},
 	"invitations": {

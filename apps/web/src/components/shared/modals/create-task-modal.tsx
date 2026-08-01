@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TitleTokenSuggestions, {
+  type TitleTokenOption,
+} from "@/components/shared/modals/title-token-suggestions";
 import CreateTaskTopbar from "@/components/task/create-task-topbar";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
 import { formatTaskMarkdown } from "@/components/task/task-markdown";
@@ -53,6 +56,11 @@ import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
+import {
+  commitTitleToken,
+  findActiveTitleToken,
+  type TitleToken,
+} from "@/lib/title-token-autocomplete";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import useTaskDraftStore from "@/store/task-draft";
@@ -238,6 +246,11 @@ function CreateTaskModal({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  // #72: inline `#`/`@`/`>` autocomplete state for the title field.
+  const [titleToken, setTitleToken] = useState<TitleToken | null>(null);
+  const titleTokenKeyHandlerRef = useRef<
+    ((event: React.KeyboardEvent<HTMLInputElement>) => boolean) | null
+  >(null);
   const draftCreationPromiseRef = useRef<Promise<Task> | null>(null);
   const didSubmitRef = useRef(false);
   const didDiscardRef = useRef(false);
@@ -616,6 +629,93 @@ function CreateTaskModal({
     (u) => u.userId === assigneeId,
   );
 
+  // #72: the option set the inline title picker shows for the active sigil.
+  const titleTokenOptions = useMemo<TitleTokenOption[]>(() => {
+    if (!titleToken) return [];
+
+    if (titleToken.kind === "label") {
+      const alreadyAdded = new Set(labels.map((label) => label.name));
+      // Labels exist per-task as well as per-organization, so the raw list
+      // repeats names. Dedupe by name and prefer the organization-level row.
+      const byName = new Map<string, (typeof organizationLabels)[number]>();
+      for (const label of organizationLabels) {
+        if (alreadyAdded.has(label.name)) continue;
+        const existing = byName.get(label.name);
+        if (!existing || (label.taskId === null && existing.taskId !== null)) {
+          byName.set(label.name, label);
+        }
+      }
+      return [...byName.values()].map((label) => ({
+        id: label.id,
+        name: label.name,
+        color: label.color,
+      }));
+    }
+
+    if (titleToken.kind === "user") {
+      return (organizationMembers?.members ?? []).map((member) => ({
+        id: member.userId,
+        name: member.user?.name || member.user?.email || member.userId,
+      }));
+    }
+
+    return priorityOptions.map((option) => ({
+      id: option.value,
+      name: option.label,
+      icon: getPriorityIcon(option.value),
+    }));
+  }, [
+    titleToken,
+    labels,
+    organizationLabels,
+    organizationMembers?.members,
+    priorityOptions,
+  ]);
+
+  /**
+   * #72: Enter (or a click) turns the typed token into a real field value and
+   * removes it from the title — the label/assignee/priority is not part of the
+   * task's name.
+   */
+  const handleTitleTokenCommit = useCallback(
+    (option: TitleTokenOption) => {
+      const input = titleInputRef.current;
+      const token = titleToken;
+      if (!token) return;
+
+      const caret = input?.selectionStart ?? title.length;
+      const next = commitTitleToken(title, token, caret);
+
+      if (token.kind === "label") {
+        const picked = organizationLabels.find(
+          (label) => label.id === option.id,
+        );
+        if (picked && !labels.some((label) => label.name === picked.name)) {
+          setLabels((current) => [...current, picked]);
+        }
+      } else if (token.kind === "user") {
+        setAssigneeId(option.id);
+      } else {
+        setPriority(option.id as Priority);
+      }
+
+      setTitle(next.title);
+      setTitleToken(null);
+      // Restore the caret where the token used to be, so typing continues
+      // naturally instead of jumping to the end of the title.
+      requestAnimationFrame(() => {
+        input?.focus();
+        input?.setSelectionRange(next.caret, next.caret);
+      });
+    },
+    [title, titleToken, organizationLabels, labels],
+  );
+
+  const handleTitleChange = useCallback((value: string, caret: number) => {
+    setTitle(value);
+    setTitleToken(findActiveTitleToken(value, caret));
+  }, []);
+
   useEffect(() => {
     if (labelsOpen && labelsStep === "select" && searchInputRef.current) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
@@ -775,11 +875,32 @@ function CreateTaskModal({
               ref={titleInputRef}
               unstyled
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) =>
+                handleTitleChange(
+                  e.target.value,
+                  e.target.selectionStart ?? e.target.value.length,
+                )
+              }
+              onKeyDown={(e) => {
+                // #72: while a token picker is open it owns Arrow/Enter/Escape.
+                // Space is deliberately not intercepted, so typing a space
+                // leaves the sigil as plain title text.
+                if (titleTokenKeyHandlerRef.current?.(e)) return;
+              }}
+              onBlur={() => setTitleToken(null)}
               autoFocus
               placeholder={t("common:modals.createTask.taskTitlePlaceholder")}
               className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-3 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
               required
+            />
+            <TitleTokenSuggestions
+              onCommit={handleTitleTokenCommit}
+              onDismiss={() => setTitleToken(null)}
+              onRegisterKeyHandler={(handler) => {
+                titleTokenKeyHandlerRef.current = handler;
+              }}
+              options={titleTokenOptions}
+              token={titleToken}
             />
 
             <div className="min-h-[200px]">

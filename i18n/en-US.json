@@ -1999,6 +1999,11 @@
     "access": {
       "title": "Board access",
       "team": "Team"
+    },
+    "titleTokens": {
+      "labels": "Labels",
+      "members": "Members",
+      "priority": "Priority"
     }
   },
   "invitations": {
