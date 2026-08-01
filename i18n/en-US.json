@@ -1932,6 +1932,14 @@
 		"column": {
 			"empty": "No tasks"
 		},
+		"preview": {
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"dueDate": "Due date",
+			"noDueDate": "No due date",
+			"labels": "Labels",
+			"none": "None"
+		},
 		"milestone": {
 			"title": "Milestone",
 			"none": "No milestone",

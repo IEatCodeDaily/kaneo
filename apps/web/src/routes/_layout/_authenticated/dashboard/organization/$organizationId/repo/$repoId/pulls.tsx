@@ -173,6 +173,10 @@ function RouteComponent() {
                       }
                       title={pullRequest.title}
                       to="/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
+                      // Same defect as #94 in the issue list: without `search`
+                      // the detail route's validateSearch falls back to "open"
+                      // and the list silently resets the user's filter.
+                      search={{ state }}
                       trailing={
                         <RepoDiffDelta
                           additions={pullRequest.additions}
