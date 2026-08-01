@@ -59,6 +59,7 @@ import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import debounce from "@/lib/debounce";
+import { toReferenceSearchQuery } from "@/lib/editor-reference-query";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
   extractIssueKeyFromUrl,
@@ -83,6 +84,7 @@ import {
   ShikiCodeBlock,
 } from "./extensions/shiki-code-block";
 import { TaskItemWithCheckbox } from "./extensions/task-item-with-checkbox";
+import { formatTaskMarkdown } from "./task-markdown";
 import "tippy.js/dist/tippy.css";
 
 type TaskDescriptionProps = {
@@ -117,10 +119,7 @@ type SlashMenuState = {
 };
 
 function formatMarkdown(markdown: string) {
-  return markdown
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/\n{2,}$/g, "\n");
+  return formatTaskMarkdown(markdown);
 }
 
 type EmbedComposerState = {
@@ -561,6 +560,15 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     [],
   );
 
+  useEffect(
+    () => () => {
+      // A route change can destroy this editor before the debounce expires.
+      // Flush the latest markdown so drafts keep their final keystrokes.
+      void debouncedUpdate.flush();
+    },
+    [debouncedUpdate],
+  );
+
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -599,7 +607,9 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         ReferenceSuggestion.configure({
           search: (query) =>
             searchReferences({
-              query,
+              // `#` with nothing typed still lists tasks; the search API
+              // rejects an empty `q`, so it gets a match-all pattern.
+              query: toReferenceSearchQuery(query),
               organizationId: organizationIdRef.current,
             }),
         }),
@@ -799,7 +809,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   // menus, paste handlers, and toolbar buttons all become no-ops because
   // the editor refuses content mutations.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     editor.setEditable(canEdit);
   }, [editor, canEdit]);
 
@@ -983,7 +993,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   );
 
   useEffect(() => {
-    if (!editor) return;
+    // A destroyed editor is still truthy but its commandManager is null, so a
+    // `!editor` check alone is not enough: navigating between a parent task and
+    // its subtask tears the editor down while this effect is still scheduled,
+    // and touching `.commands` then throws "can't access property commands".
+    if (!editor || editor.isDestroyed) return;
     if (lastEditorRef.current !== editor) {
       hasHydratedRef.current = false;
       lastEditorRef.current = editor;
@@ -1026,7 +1040,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   }, [editor, taskId, task?.description]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
 
     syncSlashMenu(editor);
     const onSelection = () => syncSlashMenu(editor);

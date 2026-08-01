@@ -45,12 +45,34 @@ async function getBoards(
         return earliest;
       }, null);
 
+      /**
+       * Span of the board on a timeline: from the earliest task start to the
+       * latest task due date. `dueDate` above is deliberately left alone — it
+       * is the *soonest* deadline and drives the "due" badge, which is a
+       * different question from "how long does this board run".
+       *
+       * Tasks fall back to their due date when they have no start (and vice
+       * versa) so a board with only one of the two still occupies a real span
+       * rather than disappearing from the timeline.
+       */
+      let startsAt: Date | null = null;
+      let endsAt: Date | null = null;
+      for (const task of board.tasks) {
+        const taskStart = task.startDate ?? task.dueDate;
+        const taskEnd = task.dueDate ?? task.startDate;
+        if (taskStart && (!startsAt || taskStart < startsAt))
+          startsAt = taskStart;
+        if (taskEnd && (!endsAt || taskEnd > endsAt)) endsAt = taskEnd;
+      }
+
       return {
         ...board,
         statistics: {
           completionPercentage,
           totalTasks,
           dueDate,
+          startsAt,
+          endsAt,
         },
         archivedTasks: [],
         plannedTasks: [],

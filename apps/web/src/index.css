@@ -194,6 +194,14 @@ input:-webkit-autofill:active {
   --code: var(--color-white);
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-black) / 4%);
+
+  /*
+   * Declares the theme to the CSS engine, not just to our own tokens. Third
+   * party components that use `light-dark()` — @pierre/trees paints its
+   * <file-tree-container> that way — read this and nothing else, so without it
+   * they render their light palette inside our dark UI.
+   */
+  color-scheme: light;
 }
 
 .dark {
@@ -250,6 +258,15 @@ input:-webkit-autofill:active {
   --code: color-mix(in srgb, var(--background) 98%, var(--color-white));
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-white) / 4%);
+
+  /*
+   * Required for third-party components that theme via `light-dark()`.
+   * @pierre/trees paints <file-tree-container> with
+   * `light-dark(#f8f8f8, #141415)`, and that function keys off `color-scheme`
+   * rather than our `.dark` class — so without this the changed-files tree and
+   * the Code Explorer tree both render bright white in dark mode.
+   */
+  color-scheme: dark;
 }
 
 @layer base {
@@ -695,6 +712,17 @@ input:-webkit-autofill:active {
     color: color-mix(in srgb, var(--foreground) 78%, transparent);
   }
 
+  /*
+   * @pierre/trees sets `color-scheme: light dark` on its own <file-tree-container>,
+   * which wins over the inherited scheme — so its `light-dark(#f8f8f8, #141415)`
+   * background always resolved to the light value and the tree rendered bright
+   * white inside our dark UI (Code Explorer and the PR changed-files tree both).
+   * Pinning the scheme on the element is what actually reaches it.
+   */
+  .dark file-tree-container {
+    color-scheme: dark;
+  }
+
   .kaneo-tiptap-content .ProseMirror img.kaneo-editor-image,
   .kaneo-comment-editor-prose img.kaneo-editor-image {
     display: block;
@@ -709,9 +737,23 @@ input:-webkit-autofill:active {
     overflow: hidden;
   }
 
+  /*
+   * The create-task modal is a fixed-height dialog, so a pasted image competes
+   * with the typing area for the same vertical space. Cap it well below the
+   * editor height and always leave a clickable, visible line after it —
+   * otherwise the image fills the body and there is nowhere to type.
+   */
   .kaneo-create-task-modal .kaneo-comment-editor-prose img.kaneo-editor-image {
-    max-height: min(50vh, 28rem);
-    width: 100%;
+    max-height: min(32vh, 16rem);
+    width: auto;
+  }
+
+  .kaneo-create-task-modal
+    .kaneo-comment-editor-content
+    .ProseMirror
+    > p:last-child {
+    min-height: 1.5rem;
+    scroll-margin-bottom: 1.5rem;
   }
 
   .kaneo-tiptap-content .ProseMirror .is-editor-empty:first-child::before {

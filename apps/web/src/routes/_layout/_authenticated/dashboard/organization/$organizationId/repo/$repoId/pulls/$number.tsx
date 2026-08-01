@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ExternalLink, GitBranch } from "lucide-react";
+import { useState } from "react";
 import PageTitle from "@/components/page-title";
 import PullRequestLiveDetails from "@/components/repo/pull-request-live-details";
 import RepoDiffDelta from "@/components/repo/repo-diff-delta";
@@ -25,6 +26,9 @@ function RouteComponent() {
   const { organizationId, repoId, number: numberParam } = Route.useParams();
   const number = Number(numberParam);
   const { data: repo } = useGetRepo({ id: repoId });
+  // Tracked here because the tabs live in PullRequestLiveDetails but the
+  // metadata sidebar is rendered by the layout above it.
+  const [activeTab, setActiveTab] = useState("discussion");
   const {
     data: pullRequest,
     isLoading,
@@ -131,9 +135,11 @@ function RouteComponent() {
             <PullRequestLiveDetails
               discussion={discussion}
               number={number}
+              onTabChange={setActiveTab}
               repoId={repoId}
             />
           )}
+          hideSidebar={activeTab === "diffs"}
           kind="pull-request"
           management={{
             body: pullRequest.body,

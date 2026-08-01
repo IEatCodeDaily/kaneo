@@ -4,6 +4,7 @@ import {
   intentPrefetchHandlers,
   prefetchBoardNavigation,
   prefetchRepoNavigation,
+  prefetchTaskNavigation,
 } from "./navigation-prefetch";
 
 vi.mock("@/fetchers/board/get-board", () => ({
@@ -12,10 +13,16 @@ vi.mock("@/fetchers/board/get-board", () => ({
 vi.mock("@/fetchers/task/get-tasks", () => ({
   default: vi.fn(async () => ({ id: "board-1", columns: [] })),
 }));
+vi.mock("@/fetchers/task/get-task", () => ({
+  default: vi.fn(async () => ({ id: "task-1" })),
+}));
 vi.mock("@/fetchers/repo/get-repo", () => ({
   default: vi.fn(async () => ({ id: "repo-1" })),
 }));
 vi.mock("@/fetchers/repo/get-repo-issues", () => ({
+  default: vi.fn(async () => ({ items: [], pagination: {} })),
+}));
+vi.mock("@/fetchers/repo/get-repo-pull-requests", () => ({
   default: vi.fn(async () => ({ items: [], pagination: {} })),
 }));
 
@@ -26,26 +33,32 @@ const createQueryClient = () =>
     },
   });
 
+/** Record every key handed to prefetchQuery without stubbing the cache away. */
+const spyOnPrefetch = (queryClient: QueryClient) => {
+  const keys: unknown[][] = [];
+  const original = queryClient.prefetchQuery.bind(queryClient);
+  vi.spyOn(queryClient, "prefetchQuery").mockImplementation((options) => {
+    keys.push(options.queryKey as unknown[]);
+    return original(options);
+  });
+  return keys;
+};
+
 describe("navigation intent prefetch", () => {
-  it.each(["onMouseEnter", "onFocus"] as const)(
-    "%s populates the exact board route consumer keys",
+  it.each(["onMouseEnter", "onFocus", "onPointerEnter"] as const)(
+    "%s prefetches the board's own task queryKey",
     async (intent) => {
       const queryClient = createQueryClient();
+      const keys = spyOnPrefetch(queryClient);
       const handlers = intentPrefetchHandlers(() =>
         prefetchBoardNavigation(queryClient, "org-1", "board-1"),
       );
 
       handlers[intent]();
-      await Promise.all([
-        queryClient.ensureQueryData({
-          queryKey: ["boards", "org-1", "board-1"],
-        }),
-        queryClient.ensureQueryData({ queryKey: ["tasks", "board-1"] }),
-      ]);
+      await queryClient.ensureQueryData({ queryKey: ["tasks", "board-1"] });
 
-      expect(queryClient.getQueryData(["boards", "org-1", "board-1"])).toEqual({
-        id: "board-1",
-      });
+      expect(keys).toContainEqual(["tasks", "board-1"]);
+      expect(keys).toContainEqual(["boards", "org-1", "board-1"]);
       expect(queryClient.getQueryData(["tasks", "board-1"])).toEqual({
         id: "board-1",
         columns: [],
@@ -53,43 +66,51 @@ describe("navigation intent prefetch", () => {
     },
   );
 
-  it.each(["onMouseEnter", "onFocus"] as const)(
-    "%s populates the exact repository route consumer keys",
+  it.each(["onMouseEnter", "onFocus", "onPointerEnter"] as const)(
+    "%s prefetches the repository's issue and pull-request lists",
     async (intent) => {
       const queryClient = createQueryClient();
+      const keys = spyOnPrefetch(queryClient);
       const handlers = intentPrefetchHandlers(() =>
         prefetchRepoNavigation(queryClient, "repo-1"),
       );
 
       handlers[intent]();
-      await Promise.all([
-        queryClient.ensureQueryData({ queryKey: ["repo", "repo-1"] }),
-        queryClient.ensureQueryData({
-          queryKey: ["repo-issues", "repo-1", "open", 1, undefined],
-        }),
-      ]);
+      await queryClient.ensureQueryData({ queryKey: ["repo", "repo-1"] });
 
-      expect(queryClient.getQueryData(["repo", "repo-1"])).toEqual({
-        id: "repo-1",
-      });
-      expect(
-        queryClient.getQueryData([
-          "repo-issues",
-          "repo-1",
-          "open",
-          1,
-          undefined,
-        ]),
-      ).toEqual({ items: [], pagination: {} });
+      expect(keys).toContainEqual(["repo", "repo-1"]);
+      // Defaults must match useGetRepoIssues / useGetRepoPullRequests exactly,
+      // or the route mounts on a different key and refetches anyway.
+      expect(keys).toContainEqual(["repo-issues", "repo-1", "open", 1, 50]);
+      expect(keys).toContainEqual([
+        "repo-pull-requests",
+        "repo-1",
+        "open",
+        1,
+        50,
+      ]);
     },
   );
 
-  it("does not duplicate requests when click consumers mount after prefetch", async () => {
+  it("prefetches a single task row on intent", async () => {
+    const queryClient = createQueryClient();
+    const keys = spyOnPrefetch(queryClient);
+
+    await intentPrefetchHandlers(() =>
+      prefetchTaskNavigation(queryClient, "task-1"),
+    ).onPointerEnter();
+    await queryClient.ensureQueryData({ queryKey: ["task", "task-1"] });
+
+    expect(keys).toContainEqual(["task", "task-1"]);
+  });
+
+  it("serves the prefetched entry to the destination instead of refetching", async () => {
     const queryClient = createQueryClient();
     const boardRequest = vi.fn(async () => ({ id: "board-1" }));
     const query = {
       queryKey: ["tasks", "board-1"] as const,
       queryFn: boardRequest,
+      staleTime: 10_000,
     };
 
     await queryClient.prefetchQuery(query);

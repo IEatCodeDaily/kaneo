@@ -1,11 +1,15 @@
-import { eq, or } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskRelationTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
-import { deleteS3Keys, getTaskAssetKeys } from "../../storage/cleanup-assets";
 import getTask from "./get-task";
 
+/**
+ * Soft-deletes a task: stamps `deletedAt`/`deletedBy` so the task drops out of
+ * every normal read path but stays recoverable from the recycle bin until it is
+ * purged (see `purge-trashed-tasks`) or permanently deleted.
+ */
 async function deleteTask(taskId: string, currentUserId: string) {
   const task = await getTask(taskId);
 
@@ -20,11 +24,10 @@ async function deleteTask(taskId: string, currentUserId: string) {
     )
     .execute();
 
-  const assetKeys = await getTaskAssetKeys(taskId);
-
   const [deletedTask] = await db
-    .delete(taskTable)
-    .where(eq(taskTable.id, taskId))
+    .update(taskTable)
+    .set({ deletedAt: new Date(), deletedBy: currentUserId })
+    .where(and(eq(taskTable.id, taskId), isNull(taskTable.deletedAt)))
     .returning()
     .execute();
 
@@ -49,11 +52,6 @@ async function deleteTask(taskId: string, currentUserId: string) {
       sourceTaskId: relation.sourceTaskId,
       targetTaskId: relation.targetTaskId,
     });
-  }
-
-  // Fire-and-forget S3 cleanup after successful DB delete
-  if (assetKeys.length > 0) {
-    deleteS3Keys(assetKeys).catch(() => {});
   }
 
   return task;

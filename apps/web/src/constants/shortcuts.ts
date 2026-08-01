@@ -29,6 +29,7 @@ export const shortcuts = {
   task: {
     prefix: "t",
     create: "c",
+    focusTitle: "e",
   },
   view: {
     prefix: "v",

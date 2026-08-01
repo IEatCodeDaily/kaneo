@@ -5048,6 +5048,12 @@
 						},
 						"repos": {
 							"type": "string"
+						},
+						"moreBoards": {
+							"type": "string"
+						},
+						"moreRepos": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -5057,7 +5063,9 @@
 						"invitations",
 						"more",
 						"backToBoard",
-						"repos"
+						"repos",
+						"moreBoards",
+						"moreRepos"
 					]
 				},
 				"boardList": {
@@ -6721,6 +6729,12 @@
 						"deleteError": {
 							"type": "string"
 						},
+						"unlinkSuccess": {
+							"type": "string"
+						},
+						"unlinkError": {
+							"type": "string"
+						},
 						"deleteDialogTitle": {
 							"type": "string"
 						},
@@ -6748,6 +6762,8 @@
 						"createError",
 						"deleteSuccess",
 						"deleteError",
+						"unlinkSuccess",
+						"unlinkError",
 						"deleteDialogTitle",
 						"deleteDialogDescription",
 						"deleteAction",
@@ -7186,6 +7202,70 @@
 						"fields"
 					]
 				},
+				"group": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"by": {
+							"type": "string"
+						},
+						"none": {
+							"type": "string"
+						},
+						"status": {
+							"type": "string"
+						},
+						"priority": {
+							"type": "string"
+						},
+						"assignee": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"by",
+						"none",
+						"status",
+						"priority",
+						"assignee"
+					]
+				},
+				"display": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"show": {
+							"type": "string"
+						},
+						"assignee": {
+							"type": "string"
+						},
+						"priority": {
+							"type": "string"
+						},
+						"labels": {
+							"type": "string"
+						},
+						"dates": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"show",
+						"assignee",
+						"priority",
+						"labels",
+						"dates"
+					]
+				},
 				"boardFilters": {
 					"type": "object",
 					"additionalProperties": false,
@@ -7313,6 +7393,26 @@
 						},
 						"taskAriaLabel": {
 							"type": "string"
+						},
+						"zoom": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"day": {
+									"type": "string"
+								},
+								"week": {
+									"type": "string"
+								},
+								"month": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"day",
+								"week",
+								"month"
+							]
 						}
 					},
 					"required": [
@@ -7329,7 +7429,40 @@
 						"updateDatesError",
 						"resizeStart",
 						"resizeDue",
-						"taskAriaLabel"
+						"taskAriaLabel",
+						"zoom"
+					]
+				},
+				"calendar": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pageTitle": {
+							"type": "string"
+						},
+						"title": {
+							"type": "string"
+						},
+						"today": {
+							"type": "string"
+						},
+						"previousMonth": {
+							"type": "string"
+						},
+						"nextMonth": {
+							"type": "string"
+						},
+						"more": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"pageTitle",
+						"title",
+						"today",
+						"previousMonth",
+						"nextMonth",
+						"more"
 					]
 				},
 				"delete": {
@@ -7532,6 +7665,38 @@
 						"copyLinkSuccess"
 					]
 				},
+				"attachment": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"fallbackName": {
+							"type": "string"
+						},
+						"copyImageAddress": {
+							"type": "string"
+						},
+						"copyFileAddress": {
+							"type": "string"
+						},
+						"openInNewTab": {
+							"type": "string"
+						},
+						"download": {
+							"type": "string"
+						},
+						"copyMarkdown": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"fallbackName",
+						"copyImageAddress",
+						"copyFileAddress",
+						"openInNewTab",
+						"download",
+						"copyMarkdown"
+					]
+				},
 				"actions": {
 					"type": "object",
 					"additionalProperties": false,
@@ -7545,6 +7710,12 @@
 						"moveToBacklog": {
 							"type": "string"
 						},
+						"unlink": {
+							"type": "string"
+						},
+						"unlinkSubtask": {
+							"type": "string"
+						},
 						"delete": {
 							"type": "string"
 						}
@@ -7553,6 +7724,8 @@
 						"archive",
 						"markAsPlanned",
 						"moveToBacklog",
+						"unlink",
+						"unlinkSubtask",
 						"delete"
 					]
 				},
@@ -7683,6 +7856,18 @@
 						"noActionsFound",
 						"changeStatus"
 					]
+				},
+				"column": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"empty": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"empty"
+					]
 				}
 			},
 			"required": [
@@ -7700,8 +7885,11 @@
 				"popover",
 				"backlog",
 				"sort",
+				"group",
+				"display",
 				"boardFilters",
 				"gantt",
+				"calendar",
 				"delete",
 				"archive",
 				"listView",
@@ -7712,8 +7900,10 @@
 				"labels",
 				"update",
 				"contextMenu",
+				"attachment",
 				"actions",
-				"bulk"
+				"bulk",
+				"column"
 			]
 		},
 		"invitations": {
@@ -7847,6 +8037,67 @@
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
+						"view": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"table": {
+									"type": "string"
+								},
+								"timeline": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"table",
+								"timeline"
+							]
+						},
+						"timeline": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"boardColumn": {
+									"type": "string"
+								},
+								"barLabel": {
+									"type": "string"
+								},
+								"emptyTitle": {
+									"type": "string"
+								},
+								"emptyDescription": {
+									"type": "string"
+								},
+								"zoom": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"week": {
+											"type": "string"
+										},
+										"month": {
+											"type": "string"
+										},
+										"year": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"week",
+										"month",
+										"year"
+									]
+								}
+							},
+							"required": [
+								"boardColumn",
+								"barLabel",
+								"emptyTitle",
+								"emptyDescription",
+								"zoom"
+							]
+						},
 						"pageTitle": {
 							"type": "string"
 						},
@@ -7902,6 +8153,8 @@
 						}
 					},
 					"required": [
+						"view",
+						"timeline",
 						"pageTitle",
 						"createBoard",
 						"title",
@@ -8278,12 +8531,24 @@
 						},
 						"you": {
 							"type": "string"
+						},
+						"people": {
+							"type": "string"
+						},
+						"agents": {
+							"type": "string"
+						},
+						"agentsManagedByAdmins": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"pageTitle",
 						"inviteMember",
-						"you"
+						"you",
+						"people",
+						"agents",
+						"agentsManagedByAdmins"
 					]
 				},
 				"invitations": {

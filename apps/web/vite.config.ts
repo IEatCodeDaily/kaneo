@@ -114,7 +114,31 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        /**
+         * Split the vendor half of the entry chunk.
+         *
+         * The entry was 1,180 kB because React, TanStack Router/Query, the
+         * editor and the app's own code all landed in one file that every
+         * route blocks on. These four groups change on different schedules, so
+         * splitting them also means a release only invalidates the chunk it
+         * touched instead of the whole 1.1 MB.
+         */
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+            return "vendor-react";
+          }
+          if (id.includes("@tanstack")) return "vendor-tanstack";
+          if (id.includes("@tiptap") || id.includes("prosemirror")) {
+            return "vendor-editor";
+          }
+          if (id.includes("shiki") || id.includes("@shikijs")) {
+            return undefined; // keep shiki's per-language chunks intact
+          }
+
+          return undefined;
+        },
       },
     },
     commonjsOptions: {

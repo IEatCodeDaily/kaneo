@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Maximize2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -14,6 +15,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import TaskDetailsContent from "./task-details-content";
 import TaskPropertiesSidebar from "./task-properties-sidebar";
+import TaskTopbarMilestone from "./task-topbar-milestone";
 
 type TaskDetailsSheetProps = {
   taskId: string | undefined;
@@ -73,8 +75,17 @@ export default function TaskDetailsSheet({
             <span className="text-sm font-medium text-muted-foreground">
               {board?.slug}-{task?.number}
             </span>
+            {currentTaskId && (
+              <TaskTopbarMilestone taskId={currentTaskId} boardId={boardId} />
+            )}
           </div>
           <div className="flex items-center gap-1">
+            <BoardAccessAvatars
+              organizationId={organizationId}
+              resourceId={boardId}
+              resourceType="board"
+              className="mr-1"
+            />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -45,6 +45,162 @@ type ListViewProps = {
   board: BoardWithTasks;
   disableDragDrop?: boolean;
 };
+
+type ColumnSectionProps = {
+  active: boolean;
+  boardSlug: string;
+  collapsedParentIds: ReadonlySet<string>;
+  column: BoardWithTasks["columns"][number];
+  expanded: boolean;
+  onAddTask: () => void;
+  onArchive: () => void;
+  onToggle: () => void;
+  onToggleParent: (parentId: string) => void;
+};
+
+/** Stable component identity keeps each dnd-kit droppable mounted. */
+const ColumnSection = memo(function ColumnSection({
+  active,
+  boardSlug,
+  collapsedParentIds,
+  column,
+  expanded,
+  onAddTask,
+  onArchive,
+  onToggle,
+  onToggleParent,
+}: ColumnSectionProps) {
+  const { t } = useTranslation();
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+    data: { type: "column", column },
+  });
+  const groups = useMemo(
+    () => groupSameBucketSubtasks(column.tasks),
+    [column.tasks],
+  );
+  const showDropIndicator = active;
+
+  return (
+    <div
+      className={cn(
+        "border-b border-border/50 transition-colors duration-150 overflow-auto",
+        showDropIndicator && "border-l-4 border-l-ring bg-accent/35",
+      )}
+    >
+      <div className="flex items-center justify-between py-2 px-4 bg-muted/60 border-b border-border/50">
+        <button
+          type="button"
+          onClick={() => onToggle()}
+          className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight
+            className={cn(
+              "w-3 h-3 transition-transform",
+              expanded && "rotate-90",
+            )}
+          />
+          <div className="flex items-center gap-2 h-4">
+            {getColumnIcon(column.id, column.isFinal, column.icon)}
+            <div className="flex items-center gap-1">
+              <span className="mt-1 mr-1">{column.name}</span>
+              <span className="text-xs text-muted-foreground mt-0.5">
+                {column.tasks.length}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              onAddTask();
+            }}
+            className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+            title={t("tasks:listView.addTask")}
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+
+          {column.isFinal && column.tasks.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onArchive()}
+              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+              title={t("tasks:listView.archiveAllTooltip")}
+            >
+              <Archive className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {expanded && (
+        <div
+          ref={setNodeRef}
+          className="bg-card transition-[translate,opacity] duration-150 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0"
+        >
+          <SortableContext
+            items={column.tasks}
+            strategy={verticalListSortingStrategy}
+          >
+            {/* Their grouping + collapse, without the per-row motion.div:
+                one Framer Motion instance per row cost ~3s of main-thread
+                blocking on a 180-task board. The CSS starting-style fade on
+                the container gives the same visual entry for free. */}
+            {groups.map(({ parent, children }) => {
+              const collapsed = collapsedParentIds.has(parent.id);
+              const visibleTasks = collapsed ? [parent] : [parent, ...children];
+              return (
+                <div
+                  data-testid={children.length ? "list-task-group" : undefined}
+                  key={parent.id}
+                >
+                  {visibleTasks.map((task, index) => (
+                    <div
+                      key={task.id}
+                      className={
+                        index > 0 ? "ml-6 border-l-2 border-border" : undefined
+                      }
+                    >
+                      <TaskRow task={task} boardSlug={boardSlug} />
+                    </div>
+                  ))}
+                  {children.length > 0 && (
+                    <button
+                      aria-expanded={!collapsed}
+                      className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() => onToggleParent(parent.id)}
+                      type="button"
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="size-3" />
+                      ) : (
+                        <ChevronDown className="size-3" />
+                      )}
+                      {collapseToggleLabel({
+                        parentId: parent.id,
+                        childCount: children.length,
+                        collapsed,
+                      })}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </SortableContext>
+
+          {column.tasks.length === 0 && (
+            <div className="py-6 px-4 text-center text-xs text-muted-foreground">
+              {t("tasks:listView.noTasks")}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
 
 function ListView({ board, disableDragDrop = false }: ListViewProps) {
   const { t } = useTranslation();
@@ -282,175 +438,6 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     setColumnToArchive(null);
   };
 
-  /**
-   * Declared inside ListView on purpose — it closes over a dozen pieces of
-   * parent state (activeId, overColumnId, collapsedParents, modal setters).
-   * Hoisting it would mean threading all of those through props.
-   *
-   * The cost is that it is a fresh component identity on every ListView
-   * render, so React remounts each column subtree and dnd-kit re-registers
-   * every droppable. That is why the grouping below must be memoized per
-   * column: it is the one piece of real work in here.
-   *
-   * ponytail: hoist this to a top-level memo() component if column remounts
-   * ever show up in a profile; it needs a props object first.
-   */
-  function ColumnSection({
-    column,
-  }: {
-    column: BoardWithTasks["columns"][number];
-  }) {
-    const { setNodeRef } = useDroppable({
-      id: column.id,
-      data: {
-        type: "column",
-        column,
-      },
-    });
-
-    // Without this, every ListView render re-groups every column's tasks.
-    const groups = useMemo(
-      () => groupSameBucketSubtasks(column.tasks),
-      [column.tasks],
-    );
-
-    const showDropIndicator = activeId && overColumnId === column.id;
-
-    return (
-      <div
-        className={cn(
-          "border-b border-border/50 transition-colors duration-150 overflow-auto",
-          showDropIndicator && "border-l-4 border-l-ring bg-accent/35",
-        )}
-      >
-        <div className="flex items-center justify-between py-2 px-4 bg-muted/60 border-b border-border/50">
-          <button
-            type="button"
-            onClick={() => toggleSection(column.id)}
-            className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronRight
-              className={cn(
-                "w-3 h-3 transition-transform",
-                expandedSections[column.id] && "rotate-90",
-              )}
-            />
-            <div className="flex items-center gap-2 h-4">
-              {getColumnIcon(column.id, column.isFinal, column.icon)}
-              <div className="flex items-center gap-1">
-                <span className="mt-1 mr-1">{column.name}</span>
-                <span className="text-xs text-muted-foreground mt-0.5">
-                  {column.tasks.length}
-                </span>
-              </div>
-            </div>
-          </button>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setIsTaskModalOpen(true);
-                setActiveColumn(column.id);
-              }}
-              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
-              title={t("tasks:listView.addTask")}
-            >
-              <Plus className="w-3 h-3" />
-            </button>
-
-            {column.isFinal && column.tasks.length > 0 && (
-              <button
-                type="button"
-                onClick={() => handleArchiveClick(column)}
-                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
-                title={t("tasks:listView.archiveAllTooltip")}
-              >
-                <Archive className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {expandedSections[column.id] && (
-          <div
-            ref={setNodeRef}
-            className="bg-card transition-[translate,opacity] duration-150 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0"
-          >
-            <SortableContext
-              items={column.tasks}
-              strategy={verticalListSortingStrategy}
-            >
-              {/* Their grouping + collapse, without the per-row motion.div:
-                  one Framer Motion instance per row cost ~3s of main-thread
-                  blocking on a 180-task board. The CSS starting-style fade on
-                  the container gives the same visual entry for free. */}
-              {groups.map(({ parent, children }) => {
-                const collapsed = collapsedParents.has(parent.id);
-                const visibleTasks = collapsed
-                  ? [parent]
-                  : [parent, ...children];
-                return (
-                  <div
-                    data-testid={
-                      children.length ? "list-task-group" : undefined
-                    }
-                    key={parent.id}
-                  >
-                    {visibleTasks.map((task, index) => (
-                      <div
-                        key={task.id}
-                        className={
-                          index > 0
-                            ? "ml-6 border-l-2 border-border"
-                            : undefined
-                        }
-                      >
-                        <TaskRow task={task} boardSlug={board?.slug ?? ""} />
-                      </div>
-                    ))}
-                    {children.length > 0 && (
-                      <button
-                        aria-expanded={!collapsed}
-                        className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                        onClick={() =>
-                          setCollapsedParents((current) => {
-                            const next = new Set(current);
-                            if (collapsed) next.delete(parent.id);
-                            else next.add(parent.id);
-                            return next;
-                          })
-                        }
-                        type="button"
-                      >
-                        {collapsed ? (
-                          <ChevronRight className="size-3" />
-                        ) : (
-                          <ChevronDown className="size-3" />
-                        )}
-                        {collapseToggleLabel({
-                          parentId: parent.id,
-                          childCount: children.length,
-                          collapsed,
-                        })}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </SortableContext>
-
-            {column.tasks.length === 0 && (
-              <div className="py-6 px-4 text-center text-xs text-muted-foreground">
-                {t("tasks:listView.noTasks")}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   if (!board?.columns) {
     return null;
   }
@@ -473,7 +460,28 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
       <div className="w-full h-full overflow-auto bg-muted/20">
         <div className="divide-y divide-border/50">
           {board.columns.map((column) => (
-            <ColumnSection key={column.id} column={column} />
+            <ColumnSection
+              active={Boolean(activeId && overColumnId === column.id)}
+              boardSlug={board.slug ?? ""}
+              collapsedParentIds={collapsedParents}
+              column={column}
+              expanded={Boolean(expandedSections[column.id])}
+              key={column.id}
+              onAddTask={() => {
+                setIsTaskModalOpen(true);
+                setActiveColumn(column.id);
+              }}
+              onArchive={() => handleArchiveClick(column)}
+              onToggle={() => toggleSection(column.id)}
+              onToggleParent={(parentId) =>
+                setCollapsedParents((current) => {
+                  const next = new Set(current);
+                  if (next.has(parentId)) next.delete(parentId);
+                  else next.add(parentId);
+                  return next;
+                })
+              }
+            />
           ))}
         </div>
       </div>

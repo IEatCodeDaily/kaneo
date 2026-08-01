@@ -74,6 +74,15 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
     [debouncedUpdate],
   );
 
+  useEffect(
+    () => () => {
+      // Navigation can unmount the title before the 800ms timer fires. Flush
+      // the last keystroke rather than silently discarding it.
+      void debouncedUpdate.flush();
+    },
+    [debouncedUpdate],
+  );
+
   return (
     <Form {...form}>
       <FormField
@@ -85,6 +94,10 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
             type="text"
             placeholder={t("tasks:detail.titlePlaceholder")}
             readOnly={!canEdit}
+            // A single-line input clips long titles with no way to read the
+            // rest, and the Properties sidebar cuts it off further. Expose the
+            // full value as a tooltip rather than letting it silently vanish.
+            title={field.value || undefined}
             className="block h-auto w-full appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] leading-[1.15] font-semibold tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45"
             onChange={(e) => {
               field.onChange(e);

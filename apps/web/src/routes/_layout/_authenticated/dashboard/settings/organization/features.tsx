@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FolderGit2 } from "lucide-react";
 import { useState } from "react";
 import PageTitle from "@/components/page-title";
+import { AiSettings } from "@/components/settings/ai-settings";
 import { Switch } from "@/components/ui/switch";
 import useUpdateOrganization from "@/hooks/mutations/organization/use-update-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -84,6 +85,7 @@ function RouteComponent() {
             />
           </div>
         </section>
+        <AiSettings />
       </div>
     </>
   );

@@ -23,6 +23,12 @@ type RepoListRowProps = {
   trailing?: ReactNode;
   to: string;
   params: Record<string, string>;
+  /**
+   * Search params to carry across the navigation. The list's own filter lives
+   * in the URL, so a row that omits it resets the filter on click: opening a
+   * closed issue snapped the list back to "open".
+   */
+  search?: Record<string, string>;
 };
 
 /**
@@ -49,6 +55,7 @@ export default function RepoListRow({
   trailing,
   to,
   params,
+  search,
 }: RepoListRowProps) {
   return (
     <Link
@@ -56,6 +63,7 @@ export default function RepoListRow({
       className="flex h-16 items-start gap-3 px-3 py-3 transition-colors hover:bg-muted/60"
       data-slot="repo-list-row"
       params={params}
+      search={search}
       to={to}
     >
       {icon}

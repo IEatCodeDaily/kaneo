@@ -7,6 +7,11 @@ import {
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import {
+  clampSubtaskDepthLimit,
+  exceedsSubtaskDepthLimit,
+  subtaskDepthLimitMessage,
+} from "./subtask-depth";
 
 async function createTaskRelation({
   sourceTaskId,
@@ -91,6 +96,40 @@ async function createTaskRelation({
     throw new HTTPException(409, {
       message: "This relation already exists",
     });
+  }
+
+  if (relationType === "subtask") {
+    // Depth is a per-board setting (1..4). Walk the existing subtask graph for
+    // the source's board and reject the link when the resulting chain would be
+    // deeper than the board allows.
+    const [board] = await db
+      .select({ subtaskDepthLimit: boardTable.subtaskDepthLimit })
+      .from(boardTable)
+      .where(eq(boardTable.id, sourceTask.boardId))
+      .limit(1);
+
+    const depthLimit = clampSubtaskDepthLimit(board?.subtaskDepthLimit);
+
+    const edges = await db
+      .select({
+        sourceTaskId: taskRelationTable.sourceTaskId,
+        targetTaskId: taskRelationTable.targetTaskId,
+      })
+      .from(taskRelationTable)
+      .where(eq(taskRelationTable.relationType, "subtask"));
+
+    if (
+      exceedsSubtaskDepthLimit({
+        edges,
+        sourceTaskId,
+        targetTaskId,
+        depthLimit,
+      })
+    ) {
+      throw new HTTPException(400, {
+        message: subtaskDepthLimitMessage(depthLimit),
+      });
+    }
   }
 
   const [relation] = await db

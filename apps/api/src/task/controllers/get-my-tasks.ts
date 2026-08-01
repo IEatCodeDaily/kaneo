@@ -1,0 +1,138 @@
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import db from "../../database";
+import {
+  activityTable,
+  boardTable,
+  columnTable,
+  milestoneTable,
+  organizationMemberTable,
+  taskTable,
+  teamMemberTable,
+  userTable,
+} from "../../database/schema";
+
+export type MyTasksRelation = "assigned" | "created" | "team" | "all";
+
+type GetMyTasksOptions = {
+  userId: string;
+  /** Restrict to a single organization; omit for every org the user belongs to. */
+  organizationId?: string;
+  /**
+   * Which relationship to the user a task must have.
+   * - assigned: directly assigned to the user
+   * - created:  the user raised it (derived from the `created` activity row)
+   * - team:     assigned to a team the user belongs to
+   * - all:      any of the above
+   */
+  relation?: MyTasksRelation;
+  /** Include tasks sitting in a final (done) column. Defaults to false. */
+  includeCompleted?: boolean;
+  limit?: number;
+};
+
+/**
+ * Cross-board "My Tasks" list (#58).
+ *
+ * Scoped through `organization_member`, so a user can only ever see tasks in
+ * organizations they still belong to — removing a member removes their access
+ * with no separate cleanup.
+ *
+ * Soft-deleted tasks (`deleted_at`) are excluded: trashed work is not "my
+ * work", and the recycle bin has its own endpoint.
+ */
+async function getMyTasks({
+  userId,
+  organizationId,
+  relation = "all",
+  includeCompleted = false,
+  limit = 100,
+}: GetMyTasksOptions) {
+  const teamRows = await db
+    .select({ teamId: teamMemberTable.teamId })
+    .from(teamMemberTable)
+    .where(eq(teamMemberTable.userId, userId));
+
+  const userTeamIds = teamRows.map((row) => row.teamId);
+
+  const assignedToUser = eq(taskTable.userId, userId);
+
+  // `inArray` with an empty list generates invalid SQL in drizzle, so guard it.
+  const assignedToUserTeam =
+    userTeamIds.length > 0
+      ? inArray(taskTable.teamId, userTeamIds)
+      : sql`false`;
+
+  // The task table has no author column; creation is recorded in the activity
+  // feed as a `created` row, so authorship is derived from there rather than
+  // guessed.
+  const createdByUser = sql`exists (
+    select 1 from ${activityTable}
+    where ${activityTable.taskId} = ${taskTable.id}
+      and ${activityTable.type} = 'created'
+      and ${activityTable.userId} = ${userId}
+  )`;
+
+  const relationFilter =
+    relation === "assigned"
+      ? assignedToUser
+      : relation === "team"
+        ? assignedToUserTeam
+        : relation === "created"
+          ? createdByUser
+          : or(assignedToUser, assignedToUserTeam, createdByUser);
+
+  const conditions = [
+    // Membership gate: never leak tasks from an organization the user left.
+    sql`exists (
+      select 1 from ${organizationMemberTable}
+      where ${organizationMemberTable.organizationId} = ${boardTable.organizationId}
+        and ${organizationMemberTable.userId} = ${userId}
+    )`,
+    isNull(taskTable.deletedAt),
+    relationFilter,
+  ];
+
+  if (organizationId) {
+    conditions.push(eq(boardTable.organizationId, organizationId));
+  }
+
+  if (!includeCompleted) {
+    conditions.push(
+      or(isNull(columnTable.isFinal), eq(columnTable.isFinal, false)),
+    );
+  }
+
+  return db
+    .select({
+      id: taskTable.id,
+      title: taskTable.title,
+      number: taskTable.number,
+      status: taskTable.status,
+      priority: taskTable.priority,
+      dueDate: taskTable.dueDate,
+      createdAt: taskTable.createdAt,
+      updatedAt: taskTable.updatedAt,
+      boardId: taskTable.boardId,
+      boardName: boardTable.name,
+      boardSlug: boardTable.slug,
+      organizationId: boardTable.organizationId,
+      columnId: taskTable.columnId,
+      columnName: columnTable.name,
+      isFinal: columnTable.isFinal,
+      assigneeId: taskTable.userId,
+      assigneeName: userTable.name,
+      teamId: taskTable.teamId,
+      milestoneId: taskTable.milestoneId,
+      milestoneName: milestoneTable.name,
+    })
+    .from(taskTable)
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .leftJoin(columnTable, eq(taskTable.columnId, columnTable.id))
+    .leftJoin(userTable, eq(taskTable.userId, userTable.id))
+    .leftJoin(milestoneTable, eq(taskTable.milestoneId, milestoneTable.id))
+    .where(and(...conditions))
+    .orderBy(desc(taskTable.updatedAt))
+    .limit(limit);
+}
+
+export default getMyTasks;

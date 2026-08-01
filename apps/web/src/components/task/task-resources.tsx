@@ -55,6 +55,8 @@ import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
+import { ResourceSyncBadge } from "./resource-sync-badge";
+import { selectResourceAutoLinks } from "./task-resource-links";
 
 type ResourceType = "issues" | "pull-requests";
 
@@ -302,26 +304,10 @@ export default function TaskResources({
    * Only manual links can be unlinked here — an auto-synced link would just be
    * recreated by the next sync, so offering the action would be a lie.
    */
-  const autoLinks = useMemo(() => {
-    const manualUrls = new Set(links.map((item) => item.url));
-
-    // A branch link is noise once its pull request is present.
-    const hasPullRequest =
-      links.some((item) => item.itemType === "pull-requests") ||
-      (externalLinks as ExternalLinkType[]).some(
-        (link) => link.resourceType === "pull_request",
-      );
-
-    return (externalLinks as ExternalLinkType[]).filter((link) => {
-      // The canonical synchronized issue is task metadata and renders in
-      // Properties. Resources remains for manually linked items and secondary
-      // integration artifacts such as pull requests and branches.
-      if (link.resourceType === "issue") return false;
-      if (manualUrls.has(link.url)) return false;
-      if (hasPullRequest && link.resourceType === "branch") return false;
-      return true;
-    });
-  }, [externalLinks, links]);
+  const autoLinks = useMemo(
+    () => selectResourceAutoLinks(externalLinks as ExternalLinkType[], links),
+    [externalLinks, links],
+  );
 
   const hasAnyResource = links.length > 0 || autoLinks.length > 0;
 
@@ -506,6 +492,7 @@ export default function TaskResources({
                 <span className="min-w-0 flex-1 truncate">
                   {link.title || link.externalId}
                 </span>
+                <ResourceSyncBadge resourceType={link.resourceType} />
                 {repoLabel && <RepoLabel label={repoLabel} />}
                 <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
               </a>

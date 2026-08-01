@@ -46,6 +46,7 @@ import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -53,6 +54,7 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
+import { useSectionOpenState } from "@/lib/use-section-open-state";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
 import SubtaskRow from "./subtask-row";
@@ -70,7 +72,6 @@ export default function TaskSubtasks({
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
@@ -80,13 +81,15 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const { data: relations = [], isSuccess: relationsLoaded } =
+    useGetTaskRelations(taskId);
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id ?? "",
   );
   const createTask = useCreateTask();
   const createRelation = useCreateTaskRelation();
+  const { mutateAsync: deleteTaskRelation } = useDeleteTaskRelation(taskId);
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { data: columns = [] } = useGetColumns(boardId);
@@ -121,6 +124,13 @@ export default function TaskSubtasks({
   ).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
+
+  // Empty sections default to collapsed so a fresh task is not padded out by
+  // two empty accordions (#73). Latched off the first loaded payload.
+  const [isOpen, setIsOpen] = useSectionOpenState(
+    totalCount > 0,
+    relationsLoaded,
+  );
 
   useEffect(() => {
     if (!linkOpen) {
@@ -415,6 +425,25 @@ export default function TaskSubtasks({
     }
   };
 
+  /**
+   * Removes the parent/subtask link only. The subtask itself is untouched and
+   * stays on its board — this is deliberately not a delete.
+   */
+  const handleUnlink = async (relationId: string) => {
+    try {
+      await deleteTaskRelation(relationId);
+      queryClient.invalidateQueries({ queryKey: ["task-relations", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
+      toast.success(t("tasks:subtasks.unlinkSuccess"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("tasks:subtasks.unlinkError"),
+      );
+    }
+  };
+
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -509,6 +538,7 @@ export default function TaskSubtasks({
                       })
                     }
                     onDeleteClick={() => setDeleteTaskId(subtask.task.id)}
+                    onUnlink={() => handleUnlink(subtask.relation.id)}
                   />
                 );
               })}

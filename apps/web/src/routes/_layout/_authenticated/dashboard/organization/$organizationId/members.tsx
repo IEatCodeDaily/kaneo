@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import InviteTeamMemberModal from "@/components/team/invite-team-member-modal";
-import MembersTable from "@/components/team/members-table";
+import { OrganizationMembersGroups } from "@/components/team/organization-members-groups";
 import { Button } from "@/components/ui/button";
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -109,10 +109,11 @@ function RouteComponent() {
         {isTeams ? (
           <TeamsManagement createTeamSignal={createTeamSignal} />
         ) : (
-          <MembersTable
+          <OrganizationMembersGroups
             organizationId={organizationId}
             users={organization?.members ?? []}
             invitations={organization?.invitations ?? []}
+            canManageAgents={isAdmin}
           />
         )}
 

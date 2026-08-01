@@ -40,12 +40,22 @@ type TaskCardContextMenuContentProps = {
   task: Task;
   taskCardContext: TaskCardContext;
   onDeleteClick: () => void;
+  /**
+   * Only provided where the task is rendered as part of a relation (a subtask
+   * row, a relation row). Kanban cards have no relation to unlink, so the item
+   * is absent there rather than shown disabled.
+   */
+  onUnlink?: () => void;
+  /** Label for the unlink action, e.g. "Unlink subtask" vs "Unlink relation". */
+  unlinkLabel?: string;
 };
 
 export default function TaskCardContextMenuContent({
   task,
   taskCardContext,
   onDeleteClick,
+  onUnlink,
+  unlinkLabel,
 }: TaskCardContextMenuContentProps) {
   const { t } = useTranslation();
   const { board } = useBoardStore();
@@ -304,6 +314,22 @@ export default function TaskCardContextMenuContent({
           <ContextMenuItem onClick={() => handleChange("status", "planned")}>
             <span>{t("tasks:actions.markAsPlanned")}</span>
           </ContextMenuItem>
+
+          {onUnlink && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => {
+                    onUnlink();
+                  }, 0);
+                }}
+              >
+                <span>{unlinkLabel ?? t("tasks:actions.unlink")}</span>
+              </ContextMenuItem>
+            </>
+          )}
 
           <ContextMenuSeparator />
 

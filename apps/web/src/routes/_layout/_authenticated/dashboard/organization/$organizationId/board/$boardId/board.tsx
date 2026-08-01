@@ -1,23 +1,32 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { PanelRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import BoardPropertiesPanel from "@/components/board/board-properties-panel";
 import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
+import {
+  type BoardDensity,
+  BoardDensityProvider,
+} from "@/components/kanban-board/board-density";
+import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardSort } from "@/hooks/use-board-sort";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
+import {
+  type BoardGroupBy,
+  useTaskFiltersWithLabelsSupport,
+} from "@/hooks/use-task-filters-with-labels-support";
 import { sortTasks } from "@/lib/sort-tasks";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -48,9 +57,10 @@ function RouteComponent() {
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
+  const [density, setDensity] = useState<BoardDensity>("comfortable");
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
-  const [isBoardSearchMounted, setIsBoardSearchMounted] = useState(false);
-  const [isBoardSearchVisible, setIsBoardSearchVisible] = useState(false);
   const [boardSearchInput, setBoardSearchInput] =
     useState<HTMLInputElement | null>(null);
   const { sort, setSort } = useBoardSort(boardId);
@@ -92,15 +102,11 @@ function RouteComponent() {
     }
   }, [data, setBoard]);
 
-  const openBoardSearch = useCallback(() => {
-    setIsBoardSearchMounted(true);
-    window.requestAnimationFrame(() => setIsBoardSearchVisible(true));
-  }, []);
-
-  const closeBoardSearch = useCallback(() => {
-    setIsBoardSearchVisible(false);
-    window.setTimeout(() => setIsBoardSearchMounted(false), 180);
-  }, []);
+  // The search box is always present in the toolbar now, so cmd/ctrl-F just
+  // focuses it instead of mounting a transient popover in the page header.
+  const focusBoardSearch = useCallback(() => {
+    boardSearchInput?.focus();
+  }, [boardSearchInput]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -110,17 +116,12 @@ function RouteComponent() {
       if (!isFindShortcut) return;
 
       event.preventDefault();
-      openBoardSearch();
+      focusBoardSearch();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openBoardSearch]);
-
-  useEffect(() => {
-    if (!isBoardSearchMounted) return;
-    window.requestAnimationFrame(() => boardSearchInput?.focus());
-  }, [isBoardSearchMounted, boardSearchInput]);
+  }, [focusBoardSearch]);
 
   const {
     filters,
@@ -142,41 +143,25 @@ function RouteComponent() {
     };
   }, [filteredBoard, sort]);
 
-  const boardHeaderSearch = isBoardSearchMounted ? (
-    <div
-      className={`relative w-[240px] origin-top transition-[translate,scale,opacity] duration-180 ease-out ${
-        isBoardSearchVisible
-          ? "translate-y-0 scale-y-100 opacity-100"
-          : "pointer-events-none -translate-y-1 scale-y-95 opacity-0"
-      }`}
-    >
-      <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-      <Input
-        ref={setBoardSearchInput}
-        value={boardSearchQuery}
-        onChange={(event) => setBoardSearchQuery(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && !boardSearchQuery.trim()) {
-            closeBoardSearch();
-          }
-        }}
-        onBlur={() => {
-          if (!boardSearchQuery.trim()) {
-            closeBoardSearch();
-          }
-        }}
-        placeholder={t("tasks:boardSearchPlaceholder")}
-        className="h-7.5 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs [&_[data-slot=input]]:placeholder:leading-7"
-      />
-    </div>
-  ) : null;
+  // Flat list of every task on the board. Milestone dates/progress are derived
+  // from these in the properties panel - they are never entered by hand.
+  const allBoardTasks = useMemo(
+    () =>
+      board
+        ? [
+            ...board.columns.flatMap((column) => column.tasks),
+            ...(board.plannedTasks ?? []),
+            ...(board.archivedTasks ?? []),
+          ]
+        : [],
+    [board],
+  );
 
   return (
     <BoardLayout
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
-      headerActions={boardHeaderSearch}
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
@@ -203,24 +188,58 @@ function RouteComponent() {
           setViewMode={setViewMode}
           sort={sort}
           onSortChange={setSort}
+          searchQuery={boardSearchQuery}
+          onSearchQueryChange={setBoardSearchQuery}
+          searchInputRef={setBoardSearchInput}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
+          density={density}
+          onDensityChange={setDensity}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
-          {sortedBoard && !isPlaceholderData ? (
-            viewMode === "board" ? (
-              <KanbanBoard
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
+          <div className="relative flex h-full min-w-0 flex-1 overflow-hidden">
+            {!isPropertiesPanelOpen ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={t("organization:boards.properties.open")}
+                data-testid="board-properties-toggle"
+                className="absolute top-2 right-2 z-10"
+                onClick={() => setIsPropertiesPanelOpen(true)}
+              >
+                <PanelRight className="h-4 w-4" />
+              </Button>
+            ) : null}
+            {sortedBoard && !isPlaceholderData ? (
+              <BoardGroupByProvider groupBy={groupBy}>
+                <BoardDensityProvider density={density}>
+                  {viewMode === "board" ? (
+                    <KanbanBoard
+                      board={sortedBoard}
+                      disableDragDrop={sort.field !== "position"}
+                    />
+                  ) : (
+                    <ListView
+                      board={sortedBoard}
+                      disableDragDrop={sort.field !== "position"}
+                    />
+                  )}
+                </BoardDensityProvider>
+              </BoardGroupByProvider>
             ) : (
-              <ListView
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
-            )
-          ) : (
-            <BoardSkeleton />
-          )}
+              <BoardSkeleton />
+            )}
+          </div>
+
+          <BoardPropertiesPanel
+            open={isPropertiesPanelOpen}
+            onClose={() => setIsPropertiesPanelOpen(false)}
+            board={board}
+            organizationId={organizationId}
+            tasks={allBoardTasks}
+          />
         </div>
 
         <CreateTaskModal

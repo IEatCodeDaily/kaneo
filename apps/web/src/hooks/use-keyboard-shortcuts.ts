@@ -163,11 +163,12 @@ export function KeyboardShortcutsProvider({
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
+      const target = event.target;
       const isEditingText =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true";
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
       if (isEditingText && !event.metaKey && !event.ctrlKey) {
         return;
       }

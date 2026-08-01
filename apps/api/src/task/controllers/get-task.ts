@@ -1,9 +1,14 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable, teamTable, userTable } from "../../database/schema";
 
-async function getTask(taskId: string) {
+type GetTaskOptions = {
+  /** Include soft-deleted (trashed) tasks. Only recycle-bin paths set this. */
+  includeDeleted?: boolean;
+};
+
+async function getTask(taskId: string, options: GetTaskOptions = {}) {
   const task = await db
     .select({
       id: taskTable.id,
@@ -23,11 +28,17 @@ async function getTask(taskId: string) {
       assigneeId: userTable.id,
       teamAssigneeName: teamTable.name,
       boardId: taskTable.boardId,
+      deletedAt: taskTable.deletedAt,
+      deletedBy: taskTable.deletedBy,
     })
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
     .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
-    .where(eq(taskTable.id, taskId))
+    .where(
+      options.includeDeleted
+        ? eq(taskTable.id, taskId)
+        : and(eq(taskTable.id, taskId), isNull(taskTable.deletedAt)),
+    )
     .limit(1);
 
   if (!task.length || !task[0]) {

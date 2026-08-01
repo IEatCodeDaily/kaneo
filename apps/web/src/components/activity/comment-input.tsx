@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowUp, Paperclip } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CommentEditor from "@/components/activity/comment-editor";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import {
 import useCreateComment from "@/hooks/mutations/comment/use-create-comment";
 import { getModifierKeyText } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
+import useCommentDraftStore, {
+  commentDraftKey,
+} from "@/lib/editor-comment-draft";
 import { toast } from "@/lib/toast";
 
 type CommentInputProps = {
@@ -26,6 +29,27 @@ export default function CommentInput({ taskId }: CommentInputProps) {
   const [attachAction, setAttachAction] = useState<(() => void) | null>(null);
   const { mutateAsync: createComment, isPending } = useCreateComment();
   const queryClient = useQueryClient();
+  const draftKey = commentDraftKey(taskId);
+  const saveDraft = useCommentDraftStore((state) => state.saveDraft);
+  const clearDraft = useCommentDraftStore((state) => state.clearDraft);
+  const restoredForRef = useRef<string | null>(null);
+
+  // Restore an unsent comment when the task is (re)opened. Guarded per task so
+  // typing never gets clobbered by a re-render of the same composer.
+  useEffect(() => {
+    if (restoredForRef.current === draftKey) return;
+    restoredForRef.current = draftKey;
+    const saved = useCommentDraftStore.getState().getDraft(draftKey);
+    setContent(saved?.content ?? "");
+  }, [draftKey]);
+
+  const handleChange = useCallback(
+    (next: string) => {
+      setContent(next);
+      saveDraft(draftKey, next);
+    },
+    [draftKey, saveDraft],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!content.trim()) {
@@ -40,6 +64,8 @@ export default function CommentInput({ taskId }: CommentInputProps) {
       });
 
       setContent("");
+      // The comment exists now; a resurrected draft would duplicate it.
+      clearDraft(draftKey);
       await queryClient.invalidateQueries({ queryKey: ["activities", taskId] });
 
       toast.success(t("activity:comment.added"));
@@ -47,7 +73,7 @@ export default function CommentInput({ taskId }: CommentInputProps) {
       console.error("Failed to create comment:", error);
       toast.error(t("activity:comment.failedToAdd"));
     }
-  }, [content, createComment, queryClient, t, taskId]);
+  }, [clearDraft, content, createComment, draftKey, queryClient, t, taskId]);
 
   const handleAttachActionChange = useCallback(
     (nextAttachAction: (() => void) | null) => {
@@ -61,7 +87,7 @@ export default function CommentInput({ taskId }: CommentInputProps) {
       <div className="rounded-xl border border-border/80 bg-card/70 transition-colors focus-within:border-ring/60 focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--ring)_20%,transparent)]">
         <CommentEditor
           value={content}
-          onChange={setContent}
+          onChange={handleChange}
           placeholder={t("activity:comment.leavePlaceholder")}
           taskId={taskId}
           uploadSurface="comment"

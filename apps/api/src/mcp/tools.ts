@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import {
+  assertBoardPermission,
+  assertTaskPermission,
+  type McpPermissionMap,
+} from "./permissions";
 
 class ApiClient {
   constructor(
@@ -177,8 +182,25 @@ export function registerMcpTools(
   server: McpServer,
   baseUrl: string,
   token: string,
+  userId?: string,
 ): void {
   const client = new ApiClient(baseUrl, token);
+
+  /**
+   * Permission gate for task tools (#38). When the MCP session knows which
+   * user it acts for, every task tool re-checks that user's organization
+   * permissions with the same rules the HTTP API enforces, before any request
+   * is issued. Without this a tool would inherit the raw bearer token and
+   * bypass role checks entirely.
+   */
+  const guardTask = (taskId: string, permissions: McpPermissionMap) =>
+    userId
+      ? assertTaskPermission(userId, taskId, permissions)
+      : Promise.resolve("");
+  const guardBoard = (boardId: string, permissions: McpPermissionMap) =>
+    userId
+      ? assertBoardPermission(userId, boardId, permissions)
+      : Promise.resolve("");
 
   server.registerTool(
     "whoami",
@@ -360,11 +382,12 @@ export function registerMcpTools(
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
-      run(() =>
-        client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
+      run(async () => {
+        await guardTask(args.taskId, { task: ["read"] });
+        return client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
           method: "GET",
-        }),
-      ),
+        });
+      }),
   );
 
   server.registerTool(
@@ -392,13 +415,41 @@ export function registerMcpTools(
       if (args.startDate !== undefined) body.startDate = args.startDate;
       if (args.dueDate !== undefined) body.dueDate = args.dueDate;
       if (args.userId !== undefined) body.userId = args.userId;
-      return run(() =>
-        client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
+      return run(async () => {
+        await guardBoard(args.boardId, { task: ["create"] });
+        return client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
           method: "POST",
           body: JSON.stringify(body),
-        }),
-      );
+        });
+      });
     },
+  );
+
+  server.registerTool(
+    "assign_task",
+    {
+      description:
+        "Assign a task to a user (or unassign by omitting userId). Requires task:update in the task's organization.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        userId: nullableOptionalNonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTask(args.taskId, { task: ["update"] });
+        const existing = (await client.json(
+          `/api/task/${encodeURIComponent(args.taskId)}`,
+          { method: "GET" },
+        )) as Record<string, unknown>;
+        const body = buildFullTaskUpdateBody(existing, {
+          userId: args.userId === undefined ? null : args.userId,
+        });
+        return client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        });
+      }),
   );
 
   server.registerTool(
@@ -422,6 +473,7 @@ export function registerMcpTools(
     async (args) => {
       const { taskId, ...patch } = args;
       return run(async () => {
+        await guardTask(taskId, { task: ["update"] });
         const existing = (await client.json(
           `/api/task/${encodeURIComponent(taskId)}`,
           { method: "GET" },
@@ -686,5 +738,168 @@ export function registerMcpTools(
           method: "DELETE",
         });
       }),
+  );
+
+  /*
+   * Tools below close gaps that made the surface above hard for an external
+   * agent to use safely, rather than adding more of the same CRUD:
+   *
+   * - `status` on create/move/update_task is a free-form string, but valid
+   *   values are the *board's* column slugs. Without list_board_columns an
+   *   agent has to guess and gets a rejected write.
+   * - The whole repo/issue/PR side of Kaneo was unreachable, so an agent could
+   *   manage tasks but not see the code work they refer to.
+   * - Finding anything required knowing its board first; there was no way in
+   *   from a name or keyword. `search` already spans every entity server-side.
+   * - Assignment took a raw userId with no way to resolve a person to one.
+   */
+
+  server.registerTool(
+    "list_board_columns",
+    {
+      description:
+        "List a board's columns. The `slug` of a column is the exact value the `status` argument of create_task, update_task, update_task_status and move_task expects — call this before writing a status rather than guessing. Also returns `isFinal`, which marks columns that count as complete.",
+      inputSchema: z.object({ boardId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/column/${encodeURIComponent(args.boardId)}`, {
+          method: "GET",
+        }),
+      ),
+  );
+
+  server.registerTool(
+    "search",
+    {
+      description:
+        "Search across tasks, boards, comments, activities, repositories, GitHub issues and pull requests in one call. Use this to resolve a name or keyword to an ID before acting, instead of listing boards and scanning them. `organizationId` is required — get one from list_organizations first.",
+      inputSchema: z.object({
+        q: nonEmptyString,
+        organizationId: nonEmptyString,
+        type: z
+          .enum([
+            "all",
+            "tasks",
+            "boards",
+            "organizations",
+            "comments",
+            "activities",
+            "repositories",
+            "issues",
+            "pullRequests",
+          ])
+          .optional(),
+        boardId: optionalNonEmptyString,
+        limit: z.number().int().positive().max(100).optional(),
+      }),
+    },
+    async (args) =>
+      run(() => {
+        const params = new URLSearchParams({
+          q: args.q,
+          organizationId: args.organizationId,
+        });
+        if (args.type) params.set("type", args.type);
+        if (args.boardId) params.set("boardId", args.boardId);
+        if (args.limit !== undefined) params.set("limit", String(args.limit));
+        return client.json(`/api/search?${params.toString()}`, {
+          method: "GET",
+        });
+      }),
+  );
+
+  server.registerTool(
+    "list_organization_members",
+    {
+      description:
+        "List members of an organization with their user IDs. Use this to resolve a person's name or email to the `userId` that create_task and update_task expect for assignment.",
+      inputSchema: z.object({ organizationId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/auth/organization/list-members?organizationId=${encodeURIComponent(args.organizationId)}`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "list_repos",
+    {
+      description: "List repositories connected to an organization.",
+      inputSchema: z.object({ organizationId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/repo?organizationId=${encodeURIComponent(args.organizationId)}`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "list_repo_pull_requests",
+    {
+      description:
+        "List pull requests for a connected repository, optionally filtered by state.",
+      inputSchema: z.object({
+        repoId: nonEmptyString,
+        state: z.enum(["open", "closed", "merged", "all"]).optional(),
+      }),
+    },
+    async (args) =>
+      run(() => {
+        const params = new URLSearchParams();
+        if (args.state) params.set("state", args.state);
+        const query = params.size > 0 ? `?${params.toString()}` : "";
+        return client.json(
+          `/api/repo/${encodeURIComponent(args.repoId)}/pull-requests${query}`,
+          { method: "GET" },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "list_repo_issues",
+    {
+      description:
+        "List GitHub issues for a connected repository, optionally filtered by state.",
+      inputSchema: z.object({
+        repoId: nonEmptyString,
+        state: z.enum(["open", "closed", "all"]).optional(),
+      }),
+    },
+    async (args) =>
+      run(() => {
+        const params = new URLSearchParams();
+        if (args.state) params.set("state", args.state);
+        const query = params.size > 0 ? `?${params.toString()}` : "";
+        return client.json(
+          `/api/repo/${encodeURIComponent(args.repoId)}/issues${query}`,
+          { method: "GET" },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "get_repo_pull_request_files",
+    {
+      description:
+        "Get the changed files and patches for a pull request — the diff an agent needs to review code rather than only read metadata.",
+      inputSchema: z.object({
+        repoId: nonEmptyString,
+        number: z.number().int().positive(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/repo/${encodeURIComponent(args.repoId)}/pull-requests/${args.number}/files`,
+          { method: "GET" },
+        ),
+      ),
   );
 }

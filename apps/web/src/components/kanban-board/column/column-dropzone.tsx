@@ -6,12 +6,14 @@ import {
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { groupTasks } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
 import {
   collapseToggleLabel,
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
 import type { BoardWithTasks } from "@/types/board";
+import { useBoardGroupBy } from "../board-view-context";
 import TaskCard from "../task-card";
 
 type ColumnDropzoneProps = {
@@ -32,17 +34,39 @@ const CHUNK = 40;
 /** Approximate rendered height of one card, for the pending-space reservation. */
 const CARD_HEIGHT_PX = 102;
 
+/**
+ * Measured rendered heights of a task card, used as the contain-intrinsic-size
+ * placeholder for cards whose layout the browser is skipping.
+ *
+ * These must match reality or the column visibly jitters: content-visibility
+ * skips layout for off-screen cards, and the browser then sizes them from
+ * contain-intrinsic-size instead. Understating it makes total column height
+ * shrink as cards scroll out and snap back as they scroll in — measured at
+ * ~600px of scrollHeight thrash on a 77-task board when this was a flat 92px
+ * against cards that actually render 101px/121px.
+ *
+ * A card with labels is one label row (plus its 10px margin) taller.
+ */
+const CARD_INTRINSIC_HEIGHT_PX = 101;
+const CARD_WITH_LABELS_INTRINSIC_HEIGHT_PX = 121;
+
 export function ColumnDropzone({
   column,
   disableDragDrop = false,
   onIsOverChange,
 }: ColumnDropzoneProps) {
   const { t } = useTranslation();
+  const groupBy = useBoardGroupBy();
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: { type: "column", column },
   });
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(
+    new Set(),
+  );
+  // Board-level group-by sections the user has hidden (#61 rework). Keyed by
+  // group key so toggling one group never touches another's state.
+  const [collapsedTaskGroups, setCollapsedTaskGroups] = useState<Set<string>>(
     new Set(),
   );
   const groups = useMemo(
@@ -114,6 +138,14 @@ export function ColumnDropzone({
     [groups, mountCount],
   );
 
+  // Board-level "group by": buckets this column's tasks under a heading.
+  // Only used when grouping is on, so the ungrouped path keeps its
+  // progressive-mount behaviour untouched.
+  const taskGroups = useMemo(
+    () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
+    [column.tasks, groupBy],
+  );
+
   // Reserve height for not-yet-mounted groups so the scrollbar doesn't jump as
   // chunks land.
   const pendingCards = useMemo(
@@ -138,7 +170,14 @@ export function ColumnDropzone({
       className={nested ? "ml-4 border-l-2 border-border pl-2" : undefined}
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: `auto ${CARD_HEIGHT_PX - 10}px`,
+        // `auto` height alone is not enough: until a card has been rendered once
+        // the browser has no last-known size and falls back to the fixed value,
+        // so it has to be the real card height or the column jitters on scroll.
+        containIntrinsicSize: `auto ${
+          task.labels?.length
+            ? CARD_WITH_LABELS_INTRINSIC_HEIGHT_PX
+            : CARD_INTRINSIC_HEIGHT_PX
+        }px`,
       }}
     >
       <TaskCard task={task} disableDragDrop={disableDragDrop} />
@@ -151,68 +190,123 @@ export function ColumnDropzone({
         items={column.tasks}
         strategy={verticalListSortingStrategy}
       >
-        <div
-          className={cn(
-            "flex flex-col gap-2",
-            // Container-level entry animation, replacing the old per-card
-            // motion.div: one CSS transition on the wrapper reads the same but
-            // costs nothing per card.
-            "transition-[translate,opacity] duration-150 ease-out",
-            "starting:-translate-y-1 starting:opacity-0",
-            "motion-reduce:starting:translate-y-0",
-          )}
-        >
-          {visibleGroups.map(({ parent, children }) => {
-            const collapsed = collapsedParents.has(parent.id);
-            return (
-              <div
-                className="flex flex-col gap-2"
-                data-testid={children.length ? "task-group" : undefined}
-                key={parent.id}
-              >
-                {renderCard(parent)}
-                {children.length > 0 && (
+        {groupBy !== "none" ? (
+          <div className="flex flex-col gap-3" data-slot="task-group-list">
+            {taskGroups.map((group) => {
+              const groupKey = group.key || "unset";
+              const groupCollapsed = collapsedTaskGroups.has(groupKey);
+              const groupTitle = group.labelKey
+                ? t(group.labelKey)
+                : group.label;
+              return (
+                <section
+                  className="flex flex-col gap-2"
+                  data-slot="task-group"
+                  key={groupKey}
+                >
+                  {/* The whole heading is the show/hide affordance: the user
+                      asked for each grouping to be a collapsible section, not
+                      a flat separator line. */}
                   <button
-                    aria-expanded={!collapsed}
-                    className="flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-expanded={!groupCollapsed}
+                    className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-medium text-[11px] text-muted-foreground uppercase tracking-wide hover:bg-muted hover:text-foreground"
+                    data-slot="task-group-toggle"
                     onClick={() =>
-                      setCollapsedParents((current) => {
+                      setCollapsedTaskGroups((current) => {
                         const next = new Set(current);
-                        if (collapsed) next.delete(parent.id);
-                        else next.add(parent.id);
+                        if (groupCollapsed) next.delete(groupKey);
+                        else next.add(groupKey);
                         return next;
                       })
                     }
                     type="button"
                   >
-                    {collapsed ? (
+                    {groupCollapsed ? (
                       <ChevronRight className="size-3" />
                     ) : (
                       <ChevronDown className="size-3" />
                     )}
-                    {collapseToggleLabel({
-                      parentId: parent.id,
-                      childCount: children.length,
-                      collapsed,
-                    })}
+                    <span>{groupTitle}</span>
+                    <span className="ml-1.5 text-muted-foreground/70">
+                      {group.tasks.length}
+                    </span>
                   </button>
-                )}
-                {!collapsed && children.map((child) => renderCard(child, true))}
+                  {!groupCollapsed &&
+                    group.tasks.map((task) => renderCard(task))}
+                </section>
+              );
+            })}
+            {taskGroups.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
+                {t("tasks:column.empty")}
               </div>
-            );
-          })}
-          {pendingCards > 0 ? (
-            <div
-              aria-hidden="true"
-              style={{ height: `${pendingCards * CARD_HEIGHT_PX}px` }}
-            />
-          ) : null}
-          {totalGroups === 0 ? (
-            <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
-              {t("tasks:column.empty")}
-            </div>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              "flex flex-col gap-2",
+              // Container-level entry animation, replacing the old per-card
+              // motion.div: one CSS transition on the wrapper reads the same but
+              // costs nothing per card.
+              "transition-[translate,opacity] duration-150 ease-out",
+              "starting:-translate-y-1 starting:opacity-0",
+              "motion-reduce:starting:translate-y-0",
+            )}
+          >
+            {visibleGroups.map(({ parent, children }) => {
+              const collapsed = collapsedParents.has(parent.id);
+              return (
+                <div
+                  className="flex flex-col gap-2"
+                  data-testid={children.length ? "task-group" : undefined}
+                  key={parent.id}
+                >
+                  {renderCard(parent)}
+                  {children.length > 0 && (
+                    <button
+                      aria-expanded={!collapsed}
+                      className="flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() =>
+                        setCollapsedParents((current) => {
+                          const next = new Set(current);
+                          if (collapsed) next.delete(parent.id);
+                          else next.add(parent.id);
+                          return next;
+                        })
+                      }
+                      type="button"
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="size-3" />
+                      ) : (
+                        <ChevronDown className="size-3" />
+                      )}
+                      {collapseToggleLabel({
+                        parentId: parent.id,
+                        childCount: children.length,
+                        collapsed,
+                      })}
+                    </button>
+                  )}
+                  {!collapsed &&
+                    children.map((child) => renderCard(child, true))}
+                </div>
+              );
+            })}
+            {pendingCards > 0 ? (
+              <div
+                aria-hidden="true"
+                style={{ height: `${pendingCards * CARD_HEIGHT_PX}px` }}
+              />
+            ) : null}
+            {totalGroups === 0 ? (
+              <div className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
+                {t("tasks:column.empty")}
+              </div>
+            ) : null}
+          </div>
+        )}
       </SortableContext>
     </div>
   );

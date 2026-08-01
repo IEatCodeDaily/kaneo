@@ -21,6 +21,94 @@ const FILTER_KEYS: Array<keyof BoardFilters> = [
   "labels",
 ];
 
+export const BOARD_GROUP_BY_VALUES = [
+  "none",
+  "assignee",
+  "priority",
+  "label",
+] as const;
+
+export type BoardGroupBy = (typeof BOARD_GROUP_BY_VALUES)[number];
+
+export type TaskGroup = {
+  /** Stable identity for the group — the raw value, or "" when unset. */
+  key: string;
+  /**
+   * Either a plain label (assignee id / priority / label name) or an i18n key
+   * for the "unset" bucket. Callers translate `labelKey` when present.
+   */
+  label?: string;
+  labelKey?: string;
+  tasks: Task[];
+};
+
+function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
+  switch (groupBy) {
+    case "assignee":
+      return [task.userId ?? ""];
+    case "priority":
+      return [task.priority ?? ""];
+    case "label": {
+      const labels = task.labels ?? [];
+      return labels.length > 0 ? labels.map((label) => label.name ?? "") : [""];
+    }
+    default:
+      return [""];
+  }
+}
+
+const UNSET_LABEL_KEYS: Record<BoardGroupBy, string> = {
+  none: "tasks:groupBy.all",
+  assignee: "tasks:assignee.unassigned",
+  priority: "tasks:groupBy.noPriority",
+  label: "tasks:groupBy.noLabel",
+};
+
+/**
+ * Buckets a column's tasks for the board "group by" control. `none` returns a
+ * single bucket so callers can render one code path regardless of grouping.
+ * A task with several labels appears in each of its label groups.
+ */
+export function groupTasks(tasks: Task[], groupBy: BoardGroupBy): TaskGroup[] {
+  if (groupBy === "none") {
+    return [{ key: "", labelKey: UNSET_LABEL_KEYS.none, tasks }];
+  }
+
+  const buckets = new Map<string, Task[]>();
+
+  for (const task of tasks) {
+    for (const key of groupKeysForTask(task, groupBy)) {
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.push(task);
+      } else {
+        buckets.set(key, [task]);
+      }
+    }
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => {
+      // Unset always sorts last so named groups read first.
+      if (a === "") return 1;
+      if (b === "") return -1;
+      return a.localeCompare(b);
+    })
+    .map(([key, groupedTasks]) => ({
+      key,
+      ...(key === ""
+        ? { labelKey: UNSET_LABEL_KEYS[groupBy] }
+        : { label: key }),
+      tasks: groupedTasks,
+    }));
+}
+
+function normalizeGroupBy(raw: unknown): BoardGroupBy {
+  return BOARD_GROUP_BY_VALUES.includes(raw as BoardGroupBy)
+    ? (raw as BoardGroupBy)
+    : "none";
+}
+
 function normalizeFilters(raw: unknown): BoardFilters {
   if (!raw || typeof raw !== "object") {
     return DEFAULT_FILTERS;
@@ -47,7 +135,22 @@ export function useTaskFiltersWithLabelsSupport(
 ) {
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const storageKey = boardId ? `kaneo:board-filters:${boardId}` : null;
+  const groupByStorageKey = boardId ? `kaneo:board-group-by:${boardId}` : null;
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
+  const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
+
+  // Same per-board localStorage convention as the filters above.
+  useEffect(() => {
+    if (!groupByStorageKey || typeof window === "undefined") return;
+    setGroupBy(
+      normalizeGroupBy(window.localStorage.getItem(groupByStorageKey)),
+    );
+  }, [groupByStorageKey]);
+
+  useEffect(() => {
+    if (!groupByStorageKey || typeof window === "undefined") return;
+    window.localStorage.setItem(groupByStorageKey, groupBy);
+  }, [groupBy, groupByStorageKey]);
 
   useEffect(() => {
     if (!storageKey || typeof window === "undefined") return;
@@ -79,9 +182,14 @@ export function useTaskFiltersWithLabelsSupport(
         if (normalizedTextQuery) {
           const title = task.title?.toLowerCase() ?? "";
           const description = task.description?.toLowerCase() ?? "";
+          // Match the global search's task-number semantics: a bare number or
+          // a hash-prefixed number resolves to that task number.
+          const searchedNumber = /^#?(\d+)$/.exec(normalizedTextQuery)?.[1];
           const matchesText =
             title.includes(normalizedTextQuery) ||
-            description.includes(normalizedTextQuery);
+            description.includes(normalizedTextQuery) ||
+            (searchedNumber !== undefined &&
+              task.number === Number(searchedNumber));
 
           if (!matchesText) {
             return false;
@@ -229,5 +337,7 @@ export function useTaskFiltersWithLabelsSupport(
     filteredBoard,
     hasActiveFilters,
     clearFilters,
+    groupBy,
+    setGroupBy,
   };
 }

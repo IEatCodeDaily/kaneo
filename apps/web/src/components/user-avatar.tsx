@@ -2,7 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut, Mail, Settings, Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { OrganizationMenuSection } from "@/components/organization-switcher";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
+import { ThemeToggleDropdown } from "@/components/theme-toggle-dropdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +99,24 @@ export function UserAvatar() {
         </div>
 
         <Separator />
+
+        {/*
+          #96: the organization selector moved out of the sidebar header into
+          this menu, alongside the theme toggle. The sidebar top now hosts the
+          team-view selector instead.
+        */}
+        <div className="p-0.5">
+          <OrganizationMenuSection />
+          <div
+            className="flex h-7 items-center justify-between gap-2 px-2 text-sm font-normal"
+            data-testid="user-menu-theme-toggle"
+          >
+            <span>{t("navigation:userMenu.theme")}</span>
+            <ThemeToggleDropdown />
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
 
         <div className="p-0.5">
           <DropdownMenuItem

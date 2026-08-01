@@ -26,13 +26,16 @@ test("status selector offers Move to Backlog and Archive below a divider", async
     `/dashboard/organization/${fixtures.organizationId}/board/${fixtures.boardId}/task/${task.id}`,
   );
 
-  // The sidebar renders a mobile and a desktop variant; only one is visible at
-  // a given viewport, so target the visible one rather than the first in DOM.
-  await page
+  // The sidebar renders several responsive variants of the status trigger and
+  // only one is visible at a given viewport. `filter({ visible: true })` is
+  // evaluated when the locator resolves, which can race hydration, so wait for
+  // the visible one to settle before clicking it.
+  const statusTrigger = page
     .getByTestId("task-status-trigger")
-    .filter({ visible: true })
-    .first()
-    .click();
+    .locator("visible=true")
+    .first();
+  await statusTrigger.waitFor({ state: "visible" });
+  await statusTrigger.click();
 
   const backlog = page.getByRole("button", { name: "Move to Backlog" });
   const archive = page.getByRole("button", { name: "Archive", exact: true });

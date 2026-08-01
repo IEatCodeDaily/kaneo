@@ -435,6 +435,9 @@ export const boardTable = pgTable(
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     lastTaskNumber: integer("last_task_number").notNull().default(0),
+    // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
+    // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
+    subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
   },
   (table) => [
     unique("board_organization_id_id_unique").on(
@@ -503,6 +506,37 @@ export const workflowRuleTable = pgTable(
   ],
 );
 
+export const milestoneTable = pgTable(
+  "milestone",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    description: text("description"),
+    dueDate: timestamp("due_date", { mode: "date" }),
+    status: text("status").notNull().default("planned"),
+    position: integer("position").notNull().default(0),
+    completedAt: timestamp("completed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("milestone_boardId_idx").on(table.boardId),
+    index("milestone_dueDate_idx").on(table.dueDate),
+    unique("milestone_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
 export const taskTable = pgTable(
   "task",
   {
@@ -544,6 +578,15 @@ export const taskTable = pgTable(
       onUpdate: "cascade",
     }),
     priority: text("priority").default("low"),
+    milestoneId: text("milestone_id").references(() => milestoneTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
+    deletedBy: text("deleted_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
@@ -559,6 +602,88 @@ export const taskTable = pgTable(
     index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_board_number_unique").on(table.boardId, table.number),
+  ],
+);
+
+export const flagTypeTable = pgTable(
+  "flag_type",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    color: text("color"),
+    icon: text("icon"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("flag_type_boardId_idx").on(table.boardId),
+    unique("flag_type_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
+export const taskFlagTable = pgTable(
+  "task_flag",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    flagTypeId: text("flag_type_id")
+      .notNull()
+      .references(() => flagTypeTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Who raised the flag.
+    flaggedBy: text("flagged_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    // Flags are aimed at a user OR a team; exactly one target is expected.
+    targetUserId: text("target_user_id").references(() => userTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    targetTeamId: text("target_team_id").references(() => teamTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    note: text("note"),
+    // Unflagging keeps the row and records who resolved it.
+    resolvedAt: timestamp("resolved_at", { mode: "date" }),
+    resolvedBy: text("resolved_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("task_flag_taskId_idx").on(table.taskId),
+    index("task_flag_flagTypeId_idx").on(table.flagTypeId),
+    index("task_flag_targetUserId_idx").on(table.targetUserId),
+    index("task_flag_targetTeamId_idx").on(table.targetTeamId),
+    index("task_flag_resolvedAt_idx").on(table.resolvedAt),
   ],
 );
 

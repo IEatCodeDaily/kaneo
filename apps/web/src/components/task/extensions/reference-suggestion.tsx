@@ -2,6 +2,8 @@ import { Extension } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactRenderer } from "@tiptap/react";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
+import { shouldRepositionOverlay } from "@/lib/editor-overlay-position";
+import { shouldShowReferenceMenu } from "@/lib/editor-reference-query";
 import ReferenceList, {
   type ReferenceItem,
   type ReferenceListRef,
@@ -39,7 +41,10 @@ export const ReferenceSuggestion = Extension.create<ReferenceSuggestionOptions>(
         char: "#",
         pluginKey: new PluginKey("kaneoReferenceSuggestion"),
         allowSpaces: false,
-        items: ({ query }) => search(query),
+        // An empty query is a valid state: typing `#` alone must already list
+        // referenceable tasks instead of waiting for a first search character.
+        items: ({ query }) =>
+          shouldShowReferenceMenu(query) ? search(query) : Promise.resolve([]),
         command: ({ editor, range, props }) => {
           const item = props as unknown as ReferenceItem;
           const issueKey =
@@ -63,13 +68,27 @@ export const ReferenceSuggestion = Extension.create<ReferenceSuggestionOptions>(
         render: () => {
           let component: ReactRenderer<ReferenceListRef> | null = null;
           let popup: HTMLDivElement | null = null;
+          // Last position actually written to the popup. Opening the popup
+          // reflows the task drawer, which nudges the caret rect, which would
+          // move the popup again — a feedback loop the user sees as jitter.
+          // Only meaningful caret movement is allowed to reposition it.
+          let placedAt: { top: number; left: number } | null = null;
 
-          const place = (clientRect?: (() => DOMRect | null) | null) => {
+          const place = (
+            clientRect?: (() => DOMRect | null) | null,
+            force = false,
+          ) => {
             if (!popup || !clientRect) return;
             const rect = clientRect();
             if (!rect) return;
-            popup.style.top = `${rect.bottom + window.scrollY + 4}px`;
-            popup.style.left = `${rect.left + window.scrollX}px`;
+            const next = {
+              top: rect.bottom + window.scrollY + 4,
+              left: rect.left + window.scrollX,
+            };
+            if (!force && !shouldRepositionOverlay(placedAt, next)) return;
+            placedAt = next;
+            popup.style.top = `${next.top}px`;
+            popup.style.left = `${next.left}px`;
           };
 
           return {
@@ -82,7 +101,8 @@ export const ReferenceSuggestion = Extension.create<ReferenceSuggestionOptions>(
               popup.className = "kaneo-mention-popup";
               popup.appendChild(component.element);
               document.body.appendChild(popup);
-              place(props.clientRect);
+              placedAt = null;
+              place(props.clientRect, true);
             },
             onUpdate: (props) => {
               component?.updateProps(props);
@@ -95,6 +115,7 @@ export const ReferenceSuggestion = Extension.create<ReferenceSuggestionOptions>(
             onExit: () => {
               popup?.remove();
               popup = null;
+              placedAt = null;
               component?.destroy();
               component = null;
             },

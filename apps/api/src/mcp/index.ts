@@ -30,12 +30,14 @@ const apiUrl = (process.env.KANEO_API_URL || "http://localhost:1337").replace(
 
 const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
 
-function createMcpServerForUser(token: string): McpServer {
+function createMcpServerForUser(token: string, userId?: string): McpServer {
   const server = new McpServer({
     name: "kaneo-mcp",
     version: "1.0.0",
   });
-  registerMcpTools(server, apiUrl, token);
+  // userId keys the permission guards; without it the task tools cannot
+  // check organization roles (#38).
+  registerMcpTools(server, apiUrl, token, userId);
   return server;
 }
 
@@ -294,7 +296,7 @@ mcp.all("/mcp", async (c) => {
     }
   };
 
-  const server = createMcpServerForUser(authResult.token);
+  const server = createMcpServerForUser(authResult.token, authResult.userId);
   await server.connect(transport);
   const response = await transport.handleRequest(c.req.raw);
 

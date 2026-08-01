@@ -13,6 +13,74 @@ describe("useTaskFiltersWithLabelsSupport", () => {
     window.localStorage.clear();
   });
 
+  it("filters board tasks by case-insensitive title, description, and bare or hash-prefixed task number", () => {
+    const board = {
+      id: "board-1",
+      columns: [
+        {
+          id: "todo",
+          tasks: [
+            {
+              id: "title-match",
+              title: "Ship board search",
+              description: null,
+              number: 1,
+              status: "todo",
+              priority: null,
+              userId: null,
+              labels: [],
+            },
+            {
+              id: "description-match",
+              title: "Unrelated",
+              description: "Find this implementation detail",
+              number: 2,
+              status: "todo",
+              priority: null,
+              userId: null,
+              labels: [],
+            },
+            {
+              id: "number-match",
+              title: "Unrelated too",
+              description: null,
+              number: 42,
+              status: "todo",
+              priority: null,
+              userId: null,
+              labels: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const { result, rerender } = renderHook(
+      ({ query }) =>
+        useTaskFiltersWithLabelsSupport(board as never, "board-1", query),
+      { initialProps: { query: "SHIP" } },
+    );
+
+    expect(
+      result.current.filteredBoard?.columns[0]?.tasks.map((task) => task.id),
+    ).toEqual(["title-match"]);
+
+    rerender({ query: "implementation" });
+    expect(
+      result.current.filteredBoard?.columns[0]?.tasks.map((task) => task.id),
+    ).toEqual(["description-match"]);
+
+    rerender({ query: "#42" });
+    expect(
+      result.current.filteredBoard?.columns[0]?.tasks.map((task) => task.id),
+    ).toEqual(["number-match"]);
+
+    rerender({ query: "42" });
+    expect(
+      result.current.filteredBoard?.columns[0]?.tasks.map((task) => task.id),
+    ).toEqual(["number-match"]);
+  });
+
   it("restores persisted label filters from storage and matches tasks from board data", async () => {
     window.localStorage.setItem(
       storageKey,

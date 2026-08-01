@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CreateTaskTopbar from "@/components/task/create-task-topbar";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
+import { formatTaskMarkdown } from "@/components/task/task-markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,10 +38,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { shortcuts } from "@/constants/shortcuts";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
+import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -83,6 +88,35 @@ type Label = {
 };
 
 type PopoverStep = "select" | "color";
+
+export function focusTaskTitleFromShortcut(
+  event: KeyboardEvent,
+  titleInput: HTMLInputElement | null,
+  open: boolean,
+) {
+  if (!open) return false;
+
+  const target = event.target;
+  const isTyping =
+    target instanceof Element &&
+    (target.closest('input, textarea, [contenteditable="true"]') !== null ||
+      (target instanceof HTMLElement && target.isContentEditable));
+
+  if (
+    event.key.toLowerCase() !== shortcuts.task.focusTitle ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey ||
+    isTyping
+  ) {
+    return false;
+  }
+
+  event.preventDefault();
+  titleInput?.focus();
+  return true;
+}
 
 function normalizeTask(
   task: Partial<Task> &
@@ -189,6 +223,8 @@ function CreateTaskModal({
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [createMore, setCreateMore] = useState(false);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [milestoneId, setMilestoneId] = useState<string | null>(null);
+  const [parentTaskId, setParentTaskId] = useState<string | null>(null);
   const [draftTask, setDraftTask] = useState<Task | null>(null);
 
   const [labelsOpen, setLabelsOpen] = useState(false);
@@ -201,6 +237,7 @@ function CreateTaskModal({
   const resolvedBoardId = boardId || board?.id || routeBoardId || "";
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const draftCreationPromiseRef = useRef<Promise<Task> | null>(null);
   const didSubmitRef = useRef(false);
   const didDiscardRef = useRef(false);
@@ -213,6 +250,8 @@ function CreateTaskModal({
   const { mutateAsync: createTask } = useCreateTask();
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTask } = useDeleteTask();
+  const { mutateAsync: assignMilestone } = useAssignMilestoneToTask();
+  const { mutateAsync: createRelation } = useCreateTaskRelation();
 
   const filteredLabels = (() => {
     const searchFiltered = organizationLabels.filter((label) =>
@@ -249,6 +288,8 @@ function CreateTaskModal({
     setSearchValue("");
     setSelectedColor("gray");
     setNewLabelName("");
+    setMilestoneId(null);
+    setParentTaskId(null);
     draftCreationPromiseRef.current = null;
     didSubmitRef.current = false;
     setDraftTask(null);
@@ -378,7 +419,7 @@ function CreateTaskModal({
     const draftStatus = "planned";
     const draftPromise = createTask({
       title: title.trim() || t("common:modals.createTask.untitledTask"),
-      description: description.trim() || "",
+      description: formatTaskMarkdown(description),
       userId: assigneeId,
       priority,
       boardId: resolvedBoardId,
@@ -429,7 +470,7 @@ function CreateTaskModal({
             await updateTask({
               ...draftTask,
               title: title.trim(),
-              description: description.trim() || "",
+              description: formatTaskMarkdown(description),
               userId: assigneeId || null,
               status: taskStatus,
               priority,
@@ -441,7 +482,7 @@ function CreateTaskModal({
         : normalizeTask(
             await createTask({
               title: title.trim(),
-              description: description.trim() || "",
+              description: formatTaskMarkdown(description),
               userId: assigneeId,
               priority,
               boardId: resolvedBoardId,
@@ -461,6 +502,32 @@ function CreateTaskModal({
           });
         } catch (error) {
           console.error("Failed to create label:", error);
+        }
+      }
+
+      // Milestone and parent task are chosen before the task exists, so both
+      // are applied right after creation.
+      if (milestoneId) {
+        try {
+          await assignMilestone({
+            boardId: resolvedBoardId,
+            taskId: savedTask.id,
+            milestoneId,
+          });
+        } catch (error) {
+          console.error("Failed to assign milestone:", error);
+        }
+      }
+
+      if (parentTaskId) {
+        try {
+          await createRelation({
+            sourceTaskId: parentTaskId,
+            targetTaskId: savedTask.id,
+            relationType: "subtask",
+          });
+        } catch (error) {
+          console.error("Failed to link parent task:", error);
         }
       }
 
@@ -486,6 +553,8 @@ function CreateTaskModal({
         setSearchValue("");
         setSelectedColor("gray");
         setNewLabelName("");
+        setMilestoneId(null);
+        setParentTaskId(null);
         draftCreationPromiseRef.current = null;
         didSubmitRef.current = false;
         setDraftTask(null);
@@ -556,6 +625,8 @@ function CreateTaskModal({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!open) return;
+
+      if (focusTaskTitleFromShortcut(e, titleInputRef.current, open)) return;
 
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
@@ -691,7 +762,17 @@ function CreateTaskModal({
           className="flex flex-col flex-1 min-h-0 space-y-6"
         >
           <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6">
+            {resolvedBoardId && (
+              <CreateTaskTopbar
+                boardId={resolvedBoardId}
+                milestoneId={milestoneId}
+                onMilestoneChange={setMilestoneId}
+                parentTaskId={parentTaskId}
+                onParentTaskChange={setParentTaskId}
+              />
+            )}
             <Input
+              ref={titleInputRef}
               unstyled
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -743,47 +824,97 @@ function CreateTaskModal({
                 {statusLabel}
               </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      startDate
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
+              {/* Start and due date belong together, so they are grouped in
+                  their own row instead of being separated by the other
+                  property pills as the flex row wraps (#71). */}
+              <div
+                className="flex items-center gap-2"
+                data-testid="create-task-date-fields"
+              >
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                        startDate
+                          ? "bg-accent/30 text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5" />
+                      <span>
+                        {startDate
+                          ? formatDateMedium(startDate)
+                          : t("common:modals.createTask.startDate")}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      className="w-full bg-popover"
+                    />
+                    {startDate && (
+                      <div className="p-2 border-t border-border">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => setStartDate(undefined)}
+                        >
+                          {t("common:modals.createTask.clearStartDate")}
+                        </Button>
+                      </div>
                     )}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>
-                      {startDate
-                        ? formatDateMedium(startDate)
-                        : t("common:modals.createTask.startDate")}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    className="w-full bg-popover"
-                  />
-                  {startDate && (
-                    <div className="p-2 border-t border-border">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => setStartDate(undefined)}
-                      >
-                        {t("common:modals.createTask.clearStartDate")}
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                        dueDate
+                          ? "bg-accent/30 text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5" />
+                      <span>
+                        {dueDate
+                          ? formatDateMedium(dueDate)
+                          : t("common:modals.createTask.dueDate")}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={setDueDate}
+                      className="w-full bg-popover"
+                    />
+                    {dueDate && (
+                      <div className="p-2 border-t border-border">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => setDueDate(undefined)}
+                        >
+                          {t("common:modals.createTask.clearDueDate")}
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               <Popover>
                 <PopoverTrigger asChild>
@@ -901,48 +1032,6 @@ function CreateTaskModal({
                       </button>
                     ))}
                   </div>
-                </PopoverContent>
-              </Popover>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      dueDate
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>
-                      {dueDate
-                        ? formatDateMedium(dueDate)
-                        : t("common:modals.createTask.dueDate")}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    className="w-full bg-popover"
-                  />
-                  {dueDate && (
-                    <div className="p-2 border-t border-border">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => setDueDate(undefined)}
-                      >
-                        {t("common:modals.createTask.clearDueDate")}
-                      </Button>
-                    </div>
-                  )}
                 </PopoverContent>
               </Popover>
 

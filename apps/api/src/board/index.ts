@@ -134,13 +134,24 @@ const board = new Hono<{
         slug: v.string(),
         description: v.string(),
         isPublic: v.boolean(),
+        // #95: nesting depth is a per-board setting. Clamp in valibot so the
+        // API rejects out-of-range values before the DB CHECK constraint does.
+        subtaskDepthLimit: v.optional(
+          v.pipe(
+            v.number(),
+            v.integer(),
+            v.minValue(1, "subtaskDepthLimit must be between 1 and 4"),
+            v.maxValue(4, "subtaskDepthLimit must be between 1 and 4"),
+          ),
+        ),
       }),
     ),
     organizationAccess.fromBoard(),
     requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { name, icon, slug, description, isPublic } = c.req.valid("json");
+      const { name, icon, slug, description, isPublic, subtaskDepthLimit } =
+        c.req.valid("json");
       const organizationId = c.get("organizationId");
       const updatedBoard = await updateBoardCtrl(
         id,
@@ -150,6 +161,7 @@ const board = new Hono<{
         description,
         isPublic,
         organizationId,
+        subtaskDepthLimit,
       );
       return c.json(updatedBoard);
     },

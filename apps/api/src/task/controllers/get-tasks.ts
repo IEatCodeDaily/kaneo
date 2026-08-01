@@ -5,6 +5,7 @@ import {
   eq,
   gte,
   inArray,
+  isNull,
   lte,
   type SQL,
   sql,
@@ -85,7 +86,10 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     });
   }
 
-  const conditions = [eq(taskTable.boardId, boardId)];
+  const conditions = [
+    eq(taskTable.boardId, boardId),
+    isNull(taskTable.deletedAt),
+  ];
 
   if (options.status) {
     conditions.push(eq(taskTable.status, options.status));

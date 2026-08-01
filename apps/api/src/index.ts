@@ -35,6 +35,7 @@ import { waitForDatabase } from "./database/wait-for-database";
 import discordIntegration from "./discord-integration";
 import { eventContext } from "./events";
 import externalLink from "./external-link";
+import flag from "./flag";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
 import githubDelegation, {
@@ -48,6 +49,7 @@ import invitation from "./invitation";
 import label from "./label";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
+import milestone from "./milestone";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -613,7 +615,9 @@ export function createApp() {
   const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
+  const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
+  const milestoneApi = api.route("/milestone", milestone);
   const notificationApi = api.route("/notification", notification);
   const notificationPreferencesApi = api.route(
     "/notification-preferences",
@@ -812,7 +816,9 @@ export function createApp() {
     genericWebhookIntegrationApi,
     invitationApi,
     invitationPublicApi,
+    flagApi,
     labelApi,
+    milestoneApi,
     notificationApi,
     notificationPreferencesApi,
     boardApi,
@@ -934,7 +940,9 @@ const {
   genericWebhookIntegrationApi,
   invitationApi,
   invitationPublicApi,
+  flagApi,
   labelApi,
+  milestoneApi,
   notificationApi,
   notificationPreferencesApi,
   boardApi,
@@ -971,7 +979,9 @@ export type AppType =
   | typeof aiApi
   | typeof commentApi
   | typeof timeEntryApi
+  | typeof flagApi
   | typeof labelApi
+  | typeof milestoneApi
   | typeof notificationApi
   | typeof notificationPreferencesApi
   | typeof searchApi
