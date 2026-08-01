@@ -666,7 +666,9 @@ export const taskFlagTable = pgTable(
       onUpdate: "cascade",
     }),
     note: text("note"),
-    // Unflagging keeps the row and records who resolved it.
+    // Unflagging keeps the row and records who resolved it. #107: unflagging
+    // requires a mandatory explanation, stored alongside the resolver.
+    resolveNote: text("resolve_note"),
     resolvedAt: timestamp("resolved_at", { mode: "date" }),
     resolvedBy: text("resolved_by").references(() => userTable.id, {
       onDelete: "set null",

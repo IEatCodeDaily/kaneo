@@ -55,7 +55,11 @@ describe("flag mutations refresh the activity feed (#107)", () => {
     invalidateQueries.mockReset();
     const { result } = renderHook(() => useResolveTaskFlag());
 
-    result.current.mutate({ flagId: "flag-1", taskId: "task-1" });
+    result.current.mutate({
+      flagId: "flag-1",
+      taskId: "task-1",
+      resolveNote: "done",
+    });
 
     expect(invalidatedKeys()).toContainEqual(["activities", "task-1"]);
   });

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/popover";
 import type { TaskFlag } from "@/fetchers/flag/get-task-flags";
 import useCreateTaskFlag from "@/hooks/mutations/flag/use-create-task-flag";
-import useResolveTaskFlag from "@/hooks/mutations/flag/use-resolve-task-flag";
 import useGetBoardFlagTypes from "@/hooks/queries/flag/use-get-board-flag-types";
 import useGetTaskFlags from "@/hooks/queries/flag/use-get-task-flags";
 import { cn } from "@/lib/cn";
@@ -50,7 +49,6 @@ export default function TaskFlagPicker({
   const { data: flagTypes = [] } = useGetBoardFlagTypes(boardId);
   const { data: flags = [] } = useGetTaskFlags(taskId);
   const { mutate: createTaskFlag, isPending: isRaising } = useCreateTaskFlag();
-  const { mutate: resolveTaskFlag } = useResolveTaskFlag();
 
   const activeFlags = useMemo(
     () => (flags as TaskFlag[]).filter((flag) => !flag.resolvedAt),
@@ -220,9 +218,12 @@ export default function TaskFlagPicker({
                     size="sm"
                     className="h-6 px-1.5 text-xs"
                     data-testid={`flag-unflag-${flag.id}`}
-                    onClick={() => resolveTaskFlag({ flagId: flag.id, taskId })}
+                    // #107: unflagging requires a note, and the note field
+                    // lives in the activity feed. Send the reader there rather
+                    // than silently resolving without one.
+                    onClick={() => setOpen(false)}
                   >
-                    {t("flags:dialog.unflag")}
+                    {t("flags:dialog.unflagInActivity")}
                   </Button>
                 </div>
               );

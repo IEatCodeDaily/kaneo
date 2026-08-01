@@ -30,6 +30,16 @@ vi.mock("@/hooks/mutations/flag/use-resolve-task-flag", () => ({
   default: () => ({ mutate: resolveMutate, isPending: false }),
 }));
 
+// The unflag control only renders while the flag is still active, so the row
+// needs the task's live flag list.
+const activeFlags: { id: string; resolvedAt: string | null }[] = [
+  { id: "flag-1", resolvedAt: null },
+];
+
+vi.mock("@/hooks/queries/flag/use-get-task-flags", () => ({
+  default: () => ({ data: activeFlags }),
+}));
+
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
   default: () => ({ data: { id: "org-1" } }),
 }));
@@ -115,15 +125,43 @@ describe("flag activity entries (#107)", () => {
     expect(chip.querySelector("svg")).not.toBeNull();
   });
 
-  it("offers an unflag button on the raised entry that resolves the flag", () => {
+  it("puts the unflag control on its own row under the flag entry", () => {
     renderActivity(raised);
 
-    fireEvent.click(screen.getByText("flags:dialog.unflag"));
+    // Own row beneath the entry, not an inline word in the sentence.
+    const control = screen.getByTestId("unflag-control-flag-1");
+    expect(control.tagName).toBe("FORM");
+    expect(screen.getByTestId("unflag-note-flag-1")).toBeTruthy();
+  });
 
-    expect(resolveMutate).toHaveBeenCalledWith({
-      flagId: "flag-1",
-      taskId: "task-1",
+  it("requires a note before the flag can be resolved", () => {
+    renderActivity(raised);
+
+    const submit = screen.getByTestId(
+      "unflag-submit-flag-1",
+    ) as HTMLButtonElement;
+
+    // Mandatory: disabled while the Notes field is empty.
+    expect(submit.disabled).toBe(true);
+    fireEvent.click(submit);
+    expect(resolveMutate).not.toHaveBeenCalled();
+
+    // Whitespace alone is not a note.
+    fireEvent.change(screen.getByTestId("unflag-note-flag-1"), {
+      target: { value: "   " },
     });
+    expect(submit.disabled).toBe(true);
+
+    fireEvent.change(screen.getByTestId("unflag-note-flag-1"), {
+      target: { value: "  approved by design  " },
+    });
+    expect(submit.disabled).toBe(false);
+    fireEvent.click(submit);
+
+    expect(resolveMutate).toHaveBeenCalledWith(
+      { flagId: "flag-1", taskId: "task-1", resolveNote: "approved by design" },
+      expect.anything(),
+    );
   });
 
   it("degrades to a plain verb for legacy entries with no flag type name", () => {

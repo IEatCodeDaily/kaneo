@@ -149,11 +149,10 @@ describe("TaskFlagPicker (#107)", () => {
       trigger.querySelector('span[style*="rgb(239, 68, 68)"]'),
     ).not.toBeNull();
 
+    // #107: unflagging needs a mandatory note, and that field lives in the
+    // activity feed — the picker no longer resolves flags directly.
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByTestId("flag-unflag-flag-1"));
-    expect(resolveTaskFlagMock).toHaveBeenCalledWith({
-      flagId: "flag-1",
-      taskId: "task-1",
-    });
+    expect(screen.getByTestId("flag-unflag-flag-1")).toBeTruthy();
+    expect(resolveTaskFlagMock).not.toHaveBeenCalled();
   });
 });

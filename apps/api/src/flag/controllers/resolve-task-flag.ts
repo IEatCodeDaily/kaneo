@@ -10,7 +10,11 @@ import { publishEvent } from "../../events";
  * Only currently-active flags (resolvedAt IS NULL) can be resolved, so a
  * second unflag can't overwrite the original resolver.
  */
-async function resolveTaskFlag(id: string, resolvedBy: string) {
+async function resolveTaskFlag(
+  id: string,
+  resolvedBy: string,
+  resolveNote: string,
+) {
   const [flag] = await db
     .select()
     .from(taskFlagTable)
@@ -30,6 +34,7 @@ async function resolveTaskFlag(id: string, resolvedBy: string) {
     .set({
       resolvedAt: new Date(),
       resolvedBy,
+      resolveNote,
       updatedAt: new Date(),
     })
     .where(and(eq(taskFlagTable.id, id), isNull(taskFlagTable.resolvedAt)))
@@ -69,6 +74,7 @@ async function resolveTaskFlag(id: string, resolvedBy: string) {
     flagTypeColor: flagType?.color ?? null,
     flagTypeIcon: flagType?.icon ?? null,
     resolvedBy,
+    resolveNote,
     targetUserId: resolved.targetUserId,
     targetTeamId: resolved.targetTeamId,
   });

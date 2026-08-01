@@ -257,10 +257,23 @@ const flag = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
+    // #107: unflagging demands a written reason. Enforced server-side so the
+    // rule holds for API clients, not just the dialog.
+    validator(
+      "json",
+      v.object({
+        resolveNote: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1, "A note is required to unflag"),
+        ),
+      }),
+    ),
     async (c) => {
       const { id } = c.req.valid("param");
+      const { resolveNote } = c.req.valid("json");
       const userId = c.get("userId");
-      const resolved = await resolveTaskFlag(id, userId);
+      const resolved = await resolveTaskFlag(id, userId, resolveNote);
       return c.json(resolved);
     },
   )

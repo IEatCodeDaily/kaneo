@@ -2298,7 +2298,10 @@
         "noType": "Pick a flag type.",
         "bothTargets": "Pick either a user or a team, not both.",
         "noTarget": "Pick a user or a team to flag this to."
-      }
+      },
+      "resolveNote": "Notes",
+      "unflagFailed": "Could not unflag",
+      "unflagInActivity": "Unflag in activity"
     }
   },
   "inbox": {

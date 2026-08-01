@@ -211,7 +211,11 @@ describe("task flags", () => {
       // assertions below (not a TypeError) are what catches it.
       mockDelete.mockReturnValue(makeDeleteChain([ACTIVE_FLAG], whereCaptured));
 
-      const resolved = await resolveTaskFlag("flag-1", "user-c");
+      const resolved = await resolveTaskFlag(
+        "flag-1",
+        "user-c",
+        "unblocked by infra",
+      );
 
       // The row survives: no DELETE was issued.
       expect(mockDelete).not.toHaveBeenCalled();
@@ -220,9 +224,12 @@ describe("task flags", () => {
       const values = setCaptured[0] as {
         resolvedBy?: string;
         resolvedAt?: Date;
+        resolveNote?: string;
       };
       expect(values.resolvedBy).toBe("user-c");
       expect(values.resolvedAt).toBeInstanceOf(Date);
+      // #107: unflagging requires a reason, and it is persisted on the row.
+      expect(values.resolveNote).toBe("unblocked by infra");
 
       expect(resolved.id).toBe("flag-1");
       expect(resolved.resolvedBy).toBe("user-c");
@@ -231,7 +238,11 @@ describe("task flags", () => {
       // Activity history gets the unflag event, naming who resolved it.
       expect(mockPublishEvent).toHaveBeenCalledWith(
         "task.flag_resolved",
-        expect.objectContaining({ resolvedBy: "user-c", taskId: "task-1" }),
+        expect.objectContaining({
+          resolvedBy: "user-c",
+          taskId: "task-1",
+          resolveNote: "unblocked by infra",
+        }),
       );
     });
 
@@ -253,9 +264,9 @@ describe("task flags", () => {
       mockUpdate.mockReturnValue(makeUpdateChain([], [], []));
       mockDelete.mockReturnValue(makeDeleteChain([], []));
 
-      await expect(resolveTaskFlag("flag-1", "user-c")).rejects.toThrow(
-        "Flag is already resolved",
-      );
+      await expect(
+        resolveTaskFlag("flag-1", "user-c", "second attempt"),
+      ).rejects.toThrow("Flag is already resolved");
 
       expect(mockUpdate).not.toHaveBeenCalled();
       expect(mockDelete).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import { Calendar, CircleAlert, Flag, History, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getFlagColor, getFlagIcon } from "@/components/flag/flag-icon";
-import useResolveTaskFlag from "@/hooks/mutations/flag/use-resolve-task-flag";
+import useGetTaskFlags from "@/hooks/queries/flag/use-get-task-flags";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
 import { formatDateMedium, formatRelativeTime } from "@/lib/format";
@@ -15,6 +15,7 @@ import {
 } from "../ui/preview-card";
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
+import UnflagControl from "./unflag-control";
 import { isCommentActivity } from "./utils";
 
 type ActivityItem = {
@@ -504,8 +505,17 @@ function Activity({
   const { data: organizationMembers } = useGetOrganizationMembers({
     organizationId: organization?.id,
   });
-  const resolveFlag = useResolveTaskFlag();
   const eventData = getEventDataRecord(activity.eventData);
+
+  // A flag_raised row keeps its unflag control only while that flag is still
+  // active; once resolved the row is history and the feed already carries a
+  // matching flag_resolved entry.
+  const { data: taskFlags = [] } = useGetTaskFlags(activity.taskId);
+  const isFlagResolved =
+    typeof eventData?.flagId === "string" &&
+    !(taskFlags as { id: string; resolvedAt: string | null }[]).some(
+      (flag) => flag.id === eventData.flagId && !flag.resolvedAt,
+    );
 
   const user = activity.userId
     ? organizationMembers?.find(
@@ -572,25 +582,17 @@ function Activity({
             | undefined,
           t,
         })}{" "}
-        {activity.type === "flag_raised" &&
-          typeof eventData?.flagId === "string" && (
-            <button
-              className="rounded border border-border px-1.5 py-0.5 text-xs"
-              disabled={resolveFlag.isPending}
-              onClick={() =>
-                resolveFlag.mutate({
-                  flagId: eventData.flagId as string,
-                  taskId: activity.taskId,
-                })
-              }
-              type="button"
-            >
-              {t("flags:dialog.unflag")}
-            </button>
-          )}{" "}
         <span className="whitespace-nowrap text-muted-foreground/70 text-xs">
           {formatRelativeTime(activity.createdAt)}
         </span>
+        {/* #107: the unflag action sits on its OWN row beneath the flag it
+            resolves, with a mandatory Notes field — not inline in the
+            sentence. Only rendered while the flag is still active. */}
+        {activity.type === "flag_raised" &&
+          typeof eventData?.flagId === "string" &&
+          !isFlagResolved && (
+            <UnflagControl flagId={eventData.flagId} taskId={activity.taskId} />
+          )}
       </TimelineContent>
     </TimelineItem>
   );
