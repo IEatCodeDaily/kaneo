@@ -2,6 +2,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { Maximize2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -10,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import {
@@ -20,6 +29,7 @@ import {
 } from "@/lib/task-drawer-width";
 import TaskDetailsContent from "./task-details-content";
 import TaskPropertiesSidebar from "./task-properties-sidebar";
+import TaskTemplateMenu, { type TaskTemplateData } from "./task-template-menu";
 import TaskTopbarControls from "./task-topbar-controls";
 
 type TaskDetailsSheetProps = {
@@ -43,6 +53,9 @@ export default function TaskDetailsSheet({
   const [isOpen, setIsOpen] = useState(Boolean(taskId));
 
   const { data: task } = useGetTask(currentTaskId ?? "");
+  const { mutate: updateTask } = useUpdateTask();
+  const [pendingTemplate, setPendingTemplate] =
+    useState<TaskTemplateData | null>(null);
   const { data: board } = useGetBoard({ id: boardId, organizationId });
 
   useEffect(() => {
@@ -165,11 +178,13 @@ export default function TaskDetailsSheet({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {/*
-              #146 / #91: board access avatars belong on the BOARD topbar, not
-              on every ticket. They describe who can see the board, which is
-              board-level information repeated on each ticket drawer.
-            */}
+            {task ? (
+              <TaskTemplateMenu
+                iconOnly
+                organizationId={organizationId}
+                onApply={({ data }) => setPendingTemplate(data)}
+              />
+            ) : null}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -198,6 +213,40 @@ export default function TaskDetailsSheet({
             </Button>
           </div>
         </div>
+
+        <AlertDialog
+          open={Boolean(pendingTemplate)}
+          onOpenChange={(open) => !open && setPendingTemplate(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("tasks:templates.applyTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("tasks:templates.applyWarning")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setPendingTemplate(null)}
+              >
+                {t("common:actions.cancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (task && pendingTemplate) {
+                    updateTask({ ...task, ...pendingTemplate });
+                  }
+                  setPendingTemplate(null);
+                }}
+              >
+                {t("tasks:templates.apply")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div
           className="flex flex-col flex-1 min-h-0 overflow-hidden"

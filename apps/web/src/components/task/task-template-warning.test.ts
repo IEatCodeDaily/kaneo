@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const sidebar = readFileSync(
-  resolve(process.cwd(), "src/components/task/task-properties-sidebar.tsx"),
+  resolve(process.cwd(), "src/components/task/task-details-sheet.tsx"),
   "utf8",
 );
 

@@ -5,6 +5,7 @@ import * as v from "valibot";
 import db from "../database";
 import { taskTemplateTable } from "../database/schema";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 
 const dataSchema = v.object({
   title: v.string(),
@@ -41,6 +42,7 @@ const taskTemplate = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
       const { organizationId } = c.req.valid("param");
       const [created] = await db
@@ -50,6 +52,36 @@ const taskTemplate = new Hono<{ Variables: { userId: string } }>()
       return c.json(created);
     },
   )
+  .put(
+    "/organization/:organizationId/:id",
+    validator(
+      "param",
+      v.object({ organizationId: v.string(), id: v.string() }),
+    ),
+    validator(
+      "json",
+      v.object({
+        name: v.pipe(v.string(), v.trim(), v.minLength(1)),
+        data: dataSchema,
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
+    async (c) => {
+      const { organizationId, id } = c.req.valid("param");
+      const [updated] = await db
+        .update(taskTemplateTable)
+        .set(c.req.valid("json"))
+        .where(
+          and(
+            eq(taskTemplateTable.id, id),
+            eq(taskTemplateTable.organizationId, organizationId),
+          ),
+        )
+        .returning();
+      return c.json(updated);
+    },
+  )
   .delete(
     "/organization/:organizationId/:id",
     validator(
@@ -57,6 +89,7 @@ const taskTemplate = new Hono<{ Variables: { userId: string } }>()
       v.object({ organizationId: v.string(), id: v.string() }),
     ),
     organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
     async (c) => {
       const { organizationId, id } = c.req.valid("param");
       const [deleted] = await db

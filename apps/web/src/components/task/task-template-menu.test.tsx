@@ -1,11 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import TaskTemplateMenu from "./task-template-menu";
@@ -48,14 +42,9 @@ describe("TaskTemplateMenu (#118)", () => {
       }),
     );
     const onApply = vi.fn();
-    render(
-      <TaskTemplateMenu
-        organizationId="org-1"
-        current={data}
-        onApply={onApply}
-      />,
-      { wrapper },
-    );
+    render(<TaskTemplateMenu organizationId="org-1" onApply={onApply} />, {
+      wrapper,
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:templates.label" }),
     );
@@ -63,40 +52,23 @@ describe("TaskTemplateMenu (#118)", () => {
     expect(onApply).toHaveBeenCalledWith({ id: "t1", name: "Bug", data });
   });
 
-  it("saves the current values as a named template", async () => {
+  it("keeps template management out of the apply menu", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "t1" }) })
       .mockResolvedValue({ ok: true, json: async () => [] });
     vi.stubGlobal("fetch", fetchMock);
-    render(
-      <TaskTemplateMenu
-        organizationId="org-1"
-        current={data}
-        onApply={vi.fn()}
-      />,
-      { wrapper },
-    );
+    render(<TaskTemplateMenu organizationId="org-1" onApply={vi.fn()} />, {
+      wrapper,
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:templates.label" }),
     );
-    fireEvent.change(await screen.findByLabelText("tasks:templates.name"), {
-      target: { value: "Bug" },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:templates.save" }),
-    );
-    await waitFor(() =>
-      expect(
-        fetchMock.mock.calls.some(([, options]) => options?.method === "POST"),
-      ).toBe(true),
-    );
-    const post = fetchMock.mock.calls.find(
-      ([, request]) => request?.method === "POST",
-    );
-    expect(post).toBeDefined();
-    if (!post) throw new Error("Template POST missing");
-    expect(JSON.parse(post[1].body)).toEqual({ name: "Bug", data });
+    expect(
+      await screen.findByText("tasks:templates.empty"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("tasks:templates.name"),
+    ).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

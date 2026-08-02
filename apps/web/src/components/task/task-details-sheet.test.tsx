@@ -5,6 +5,9 @@ import TaskDetailsSheet from "./task-details-sheet";
 const useGetTask = vi.fn((_taskId?: string) => ({ data: { number: 104 } }));
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("@/hooks/mutations/task/use-update-task", () => ({
+  useUpdateTask: () => ({ mutate: vi.fn() }),
+}));
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-i18next")>()),
   useTranslation: () => ({ t: (key: string) => key }),
@@ -19,6 +22,7 @@ vi.mock("@/components/presence/board-access-avatars", () => ({
   default: () => null,
 }));
 vi.mock("./task-topbar-controls", () => ({ default: () => null }));
+vi.mock("./task-template-menu", () => ({ default: () => null }));
 vi.mock("./task-properties-sidebar", () => ({ default: () => null }));
 vi.mock("./task-details-content", () => ({ default: () => null }));
 vi.mock("@/components/ui/tooltip", () => ({

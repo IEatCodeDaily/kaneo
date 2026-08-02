@@ -892,13 +892,6 @@ function CreateTaskModal({
             {organization?.id ? (
               <TaskTemplateMenu
                 organizationId={organization.id}
-                current={{
-                  title,
-                  description: description || null,
-                  priority,
-                  startDate: startDate?.toISOString() ?? null,
-                  dueDate: dueDate?.toISOString() ?? null,
-                }}
                 onApply={({ data }) => {
                   setTitle(data.title);
                   setDescription(data.description ?? "");

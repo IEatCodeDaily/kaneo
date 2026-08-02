@@ -4,7 +4,14 @@ import {
   Outlet,
   useLocation,
 } from "@tanstack/react-router";
-import { FlaskConical, Plug, Settings, Shield, Tag } from "lucide-react";
+import {
+  FileText,
+  FlaskConical,
+  Plug,
+  Settings,
+  Shield,
+  Tag,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -45,6 +52,11 @@ function RouteComponent() {
       title: t("settings:organizationLabels.title", { defaultValue: "Labels" }),
       url: "/dashboard/settings/organization/labels",
       icon: Tag,
+    },
+    {
+      title: "Templates",
+      url: "/dashboard/settings/organization/templates",
+      icon: FileText,
     },
     {
       title: "Connections",
