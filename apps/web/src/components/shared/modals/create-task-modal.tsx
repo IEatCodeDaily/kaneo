@@ -95,7 +95,18 @@ type LabelColor =
   | "yellow"
   | "orange"
   | "pink"
-  | "red";
+  | "red"
+  | "blossom"
+  | "honey"
+  | "lime"
+  | "emerald"
+  | "lagoon"
+  | "sky"
+  | "ocean"
+  | "indigo"
+  | "violet"
+  | "orchid"
+  | "cocoa";
 
 type Label = {
   id: string;
@@ -215,6 +226,61 @@ function CreateTaskModal({
           value: "red" as LabelColor,
           labelKey: "crimson" as const,
           color: "var(--color-red-600)",
+        },
+        {
+          value: "blossom" as LabelColor,
+          labelKey: "blossom" as const,
+          color: "var(--color-pink-500)",
+        },
+        {
+          value: "honey" as LabelColor,
+          labelKey: "honey" as const,
+          color: "var(--color-amber-500)",
+        },
+        {
+          value: "lime" as LabelColor,
+          labelKey: "lime" as const,
+          color: "var(--color-lime-600)",
+        },
+        {
+          value: "emerald" as LabelColor,
+          labelKey: "emerald" as const,
+          color: "var(--color-emerald-500)",
+        },
+        {
+          value: "lagoon" as LabelColor,
+          labelKey: "lagoon" as const,
+          color: "var(--color-cyan-600)",
+        },
+        {
+          value: "sky" as LabelColor,
+          labelKey: "sky" as const,
+          color: "var(--color-sky-500)",
+        },
+        {
+          value: "ocean" as LabelColor,
+          labelKey: "ocean" as const,
+          color: "var(--color-blue-600)",
+        },
+        {
+          value: "indigo" as LabelColor,
+          labelKey: "indigo" as const,
+          color: "var(--color-indigo-500)",
+        },
+        {
+          value: "violet" as LabelColor,
+          labelKey: "violet" as const,
+          color: "var(--color-violet-600)",
+        },
+        {
+          value: "orchid" as LabelColor,
+          labelKey: "orchid" as const,
+          color: "var(--color-fuchsia-500)",
+        },
+        {
+          value: "cocoa" as LabelColor,
+          labelKey: "cocoa" as const,
+          color: "var(--color-amber-800)",
         },
       ].map(({ labelKey, ...rest }) => ({
         ...rest,

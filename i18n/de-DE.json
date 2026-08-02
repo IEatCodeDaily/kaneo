@@ -124,7 +124,18 @@
 					"amber": "Bernstein",
 					"terracotta": "Terrakotta",
 					"rose": "Rosa",
-					"crimson": "Karmesinrot"
+					"crimson": "Karmesinrot",
+					"blossom": "Blüte",
+					"honey": "Honig",
+					"lime": "Limette",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Himmel",
+					"ocean": "Ozean",
+					"indigo": "Indigo",
+					"violet": "Violett",
+					"orchid": "Orchidee",
+					"cocoa": "Kakao"
 				}
 			}
 		}
@@ -1559,7 +1570,18 @@
 					"amber": "Bernstein",
 					"terracotta": "Terrakotta",
 					"rose": "Rosa",
-					"crimson": "Karmesinrot"
+					"crimson": "Karmesinrot",
+					"blossom": "Blüte",
+					"honey": "Honig",
+					"lime": "Limette",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Himmel",
+					"ocean": "Ozean",
+					"indigo": "Indigo",
+					"violet": "Violett",
+					"orchid": "Orchidee",
+					"cocoa": "Kakao"
 				}
 			}
 		},

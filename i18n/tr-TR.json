@@ -124,7 +124,18 @@
 					"amber": "Kehribar",
 					"terracotta": "Terakota",
 					"rose": "Gül Kurusu",
-					"crimson": "Koyu Kırmızı"
+					"crimson": "Koyu Kırmızı",
+					"blossom": "Çiçek",
+					"honey": "Bal",
+					"lime": "Misket limonu",
+					"emerald": "Zümrüt",
+					"lagoon": "Lagün",
+					"sky": "Gökyüzü",
+					"ocean": "Okyanus",
+					"indigo": "Çivit",
+					"violet": "Menekşe",
+					"orchid": "Orkide",
+					"cocoa": "Kakao"
 				}
 			}
 		}
@@ -1525,7 +1536,18 @@
 					"amber": "Kehribar",
 					"terracotta": "Terakota",
 					"rose": "Gül Kurusu",
-					"crimson": "Koyu Kırmızı"
+					"crimson": "Koyu Kırmızı",
+					"blossom": "Çiçek",
+					"honey": "Bal",
+					"lime": "Misket limonu",
+					"emerald": "Zümrüt",
+					"lagoon": "Lagün",
+					"sky": "Gökyüzü",
+					"ocean": "Okyanus",
+					"indigo": "Çivit",
+					"violet": "Menekşe",
+					"orchid": "Orkide",
+					"cocoa": "Kakao"
 				}
 			}
 		},

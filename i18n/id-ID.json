@@ -124,7 +124,18 @@
 					"amber": "Kuning Ambar",
 					"terracotta": "Merah Bata",
 					"rose": "Merah Mawar",
-					"crimson": "Merah Tua"
+					"crimson": "Merah Tua",
+					"blossom": "Bunga",
+					"honey": "Madu",
+					"lime": "Limau",
+					"emerald": "Zamrud",
+					"lagoon": "Laguna",
+					"sky": "Langit",
+					"ocean": "Samudra",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orkid",
+					"cocoa": "Kakao"
 				}
 			}
 		}
@@ -1663,7 +1674,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson"
+					"crimson": "Crimson",
+					"blossom": "Bunga",
+					"honey": "Madu",
+					"lime": "Limau",
+					"emerald": "Zamrud",
+					"lagoon": "Laguna",
+					"sky": "Langit",
+					"ocean": "Samudra",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orkid",
+					"cocoa": "Kakao"
 				}
 			}
 		},

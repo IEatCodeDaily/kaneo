@@ -123,7 +123,18 @@
 					"amber": "Ámbar",
 					"terracotta": "Terracota",
 					"rose": "Rosa",
-					"crimson": "Carmesí"
+					"crimson": "Carmesí",
+					"blossom": "Flor",
+					"honey": "Miel",
+					"lime": "Lima",
+					"emerald": "Esmeralda",
+					"lagoon": "Laguna",
+					"sky": "Cielo",
+					"ocean": "Océano",
+					"indigo": "Índigo",
+					"violet": "Violeta",
+					"orchid": "Orquídea",
+					"cocoa": "Cacao"
 				}
 			}
 		}
@@ -1291,7 +1302,18 @@
 					"amber": "Ámbar",
 					"terracotta": "Terracota",
 					"rose": "Rosa",
-					"crimson": "Carmesí"
+					"crimson": "Carmesí",
+					"blossom": "Flor",
+					"honey": "Miel",
+					"lime": "Lima",
+					"emerald": "Esmeralda",
+					"lagoon": "Laguna",
+					"sky": "Cielo",
+					"ocean": "Océano",
+					"indigo": "Índigo",
+					"violet": "Violeta",
+					"orchid": "Orquídea",
+					"cocoa": "Cacao"
 				}
 			}
 		},

@@ -37,6 +37,18 @@ const labelColors = [
   { value: "orange", key: "terracotta", color: "var(--color-orange-600)" },
   { value: "pink", key: "rose", color: "var(--color-rose-600)" },
   { value: "red", key: "crimson", color: "var(--color-red-600)" },
+  // #175: additional hues.
+  { value: "blossom", key: "blossom", color: "var(--color-pink-500)" },
+  { value: "honey", key: "honey", color: "var(--color-amber-500)" },
+  { value: "lime", key: "lime", color: "var(--color-lime-600)" },
+  { value: "emerald", key: "emerald", color: "var(--color-emerald-500)" },
+  { value: "lagoon", key: "lagoon", color: "var(--color-cyan-600)" },
+  { value: "sky", key: "sky", color: "var(--color-sky-500)" },
+  { value: "ocean", key: "ocean", color: "var(--color-blue-600)" },
+  { value: "indigo", key: "indigo", color: "var(--color-indigo-500)" },
+  { value: "violet", key: "violet", color: "var(--color-violet-600)" },
+  { value: "orchid", key: "orchid", color: "var(--color-fuchsia-500)" },
+  { value: "cocoa", key: "cocoa", color: "var(--color-amber-800)" },
 ];
 
 type LabelColor =
@@ -48,7 +60,18 @@ type LabelColor =
   | "yellow"
   | "orange"
   | "pink"
-  | "red";
+  | "red"
+  | "blossom"
+  | "honey"
+  | "lime"
+  | "emerald"
+  | "lagoon"
+  | "sky"
+  | "ocean"
+  | "indigo"
+  | "violet"
+  | "orchid"
+  | "cocoa";
 
 type TaskLabelsPopoverProps = {
   task: Task;

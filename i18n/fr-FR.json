@@ -124,7 +124,18 @@
 					"amber": "Ambre",
 					"terracotta": "Terre cuite",
 					"rose": "Rose",
-					"crimson": "Cramoisi"
+					"crimson": "Cramoisi",
+					"blossom": "Fleur",
+					"honey": "Miel",
+					"lime": "Citron vert",
+					"emerald": "Émeraude",
+					"lagoon": "Lagune",
+					"sky": "Ciel",
+					"ocean": "Océan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidée",
+					"cocoa": "Cacao"
 				}
 			}
 		}
@@ -1526,7 +1537,18 @@
 					"amber": "Ambre",
 					"terracotta": "Terre cuite",
 					"rose": "Rose",
-					"crimson": "Cramoisi"
+					"crimson": "Cramoisi",
+					"blossom": "Fleur",
+					"honey": "Miel",
+					"lime": "Citron vert",
+					"emerald": "Émeraude",
+					"lagoon": "Lagune",
+					"sky": "Ciel",
+					"ocean": "Océan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidée",
+					"cocoa": "Cacao"
 				}
 			}
 		},
