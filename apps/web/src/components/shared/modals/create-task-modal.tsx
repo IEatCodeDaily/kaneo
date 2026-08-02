@@ -984,24 +984,30 @@ function CreateTaskModal({
             </div>
 
             {labels.length > 0 && (
-              <div className="flex flex-wrap mb-2">
+              <div
+                className="mb-2 flex flex-wrap gap-1.5"
+                data-testid="create-task-selected-labels"
+              >
                 {labels.map((label) => (
                   <Badge
                     key={label.name}
                     color={label.color}
                     variant="outline"
-                    className="flex items-center gap-1 pl-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                    className="h-6! cursor-pointer gap-1.5 px-2 py-0! leading-none transition-colors hover:bg-accent/50"
                     onClick={() => removeLabel(label.name)}
                   >
                     <span
-                      className="inline-block w-2 h-2 mr-1.5 rounded-full"
+                      aria-hidden="true"
+                      className="size-2 shrink-0 rounded-full"
                       style={{
                         backgroundColor:
                           labelColors.find((c) => c.value === label.color)
                             ?.color || "var(--color-neutral-400)",
                       }}
                     />
-                    <span className="max-w-20 truncate">{label.name}</span>
+                    <span className="max-w-20 truncate leading-none">
+                      {label.name}
+                    </span>
                   </Badge>
                 ))}
               </div>
