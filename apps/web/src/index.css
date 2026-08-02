@@ -1147,11 +1147,35 @@ input:-webkit-autofill:active {
     margin: 0;
   }
 
+  /*
+    #179: these three rules set spacing but never a font-size, so h1/h2/h3 all
+    inherited the base body size and rendered identically — typing "# Header 1"
+    through "### Header 3" produced three lines of the same size.
+
+    Sizes mirror `.kaneo-tiptap-content` (the task description editor) so a
+    heading looks the same wherever it is written or read.
+  */
   .kaneo-comment-editor-prose h1,
   .kaneo-comment-editor-prose h2,
   .kaneo-comment-editor-prose h3 {
     margin: 0.12rem 0 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: 1.32;
+    color: var(--foreground);
+  }
+
+  .kaneo-comment-editor-prose h1 {
+    font-size: 1.24rem;
+  }
+
+  .kaneo-comment-editor-prose h2 {
+    font-size: 1.12rem;
+  }
+
+  .kaneo-comment-editor-prose h3 {
+    font-size: 1.02rem;
   }
 
   .kaneo-comment-editor-prose ul,
