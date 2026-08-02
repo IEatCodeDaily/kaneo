@@ -728,27 +728,32 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
+  const privilegeChecks = new Map<string, Promise<boolean>>();
   const visibility = await Promise.all(
-    results.map(async (result) => {
-      if (result.boardId && result.organizationId) {
-        return requireResourcePrivilege({
-          organizationId: result.organizationId,
-          resourceType: "board",
-          resourceId: result.boardId,
-          userId: resolvedUserId,
-          required: "view",
-        });
+    results.map((result) => {
+      const resourceType = result.boardId
+        ? "board"
+        : result.repoId
+          ? "repo"
+          : null;
+      const resourceId = result.boardId ?? result.repoId;
+      if (!resourceType || !resourceId || !result.organizationId) {
+        return true;
       }
-      if (result.repoId && result.organizationId) {
-        return requireResourcePrivilege({
-          organizationId: result.organizationId,
-          resourceType: "repo",
-          resourceId: result.repoId,
-          userId: resolvedUserId,
-          required: "view",
-        });
-      }
-      return true;
+
+      const key = `${resourceType}:${resourceId}`;
+      const existing = privilegeChecks.get(key);
+      if (existing) return existing;
+
+      const check = requireResourcePrivilege({
+        organizationId: result.organizationId,
+        resourceType,
+        resourceId,
+        userId: resolvedUserId,
+        required: "view",
+      });
+      privilegeChecks.set(key, check);
+      return check;
     }),
   );
   const filteredResults = results.filter((_, index) => visibility[index]);
