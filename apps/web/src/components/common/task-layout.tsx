@@ -50,8 +50,6 @@ export default function TaskLayout({
         <Layout.Header className="h-11 border-border/80 px-2">
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <div className="h-4 w-px shrink-0 bg-border/80" />
-
               <div className="min-w-0 items-center gap-1.5 flex">
                 <button
                   type="button"
