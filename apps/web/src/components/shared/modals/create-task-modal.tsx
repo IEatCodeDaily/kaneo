@@ -906,46 +906,53 @@ function CreateTaskModal({
                 onParentTaskChange={setParentTaskId}
               />
             )}
-            <Input
-              ref={titleInputRef}
-              unstyled
-              value={title}
-              onChange={(e) =>
-                handleTitleChange(
-                  e.target.value,
-                  e.target.selectionStart ?? e.target.value.length,
-                )
-              }
-              onKeyDown={(e) => {
-                // #72: while a token picker is open it owns Arrow/Enter/Escape.
-                // Space is deliberately not intercepted, so typing a space
-                // leaves the sigil as plain title text.
-                if (titleTokenKeyHandlerRef.current?.(e)) return;
-              }}
-              onBlur={() => setTitleToken(null)}
-              autoFocus
-              placeholder={t("common:modals.createTask.taskTitlePlaceholder")}
-              className="w-full [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:py-3 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
-              required
-            />
             {/*
+              #72: title, picker anchor and hint are ONE unit. The parent uses
+              `space-y-6`, which inserted a 24px gap between each of them —
+              that gap was never the input's padding, which is why capping the
+              padding alone never closed it.
+            */}
+            <div className="flex flex-col">
+              <Input
+                ref={titleInputRef}
+                unstyled
+                value={title}
+                onChange={(e) =>
+                  handleTitleChange(
+                    e.target.value,
+                    e.target.selectionStart ?? e.target.value.length,
+                  )
+                }
+                onKeyDown={(e) => {
+                  // #72: while a token picker is open it owns Arrow/Enter/Escape.
+                  // Space is deliberately not intercepted, so typing a space
+                  // leaves the sigil as plain title text.
+                  if (titleTokenKeyHandlerRef.current?.(e)) return;
+                }}
+                onBlur={() => setTitleToken(null)}
+                autoFocus
+                placeholder={t("common:modals.createTask.taskTitlePlaceholder")}
+                className="w-full !mb-0 [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:pt-3 [&_[data-slot=input]]:pb-0 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:leading-tight [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight [&_[data-slot=input]]:text-foreground [&_[data-slot=input]]:placeholder:text-muted-foreground [&_[data-slot=input]]:outline-none"
+                required
+              />
+              {/*
               #72: zero-height anchor directly under the title input, so the
               picker floats over the modal body without shifting it AND opens
               flush against the title rather than below the hint line.
             */}
-            <div className="relative h-0">
-              <TitleTokenSuggestions
-                onCommit={handleTitleTokenCommit}
-                onDismiss={() => setTitleToken(null)}
-                onRegisterKeyHandler={(handler) => {
-                  titleTokenKeyHandlerRef.current = handler;
-                }}
-                options={titleTokenOptions}
-                token={titleToken}
-              />
+              <div className="relative h-0">
+                <TitleTokenSuggestions
+                  onCommit={handleTitleTokenCommit}
+                  onDismiss={() => setTitleToken(null)}
+                  onRegisterKeyHandler={(handler) => {
+                    titleTokenKeyHandlerRef.current = handler;
+                  }}
+                  options={titleTokenOptions}
+                  token={titleToken}
+                />
+              </div>
+              <TitleTokenHint hidden={titleToken !== null} />
             </div>
-            {/* #72: tells the user the shortcuts exist. */}
-            <TitleTokenHint hidden={titleToken !== null} />
 
             <div className="min-h-[200px]">
               <TaskDescriptionEditor
