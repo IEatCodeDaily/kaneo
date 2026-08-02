@@ -1,6 +1,28 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { useTaskFiltersWithLabelsSupport } from "./use-task-filters-with-labels-support";
+import {
+  groupTasks,
+  useTaskFiltersWithLabelsSupport,
+} from "./use-task-filters-with-labels-support";
+
+describe("groupTasks", () => {
+  it("uses the assignee display name instead of the user id", () => {
+    const task = {
+      id: "assigned",
+      title: "Assigned task",
+      status: "to-do",
+      priority: null,
+      userId: "usr_raw_id",
+      assigneeName: "Raisal Wardana",
+      labels: [],
+    };
+
+    expect(groupTasks([task as never], "assignee")[0]).toMatchObject({
+      key: "Raisal Wardana",
+      label: "Raisal Wardana",
+    });
+  });
+});
 
 describe("useTaskFiltersWithLabelsSupport", () => {
   const storageKey = "kaneo:board-filters:board-1";

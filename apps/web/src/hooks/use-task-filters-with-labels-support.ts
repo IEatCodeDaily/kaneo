@@ -34,7 +34,7 @@ export type TaskGroup = {
   /** Stable identity for the group — the raw value, or "" when unset. */
   key: string;
   /**
-   * Either a plain label (assignee id / priority / label name) or an i18n key
+   * Either a plain label (assignee name / priority / label name) or an i18n key
    * for the "unset" bucket. Callers translate `labelKey` when present.
    */
   label?: string;
@@ -45,7 +45,7 @@ export type TaskGroup = {
 function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
   switch (groupBy) {
     case "assignee":
-      return [task.userId ?? ""];
+      return [task.assigneeName ?? ""];
     case "priority":
       return [task.priority ?? ""];
     case "label": {
