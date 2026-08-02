@@ -1256,7 +1256,9 @@
 				"create": "Buat",
 				"views": "Tampilan",
 				"navigation": "Navigasi",
-				"quickSelect": "Pilih Cepat (di popover)"
+				"quickSelect": "Pilih Cepat (di popover)",
+				"ticketTitle": "Judul tiket",
+				"editor": "Deskripsi & komentar"
 			},
 			"items": {
 				"openCommandPalette": "Buka palet perintah",
@@ -1273,7 +1275,12 @@
 				"nextTask": "Tugas berikutnya",
 				"prevTask": "Tugas sebelumnya",
 				"openTask": "Buka tugas terpilih",
-				"quickSelectNumber": "Pilih opsi berdasarkan nomor"
+				"quickSelectNumber": "Pilih opsi berdasarkan nomor",
+				"titleLabel": "Tambahkan label",
+				"titleMember": "Tetapkan anggota",
+				"titlePriority": "Atur prioritas",
+				"editorMention": "Sebut orang atau tiket",
+				"editorSlash": "Buka menu blok"
 			}
 		},
 		"repoList": {

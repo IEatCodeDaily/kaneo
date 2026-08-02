@@ -901,7 +901,9 @@
 				"create": "Aanmaken",
 				"views": "Weergaven",
 				"navigation": "Navigatie",
-				"quickSelect": "Snelkeuze (in popovers)"
+				"quickSelect": "Snelkeuze (in popovers)",
+				"ticketTitle": "Tickettitel",
+				"editor": "Beschrijving en reacties"
 			},
 			"items": {
 				"openCommandPalette": "Opdrachtpalet openen",
@@ -918,7 +920,12 @@
 				"nextTask": "Volgende taak",
 				"prevTask": "Vorige taak",
 				"openTask": "Geselecteerde taak openen",
-				"quickSelectNumber": "Selecteer optie via nummer"
+				"quickSelectNumber": "Selecteer optie via nummer",
+				"titleLabel": "Een label toevoegen",
+				"titleMember": "Een lid toewijzen",
+				"titlePriority": "Prioriteit instellen",
+				"editorMention": "Een persoon of ticket vermelden",
+				"editorSlash": "Het blokmenu openen"
 			}
 		},
 		"repoList": {
