@@ -9,7 +9,7 @@ import {
   GitMerge,
   GitPullRequest,
 } from "lucide-react";
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import {
@@ -49,35 +49,36 @@ type TaskRowProps = {
   boardSlug: string;
 };
 
-function TaskRow({ task, boardSlug }: TaskRowProps) {
+const TaskRowContent = memo(function TaskRowContent({
+  task,
+  boardSlug,
+  isDragging,
+}: TaskRowProps & { isDragging: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const { board } = useBoardStore();
+  const boardId = useBoardStore((state) => state.board?.id);
   const { data: organization } = useActiveOrganization();
-  const {
-    showAssignees,
-    showPriority,
-    showDueDates,
-    showLabels,
-    showTaskNumbers,
-  } = useUserPreferencesStore();
+  const showAssignees = useUserPreferencesStore((state) => state.showAssignees);
+  const showPriority = useUserPreferencesStore((state) => state.showPriority);
+  const showDueDates = useUserPreferencesStore((state) => state.showDueDates);
+  const showLabels = useUserPreferencesStore((state) => state.showLabels);
+  const showTaskNumbers = useUserPreferencesStore(
+    (state) => state.showTaskNumbers,
+  );
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   const { mutateAsync: deleteTask } = useDeleteTask();
   // From the board payload — fetching per card cost one request + preflight
   // each (186 on a 180-task board).
   const externalLinks = task.externalLinks;
-  const { toggleSelection, isSelected, isFocused } = useBulkSelectionStore();
-  const isTaskSelected = isSelected(task.id);
-  const isTaskFocused = isFocused(task.id);
+  const toggleSelection = useBulkSelectionStore(
+    (state) => state.toggleSelection,
+  );
+  const isTaskSelected = useBulkSelectionStore((state) =>
+    state.selectedTaskIds.has(task.id),
+  );
+  const isTaskFocused = useBulkSelectionStore(
+    (state) => state.focusedTaskId === task.id,
+  );
 
   const pullRequests = useMemo(() => {
     if (!externalLinks) return [];
@@ -111,14 +112,8 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
     };
   };
 
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
-    touchAction: isDragging ? "none" : "auto",
-  };
-
   const handleClick = (e: React.MouseEvent) => {
-    if (!board || !task) return;
+    if (!boardId || !task) return;
     if (e.defaultPrevented) return;
 
     if (e.metaKey || e.ctrlKey) {
@@ -153,7 +148,7 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
     try {
       await deleteTask(task.id);
       queryClient.invalidateQueries({
-        queryKey: ["tasks", board?.id],
+        queryKey: ["tasks", boardId],
       });
     } catch (error) {
       toast.error(
@@ -166,19 +161,6 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
 
   return (
     <div
-      ref={setNodeRef}
-      style={{
-        ...style,
-        // Skip layout/paint for rows scrolled out of view. contain-intrinsic-size
-        // reserves the row's height so the scrollbar stays accurate.
-        // Suppressed while dragging so dnd-kit can measure the row.
-        ...(isDragging
-          ? {}
-          : {
-              contentVisibility: "auto",
-              containIntrinsicSize: "auto 34px",
-            }),
-      }}
       className={cn(
         "border-b border-border/50 transition-colors duration-150",
         isDragging && "opacity-50",
@@ -197,8 +179,6 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
               "group relative flex items-center gap-3 px-4 py-1.5 transition-colors cursor-pointer",
               isTaskSelected ? "bg-accent/45" : "hover:bg-accent/60",
             )}
-            {...attributes}
-            {...listeners}
           >
             {showPriority && (
               <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
@@ -390,11 +370,11 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
           </div>
         </ContextMenuTrigger>
 
-        {board && organization && (
+        {boardId && organization && (
           <TaskCardContextMenuContent
             task={task}
             taskCardContext={{
-              boardId: board.id,
+              boardId,
               worskpaceId: organization.id,
             }}
             onDeleteClick={() => setIsDeleteTaskModalOpen(true)}
@@ -429,6 +409,44 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
           </AlertDialogContent>
         </AlertDialog>
       )}
+    </div>
+  );
+});
+
+function TaskRow({ task, boardSlug }: TaskRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
+    touchAction: isDragging ? "none" : "auto",
+    ...(isDragging
+      ? {}
+      : {
+          contentVisibility: "auto",
+          containIntrinsicSize: "auto 34px",
+        }),
+  };
+
+  return (
+    <div
+      data-task-id={task.id}
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      <TaskRowContent
+        boardSlug={boardSlug}
+        isDragging={isDragging}
+        task={task}
+      />
     </div>
   );
 }

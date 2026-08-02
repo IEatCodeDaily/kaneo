@@ -3,7 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -36,42 +36,36 @@ type BacklogTaskRowProps = {
   task: Task;
 };
 
-export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
+const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
+  task,
+  isDragging,
+}: BacklogTaskRowProps & { isDragging: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const { board } = useBoardStore();
+  const boardId = useBoardStore((state) => state.board?.id);
+  const boardSlug = useBoardStore((state) => state.board?.slug);
   const { data: organization } = useActiveOrganization();
-  const {
-    showAssignees,
-    showPriority,
-    showDueDates,
-    showLabels,
-    showTaskNumbers,
-  } = useUserPreferencesStore();
+  const showAssignees = useUserPreferencesStore((state) => state.showAssignees);
+  const showPriority = useUserPreferencesStore((state) => state.showPriority);
+  const showDueDates = useUserPreferencesStore((state) => state.showDueDates);
+  const showLabels = useUserPreferencesStore((state) => state.showLabels);
+  const showTaskNumbers = useUserPreferencesStore(
+    (state) => state.showTaskNumbers,
+  );
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
   const { mutateAsync: deleteTask } = useDeleteTask();
-  const { toggleSelection, isSelected, isFocused } =
-    useBacklogBulkSelectionStore();
-  const isTaskSelected = isSelected(task.id);
-  const isTaskFocused = isFocused(task.id);
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
-    touchAction: isDragging ? "none" : "auto",
-  };
+  const toggleSelection = useBacklogBulkSelectionStore(
+    (state) => state.toggleSelection,
+  );
+  const isTaskSelected = useBacklogBulkSelectionStore((state) =>
+    state.selectedTaskIds.has(task.id),
+  );
+  const isTaskFocused = useBacklogBulkSelectionStore(
+    (state) => state.focusedTaskId === task.id,
+  );
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!board || !task) return;
+    if (!boardId || !task) return;
     if (e.defaultPrevented) return;
 
     if (e.metaKey || e.ctrlKey) {
@@ -106,7 +100,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
     try {
       await deleteTask(task.id);
       queryClient.invalidateQueries({
-        queryKey: ["tasks", board?.id],
+        queryKey: ["tasks", boardId],
       });
     } catch (error) {
       toast.error(
@@ -119,18 +113,6 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
 
   return (
     <div
-      ref={setNodeRef}
-      style={{
-        ...style,
-        // Skip layout/paint for off-screen rows; suppressed while dragging so
-        // dnd-kit can measure the row.
-        ...(isDragging
-          ? {}
-          : {
-              contentVisibility: "auto",
-              containIntrinsicSize: "auto 34px",
-            }),
-      }}
       className={cn(
         "border-b border-border/50 transition-colors duration-150",
         isDragging && "opacity-50",
@@ -149,8 +131,6 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
               "group relative flex items-center gap-3 px-4 py-1.5 transition-colors cursor-pointer",
               isTaskSelected ? "bg-accent/45" : "hover:bg-accent/60",
             )}
-            {...attributes}
-            {...listeners}
           >
             {showPriority && (
               <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
@@ -159,7 +139,7 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
             )}
             {showTaskNumbers && (
               <div className="text-xs font-mono text-muted-foreground flex-shrink-0">
-                {board?.slug}-{task.number}
+                {boardSlug}-{task.number}
               </div>
             )}
 
@@ -221,11 +201,11 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
           </div>
         </ContextMenuTrigger>
 
-        {board && organization && (
+        {boardId && organization && (
           <TaskCardContextMenuContent
             task={task}
             taskCardContext={{
-              boardId: board.id,
+              boardId,
               worskpaceId: organization.id,
             }}
             onDeleteClick={() => setIsDeleteTaskModalOpen(true)}
@@ -260,6 +240,34 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
           </AlertDialogContent>
         </AlertDialog>
       )}
+    </div>
+  );
+});
+
+export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 200ms cubic-bezier(0.23, 1, 0.32, 1)",
+    touchAction: isDragging ? "none" : "auto",
+    ...(isDragging
+      ? {}
+      : {
+          contentVisibility: "auto",
+          containIntrinsicSize: "auto 34px",
+        }),
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <BacklogTaskRowContent isDragging={isDragging} task={task} />
     </div>
   );
 }

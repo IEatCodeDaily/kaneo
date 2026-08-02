@@ -199,7 +199,7 @@ export default function TaskResources({
           limit: RESOURCE_LIMIT,
         }),
       queryKey: ["repo-issues", repoId, "all", 1, RESOURCE_LIMIT],
-      enabled: commandOpen,
+      enabled: commandOpen && resourceType === "issues",
     })),
   });
 
@@ -213,7 +213,7 @@ export default function TaskResources({
           limit: RESOURCE_LIMIT,
         }),
       queryKey: ["repo-pull-requests", repoId, "all", 1, RESOURCE_LIMIT],
-      enabled: commandOpen,
+      enabled: commandOpen && resourceType === "pull-requests",
     })),
   });
 

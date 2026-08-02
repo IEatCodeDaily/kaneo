@@ -141,6 +141,7 @@ const ColumnSection = memo(function ColumnSection({
 
       {expanded && (
         <div
+          data-column-id={column.id}
           ref={setNodeRef}
           className="bg-card transition-[translate,opacity] duration-150 ease-out starting:-translate-y-1 starting:opacity-0 motion-reduce:starting:translate-y-0"
         >
