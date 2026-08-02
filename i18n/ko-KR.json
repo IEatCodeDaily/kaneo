@@ -1288,7 +1288,8 @@
 		},
 		"statusRun": "{{from}}에서 {{to}}(으)로 옮겼습니다",
 		"statusRunNoOp": "상태를 여러 번 변경했고 다시 {{status}}로 돌아왔습니다",
-		"statusRunSteps": "{{count}}단계"
+		"statusRunSteps": "{{count}}단계",
+		"resolutionNote": "해결 메모"
 	},
 	"tasks": {
 		"status": {

@@ -1293,7 +1293,8 @@
 		},
 		"statusRun": "bunu {{from}} durumundan {{to}} durumuna taşıdı",
 		"statusRunNoOp": "durumu birkaç kez değiştirdi, {{status}} durumuna geri döndü",
-		"statusRunSteps": "{{count}} adım"
+		"statusRunSteps": "{{count}} adım",
+		"resolutionNote": "Çözüm notu"
 	},
 	"tasks": {
 		"status": {

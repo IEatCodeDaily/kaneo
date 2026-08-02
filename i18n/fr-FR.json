@@ -1294,7 +1294,8 @@
 		},
 		"statusRun": "l’a déplacé de {{from}} vers {{to}}",
 		"statusRunNoOp": "a changé le statut plusieurs fois, revenant à {{status}}",
-		"statusRunSteps": "{{count}} étapes"
+		"statusRunSteps": "{{count}} étapes",
+		"resolutionNote": "Note de résolution"
 	},
 	"tasks": {
 		"status": {

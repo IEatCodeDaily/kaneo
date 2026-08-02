@@ -1291,7 +1291,8 @@
 		},
 		"statusRun": "переместил из {{from}} в {{to}}",
 		"statusRunNoOp": "несколько раз менял статус и вернулся к {{status}}",
-		"statusRunSteps": "шагов: {{count}}"
+		"statusRunSteps": "шагов: {{count}}",
+		"resolutionNote": "Примечание к решению"
 	},
 	"tasks": {
 		"status": {
