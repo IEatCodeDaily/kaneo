@@ -573,6 +573,7 @@
 			"iconHint": "사이드바와 프로젝트 화면에 표시됩니다.",
 			"pickIconTitle": "아이콘 선택",
 			"searchIconsPlaceholder": "아이콘 검색...",
+			"useEmoji": "이 이모지 사용",
 			"boardNameLabel": "프로젝트 이름",
 			"boardNameHint": "프로젝트의 이름",
 			"boardNamePlaceholder": "프로젝트 이름 입력",

@@ -483,6 +483,7 @@
 			"iconHint": "Se muestra en la barra lateral y en las vistas del proyecto.",
 			"pickIconTitle": "Elegir icono",
 			"searchIconsPlaceholder": "Buscar iconos...",
+			"useEmoji": "Usar este emoji",
 			"boardNameLabel": "Nombre del proyecto",
 			"boardNameHint": "El nombre de tu proyecto",
 			"boardNamePlaceholder": "Introduce el nombre del proyecto",

@@ -575,6 +575,7 @@
 			"iconHint": "S'affiche dans la barre latérale et les surfaces du projet.",
 			"pickIconTitle": "Choisir une icône",
 			"searchIconsPlaceholder": "Rechercher des icônes...",
+			"useEmoji": "Utiliser cet emoji",
 			"boardNameLabel": "Nom du projet",
 			"boardNameHint": "Le nom de votre projet",
 			"boardNamePlaceholder": "Entrez le nom du projet",

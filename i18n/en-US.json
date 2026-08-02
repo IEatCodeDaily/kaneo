@@ -751,6 +751,7 @@
 			"iconHint": "Displayed in the sidebar and board surfaces.",
 			"pickIconTitle": "Pick icon",
 			"searchIconsPlaceholder": "Search icons...",
+			"useEmoji": "Use this emoji",
 			"boardNameLabel": "Board name",
 			"boardNameHint": "The name of your board",
 			"boardNamePlaceholder": "Enter board name",

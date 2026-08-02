@@ -2908,6 +2908,9 @@
 						"searchIconsPlaceholder": {
 							"type": "string"
 						},
+						"useEmoji": {
+							"type": "string"
+						},
 						"boardNameLabel": {
 							"type": "string"
 						},
@@ -3017,6 +3020,7 @@
 						"iconHint",
 						"pickIconTitle",
 						"searchIconsPlaceholder",
+						"useEmoji",
 						"boardNameLabel",
 						"boardNameHint",
 						"boardNamePlaceholder",

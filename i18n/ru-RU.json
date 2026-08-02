@@ -573,6 +573,7 @@
 			"iconHint": "Отображается в боковой панели и на страницах проекта.",
 			"pickIconTitle": "Выбрать иконку",
 			"searchIconsPlaceholder": "Поиск иконок...",
+			"useEmoji": "Использовать этот эмодзи",
 			"boardNameLabel": "Название проекта",
 			"boardNameHint": "Название вашего проекта",
 			"boardNamePlaceholder": "Введите название проекта",

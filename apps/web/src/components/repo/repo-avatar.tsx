@@ -1,4 +1,5 @@
 import { GitBranch } from "lucide-react";
+import { cn } from "@/lib/cn";
 import type { Repo } from "@/types/repo";
 
 /**
@@ -19,15 +20,26 @@ import type { Repo } from "@/types/repo";
  * #171 will make board/repo icons user-configurable (including emoji); this is
  * the neutral default until then.
  */
-export default function RepoAvatar({ repo }: { repo: Repo }) {
+export default function RepoAvatar({
+  repo,
+  className,
+}: {
+  repo: Repo;
+  className?: string;
+}) {
   const initial = repoInitial(repo);
 
-  if (!initial) return <GitBranch aria-hidden="true" />;
+  if (!initial) {
+    return <GitBranch aria-hidden="true" className={cn("size-4", className)} />;
+  }
 
   return (
     <span
       aria-hidden="true"
-      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold uppercase leading-none text-white"
+      className={cn(
+        "flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold uppercase leading-none text-white",
+        className,
+      )}
       data-testid="repo-avatar"
       style={{ backgroundColor: repoColor(repo) }}
     >
