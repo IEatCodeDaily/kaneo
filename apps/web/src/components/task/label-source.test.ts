@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isRepoLabel, labelSourceAttribute } from "./label-source";
+import {
+  canSelectLabelSource,
+  isRepoLabel,
+  labelSourceAttribute,
+} from "./label-source";
 
 /**
  * #147: "Differentiate Kaneo native labels and repo labels".
@@ -9,6 +13,11 @@ import { isRepoLabel, labelSourceAttribute } from "./label-source";
  * rather than silently marking every label as native.
  */
 describe("#147 label source distinction", () => {
+  it("hides repo labels from normal tickets but allows synced tickets", () => {
+    expect(canSelectLabelSource("repo", false)).toBe(false);
+    expect(canSelectLabelSource("repo", true)).toBe(true);
+    expect(canSelectLabelSource("kaneo", false)).toBe(true);
+  });
   it("marks repo-sourced labels", () => {
     expect(isRepoLabel("repo")).toBe(true);
     expect(labelSourceAttribute("repo")).toBe("repo");

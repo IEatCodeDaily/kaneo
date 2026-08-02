@@ -10,12 +10,15 @@ import {
 } from "@/components/ui/popover";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
+import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
+import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
+import { canSelectLabelSource } from "./label-source";
 
 const labelColors = [
   { value: "gray", key: "stone", color: "var(--color-stone-500)" },
@@ -76,6 +79,11 @@ export default function TaskLabelsPopover({
   const canCreateLabels = canManageLabels();
 
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
+  const { data: externalLinks = [] } = useExternalLinks(task.id);
+  const { data: repoLinks = [] } = useGetTaskRepoLinks(task.id);
+  const isSyncedTicket =
+    externalLinks.some((link) => link.resourceType === "issue") ||
+    repoLinks.some((link) => link.itemType === "issues" && link.syncEnabled);
   const { data: organizationLabels = [] } =
     useGetLabelsByOrganization(organizationId);
 
@@ -85,8 +93,10 @@ export default function TaskLabelsPopover({
   );
 
   const filteredLabels = useMemo(() => {
-    const searchFiltered = organizationLabels.filter((label) =>
-      label.name.toLowerCase().includes(searchValue.toLowerCase()),
+    const searchFiltered = organizationLabels.filter(
+      (label) =>
+        canSelectLabelSource(label.source, isSyncedTicket) &&
+        label.name.toLowerCase().includes(searchValue.toLowerCase()),
     );
 
     const labelMap = new Map<string, (typeof organizationLabels)[0]>();
@@ -98,7 +108,7 @@ export default function TaskLabelsPopover({
     }
 
     return Array.from(labelMap.values());
-  }, [organizationLabels, searchValue]);
+  }, [organizationLabels, searchValue, isSyncedTicket]);
 
   const isCreatingNewLabel = useMemo(
     () =>

@@ -14,3 +14,10 @@ export function isRepoLabel(source: string | null | undefined) {
 export function labelSourceAttribute(source: string | null | undefined) {
   return source ?? "kaneo";
 }
+
+export function canSelectLabelSource(
+  source: string | null | undefined,
+  syncedTicket: boolean,
+) {
+  return !isRepoLabel(source) || syncedTicket;
+}

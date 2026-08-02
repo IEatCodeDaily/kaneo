@@ -747,7 +747,10 @@ export default function TaskPropertiesSidebar({
                   >
                     <Badge
                       variant="outline"
-                      className="flex items-center gap-1 px-1.5 py-0.5 cursor-pointer hover:bg-accent/50 transition-colors text-[10px]"
+                      className={cn(
+                        "flex cursor-pointer items-center gap-1 px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50",
+                        isRepoLabel(label.source) && "opacity-60",
+                      )}
                       data-label-source={labelSourceAttribute(label.source)}
                       title={
                         isRepoLabel(label.source)
@@ -772,11 +775,16 @@ export default function TaskPropertiesSidebar({
                         a second text label next to the name.
                       */}
                       {isRepoLabel(label.source) && (
-                        <Github
-                          aria-hidden="true"
-                          className="size-2.5 shrink-0 opacity-60"
-                          data-testid="label-repo-mark"
-                        />
+                        <>
+                          <Github
+                            aria-hidden="true"
+                            className="size-2.5 shrink-0 opacity-60"
+                            data-testid="label-repo-mark"
+                          />
+                          <span className="sr-only">
+                            {t("tasks:labels.fromRepository")}
+                          </span>
+                        </>
                       )}
                     </Badge>
                   </TaskLabelsPopover>
