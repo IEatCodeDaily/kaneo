@@ -1759,6 +1759,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "{{repo}} ile eşitlendi"
+		},
+		"groupBy": {
+			"dueDate": "Son tarih",
+			"noDueDate": "Son tarih yok"
 		}
 	},
 	"invitations": {

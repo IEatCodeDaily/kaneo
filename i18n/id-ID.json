@@ -1897,6 +1897,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Tersinkron dengan {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Tanggal jatuh tempo",
+			"noDueDate": "Tanpa tanggal jatuh tempo"
 		}
 	},
 	"invitations": {

@@ -1999,7 +1999,9 @@
 			"none": "None",
 			"assignee": "Assignee",
 			"priority": "Priority",
-			"byLabel": "Label"
+			"byLabel": "Label",
+			"dueDate": "Due date",
+			"noDueDate": "No due date"
 		},
 		"preview": {
 			"assignee": "Assignee",

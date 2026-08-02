@@ -1760,6 +1760,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Synchronisé avec {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Date d’échéance",
+			"noDueDate": "Aucune date d’échéance"
 		}
 	},
 	"invitations": {

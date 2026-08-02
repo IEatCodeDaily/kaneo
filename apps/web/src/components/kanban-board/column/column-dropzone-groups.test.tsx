@@ -43,6 +43,7 @@ type Task = {
   title: string;
   priority: string;
   labels?: unknown[];
+  dueDate?: string | null;
 };
 
 function makeColumn() {
@@ -96,5 +97,39 @@ describe("ColumnDropzone grouped sections", () => {
 
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("High one")).toBeTruthy();
+  });
+
+  it("groups by due date and renders a calendar icon", () => {
+    groupByMock.mockReturnValue("dueDate");
+    const column = makeColumn();
+    column.tasks[0].dueDate = "2026-08-07T12:00:00.000Z";
+    column.tasks[1].dueDate = null;
+
+    render(<ColumnDropzone column={column as never} />);
+
+    expect(screen.getByText(/Aug 7, 2026/)).toBeTruthy();
+    expect(screen.getByText("tasks:groupBy.noDueDate")).toBeTruthy();
+    expect(document.querySelectorAll("svg.lucide-calendar-days").length).toBe(
+      2,
+    );
+  });
+
+  it("renders every label bucket when one task has several labels", () => {
+    groupByMock.mockReturnValue("label");
+    const column = makeColumn();
+    column.tasks = [
+      {
+        id: "t1",
+        title: "Shared task",
+        priority: "high",
+        labels: [{ name: "frontend" }, { name: "bug" }],
+      },
+    ];
+
+    render(<ColumnDropzone column={column as never} />);
+
+    expect(screen.getByText("frontend")).toBeTruthy();
+    expect(screen.getByText("bug")).toBeTruthy();
+    expect(screen.getAllByText("Shared task")).toHaveLength(2);
   });
 });

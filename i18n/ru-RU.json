@@ -1792,6 +1792,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Синхронизировано с {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Срок выполнения",
+			"noDueDate": "Без срока выполнения"
 		}
 	},
 	"invitations": {

@@ -1750,6 +1750,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Синхронізовано з {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Термін виконання",
+			"noDueDate": "Без терміну виконання"
 		}
 	},
 	"invitations": {

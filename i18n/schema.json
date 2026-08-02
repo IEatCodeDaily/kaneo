@@ -1880,6 +1880,12 @@
 						},
 						"weekStartsOnSaturday": {
 							"type": "string"
+						},
+						"reduceOverlayBlur": {
+							"type": "string"
+						},
+						"reduceOverlayBlurDescription": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -1921,7 +1927,9 @@
 						"labelsDescription",
 						"priority",
 						"priorityDescription",
-						"weekStartsOnSaturday"
+						"weekStartsOnSaturday",
+						"reduceOverlayBlur",
+						"reduceOverlayBlurDescription"
 					]
 				},
 				"developerPage": {
@@ -5219,6 +5227,12 @@
 								},
 								"quickSelect": {
 									"type": "string"
+								},
+								"ticketTitle": {
+									"type": "string"
+								},
+								"editor": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -5226,7 +5240,9 @@
 								"create",
 								"views",
 								"navigation",
-								"quickSelect"
+								"quickSelect",
+								"ticketTitle",
+								"editor"
 							]
 						},
 						"items": {
@@ -5277,6 +5293,24 @@
 								},
 								"quickSelectNumber": {
 									"type": "string"
+								},
+								"titleLabel": {
+									"type": "string"
+								},
+								"titleMember": {
+									"type": "string"
+								},
+								"titlePriority": {
+									"type": "string"
+								},
+								"editorMention": {
+									"type": "string"
+								},
+								"editorSlash": {
+									"type": "string"
+								},
+								"editorTicket": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -5294,7 +5328,13 @@
 								"nextTask",
 								"prevTask",
 								"openTask",
-								"quickSelectNumber"
+								"quickSelectNumber",
+								"titleLabel",
+								"titleMember",
+								"titlePriority",
+								"editorMention",
+								"editorSlash",
+								"editorTicket"
 							]
 						}
 					},
@@ -5927,6 +5967,12 @@
 								"previewImageAlt",
 								"codeLang"
 							]
+						},
+						"draftSaved": {
+							"type": "string"
+						},
+						"deleteDraft": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -5947,7 +5993,9 @@
 						"leavePlaceholder",
 						"attachFile",
 						"submitShortcut",
-						"editor"
+						"editor",
+						"draftSaved",
+						"deleteDraft"
 					]
 				},
 				"flagRaised": {
@@ -5957,6 +6005,18 @@
 					"type": "string"
 				},
 				"flagTarget": {
+					"type": "string"
+				},
+				"statusRun": {
+					"type": "string"
+				},
+				"statusRunNoOp": {
+					"type": "string"
+				},
+				"statusRunSteps": {
+					"type": "string"
+				},
+				"resolutionNote": {
 					"type": "string"
 				}
 			},
@@ -5976,7 +6036,11 @@
 				"comment",
 				"flagRaised",
 				"flagResolved",
-				"flagTarget"
+				"flagTarget",
+				"statusRun",
+				"statusRunNoOp",
+				"statusRunSteps",
+				"resolutionNote"
 			]
 		},
 		"tasks": {
@@ -6052,6 +6116,9 @@
 					]
 				},
 				"boardSearchPlaceholder": {
+					"type": "string"
+				},
+				"boardClearSearch": {
 					"type": "string"
 				},
 				"view": {
@@ -7024,6 +7091,21 @@
 								"dueNextWeek",
 								"noDueDate"
 							]
+						},
+						"moveAllDialogTitle": {
+							"type": "string"
+						},
+						"moveAllDialogDescription": {
+							"type": "string"
+						},
+						"moveAllDialogDescription_other": {
+							"type": "string"
+						},
+						"moveAllDialogConfirm": {
+							"type": "string"
+						},
+						"moveAllDialogConfirm_other": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -7039,7 +7121,12 @@
 						"addFilter",
 						"sections",
 						"noTasksInSection",
-						"filters"
+						"filters",
+						"moveAllDialogTitle",
+						"moveAllDialogDescription",
+						"moveAllDialogDescription_other",
+						"moveAllDialogConfirm",
+						"moveAllDialogConfirm_other"
 					]
 				},
 				"sort": {
@@ -7141,6 +7228,9 @@
 						"compact": {
 							"type": "string"
 						},
+						"taskNumbers": {
+							"type": "string"
+						},
 						"show": {
 							"type": "string"
 						},
@@ -7161,6 +7251,7 @@
 						"label",
 						"comfortable",
 						"compact",
+						"taskNumbers",
 						"show",
 						"assignee",
 						"priority",
@@ -7512,9 +7603,12 @@
 						},
 						"empty": {
 							"type": "string"
+						},
+						"fromRepository": {
+							"type": "string"
 						}
 					},
-					"required": ["label", "empty"]
+					"required": ["label", "empty", "fromRepository"]
 				},
 				"update": {
 					"type": "object",
@@ -7776,9 +7870,23 @@
 						},
 						"byLabel": {
 							"type": "string"
+						},
+						"dueDate": {
+							"type": "string"
+						},
+						"noDueDate": {
+							"type": "string"
 						}
 					},
-					"required": ["label", "none", "assignee", "priority", "byLabel"]
+					"required": [
+						"label",
+						"none",
+						"assignee",
+						"priority",
+						"byLabel",
+						"dueDate",
+						"noDueDate"
+					]
 				},
 				"preview": {
 					"type": "object",
@@ -7952,15 +8060,91 @@
 						},
 						"team": {
 							"type": "string"
+						},
+						"member": {
+							"type": "string"
+						},
+						"viewing": {
+							"type": "string"
 						}
 					},
-					"required": ["title", "team"]
+					"required": ["title", "team", "member", "viewing"]
+				},
+				"templates": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"name": {
+							"type": "string"
+						},
+						"save": {
+							"type": "string"
+						},
+						"delete": {
+							"type": "string"
+						},
+						"empty": {
+							"type": "string"
+						},
+						"applyTitle": {
+							"type": "string"
+						},
+						"applyWarning": {
+							"type": "string"
+						},
+						"apply": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"name",
+						"save",
+						"delete",
+						"empty",
+						"applyTitle",
+						"applyWarning",
+						"apply"
+					]
+				},
+				"titleTokens": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"labels": {
+							"type": "string"
+						},
+						"members": {
+							"type": "string"
+						},
+						"priority": {
+							"type": "string"
+						},
+						"hint": {
+							"type": "string"
+						}
+					},
+					"required": ["labels", "members", "priority", "hint"]
+				},
+				"boardSync": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"syncedWith": {
+							"type": "string"
+						}
+					},
+					"required": ["syncedWith"]
 				}
 			},
 			"required": [
 				"status",
 				"priority",
 				"boardSearchPlaceholder",
+				"boardClearSearch",
 				"view",
 				"common",
 				"detail",
@@ -7996,7 +8180,10 @@
 				"preview",
 				"milestone",
 				"parentTask",
-				"access"
+				"access",
+				"templates",
+				"titleTokens",
+				"boardSync"
 			]
 		},
 		"invitations": {
@@ -8641,6 +8828,9 @@
 						},
 						"agentsManagedByAdmins": {
 							"type": "string"
+						},
+						"agentsCredentialsHint": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -8649,7 +8839,8 @@
 						"you",
 						"people",
 						"agents",
-						"agentsManagedByAdmins"
+						"agentsManagedByAdmins",
+						"agentsCredentialsHint"
 					]
 				},
 				"agentManager": {
@@ -9043,6 +9234,12 @@
 						}
 					},
 					"required": ["all", "assigned", "created", "team"]
+				},
+				"flaggedCount": {
+					"type": "string"
+				},
+				"flaggedCount_other": {
+					"type": "string"
 				}
 			},
 			"required": [
@@ -9051,7 +9248,9 @@
 				"empty",
 				"count",
 				"includeCompleted",
-				"relation"
+				"relation",
+				"flaggedCount",
+				"flaggedCount_other"
 			]
 		},
 		"flags": {

@@ -1525,6 +1525,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Sincronizado con {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Fecha de vencimiento",
+			"noDueDate": "Sin fecha de vencimiento"
 		}
 	},
 	"invitations": {

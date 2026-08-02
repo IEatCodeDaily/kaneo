@@ -1751,6 +1751,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Συγχρονισμένο με {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Ημερομηνία λήξης",
+			"noDueDate": "Χωρίς ημερομηνία λήξης"
 		}
 	},
 	"invitations": {

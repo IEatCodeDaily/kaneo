@@ -1753,6 +1753,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "{{repo}}와 동기화됨"
+		},
+		"groupBy": {
+			"dueDate": "마감일",
+			"noDueDate": "마감일 없음"
 		}
 	},
 	"invitations": {

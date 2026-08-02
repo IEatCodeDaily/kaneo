@@ -1751,6 +1751,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Синхронизирано со {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Краен рок",
+			"noDueDate": "Без краен рок"
 		}
 	},
 	"invitations": {

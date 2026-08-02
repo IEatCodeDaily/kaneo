@@ -1,4 +1,4 @@
-import { Eye, Group, LayoutGrid, Rows3 } from "lucide-react";
+import { CalendarDays, Eye, Group, LayoutGrid, Rows3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { BoardDensity } from "@/components/kanban-board/board-density";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const GROUP_BY_LABEL_KEYS: Record<BoardGroupBy, string> = {
   assignee: "tasks:groupBy.assignee",
   priority: "tasks:groupBy.priority",
   label: "tasks:groupBy.byLabel",
+  dueDate: "tasks:groupBy.dueDate",
 };
 
 function BoardViewOptions({
@@ -69,6 +70,9 @@ function BoardViewOptions({
           >
             {BOARD_GROUP_BY_VALUES.map((value) => (
               <DropdownMenuRadioItem key={value} value={value}>
+                {value === "dueDate" ? (
+                  <CalendarDays className="size-4" />
+                ) : null}
                 {t(GROUP_BY_LABEL_KEYS[value])}
               </DropdownMenuRadioItem>
             ))}

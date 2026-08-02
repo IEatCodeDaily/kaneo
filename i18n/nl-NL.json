@@ -1526,6 +1526,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Gesynchroniseerd met {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Vervaldatum",
+			"noDueDate": "Geen vervaldatum"
 		}
 	},
 	"invitations": {

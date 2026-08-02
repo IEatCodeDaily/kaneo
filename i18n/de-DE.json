@@ -1793,6 +1793,10 @@
 		},
 		"boardSync": {
 			"syncedWith": "Synchronisiert mit {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Fälligkeitsdatum",
+			"noDueDate": "Kein Fälligkeitsdatum"
 		}
 	},
 	"invitations": {

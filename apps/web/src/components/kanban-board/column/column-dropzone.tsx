@@ -3,15 +3,18 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Tag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { groupTasks } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
+import { getInitials } from "@/lib/get-initials";
 import {
   collapseToggleLabel,
   groupSameBucketSubtasks,
 } from "@/lib/group-subtasks";
+import { getPriorityIcon } from "@/lib/priority";
 import type { BoardWithTasks } from "@/types/board";
 import { useBoardGroupBy } from "../board-view-context";
 import TaskCard from "../task-card";
@@ -57,7 +60,14 @@ export function ColumnDropzone({
     [column.tasks],
   );
 
-  const totalGroups = groupBy === "none" ? groups.length : column.tasks.length;
+  const taskGroups = useMemo(
+    () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
+    [column.tasks, groupBy],
+  );
+  const totalGroups =
+    groupBy === "none"
+      ? groups.length
+      : taskGroups.reduce((total, group) => total + group.tasks.length, 0);
 
   /**
    * Progressive mount.
@@ -120,10 +130,6 @@ export function ColumnDropzone({
   // Board-level "group by": buckets this column's tasks under a heading.
   // Only used when grouping is on, so the ungrouped path keeps its
   // progressive-mount behaviour untouched.
-  const taskGroups = useMemo(
-    () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
-    [column.tasks, groupBy],
-  );
   const visibleTaskGroups = useMemo(() => {
     let remaining = mountCount;
     return taskGroups.flatMap((group) => {
@@ -176,6 +182,24 @@ export function ColumnDropzone({
                 ? t(group.labelKey)
                 : group.label;
               const regionId = `${column.id}-task-group-${encodeURIComponent(groupKey)}`;
+              const firstTask = group.tasks[0];
+              const groupIcon =
+                groupBy === "assignee" ? (
+                  <Avatar className="size-4">
+                    <AvatarImage alt="" src={firstTask?.assigneeImage ?? ""} />
+                    <AvatarFallback className="text-[8px]">
+                      {getInitials(groupTitle)}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : groupBy === "priority" && groupKey ? (
+                  <span className="flex size-4 items-center justify-center [&>svg]:size-3.5">
+                    {getPriorityIcon(groupKey)}
+                  </span>
+                ) : groupBy === "label" ? (
+                  <Tag className="size-3.5" />
+                ) : groupBy === "dueDate" ? (
+                  <CalendarDays className="size-3.5" />
+                ) : null;
               return (
                 <section
                   className="flex flex-col gap-2"
@@ -205,6 +229,7 @@ export function ColumnDropzone({
                     ) : (
                       <ChevronDown className="size-3" />
                     )}
+                    {groupIcon}
                     <span>{groupTitle}</span>
                     <span className="ml-1.5 text-muted-foreground/70">
                       {group.tasks.length}

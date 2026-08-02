@@ -1,4 +1,10 @@
-import { addWeeks, endOfWeek, isWithinInterval, startOfWeek } from "date-fns";
+import {
+  addWeeks,
+  endOfWeek,
+  format,
+  isWithinInterval,
+  startOfWeek,
+} from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
@@ -26,6 +32,7 @@ export const BOARD_GROUP_BY_VALUES = [
   "assignee",
   "priority",
   "label",
+  "dueDate",
 ] as const;
 
 export type BoardGroupBy = (typeof BOARD_GROUP_BY_VALUES)[number];
@@ -52,6 +59,8 @@ function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
       const labels = task.labels ?? [];
       return labels.length > 0 ? labels.map((label) => label.name ?? "") : [""];
     }
+    case "dueDate":
+      return [task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""];
     default:
       return [""];
   }
@@ -62,6 +71,7 @@ const UNSET_LABEL_KEYS: Record<BoardGroupBy, string> = {
   assignee: "tasks:assignee.unassigned",
   priority: "tasks:groupBy.noPriority",
   label: "tasks:groupBy.noLabel",
+  dueDate: "tasks:groupBy.noDueDate",
 };
 
 /**
@@ -98,7 +108,14 @@ export function groupTasks(tasks: Task[], groupBy: BoardGroupBy): TaskGroup[] {
       key,
       ...(key === ""
         ? { labelKey: UNSET_LABEL_KEYS[groupBy] }
-        : { label: key }),
+        : {
+            label:
+              groupBy === "dueDate"
+                ? new Intl.DateTimeFormat(undefined, {
+                    dateStyle: "medium",
+                  }).format(new Date(`${key}T00:00:00`))
+                : key,
+          }),
       tasks: groupedTasks,
     }));
 }
