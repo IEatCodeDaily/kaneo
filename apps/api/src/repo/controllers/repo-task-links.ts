@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   boardTable,
+  externalLinkTable,
   repoIssueTable,
   repoPullRequestTable,
   taskRepoItemLinkTable,
@@ -38,6 +39,20 @@ function itemTable(itemType: RepoItemType) {
   return itemType === "issue" ? repoIssueTable : repoPullRequestTable;
 }
 
+/**
+ * Tasks linked to a repository issue or pull request, from BOTH linkage
+ * mechanisms (#174).
+ *
+ * A task can be attached to a GitHub item two independent ways:
+ *   1. `task_repo_item_link` — written by "Create synced issue in repo" and by
+ *      manual linking from the task's Resources panel;
+ *   2. `external_link` — written by the board↔GitHub integration, which has no
+ *      `task_repo_item_link` row at all.
+ *
+ * Reading only (1) is why board-integration-synced tasks were invisible here:
+ * 9 of 10 such tasks had no repo-item link, so the issue view showed an empty
+ * task list while the task itself displayed the issue as synced.
+ */
 export async function getRepoItemTaskLinks(
   repoId: string,
   number: number,
@@ -47,7 +62,7 @@ export async function getRepoItemTaskLinks(
   const item = itemTable(itemType);
   const itemId = itemColumn(itemType);
 
-  return db
+  const repoItemLinks = await db
     .select({
       id: taskRepoItemLinkTable.id,
       taskId: taskTable.id,
@@ -73,8 +88,83 @@ export async function getRepoItemTaskLinks(
         eq(item.repoId, repoId),
         eq(item.number, number),
         eq(boardTable.organizationId, organizationId),
+        isNull(taskTable.deletedAt),
       ),
     );
+
+  // Only issues arrive via the integration; pull requests have no such path.
+  if (itemType !== "issue") return repoItemLinks;
+
+  const integrationLinks = await getIntegrationTaskLinks(
+    repoId,
+    number,
+    organizationId,
+  );
+
+  // A task reachable through both mechanisms must appear once. The repo-item
+  // link wins because it carries the real sync flags.
+  const seen = new Set(repoItemLinks.map((link) => link.taskId));
+
+  return [
+    ...repoItemLinks,
+    ...integrationLinks.filter((link) => !seen.has(link.taskId)),
+  ];
+}
+
+/**
+ * Tasks attached to an issue by the board↔GitHub integration (#174).
+ *
+ * `external_link` stores the issue as a URL plus its number, with no repo
+ * foreign key, so the repository is matched on the mirrored item's own URL
+ * rather than a join column.
+ */
+async function getIntegrationTaskLinks(
+  repoId: string,
+  number: number,
+  organizationId: string,
+): Promise<TaskLink[]> {
+  const issue = await db.query.repoIssueTable.findFirst({
+    where: and(
+      eq(repoIssueTable.repoId, repoId),
+      eq(repoIssueTable.number, number),
+    ),
+    columns: { url: true },
+  });
+  if (!issue?.url) return [];
+
+  const rows = await db
+    .select({
+      id: externalLinkTable.id,
+      taskId: taskTable.id,
+      createdAt: externalLinkTable.createdAt,
+      task: {
+        id: taskTable.id,
+        title: taskTable.title,
+        status: taskTable.status,
+        priority: taskTable.priority,
+        number: taskTable.number,
+        boardId: taskTable.boardId,
+      },
+    })
+    .from(externalLinkTable)
+    .innerJoin(taskTable, eq(externalLinkTable.taskId, taskTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .where(
+      and(
+        eq(externalLinkTable.resourceType, "issue"),
+        eq(externalLinkTable.url, issue.url),
+        eq(boardTable.organizationId, organizationId),
+        isNull(taskTable.deletedAt),
+      ),
+    );
+
+  return rows.map((row) => ({
+    ...row,
+    // The integration link IS the sync; it has no separate flag or break state.
+    syncEnabled: true,
+    syncBrokenAt: null,
+    syncBrokenReason: null,
+  }));
 }
 
 export async function getTaskRepoItemLinks(
