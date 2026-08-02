@@ -1428,7 +1428,10 @@
 			},
 			"draftSaved": "Draf tersimpan",
 			"deleteDraft": "Hapus draf"
-		}
+		},
+		"statusRun": "memindahkan ini dari {{from}} ke {{to}}",
+		"statusRunNoOp": "mengubah status beberapa kali, kembali ke {{status}}",
+		"statusRunSteps": "{{count}} langkah"
 	},
 	"tasks": {
 		"status": {

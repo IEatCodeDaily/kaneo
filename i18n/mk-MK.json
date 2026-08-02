@@ -1283,7 +1283,10 @@
 			},
 			"draftSaved": "Нацртот е зачуван",
 			"deleteDraft": "Избриши нацрт"
-		}
+		},
+		"statusRun": "го премести од {{from}} во {{to}}",
+		"statusRunNoOp": "го смени статусот неколку пати, враќајќи се на {{status}}",
+		"statusRunSteps": "{{count}} чекори"
 	},
 	"tasks": {
 		"status": {
