@@ -2019,7 +2019,8 @@
 		},
 		"access": {
 			"title": "Board access",
-			"team": "Team"
+			"team": "Team",
+			"member": "Member"
 		},
 		"titleTokens": {
 			"labels": "Labels",
