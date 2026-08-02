@@ -66,6 +66,7 @@ import slackIntegration from "./slack-integration";
 import { getPrivateObject } from "./storage/s3";
 import task from "./task";
 import taskRelation from "./task-relation";
+import taskTemplate from "./task-template";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
 import {
@@ -618,6 +619,7 @@ export function createApp() {
   const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
   const milestoneApi = api.route("/milestone", milestone);
+  const taskTemplateApi = api.route("/task-template", taskTemplate);
   const notificationApi = api.route("/notification", notification);
   const notificationPreferencesApi = api.route(
     "/notification-preferences",
@@ -819,6 +821,7 @@ export function createApp() {
     flagApi,
     labelApi,
     milestoneApi,
+    taskTemplateApi,
     notificationApi,
     notificationPreferencesApi,
     boardApi,

@@ -18,6 +18,7 @@ import TitleTokenSuggestions, {
 import CreateTaskTopbar from "@/components/task/create-task-topbar";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
 import { formatTaskMarkdown } from "@/components/task/task-markdown";
+import TaskTemplateMenu from "@/components/task/task-template-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -873,20 +874,43 @@ function CreateTaskModal({
         showCloseButton={false}
       >
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle asChild>
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="text-muted-foreground font-semibold tracking-wider text-sm">
-                  {board?.slug?.toUpperCase() ||
-                    t("common:modals.createTask.breadcrumbTask")}
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem className="text-foreground font-medium text-sm">
-                  {t("common:modals.createTask.title")}
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle asChild>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="text-muted-foreground font-semibold tracking-wider text-sm">
+                    {board?.slug?.toUpperCase() ||
+                      t("common:modals.createTask.breadcrumbTask")}
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem className="text-foreground font-medium text-sm">
+                    {t("common:modals.createTask.title")}
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </DialogTitle>
+            {organization?.id ? (
+              <TaskTemplateMenu
+                organizationId={organization.id}
+                current={{
+                  title,
+                  description: description || null,
+                  priority,
+                  startDate: startDate?.toISOString() ?? null,
+                  dueDate: dueDate?.toISOString() ?? null,
+                }}
+                onApply={({ data }) => {
+                  setTitle(data.title);
+                  setDescription(data.description ?? "");
+                  setPriority((data.priority as Priority) ?? "no-priority");
+                  setStartDate(
+                    data.startDate ? new Date(data.startDate) : undefined,
+                  );
+                  setDueDate(data.dueDate ? new Date(data.dueDate) : undefined);
+                }}
+              />
+            ) : null}
+          </div>
           <DialogDescription className="sr-only">
             {t("common:modals.createTask.description")}
           </DialogDescription>

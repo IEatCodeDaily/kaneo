@@ -8,7 +8,16 @@ import {
   Github,
   Plus,
 } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import labelColors from "@/constants/label-colors";
+import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
@@ -44,6 +54,7 @@ import TaskPriorityPopover from "./task-priority-popover";
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
 import TaskSyncedIssueProperty from "./task-synced-issue-property";
+import TaskTemplateMenu, { type TaskTemplateData } from "./task-template-menu";
 
 function slugify(text: string | undefined): string {
   if (!text) return "";
@@ -84,6 +95,9 @@ export default function TaskPropertiesSidebar({
 }: TaskPropertiesSidebarProps) {
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId ?? "");
+  const { mutate: updateTask } = useUpdateTask();
+  const [pendingTemplate, setPendingTemplate] =
+    useState<TaskTemplateData | null>(null);
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: columns = [] } = useGetColumns(boardId);
   const { data: organizationMembers } =
@@ -134,6 +148,51 @@ export default function TaskPropertiesSidebar({
 
   return (
     <div className={className} data-slot="task-properties-sidebar">
+      {task ? (
+        <div className="mb-2 flex justify-end">
+          <TaskTemplateMenu
+            organizationId={organizationId}
+            current={{
+              title: task.title,
+              description: task.description,
+              priority: task.priority,
+              startDate: task.startDate,
+              dueDate: task.dueDate,
+            }}
+            onApply={({ data }) => setPendingTemplate(data)}
+          />
+        </div>
+      ) : null}
+      <AlertDialog
+        open={Boolean(pendingTemplate)}
+        onOpenChange={(open) => !open && setPendingTemplate(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("tasks:templates.applyTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("tasks:templates.applyWarning")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setPendingTemplate(null)}>
+              {t("common:actions.cancel")}
+            </Button>
+            <Button
+              onClick={() => {
+                if (task && pendingTemplate) {
+                  updateTask({ ...task, ...pendingTemplate });
+                }
+                setPendingTemplate(null);
+              }}
+            >
+              {t("tasks:templates.apply")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
         {/* Compact mode: properties + icons in one row */}
         {compact && (

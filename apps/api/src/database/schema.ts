@@ -858,10 +858,7 @@ export const labelTable = pgTable(
      * `repo` is one that arrived with an issue imported from a linked
      * repository. Defaults to `kaneo` so pre-existing rows stay valid.
      */
-    source: text("source")
-      .$type<"kaneo" | "repo">()
-      .notNull()
-      .default("kaneo"),
+    source: text("source").$type<"kaneo" | "repo">().notNull().default("kaneo"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -886,6 +883,40 @@ export const labelTable = pgTable(
     uniqueIndex("label_organization_name_unique")
       .on(table.organizationId, table.name)
       .where(sql`${table.taskId} is null`),
+  ],
+);
+
+export const taskTemplateTable = pgTable(
+  "task_template",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    data: jsonb("data")
+      .$type<{
+        title: string;
+        description: string | null;
+        priority: string | null;
+        startDate: string | null;
+        dueDate: string | null;
+      }>()
+      .notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("task_template_organization_id_idx").on(table.organizationId),
+    unique("task_template_organization_name_unique").on(
+      table.organizationId,
+      table.name,
+    ),
   ],
 );
 

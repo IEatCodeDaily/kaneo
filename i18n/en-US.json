@@ -2024,6 +2024,16 @@
 			"member": "Member",
 			"viewing": "Viewing"
 		},
+		"templates": {
+			"label": "Templates",
+			"name": "Template name",
+			"save": "Save current values",
+			"delete": "Delete template",
+			"empty": "No templates yet",
+			"applyTitle": "Apply task template?",
+			"applyWarning": "This replaces the current title, description, priority and dates.",
+			"apply": "Replace current values"
+		},
 		"titleTokens": {
 			"labels": "Labels",
 			"members": "Members",
