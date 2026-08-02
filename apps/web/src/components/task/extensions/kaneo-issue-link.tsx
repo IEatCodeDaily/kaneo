@@ -126,10 +126,34 @@ export const KaneoIssueLink = Node.create({
   selectable: false,
 
   addAttributes() {
+    /*
+     * #128: each attribute needs an explicit parseHTML.
+     *
+     * Tiptap's default parser looks for a DOM attribute named exactly like the
+     * attribute key, i.e. `issueKey` / `taskId`. renderHTML writes kebab-case
+     * (`issue-key`, `task-id`, plus `data-` variants), so on the way back in
+     * nothing matched and both fell back to "". That is why a saved mention
+     * reloaded as `issue-key="" task-id=""` and rendered blank.
+     */
     return {
-      url: { default: "" },
-      issueKey: { default: "" },
-      taskId: { default: "" },
+      url: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("url") ?? "",
+      },
+      issueKey: {
+        default: "",
+        parseHTML: (element) =>
+          element.getAttribute("issue-key") ??
+          element.getAttribute("data-issue-key") ??
+          "",
+      },
+      taskId: {
+        default: "",
+        parseHTML: (element) =>
+          element.getAttribute("task-id") ??
+          element.getAttribute("data-task-id") ??
+          "",
+      },
     };
   },
 
@@ -168,6 +192,14 @@ export const KaneoIssueLink = Node.create({
     const issueKey = String(node.attrs?.issueKey || "");
     const taskId = String(node.attrs?.taskId || "");
     if (!url) return "";
-    return `\n<kaneo-issue-link url="${url}" issue-key="${issueKey}" task-id="${taskId}" />\n`;
+    /*
+     * #128: an explicit closing tag, NOT a self-closing `/>`.
+     *
+     * `<kaneo-issue-link ... />` is not valid HTML for a non-void element, so
+     * the parser treats it as an OPEN tag and swallows everything after it —
+     * which is why a description lost all of its text following a mention.
+     * Custom elements must be written `<tag ...></tag>`.
+     */
+    return `\n<kaneo-issue-link url="${url}" issue-key="${issueKey}" task-id="${taskId}"></kaneo-issue-link>\n`;
   },
 });

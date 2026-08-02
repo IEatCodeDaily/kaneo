@@ -39,6 +39,12 @@ vi.mock("@/hooks/queries/task/use-get-my-tasks", () => ({
   default: () => ({ data: [{ id: "t-1" }, { id: "t-2" }, { id: "t-3" }] }),
 }));
 
+// #141: the My Tickets badge counts assigned + flagged, so the flags query
+// needs a stub here too — without it the badge hits a real QueryClient.
+vi.mock("@/hooks/queries/flag/use-get-my-flags", () => ({
+  default: () => ({ data: [] }),
+}));
+
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>

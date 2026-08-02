@@ -15,7 +15,29 @@
  * like a fresh change (which re-triggers the debounced save in a loop).
  */
 export function formatTaskMarkdown(markdown: string) {
-  return markdown.replace(/\r\n/g, "\n").replace(/\n+$/g, "");
+  return repairSelfClosingIssueLinks(
+    markdown.replace(/\r\n/g, "\n").replace(/\n+$/g, ""),
+  );
+}
+
+/**
+ * #128: repair legacy self-closing ticket mentions.
+ *
+ * `<kaneo-issue-link ... />` is not valid HTML for a non-void element, so the
+ * parser treats it as an OPEN tag and everything after it gets swallowed into
+ * the element — the mention rendered blank AND the rest of the description
+ * disappeared.
+ *
+ * The serializer now emits an explicit closing tag, but descriptions already
+ * saved in the old form are still in the database. Normalizing on the hydrate
+ * path repairs them in place, and because this function also runs on save the
+ * repaired form is what gets written back.
+ */
+function repairSelfClosingIssueLinks(markdown: string) {
+  return markdown.replace(
+    /<kaneo-issue-link\b([^>]*?)\s*\/>/g,
+    "<kaneo-issue-link$1></kaneo-issue-link>",
+  );
 }
 
 export default formatTaskMarkdown;
