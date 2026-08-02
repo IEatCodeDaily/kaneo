@@ -34,6 +34,7 @@ type AccessEntry = {
   name: string;
   detail: string;
   image?: string | null;
+  userId?: string;
 };
 
 type BoardAccessAvatarsProps = {
@@ -49,9 +50,8 @@ type BoardAccessAvatarsProps = {
  * board. With no resource grants every organization member has access (same
  * rule the resource-grant editor states), so we fall back to the member list.
  *
- * There is no presence/heartbeat signal in the API today (the board websocket
- * only broadcasts data mutations, never a member roster), so no online/offline
- * dot is rendered — that needs a backend presence channel first.
+ * Board sockets publish a deduplicated viewer roster. Repo pages do not yet
+ * have an equivalent socket, so their access list remains roster-only.
  */
 export default function BoardAccessAvatars({
   organizationId,
@@ -65,6 +65,11 @@ export default function BoardAccessAvatars({
   const { data: organizationMembers } =
     useGetActiveOrganizationMembers(organizationId);
   const members = organizationMembers?.members ?? [];
+  const { data: presentUserIds = [] } = useQuery<string[]>({
+    queryKey: ["board-presence", resourceId],
+    queryFn: () => [],
+    enabled: false,
+  });
 
   const { data: grants = [] } = useQuery<Grant[]>({
     queryKey: ["resource-grants", organizationId, resourceType, resourceId],
@@ -110,6 +115,7 @@ export default function BoardAccessAvatars({
     name: member.user?.name || member.user?.email || t("common:unknown"),
     detail: member.role ?? "",
     image: member.user?.image ?? null,
+    userId: member.userId,
   }));
 
   const teamEntries: AccessEntry[] = grants
@@ -162,7 +168,7 @@ export default function BoardAccessAvatars({
                       render={
                         <span
                           data-testid={`board-access-avatar-${entry.key}`}
-                          className="-ml-1.5 first:ml-0"
+                          className="relative -ml-1.5 inline-flex first:ml-0"
                         >
                           <Avatar className="size-6 border border-background ring-1 ring-border">
                             {entry.kind === "member" && entry.image ? (
@@ -176,6 +182,13 @@ export default function BoardAccessAvatars({
                               )}
                             </AvatarFallback>
                           </Avatar>
+                          {entry.userId &&
+                          presentUserIds.includes(entry.userId) ? (
+                            <span
+                              title={t("tasks:access.viewing")}
+                              className="absolute right-0 bottom-0 size-2 rounded-full border border-background bg-success"
+                            />
+                          ) : null}
                         </span>
                       }
                     />
@@ -226,6 +239,11 @@ export default function BoardAccessAvatars({
                 <span className="min-w-0 flex-1 truncate text-xs">
                   {entry.name}
                 </span>
+                {entry.userId && presentUserIds.includes(entry.userId) ? (
+                  <span className="text-[10px] text-success-foreground">
+                    {t("tasks:access.viewing")}
+                  </span>
+                ) : null}
                 {/* The access type is the point of the list — always shown. */}
                 <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground capitalize">
                   {entry.detail || t("tasks:access.member")}

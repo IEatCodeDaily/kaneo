@@ -2021,7 +2021,8 @@
 		"access": {
 			"title": "Board access",
 			"team": "Team",
-			"member": "Member"
+			"member": "Member",
+			"viewing": "Viewing"
 		},
 		"titleTokens": {
 			"labels": "Labels",

@@ -48,6 +48,26 @@ const connections = new Map<string, Connection>();
 function handleMessage(event: MessageEvent, queryClient: QueryClient) {
   try {
     const message = JSON.parse(event.data);
+    if (message.type === "PRESENCE_SNAPSHOT") {
+      queryClient.setQueryData(
+        ["board-presence", message.boardId],
+        message.userIds,
+      );
+      return;
+    }
+    if (
+      message.type === "PRESENCE_JOINED" ||
+      message.type === "PRESENCE_LEFT"
+    ) {
+      queryClient.setQueryData<string[]>(
+        ["board-presence", message.boardId],
+        (current = []) =>
+          message.type === "PRESENCE_JOINED"
+            ? [...new Set([...current, message.userId])]
+            : current.filter((id) => id !== message.userId),
+      );
+      return;
+    }
     if (
       message.type === "TASK_UPDATED" ||
       message.type === "TASK_CREATED" ||

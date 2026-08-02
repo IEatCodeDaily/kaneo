@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mockMembers = vi.fn();
 const mockGrants = vi.fn();
+let presentUserIds: string[] = [];
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -17,6 +18,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQuery: (options: { queryKey: unknown[] }) => {
     const key = options.queryKey?.[0];
     if (key === "resource-grants") return mockGrants();
+    if (key === "board-presence") return { data: presentUserIds };
     return { data: [] };
   },
 }));
@@ -40,6 +42,7 @@ function member(id: string, name: string, role: string) {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  presentUserIds = [];
 });
 
 /**
@@ -169,5 +172,27 @@ describe("BoardAccessAvatars dropdown (#91)", () => {
     // ...the dropdown is not.
     fireEvent.click(screen.getByTestId("board-access-trigger"));
     expect(screen.getAllByTestId(/^board-access-row-/)).toHaveLength(9);
+  });
+
+  it("marks members with an active board socket as viewing", () => {
+    presentUserIds = ["u2"];
+    mockMembers.mockReturnValue({
+      data: {
+        members: [
+          member("u1", "Raisal", "owner"),
+          member("u2", "Zephyr", "admin"),
+        ],
+        total: 2,
+      },
+    });
+    mockGrants.mockReturnValue({ data: [] });
+
+    render(<BoardAccessAvatars organizationId="org-1" resourceId="board-1" />);
+    expect(screen.getAllByTitle("tasks:access.viewing")).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId("board-access-trigger"));
+    expect(
+      screen.getByTestId("board-access-row-member-u2").textContent,
+    ).toContain("tasks:access.viewing");
   });
 });
