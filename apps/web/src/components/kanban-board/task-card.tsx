@@ -54,7 +54,7 @@ type TaskCardProps = {
   disableDragDrop?: boolean;
 };
 
-const TaskCardContent = memo(function TaskCardContent({
+export const TaskCardContent = memo(function TaskCardContent({
   task,
   disableDragDrop = false,
   isDragging,
@@ -476,6 +476,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
   } = useSortable({ id: task.id, disabled: disableDragDrop });
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
+
     transition:
       transition || "transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
     opacity: isDragging ? 0.6 : 1,

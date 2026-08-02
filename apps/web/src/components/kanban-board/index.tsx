@@ -30,7 +30,7 @@ import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 
 import Column from "./column";
-import TaskCard from "./task-card";
+import { TaskCardContent } from "./task-card";
 
 type KanbanBoardProps = {
   board: BoardWithTasks;
@@ -239,7 +239,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
         {activeTask ? (
           <div className="transform rotate-1 scale-[1.03] shadow-lg">
             <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} />
+              <TaskCardContent task={activeTask} isDragging />
             </div>
           </div>
         ) : null}
