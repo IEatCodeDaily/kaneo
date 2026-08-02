@@ -22,6 +22,25 @@ describe("groupTasks", () => {
       label: "Raisal Wardana",
     });
   });
+
+  it("groups due dates by the same local calendar day the card displays", () => {
+    const previousTimezone = process.env.TZ;
+    process.env.TZ = "Pacific/Kiritimati";
+    try {
+      const task = {
+        id: "dated",
+        title: "Dated task",
+        dueDate: "2026-08-07T12:00:00.000Z",
+        labels: [],
+      };
+
+      expect(groupTasks([task as never], "dueDate")[0]).toMatchObject({
+        key: "2026-08-08",
+      });
+    } finally {
+      process.env.TZ = previousTimezone;
+    }
+  });
 });
 
 describe("useTaskFiltersWithLabelsSupport", () => {
