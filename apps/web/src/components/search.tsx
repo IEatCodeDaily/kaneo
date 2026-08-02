@@ -4,13 +4,21 @@ import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchCommandMenu from "@/components/search-command-menu";
-import { SidebarGroup } from "@/components/ui/sidebar";
+import { SidebarGroup, useSidebar } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 export default function Search() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   useRegisterShortcuts({
     shortcuts: {
@@ -19,6 +27,39 @@ export default function Search() {
       },
     },
   });
+
+  /*
+   * #96: collapsed, the search field morphs into a single icon button with a
+   * hover tooltip — the bordered input plus its shortcut hint looked clipped
+   * and unfinished in a 64px rail.
+   */
+  if (isCollapsed) {
+    return (
+      <SidebarGroup className="pb-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  aria-label={t("navigation:commandPalette.search")}
+                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                  data-testid="sidebar-search-collapsed"
+                  onClick={() => setOpen(true)}
+                  type="button"
+                >
+                  <SearchIcon aria-hidden="true" size={16} />
+                </button>
+              }
+            />
+            <TooltipContent side="right">
+              {t("navigation:commandPalette.search")}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <SearchCommandMenu open={open} setOpen={setOpen} />
+      </SidebarGroup>
+    );
+  }
 
   return (
     <SidebarGroup className="pb-1">

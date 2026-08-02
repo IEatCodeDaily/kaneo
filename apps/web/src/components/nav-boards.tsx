@@ -4,6 +4,7 @@ import {
   EyeOff,
   Folder,
   Forward,
+  LayoutGrid,
   MoreHorizontal,
   Plus,
   Settings,
@@ -221,6 +222,32 @@ export function NavBoards() {
 
   return (
     <>
+      {/*
+        #96: collapsed, the whole boards tree would be unreadable in a 64px
+        rail, but hiding it entirely left the rail with no way to reach a
+        board. Show a single "Boards" icon that opens the overview, with the
+        name on hover.
+      */}
+      <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              data-testid="sidebar-boards-collapsed"
+              onClick={() =>
+                navigate({
+                  to: "/dashboard/organization/$organizationId",
+                  params: { organizationId: organization.id },
+                })
+              }
+              tooltip={t("navigation:sidebar.boards")}
+            >
+              <LayoutGrid aria-hidden="true" />
+              <span>{t("navigation:sidebar.boards")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
       <SidebarGroup className="group/boards group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
         <div className="relative flex items-center">
           <SidebarGroupLabel

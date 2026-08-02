@@ -19,6 +19,7 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useRememberCurrentView } from "@/hooks/use-remembered-view";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
+import { cn } from "@/lib/cn";
 import Search from "./search";
 
 /**
@@ -35,6 +36,7 @@ import Search from "./search";
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const { data: organization } = useActiveOrganization();
   const organizationInitials = organization?.name
     ?.split(/\s+/)
@@ -71,9 +73,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="flex w-full items-center gap-1"
           data-testid="sidebar-header"
         >
-          <TeamViewSelector />
+          {/*
+            #96: collapsed shows ONLY the sidebar toggle — no team selector.
+            The rail is a navigation strip, not a control panel.
+          */}
+          {!isCollapsed && <TeamViewSelector />}
           <SidebarTrigger
-            className="ml-auto shrink-0"
+            className={cn("shrink-0", !isCollapsed && "ml-auto")}
             data-testid="sidebar-toggle"
           />
         </div>
@@ -108,9 +114,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             )}
           </div>
-          <div className="h-8 w-8 shrink-0">
-            <UserAvatar />
-          </div>
+          {/*
+            #96: collapsed shows only the organization logo. The user avatar is
+            an extra control in a strip that should read as pure navigation;
+            it returns as soon as the sidebar expands.
+          */}
+          {!isCollapsed && (
+            <div className="h-8 w-8 shrink-0">
+              <UserAvatar />
+            </div>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>

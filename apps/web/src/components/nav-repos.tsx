@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   CircleDot,
   ExternalLink,
+  GitBranch,
   GitPullRequest,
   MoreHorizontal,
   Plus,
@@ -109,183 +110,210 @@ export function NavRepos() {
     });
 
   return (
-    <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
-      <div className="flex h-7 items-center">
-        <SidebarGroupLabel
-          className="h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground"
-          render={<button type="button" />}
-          onClick={() =>
-            navigate({
-              to: "/dashboard/organization/$organizationId/repo",
-              params: { organizationId: organization.id },
-            })
-          }
-        >
-          <span>{t("navigation:sidebar.repos")}</span>
-          <Badge className="h-4 px-1 text-[9px]" variant="secondary">
-            Beta
-          </Badge>
-        </SidebarGroupLabel>
-        {canCreateRepo && (
-          <button
-            aria-label="Add repository"
-            className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-hover/repos:opacity-100"
-            onClick={() => setAddRepoOpen(true)}
-            type="button"
-          >
-            <Plus className="size-3.5" />
-          </button>
-        )}
-        {hiddenRepos.length > 0 && (
-          <Menu>
-            <MenuTrigger
-              render={
-                <button
-                  aria-label="Repository sidebar options"
-                  className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                  type="button"
-                />
+    <>
+      {/* #96: collapsed, a single "Repos" icon that opens the overview. */}
+      <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              data-testid="sidebar-repos-collapsed"
+              onClick={() =>
+                navigate({
+                  to: "/dashboard/organization/$organizationId/repo",
+                  params: { organizationId: organization?.id ?? "" },
+                })
               }
+              tooltip={t("navigation:sidebar.repos")}
             >
-              <MoreHorizontal className="size-3.5" />
-            </MenuTrigger>
-            <MenuPopup align="end">
-              {hiddenRepos.map((repo) => (
-                <MenuItem
-                  key={repo.id}
-                  onClick={() =>
-                    setRepoSidebarVisibility(user?.id ?? "", repo.id, true)
-                  }
-                >
-                  Show {repo.name}
-                </MenuItem>
-              ))}
-            </MenuPopup>
-          </Menu>
-        )}
-      </div>
-      <SidebarGroupContent>
-        <SidebarMenu className="gap-0.5">
-          <SidebarSortableList
-            ids={visibleRepos.map((repo) => repo.id)}
-            onReorder={(ids) => setRepoSidebarOrder(user?.id ?? "", ids)}
-          >
-            {visibleRepos.map((repo) => (
-              <SidebarSortableItem id={repo.id} key={repo.id}>
-                <ContextMenu>
-                  <ContextMenuTrigger asChild>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
-                        isActive={isCurrentRepo(repo.id)}
-                        onClick={() => openRepo(repo.id)}
-                        {...intentPrefetchHandlers(() =>
-                          prefetchRepoNavigation(queryClient, repo.id),
-                        )}
-                        size="default"
-                      >
-                        <span className="truncate">{repo.name}</span>
-                        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-sidebar-foreground/70">
-                          <span className="flex items-center gap-0.5">
-                            <CircleDot className="h-3 w-3" />
-                            {repo.openIssueCount}
-                          </span>
-                          <span className="flex items-center gap-0.5">
-                            <GitPullRequest className="h-3 w-3" />
-                            {repo.openPullRequestCount}
-                          </span>
-                        </span>
-                      </SidebarMenuButton>
-                      <Menu>
-                        <MenuTrigger
-                          render={
-                            <SidebarMenuAction
-                              aria-label={`Actions for ${repo.name}`}
-                              showOnHover
-                            />
-                          }
-                        >
-                          <MoreHorizontal />
-                        </MenuTrigger>
-                        <MenuPopup align="end" side="right">
-                          <MenuItem onClick={() => openRepo(repo.id)}>
-                            <ExternalLink />
-                            Open
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() =>
-                              navigate({
-                                to: "/dashboard/settings/repos/$repoId/visibility",
-                                params: { repoId: repo.id },
-                              })
-                            }
-                          >
-                            <Settings />
-                            Settings
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() =>
-                              setRepoSidebarVisibility(
-                                user?.id ?? "",
-                                repo.id,
-                                false,
-                              )
-                            }
-                          >
-                            Hide from sidebar
-                          </MenuItem>
-                        </MenuPopup>
-                      </Menu>
-                    </SidebarMenuItem>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-44">
-                    <ContextMenuItem onClick={() => openRepo(repo.id)}>
-                      <ExternalLink />
-                      Open
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() =>
-                        navigate({
-                          to: "/dashboard/settings/repos/$repoId/visibility",
-                          params: { repoId: repo.id },
-                        })
-                      }
-                    >
-                      <Settings />
-                      Settings
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() =>
-                        setRepoSidebarVisibility(user?.id ?? "", repo.id, false)
-                      }
-                    >
-                      Hide from sidebar
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
-              </SidebarSortableItem>
-            ))}
-          </SidebarSortableList>
-          <NavHiddenItems
-            isActive={(repoId) => isCurrentRepo(repoId)}
-            items={hiddenRepos.map((repo) => ({
-              id: repo.id,
-              name: repo.name,
-            }))}
-            label={t("navigation:sidebar.moreRepos")}
-            onIntent={(repoId) => prefetchRepoNavigation(queryClient, repoId)}
-            onSelect={(repoId) => openRepo(repoId)}
-            testIdPrefix="repos"
-          />
+              <GitBranch aria-hidden="true" />
+              <span>{t("navigation:sidebar.repos")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarGroupContent>
-      {canCreateRepo && (
-        <AddRepoDialog
-          onOpenChange={setAddRepoOpen}
-          open={addRepoOpen}
-          organizationId={organization.id}
-        />
-      )}
-    </SidebarGroup>
+      </SidebarGroup>
+
+      <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
+        <div className="flex h-7 items-center">
+          <SidebarGroupLabel
+            className="h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground"
+            render={<button type="button" />}
+            onClick={() =>
+              navigate({
+                to: "/dashboard/organization/$organizationId/repo",
+                params: { organizationId: organization.id },
+              })
+            }
+          >
+            <span>{t("navigation:sidebar.repos")}</span>
+            <Badge className="h-4 px-1 text-[9px]" variant="secondary">
+              Beta
+            </Badge>
+          </SidebarGroupLabel>
+          {canCreateRepo && (
+            <button
+              aria-label="Add repository"
+              className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-hover/repos:opacity-100"
+              onClick={() => setAddRepoOpen(true)}
+              type="button"
+            >
+              <Plus className="size-3.5" />
+            </button>
+          )}
+          {hiddenRepos.length > 0 && (
+            <Menu>
+              <MenuTrigger
+                render={
+                  <button
+                    aria-label="Repository sidebar options"
+                    className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    type="button"
+                  />
+                }
+              >
+                <MoreHorizontal className="size-3.5" />
+              </MenuTrigger>
+              <MenuPopup align="end">
+                {hiddenRepos.map((repo) => (
+                  <MenuItem
+                    key={repo.id}
+                    onClick={() =>
+                      setRepoSidebarVisibility(user?.id ?? "", repo.id, true)
+                    }
+                  >
+                    Show {repo.name}
+                  </MenuItem>
+                ))}
+              </MenuPopup>
+            </Menu>
+          )}
+        </div>
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-0.5">
+            <SidebarSortableList
+              ids={visibleRepos.map((repo) => repo.id)}
+              onReorder={(ids) => setRepoSidebarOrder(user?.id ?? "", ids)}
+            >
+              {visibleRepos.map((repo) => (
+                <SidebarSortableItem id={repo.id} key={repo.id}>
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
+                          isActive={isCurrentRepo(repo.id)}
+                          onClick={() => openRepo(repo.id)}
+                          {...intentPrefetchHandlers(() =>
+                            prefetchRepoNavigation(queryClient, repo.id),
+                          )}
+                          size="default"
+                        >
+                          <span className="truncate">{repo.name}</span>
+                          <span className="ml-auto flex items-center gap-1.5 text-[11px] text-sidebar-foreground/70">
+                            <span className="flex items-center gap-0.5">
+                              <CircleDot className="h-3 w-3" />
+                              {repo.openIssueCount}
+                            </span>
+                            <span className="flex items-center gap-0.5">
+                              <GitPullRequest className="h-3 w-3" />
+                              {repo.openPullRequestCount}
+                            </span>
+                          </span>
+                        </SidebarMenuButton>
+                        <Menu>
+                          <MenuTrigger
+                            render={
+                              <SidebarMenuAction
+                                aria-label={`Actions for ${repo.name}`}
+                                showOnHover
+                              />
+                            }
+                          >
+                            <MoreHorizontal />
+                          </MenuTrigger>
+                          <MenuPopup align="end" side="right">
+                            <MenuItem onClick={() => openRepo(repo.id)}>
+                              <ExternalLink />
+                              Open
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() =>
+                                navigate({
+                                  to: "/dashboard/settings/repos/$repoId/visibility",
+                                  params: { repoId: repo.id },
+                                })
+                              }
+                            >
+                              <Settings />
+                              Settings
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() =>
+                                setRepoSidebarVisibility(
+                                  user?.id ?? "",
+                                  repo.id,
+                                  false,
+                                )
+                              }
+                            >
+                              Hide from sidebar
+                            </MenuItem>
+                          </MenuPopup>
+                        </Menu>
+                      </SidebarMenuItem>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-44">
+                      <ContextMenuItem onClick={() => openRepo(repo.id)}>
+                        <ExternalLink />
+                        Open
+                      </ContextMenuItem>
+                      <ContextMenuItem
+                        onClick={() =>
+                          navigate({
+                            to: "/dashboard/settings/repos/$repoId/visibility",
+                            params: { repoId: repo.id },
+                          })
+                        }
+                      >
+                        <Settings />
+                        Settings
+                      </ContextMenuItem>
+                      <ContextMenuItem
+                        onClick={() =>
+                          setRepoSidebarVisibility(
+                            user?.id ?? "",
+                            repo.id,
+                            false,
+                          )
+                        }
+                      >
+                        Hide from sidebar
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                </SidebarSortableItem>
+              ))}
+            </SidebarSortableList>
+            <NavHiddenItems
+              isActive={(repoId) => isCurrentRepo(repoId)}
+              items={hiddenRepos.map((repo) => ({
+                id: repo.id,
+                name: repo.name,
+              }))}
+              label={t("navigation:sidebar.moreRepos")}
+              onIntent={(repoId) => prefetchRepoNavigation(queryClient, repoId)}
+              onSelect={(repoId) => openRepo(repoId)}
+              testIdPrefix="repos"
+            />
+          </SidebarMenu>
+        </SidebarGroupContent>
+        {canCreateRepo && (
+          <AddRepoDialog
+            onOpenChange={setAddRepoOpen}
+            open={addRepoOpen}
+            organizationId={organization.id}
+          />
+        )}
+      </SidebarGroup>
+    </>
   );
 }
