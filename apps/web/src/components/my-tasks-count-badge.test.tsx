@@ -46,6 +46,52 @@ describe("MyTasksCountBadge", () => {
     render(<MyTasksCountBadge organizationId="org-1" />);
 
     expect(screen.getByTestId("my-tasks-count-badge").textContent).toBe("3");
+    // No flags -> no warning bubble at all, not a "0".
+    expect(screen.queryByTestId("my-tasks-flagged-badge")).toBeNull();
+  });
+
+  /**
+   * KFL-141, second round: "it's not flagged + assigned, it's flagged AND
+   * assigned. so current white number should be assigned. flagged should be
+   * different colour, like warning."
+   *
+   * 12 assigned + 2 flagged renders as TWO bubbles, 12 and 2 — not 14.
+   */
+  it("shows assigned and flagged as two separate counts", () => {
+    withTasks(Array.from({ length: 12 }, (_, i) => ({ id: `t-${i}` })));
+    withFlags([
+      { taskId: "f-1", resolvedAt: null },
+      { taskId: "f-2", resolvedAt: null },
+    ]);
+
+    render(<MyTasksCountBadge organizationId="org-1" />);
+
+    expect(screen.getByTestId("my-tasks-count-badge").textContent).toBe("12");
+    expect(screen.getByTestId("my-tasks-flagged-badge").textContent).toBe("2");
+  });
+
+  it("gives the flagged badge a warning colour, distinct from assigned", () => {
+    withTasks([{ id: "a" }]);
+    withFlags([{ taskId: "f-1", resolvedAt: null }]);
+
+    render(<MyTasksCountBadge organizationId="org-1" />);
+
+    const flagged = screen.getByTestId("my-tasks-flagged-badge");
+    const assigned = screen.getByTestId("my-tasks-count-badge");
+    expect(flagged.classList.contains("bg-warning")).toBe(true);
+    expect(assigned.classList.contains("bg-sidebar-primary")).toBe(true);
+    // The two bubbles must not share a background.
+    expect(flagged.className).not.toBe(assigned.className);
+  });
+
+  it("shows only the flagged badge when nothing is assigned", () => {
+    withTasks([]);
+    withFlags([{ taskId: "f-1", resolvedAt: null }]);
+
+    render(<MyTasksCountBadge organizationId="org-1" />);
+
+    expect(screen.queryByTestId("my-tasks-count-badge")).toBeNull();
+    expect(screen.getByTestId("my-tasks-flagged-badge").textContent).toBe("1");
   });
 
   it("renders nothing when there is nothing to do (no zero badge)", () => {
@@ -95,25 +141,6 @@ describe("MyTasksCountBadge", () => {
     });
   });
 
-  it("includes tickets flagged for me that are not assigned to me", () => {
-    withTasks([{ id: "a" }]);
-    withFlags([{ taskId: "flagged-1", resolvedAt: null }]);
-
-    render(<MyTasksCountBadge organizationId="org-1" />);
-
-    expect(screen.getByTestId("my-tasks-count-badge").textContent).toBe("2");
-  });
-
-  // A ticket both assigned to me AND flagged for me is one piece of work.
-  it("counts an assigned-and-flagged ticket only once", () => {
-    withTasks([{ id: "a" }, { id: "b" }]);
-    withFlags([{ taskId: "a", resolvedAt: null }]);
-
-    render(<MyTasksCountBadge organizationId="org-1" />);
-
-    expect(screen.getByTestId("my-tasks-count-badge").textContent).toBe("2");
-  });
-
   it("ignores resolved flags", () => {
     withTasks([{ id: "a" }]);
     withFlags([{ taskId: "done-1", resolvedAt: "2026-08-01T00:00:00.000Z" }]);
@@ -121,6 +148,7 @@ describe("MyTasksCountBadge", () => {
     render(<MyTasksCountBadge organizationId="org-1" />);
 
     expect(screen.getByTestId("my-tasks-count-badge").textContent).toBe("1");
+    expect(screen.queryByTestId("my-tasks-flagged-badge")).toBeNull();
   });
 
   it("uses the same badge styling as the Inbox badge", () => {
@@ -131,12 +159,14 @@ describe("MyTasksCountBadge", () => {
 
     const badge = screen.getByTestId("my-tasks-count-badge");
     for (const token of [
-      "ml-auto",
       "rounded-full",
       "bg-sidebar-primary",
       "text-sidebar-primary-foreground",
     ]) {
       expect(badge.classList.contains(token)).toBe(true);
     }
+    // ml-auto now lives on the wrapper that holds both bubbles, so the group
+    // as a whole still sits flush right in the nav row.
+    expect(badge.parentElement?.classList.contains("ml-auto")).toBe(true);
   });
 });

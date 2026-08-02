@@ -3,20 +3,18 @@ import useGetMyFlags from "@/hooks/queries/flag/use-get-my-flags";
 import useGetMyTasks from "@/hooks/queries/task/use-get-my-tasks";
 
 /**
- * Count badge for the sidebar "My Tickets" entry (KFL-141).
+ * Count badges for the sidebar "My Tickets" entry (KFL-141).
  *
- * The ticket is explicit about what each sidebar badge counts:
- *   Inbox       -> everything (handled by InboxUnreadBadge)
- *   My Tickets  -> "flagged and assigned tickets"
+ * Two separate counts, not one combined number:
+ *   assigned -> neutral badge, same styling as the Inbox badge
+ *   flagged  -> warning badge, because a flag is someone asking for you
  *
- * So this counts tickets ASSIGNED to the signed-in user, plus any ticket
- * flagged for them that they are not already assigned to. Flags are the
- * "someone needs you on this" signal, so a flagged ticket belongs in the
- * count even when it is assigned to somebody else — but a ticket that is
- * both assigned and flagged must only be counted once.
+ * "12 assigned and 2 flagged" renders as `12` in the neutral bubble and `2` in
+ * the warning bubble. They are independent counts: a ticket that is both
+ * assigned to you and flagged for you appears in both, because it is one
+ * ticket wearing two different hats.
  *
- * Mirrors InboxUnreadBadge's markup and styling, and renders nothing at all
- * when there is nothing to do rather than showing a "0".
+ * Each badge hides itself at zero rather than showing a "0".
  */
 function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
   const { t } = useTranslation();
@@ -27,26 +25,39 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
   });
   const { data: flags } = useGetMyFlags();
 
-  // Union, not sum: a ticket both assigned to me and flagged for me is one
-  // item of work, not two. Resolved flags are done, so they do not count.
-  const workIds = new Set<string>(
-    (tasks ?? []).map((task: { id: string }) => task.id),
-  );
-  for (const flag of flags ?? []) {
-    if (!flag.resolvedAt) workIds.add(flag.taskId);
-  }
-  const taskCount = workIds.size;
+  const assignedCount = (tasks ?? []).length;
+  // Resolved flags are finished work and must not be counted.
+  const flaggedCount = (flags ?? []).filter((flag) => !flag.resolvedAt).length;
 
-  if (taskCount === 0) return null;
+  if (assignedCount === 0 && flaggedCount === 0) return null;
 
   return (
-    <span
-      aria-label={t("myTasks:count", { count: taskCount })}
-      role="status"
-      className="ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-[10px] text-sidebar-primary-foreground leading-none"
-      data-testid="my-tasks-count-badge"
-    >
-      {taskCount > 99 ? "99+" : taskCount}
+    <span className="ml-auto flex shrink-0 items-center gap-1">
+      {flaggedCount > 0 && (
+        <span
+          aria-label={t("myTasks:flaggedCount", { count: flaggedCount })}
+          role="status"
+          /*
+           * --warning-foreground is itself an amber tone (amber-700/400), so
+           * pairing it with the amber-500 background would be unreadable.
+           * A near-black foreground is the legible pairing on amber.
+           */
+          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 font-semibold text-[10px] text-neutral-950 leading-none"
+          data-testid="my-tasks-flagged-badge"
+        >
+          {flaggedCount > 99 ? "99+" : flaggedCount}
+        </span>
+      )}
+      {assignedCount > 0 && (
+        <span
+          aria-label={t("myTasks:count", { count: assignedCount })}
+          role="status"
+          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-[10px] text-sidebar-primary-foreground leading-none"
+          data-testid="my-tasks-count-badge"
+        >
+          {assignedCount > 99 ? "99+" : assignedCount}
+        </span>
+      )}
     </span>
   );
 }

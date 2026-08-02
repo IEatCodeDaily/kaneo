@@ -2296,7 +2296,9 @@
 			"assigned": "Assigned",
 			"created": "Created",
 			"team": "Team"
-		}
+		},
+		"flaggedCount": "{{count}} flagged ticket",
+		"flaggedCount_other": "{{count}} flagged tickets"
 	},
 	"flags": {
 		"title": "Flags",
