@@ -1549,6 +1549,7 @@
 			"noActivity": "No activity found",
 			"openInFullPage": "Open in full page",
 			"titlePlaceholder": "Click to add a title",
+			"titleSaving": "Saving title…",
 			"addDescription": "Add a description...",
 			"editor": {
 				"ariaLabel": "Ticket description editor",

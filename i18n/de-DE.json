@@ -1366,6 +1366,7 @@
 			"noActivity": "Keine Aktivität gefunden",
 			"openInFullPage": "Auf ganzer Seite öffnen",
 			"titlePlaceholder": "Klicken, um einen Titel hinzuzufügen",
+			"titleSaving": "Titel wird gespeichert…",
 			"addDescription": "Beschreibung hinzufügen...",
 			"editor": {
 				"ariaLabel": "Editor für Aufgabenbeschreibung",

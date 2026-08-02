@@ -1321,6 +1321,7 @@
 			"noActivity": "Активність не знайдено",
 			"openInFullPage": "Відкрити на повну сторінку",
 			"titlePlaceholder": "Натисніть, щоб додати назву",
+			"titleSaving": "Збереження назви…",
 			"addDescription": "Додати опис...",
 			"editor": {
 				"ariaLabel": "Редактор опису завдання",

@@ -6062,6 +6062,9 @@
 						"titlePlaceholder": {
 							"type": "string"
 						},
+						"titleSaving": {
+							"type": "string"
+						},
 						"addDescription": {
 							"type": "string"
 						},
@@ -6440,6 +6443,7 @@
 						"noActivity",
 						"openInFullPage",
 						"titlePlaceholder",
+						"titleSaving",
 						"addDescription",
 						"editor"
 					]

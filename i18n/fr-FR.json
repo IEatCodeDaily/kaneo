@@ -1332,6 +1332,7 @@
 			"noActivity": "Aucune activité trouvée",
 			"openInFullPage": "Ouvrir en plein écran",
 			"titlePlaceholder": "Cliquez pour ajouter un titre",
+			"titleSaving": "Enregistrement du titre…",
 			"addDescription": "Ajouter une description...",
 			"editor": {
 				"ariaLabel": "Éditeur de description de tâche",
