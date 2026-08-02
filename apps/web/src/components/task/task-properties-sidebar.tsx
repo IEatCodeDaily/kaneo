@@ -19,8 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import labelColors from "@/constants/label-colors";
-
+import labelColors, { resolveLabelColor } from "@/constants/label-colors";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
@@ -776,9 +775,7 @@ export default function TaskPropertiesSidebar({
                       <span
                         className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                         style={{
-                          backgroundColor:
-                            labelColors.find((c) => c.value === label.color)
-                              ?.color || "var(--color-neutral-400)",
+                          backgroundColor: resolveLabelColor(label.color),
                         }}
                       />
                       <span className="truncate max-w-[60px]">

@@ -43,6 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { resolveLabelColor } from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
@@ -1000,9 +1001,7 @@ function CreateTaskModal({
                       aria-hidden="true"
                       className="size-2 shrink-0 rounded-full"
                       style={{
-                        backgroundColor:
-                          labelColors.find((c) => c.value === label.color)
-                            ?.color || "var(--color-neutral-400)",
+                        backgroundColor: resolveLabelColor(label.color),
                       }}
                     />
                     <span className="max-w-20 truncate leading-none">
@@ -1283,10 +1282,7 @@ function CreateTaskModal({
                             <span
                               className="w-2 h-2 rounded-full flex-shrink-0"
                               style={{
-                                backgroundColor:
-                                  labelColors.find(
-                                    (c) => c.value === label.color,
-                                  )?.color || "var(--color-neutral-400)",
+                                backgroundColor: resolveLabelColor(label.color),
                               }}
                             />
                             <span className="max-w-20 truncate">
@@ -1313,9 +1309,7 @@ function CreateTaskModal({
                               className="w-2 h-2 rounded-full flex-shrink-0"
                               style={{
                                 backgroundColor:
-                                  labelColors.find(
-                                    (c) => c.value === selectedColor,
-                                  )?.color || "var(--color-neutral-400)",
+                                  resolveLabelColor(selectedColor),
                               }}
                             />
                             <span className="truncate">
