@@ -1538,7 +1538,12 @@
 				"dueThisWeek": "Срок на этой неделе",
 				"dueNextWeek": "Срок на следующей неделе",
 				"noDueDate": "Без срока"
-			}
+			},
+			"moveAllDialogTitle": "Переместить все запланированные тикеты?",
+			"moveAllDialogDescription": "{{count}} запланированный тикет будет перемещён в «К выполнению».",
+			"moveAllDialogDescription_other": "{{count}} запланированных тикетов будет перемещено в «К выполнению».",
+			"moveAllDialogConfirm": "Переместить {{count}} тикет",
+			"moveAllDialogConfirm_other": "Переместить {{count}} тикетов"
 		},
 		"sort": {
 			"label": "Сортировка",

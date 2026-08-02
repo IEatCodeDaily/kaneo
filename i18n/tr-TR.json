@@ -1540,7 +1540,12 @@
 				"dueThisWeek": "Bu hafta bitiyor",
 				"dueNextWeek": "Önümüzdeki hafta bitiyor",
 				"noDueDate": "Bitiş tarihi yok"
-			}
+			},
+			"moveAllDialogTitle": "Planlanan tüm biletler taşınsın mı?",
+			"moveAllDialogDescription": "{{count}} planlanan bilet Yapılacaklar’a taşınacak.",
+			"moveAllDialogDescription_other": "{{count}} planlanan bilet Yapılacaklar’a taşınacak.",
+			"moveAllDialogConfirm": "{{count}} bileti taşı",
+			"moveAllDialogConfirm_other": "{{count}} bileti taşı"
 		},
 		"sort": {
 			"label": "Sırala",

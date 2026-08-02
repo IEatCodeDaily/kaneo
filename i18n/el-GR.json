@@ -1532,7 +1532,12 @@
 				"dueThisWeek": "Λήγει αυτή την εβδομάδα",
 				"dueNextWeek": "Λήγει την επόμενη εβδομάδα",
 				"noDueDate": "Χωρίς ημερομηνία λήξης"
-			}
+			},
+			"moveAllDialogTitle": "Μετακίνηση όλων των προγραμματισμένων tickets;",
+			"moveAllDialogDescription": "{{count}} προγραμματισμένο ticket θα μετακινηθεί στο «Προς εκτέλεση».",
+			"moveAllDialogDescription_other": "{{count}} προγραμματισμένα tickets θα μετακινηθούν στο «Προς εκτέλεση».",
+			"moveAllDialogConfirm": "Μετακίνηση {{count}} ticket",
+			"moveAllDialogConfirm_other": "Μετακίνηση {{count}} tickets"
 		},
 		"sort": {
 			"label": "Ταξινόμηση",

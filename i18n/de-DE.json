@@ -1574,7 +1574,12 @@
 				"dueThisWeek": "Diese Woche fällig",
 				"dueNextWeek": "Nächste Woche fällig",
 				"noDueDate": "Kein Fälligkeitsdatum"
-			}
+			},
+			"moveAllDialogTitle": "Alle geplanten Tickets verschieben?",
+			"moveAllDialogDescription": "{{count}} geplantes Ticket wird nach „Zu erledigen“ verschoben.",
+			"moveAllDialogDescription_other": "{{count}} geplante Tickets werden nach „Zu erledigen“ verschoben.",
+			"moveAllDialogConfirm": "{{count}} Ticket verschieben",
+			"moveAllDialogConfirm_other": "{{count}} Tickets verschieben"
 		},
 		"sort": {
 			"label": "Sortieren",

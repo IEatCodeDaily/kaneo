@@ -1534,7 +1534,12 @@
 				"dueThisWeek": "이번 주 마감",
 				"dueNextWeek": "다음 주 마감",
 				"noDueDate": "마감일 없음"
-			}
+			},
+			"moveAllDialogTitle": "계획된 티켓을 모두 이동할까요?",
+			"moveAllDialogDescription": "계획된 티켓 {{count}}개가 할 일로 이동합니다.",
+			"moveAllDialogDescription_other": "계획된 티켓 {{count}}개가 할 일로 이동합니다.",
+			"moveAllDialogConfirm": "티켓 {{count}}개 이동",
+			"moveAllDialogConfirm_other": "티켓 {{count}}개 이동"
 		},
 		"sort": {
 			"label": "정렬",

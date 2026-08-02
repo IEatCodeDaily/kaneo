@@ -1532,7 +1532,12 @@
 				"dueThisWeek": "Рок оваа недела",
 				"dueNextWeek": "Рок следна недела",
 				"noDueDate": "Без краен рок"
-			}
+			},
+			"moveAllDialogTitle": "Премести ги сите планирани тикети?",
+			"moveAllDialogDescription": "{{count}} планиран тикет ќе биде преместен во „За правење“.",
+			"moveAllDialogDescription_other": "{{count}} планирани тикети ќе бидат преместени во „За правење“.",
+			"moveAllDialogConfirm": "Премести {{count}} тикет",
+			"moveAllDialogConfirm_other": "Премести {{count}} тикети"
 		},
 		"sort": {
 			"label": "Подреди",

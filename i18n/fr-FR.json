@@ -1541,7 +1541,12 @@
 				"dueThisWeek": "Échéance cette semaine",
 				"dueNextWeek": "Échéance la semaine prochaine",
 				"noDueDate": "Pas de date d'échéance"
-			}
+			},
+			"moveAllDialogTitle": "Déplacer tous les tickets planifiés ?",
+			"moveAllDialogDescription": "{{count}} ticket planifié sera déplacé vers À faire.",
+			"moveAllDialogDescription_other": "{{count}} tickets planifiés seront déplacés vers À faire.",
+			"moveAllDialogConfirm": "Déplacer {{count}} ticket",
+			"moveAllDialogConfirm_other": "Déplacer {{count}} tickets"
 		},
 		"sort": {
 			"label": "Trier",

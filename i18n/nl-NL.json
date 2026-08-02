@@ -1307,7 +1307,12 @@
 				"dueThisWeek": "Deze week vervallen",
 				"dueNextWeek": "Volgende week vervallen",
 				"noDueDate": "Geen einddatum"
-			}
+			},
+			"moveAllDialogTitle": "Alle geplande tickets verplaatsen?",
+			"moveAllDialogDescription": "{{count}} gepland ticket wordt verplaatst naar Te doen.",
+			"moveAllDialogDescription_other": "{{count}} geplande tickets worden verplaatst naar Te doen.",
+			"moveAllDialogConfirm": "{{count}} ticket verplaatsen",
+			"moveAllDialogConfirm_other": "{{count}} tickets verplaatsen"
 		},
 		"sort": {
 			"label": "Sorteren",

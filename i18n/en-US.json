@@ -1759,7 +1759,12 @@
 				"dueThisWeek": "Due this week",
 				"dueNextWeek": "Due next week",
 				"noDueDate": "No due date"
-			}
+			},
+			"moveAllDialogTitle": "Move all planned tickets?",
+			"moveAllDialogDescription": "{{count}} planned ticket will move to To Do.",
+			"moveAllDialogDescription_other": "{{count}} planned tickets will move to To Do.",
+			"moveAllDialogConfirm": "Move {{count}} ticket",
+			"moveAllDialogConfirm_other": "Move {{count}} tickets"
 		},
 		"sort": {
 			"label": "Sort",

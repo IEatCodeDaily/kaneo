@@ -1529,7 +1529,12 @@
 				"dueThisWeek": "Термін цього тижня",
 				"dueNextWeek": "Термін наступного тижня",
 				"noDueDate": "Без дати завершення"
-			}
+			},
+			"moveAllDialogTitle": "Перемістити всі заплановані тікети?",
+			"moveAllDialogDescription": "{{count}} запланований тікет буде переміщено до «До виконання».",
+			"moveAllDialogDescription_other": "{{count}} запланованих тікетів буде переміщено до «До виконання».",
+			"moveAllDialogConfirm": "Перемістити {{count}} тікет",
+			"moveAllDialogConfirm_other": "Перемістити {{count}} тікетів"
 		},
 		"sort": {
 			"label": "Сортування",

@@ -1,15 +1,24 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { produce } from "immer";
 import { ArrowRight, Calendar, Filter, Plus, User, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
+import { planMoveAllPlannedToTodo } from "@/components/backlog-list-view/move-all-planned";
 import BoardLayout from "@/components/common/board-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +70,8 @@ function RouteComponent() {
   const { data } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  // #143: proper confirmation dialog for the bulk move (was window.confirm).
+  const [moveAllOpen, setMoveAllOpen] = useState(false);
   const { mutate: updateTask } = useUpdateTask();
   const [sort, setSort] = useState<SortConfig>({
     field: "position",
@@ -305,49 +316,35 @@ function RouteComponent() {
     };
   }, [filteredBoard, sort]);
 
+  /**
+   * #143: open the confirmation dialog.
+   *
+   * This used to call the browser's native `confirm()`, which is an OS-level
+   * box that ignores the app's styling, cannot show the destination, and is
+   * not keyboard-navigable in the way the rest of the app is.
+   */
   const handleMoveAllPlannedToTodo = () => {
     if (!board) return;
 
-    const plannedTasks = board.plannedTasks || [];
-
-    if (plannedTasks.length === 0) {
+    if ((board.plannedTasks || []).length === 0) {
       toast.info(t("tasks:backlog.noTasksToMove"));
       return;
     }
 
-    if (
-      !confirm(
-        t("tasks:backlog.moveAllConfirm", { count: plannedTasks.length }),
-      )
-    ) {
-      return;
+    setMoveAllOpen(true);
+  };
+
+  const confirmMoveAllPlannedToTodo = () => {
+    const plan = planMoveAllPlannedToTodo(board ?? null);
+    if (!plan) return;
+
+    for (const task of plan.movedTasks) {
+      updateTask(task);
     }
 
-    for (const task of plannedTasks) {
-      updateTask({
-        ...task,
-        status: "to-do",
-      });
-    }
-
-    const updatedBoard = produce(board, (draft) => {
-      const todoColumn = draft.columns?.find((col) => col.id === "to-do");
-      if (todoColumn && draft.plannedTasks) {
-        todoColumn.tasks.push(
-          ...draft.plannedTasks.map((task) => ({
-            ...task,
-            status: "to-do",
-          })),
-        );
-
-        draft.plannedTasks = [];
-      }
-    });
-
-    setBoard(updatedBoard);
-    toast.success(
-      t("tasks:backlog.moveAllSuccess", { count: plannedTasks.length }),
-    );
+    setBoard(plan.updatedBoard);
+    setMoveAllOpen(false);
+    toast.success(t("tasks:backlog.moveAllSuccess", { count: plan.count }));
   };
 
   return (
@@ -718,6 +715,43 @@ function RouteComponent() {
           organizationId={organizationId}
           onClose={handleCloseTaskSheet}
         />
+
+        {/*
+          #143: a real confirmation dialog for the bulk move. It names the
+          exact number of tickets and the destination, the confirm button says
+          what it does, and Escape/overlay-click cancel — all of which the
+          native confirm() it replaced could not do.
+        */}
+        <AlertDialog open={moveAllOpen} onOpenChange={setMoveAllOpen}>
+          <AlertDialogContent data-testid="backlog-move-all-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("tasks:backlog.moveAllDialogTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("tasks:backlog.moveAllDialogDescription", {
+                  count: (board?.plannedTasks || []).length,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose>
+                <Button variant="outline" size="sm">
+                  {t("common:actions.cancel")}
+                </Button>
+              </AlertDialogClose>
+              <Button
+                data-testid="backlog-move-all-confirm"
+                onClick={confirmMoveAllPlannedToTodo}
+                size="sm"
+              >
+                {t("tasks:backlog.moveAllDialogConfirm", {
+                  count: (board?.plannedTasks || []).length,
+                })}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </BoardLayout>
   );

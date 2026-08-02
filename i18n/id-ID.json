@@ -1678,7 +1678,12 @@
 				"dueThisWeek": "Tenggat minggu ini",
 				"dueNextWeek": "Tenggat minggu depan",
 				"noDueDate": "Tanpa tenggat"
-			}
+			},
+			"moveAllDialogTitle": "Pindahkan semua tiket terencana?",
+			"moveAllDialogDescription": "{{count}} tiket terencana akan dipindahkan ke To Do.",
+			"moveAllDialogDescription_other": "{{count}} tiket terencana akan dipindahkan ke To Do.",
+			"moveAllDialogConfirm": "Pindahkan {{count}} tiket",
+			"moveAllDialogConfirm_other": "Pindahkan {{count}} tiket"
 		},
 		"sort": {
 			"label": "Urutkan",

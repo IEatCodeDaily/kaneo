@@ -1306,7 +1306,12 @@
 				"dueThisWeek": "Para esta semana",
 				"dueNextWeek": "Para la semana que viene",
 				"noDueDate": "Sin fecha de vencimiento"
-			}
+			},
+			"moveAllDialogTitle": "¿Mover todos los tickets planificados?",
+			"moveAllDialogDescription": "{{count}} ticket planificado se moverá a Por hacer.",
+			"moveAllDialogDescription_other": "{{count}} tickets planificados se moverán a Por hacer.",
+			"moveAllDialogConfirm": "Mover {{count}} ticket",
+			"moveAllDialogConfirm_other": "Mover {{count}} tickets"
 		},
 		"sort": {
 			"label": "Ordenar",
