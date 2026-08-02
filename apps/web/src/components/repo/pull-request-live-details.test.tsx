@@ -157,3 +157,29 @@ describe("PullRequestLiveDetails optimistic tab switching (#89)", () => {
     expect(screen.getByTestId("pull-request-tab-progress")).toBeTruthy();
   });
 });
+
+describe("PullRequestLiveDetails sticky controls (#47)", () => {
+  it("stacks tabs and diff properties without clipping either sticky row", () => {
+    filesState = {
+      data: {
+        files: [
+          { additions: 1, deletions: 0, filename: "README.md", patch: "" },
+        ],
+        totals: { additions: 1, changedFiles: 1, deletions: 0 },
+      },
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+    };
+    renderDetails();
+
+    const strip = screen.getByTestId("pull-request-tabs-strip");
+    expect(strip.className).toContain("sticky");
+    expect(strip.className).not.toMatch(/overflow-(?:hidden|auto|scroll)/);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Diffs" }));
+    const properties = screen.getByTestId("pull-request-diff-properties");
+    expect(properties.className).toContain("sticky");
+    expect(properties.className).toContain("bg-background/95");
+  });
+});
