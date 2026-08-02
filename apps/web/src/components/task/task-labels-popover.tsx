@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
 import { canSelectLabelSource } from "./label-source";
+import { isRepoSyncedTask } from "./task-repo-label-visibility";
 
 const labelColors = [
   { value: "gray", key: "stone", color: "var(--color-stone-500)" },
@@ -81,11 +82,11 @@ export default function TaskLabelsPopover({
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
   const { data: externalLinks = [] } = useExternalLinks(task.id);
   const { data: repoLinks = [] } = useGetTaskRepoLinks(task.id);
-  const isSyncedTicket =
-    externalLinks.some((link) => link.resourceType === "issue") ||
-    repoLinks.some((link) => link.itemType === "issues" && link.syncEnabled);
-  const { data: organizationLabels = [] } =
-    useGetLabelsByOrganization(organizationId);
+  const isSyncedTicket = isRepoSyncedTask(externalLinks, repoLinks);
+  const { data: organizationLabels = [] } = useGetLabelsByOrganization(
+    organizationId,
+    { includeRepo: true },
+  );
 
   const taskLabelNames = useMemo(
     () => taskLabels.map((label) => label.name),
