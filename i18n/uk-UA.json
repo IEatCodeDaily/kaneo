@@ -1860,7 +1860,8 @@
 		},
 		"members": {
 			"pageTitle": "Учасники",
-			"inviteMember": "Запросити учасника"
+			"inviteMember": "Запросити учасника",
+			"agentsCredentialsHint": "Видача та відкликання ключів доступу"
 		},
 		"inviteModal": {
 			"title": "Запросити учасника команди",

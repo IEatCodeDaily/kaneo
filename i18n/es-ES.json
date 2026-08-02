@@ -1633,7 +1633,8 @@
 		},
 		"members": {
 			"pageTitle": "Miembros",
-			"inviteMember": "Invitar miembro"
+			"inviteMember": "Invitar miembro",
+			"agentsCredentialsHint": "Emitir y revocar claves de acceso"
 		},
 		"inviteModal": {
 			"title": "Invitar miembro al equipo",

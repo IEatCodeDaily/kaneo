@@ -5,12 +5,29 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
 
-const ALLOWED_PERMISSIONS: Record<string, readonly string[]> = {
-  board: ["read", "create", "update"],
-  task: ["read", "create", "update"],
-  label: ["read"],
-  organization: ["read"],
-};
+/*
+ * Agents are first-class members: a human user and an agent user are treated
+ * identically, and access is decided by the member's ROLE via
+ * `resource-access.ts` — not by what kind of principal is asking.
+ *
+ * This used to be a hardcoded allowlist that capped agents at
+ * board/task read+create+update, label read and organization read. That
+ * silently denied an agent things its own role permits (deleting a task,
+ * managing labels, anything team-scoped) even when it was an organization
+ * owner. The vocabulary below is therefore descriptive, not restrictive: it
+ * lists the resources and actions that exist so a typo is still rejected, and
+ * every action a role can perform is available to an agent holding that role.
+ */
+export const RESOURCE_ACTIONS = ["read", "create", "update", "delete"] as const;
+export const KNOWN_RESOURCES = [
+  "board",
+  "task",
+  "label",
+  "organization",
+  "team",
+  "milestone",
+  "comment",
+] as const;
 const MAX_EXPIRY_DAYS = 365;
 
 type AgentMetadata = {
@@ -49,7 +66,7 @@ async function requireAdmin(userId: string, organizationId: string) {
   }
 }
 
-function validatePermissions(value: unknown): Record<string, string[]> {
+export function validatePermissions(value: unknown): Record<string, string[]> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new HTTPException(400, {
       message: "Explicit permissions are required",
@@ -60,13 +77,13 @@ function validatePermissions(value: unknown): Record<string, string[]> {
     value as Record<string, unknown>,
   )) {
     if (
-      !(resource in ALLOWED_PERMISSIONS) ||
+      !(KNOWN_RESOURCES as readonly string[]).includes(resource) ||
       !Array.isArray(actions) ||
       actions.length === 0 ||
       actions.some(
         (action) =>
           typeof action !== "string" ||
-          !ALLOWED_PERMISSIONS[resource].includes(action),
+          !(RESOURCE_ACTIONS as readonly string[]).includes(action),
       )
     ) {
       throw new HTTPException(400, {
@@ -210,4 +227,3 @@ agent.delete("/:id", async (c) => {
 });
 
 export default agent;
-export { ALLOWED_PERMISSIONS, validatePermissions };

@@ -1902,7 +1902,8 @@
 		},
 		"members": {
 			"pageTitle": "Участники",
-			"inviteMember": "Пригласить участника"
+			"inviteMember": "Пригласить участника",
+			"agentsCredentialsHint": "Выпуск и отзыв ключей доступа"
 		},
 		"inviteModal": {
 			"title": "Пригласить участника команды",

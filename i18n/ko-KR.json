@@ -1861,7 +1861,8 @@
 		},
 		"members": {
 			"pageTitle": "멤버",
-			"inviteMember": "멤버 초대"
+			"inviteMember": "멤버 초대",
+			"agentsCredentialsHint": "액세스 키 발급 및 취소"
 		},
 		"inviteModal": {
 			"title": "팀 멤버 초대",

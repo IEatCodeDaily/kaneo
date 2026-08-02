@@ -46,7 +46,17 @@ const agent = {
 };
 
 describe("OrganizationMembersGroups", () => {
-  it("keeps human members and agents in clearly separate labelled groups", () => {
+  /**
+   * Agents are first-class members: "human user and agents user is identical.
+   * treat them equally."
+   *
+   * This previously asserted the OPPOSITE — that the members table contained
+   * only "Human" and explicitly NOT "Robot" — because agents were filtered out
+   * and surfaced solely as API keys. They now appear in the same table with
+   * the same role column; the Agents section below is credential management
+   * only.
+   */
+  it("lists agents alongside human members in the same table", () => {
     render(
       <OrganizationMembersGroups
         organizationId="org-1"
@@ -58,10 +68,10 @@ describe("OrganizationMembersGroups", () => {
 
     expect(screen.getByRole("heading", { name: "People" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Agents" })).toBeTruthy();
-    expect(screen.getByTestId("members-table").textContent).toBe("Human");
-    expect(screen.getByTestId("members-table").textContent).not.toContain(
-      "Robot",
-    );
+    const table = screen.getByTestId("members-table").textContent;
+    expect(table).toContain("Human");
+    expect(table).toContain("Robot");
+    // The key-management section stays, for issuing and revoking credentials.
     expect(screen.getByTestId("agent-manager")).toBeTruthy();
   });
 
