@@ -113,23 +113,9 @@ export function UserAvatar() {
         </div>
 
         {/*
-          #113: the organization rows and the theme control read as one
-          undifferentiated block without a rule between them. Separate the
-          organization section from the theme section.
+          #155: no separator here. OrganizationMenuSection already renders its
+          own trailing rule, so adding a second one drew a doubled divider.
         */}
-        <DropdownMenuSeparator data-testid="user-menu-theme-separator" />
-
-        <div className="p-0.5">
-          <div
-            className="flex h-7 items-center justify-between gap-2 px-2 text-sm font-normal"
-            data-testid="user-menu-theme-toggle"
-          >
-            <span>{t("navigation:userMenu.theme")}</span>
-            <ThemeToggleDropdown />
-          </div>
-        </div>
-
-        <DropdownMenuSeparator />
 
         <div className="p-0.5">
           <DropdownMenuItem
@@ -200,13 +186,32 @@ export function UserAvatar() {
           )}
         </div>
 
+        {/*
+          #155: requested order is nameplate -> org -> settings -> theme ->
+          logout, so the theme row sits below the settings group rather than
+          above it.
+        */}
+        <DropdownMenuSeparator data-testid="user-menu-theme-separator" />
+
+        <div className="p-0.5">
+          <div
+            className="flex h-7 items-center justify-between gap-2 px-2 text-sm font-normal"
+            data-testid="user-menu-theme-toggle"
+          >
+            <span>{t("navigation:userMenu.theme")}</span>
+            <ThemeToggleDropdown />
+          </div>
+        </div>
+
         <DropdownMenuSeparator />
 
         <div className="p-0.5">
+          {/* #155: destructive styling — logging out ends the session. */}
           <DropdownMenuItem
             onClick={handleSignOut}
             disabled={isPending}
-            className="h-7 gap-2 px-2 text-sm font-normal"
+            className="h-7 gap-2 px-2 text-sm font-normal text-destructive focus:text-destructive data-highlighted:text-destructive"
+            data-testid="user-menu-logout"
           >
             <LogOut className="size-3.5" />
             {isPending

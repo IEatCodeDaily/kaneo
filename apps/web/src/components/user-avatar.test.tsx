@@ -6,6 +6,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * dark/light toggle, both of which used to live in the sidebar chrome.
  */
 
+/*
+ * user-avatar imports the shortcuts-help opener, which pulls in ui/dialog and
+ * boots the real i18n bootstrap during collection. Stub the dialog module.
+ */
+vi.mock("@/components/keyboard-shortcuts-help", () => ({
+  openKeyboardShortcutsHelp: vi.fn(),
+  KeyboardShortcutsHelp: () => null,
+}));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -61,8 +70,9 @@ afterEach(() => {
 });
 
 function openMenu() {
-  render(<UserAvatar />);
+  const result = render(<UserAvatar />);
   fireEvent.click(screen.getByRole("button", { name: "Open profile menu" }));
+  return result;
 }
 
 describe("UserAvatar menu (#96)", () => {
@@ -150,15 +160,20 @@ describe("UserAvatar organization/theme separator (#113)", () => {
     expect(screen.getByTestId("user-menu-theme-separator")).toBeTruthy();
   });
 
-  it("places the separator after the organization section and before the theme row", () => {
+  /**
+   * #155 moved the theme row BELOW the settings group, so the rule that
+   * introduces it now sits after Settings rather than after the organization
+   * section. It must still immediately precede the theme row.
+   */
+  it("places the separator directly before the theme row", () => {
     openMenu();
 
     const separator = screen.getByTestId("user-menu-theme-separator");
-    const organization = screen.getByTestId("organization-selector");
+    const settings = screen.getByText("navigation:userMenu.settings");
     const themeRow = screen.getByTestId("user-menu-theme-toggle");
 
     expect(
-      organization.compareDocumentPosition(separator) &
+      settings.compareDocumentPosition(separator) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -175,6 +190,45 @@ describe("UserAvatar organization/theme separator (#113)", () => {
     );
     expect(classes).toContain("h-px");
     expect(classes).toContain("bg-border");
+  });
+
+  /**
+   * #155: "double section divider above theme, and no section divider below
+   * theme". OrganizationMenuSection renders its own trailing rule, so the
+   * extra one in this component drew two stacked lines.
+   */
+  /*
+   * NOTE on the doubled divider (#155): it is deliberately NOT asserted here.
+   * OrganizationMenuSection is mocked in this suite, so the rule it renders —
+   * the first of the two stacked lines — never exists in this DOM, and
+   * DropdownMenuSeparator does not expose a queryable slot of its own. Every
+   * assertion I tried stayed green with the duplicate restored, i.e. proved
+   * nothing. The fix is verified in the browser instead, and the ordering and
+   * destructive-logout tests below do have working negative controls.
+   */
+
+  it("orders the menu as organization -> settings -> theme -> log out", () => {
+    openMenu();
+
+    const order = [
+      screen.getByTestId("organization-selector"),
+      screen.getByText("navigation:userMenu.settings"),
+      screen.getByTestId("user-menu-theme-toggle"),
+      screen.getByTestId("user-menu-logout"),
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1].compareDocumentPosition(order[i]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it("styles log out as destructive", () => {
+    openMenu();
+
+    const logout = screen.getByTestId("user-menu-logout");
+    expect(Array.from(logout.classList)).toContain("text-destructive");
   });
 
   /**
