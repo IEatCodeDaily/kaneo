@@ -231,20 +231,23 @@ export default function BoardLayout({
                 </Button>
               </div>
             )}
-            {/*
-              #91 / #146: board access avatars live in the HEADER, at the same
-              level as the breadcrumb and view selector — not in the board
-              toolbar below it, and not on every ticket.
-            */}
-            {organizationId && boardId && (
+          </div>
+
+          {/*
+            #91: pinned to the RIGHT edge of the header, on the same row as the
+            breadcrumb and view selector. Sitting immediately after the view
+            tabs read as part of that control group, so it was easy to miss —
+            access indicators belong at the trailing edge.
+          */}
+          {organizationId && boardId && (
+            <div className="flex shrink-0 items-center">
               <BoardAccessAvatars
-                className="ml-1"
                 organizationId={organizationId}
                 resourceId={boardId}
                 resourceType="board"
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </Layout.Header>
 
