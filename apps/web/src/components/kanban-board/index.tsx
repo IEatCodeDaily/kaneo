@@ -18,7 +18,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
@@ -58,7 +58,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const boardBeforeDrag = useRef<BoardWithTasks | null>(null);
+  const [previewBoard, setPreviewBoard] = useState<BoardWithTasks | null>(null);
   const { isPending: isReorderPending, mutate: reorderTasks } =
     useReorderTasks();
   const navigate = useNavigate();
@@ -133,7 +133,6 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    boardBeforeDrag.current = board;
     setActiveId(event.active.id);
   };
 
@@ -142,61 +141,54 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
 
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
-    const source = board.columns.find((column) =>
+    const currentBoard = previewBoard ?? board;
+    const source = currentBoard.columns.find((column) =>
       column.tasks.some((task) => task.id === activeTaskId),
     );
-    const destination = board.columns.find(
+    const destination = currentBoard.columns.find(
       (column) =>
         column.id === overId || column.tasks.some((task) => task.id === overId),
     );
     if (!source || !destination || source.id === destination.id) return;
 
-    const result = reorderBoardTask(board, activeTaskId, overId);
-    if (result) setBoard(result.board);
+    const result = reorderBoardTask(currentBoard, activeTaskId, overId);
+    if (result) setPreviewBoard(result.board);
   };
 
   const handleDragCancel = (_event: DragCancelEvent) => {
-    if (boardBeforeDrag.current) setBoard(boardBeforeDrag.current);
-    boardBeforeDrag.current = null;
+    setPreviewBoard(null);
     setActiveId(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    const currentBoard = previewBoard ?? board;
     setActiveId(null);
+    setPreviewBoard(null);
 
-    if (!over || !board?.columns) return;
+    if (!over || !currentBoard?.columns) return;
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const result = reorderBoardTask(board, activeId, overId);
-    if (!result) {
-      if (
-        boardBeforeDrag.current &&
-        boardBeforeDrag.current.columns.find((column) =>
-          column.tasks.some((task) => task.id === activeId),
-        )?.id !==
-          board.columns.find((column) =>
-            column.tasks.some((task) => task.id === activeId),
-          )?.id
-      ) {
-        reorderTasks({
-          boardId: board.id,
-          board,
-          tasks: taskOrderUpdates(board),
-        });
-      }
-      boardBeforeDrag.current = null;
+    if (previewBoard) {
+      setBoard(previewBoard);
+      reorderTasks({
+        boardId: previewBoard.id,
+        board: previewBoard,
+        tasks: taskOrderUpdates(previewBoard),
+      });
       return;
     }
+
+    const result = reorderBoardTask(currentBoard, activeId, overId);
+    if (!result) return;
     setBoard(result.board);
     reorderTasks({
-      boardId: board.id,
+      boardId: result.board.id,
       board: result.board,
       tasks: taskOrderUpdates(result.board),
     });
-    boardBeforeDrag.current = null;
   };
 
   // #111: one board-shaped skeleton, shared with the route and BoardLayout.
@@ -206,8 +198,9 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     return <BoardSkeleton />;
   }
 
+  const renderedBoard = previewBoard ?? board;
   const activeTask = activeId
-    ? board.columns
+    ? renderedBoard.columns
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
@@ -224,7 +217,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
         <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {board.columns?.map((column) => (
+            {renderedBoard.columns?.map((column) => (
               <div
                 key={column.id}
                 className="h-full max-w-96 min-w-80 shrink-0 flex-1"
