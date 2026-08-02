@@ -1,6 +1,9 @@
+import { Link } from "@tanstack/react-router";
 import { Github } from "lucide-react";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
+import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
+import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import type { ExternalLink } from "@/types/external-link";
 
 function repositoryLabel(url: string) {
@@ -31,15 +34,21 @@ function repositoryLabel(url: string) {
  */
 export default function TaskSyncedIssueProperty({
   taskId,
+  organizationId,
   compact = false,
   showLabel = false,
 }: {
   taskId: string;
+  organizationId?: string;
   compact?: boolean;
   showLabel?: boolean;
 }) {
   const { data: externalLinks = [] } = useExternalLinks(taskId);
   const { data: repoLinks = [] } = useGetTaskRepoLinks(taskId);
+  const { data: repos = [] } = useGetRepos({
+    organizationId: organizationId ?? "",
+    enabled: Boolean(organizationId),
+  });
 
   const integrationIssue = (externalLinks as ExternalLink[]).find(
     (link) => link.resourceType === "issue",
@@ -66,23 +75,51 @@ export default function TaskSyncedIssueProperty({
 
   const repo = repositoryLabel(issue.url);
   const label = `${repo ? `${repo} ` : ""}#${issue.number}`;
-
-  const link = (
-    <a
-      aria-label={`${label}${issue.title ? ` ${issue.title}` : ""}`}
-      className={`flex h-7 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold hover:bg-accent ${
-        compact ? "max-w-48" : "w-full"
-      }`}
-      data-testid="task-synced-issue"
-      href={issue.url}
-      rel="noreferrer"
-      target="_blank"
-      title={issue.title ?? label}
-    >
+  const linkClassName = `flex h-7 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-semibold hover:bg-accent ${
+    compact ? "max-w-48" : "w-full"
+  }`;
+  const ariaLabel = `${label}${issue.title ? ` ${issue.title}` : ""}`;
+  const body = (
+    <>
       <Github className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="truncate">{label}</span>
-    </a>
+    </>
   );
+
+  // #30: when the synced issue lives in a repository connected to this
+  // organization, keep navigation inside Kaneo. Only genuinely external
+  // issues should escape to GitHub in a new tab.
+  const target = getRepoIssueRelationTarget(
+    { number: Number(issue.number), html_url: issue.url },
+    repos,
+    organizationId ?? "",
+  );
+
+  const link =
+    organizationId && target.internal ? (
+      <Link
+        aria-label={ariaLabel}
+        className={linkClassName}
+        data-testid="task-synced-issue"
+        params={target.params}
+        title={issue.title ?? label}
+        to={target.to}
+      >
+        {body}
+      </Link>
+    ) : (
+      <a
+        aria-label={ariaLabel}
+        className={linkClassName}
+        data-testid="task-synced-issue"
+        href={issue.url}
+        rel="noreferrer"
+        target="_blank"
+        title={issue.title ?? label}
+      >
+        {body}
+      </a>
+    );
 
   if (!showLabel) return link;
 
