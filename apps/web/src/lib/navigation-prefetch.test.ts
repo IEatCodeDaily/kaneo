@@ -5,6 +5,7 @@ import {
   prefetchBoardNavigation,
   prefetchRepoNavigation,
   prefetchTaskNavigation,
+  repoPullRequestsQueryOptions,
 } from "./navigation-prefetch";
 
 vi.mock("@/fetchers/board/get-board", () => ({
@@ -117,5 +118,18 @@ describe("navigation intent prefetch", () => {
     await queryClient.ensureQueryData(query);
 
     expect(boardRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("serves prefetched pull requests to the route without a second fetch", async () => {
+    const queryClient = createQueryClient();
+    const options = repoPullRequestsQueryOptions("repo-1", "open", 1, 50);
+
+    await prefetchRepoNavigation(queryClient, "repo-1");
+    const cached = await queryClient.ensureQueryData(options);
+
+    expect(cached).toEqual({ items: [], pagination: {} });
+    expect(queryClient.getQueryState(options.queryKey)?.fetchStatus).toBe(
+      "idle",
+    );
   });
 });

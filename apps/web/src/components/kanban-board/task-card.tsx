@@ -36,6 +36,10 @@ import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
+import {
+  intentPrefetchHandlers,
+  prefetchTaskNavigation,
+} from "@/lib/navigation-prefetch";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
@@ -491,6 +495,9 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      {...intentPrefetchHandlers(() =>
+        prefetchTaskNavigation(queryClient, task.id),
+      )}
     >
       <TaskCardContent
         disableDragDrop={disableDragDrop}

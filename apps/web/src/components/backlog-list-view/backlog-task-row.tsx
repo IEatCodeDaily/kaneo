@@ -21,6 +21,10 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { cn } from "@/lib/cn";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
+import {
+  intentPrefetchHandlers,
+  prefetchTaskNavigation,
+} from "@/lib/navigation-prefetch";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
@@ -266,7 +270,15 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      {...intentPrefetchHandlers(() =>
+        prefetchTaskNavigation(queryClient, task.id),
+      )}
+    >
       <BacklogTaskRowContent isDragging={isDragging} task={task} />
     </div>
   );
