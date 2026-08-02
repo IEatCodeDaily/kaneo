@@ -124,7 +124,18 @@
 					"amber": "Бурштин",
 					"terracotta": "Теракота",
 					"rose": "Троянда",
-					"crimson": "Багряний"
+					"crimson": "Багряний",
+					"blossom": "Квіт",
+					"honey": "Мед",
+					"lime": "Лайм",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Індиго",
+					"violet": "Фіолет",
+					"orchid": "Орхідея",
+					"cocoa": "Какао"
 				}
 			}
 		}
@@ -562,6 +573,7 @@
 			"iconHint": "Відображається в бічній панелі та на поверхнях проєкту.",
 			"pickIconTitle": "Обрати іконку",
 			"searchIconsPlaceholder": "Пошук іконок...",
+			"useEmoji": "Використати це емодзі",
 			"boardNameLabel": "Назва проєкту",
 			"boardNameHint": "Назва вашого проєкту",
 			"boardNamePlaceholder": "Введіть назву проєкту",
@@ -1514,7 +1526,18 @@
 					"amber": "Бурштин",
 					"terracotta": "Теракота",
 					"rose": "Троянда",
-					"crimson": "Багряний"
+					"crimson": "Багряний",
+					"blossom": "Квіт",
+					"honey": "Мед",
+					"lime": "Лайм",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Індиго",
+					"violet": "Фіолет",
+					"orchid": "Орхідея",
+					"cocoa": "Какао"
 				}
 			}
 		},

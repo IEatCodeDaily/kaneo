@@ -1,44 +1,70 @@
 import { GitBranch } from "lucide-react";
-import { useState } from "react";
+import { cn } from "@/lib/cn";
 import type { Repo } from "@/types/repo";
 
 /**
- * Per-repository identity glyph for the collapsed sidebar rail (#96).
+ * Per-repository identity glyph for the sidebar rail (#96).
  *
- * Boards carry their own `icon` field; repositories do not, so the closest thing
- * to "the repo's own icon" is its owner's avatar on the hosting provider. The
- * avatar URL is derived from the repo's own `url`, so it works for GitHub
- * Enterprise / self-hosted hosts too rather than hardcoding github.com.
+ * #173: this used to render the owner's avatar from the hosting provider
+ * (`https://github.com/<owner>.png`). That was a mistake:
+ *   - every rail render fired cross-site requests to github.com;
+ *   - owners without an avatar produced console 404s;
+ *   - the browser logged rejected `_gh_sess` / `_octo` cookie warnings, i.e.
+ *     we were leaking the user's presence to GitHub just to draw a 16px icon.
  *
- * Any failure to load falls back to the generic repo glyph — a rail slot must
- * never render empty.
+ * Repositories carry no icon field of their own, so identity is now derived
+ * locally: the owner/name initial over a deterministic colour from the shared
+ * label palette. No network, no third-party cookies, works offline and for
+ * self-hosted providers.
+ *
+ * #171 will make board/repo icons user-configurable (including emoji); this is
+ * the neutral default until then.
  */
-export default function RepoAvatar({ repo }: { repo: Repo }) {
-  const [failed, setFailed] = useState(false);
-  const avatarUrl = ownerAvatarUrl(repo);
+export default function RepoAvatar({
+  repo,
+  className,
+}: {
+  repo: Repo;
+  className?: string;
+}) {
+  const initial = repoInitial(repo);
 
-  if (!avatarUrl || failed) return <GitBranch aria-hidden="true" />;
+  if (!initial) {
+    return <GitBranch aria-hidden="true" className={cn("size-4", className)} />;
+  }
 
   return (
-    <img
-      alt=""
+    <span
       aria-hidden="true"
-      className="size-4 shrink-0 rounded-sm object-cover"
-      onError={() => setFailed(true)}
-      src={avatarUrl}
-    />
+      className={cn(
+        "flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold uppercase leading-none text-white",
+        className,
+      )}
+      data-testid="repo-avatar"
+      style={{ backgroundColor: repoColor(repo) }}
+    >
+      {initial}
+    </span>
   );
 }
 
-/** Owner avatar on the repo's own host, or null when it can't be derived. */
-export function ownerAvatarUrl(repo: Pick<Repo, "url" | "owner">) {
-  if (!repo.owner) return null;
+/** First character of the repository name, or null when there isn't one. */
+export function repoInitial(repo: Pick<Repo, "name">) {
+  const trimmed = (repo.name ?? "").trim();
+  return trimmed ? Array.from(trimmed)[0] : null;
+}
 
-  try {
-    const { origin } = new URL(repo.url);
-    // GitHub (and GHE) expose the owner avatar at /<owner>.png.
-    return `${origin}/${encodeURIComponent(repo.owner)}.png?size=32`;
-  } catch {
-    return null;
+/**
+ * Deterministic colour for a repository.
+ *
+ * Same repo always gets the same colour, so the rail is stable between renders
+ * and reloads without storing anything.
+ */
+export function repoColor(repo: Pick<Repo, "owner" | "name">) {
+  const key = `${repo.owner ?? ""}/${repo.name ?? ""}`;
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) % 360;
   }
+  return `hsl(${hash} 55% 45%)`;
 }

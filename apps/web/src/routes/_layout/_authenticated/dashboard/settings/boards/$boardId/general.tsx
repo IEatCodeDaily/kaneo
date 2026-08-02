@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { TasksImportExport } from "@/components/board/tasks-import-export.tsx";
+import EntityIcon from "@/components/common/entity-icon";
 import PageTitle from "@/components/page-title";
 import {
   AlertDialog,
@@ -43,8 +44,30 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
+import { isEmojiIcon } from "@/lib/resolve-icon";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board.ts";
+
+/**
+ * #171: a starter set of emoji for the board icon picker.
+ *
+ * Any emoji works — typing one into the search box offers it directly — but a
+ * visible set makes the capability discoverable instead of hidden.
+ */
+const EMOJI_SUGGESTIONS = [
+  "🚀",
+  "🎯",
+  "🐛",
+  "🔥",
+  "✨",
+  "📦",
+  "🧪",
+  "🛠️",
+  "📊",
+  "🔐",
+  "💡",
+  "⚡",
+];
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/boards/$boardId/general",
@@ -368,13 +391,10 @@ function RouteComponent() {
                       title={t("settings:boardGeneral.pickIconTitle")}
                       disabled={!canEdit}
                     >
-                      {(() => {
-                        const selectedKey =
-                          (boardForm.watch("icon") as keyof typeof icons) ||
-                          "Layout";
-                        const SelectedIcon = icons[selectedKey] || icons.Layout;
-                        return <SelectedIcon className="h-4 w-4" />;
-                      })()}
+                      <EntityIcon
+                        className="h-4 w-4 text-base"
+                        value={boardForm.watch("icon")}
+                      />
                       <span className="truncate text-xs">
                         {boardForm.watch("icon") || "Layout"}
                       </span>
@@ -390,8 +410,64 @@ function RouteComponent() {
                         )}
                         className="h-8 text-xs"
                       />
+                      {/*
+                        #171: an icon may also be an emoji. Typing or pasting one
+                        into the search box offers it directly, so the whole
+                        emoji space is available without shipping a picker.
+                      */}
+                      {isEmojiIcon(iconSearch) && (
+                        <Button
+                          className="h-10 w-full justify-start gap-2 text-xs"
+                          onClick={() => {
+                            boardForm.setValue("icon", iconSearch.trim(), {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                            setIconPopoverOpen(false);
+                            setIconSearch("");
+                          }}
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <span className="text-base leading-none">
+                            {iconSearch.trim()}
+                          </span>
+                          {t("settings:boardGeneral.useEmoji")}
+                        </Button>
+                      )}
                       <div className="max-h-[280px] overflow-y-auto pr-1">
                         <div className="grid grid-cols-6 gap-1.5">
+                          {EMOJI_SUGGESTIONS.filter(
+                            () => !iconSearch.trim() || isEmojiIcon(iconSearch),
+                          ).map((emoji) => {
+                            const isSelected =
+                              boardForm.getValues("icon") === emoji;
+                            return (
+                              <Button
+                                className={cn(
+                                  "h-10 items-center justify-center rounded-md p-0 text-base leading-none",
+                                  isSelected &&
+                                    "bg-sidebar-accent text-sidebar-accent-foreground",
+                                )}
+                                key={emoji}
+                                onClick={() => {
+                                  boardForm.setValue("icon", emoji, {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  });
+                                  setIconPopoverOpen(false);
+                                  setIconSearch("");
+                                }}
+                                size="sm"
+                                title={emoji}
+                                type="button"
+                                variant="ghost"
+                              >
+                                {emoji}
+                              </Button>
+                            );
+                          })}
                           {Object.entries(icons)
                             .filter(([iconName]) =>
                               iconName

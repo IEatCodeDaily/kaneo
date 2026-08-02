@@ -66,3 +66,66 @@ describe("resolveLabelColor", () => {
     expect(resolveLabelColor("red")).toBe("var(--color-red-600)");
   });
 });
+
+/**
+ * #175 / #169: the palette gained hues so a label can be the colour its name
+ * implies (a `bug` had to sit on rose, which reads pink).
+ *
+ * `value` is persisted, so the original entries are frozen: renaming or
+ * repointing one silently repaints every label already stored with it.
+ */
+describe("#175 palette additions are backwards compatible", () => {
+  /** Colour identities that existed before #175 and must never move. */
+  const FROZEN: Record<string, string> = {
+    gray: "var(--color-stone-500)",
+    "dark-gray": "var(--color-slate-500)",
+    purple: "var(--color-violet-500)",
+    teal: "var(--color-emerald-600)",
+    green: "var(--color-green-600)",
+    yellow: "var(--color-amber-600)",
+    orange: "var(--color-orange-600)",
+    pink: "var(--color-rose-600)",
+    red: "var(--color-red-600)",
+  };
+
+  it("keeps every pre-existing value pointing at the same colour", () => {
+    for (const [value, color] of Object.entries(FROZEN)) {
+      expect(resolveLabelColor(value)).toBe(color);
+    }
+  });
+
+  it("exposes the new hues", () => {
+    for (const value of [
+      "blossom",
+      "honey",
+      "lime",
+      "emerald",
+      "lagoon",
+      "sky",
+      "ocean",
+      "indigo",
+      "violet",
+      "orchid",
+      "cocoa",
+    ]) {
+      const resolved = resolveLabelColor(value);
+      expect(resolved).not.toBe(LABEL_COLOR_FALLBACK);
+      expect(resolved).toMatch(/^var\(--color-/);
+    }
+  });
+
+  it("gives every entry a distinct value and a themed colour", () => {
+    const values = labelColors.map((c) => c.value);
+    expect(new Set(values).size).toBe(values.length);
+    for (const entry of labelColors) {
+      expect(entry.color).toMatch(/^var\(--color-/);
+      expect(entry.label.length).toBeGreaterThan(0);
+    }
+  });
+
+  // `red` (Crimson) and `pink` (Rose) are adjacent; a `bug` label moved from
+  // pink to red, so the two must stay visually distinguishable.
+  it("keeps crimson and rose as different colours", () => {
+    expect(resolveLabelColor("red")).not.toBe(resolveLabelColor("pink"));
+  });
+});

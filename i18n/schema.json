@@ -453,6 +453,39 @@
 										},
 										"crimson": {
 											"type": "string"
+										},
+										"blossom": {
+											"type": "string"
+										},
+										"honey": {
+											"type": "string"
+										},
+										"lime": {
+											"type": "string"
+										},
+										"emerald": {
+											"type": "string"
+										},
+										"lagoon": {
+											"type": "string"
+										},
+										"sky": {
+											"type": "string"
+										},
+										"ocean": {
+											"type": "string"
+										},
+										"indigo": {
+											"type": "string"
+										},
+										"violet": {
+											"type": "string"
+										},
+										"orchid": {
+											"type": "string"
+										},
+										"cocoa": {
+											"type": "string"
 										}
 									},
 									"required": [
@@ -464,7 +497,18 @@
 										"amber",
 										"terracotta",
 										"rose",
-										"crimson"
+										"crimson",
+										"blossom",
+										"honey",
+										"lime",
+										"emerald",
+										"lagoon",
+										"sky",
+										"ocean",
+										"indigo",
+										"violet",
+										"orchid",
+										"cocoa"
 									]
 								}
 							},
@@ -2864,6 +2908,9 @@
 						"searchIconsPlaceholder": {
 							"type": "string"
 						},
+						"useEmoji": {
+							"type": "string"
+						},
 						"boardNameLabel": {
 							"type": "string"
 						},
@@ -2973,6 +3020,7 @@
 						"iconHint",
 						"pickIconTitle",
 						"searchIconsPlaceholder",
+						"useEmoji",
 						"boardNameLabel",
 						"boardNameHint",
 						"boardNamePlaceholder",
@@ -6809,6 +6857,39 @@
 										},
 										"crimson": {
 											"type": "string"
+										},
+										"blossom": {
+											"type": "string"
+										},
+										"honey": {
+											"type": "string"
+										},
+										"lime": {
+											"type": "string"
+										},
+										"emerald": {
+											"type": "string"
+										},
+										"lagoon": {
+											"type": "string"
+										},
+										"sky": {
+											"type": "string"
+										},
+										"ocean": {
+											"type": "string"
+										},
+										"indigo": {
+											"type": "string"
+										},
+										"violet": {
+											"type": "string"
+										},
+										"orchid": {
+											"type": "string"
+										},
+										"cocoa": {
+											"type": "string"
 										}
 									},
 									"required": [
@@ -6820,7 +6901,18 @@
 										"amber",
 										"terracotta",
 										"rose",
-										"crimson"
+										"crimson",
+										"blossom",
+										"honey",
+										"lime",
+										"emerald",
+										"lagoon",
+										"sky",
+										"ocean",
+										"indigo",
+										"violet",
+										"orchid",
+										"cocoa"
 									]
 								}
 							},

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import EntityIcon from "@/components/common/entity-icon";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   ContextMenu,
@@ -36,7 +37,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import boardIcons from "@/constants/board-icons";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -247,10 +247,6 @@ export function NavBoards() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           {visibleBoards.map((board) => {
-            const BoardIcon =
-              boardIcons[board.icon as keyof typeof boardIcons] ??
-              boardIcons.Layout;
-
             return (
               <SidebarMenuItem key={board.id}>
                 <SidebarMenuButton
@@ -266,7 +262,7 @@ export function NavBoards() {
                   }
                   tooltip={board.name}
                 >
-                  <BoardIcon aria-hidden="true" />
+                  <EntityIcon className="size-4" value={board.icon} />
                   <span>{board.name}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -360,7 +356,13 @@ export function NavBoards() {
                               prefetchBoard(board.id),
                             )}
                           >
-                            <span>{board.name}</span>
+                            {/* #171: the icon is shown in the expanded rail
+                                too, not only when collapsed. */}
+                            <EntityIcon
+                              className="me-2 size-4 text-sidebar-foreground/70"
+                              value={board.icon}
+                            />
+                            <span className="truncate">{board.name}</span>
                           </SidebarMenuButton>
 
                           <DropdownMenu>

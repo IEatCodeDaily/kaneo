@@ -225,6 +225,8 @@ export function NavRepos() {
                           )}
                           size="default"
                         >
+                          {/* #171: repos show an icon in the expanded rail too. */}
+                          <RepoAvatar className="me-2" repo={repo} />
                           <span className="truncate">{repo.name}</span>
                           <span className="ml-auto flex items-center gap-1.5 text-[11px] text-sidebar-foreground/70">
                             <span className="flex items-center gap-0.5">

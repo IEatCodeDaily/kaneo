@@ -95,14 +95,22 @@ export function createTaskTitleSaver({
       if (title === savedTitle) {
         // Typed back to the persisted value: nothing left to save.
         debounced.cancel();
+        notify();
         return;
       }
       debounced(title);
+      // #164: `pending` drives the "typing" indicator, so subscribers must be
+      // told when a keystroke queues a write, not only when one starts.
+      notify();
     },
     flush: async () => {
       await debounced.flush();
+      notify();
     },
-    cancel: () => debounced.cancel(),
+    cancel: () => {
+      debounced.cancel();
+      notify();
+    },
     pending: () => debounced.pending(),
     saving: () => inFlight > 0,
     subscribe: (listener: () => void) => {

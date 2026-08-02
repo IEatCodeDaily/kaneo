@@ -1,4 +1,12 @@
+/**
+ * Named label colours.
+ *
+ * `value` is what gets persisted, so an existing entry must never be renamed,
+ * removed, or repointed at a different hue — that would silently repaint every
+ * label already stored with it. New colours are only ever appended (#175).
+ */
 const labelColors = [
+  // --- original palette: semantics frozen, do not repoint ---
   { value: "gray", label: "Stone", color: "var(--color-stone-500)" },
   { value: "dark-gray", label: "Slate", color: "var(--color-slate-500)" },
   { value: "purple", label: "Lavender", color: "var(--color-violet-500)" },
@@ -8,6 +16,18 @@ const labelColors = [
   { value: "orange", label: "Terracotta", color: "var(--color-orange-600)" },
   { value: "pink", label: "Rose", color: "var(--color-rose-600)" },
   { value: "red", label: "Crimson", color: "var(--color-red-600)" },
+  // --- #175: additional hues ---
+  { value: "blossom", label: "Blossom", color: "var(--color-pink-500)" },
+  { value: "honey", label: "Honey", color: "var(--color-amber-500)" },
+  { value: "lime", label: "Lime", color: "var(--color-lime-600)" },
+  { value: "emerald", label: "Emerald", color: "var(--color-emerald-500)" },
+  { value: "lagoon", label: "Lagoon", color: "var(--color-cyan-600)" },
+  { value: "sky", label: "Sky", color: "var(--color-sky-500)" },
+  { value: "ocean", label: "Ocean", color: "var(--color-blue-600)" },
+  { value: "indigo", label: "Indigo", color: "var(--color-indigo-500)" },
+  { value: "violet", label: "Violet", color: "var(--color-violet-600)" },
+  { value: "orchid", label: "Orchid", color: "var(--color-fuchsia-500)" },
+  { value: "cocoa", label: "Cocoa", color: "var(--color-amber-800)" },
 ];
 
 /** Fallback when a colour is neither a known token nor valid CSS. */

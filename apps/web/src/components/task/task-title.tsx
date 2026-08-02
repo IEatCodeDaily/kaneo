@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, PencilLine } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -14,6 +14,7 @@ import { Form, FormField } from "@/components/ui/form";
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { cn } from "@/lib/cn";
 import { createTaskTitleSaver } from "@/lib/task-title-save";
 
 type TaskTitleProps = {
@@ -88,6 +89,12 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
   const isSaving = useSyncExternalStore(
     saver.subscribe,
     saver.saving,
+    () => false,
+  );
+  // #164: a queued-but-not-yet-sent edit is the "typing" state.
+  const hasPendingEdit = useSyncExternalStore(
+    saver.subscribe,
+    saver.pending,
     () => false,
   );
 
@@ -173,16 +180,39 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
             />
             {/*
               #164: the save is debounced and silent, so a rename felt like it
-              might not have registered. Show a spinner aligned to the right
-              edge of the title row while the write is in flight.
+              might not have registered.
+
+              Round 2 — the user asked for something more intuitive than a bare
+              spinner: a small writing icon while they are typing, morphing into
+              the spinner once the write actually starts. Both states occupy the
+              same slot, and the icons cross-fade so the swap reads as one
+              element changing rather than two icons swapping places.
             */}
-            {isSaving && (
+            <span
+              aria-hidden="true"
+              className="relative size-4 shrink-0"
+              data-state={
+                isSaving ? "saving" : hasPendingEdit ? "typing" : "idle"
+              }
+              data-testid="task-title-status"
+            >
+              <PencilLine
+                className={cn(
+                  "absolute inset-0 size-4 text-muted-foreground transition-opacity duration-200",
+                  hasPendingEdit && !isSaving
+                    ? "animate-pulse opacity-100"
+                    : "opacity-0",
+                )}
+                data-testid="task-title-typing"
+              />
               <Loader2
-                aria-hidden="true"
-                className="size-4 shrink-0 animate-spin text-muted-foreground"
+                className={cn(
+                  "absolute inset-0 size-4 animate-spin text-muted-foreground transition-opacity duration-200",
+                  isSaving ? "opacity-100" : "opacity-0",
+                )}
                 data-testid="task-title-saving"
               />
-            )}
+            </span>
             <span aria-live="polite" className="sr-only">
               {isSaving ? t("tasks:detail.titleSaving") : ""}
             </span>

@@ -124,7 +124,18 @@
 					"amber": "Bernstein",
 					"terracotta": "Terrakotta",
 					"rose": "Rosa",
-					"crimson": "Karmesinrot"
+					"crimson": "Karmesinrot",
+					"blossom": "Blüte",
+					"honey": "Honig",
+					"lime": "Limette",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Himmel",
+					"ocean": "Ozean",
+					"indigo": "Indigo",
+					"violet": "Violett",
+					"orchid": "Orchidee",
+					"cocoa": "Kakao"
 				}
 			}
 		}
@@ -576,6 +587,7 @@
 			"iconHint": "Wird in der Sidebar und auf Projektflächen angezeigt.",
 			"pickIconTitle": "Symbol auswählen",
 			"searchIconsPlaceholder": "Symbole suchen...",
+			"useEmoji": "Dieses Emoji verwenden",
 			"boardNameLabel": "Projektname",
 			"boardNameHint": "Der Name deines Projekts",
 			"boardNamePlaceholder": "Projektnamen eingeben",
@@ -1559,7 +1571,18 @@
 					"amber": "Bernstein",
 					"terracotta": "Terrakotta",
 					"rose": "Rosa",
-					"crimson": "Karmesinrot"
+					"crimson": "Karmesinrot",
+					"blossom": "Blüte",
+					"honey": "Honig",
+					"lime": "Limette",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Himmel",
+					"ocean": "Ozean",
+					"indigo": "Indigo",
+					"violet": "Violett",
+					"orchid": "Orchidee",
+					"cocoa": "Kakao"
 				}
 			}
 		},

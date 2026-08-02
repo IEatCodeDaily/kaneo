@@ -124,7 +124,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson"
+					"crimson": "Crimson",
+					"blossom": "Blossom",
+					"honey": "Honey",
+					"lime": "Lime",
+					"emerald": "Emerald",
+					"lagoon": "Lagoon",
+					"sky": "Sky",
+					"ocean": "Ocean",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchid",
+					"cocoa": "Cocoa"
 				}
 			}
 		}
@@ -740,6 +751,7 @@
 			"iconHint": "Displayed in the sidebar and board surfaces.",
 			"pickIconTitle": "Pick icon",
 			"searchIconsPlaceholder": "Search icons...",
+			"useEmoji": "Use this emoji",
 			"boardNameLabel": "Board name",
 			"boardNameHint": "The name of your board",
 			"boardNamePlaceholder": "Enter board name",
@@ -1745,7 +1757,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson"
+					"crimson": "Crimson",
+					"blossom": "Blossom",
+					"honey": "Honey",
+					"lime": "Lime",
+					"emerald": "Emerald",
+					"lagoon": "Lagoon",
+					"sky": "Sky",
+					"ocean": "Ocean",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchid",
+					"cocoa": "Cocoa"
 				}
 			}
 		},

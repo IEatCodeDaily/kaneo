@@ -124,7 +124,18 @@
 					"amber": "Килибар",
 					"terracotta": "Теракота",
 					"rose": "Роза",
-					"crimson": "Гримизна"
+					"crimson": "Гримизна",
+					"blossom": "Цвет",
+					"honey": "Мед",
+					"lime": "Лимета",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Виолетова",
+					"orchid": "Орхидеја",
+					"cocoa": "Какао"
 				}
 			}
 		}
@@ -562,6 +573,7 @@
 			"iconHint": "Се прикажува во страничната лента и на површините на проектот.",
 			"pickIconTitle": "Избери икона",
 			"searchIconsPlaceholder": "Пребарај икони...",
+			"useEmoji": "Користи ова емоџи",
 			"boardNameLabel": "Име на проект",
 			"boardNameHint": "Името на твојот проект",
 			"boardNamePlaceholder": "Внеси име на проект",
@@ -1517,7 +1529,18 @@
 					"amber": "Килибар",
 					"terracotta": "Теракота",
 					"rose": "Роза",
-					"crimson": "Гримизна"
+					"crimson": "Гримизна",
+					"blossom": "Цвет",
+					"honey": "Мед",
+					"lime": "Лимета",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Виолетова",
+					"orchid": "Орхидеја",
+					"cocoa": "Какао"
 				}
 			}
 		},

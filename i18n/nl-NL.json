@@ -123,7 +123,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Roos",
-					"crimson": "Karmozijn"
+					"crimson": "Karmozijn",
+					"blossom": "Bloesem",
+					"honey": "Honing",
+					"lime": "Limoen",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Hemel",
+					"ocean": "Oceaan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidee",
+					"cocoa": "Cacao"
 				}
 			}
 		}
@@ -472,6 +483,7 @@
 			"iconHint": "Wordt getoond in de zijbalk en boardoverzichten.",
 			"pickIconTitle": "Icoon kiezen",
 			"searchIconsPlaceholder": "Iconen zoeken...",
+			"useEmoji": "Deze emoji gebruiken",
 			"boardNameLabel": "Boardnaam",
 			"boardNameHint": "De naam van je board",
 			"boardNamePlaceholder": "Voer boardnaam in",
@@ -1292,7 +1304,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Roos",
-					"crimson": "Karmozijn"
+					"crimson": "Karmozijn",
+					"blossom": "Bloesem",
+					"honey": "Honing",
+					"lime": "Limoen",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Hemel",
+					"ocean": "Oceaan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidee",
+					"cocoa": "Cacao"
 				}
 			}
 		},
