@@ -893,21 +893,38 @@ function RouteComponent() {
                         aria-expanded={!unscheduledCollapsed}
                         data-testid="gantt-section-unscheduled"
                         onClick={() => setUnscheduledCollapsed((open) => !open)}
-                        className="sticky left-0 top-0 z-[14] flex w-full items-center gap-2 border-y border-border bg-muted/40 px-3 py-1 text-left hover:bg-muted/60"
+                        className="sticky top-0 z-[14] flex w-full items-center border-y border-border bg-muted/40 py-1 text-left hover:bg-muted/60"
                         style={{ width: showTaskRail ? undefined : "100%" }}
                       >
-                        <ChevronDown
-                          aria-hidden="true"
-                          className={cn(
-                            "size-3 shrink-0 text-muted-foreground transition-transform",
-                            unscheduledCollapsed && "-rotate-90",
-                          )}
-                        />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          {t("tasks:gantt.unscheduledGroup")}
-                        </span>
-                        <span className="rounded bg-secondary px-1 py-px text-[9px] font-medium text-secondary-foreground">
-                          {unscheduledRows.length}
+                        {/*
+                          #152 (round 2): the BAR spans the full timeline width,
+                          so `sticky left-0` on it has nothing to stick within —
+                          the label scrolled off with the grid. The label is now
+                          its own sticky box pinned to the task-column width, so
+                          it stays frozen at the left edge while the timeline
+                          scrolls underneath.
+                        */}
+                        <span
+                          className="sticky left-0 z-[1] flex shrink-0 items-center gap-2 bg-muted/40 px-3"
+                          style={
+                            showTaskRail
+                              ? { width: `${taskColumnWidthRem}rem` }
+                              : undefined
+                          }
+                        >
+                          <ChevronDown
+                            aria-hidden="true"
+                            className={cn(
+                              "size-3 shrink-0 text-muted-foreground transition-transform",
+                              unscheduledCollapsed && "-rotate-90",
+                            )}
+                          />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {t("tasks:gantt.unscheduledGroup")}
+                          </span>
+                          <span className="rounded bg-secondary px-1 py-px text-[9px] font-medium text-secondary-foreground">
+                            {unscheduledRows.length}
+                          </span>
                         </span>
                       </button>
                       {!unscheduledCollapsed &&
