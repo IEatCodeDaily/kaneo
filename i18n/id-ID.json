@@ -1866,6 +1866,9 @@
 			"members": "Anggota",
 			"priority": "Prioritas",
 			"hint": "Ketik # untuk label, @ untuk anggota, ! untuk prioritas"
+		},
+		"boardSync": {
+			"syncedWith": "Tersinkron dengan {{repo}}"
 		}
 	},
 	"invitations": {

@@ -1494,6 +1494,9 @@
 			"members": "Miembros",
 			"priority": "Prioridad",
 			"hint": "Escribe # para etiquetas, @ para miembros, ! para prioridad"
+		},
+		"boardSync": {
+			"syncedWith": "Sincronizado con {{repo}}"
 		}
 	},
 	"invitations": {

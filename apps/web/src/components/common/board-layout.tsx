@@ -10,6 +10,7 @@ import {
   SquircleDashed,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import BoardSyncIndicator from "@/components/board/board-sync-indicator";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
@@ -18,15 +19,6 @@ import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
 import { Button } from "@/components/ui/button";
-import { KbdSequence } from "@/components/ui/kbd";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
@@ -130,25 +122,6 @@ export default function BoardLayout({
       <Layout.Header className="h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-7 w-7 cursor-pointer text-foreground/85 hover:text-foreground" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="flex items-center gap-2 text-[10px]">
-                    Toggle sidebar
-                    <KbdSequence
-                      keys={[
-                        shortcuts.sidebar.prefix,
-                        shortcuts.sidebar.toggle,
-                      ]}
-                    />
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
             <div className="h-4 w-px shrink-0 bg-border/80" />
 
             <div className="hidden min-w-0 items-center gap-1 md:flex">
@@ -240,7 +213,9 @@ export default function BoardLayout({
             access indicators belong at the trailing edge.
           */}
           {organizationId && boardId && (
-            <div className="flex shrink-0 items-center">
+            <div className="flex min-w-0 shrink-0 items-center gap-2">
+              {/* #158: sync indicator sits to the LEFT of the avatars. */}
+              <BoardSyncIndicator boardId={boardId} />
               <BoardAccessAvatars
                 organizationId={organizationId}
                 resourceId={boardId}

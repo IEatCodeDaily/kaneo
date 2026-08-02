@@ -1495,6 +1495,9 @@
 			"members": "Leden",
 			"priority": "Prioriteit",
 			"hint": "Typ # voor labels, @ voor leden, ! voor prioriteit"
+		},
+		"boardSync": {
+			"syncedWith": "Gesynchroniseerd met {{repo}}"
 		}
 	},
 	"invitations": {

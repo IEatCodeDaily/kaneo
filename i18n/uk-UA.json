@@ -1719,6 +1719,9 @@
 			"members": "Учасники",
 			"priority": "Пріоритет",
 			"hint": "# — мітки, @ — учасники, ! — пріоритет"
+		},
+		"boardSync": {
+			"syncedWith": "Синхронізовано з {{repo}}"
 		}
 	},
 	"invitations": {

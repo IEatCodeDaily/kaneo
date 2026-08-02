@@ -1762,6 +1762,9 @@
 			"members": "Mitglieder",
 			"priority": "Priorität",
 			"hint": "# für Labels, @ für Mitglieder, ! für Priorität"
+		},
+		"boardSync": {
+			"syncedWith": "Synchronisiert mit {{repo}}"
 		}
 	},
 	"invitations": {

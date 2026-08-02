@@ -2023,6 +2023,9 @@
 			"members": "Members",
 			"priority": "Priority",
 			"hint": "Type # for labels, @ for members, ! for priority"
+		},
+		"boardSync": {
+			"syncedWith": "Synced with {{repo}}"
 		}
 	},
 	"invitations": {
