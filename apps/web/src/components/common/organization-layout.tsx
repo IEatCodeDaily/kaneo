@@ -33,7 +33,6 @@ export default function OrganizationLayout({
       <Layout.Header>
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-1">
-            <div className="mx-1.5 h-4 w-px shrink-0 bg-border/80" />
             {/*
               The breadcrumb is the only expendable element in this row: on a
               phone the organization name plus page title can consume the width

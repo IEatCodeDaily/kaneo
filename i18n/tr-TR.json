@@ -1331,6 +1331,7 @@
 			"noActivity": "Aktivite bulunamadı",
 			"openInFullPage": "Tam sayfada aç",
 			"titlePlaceholder": "Başlık eklemek için tıklayın",
+			"titleSaving": "Başlık kaydediliyor…",
 			"addDescription": "Açıklama ekle...",
 			"editor": {
 				"ariaLabel": "Talep açıklama düzenleyici",

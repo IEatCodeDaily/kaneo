@@ -17,6 +17,16 @@ export type TaskTitleSaver = {
   cancel: () => void;
   /** Whether an edit is waiting to be saved. */
   pending: () => boolean;
+  /** Whether a write is currently in flight (#164: drives the spinner). */
+  saving: () => boolean;
+  /**
+   * Subscribe to saving-state changes. Returns an unsubscribe function.
+   *
+   * The saver lives outside React so the timing rules stay unit-testable;
+   * components need a push notification to re-render when a write starts or
+   * finishes.
+   */
+  subscribe: (listener: () => void) => () => void;
   /** The value we believe is persisted. */
   saved: () => string;
   /**
@@ -46,6 +56,12 @@ export function createTaskTitleSaver({
   onError,
 }: CreateTaskTitleSaverOptions): TaskTitleSaver {
   let savedTitle = initialTitle;
+  let inFlight = 0;
+  const listeners = new Set<() => void>();
+
+  const notify = () => {
+    for (const listener of listeners) listener();
+  };
 
   const persist = async (title: string) => {
     // A late timer can still fire for a value that already landed (or that
@@ -55,6 +71,8 @@ export function createTaskTitleSaver({
 
     const previous = savedTitle;
     savedTitle = title;
+    inFlight += 1;
+    notify();
 
     try {
       await save(title);
@@ -64,6 +82,9 @@ export function createTaskTitleSaver({
       savedTitle = previous;
       if (onError) onError(error);
       else throw error;
+    } finally {
+      inFlight -= 1;
+      notify();
     }
   };
 
@@ -83,6 +104,11 @@ export function createTaskTitleSaver({
     },
     cancel: () => debounced.cancel(),
     pending: () => debounced.pending(),
+    saving: () => inFlight > 0,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
     saved: () => savedTitle,
     reset: (title: string) => {
       debounced.cancel();

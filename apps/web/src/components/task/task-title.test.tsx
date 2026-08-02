@@ -106,3 +106,97 @@ describe("TaskTitle persistence", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * #164: the field was bound with `values: { title: task?.title }`, so
+ * react-hook-form re-synced it from the server on every render. A background
+ * refetch or a rename elsewhere therefore overwrote what the user was typing.
+ * Local edits must win while the field is being edited.
+ */
+describe("#164 optimistic-local-wins while editing", () => {
+  afterEach(() => {
+    mocks.task = { id: "task-1", title: "Old title", description: "" };
+  });
+
+  it("keeps the user's text when a server title arrives mid-edit", async () => {
+    const view = render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "My local edit" } });
+
+    // A refetch lands with a different title while the user is still typing.
+    mocks.task = { ...mocks.task, title: "Renamed on the server" };
+    view.rerender(<TaskTitle taskId="task-1" />);
+
+    // The regression: this used to become "Renamed on the server".
+    expect((input as HTMLInputElement).value).toBe("My local edit");
+  });
+
+  // NEGATIVE CONTROL: when the user is NOT editing, a server rename must still
+  // appear — otherwise the assertion above would pass for a field that simply
+  // ignores the server forever.
+  it("adopts a server title when the field is not being edited", async () => {
+    const view = render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.focus(input);
+    fireEvent.blur(input);
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+
+    mocks.task = { ...mocks.task, title: "Renamed elsewhere" };
+    view.rerender(<TaskTitle taskId="task-1" />);
+
+    expect((input as HTMLInputElement).value).toBe("Renamed elsewhere");
+  });
+
+  it("still persists the local edit that beat the server value", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Local wins" } });
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Local wins" }),
+    );
+  });
+});
+
+describe("#164 saving spinner", () => {
+  it("shows a spinner only while the write is in flight", async () => {
+    // Hold the mutation open so the in-flight window is observable.
+    let release: (() => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+
+    fireEvent.change(input, { target: { value: "Saving now" } });
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+
+    expect(screen.getByTestId("task-title-saving")).toBeTruthy();
+
+    release?.();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+  });
+
+  // NEGATIVE CONTROL: no spinner without an edit, so the assertion above
+  // cannot pass for a spinner that is simply always mounted.
+  it("shows no spinner when nothing is being saved", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+
+    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+  });
+});

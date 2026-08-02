@@ -1109,6 +1109,7 @@
 			"noActivity": "No hay actividad",
 			"openInFullPage": "Abrir en página completa",
 			"titlePlaceholder": "Click para añadir título",
+			"titleSaving": "Guardando título…",
 			"addDescription": "Añadir una descripción...",
 			"editor": {
 				"ariaLabel": "Editor de descripción de tareas",

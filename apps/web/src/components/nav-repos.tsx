@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
+import RepoAvatar from "@/components/repo/repo-avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   ContextMenu,
@@ -111,18 +112,37 @@ export function NavRepos() {
 
   return (
     <>
-      {/* #96: one icon per repository, named on hover, instead of a single
-          aggregate "Repos" entry. */}
+      {/*
+        #96: the collapsed rail shows the Repos *overview* entry first, then one
+        entry per repository. Repos carry no icon field of their own (unlike
+        boards), so each uses its owner's provider avatar as its identity, with
+        the generic repo glyph as the fallback.
+      */}
       <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              data-testid="sidebar-repos-collapsed"
+              onClick={() =>
+                navigate({
+                  to: "/dashboard/organization/$organizationId/repo",
+                  params: { organizationId: organization.id },
+                })
+              }
+              tooltip={t("navigation:sidebar.repos")}
+            >
+              <GitBranch aria-hidden="true" />
+              <span>{t("navigation:sidebar.repos")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {visibleRepos.map((repo) => (
             <SidebarMenuItem key={repo.id}>
               <SidebarMenuButton
                 data-testid={`sidebar-repo-collapsed-${repo.id}`}
                 onClick={() => openRepo(repo.id)}
-                tooltip={repo.name}
+                tooltip={`${repo.owner}/${repo.name}`}
               >
-                <GitBranch aria-hidden="true" />
+                <RepoAvatar repo={repo} />
                 <span>{repo.name}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>

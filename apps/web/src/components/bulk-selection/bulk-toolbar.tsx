@@ -36,7 +36,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import labelColors from "@/constants/label-colors";
+import labelColors, { resolveLabelColor } from "@/constants/label-colors";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -349,9 +349,7 @@ function BulkToolbar() {
             <span
               className="inline-block w-3 h-3 rounded-full shrink-0"
               style={{
-                backgroundColor:
-                  labelColors.find((c) => c.value === label.color)?.color ||
-                  "var(--color-neutral-400)",
+                backgroundColor: resolveLabelColor(label.color),
               }}
             />
           ),

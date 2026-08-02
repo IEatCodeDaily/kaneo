@@ -68,7 +68,6 @@ export default function RepoLayout({
       <Layout.Header className="h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="h-4 w-px shrink-0 bg-border/80" />
             <div className="hidden min-w-0 items-center gap-1 text-xs md:flex">
               <span className="truncate text-foreground/75">{repoTitle}</span>
             </div>

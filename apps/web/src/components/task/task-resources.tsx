@@ -53,6 +53,7 @@ import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
+import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 import { ResourceSyncBadge } from "./resource-sync-badge";
@@ -461,14 +462,28 @@ export default function TaskResources({
             const isBranch = link.resourceType === "branch";
             const repoLabel = getRepoLabelFromUrl(link.url);
 
-            return (
-              <a
-                className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
-                href={link.url}
-                key={link.id}
-                rel="noreferrer"
-                target="_blank"
-              >
+            /*
+              #30: integration-linked rows were hardcoded to github.com. When the
+              issue/PR lives in a repository connected to this organization it
+              must open inside Kaneo. Branches have no in-app page, so they still
+              go out to the provider.
+            */
+            const internalTarget =
+              isBranch || !link.externalId
+                ? null
+                : getRepoIssueRelationTarget(
+                    { number: Number(link.externalId), html_url: link.url },
+                    repos,
+                    organizationId,
+                  );
+            const internal =
+              internalTarget?.internal === true ? internalTarget : null;
+
+            const rowClassName =
+              "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60";
+
+            const body = (
+              <>
                 {/*
                   Auto-synced rows carry a small Link2 badge over the resource
                   icon so they are distinguishable from manually linked items,
@@ -504,6 +519,38 @@ export default function TaskResources({
                 <ResourceSyncBadge resourceType={link.resourceType} />
                 {repoLabel && <RepoLabel label={repoLabel} />}
                 <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              </>
+            );
+
+            if (internal) {
+              const pullTarget = isPullRequest
+                ? {
+                    ...internal,
+                    to: "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number" as const,
+                  }
+                : internal;
+
+              return (
+                <Link
+                  className={rowClassName}
+                  key={link.id}
+                  params={pullTarget.params}
+                  to={pullTarget.to}
+                >
+                  {body}
+                </Link>
+              );
+            }
+
+            return (
+              <a
+                className={rowClassName}
+                href={link.url}
+                key={link.id}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {body}
               </a>
             );
           })}

@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import labelColors from "@/constants/label-colors";
+import labelColors, { resolveLabelColor } from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
@@ -508,9 +508,7 @@ function RouteComponent() {
                         <span
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                           style={{
-                            backgroundColor:
-                              labelColors.find((c) => c.value === label.color)
-                                ?.color || "var(--color-neutral-400)",
+                            backgroundColor: resolveLabelColor(label.color),
                           }}
                         />
                         <span>
@@ -674,10 +672,7 @@ function RouteComponent() {
                             <span
                               className="w-3 h-3 rounded-full flex-shrink-0"
                               style={{
-                                backgroundColor:
-                                  labelColors.find(
-                                    (c) => c.value === label.color,
-                                  )?.color || "var(--color-neutral-400)",
+                                backgroundColor: resolveLabelColor(label.color),
                               }}
                             />
                             <span className="max-w-20 truncate">

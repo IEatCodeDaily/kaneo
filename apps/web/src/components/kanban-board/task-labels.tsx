@@ -1,35 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-
-const labelColors = [
-  { value: "gray", label: "Stone", color: "var(--color-stone-500)" },
-  { value: "dark-gray", label: "Slate", color: "var(--color-slate-500)" },
-  { value: "purple", label: "Lavender", color: "var(--color-violet-500)" },
-  { value: "teal", label: "Sage", color: "var(--color-emerald-600)" },
-  { value: "green", label: "Forest", color: "var(--color-green-600)" },
-  { value: "yellow", label: "Amber", color: "var(--color-amber-600)" },
-  { value: "orange", label: "Terracotta", color: "var(--color-orange-600)" },
-  { value: "pink", label: "Rose", color: "var(--color-rose-600)" },
-  { value: "red", label: "Crimson", color: "var(--color-red-600)" },
-];
-
-function isValidHtmlColor(color: string): boolean {
-  const s = new Option().style;
-  s.color = color;
-  return s.color !== "";
-}
-
-function validColor(value: string): string {
-  const mapped = labelColors.find((c) => c.value === value)?.color;
-  if (mapped) {
-    return mapped;
-  }
-
-  if (isValidHtmlColor(value)) {
-    return value;
-  }
-
-  return "var(--color-neutral-400)";
-}
+import { resolveLabelColor } from "@/constants/label-colors";
 
 type TaskLabel = { id: string; name: string; color: string };
 
@@ -41,6 +11,10 @@ type TaskLabel = { id: string; name: string; color: string };
  * 180-task board, the last of them queued over a second deep. The board
  * payload already includes `labels` on every task, so the fetch was pure
  * duplication.
+ *
+ * #169: colour resolution used to live here as a private `validColor` helper.
+ * It now comes from `resolveLabelColor` so the dropdowns render synced hex
+ * labels the same way these chips always did.
  */
 function TaskCardLabels({ labels }: { labels: TaskLabel[] | undefined }) {
   if (!labels?.length) return null;
@@ -56,7 +30,7 @@ function TaskCardLabels({ labels }: { labels: TaskLabel[] | undefined }) {
           <span
             className="inline-block w-1.5 h-1.5 mr-1 rounded-full"
             style={{
-              backgroundColor: validColor(label.color),
+              backgroundColor: resolveLabelColor(label.color),
             }}
           />
           <span className="max-w-20 truncate">{label.name}</span>

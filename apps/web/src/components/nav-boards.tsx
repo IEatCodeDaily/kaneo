@@ -36,6 +36,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import boardIcons from "@/constants/board-icons";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -223,32 +224,54 @@ export function NavBoards() {
   return (
     <>
       {/*
-        #96: the rail must expose every board, not a single aggregate entry.
-        One icon per board, each navigating straight to that board, with the
-        board name shown on hover.
+        #96: the collapsed rail shows the Boards *overview* entry first, then one
+        entry per board using that board's own configured icon (the same
+        `board.icon` the overview grid and mobile nav render). Names appear on
+        hover.
       */}
       <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
         <SidebarMenu>
-          {visibleBoards.map((board) => (
-            <SidebarMenuItem key={board.id}>
-              <SidebarMenuButton
-                data-testid={`sidebar-board-collapsed-${board.id}`}
-                onClick={() =>
-                  navigate({
-                    to: "/dashboard/organization/$organizationId/board/$boardId",
-                    params: {
-                      organizationId: organization.id,
-                      boardId: board.id,
-                    },
-                  })
-                }
-                tooltip={board.name}
-              >
-                <SquareKanban aria-hidden="true" />
-                <span>{board.name}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              data-testid="sidebar-boards-collapsed"
+              onClick={() =>
+                navigate({
+                  to: "/dashboard/organization/$organizationId",
+                  params: { organizationId: organization.id },
+                })
+              }
+              tooltip={t("navigation:sidebar.boards")}
+            >
+              <SquareKanban aria-hidden="true" />
+              <span>{t("navigation:sidebar.boards")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {visibleBoards.map((board) => {
+            const BoardIcon =
+              boardIcons[board.icon as keyof typeof boardIcons] ??
+              boardIcons.Layout;
+
+            return (
+              <SidebarMenuItem key={board.id}>
+                <SidebarMenuButton
+                  data-testid={`sidebar-board-collapsed-${board.id}`}
+                  onClick={() =>
+                    navigate({
+                      to: "/dashboard/organization/$organizationId/board/$boardId",
+                      params: {
+                        organizationId: organization.id,
+                        boardId: board.id,
+                      },
+                    })
+                  }
+                  tooltip={board.name}
+                >
+                  <BoardIcon aria-hidden="true" />
+                  <span>{board.name}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroup>
 

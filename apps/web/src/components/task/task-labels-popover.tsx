@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { resolveLabelColor } from "@/constants/label-colors";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
@@ -21,6 +22,11 @@ import type Task from "@/types/task";
 import { canSelectLabelSource } from "./label-source";
 import { isRepoSyncedTask } from "./task-repo-label-visibility";
 
+/**
+ * Local copy carries a `key` for the i18n colour names in the swatch picker.
+ * Rendering a stored colour goes through `resolveLabelColor` (#169) so that
+ * GitHub-synced hex labels don't all collapse to grey here.
+ */
 const labelColors = [
   { value: "gray", key: "stone", color: "var(--color-stone-500)" },
   { value: "dark-gray", key: "slate", color: "var(--color-slate-500)" },
@@ -257,9 +263,7 @@ export default function TaskLabelsPopover({
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{
-                backgroundColor:
-                  labelColors.find((c) => c.value === label.color)?.color ||
-                  "var(--color-neutral-400)",
+                backgroundColor: resolveLabelColor(label.color),
               }}
             />
             <span className="max-w-20 truncate">{label.name}</span>
@@ -281,9 +285,7 @@ export default function TaskLabelsPopover({
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{
-                backgroundColor:
-                  labelColors.find((c) => c.value === selectedColor)?.color ||
-                  "var(--color-neutral-400)",
+                backgroundColor: resolveLabelColor(selectedColor),
               }}
             />
             <span className="truncate">
