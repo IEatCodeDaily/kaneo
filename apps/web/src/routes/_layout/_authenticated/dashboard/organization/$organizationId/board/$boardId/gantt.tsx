@@ -355,6 +355,8 @@ function RouteComponent() {
   const { data: relationData } = useGetBoardTaskRelations(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
+  // #152: timeline sections are collapsible.
+  const [unscheduledCollapsed, setUnscheduledCollapsed] = useState(false);
   const [zoom, setZoom] = useState<GanttZoom>("day");
   const [sort, setSort] = useState<SortConfig>({
     field: "position",
@@ -880,34 +882,52 @@ function RouteComponent() {
                       of the grid. */}
                   {unscheduledRows.length > 0 ? (
                     <>
-                      <div
-                        className="sticky left-0 z-[12] flex items-center gap-2 border-y border-border bg-muted/40 px-3 py-1"
+                      {/*
+                        #152: the section header sticks to the left AND to the
+                        top of the scroll area, and toggles its rows. It was
+                        only `sticky left-0`, so it scrolled out of view
+                        vertically and could not be collapsed.
+                      */}
+                      <button
+                        type="button"
+                        aria-expanded={!unscheduledCollapsed}
+                        data-testid="gantt-section-unscheduled"
+                        onClick={() => setUnscheduledCollapsed((open) => !open)}
+                        className="sticky left-0 top-0 z-[14] flex w-full items-center gap-2 border-y border-border bg-muted/40 px-3 py-1 text-left hover:bg-muted/60"
                         style={{ width: showTaskRail ? undefined : "100%" }}
                       >
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn(
+                            "size-3 shrink-0 text-muted-foreground transition-transform",
+                            unscheduledCollapsed && "-rotate-90",
+                          )}
+                        />
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                           {t("tasks:gantt.unscheduledGroup")}
                         </span>
                         <span className="rounded bg-secondary px-1 py-px text-[9px] font-medium text-secondary-foreground">
                           {unscheduledRows.length}
                         </span>
-                      </div>
-                      {unscheduledRows.map((task) => (
-                        <GanttRow
-                          key={task.id}
-                          task={task}
-                          timeline={timeline}
-                          pixelsPerDay={pixelsPerDay}
-                          isMobile={isMobile}
-                          showTaskRail={showTaskRail}
-                          taskColumnWidthRem={taskColumnWidthRem}
-                          boardSlug={board?.slug}
-                          collapsed={false}
-                          display={display}
-                          unscheduledHint={t("tasks:gantt.unscheduledHint")}
-                          onToggleCollapse={toggleCollapse}
-                          onOpenTask={openTask}
-                        />
-                      ))}
+                      </button>
+                      {!unscheduledCollapsed &&
+                        unscheduledRows.map((task) => (
+                          <GanttRow
+                            key={task.id}
+                            task={task}
+                            timeline={timeline}
+                            pixelsPerDay={pixelsPerDay}
+                            isMobile={isMobile}
+                            showTaskRail={showTaskRail}
+                            taskColumnWidthRem={taskColumnWidthRem}
+                            boardSlug={board?.slug}
+                            collapsed={false}
+                            display={display}
+                            unscheduledHint={t("tasks:gantt.unscheduledHint")}
+                            onToggleCollapse={toggleCollapse}
+                            onOpenTask={openTask}
+                          />
+                        ))}
                     </>
                   ) : null}
                 </div>
