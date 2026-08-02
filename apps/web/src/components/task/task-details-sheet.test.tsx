@@ -6,7 +6,13 @@ const useGetTask = vi.fn((_taskId?: string) => ({ data: { number: 104 } }));
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
-  useUpdateTask: () => ({ mutate: vi.fn() }),
+  useUpdateTask: () => ({ mutateAsync: vi.fn() }),
+}));
+vi.mock("@/hooks/mutations/label/use-create-label", () => ({
+  default: () => ({ mutateAsync: vi.fn() }),
+}));
+vi.mock("@/hooks/queries/label/use-get-labels-by-organization", () => ({
+  default: () => ({ data: [] }),
 }));
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-i18next")>()),

@@ -21,18 +21,21 @@ import {
   CardPanel,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetPanel,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { isTemplateDateOffset } from "@/lib/task-template-date-offset";
 import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
@@ -46,6 +49,10 @@ const empty: TaskTemplateData = {
   priority: "no-priority",
   startDate: null,
   dueDate: null,
+  status: null,
+  labels: [],
+  startDateOffset: null,
+  dueDateOffset: null,
 };
 
 function RouteComponent() {
@@ -59,6 +66,10 @@ function RouteComponent() {
   const [deleting, setDeleting] = useState<Template | null>(null);
   const [name, setName] = useState("");
   const [data, setData] = useState(empty);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
+  const startOffsetValid = isTemplateDateOffset(data.startDateOffset ?? "");
+  const dueOffsetValid = isTemplateDateOffset(data.dueDateOffset ?? "");
   const { data: templates = [] } = useQuery<Template[]>({
     queryKey,
     enabled: Boolean(organizationId),
@@ -191,18 +202,18 @@ function RouteComponent() {
           </CardPanel>
         </CardFrame>
       </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="flex w-full flex-col overflow-hidden p-0 sm:max-w-xl">
+          <SheetHeader>
+            <SheetTitle>
               {editingId ? "Edit task template" : "New task template"}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               Set reusable defaults. Every value can still be changed after
               applying the template.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
+            </SheetDescription>
+          </SheetHeader>
+          <SheetPanel className="grid flex-1 gap-4 px-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="template-name">Template name</Label>
               <Input
@@ -234,7 +245,21 @@ function RouteComponent() {
                 }
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="template-status">Status</Label>
+                <Input
+                  id="template-status"
+                  value={data.status ?? ""}
+                  onChange={(event) =>
+                    setData({ ...data, status: event.target.value || null })
+                  }
+                  placeholder="To Do"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Resolved by column name or slug when applied.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="template-priority">Priority</Label>
                 <select
@@ -253,42 +278,116 @@ function RouteComponent() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="template-start">Start date</Label>
+                <Label htmlFor="template-start">Start date offset</Label>
                 <Input
+                  aria-describedby="template-start-help"
+                  aria-invalid={!startOffsetValid}
                   id="template-start"
-                  type="date"
-                  value={data.startDate?.slice(0, 10) ?? ""}
+                  value={data.startDateOffset ?? ""}
                   onChange={(event) =>
-                    setData({ ...data, startDate: event.target.value || null })
+                    setData({
+                      ...data,
+                      startDate: null,
+                      startDateOffset: event.target.value || null,
+                    })
                   }
+                  placeholder="+7d"
                 />
+                <p
+                  className={
+                    startOffsetValid
+                      ? "text-xs text-muted-foreground"
+                      : "text-xs text-destructive"
+                  }
+                  id="template-start-help"
+                >
+                  Use +/−N followed by m, h, d, or w.
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="template-due">Due date</Label>
+                <Label htmlFor="template-due">Due date offset</Label>
                 <Input
+                  aria-describedby="template-due-help"
+                  aria-invalid={!dueOffsetValid}
                   id="template-due"
-                  type="date"
-                  value={data.dueDate?.slice(0, 10) ?? ""}
+                  value={data.dueDateOffset ?? ""}
                   onChange={(event) =>
-                    setData({ ...data, dueDate: event.target.value || null })
+                    setData({
+                      ...data,
+                      dueDate: null,
+                      dueDateOffset: event.target.value || null,
+                    })
                   }
+                  placeholder="+14d"
                 />
+                <p
+                  className={
+                    dueOffsetValid
+                      ? "text-xs text-muted-foreground"
+                      : "text-xs text-destructive"
+                  }
+                  id="template-due-help"
+                >
+                  Use +/−N followed by m, h, d, or w.
+                </p>
               </div>
             </div>
-          </div>
-          <DialogFooter>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Labels</legend>
+              <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto rounded-md border p-3">
+                {organizationLabels
+                  .filter((label) => !label.taskId)
+                  .map((label) => {
+                    const selected = data.labels?.includes(label.name) ?? false;
+                    return (
+                      <label
+                        className="flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                        key={label.id}
+                      >
+                        <input
+                          checked={selected}
+                          onChange={() =>
+                            setData({
+                              ...data,
+                              labels: selected
+                                ? (data.labels ?? []).filter(
+                                    (name) => name !== label.name,
+                                  )
+                                : [...(data.labels ?? []), label.name],
+                            })
+                          }
+                          type="checkbox"
+                        />
+                        {label.name}
+                      </label>
+                    );
+                  })}
+                {!organizationLabels.some((label) => !label.taskId) && (
+                  <span className="text-xs text-muted-foreground">
+                    No organization labels.
+                  </span>
+                )}
+              </div>
+            </fieldset>
+          </SheetPanel>
+          <SheetFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button
-              disabled={!name.trim() || save.isPending}
+              disabled={
+                !name.trim() ||
+                save.isPending ||
+                !startOffsetValid ||
+                !dueOffsetValid
+              }
               onClick={() => save.mutate()}
             >
               {editingId ? "Save changes" : "Create template"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       <AlertDialog
         open={Boolean(deleting)}
         onOpenChange={(open) => !open && setDeleting(null)}

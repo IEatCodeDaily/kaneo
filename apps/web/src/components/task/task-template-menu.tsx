@@ -16,6 +16,10 @@ export type TaskTemplateData = {
   priority: string | null;
   startDate: string | null;
   dueDate: string | null;
+  status?: string | null;
+  labels?: string[];
+  startDateOffset?: string | null;
+  dueDateOffset?: string | null;
 };
 
 type TaskTemplate = {

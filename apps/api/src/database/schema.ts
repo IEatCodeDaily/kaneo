@@ -903,6 +903,10 @@ export const taskTemplateTable = pgTable(
         priority: string | null;
         startDate: string | null;
         dueDate: string | null;
+        status?: string | null;
+        labels?: string[];
+        startDateOffset?: string | null;
+        dueDateOffset?: string | null;
       }>()
       .notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),

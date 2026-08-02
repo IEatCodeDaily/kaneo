@@ -18,8 +18,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import {
   clampTaskDrawerWidth,
@@ -27,6 +29,7 @@ import {
   TASK_DRAWER_WIDTH_STORAGE_KEY,
   widthFromPointer,
 } from "@/lib/task-drawer-width";
+import { resolveTemplateDate } from "@/lib/task-template-date-offset";
 import TaskDetailsContent from "./task-details-content";
 import TaskPropertiesSidebar from "./task-properties-sidebar";
 import TaskTemplateMenu, { type TaskTemplateData } from "./task-template-menu";
@@ -53,7 +56,10 @@ export default function TaskDetailsSheet({
   const [isOpen, setIsOpen] = useState(Boolean(taskId));
 
   const { data: task } = useGetTask(currentTaskId ?? "");
-  const { mutate: updateTask } = useUpdateTask();
+  const { mutateAsync: updateTask } = useUpdateTask();
+  const { mutateAsync: createLabel } = useCreateLabel();
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
   const [pendingTemplate, setPendingTemplate] =
     useState<TaskTemplateData | null>(null);
   const { data: board } = useGetBoard({ id: boardId, organizationId });
@@ -235,9 +241,55 @@ export default function TaskDetailsSheet({
                 {t("common:actions.cancel")}
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   if (task && pendingTemplate) {
-                    updateTask({ ...task, ...pendingTemplate });
+                    const statusHint = pendingTemplate.status?.toLowerCase();
+                    const templateStatus = statusHint
+                      ? board?.columns?.find(
+                          (column) =>
+                            column.id.toLowerCase() === statusHint ||
+                            column.slug?.toLowerCase() === statusHint ||
+                            column.name.toLowerCase() === statusHint,
+                        )?.slug
+                      : undefined;
+                    await updateTask({
+                      ...task,
+                      title: pendingTemplate.title,
+                      description: pendingTemplate.description,
+                      priority: pendingTemplate.priority,
+                      status: templateStatus ?? task.status,
+                      startDate:
+                        pendingTemplate.startDate ||
+                        pendingTemplate.startDateOffset
+                          ? (resolveTemplateDate(
+                              pendingTemplate.startDate,
+                              pendingTemplate.startDateOffset,
+                            )?.toISOString() ?? task.startDate)
+                          : task.startDate,
+                      dueDate:
+                        pendingTemplate.dueDate || pendingTemplate.dueDateOffset
+                          ? (resolveTemplateDate(
+                              pendingTemplate.dueDate,
+                              pendingTemplate.dueDateOffset,
+                            )?.toISOString() ?? task.dueDate)
+                          : task.dueDate,
+                    });
+                    for (const labelName of pendingTemplate.labels ?? []) {
+                      const label = organizationLabels.find(
+                        (candidate) =>
+                          !candidate.taskId &&
+                          candidate.name.toLowerCase() ===
+                            labelName.toLowerCase(),
+                      );
+                      if (label) {
+                        await createLabel({
+                          name: label.name,
+                          color: label.color,
+                          taskId: task.id,
+                          organizationId,
+                        });
+                      }
+                    }
                   }
                   setPendingTemplate(null);
                 }}

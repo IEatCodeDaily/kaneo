@@ -7,12 +7,30 @@ import { taskTemplateTable } from "../database/schema";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 
+const offsetSchema = v.nullable(
+  v.pipe(
+    v.string(),
+    v.regex(/^([+-])(\d{1,5})([mhdw])$/i),
+    v.check((value) => {
+      const match = /^([+-])(\d+)([mhdw])$/i.exec(value);
+      if (!match) return false;
+      const units = { m: 1 / 1440, h: 1 / 24, d: 1, w: 7 };
+      const unit = match[3]?.toLowerCase() as keyof typeof units | undefined;
+      return Boolean(unit && Number(match[2]) * units[unit] <= 3650);
+    }),
+  ),
+);
+
 const dataSchema = v.object({
   title: v.string(),
   description: v.nullable(v.string()),
   priority: v.nullable(v.string()),
   startDate: v.nullable(v.string()),
   dueDate: v.nullable(v.string()),
+  status: v.optional(v.nullable(v.string())),
+  labels: v.optional(v.array(v.string())),
+  startDateOffset: v.optional(offsetSchema),
+  dueDateOffset: v.optional(offsetSchema),
 });
 
 const taskTemplate = new Hono<{ Variables: { userId: string } }>()

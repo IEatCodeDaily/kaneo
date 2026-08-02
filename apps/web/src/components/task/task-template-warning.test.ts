@@ -11,6 +11,7 @@ describe("existing task template warning (#118)", () => {
   it("requires confirmation before replacing current task values", () => {
     expect(sidebar).toContain("<AlertDialog");
     expect(sidebar).toContain('t("tasks:templates.applyWarning")');
-    expect(sidebar).toContain("updateTask({ ...task, ...pendingTemplate })");
+    expect(sidebar).toContain("title: pendingTemplate.title");
+    expect(sidebar).toContain("resolveTemplateDate(");
   });
 });

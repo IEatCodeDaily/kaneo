@@ -50,6 +50,7 @@ import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -58,6 +59,7 @@ import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
+import { resolveTemplateDate } from "@/lib/task-template-date-offset";
 import {
   commitTitleToken,
   findActiveTitleToken,
@@ -254,6 +256,8 @@ function CreateTaskModal({
 
   const routeBoardId = location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
   const resolvedBoardId = boardId || board?.id || routeBoardId || "";
+  const { data: templateColumns = [] } = useGetColumns(resolvedBoardId);
+  const [templateStatus, setTemplateStatus] = useState<string | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -310,6 +314,7 @@ function CreateTaskModal({
     setTitle("");
     setDescription("");
     setPriority("no-priority");
+    setTemplateStatus(null);
     setAssigneeId("");
     setStartDate(undefined);
     setDueDate(undefined);
@@ -493,7 +498,7 @@ function CreateTaskModal({
     if (!title.trim() || !resolvedBoardId || !organization?.id) return;
 
     try {
-      const taskStatus = status ?? "to-do";
+      const taskStatus = templateStatus ?? status ?? "to-do";
       didSubmitRef.current = true;
 
       const savedTask = draftTask
@@ -896,10 +901,28 @@ function CreateTaskModal({
                   setTitle(data.title);
                   setDescription(data.description ?? "");
                   setPriority((data.priority as Priority) ?? "no-priority");
-                  setStartDate(
-                    data.startDate ? new Date(data.startDate) : undefined,
+                  const statusHint = data.status?.toLowerCase();
+                  setTemplateStatus(
+                    statusHint
+                      ? (templateColumns.find(
+                          (column) =>
+                            column.id.toLowerCase() === statusHint ||
+                            column.slug?.toLowerCase() === statusHint ||
+                            column.name.toLowerCase() === statusHint,
+                        )?.slug ?? null)
+                      : null,
                   );
-                  setDueDate(data.dueDate ? new Date(data.dueDate) : undefined);
+                  setLabels(
+                    organizationLabels.filter((label) =>
+                      data.labels?.includes(label.name),
+                    ),
+                  );
+                  setStartDate(
+                    resolveTemplateDate(data.startDate, data.startDateOffset),
+                  );
+                  setDueDate(
+                    resolveTemplateDate(data.dueDate, data.dueDateOffset),
+                  );
                 }}
               />
             ) : null}
