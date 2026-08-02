@@ -11,7 +11,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/cn";
 
 type SettingsLayoutProps = {
@@ -49,10 +48,6 @@ export function SettingsLayout({
       <Layout.Header>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-1 w-full">
-            <Separator
-              orientation="vertical"
-              className="mx-1.5 data-[orientation=vertical]:h-2.5"
-            />
             <Breadcrumb className="flex items-center gap-1 text-xs w-full">
               <BreadcrumbList>
                 <BreadcrumbItem>
