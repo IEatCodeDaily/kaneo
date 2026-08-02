@@ -164,8 +164,12 @@ describe("#164 optimistic-local-wins while editing", () => {
   });
 });
 
-describe("#164 saving spinner", () => {
-  it("shows a spinner only while the write is in flight", async () => {
+describe("#164 typing and saving indicator", () => {
+  /** The single status slot reports which state it is in. */
+  const state = () =>
+    screen.getByTestId("task-title-status").getAttribute("data-state");
+
+  it("morphs from a writing icon while typing into a spinner while saving", async () => {
     // Hold the mutation open so the in-flight window is observable.
     let release: (() => void) | undefined;
     mocks.update.mockImplementation(
@@ -178,25 +182,42 @@ describe("#164 saving spinner", () => {
     render(<TaskTitle taskId="task-1" />);
     const input = screen.getByDisplayValue("Old title");
 
-    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+    expect(state()).toBe("idle");
 
+    // Typing queues a write: writing icon, no spinner yet.
     fireEvent.change(input, { target: { value: "Saving now" } });
-    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+    expect(state()).toBe("typing");
 
-    expect(screen.getByTestId("task-title-saving")).toBeTruthy();
+    // Debounce expires and the write starts: morph to the spinner.
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+    expect(state()).toBe("saving");
 
     release?.();
     await vi.advanceTimersByTimeAsync(0);
-
-    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+    expect(state()).toBe("idle");
   });
 
-  // NEGATIVE CONTROL: no spinner without an edit, so the assertion above
-  // cannot pass for a spinner that is simply always mounted.
-  it("shows no spinner when nothing is being saved", async () => {
+  // NEGATIVE CONTROL: an untouched field must sit idle, so the assertions
+  // above cannot pass for an indicator that is always showing something.
+  it("stays idle when nothing is being edited", async () => {
     render(<TaskTitle taskId="task-1" />);
     await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
 
-    expect(screen.queryByTestId("task-title-saving")).toBeNull();
+    expect(state()).toBe("idle");
+  });
+
+  it("returns to idle when the user types back the saved title", async () => {
+    render(<TaskTitle taskId="task-1" />);
+    const input = screen.getByDisplayValue("Old title");
+
+    fireEvent.change(input, { target: { value: "Old title changed" } });
+    expect(state()).toBe("typing");
+
+    // Back to the persisted value: nothing left to save.
+    fireEvent.change(input, { target: { value: "Old title" } });
+    expect(state()).toBe("idle");
+
+    await vi.advanceTimersByTimeAsync(TASK_TITLE_SAVE_DELAY_MS * 2);
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });
