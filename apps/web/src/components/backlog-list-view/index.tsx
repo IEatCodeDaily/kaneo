@@ -24,6 +24,7 @@ import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -55,6 +56,9 @@ function BacklogListView({
     focusPrevious,
     focusedTaskId,
     clearFocus,
+    isSelectMode,
+    selectedTaskIds,
+    selectTasks,
   } = useBacklogBulkSelectionStore();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -329,6 +333,22 @@ function BacklogListView({
           </button>
 
           <div className="flex items-center gap-1">
+            {isSelectMode && tasks.length > 0 && (
+              <Checkbox
+                aria-label={`Select all ${title} tickets`}
+                checked={tasks.every((task) => selectedTaskIds.has(task.id))}
+                onCheckedChange={(checked) => {
+                  const sectionIds = new Set(tasks.map((task) => task.id));
+                  selectTasks(
+                    checked
+                      ? [...new Set([...selectedTaskIds, ...sectionIds])]
+                      : [...selectedTaskIds].filter(
+                          (id) => !sectionIds.has(id),
+                        ),
+                  );
+                }}
+              />
+            )}
             {showAddButton && (
               <button
                 type="button"

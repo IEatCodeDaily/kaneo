@@ -4,7 +4,7 @@ import { ArrowRight, Calendar, Filter, Plus, User, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
-import { planMoveAllPlannedToTodo } from "@/components/backlog-list-view/move-all-planned";
+
 import BoardLayout from "@/components/common/board-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/menu";
 import labelColors from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -45,6 +45,7 @@ import { getPriorityIcon } from "@/lib/priority";
 import type { SortConfig } from "@/lib/sort-tasks";
 import { sortTasks } from "@/lib/sort-tasks";
 import { toast } from "@/lib/toast";
+import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
@@ -71,8 +72,10 @@ function RouteComponent() {
   const { board, setBoard } = useBoardStore();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   // #143: proper confirmation dialog for the bulk move (was window.confirm).
-  const [moveAllOpen, setMoveAllOpen] = useState(false);
-  const { mutate: updateTask } = useUpdateTask();
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const { bulkMoveToBoard } = useBulkOperations();
+  const { selectedTaskIds, isSelectMode, setSelectMode, clearSelection } =
+    useBacklogBulkSelectionStore();
   const [sort, setSort] = useState<SortConfig>({
     field: "position",
     direction: "asc",
@@ -323,28 +326,18 @@ function RouteComponent() {
    * box that ignores the app's styling, cannot show the destination, and is
    * not keyboard-navigable in the way the rest of the app is.
    */
-  const handleMoveAllPlannedToTodo = () => {
-    if (!board) return;
+  const selectedTasks = [
+    ...(board?.plannedTasks ?? []),
+    ...(board?.archivedTasks ?? []),
+  ].filter((task) => selectedTaskIds.has(task.id));
 
-    if ((board.plannedTasks || []).length === 0) {
-      toast.info(t("tasks:backlog.noTasksToMove"));
-      return;
-    }
-
-    setMoveAllOpen(true);
-  };
-
-  const confirmMoveAllPlannedToTodo = () => {
-    const plan = planMoveAllPlannedToTodo(board ?? null);
-    if (!plan) return;
-
-    for (const task of plan.movedTasks) {
-      updateTask(task);
-    }
-
-    setBoard(plan.updatedBoard);
-    setMoveAllOpen(false);
-    toast.success(t("tasks:backlog.moveAllSuccess", { count: plan.count }));
+  const confirmBulkMove = async () => {
+    await bulkMoveToBoard({ taskIds: [...selectedTaskIds], status: "to-do" });
+    setBulkMoveOpen(false);
+    clearSelection();
+    toast.success(
+      t("tasks:backlog.moveAllSuccess", { count: selectedTasks.length }),
+    );
   };
 
   return (
@@ -372,12 +365,18 @@ function RouteComponent() {
                 <Button
                   variant="ghost"
                   size="xs"
-                  onClick={handleMoveAllPlannedToTodo}
+                  onClick={() =>
+                    isSelectMode
+                      ? selectedTaskIds.size > 0 && setBulkMoveOpen(true)
+                      : setSelectMode(true)
+                  }
                   className="h-6 px-2 text-xs text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  title={t("tasks:backlog.moveAllTooltip")}
+                  disabled={isSelectMode && selectedTaskIds.size === 0}
                 >
                   <ArrowRight className="h-3 w-3 mr-1" />
-                  {t("tasks:backlog.moveAll")}
+                  {isSelectMode
+                    ? `Move (${selectedTaskIds.size})`
+                    : "Bulk Move"}
                 </Button>
 
                 {filters.priority && (
@@ -722,18 +721,21 @@ function RouteComponent() {
           what it does, and Escape/overlay-click cancel — all of which the
           native confirm() it replaced could not do.
         */}
-        <AlertDialog open={moveAllOpen} onOpenChange={setMoveAllOpen}>
+        <AlertDialog open={bulkMoveOpen} onOpenChange={setBulkMoveOpen}>
           <AlertDialogContent data-testid="backlog-move-all-dialog">
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("tasks:backlog.moveAllDialogTitle")}
-              </AlertDialogTitle>
+              <AlertDialogTitle>Move selected tickets?</AlertDialogTitle>
               <AlertDialogDescription>
-                {t("tasks:backlog.moveAllDialogDescription", {
-                  count: (board?.plannedTasks || []).length,
-                })}
+                This will move {selectedTasks.length} tickets to To Do.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <ul className="max-h-60 space-y-1 overflow-y-auto rounded-md border p-2 text-sm">
+              {selectedTasks.map((task) => (
+                <li className="truncate" key={task.id}>
+                  {task.title}
+                </li>
+              ))}
+            </ul>
             <AlertDialogFooter>
               <AlertDialogClose>
                 <Button variant="outline" size="sm">
@@ -742,11 +744,11 @@ function RouteComponent() {
               </AlertDialogClose>
               <Button
                 data-testid="backlog-move-all-confirm"
-                onClick={confirmMoveAllPlannedToTodo}
+                onClick={() => void confirmBulkMove()}
                 size="sm"
               >
                 {t("tasks:backlog.moveAllDialogConfirm", {
-                  count: (board?.plannedTasks || []).length,
+                  count: selectedTasks.length,
                 })}
               </Button>
             </AlertDialogFooter>

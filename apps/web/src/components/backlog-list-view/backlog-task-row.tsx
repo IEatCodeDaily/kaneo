@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { cn } from "@/lib/cn";
@@ -64,6 +65,9 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
   const isTaskSelected = useBacklogBulkSelectionStore((state) =>
     state.selectedTaskIds.has(task.id),
   );
+  const isSelectMode = useBacklogBulkSelectionStore(
+    (state) => state.isSelectMode,
+  );
   const isTaskFocused = useBacklogBulkSelectionStore(
     (state) => state.focusedTaskId === task.id,
   );
@@ -71,6 +75,12 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
   const handleClick = (e: React.MouseEvent) => {
     if (!boardId || !task) return;
     if (e.defaultPrevented) return;
+
+    if (isSelectMode) {
+      e.preventDefault();
+      toggleSelection(task.id);
+      return;
+    }
 
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
@@ -136,6 +146,12 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
               isTaskSelected ? "bg-accent/45" : "hover:bg-accent/60",
             )}
           >
+            {isSelectMode && (
+              <Checkbox
+                aria-label={`Select ${task.title}`}
+                checked={isTaskSelected}
+              />
+            )}
             {showPriority && (
               <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
                 {getPriorityIcon(task.priority ?? "")}
