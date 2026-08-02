@@ -50,7 +50,8 @@ describe("BoardToolbar", () => {
       scope(/boardFilters\.filterBy|actions\.filter/).length,
     ).toBeGreaterThan(0);
     expect(scope(/sort/i).length).toBeGreaterThan(0);
-    expect(scope(/viewOptions\.label/).length).toBeGreaterThan(0);
+    expect(scope(/groupBy\.label/).length).toBeGreaterThan(0);
+    expect(scope(/display\.label/).length).toBeGreaterThan(0);
     expect(
       bar.querySelector('input[placeholder="tasks:boardSearchPlaceholder"]'),
     ).toBeTruthy();
@@ -74,7 +75,7 @@ describe("BoardToolbar", () => {
     const onGroupByChange = vi.fn();
     render(<BoardToolbar {...baseProps} onGroupByChange={onGroupByChange} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /viewOptions\.label/ }));
+    fireEvent.click(screen.getByRole("button", { name: /groupBy\.label/ }));
     fireEvent.click(
       screen.getByRole("menuitemradio", { name: "tasks:groupBy.priority" }),
     );

@@ -1,11 +1,11 @@
-import { LayoutGrid, Rows3 } from "lucide-react";
+import { Eye, Group, LayoutGrid, Rows3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { BoardDensity } from "@/components/kanban-board/board-density";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -14,6 +14,7 @@ import {
 import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
 import { BOARD_GROUP_BY_VALUES } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type BoardViewOptionsProps = {
   groupBy: BoardGroupBy;
@@ -26,16 +27,9 @@ const GROUP_BY_LABEL_KEYS: Record<BoardGroupBy, string> = {
   none: "tasks:groupBy.none",
   assignee: "tasks:groupBy.assignee",
   priority: "tasks:groupBy.priority",
-  // Not `groupBy.label` — that key is the section heading ("Group by"), so the
-  // option itself would have rendered as "Group by" instead of "Label".
   label: "tasks:groupBy.byLabel",
 };
 
-/**
- * Compact board-header control: group-by picker + card density toggle.
- * Sits beside the existing search/filter controls rather than introducing a
- * second toolbar.
- */
 function BoardViewOptions({
   groupBy,
   onGroupByChange,
@@ -43,76 +37,94 @@ function BoardViewOptions({
   onDensityChange,
 }: BoardViewOptionsProps) {
   const { t } = useTranslation();
+  const display = useUserPreferencesStore();
+  const fields = [
+    [
+      "tasks:display.taskNumbers",
+      display.showTaskNumbers,
+      display.toggleTaskNumbers,
+    ],
+    ["tasks:display.assignee", display.showAssignees, display.toggleAssignees],
+    ["tasks:display.dates", display.showDueDates, display.toggleDueDates],
+    ["tasks:display.labels", display.showLabels, display.toggleLabels],
+    ["tasks:display.priority", display.showPriority, display.togglePriority],
+  ] as const;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="xs"
-          className="h-7 gap-1.5 rounded-md px-2 text-muted-foreground text-xs"
-          aria-label={t("tasks:viewOptions.label")}
-        >
-          <LayoutGrid className="size-3.5" />
-          <span className="hidden sm:inline">
-            {t("tasks:viewOptions.label")}
-          </span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-52">
-        <DropdownMenuRadioGroup
-          value={groupBy}
-          onValueChange={(value) => onGroupByChange(value as BoardGroupBy)}
-        >
-          {/* Base UI requires group parts to live inside the group itself:
-              a label rendered as a sibling throws MenuGroupContext is missing. */}
-          <DropdownMenuLabel>{t("tasks:groupBy.label")}</DropdownMenuLabel>
-          {BOARD_GROUP_BY_VALUES.map((value) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              {t(GROUP_BY_LABEL_KEYS[value])}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-7 gap-1.5 px-2 text-xs"
+          >
+            <Group className="size-3.5" />
+            {t("tasks:groupBy.label")}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuRadioGroup
+            value={groupBy}
+            onValueChange={(value) => onGroupByChange(value as BoardGroupBy)}
+          >
+            {BOARD_GROUP_BY_VALUES.map((value) => (
+              <DropdownMenuRadioItem key={value} value={value}>
+                {t(GROUP_BY_LABEL_KEYS[value])}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <DropdownMenuSeparator />
-
-        <div className="px-2 pt-1 pb-1.5">
-          <p className="px-1 pb-1.5 text-muted-foreground text-xs">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-7 gap-1.5 px-2 text-xs"
+          >
+            <Eye className="size-3.5" />
             {t("tasks:display.label")}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant={density === "comfortable" ? "secondary" : "ghost"}
-              size="xs"
-              aria-pressed={density === "comfortable"}
-              onClick={() => onDensityChange("comfortable")}
-              className={cn(
-                "h-6 flex-1 gap-1.5 rounded-md px-2 text-xs",
-                density !== "comfortable" && "text-muted-foreground",
-              )}
-            >
-              <LayoutGrid className="size-3.5" />
-              {t("tasks:display.comfortable")}
-            </Button>
-            <Button
-              type="button"
-              variant={density === "compact" ? "secondary" : "ghost"}
-              size="xs"
-              aria-pressed={density === "compact"}
-              onClick={() => onDensityChange("compact")}
-              className={cn(
-                "h-6 flex-1 gap-1.5 rounded-md px-2 text-xs",
-                density !== "compact" && "text-muted-foreground",
-              )}
-            >
-              <Rows3 className="size-3.5" />
-              {t("tasks:display.compact")}
-            </Button>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <div className="flex gap-1 px-2 pb-2">
+            {(["comfortable", "compact"] as const).map((value) => (
+              <Button
+                aria-pressed={density === value}
+                className={cn(
+                  "h-6 flex-1 gap-1.5 px-2 text-xs",
+                  density !== value && "text-muted-foreground",
+                )}
+                key={value}
+                onClick={() => onDensityChange(value)}
+                size="xs"
+                type="button"
+                variant={density === value ? "secondary" : "ghost"}
+              >
+                {value === "comfortable" ? (
+                  <LayoutGrid className="size-3.5" />
+                ) : (
+                  <Rows3 className="size-3.5" />
+                )}
+                {t(`tasks:display.${value}`)}
+              </Button>
+            ))}
           </div>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSeparator />
+          {fields.map(([label, checked, toggle]) => (
+            <DropdownMenuCheckboxItem
+              checked={checked}
+              key={label}
+              onCheckedChange={toggle}
+            >
+              {t(label)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 
