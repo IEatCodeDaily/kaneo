@@ -1,8 +1,6 @@
-import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
-import { formatDateShort } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
 import type { ExternalLink } from "@/types/external-link";
@@ -68,21 +66,11 @@ export function PublicTaskRow({
         )}
 
         {task.dueDate && (
-          <div
-            className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded ${dueDateStatusColors[getDueDateStatus(task.dueDate)]}`}
-          >
-            {getDueDateStatus(task.dueDate) === "overdue" && (
-              <CalendarX className="w-3 h-3" />
-            )}
-            {getDueDateStatus(task.dueDate) === "due-soon" && (
-              <CalendarClock className="w-3 h-3" />
-            )}
-            {(getDueDateStatus(task.dueDate) === "far-future" ||
-              getDueDateStatus(task.dueDate) === "no-due-date") && (
-              <Calendar className="w-3 h-3" />
-            )}
-            <span>{formatDateShort(task.dueDate)}</span>
-          </div>
+          <TaskDueDateBadge
+            completedAt={task.updatedAt}
+            dueDate={task.dueDate}
+            status={task.status}
+          />
         )}
 
         {task.priority && (

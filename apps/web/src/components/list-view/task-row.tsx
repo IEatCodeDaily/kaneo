@@ -1,17 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useNavigate } from "@tanstack/react-router";
-import { format } from "date-fns";
-import {
-  Calendar,
-  CalendarClock,
-  CalendarX,
-  GitMerge,
-  GitPullRequest,
-} from "lucide-react";
+import { GitMerge, GitPullRequest } from "lucide-react";
 import { type CSSProperties, memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
+import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -32,7 +26,6 @@ import {
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { cn } from "@/lib/cn";
-import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { getInitials } from "@/lib/get-initials";
 import {
   intentPrefetchHandlers,
@@ -347,21 +340,12 @@ const TaskRowContent = memo(function TaskRowContent({
             </div>
 
             {showDueDates && task.dueDate && (
-              <div
-                className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded flex-shrink-0 ${dueDateStatusColors[getDueDateStatus(task.dueDate)]}`}
-              >
-                {getDueDateStatus(task.dueDate) === "overdue" && (
-                  <CalendarX className="w-3 h-3" />
-                )}
-                {getDueDateStatus(task.dueDate) === "due-soon" && (
-                  <CalendarClock className="w-3 h-3" />
-                )}
-                {(getDueDateStatus(task.dueDate) === "far-future" ||
-                  getDueDateStatus(task.dueDate) === "no-due-date") && (
-                  <Calendar className="w-3 h-3" />
-                )}
-                <span>{format(new Date(task.dueDate), "MMM d")}</span>
-              </div>
+              <TaskDueDateBadge
+                completedAt={task.updatedAt}
+                dueDate={task.dueDate}
+                status={task.status}
+                className="shrink-0"
+              />
             )}
 
             {showAssignees && (

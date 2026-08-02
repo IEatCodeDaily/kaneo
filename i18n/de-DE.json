@@ -1733,7 +1733,12 @@
 			"updateSuccess": "Fälligkeitsdatum erfolgreich aktualisiert",
 			"updateError": "Fälligkeitsdatum konnte nicht aktualisiert werden",
 			"clearSuccess": "Fälligkeitsdatum entfernt",
-			"clearError": "Fälligkeitsdatum konnte nicht entfernt werden"
+			"clearError": "Fälligkeitsdatum konnte nicht entfernt werden",
+			"outcome": {
+					"early": "Früh",
+					"on-time": "Pünktlich",
+					"late": "Verspätet"
+			}
 		},
 		"labels": {
 			"label": "Labels",

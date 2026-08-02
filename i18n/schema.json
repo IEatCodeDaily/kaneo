@@ -7583,6 +7583,26 @@
 						},
 						"clearError": {
 							"type": "string"
+						},
+						"outcome": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"early": {
+									"type": "string"
+								},
+								"on-time": {
+									"type": "string"
+								},
+								"late": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"early",
+								"on-time",
+								"late"
+							]
 						}
 					},
 					"required": [
@@ -7591,7 +7611,8 @@
 						"updateSuccess",
 						"updateError",
 						"clearSuccess",
-						"clearError"
+						"clearError",
+						"outcome"
 					]
 				},
 				"labels": {

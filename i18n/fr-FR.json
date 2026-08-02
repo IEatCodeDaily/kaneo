@@ -1700,7 +1700,12 @@
 			"updateSuccess": "Date d'échéance de la tâche mise à jour avec succès",
 			"updateError": "Échec de la mise à jour de la date d'échéance de la tâche",
 			"clearSuccess": "Date d'échéance de la tâche effacée",
-			"clearError": "Échec de l'effacement de la date d'échéance"
+			"clearError": "Échec de l'effacement de la date d'échéance",
+			"outcome": {
+					"early": "En avance",
+					"on-time": "À temps",
+					"late": "En retard"
+			}
 		},
 		"labels": {
 			"label": "Labels",
