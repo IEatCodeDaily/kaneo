@@ -1117,7 +1117,9 @@
 				"create": "만들기",
 				"views": "보기",
 				"navigation": "탐색",
-				"quickSelect": "빠른 선택 (팝오버 내)"
+				"quickSelect": "빠른 선택 (팝오버 내)",
+				"ticketTitle": "티켓 제목",
+				"editor": "설명 및 댓글"
 			},
 			"items": {
 				"openCommandPalette": "명령 팔레트 열기",
@@ -1134,7 +1136,12 @@
 				"nextTask": "다음 작업",
 				"prevTask": "이전 작업",
 				"openTask": "선택한 작업 열기",
-				"quickSelectNumber": "번호로 옵션 선택"
+				"quickSelectNumber": "번호로 옵션 선택",
+				"titleLabel": "라벨 추가",
+				"titleMember": "담당자 지정",
+				"titlePriority": "우선순위 설정",
+				"editorMention": "사람 또는 티켓 멘션",
+				"editorSlash": "블록 메뉴 열기"
 			}
 		},
 		"repoList": {
@@ -1661,7 +1668,8 @@
 		},
 		"labels": {
 			"label": "라벨",
-			"empty": "사용 가능한 라벨이 없습니다"
+			"empty": "사용 가능한 라벨이 없습니다",
+			"fromRepository": "연결된 저장소에서"
 		},
 		"update": {
 			"success": "작업이 업데이트되었습니다",

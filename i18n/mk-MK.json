@@ -1115,7 +1115,9 @@
 				"create": "Креирај",
 				"views": "Прикази",
 				"navigation": "Навигација",
-				"quickSelect": "Брз избор (во менија)"
+				"quickSelect": "Брз избор (во менија)",
+				"ticketTitle": "Наслов на тикет",
+				"editor": "Опис и коментари"
 			},
 			"items": {
 				"openCommandPalette": "Отвори палета на команди",
@@ -1132,7 +1134,12 @@
 				"nextTask": "Следна задача",
 				"prevTask": "Претходна задача",
 				"openTask": "Отвори избрана задача",
-				"quickSelectNumber": "Избери опција по број"
+				"quickSelectNumber": "Избери опција по број",
+				"titleLabel": "Додај ознака",
+				"titleMember": "Додели член",
+				"titlePriority": "Постави приоритет",
+				"editorMention": "Спомни личност или тикет",
+				"editorSlash": "Отвори мени за блокови"
 			}
 		},
 		"repoList": {
@@ -1659,7 +1666,8 @@
 		},
 		"labels": {
 			"label": "Етикети",
-			"empty": "Нема достапни етикети"
+			"empty": "Нема достапни етикети",
+			"fromRepository": "Од поврзано складиште"
 		},
 		"update": {
 			"success": "Задачата е успешно ажурирана",

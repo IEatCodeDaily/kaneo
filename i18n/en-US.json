@@ -1310,7 +1310,9 @@
 				"create": "Create",
 				"views": "Views",
 				"navigation": "Navigation",
-				"quickSelect": "Quick Select (in popovers)"
+				"quickSelect": "Quick Select (in popovers)",
+				"ticketTitle": "Ticket title",
+				"editor": "Description & comments"
 			},
 			"items": {
 				"openCommandPalette": "Open command palette",
@@ -1327,7 +1329,12 @@
 				"nextTask": "Next ticket",
 				"prevTask": "Previous ticket",
 				"openTask": "Open selected ticket",
-				"quickSelectNumber": "Select option by number"
+				"quickSelectNumber": "Select option by number",
+				"titleLabel": "Add a label",
+				"titleMember": "Assign a member",
+				"titlePriority": "Set priority",
+				"editorMention": "Mention a person or ticket",
+				"editorSlash": "Open the block menu"
 			}
 		},
 		"repoList": {
@@ -1890,7 +1897,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "No labels available"
+			"empty": "No labels available",
+			"fromRepository": "From linked repository"
 		},
 		"update": {
 			"success": "Ticket updated successfully",

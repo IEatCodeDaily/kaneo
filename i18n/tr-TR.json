@@ -1118,7 +1118,9 @@
 				"create": "Oluştur",
 				"views": "Görünümler",
 				"navigation": "Gezinme",
-				"quickSelect": "Hızlı Seçim (açılır pencerelerde)"
+				"quickSelect": "Hızlı Seçim (açılır pencerelerde)",
+				"ticketTitle": "Bilet başlığı",
+				"editor": "Açıklama ve yorumlar"
 			},
 			"items": {
 				"openCommandPalette": "Komut paletini aç",
@@ -1135,7 +1137,12 @@
 				"nextTask": "Sonraki talep",
 				"prevTask": "Önceki talep",
 				"openTask": "Seçili talebi aç",
-				"quickSelectNumber": "Numarayla seçenek seç"
+				"quickSelectNumber": "Numarayla seçenek seç",
+				"titleLabel": "Etiket ekle",
+				"titleMember": "Üye ata",
+				"titlePriority": "Öncelik belirle",
+				"editorMention": "Kişi veya bilet an",
+				"editorSlash": "Blok menüsünü aç"
 			}
 		},
 		"repoList": {
@@ -1667,7 +1674,8 @@
 		},
 		"labels": {
 			"label": "Etiketler",
-			"empty": "Kullanılabilir etiket yok"
+			"empty": "Kullanılabilir etiket yok",
+			"fromRepository": "Bağlı depodan"
 		},
 		"update": {
 			"success": "Talep başarıyla güncellendi",

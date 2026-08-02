@@ -1133,7 +1133,9 @@
 				"create": "Erstellen",
 				"views": "Ansichten",
 				"navigation": "Navigation",
-				"quickSelect": "Schnellauswahl (in Popovers)"
+				"quickSelect": "Schnellauswahl (in Popovers)",
+				"ticketTitle": "Ticket-Titel",
+				"editor": "Beschreibung & Kommentare"
 			},
 			"items": {
 				"openCommandPalette": "Befehlspalette öffnen",
@@ -1150,7 +1152,12 @@
 				"nextTask": "Nächste Aufgabe",
 				"prevTask": "Vorherige Aufgabe",
 				"openTask": "Ausgewählte Aufgabe öffnen",
-				"quickSelectNumber": "Option per Nummer auswählen"
+				"quickSelectNumber": "Option per Nummer auswählen",
+				"titleLabel": "Label hinzufügen",
+				"titleMember": "Mitglied zuweisen",
+				"titlePriority": "Priorität setzen",
+				"editorMention": "Person oder Ticket erwähnen",
+				"editorSlash": "Blockmenü öffnen"
 			}
 		},
 		"repoList": {
@@ -1701,7 +1708,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Keine Labels verfügbar"
+			"empty": "Keine Labels verfügbar",
+			"fromRepository": "Aus verknüpftem Repository"
 		},
 		"update": {
 			"success": "Aufgabe erfolgreich aktualisiert",

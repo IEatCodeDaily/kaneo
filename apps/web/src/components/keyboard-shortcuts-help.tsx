@@ -22,7 +22,8 @@ type ShortcutCategory = {
   shortcuts: ShortcutItem[];
 };
 
-function useShortcutCategories(): ShortcutCategory[] {
+/** Exported so the documented inventory can be asserted directly (#115). */
+export function useShortcutCategories(): ShortcutCategory[] {
   const { t } = useTranslation();
 
   return useMemo(
@@ -122,6 +123,46 @@ function useShortcutCategories(): ShortcutCategory[] {
             description: t(
               "navigation:keyboardShortcuts.items.quickSelectNumber",
             ),
+          },
+        ],
+      },
+      /*
+       * #115: "A help popup to show all the shortcuts in Task title, Task
+       * description, comments. @ / # etc."
+       *
+       * Only shortcuts verified in the code are listed:
+       *   #/@/! -> lib/title-token-autocomplete.ts (SIGILS)
+       *   @     -> task/extensions/mention-suggestion.tsx (description)
+       *   @     -> activity/comment-editor.tsx (comments)
+       *   /     -> task-description.tsx slash menu
+       */
+      {
+        title: t("navigation:keyboardShortcuts.categories.ticketTitle"),
+        shortcuts: [
+          {
+            keys: ["#"],
+            description: t("navigation:keyboardShortcuts.items.titleLabel"),
+          },
+          {
+            keys: ["@"],
+            description: t("navigation:keyboardShortcuts.items.titleMember"),
+          },
+          {
+            keys: ["!"],
+            description: t("navigation:keyboardShortcuts.items.titlePriority"),
+          },
+        ],
+      },
+      {
+        title: t("navigation:keyboardShortcuts.categories.editor"),
+        shortcuts: [
+          {
+            keys: ["@"],
+            description: t("navigation:keyboardShortcuts.items.editorMention"),
+          },
+          {
+            keys: ["/"],
+            description: t("navigation:keyboardShortcuts.items.editorSlash"),
           },
         ],
       },

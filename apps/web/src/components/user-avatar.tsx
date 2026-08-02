@@ -1,7 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, Mail, Settings, Shield, Trash2 } from "lucide-react";
+import { Keyboard, LogOut, Mail, Settings, Shield, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { openKeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
 import { OrganizationMenuSection } from "@/components/organization-switcher";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { ThemeToggleDropdown } from "@/components/theme-toggle-dropdown";
@@ -175,6 +176,19 @@ export function UserAvatar() {
               {t("navigation:sidebar.trash")}
             </DropdownMenuItem>
           )}
+          {/*
+            #115: the shortcuts help lives here, next to the other
+            account-level entries. The dialog itself is mounted once at the app
+            root, so this only has to ask it to open.
+          */}
+          <DropdownMenuItem
+            className="h-7 gap-2 px-2 text-sm font-normal"
+            data-testid="profile-menu-shortcuts"
+            onClick={() => openKeyboardShortcutsHelp()}
+          >
+            <Keyboard className="size-3.5" />
+            {t("navigation:keyboardShortcuts.title")}
+          </DropdownMenuItem>
           {user.role === "admin" && (
             <DropdownMenuItem
               onClick={() => navigate({ to: "/dashboard/admin" })}

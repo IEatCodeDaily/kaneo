@@ -1119,7 +1119,9 @@
 				"create": "Créer",
 				"views": "Vues",
 				"navigation": "Navigation",
-				"quickSelect": "Sélection rapide (dans les popovers)"
+				"quickSelect": "Sélection rapide (dans les popovers)",
+				"ticketTitle": "Titre du ticket",
+				"editor": "Description et commentaires"
 			},
 			"items": {
 				"openCommandPalette": "Ouvrir la palette de commandes",
@@ -1136,7 +1138,12 @@
 				"nextTask": "Tâche suivante",
 				"prevTask": "Tâche précédente",
 				"openTask": "Ouvrir la tâche sélectionnée",
-				"quickSelectNumber": "Sélectionner une option par numéro"
+				"quickSelectNumber": "Sélectionner une option par numéro",
+				"titleLabel": "Ajouter une étiquette",
+				"titleMember": "Affecter un membre",
+				"titlePriority": "Définir la priorité",
+				"editorMention": "Mentionner une personne ou un ticket",
+				"editorSlash": "Ouvrir le menu de blocs"
 			}
 		},
 		"repoList": {
@@ -1668,7 +1675,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Aucun label disponible"
+			"empty": "Aucun label disponible",
+			"fromRepository": "Du dépôt lié"
 		},
 		"update": {
 			"success": "Tâche mise à jour avec succès",

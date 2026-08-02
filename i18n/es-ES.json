@@ -900,7 +900,9 @@
 				"create": "Crear",
 				"views": "Vistas",
 				"navigation": "Navegación",
-				"quickSelect": "Selección rápida (en ventana emergente)"
+				"quickSelect": "Selección rápida (en ventana emergente)",
+				"ticketTitle": "Título del ticket",
+				"editor": "Descripción y comentarios"
 			},
 			"items": {
 				"openCommandPalette": "Abrir paleta de comandos",
@@ -917,7 +919,12 @@
 				"nextTask": "Siguiente tarea",
 				"prevTask": "Tarea anterior",
 				"openTask": "Abrir tarea seleccionada",
-				"quickSelectNumber": "Seleccionar opción por número"
+				"quickSelectNumber": "Seleccionar opción por número",
+				"titleLabel": "Añadir una etiqueta",
+				"titleMember": "Asignar un miembro",
+				"titlePriority": "Establecer prioridad",
+				"editorMention": "Mencionar a una persona o ticket",
+				"editorSlash": "Abrir el menú de bloques"
 			}
 		},
 		"repoList": {
@@ -1433,7 +1440,8 @@
 		},
 		"labels": {
 			"label": "Etiquetas",
-			"empty": "No hay etiquetas disponibles"
+			"empty": "No hay etiquetas disponibles",
+			"fromRepository": "Del repositorio vinculado"
 		},
 		"update": {
 			"success": "Tarea actualizada correctamente",
