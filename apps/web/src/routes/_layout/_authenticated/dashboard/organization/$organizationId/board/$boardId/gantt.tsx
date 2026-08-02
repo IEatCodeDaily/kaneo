@@ -810,16 +810,18 @@ function RouteComponent() {
                   style={{
                     left: timelineLeft,
                     width: `${timeline.timelineMinWidthRem}rem`,
-                    ...(zoom === "day"
-                      ? {
-                          backgroundImage: [
-                            weekendTintGradient(timeline),
-                            gridLineGradient(timeline),
-                          ]
-                            .filter(Boolean)
-                            .join(", "),
-                        }
-                      : {}),
+                    /*
+                      #163: the grid used to be painted only at day zoom, so
+                      switching zoom made it vanish and reappear — read as
+                      blinking. The gradients are driven by `dayWidthRem`, which
+                      is valid at every zoom, so paint them unconditionally.
+                    */
+                    backgroundImage: [
+                      weekendTintGradient(timeline),
+                      gridLineGradient(timeline),
+                    ]
+                      .filter(Boolean)
+                      .join(", "),
                   }}
                 />
 
@@ -893,7 +895,7 @@ function RouteComponent() {
                         aria-expanded={!unscheduledCollapsed}
                         data-testid="gantt-section-unscheduled"
                         onClick={() => setUnscheduledCollapsed((open) => !open)}
-                        className="sticky top-0 z-[14] flex w-full items-center border-y border-border bg-muted/40 py-1 text-left hover:bg-muted/60"
+                        className="sticky top-0 z-[14] flex w-full items-center border-y border-border bg-card py-1 text-left hover:bg-accent"
                         style={{ width: showTaskRail ? undefined : "100%" }}
                       >
                         {/*
@@ -905,7 +907,7 @@ function RouteComponent() {
                           scrolls underneath.
                         */}
                         <span
-                          className="sticky left-0 z-[1] flex shrink-0 items-center gap-2 bg-muted/40 px-3"
+                          className="sticky left-0 z-[1] flex shrink-0 items-center gap-2 bg-card px-3"
                           style={
                             showTaskRail
                               ? { width: `${taskColumnWidthRem}rem` }

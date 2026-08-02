@@ -325,7 +325,7 @@ export default function CreateTaskTopbar({
               <div className="max-h-80 overflow-y-auto p-2">
                 {selectedParent ? (
                   <button
-                    className="mb-1 flex w-full items-center gap-2 rounded-md bg-accent px-2 py-2 text-left text-sm"
+                    className="mb-1 flex w-full items-center gap-2 rounded-md bg-primary px-2 py-2 text-primary-foreground text-left text-sm"
                     onClick={() => {
                       setPinnedParent(null);
                       onParentTaskChange(null);
