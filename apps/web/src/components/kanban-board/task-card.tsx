@@ -481,8 +481,9 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
 
-    transition:
-      transition || "transform 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    // Pointer updates arrive every frame. A 250ms transition queues stale
+    // transforms behind the cursor and makes pickup/movement feel rubbery.
+    transition: isDragging ? "none" : transition,
     opacity: isDragging ? 0.6 : 1,
     touchAction: isDragging ? "none" : "auto",
     zIndex: isDragging ? 999 : "auto",

@@ -30,7 +30,6 @@ import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 
 import Column from "./column";
-import { TaskCardContent } from "./task-card";
 
 type KanbanBoardProps = {
   board: BoardWithTasks;
@@ -230,10 +229,13 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       </div>
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (
-          <div className="transform rotate-1 scale-[1.03] shadow-lg">
-            <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCardContent task={activeTask} isDragging />
-            </div>
+          <div className="w-80 rotate-1 scale-[1.03] rounded-lg border border-ring/40 bg-card p-3 shadow-lg ring-2 ring-ring/35">
+            <p className="text-[10px] font-mono text-muted-foreground">
+              {activeTask.number}
+            </p>
+            <p className="mt-2 line-clamp-3 text-sm font-medium text-card-foreground">
+              {activeTask.title}
+            </p>
           </div>
         ) : null}
       </DragOverlay>
