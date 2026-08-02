@@ -223,4 +223,40 @@ describe("flag activity entries (#107)", () => {
     );
     expect(screen.queryByText("flags:dialog.unflag")).toBeNull();
   });
+
+  /**
+   * #167 round 2: the note first shipped as a full-width bordered, filled box,
+   * which read as a disabled text input rather than activity metadata.
+   */
+  it("renders the note as inline metadata, not an input-like box", () => {
+    const resolved = {
+      ...baseActivity,
+      type: "flag_resolved",
+      eventData: {
+        flagTypeName: "Need Help",
+        flagTypeColor: "#3b82f6",
+        resolveNote: "Approved after the accessibility review",
+      },
+    };
+
+    renderActivity(resolved);
+
+    const note = screen.getByTestId("activity-flag-resolve-note");
+    const className = note.getAttribute("class") ?? "";
+
+    // No filled, fully-bordered card: that was the input lookalike.
+    expect(className).not.toMatch(/\bbg-muted/);
+    expect(className).not.toMatch(/\brounded-md\b/);
+    /*
+      Only a left rule, never an all-sides border. `border-<colour>` sets the
+      rule's colour and is fine; what must not appear is a bare `border` or a
+      width on another edge.
+    */
+    const edgeUtilities = className
+      .split(/\s+/)
+      .filter((c) => /^border(-[trb])?(-\d+)?$/.test(c));
+    expect(edgeUtilities).toEqual([]);
+    // Hangs off a left accent rule instead.
+    expect(className).toMatch(/border-l-2/);
+  });
 });
