@@ -71,6 +71,23 @@ describe("BoardToolbar", () => {
     expect(onSearchQueryChange).toHaveBeenCalledWith("login bug");
   });
 
+  it("clears an active search from the input", () => {
+    const onSearchQueryChange = vi.fn();
+    render(
+      <BoardToolbar
+        {...baseProps}
+        onSearchQueryChange={onSearchQueryChange}
+        searchQuery="login bug"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:boardClearSearch" }),
+    );
+
+    expect(onSearchQueryChange).toHaveBeenCalledWith("");
+  });
+
   it("exposes grouping from the toolbar view options control", () => {
     const onGroupByChange = vi.fn();
     render(<BoardToolbar {...baseProps} onGroupByChange={onGroupByChange} />);

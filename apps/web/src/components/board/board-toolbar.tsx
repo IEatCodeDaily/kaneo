@@ -568,8 +568,18 @@ export default function BoardToolbar({
                 onChange={(event) => onSearchQueryChange(event.target.value)}
                 placeholder={t("tasks:boardSearchPlaceholder")}
                 aria-label={t("tasks:boardSearchPlaceholder")}
-                className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
+                className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:pr-7 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
               />
+              {searchQuery ? (
+                <button
+                  aria-label={t("tasks:boardClearSearch")}
+                  className="-translate-y-1/2 absolute top-1/2 right-1.5 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  onClick={() => onSearchQueryChange("")}
+                  type="button"
+                >
+                  <X className="size-3.5" />
+                </button>
+              ) : null}
             </div>
 
             {selectedStatusIds.length > 0 && (

@@ -54,14 +54,13 @@ function BoardViewOptions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-7 gap-1.5 px-2 text-xs"
+          <button
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 font-medium text-foreground text-xs outline-none ring-0 hover:bg-accent/60"
+            type="button"
           >
             <Group className="size-3.5" />
             {t("tasks:groupBy.label")}
-          </Button>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
           <DropdownMenuRadioGroup
@@ -79,14 +78,13 @@ function BoardViewOptions({
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-7 gap-1.5 px-2 text-xs"
+          <button
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 font-medium text-foreground text-xs outline-none ring-0 hover:bg-accent/60"
+            type="button"
           >
             <Eye className="size-3.5" />
             {t("tasks:display.label")}
-          </Button>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
           <div className="flex gap-1 px-2 pb-2">

@@ -175,6 +175,7 @@ export function ColumnDropzone({
               const groupTitle = group.labelKey
                 ? t(group.labelKey)
                 : group.label;
+              const regionId = `${column.id}-task-group-${encodeURIComponent(groupKey)}`;
               return (
                 <section
                   className="flex flex-col gap-2"
@@ -185,8 +186,9 @@ export function ColumnDropzone({
                       asked for each grouping to be a collapsible section, not
                       a flat separator line. */}
                   <button
+                    aria-controls={regionId}
                     aria-expanded={!groupCollapsed}
-                    className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left font-medium text-[11px] text-muted-foreground uppercase tracking-wide hover:bg-muted hover:text-foreground"
+                    className="flex h-7 w-full items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2 text-left font-medium text-xs text-foreground/80 uppercase tracking-wide transition-colors hover:bg-muted hover:text-foreground"
                     data-slot="task-group-toggle"
                     onClick={() =>
                       setCollapsedTaskGroups((current) => {
@@ -208,8 +210,11 @@ export function ColumnDropzone({
                       {group.tasks.length}
                     </span>
                   </button>
-                  {!groupCollapsed &&
-                    group.tasks.map((task) => renderCard(task))}
+                  {!groupCollapsed ? (
+                    <div className="flex flex-col gap-2" id={regionId}>
+                      {group.tasks.map((task) => renderCard(task))}
+                    </div>
+                  ) : null}
                 </section>
               );
             })}

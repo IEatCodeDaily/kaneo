@@ -1532,6 +1532,7 @@
 			"urgent": "Urgent"
 		},
 		"boardSearchPlaceholder": "Search tickets...",
+		"boardClearSearch": "Clear search",
 		"view": {
 			"board": "Board",
 			"list": "List"
