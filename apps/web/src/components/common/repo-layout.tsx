@@ -8,15 +8,6 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
-import { KbdSequence } from "@/components/ui/kbd";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 
 type RepoLayoutProps = {
@@ -77,25 +68,6 @@ export default function RepoLayout({
       <Layout.Header className="h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-7 w-7 cursor-pointer text-foreground/85 hover:text-foreground" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="flex items-center gap-2 text-[10px]">
-                    Toggle sidebar
-                    <KbdSequence
-                      keys={[
-                        shortcuts.sidebar.prefix,
-                        shortcuts.sidebar.toggle,
-                      ]}
-                    />
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
             <div className="h-4 w-px shrink-0 bg-border/80" />
             <div className="hidden min-w-0 items-center gap-1 text-xs md:flex">
               <span className="truncate text-foreground/75">{repoTitle}</span>

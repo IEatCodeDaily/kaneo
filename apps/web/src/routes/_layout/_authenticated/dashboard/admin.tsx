@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import { authClient } from "@/lib/auth-client";
@@ -179,7 +178,6 @@ function AdminPage() {
       <Layout>
         <Layout.Header>
           <div className="flex w-full items-center gap-1">
-            <SidebarTrigger className="-ml-1 h-6 w-6" />
             <Separator
               orientation="vertical"
               className="mx-1.5 data-[orientation=vertical]:h-2.5"

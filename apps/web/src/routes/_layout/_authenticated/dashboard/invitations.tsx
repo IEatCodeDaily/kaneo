@@ -8,7 +8,6 @@ import PageTitle from "@/components/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -143,7 +142,6 @@ function InvitationsPage() {
       <Layout>
         <Layout.Header>
           <div className="flex items-center gap-1 w-full">
-            <SidebarTrigger className="-ml-1 h-6 w-6" />
             <Separator
               orientation="vertical"
               className="mx-1.5 data-[orientation=vertical]:h-2.5"

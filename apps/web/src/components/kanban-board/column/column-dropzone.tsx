@@ -57,7 +57,6 @@ export function ColumnDropzone({
     [column.tasks],
   );
 
-
   const totalGroups = groupBy === "none" ? groups.length : column.tasks.length;
 
   /**

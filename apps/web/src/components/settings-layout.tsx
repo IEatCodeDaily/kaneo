@@ -11,16 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { KbdSequence } from "@/components/ui/kbd";
 import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
 import { cn } from "@/lib/cn";
 
 type SettingsLayoutProps = {
@@ -58,24 +49,6 @@ export function SettingsLayout({
       <Layout.Header>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-1 w-full">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-6 w-6" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="flex items-center gap-2 text-[10px]">
-                    {t("navigation:settingsLayout.toggleSidebar")}
-                    <KbdSequence
-                      keys={[
-                        shortcuts.sidebar.prefix,
-                        shortcuts.sidebar.toggle,
-                      ]}
-                    />
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
             <Separator
               orientation="vertical"
               className="mx-1.5 data-[orientation=vertical]:h-2.5"
