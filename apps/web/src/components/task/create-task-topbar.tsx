@@ -1,14 +1,25 @@
+import { useQuery } from "@tanstack/react-query";
 import { Check, Milestone, Search, Workflow, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { getApiUrl } from "@/fetchers/get-api-url";
 import type { Milestone as MilestoneRow } from "@/fetchers/milestone/get-milestones-by-board";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
@@ -35,6 +46,19 @@ type PickableTask = {
   number: number | null;
 };
 
+function tasksFromBoard(data: unknown): PickableTask[] {
+  const source = data as
+    | {
+        columns?: Array<{ tasks?: PickableTask[] }>;
+        plannedTasks?: PickableTask[];
+      }
+    | undefined;
+  return [
+    ...(source?.columns ?? []).flatMap((column) => column.tasks ?? []),
+    ...(source?.plannedTasks ?? []),
+  ];
+}
+
 /**
  * Topbar row for the create-task modal: pick the milestone and the parent task
  * before the task exists. Both are applied after creation (milestone via the
@@ -52,6 +76,7 @@ export default function CreateTaskTopbar({
   const [milestoneOpen, setMilestoneOpen] = useState(false);
   const [parentOpen, setParentOpen] = useState(false);
   const [parentSearch, setParentSearch] = useState("");
+  const [parentBoardId, setParentBoardId] = useState("all");
 
   const { data: milestones = [] } = useGetMilestonesByBoard(boardId);
   const { data: boardData } = useGetTasks(boardId);
@@ -65,24 +90,7 @@ export default function CreateTaskTopbar({
       milestone.status !== "archived" || milestone.id === milestoneId,
   );
 
-  const boardTasks = useMemo<PickableTask[]>(() => {
-    const source = boardData as
-      | {
-          columns?: Array<{ tasks?: PickableTask[] }>;
-          plannedTasks?: PickableTask[];
-        }
-      | undefined;
-    const collected: PickableTask[] = [];
-    for (const column of source?.columns ?? []) {
-      for (const task of column?.tasks ?? []) {
-        if (task?.id) collected.push(task);
-      }
-    }
-    for (const task of source?.plannedTasks ?? []) {
-      if (task?.id) collected.push(task);
-    }
-    return collected;
-  }, [boardData]);
+  const boardTasks = useMemo(() => tasksFromBoard(boardData), [boardData]);
 
   /*
    * #154: parents may live on other boards, so once the user types we also
@@ -90,6 +98,30 @@ export default function CreateTaskTopbar({
    * the board's own tickets are the sensible default.
    */
   const { data: activeOrganization } = useActiveOrganization();
+  const { data: boards = [] } = useGetBoards({
+    organizationId: activeOrganization?.id ?? "",
+  });
+  const candidates = useQuery<
+    Array<
+      PickableTask & { boardId: string; boardName: string; boardSlug: string }
+    >
+  >({
+    queryKey: ["parent-candidates", activeOrganization?.id],
+    enabled: parentOpen && Boolean(activeOrganization?.id),
+    queryFn: async () => {
+      const response = await fetch(
+        getApiUrl(`task/parent-candidates/${activeOrganization?.id}`),
+        { credentials: "include" },
+      );
+      if (!response.ok) throw new Error("Failed to load parent candidates");
+      return response.json();
+    },
+    staleTime: 5 * 60_000,
+  });
+  const allBoardOptions = (candidates.data ?? []).map((task) => ({
+    ...task,
+    crossBoard: task.boardId !== boardId,
+  }));
   const { data: searchData } = useGlobalSearch({
     q: parentSearch.trim().length > 1 ? parentSearch.trim() : "",
     type: "tasks",
@@ -105,14 +137,47 @@ export default function CreateTaskTopbar({
     () =>
       buildParentOptions({
         boardTasks,
-        searchResults: searchData?.results ?? [],
+        searchResults: [
+          ...allBoardOptions.map((option) => ({
+            id: option.id,
+            title: option.title,
+            taskNumber: option.number,
+            boardId: option.crossBoard ? "other" : boardId,
+            boardSlug: option.boardSlug,
+          })),
+          ...(searchData?.results ?? []),
+        ],
         selectedId: parentTaskId,
         selectedOption: pinnedParent,
         query: parentSearch,
         currentBoardId: boardId,
       }),
-    [boardTasks, searchData, parentTaskId, pinnedParent, parentSearch, boardId],
+    [
+      boardTasks,
+      allBoardOptions,
+      searchData,
+      parentTaskId,
+      pinnedParent,
+      parentSearch,
+      boardId,
+    ],
   );
+
+  const visibleParentOptions = parentOptions.filter((option) => {
+    const term = parentSearch.trim().toLowerCase();
+    if (
+      term &&
+      !option.title.toLowerCase().includes(term) &&
+      !String(option.number ?? "").includes(term)
+    )
+      return false;
+    if (parentBoardId === "all") return true;
+    if (parentBoardId === boardId) return !option.crossBoard;
+    return (
+      option.boardSlug ===
+      boards.find((board) => board.id === parentBoardId)?.slug
+    );
+  });
 
   const selectedParent =
     parentOptions.find((option) => option.id === parentTaskId) ?? null;
@@ -193,8 +258,8 @@ export default function CreateTaskTopbar({
         </PopoverContent>
       </Popover>
 
-      <Popover open={parentOpen} onOpenChange={setParentOpen}>
-        <PopoverTrigger
+      <Dialog open={parentOpen} onOpenChange={setParentOpen}>
+        <DialogTrigger
           render={
             <Button
               type="button"
@@ -214,76 +279,122 @@ export default function CreateTaskTopbar({
             </Button>
           }
         />
-        <PopoverContent className="w-72 p-0" align="start">
-          <div className="flex items-center gap-2 border-b border-border p-2">
-            <Search
-              className="size-3.5 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              value={parentSearch}
-              onChange={(event) => setParentSearch(event.target.value)}
-              placeholder={t("tasks:parentTask.searchPlaceholder")}
-              aria-label={t("tasks:parentTask.searchPlaceholder")}
-              className="h-8"
-            />
-          </div>
-          <div className="max-h-64 overflow-y-auto py-1">
-            <button
-              type="button"
-              data-testid="create-task-parent-clear"
-              onClick={() => {
-                onParentTaskChange(null);
-                setParentOpen(false);
-              }}
-              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent"
+        <DialogContent className="max-w-3xl p-0">
+          <DialogHeader className="border-b px-5 py-4">
+            <DialogTitle>{t("tasks:parentTask.title")}</DialogTitle>
+            <DialogDescription>
+              {t("tasks:parentTask.searchPlaceholder")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid min-h-96 sm:grid-cols-[12rem_1fr]">
+            <nav
+              aria-label="Boards"
+              className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-x-visible sm:border-r sm:border-b-0"
             >
-              <X className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{t("tasks:parentTask.clear")}</span>
-            </button>
-            {parentOptions.length === 0 && (
-              <p
-                data-testid="create-task-parent-empty"
-                className="px-2 py-1.5 text-xs text-muted-foreground"
-              >
-                {t("tasks:parentTask.empty")}
-              </p>
-            )}
-            {parentOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                data-testid={`create-task-parent-option-${option.id}`}
-                data-cross-board={option.crossBoard ? "true" : "false"}
-                onClick={() => {
-                  const next = option.id === parentTaskId ? null : option.id;
-                  // Remember the choice so a cross-board parent stays pinned
-                  // once the search query is cleared and it drops out of the
-                  // result set.
-                  setPinnedParent(next ? option : null);
-                  onParentTaskChange(next);
-                  setParentOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent"
-              >
-                <Check
+              {[{ id: "all", name: "All" }, ...boards].map((board) => (
+                <button
+                  aria-pressed={parentBoardId === board.id}
                   className={cn(
-                    "size-3.5 shrink-0",
-                    option.id === parentTaskId ? "opacity-100" : "opacity-0",
+                    "flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full",
+                    parentBoardId === board.id
+                      ? "bg-accent font-medium"
+                      : "hover:bg-accent/60",
                   )}
+                  key={board.id}
+                  onClick={() => setParentBoardId(board.id)}
+                  type="button"
+                >
+                  <span className="truncate">{board.name}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 border-b p-3">
+                <Search
+                  className="size-4 shrink-0 text-muted-foreground"
                   aria-hidden="true"
                 />
-                <span className="truncate">{formatParentLabel(option)}</span>
-                {option.crossBoard && option.boardSlug && (
-                  <span className="ms-auto shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
-                    {option.boardSlug}
+                <Input
+                  value={parentSearch}
+                  onChange={(event) => setParentSearch(event.target.value)}
+                  placeholder={t("tasks:parentTask.searchPlaceholder")}
+                  aria-label={t("tasks:parentTask.searchPlaceholder")}
+                  className="h-8"
+                />
+              </div>
+              <div className="max-h-80 overflow-y-auto p-2">
+                {selectedParent ? (
+                  <button
+                    className="mb-1 flex w-full items-center gap-2 rounded-md bg-accent px-2 py-2 text-left text-sm"
+                    onClick={() => {
+                      setPinnedParent(null);
+                      onParentTaskChange(null);
+                    }}
+                    type="button"
+                  >
+                    <Check className="size-4 shrink-0" />
+                    <span className="truncate">
+                      {formatParentLabel(selectedParent)}
+                    </span>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  data-testid="create-task-parent-clear"
+                  onClick={() => onParentTaskChange(null)}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
+                >
+                  <X className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">
+                    {t("tasks:parentTask.clear")}
                   </span>
-                )}
-              </button>
-            ))}
+                </button>
+                {visibleParentOptions
+                  .filter((option) => option.id !== parentTaskId)
+                  .map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      data-testid={`create-task-parent-option-${option.id}`}
+                      data-cross-board={option.crossBoard ? "true" : "false"}
+                      onClick={() => {
+                        setPinnedParent(option);
+                        onParentTaskChange(option.id);
+                        setParentOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
+                    >
+                      <span className="truncate">
+                        {formatParentLabel(option)}
+                      </span>
+                      {option.boardSlug ? (
+                        <span className="ms-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          {option.boardSlug}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                {candidates.isPending ? (
+                  <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                    Loading tickets…
+                  </p>
+                ) : candidates.isError ? (
+                  <p className="px-2 py-6 text-center text-sm text-destructive">
+                    Failed to load tickets.
+                  </p>
+                ) : visibleParentOptions.length === 0 ? (
+                  <p
+                    data-testid="create-task-parent-empty"
+                    className="px-2 py-6 text-center text-sm text-muted-foreground"
+                  >
+                    {t("tasks:parentTask.empty")}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
@@ -48,6 +48,34 @@ const task = new Hono<{
     userId: string;
   };
 }>()
+  .get(
+    "/parent-candidates/:organizationId",
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      return c.json(
+        await db
+          .select({
+            id: taskTable.id,
+            title: taskTable.title,
+            number: taskTable.number,
+            boardId: boardTable.id,
+            boardName: boardTable.name,
+            boardSlug: boardTable.slug,
+          })
+          .from(taskTable)
+          .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+          .where(
+            and(
+              eq(boardTable.organizationId, organizationId),
+              isNull(taskTable.deletedAt),
+            ),
+          )
+          .orderBy(asc(boardTable.name), asc(taskTable.number)),
+      );
+    },
+  )
   .get(
     "/my-tasks",
     describeRoute({

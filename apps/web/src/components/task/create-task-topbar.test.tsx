@@ -16,7 +16,14 @@ vi.mock("@/hooks/queries/search/use-global-search", () => ({
   default: () => ({ data: { results: [] } }),
 }));
 
-vi.mock("react-i18next", () => ({
+vi.mock("@/hooks/queries/board/use-get-boards", () => ({
+  default: () => ({
+    data: [{ id: "board-1", name: "Current board", slug: "CUR" }],
+  }),
+}));
+
+vi.mock("react-i18next", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("react-i18next")>()),
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
@@ -105,6 +112,17 @@ describe("CreateTaskTopbar (create-task modal topbar)", () => {
     fireEvent.click(screen.getByTestId("create-task-parent-option-task-9"));
 
     expect(onParentTaskChange).toHaveBeenCalledWith("task-9");
+  });
+
+  it("opens the requested two-pane board and ticket selector", () => {
+    setup();
+
+    fireEvent.click(screen.getByTestId("create-task-parent-trigger"));
+
+    expect(screen.getByRole("navigation", { name: "Boards" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "All" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Current board" })).toBeTruthy();
+    expect(screen.getByTestId("create-task-parent-option-task-9")).toBeTruthy();
   });
 
   it("shows the selected milestone and parent labels on the triggers", () => {
