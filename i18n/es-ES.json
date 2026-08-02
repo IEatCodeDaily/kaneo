@@ -1465,7 +1465,12 @@
 			"updateSuccess": "Fecha de vencimiento actualizada correctamente",
 			"updateError": "Error al actualizar fecha de vencimiento",
 			"clearSuccess": "Fecha de vencimiento eliminada correctamente",
-			"clearError": "Error al eliminar fecha de vencimiento"
+			"clearError": "Error al eliminar fecha de vencimiento",
+			"outcome": {
+					"early": "Antes",
+					"on-time": "A tiempo",
+					"late": "Tarde"
+			}
 		},
 		"labels": {
 			"label": "Etiquetas",

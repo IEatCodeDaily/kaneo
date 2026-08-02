@@ -1699,7 +1699,12 @@
 			"updateSuccess": "Talep bitiş tarihi başarıyla güncellendi",
 			"updateError": "Talep bitiş tarihi güncellenemedi",
 			"clearSuccess": "Talep bitiş tarihi temizlendi",
-			"clearError": "Bitiş tarihi temizlenemedi"
+			"clearError": "Bitiş tarihi temizlenemedi",
+			"outcome": {
+					"early": "Erken",
+					"on-time": "Zamanında",
+					"late": "Geç"
+			}
 		},
 		"labels": {
 			"label": "Etiketler",

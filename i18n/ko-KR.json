@@ -1693,7 +1693,12 @@
 			"updateSuccess": "작업 마감일이 업데이트되었습니다",
 			"updateError": "작업 마감일 업데이트에 실패했습니다",
 			"clearSuccess": "작업 마감일이 지워졌습니다",
-			"clearError": "마감일 지우기에 실패했습니다"
+			"clearError": "마감일 지우기에 실패했습니다",
+			"outcome": {
+					"early": "조기",
+					"on-time": "정시",
+					"late": "지연"
+			}
 		},
 		"labels": {
 			"label": "라벨",

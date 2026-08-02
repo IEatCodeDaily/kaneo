@@ -1837,7 +1837,12 @@
 			"updateSuccess": "Tenggat tugas berhasil diperbarui",
 			"updateError": "Gagal memperbarui tenggat tugas",
 			"clearSuccess": "Tenggat tugas dihapus",
-			"clearError": "Gagal menghapus tenggat"
+			"clearError": "Gagal menghapus tenggat",
+			"outcome": {
+					"early": "Lebih awal",
+					"on-time": "Tepat waktu",
+					"late": "Terlambat"
+			}
 		},
 		"labels": {
 			"label": "Label",

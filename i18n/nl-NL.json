@@ -1466,7 +1466,12 @@
 			"updateSuccess": "Einddatum taak succesvol bijgewerkt",
 			"updateError": "Bijwerken einddatum mislukt",
 			"clearSuccess": "Einddatum taak verwijderd",
-			"clearError": "Verwijderen einddatum mislukt"
+			"clearError": "Verwijderen einddatum mislukt",
+			"outcome": {
+					"early": "Vroeg",
+					"on-time": "Op tijd",
+					"late": "Te laat"
+			}
 		},
 		"labels": {
 			"label": "Labels",

@@ -1924,7 +1924,12 @@
 			"updateSuccess": "Ticket due date updated successfully",
 			"updateError": "Failed to update ticket due date",
 			"clearSuccess": "Ticket due date cleared",
-			"clearError": "Failed to clear due date"
+			"clearError": "Failed to clear due date",
+			"outcome": {
+					"early": "Early",
+					"on-time": "On time",
+					"late": "Late"
+			}
 		},
 		"labels": {
 			"label": "Labels",
