@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   HoverCard,
   HoverCardContent,
@@ -80,6 +81,7 @@ const TaskRowContent = memo(function TaskRowContent({
   const isTaskSelected = useBulkSelectionStore((state) =>
     state.selectedTaskIds.has(task.id),
   );
+  const isSelectMode = useBulkSelectionStore((state) => state.isSelectMode);
   const isTaskFocused = useBulkSelectionStore(
     (state) => state.focusedTaskId === task.id,
   );
@@ -119,6 +121,12 @@ const TaskRowContent = memo(function TaskRowContent({
   const handleClick = (e: React.MouseEvent) => {
     if (!boardId || !task) return;
     if (e.defaultPrevented) return;
+
+    if (isSelectMode) {
+      e.preventDefault();
+      toggleSelection(task.id);
+      return;
+    }
 
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
@@ -188,6 +196,12 @@ const TaskRowContent = memo(function TaskRowContent({
               <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
                 {getPriorityIcon(task.priority ?? "")}
               </div>
+            )}
+            {isSelectMode && (
+              <Checkbox
+                aria-label={`Select ${task.title}`}
+                checked={isTaskSelected}
+              />
             )}
             {showTaskNumbers && (
               <div className="text-xs font-mono text-muted-foreground flex-shrink-0">

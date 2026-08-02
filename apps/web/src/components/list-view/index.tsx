@@ -24,6 +24,7 @@ import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -59,6 +60,9 @@ type ColumnSectionProps = {
   onArchive: () => void;
   onToggle: () => void;
   onToggleParent: (parentId: string) => void;
+  isSelectMode: boolean;
+  selectedTaskIds: ReadonlySet<string>;
+  onSelectTasks: (taskIds: string[]) => void;
 };
 
 /** Stable component identity keeps each dnd-kit droppable mounted. */
@@ -72,6 +76,9 @@ const ColumnSection = memo(function ColumnSection({
   onArchive,
   onToggle,
   onToggleParent,
+  isSelectMode,
+  selectedTaskIds,
+  onSelectTasks,
 }: ColumnSectionProps) {
   const { t } = useTranslation();
   const { setNodeRef } = useDroppable({
@@ -115,6 +122,28 @@ const ColumnSection = memo(function ColumnSection({
         </button>
 
         <div className="flex items-center gap-1">
+          {isSelectMode && column.tasks.length > 0 && (
+            <Checkbox
+              aria-label={`Select all ${column.name} tickets`}
+              aria-checked={
+                column.tasks.some((task) => selectedTaskIds.has(task.id)) &&
+                !column.tasks.every((task) => selectedTaskIds.has(task.id))
+                  ? "mixed"
+                  : undefined
+              }
+              checked={column.tasks.every((task) =>
+                selectedTaskIds.has(task.id),
+              )}
+              onCheckedChange={(checked) => {
+                const ids = new Set(column.tasks.map((task) => task.id));
+                onSelectTasks(
+                  checked
+                    ? [...new Set([...selectedTaskIds, ...ids])]
+                    : [...selectedTaskIds].filter((id) => !ids.has(id)),
+                );
+              }}
+            />
+          )}
           <button
             type="button"
             onClick={() => {
@@ -215,6 +244,11 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
     focusPrevious,
     focusedTaskId,
     clearFocus,
+    clearSelection,
+    isSelectMode,
+    selectedTaskIds,
+    selectTasks,
+    setSelectMode,
   } = useBulkSelectionStore();
   const { mutate: updateTask } = useUpdateTask();
   const { isPending: isReorderPending, mutate: reorderTasks } =
@@ -254,7 +288,8 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
 
   useEffect(() => {
     clearFocus();
-  }, [clearFocus]);
+    return () => clearSelection();
+  }, [clearFocus, clearSelection]);
 
   useRegisterShortcuts({
     shortcuts: {
@@ -409,6 +444,15 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
       modifiers={[snapCenterToCursor]}
     >
       <div className="w-full h-full overflow-auto bg-muted/20">
+        <div className="sticky top-0 z-10 flex justify-end border-b bg-card/95 px-4 py-2 backdrop-blur">
+          <button
+            className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-accent"
+            onClick={() => setSelectMode(!isSelectMode)}
+            type="button"
+          >
+            {isSelectMode ? "Cancel Bulk Actions" : "Bulk Actions"}
+          </button>
+        </div>
         <div className="divide-y divide-border/50">
           {board.columns.map((column) => (
             <ColumnSection
@@ -432,6 +476,9 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
                   return next;
                 })
               }
+              isSelectMode={isSelectMode}
+              selectedTaskIds={selectedTaskIds}
+              onSelectTasks={selectTasks}
             />
           ))}
         </div>

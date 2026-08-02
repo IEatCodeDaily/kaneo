@@ -752,6 +752,9 @@ function RouteComponent() {
             <ul className="max-h-60 space-y-1 overflow-y-auto rounded-md border p-2 text-sm">
               {selectedTasks.map((task) => (
                 <li className="truncate" key={task.id}>
+                  <span className="mr-2 font-mono text-muted-foreground">
+                    {board?.slug}-{task.number}
+                  </span>
                   {task.title}
                 </li>
               ))}

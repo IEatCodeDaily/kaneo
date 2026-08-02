@@ -11,6 +11,8 @@ interface BulkSelectionState {
   toggleSelection: (taskId: string) => void;
   clearSelection: () => void;
   selectAll: () => void;
+  selectTasks: (taskIds: string[]) => void;
+  setSelectMode: (enabled: boolean) => void;
   setAvailableTasks: (taskIds: string[]) => void;
   getSelectedCount: () => number;
   isSelected: (taskId: string) => boolean;
@@ -37,10 +39,7 @@ const useBulkSelectionStore = create<BulkSelectionState>((set, get) => ({
     set((state) => {
       const newSet = new Set(state.selectedTaskIds);
       newSet.delete(taskId);
-      return {
-        selectedTaskIds: newSet,
-        isSelectMode: newSet.size > 0,
-      };
+      return { selectedTaskIds: newSet };
     }),
 
   toggleSelection: (taskId: string) => {
@@ -62,6 +61,15 @@ const useBulkSelectionStore = create<BulkSelectionState>((set, get) => ({
     set((state) => ({
       selectedTaskIds: new Set(state.availableTaskIds),
       isSelectMode: true,
+    })),
+
+  selectTasks: (taskIds) =>
+    set({ selectedTaskIds: new Set(taskIds), isSelectMode: true }),
+
+  setSelectMode: (enabled) =>
+    set((state) => ({
+      isSelectMode: enabled,
+      selectedTaskIds: enabled ? state.selectedTaskIds : new Set(),
     })),
 
   setAvailableTasks: (taskIds: string[]) =>
