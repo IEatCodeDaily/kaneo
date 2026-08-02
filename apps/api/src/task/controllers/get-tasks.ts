@@ -18,7 +18,9 @@ import {
   columnTable,
   externalLinkTable,
   labelTable,
+  repoIssueTable,
   taskRelationTable,
+  taskRepoItemLinkTable,
   taskTable,
   teamTable,
   userTable,
@@ -45,6 +47,14 @@ type GetTasksOptions = {
   sortOrder?: "asc" | "desc";
   status?: string;
 };
+
+export function shouldIncludeTaskLabel(
+  source: string,
+  integrationSynced: boolean,
+  manuallySynced: boolean,
+) {
+  return source !== "repo" || integrationSynced || manuallySynced;
+}
 
 const priorityCaseExpr = sql<number>`CASE
   WHEN ${taskTable.priority} = 'urgent' THEN 4
@@ -175,6 +185,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
               id: labelTable.id,
               name: labelTable.name,
               color: labelTable.color,
+              source: labelTable.source,
               taskId: labelTable.taskId,
             })
             .from(labelTable)
@@ -196,12 +207,46 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
         ])
       : [[], [], []];
 
+  const manuallySyncedIssueTaskIds = new Set(
+    taskIds.length
+      ? (
+          await db
+            .select({ taskId: taskRepoItemLinkTable.taskId })
+            .from(taskRepoItemLinkTable)
+            .innerJoin(
+              repoIssueTable,
+              eq(taskRepoItemLinkTable.repoIssueId, repoIssueTable.id),
+            )
+            .where(
+              and(
+                inArray(taskRepoItemLinkTable.taskId, taskIds),
+                eq(taskRepoItemLinkTable.syncEnabled, true),
+              ),
+            )
+        ).map(({ taskId }) => taskId)
+      : [],
+  );
+  const integrationSyncedIssueTaskIds = new Set(
+    externalLinksData
+      .filter((link) => link.resourceType === "issue")
+      .map((link) => link.taskId),
+  );
+
   const taskLabelsMap = new Map<
     string,
-    Array<{ id: string; name: string; color: string }>
+    Array<{ id: string; name: string; color: string; source: string }>
   >();
   for (const label of labelsData) {
     if (label.taskId) {
+      if (
+        !shouldIncludeTaskLabel(
+          label.source,
+          integrationSyncedIssueTaskIds.has(label.taskId),
+          manuallySyncedIssueTaskIds.has(label.taskId),
+        )
+      ) {
+        continue;
+      }
       if (!taskLabelsMap.has(label.taskId)) {
         taskLabelsMap.set(label.taskId, []);
       }
@@ -209,6 +254,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
         id: label.id,
         name: label.name,
         color: label.color,
+        source: label.source,
       });
     }
   }
