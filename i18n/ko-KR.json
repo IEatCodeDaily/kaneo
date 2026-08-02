@@ -1140,8 +1140,9 @@
 				"titleLabel": "라벨 추가",
 				"titleMember": "담당자 지정",
 				"titlePriority": "우선순위 설정",
-				"editorMention": "사람 또는 티켓 멘션",
-				"editorSlash": "블록 메뉴 열기"
+				"editorMention": "멤버 멘션",
+				"editorSlash": "블록 메뉴 열기",
+				"editorTicket": "티켓 참조"
 			}
 		},
 		"repoList": {

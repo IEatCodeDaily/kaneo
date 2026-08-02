@@ -1333,8 +1333,9 @@
 				"titleLabel": "Add a label",
 				"titleMember": "Assign a member",
 				"titlePriority": "Set priority",
-				"editorMention": "Mention a person or ticket",
-				"editorSlash": "Open the block menu"
+				"editorMention": "Mention a member",
+				"editorSlash": "Open the block menu",
+				"editorTicket": "Reference a ticket"
 			}
 		},
 		"repoList": {

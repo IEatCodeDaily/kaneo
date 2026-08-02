@@ -924,8 +924,9 @@
 				"titleLabel": "Een label toevoegen",
 				"titleMember": "Een lid toewijzen",
 				"titlePriority": "Prioriteit instellen",
-				"editorMention": "Een persoon of ticket vermelden",
-				"editorSlash": "Het blokmenu openen"
+				"editorMention": "Een lid vermelden",
+				"editorSlash": "Het blokmenu openen",
+				"editorTicket": "Naar een ticket verwijzen"
 			}
 		},
 		"repoList": {

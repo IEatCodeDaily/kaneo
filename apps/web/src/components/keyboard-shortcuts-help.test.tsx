@@ -37,7 +37,9 @@ vi.mock("@/components/ui/dialog", () => ({
   DialogDescription: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   DialogTitle: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
@@ -83,7 +85,34 @@ describe("#115 editor shortcuts are documented", () => {
     const keys = Array.from(section.querySelectorAll("[data-keys]")).map((n) =>
       n.getAttribute("data-keys"),
     );
-    expect(keys).toEqual(["@", "/"]);
+    // #156: @ and # are different pickers — members vs tickets.
+    expect(keys).toEqual(["@", "#", "/"]);
+  });
+
+  /**
+   * #156: "says 'Mention a person or ticket' with @ ... when it should be @
+   * for members (user and agents), and # for tickets."
+   *
+   * Verified in code: @ -> extensions/mention-suggestion (members),
+   * # -> extensions/reference-suggestion (tickets).
+   */
+  it("does not describe @ as a way to reference a ticket", () => {
+    render(<Probe />);
+    const section = screen.getByTestId(
+      "navigation:keyboardShortcuts.categories.editor",
+    );
+    const rows = Array.from(section.querySelectorAll("[data-keys]"));
+    const at = rows.find((n) => n.getAttribute("data-keys") === "@");
+    const hash = rows.find((n) => n.getAttribute("data-keys") === "#");
+
+    expect(at?.textContent).toBe(
+      "navigation:keyboardShortcuts.items.editorMention",
+    );
+    expect(hash?.textContent).toBe(
+      "navigation:keyboardShortcuts.items.editorTicket",
+    );
+    // The two must not share a description.
+    expect(at?.textContent).not.toBe(hash?.textContent);
   });
 
   // The pre-existing global sections must survive the addition.

@@ -1137,8 +1137,9 @@
 				"titleLabel": "Додати мітку",
 				"titleMember": "Призначити учасника",
 				"titlePriority": "Задати пріоритет",
-				"editorMention": "Згадати людину або тікет",
-				"editorSlash": "Відкрити меню блоків"
+				"editorMention": "Згадати учасника",
+				"editorSlash": "Відкрити меню блоків",
+				"editorTicket": "Послатися на тікет"
 			}
 		},
 		"repoList": {

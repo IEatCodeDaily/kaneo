@@ -1142,8 +1142,9 @@
 				"titleLabel": "Ajouter une étiquette",
 				"titleMember": "Affecter un membre",
 				"titlePriority": "Définir la priorité",
-				"editorMention": "Mentionner une personne ou un ticket",
-				"editorSlash": "Ouvrir le menu de blocs"
+				"editorMention": "Mentionner un membre",
+				"editorSlash": "Ouvrir le menu de blocs",
+				"editorTicket": "Référencer un ticket"
 			}
 		},
 		"repoList": {

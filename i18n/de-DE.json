@@ -1156,8 +1156,9 @@
 				"titleLabel": "Label hinzufügen",
 				"titleMember": "Mitglied zuweisen",
 				"titlePriority": "Priorität setzen",
-				"editorMention": "Person oder Ticket erwähnen",
-				"editorSlash": "Blockmenü öffnen"
+				"editorMention": "Mitglied erwähnen",
+				"editorSlash": "Blockmenü öffnen",
+				"editorTicket": "Ticket referenzieren"
 			}
 		},
 		"repoList": {

@@ -1141,8 +1141,9 @@
 				"titleLabel": "Etiket ekle",
 				"titleMember": "Üye ata",
 				"titlePriority": "Öncelik belirle",
-				"editorMention": "Kişi veya bilet an",
-				"editorSlash": "Blok menüsünü aç"
+				"editorMention": "Üye an",
+				"editorSlash": "Blok menüsünü aç",
+				"editorTicket": "Bilete referans ver"
 			}
 		},
 		"repoList": {

@@ -923,8 +923,9 @@
 				"titleLabel": "Añadir una etiqueta",
 				"titleMember": "Asignar un miembro",
 				"titlePriority": "Establecer prioridad",
-				"editorMention": "Mencionar a una persona o ticket",
-				"editorSlash": "Abrir el menú de bloques"
+				"editorMention": "Mencionar a un miembro",
+				"editorSlash": "Abrir el menú de bloques",
+				"editorTicket": "Referenciar un ticket"
 			}
 		},
 		"repoList": {

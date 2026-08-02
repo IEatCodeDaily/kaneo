@@ -156,9 +156,19 @@ export function useShortcutCategories(): ShortcutCategory[] {
       {
         title: t("navigation:keyboardShortcuts.categories.editor"),
         shortcuts: [
+          /*
+           * #156: `@` and `#` are DIFFERENT pickers and the earlier wording
+           * conflated them.
+           *   @ -> members (users and agents), extensions/mention-suggestion
+           *   # -> tickets,                    extensions/reference-suggestion
+           */
           {
             keys: ["@"],
             description: t("navigation:keyboardShortcuts.items.editorMention"),
+          },
+          {
+            keys: ["#"],
+            description: t("navigation:keyboardShortcuts.items.editorTicket"),
           },
           {
             keys: ["/"],

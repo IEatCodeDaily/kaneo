@@ -1138,8 +1138,9 @@
 				"titleLabel": "Προσθήκη ετικέτας",
 				"titleMember": "Ανάθεση μέλους",
 				"titlePriority": "Ορισμός προτεραιότητας",
-				"editorMention": "Αναφορά ατόμου ή ticket",
-				"editorSlash": "Άνοιγμα μενού μπλοκ"
+				"editorMention": "Αναφορά μέλους",
+				"editorSlash": "Άνοιγμα μενού μπλοκ",
+				"editorTicket": "Παραπομπή σε ticket"
 			}
 		},
 		"repoList": {

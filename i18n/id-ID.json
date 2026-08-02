@@ -1279,8 +1279,9 @@
 				"titleLabel": "Tambahkan label",
 				"titleMember": "Tetapkan anggota",
 				"titlePriority": "Atur prioritas",
-				"editorMention": "Sebut orang atau tiket",
-				"editorSlash": "Buka menu blok"
+				"editorMention": "Sebut anggota",
+				"editorSlash": "Buka menu blok",
+				"editorTicket": "Rujuk tiket"
 			}
 		},
 		"repoList": {
