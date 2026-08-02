@@ -187,7 +187,12 @@ export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
        * -mt-2 pulls it up under the title's own padding, leading-none kills
        * the line box, 10px/50% opacity makes it recede.
        */
-      className={`-mt-2 px-0.5 text-[10px] leading-none text-muted-foreground/50 ${
+      /*
+       * #72 (round 4): the title <Input> carries py-3, so its box extends well
+       * below the glyphs and left a ~32px visual gap. -mt-5 pulls the hint back
+       * up through that padding so it sits directly under the typed text.
+       */
+      className={`-mt-5 px-0.5 text-[10px] leading-none text-muted-foreground/50 ${
         hidden ? "invisible" : ""
       }`}
       data-testid={hidden ? "title-token-hint-hidden" : "title-token-hint"}
