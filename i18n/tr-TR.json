@@ -1859,7 +1859,8 @@
 		},
 		"members": {
 			"pageTitle": "Üyeler",
-			"inviteMember": "Üye davet et"
+			"inviteMember": "Üye davet et",
+			"agentsCredentialsHint": "Erişim anahtarlarını ver ve iptal et"
 		},
 		"inviteModal": {
 			"title": "Ekip Üyesi Davet Et",

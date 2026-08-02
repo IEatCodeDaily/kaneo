@@ -1901,7 +1901,8 @@
 		},
 		"members": {
 			"pageTitle": "Mitglieder",
-			"inviteMember": "Mitglied einladen"
+			"inviteMember": "Mitglied einladen",
+			"agentsCredentialsHint": "Zugriffsschlüssel ausstellen und widerrufen"
 		},
 		"inviteModal": {
 			"title": "Teammitglied einladen",

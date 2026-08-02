@@ -1859,7 +1859,8 @@
 		},
 		"members": {
 			"pageTitle": "Членови",
-			"inviteMember": "Покани член"
+			"inviteMember": "Покани член",
+			"agentsCredentialsHint": "Издавање и одземање клучеви за пристап"
 		},
 		"inviteModal": {
 			"title": "Покани член на тим",

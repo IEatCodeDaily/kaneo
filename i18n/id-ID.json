@@ -2007,7 +2007,8 @@
 		},
 		"members": {
 			"pageTitle": "Anggota",
-			"inviteMember": "Undang anggota"
+			"inviteMember": "Undang anggota",
+			"agentsCredentialsHint": "Terbitkan dan cabut kunci akses"
 		},
 		"inviteModal": {
 			"title": "Undang Anggota Tim",

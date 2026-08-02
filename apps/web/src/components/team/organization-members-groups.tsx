@@ -21,7 +21,17 @@ export function OrganizationMembersGroups({
   canManageAgents,
 }: Props) {
   const { t } = useTranslation();
-  const people = users.filter((member) => member.user.role !== "agent");
+  /*
+   * Agents are first-class members: a human user and an agent user are
+   * identical as far as membership goes, so they belong in the SAME table with
+   * the same role column. They used to be filtered out here and surfaced only
+   * as API keys further down, which made them look like credentials rather
+   * than members.
+   *
+   * The agent section below stays, but it is now purely credential management
+   * (issue/revoke keys) — not the only place an agent is visible.
+   */
+  const people = users;
 
   return (
     <div className="space-y-8">
@@ -48,6 +58,9 @@ export function OrganizationMembersGroups({
           <h2 id="agents-heading" className="text-sm font-semibold">
             {t("team:members.agents")}
           </h2>
+          <span className="text-xs text-muted-foreground">
+            {t("team:members.agentsCredentialsHint")}
+          </span>
         </div>
         {canManageAgents ? (
           <AgentManager />

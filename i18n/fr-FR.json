@@ -1871,7 +1871,8 @@
 		"members": {
 			"pageTitle": "Membres",
 			"inviteMember": "Inviter un membre",
-			"you": "Vous"
+			"you": "Vous",
+			"agentsCredentialsHint": "Émettre et révoquer des clés d’accès"
 		},
 		"invitations": {
 			"pendingBadge": "En attente",

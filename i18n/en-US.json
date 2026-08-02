@@ -2196,7 +2196,8 @@
 			"you": "You",
 			"people": "People",
 			"agents": "Agents",
-			"agentsManagedByAdmins": "Organization agents are managed by owners and administrators."
+			"agentsManagedByAdmins": "Organization agents are managed by owners and administrators.",
+			"agentsCredentialsHint": "Issue and revoke access keys"
 		},
 		"agentManager": {
 			"title": "Organization AI agents",

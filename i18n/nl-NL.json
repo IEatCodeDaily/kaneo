@@ -1634,7 +1634,8 @@
 		},
 		"members": {
 			"pageTitle": "Leden",
-			"inviteMember": "Lid uitnodigen"
+			"inviteMember": "Lid uitnodigen",
+			"agentsCredentialsHint": "Toegangssleutels uitgeven en intrekken"
 		},
 		"inviteModal": {
 			"title": "Teamlid uitnodigen",
