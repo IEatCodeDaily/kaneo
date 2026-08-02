@@ -206,11 +206,20 @@ export function weekendTintGradient(timeline: GanttTimeline): string | null {
   return `repeating-linear-gradient(to right, transparent ${originRem}rem, transparent ${originRem + 7 * w}rem, ${tint} ${originRem + 7 * w}rem, ${tint} ${originRem + 9 * w}rem)`;
 }
 
-/** Day-column separator lines, as one gradient rather than a border per day. */
+/**
+ * Column separator lines, as one gradient rather than a border per day.
+ *
+ * #163: the grid is painted at every zoom, not just day zoom. A line every day
+ * would be a 6px-period stripe pattern once columns shrink to month zoom, so
+ * narrow columns fall back to a line per week — the same cadence the header
+ * groups by.
+ */
 export function gridLineGradient(timeline: GanttTimeline): string {
-  const w = timeline.dayWidthRem;
+  const dayWidth = timeline.dayWidthRem;
+  // Below ~1.5rem a per-day line reads as hatching rather than a grid.
+  const period = dayWidth >= 1.5 ? dayWidth : dayWidth * 7;
   const line = "color-mix(in srgb, var(--foreground) 12%, transparent)";
-  return `repeating-linear-gradient(to right, transparent 0, transparent calc(${w}rem - 1px), ${line} calc(${w}rem - 1px), ${line} ${w}rem)`;
+  return `repeating-linear-gradient(to right, transparent 0, transparent calc(${period}rem - 1px), ${line} calc(${period}rem - 1px), ${line} ${period}rem)`;
 }
 /** Left offset in rem of a date within the timeline, for overlays. */
 export function dayOffsetRem(date: Date, timeline: GanttTimeline) {

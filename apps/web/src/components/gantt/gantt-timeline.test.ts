@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTimeline,
   type GanttTimeline,
+  gridLineGradient,
   weekendTintGradient,
 } from "./gantt-timeline";
 
@@ -110,5 +111,39 @@ describe("buildTimeline horizon", () => {
     const day = buildTimeline({ ...args, zoom: "day" });
     expect(day.headerCells.every((c) => c.span === 1)).toBe(true);
     expect(day.headerCells[0].sublabel).toMatch(/^\d+$/);
+  });
+});
+
+/**
+ * #163: the grid was painted only at day zoom, so changing zoom made it vanish
+ * and reappear. It must be drawable at every zoom, at a readable density.
+ */
+describe("#163 gridLineGradient at every zoom", () => {
+  /** Period, in rem, between painted grid lines. */
+  function period(css: string) {
+    const stops = [...css.matchAll(/([\d.]+)rem/g)].map((m) => Number(m[1]));
+    return Math.max(...stops);
+  }
+
+  it("draws a line per day while day columns are wide", () => {
+    const wide = tl("2026-07-13", 30, 2.75);
+    expect(period(gridLineGradient(wide))).toBeCloseTo(2.75, 5);
+  });
+
+  // The regression: month zoom uses 0.375rem columns (~6px). A line every day
+  // there is hatching, not a grid, so it must widen to a weekly cadence.
+  it("falls back to a weekly line when columns are narrow", () => {
+    const narrow = tl("2026-07-13", 30, 0.375);
+    expect(period(gridLineGradient(narrow))).toBeCloseTo(0.375 * 7, 5);
+  });
+
+  // NEGATIVE CONTROL: a gradient must actually be produced at every zoom,
+  // otherwise the assertions above could pass on an empty/none background.
+  it("always produces a repeating gradient", () => {
+    for (const width of [2.75, 1, 0.375]) {
+      const css = gridLineGradient(tl("2026-07-13", 30, width));
+      expect(css).toContain("repeating-linear-gradient");
+      expect(css).not.toBe("none");
+    }
   });
 });
