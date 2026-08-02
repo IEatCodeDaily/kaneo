@@ -264,6 +264,13 @@ export function setupWebhookHandlers() {
     }
   });
 
+  githubApp.webhooks.on("issue_comment.edited", async ({ payload }) => {
+    console.log("[GitHub Webhook] Handling issue_comment.edited");
+    await handleIssueCommentCreated(
+      payload as Parameters<typeof handleIssueCommentCreated>[0],
+    );
+  });
+
   githubApp.webhooks.onError((error) => {
     console.error("[GitHub Webhook] Error in webhook handler:", error);
   });

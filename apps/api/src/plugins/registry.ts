@@ -134,7 +134,9 @@ export function initializeEventSubscriptions(): void {
     comment: string;
     authorName?: string | null;
     boardId: string;
+    externalSource?: string | null;
   }>("comment.created", async (data) => {
+    if (data.externalSource) return;
     await broadcastTaskCommentCreated({
       taskId: data.taskId,
       boardId: data.boardId,

@@ -1,14 +1,19 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   activityTable,
   boardTable,
+  externalLinkTable,
+  repoIssueTable,
+  repoTable,
+  taskRepoItemLinkTable,
   taskTable,
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import createNotification from "../../notification/controllers/create-notification";
+import { createGitHubItemComment } from "../../repo/controllers/manage-github-repo";
 import { parseMentionIds } from "../../utils/parse-mentions";
 
 async function createComment(taskId: string, userId: string, content: string) {
@@ -50,6 +55,40 @@ async function createComment(taskId: string, userId: string, content: string) {
       comment: content,
       authorName: user?.name ?? null,
       boardId: task.boardId,
+    });
+  }
+
+  const [syncedIssue] = await db
+    .select({ repoId: repoTable.id, number: repoIssueTable.number })
+    .from(taskRepoItemLinkTable)
+    .innerJoin(
+      repoIssueTable,
+      eq(taskRepoItemLinkTable.repoIssueId, repoIssueTable.id),
+    )
+    .innerJoin(repoTable, eq(repoIssueTable.repoId, repoTable.id))
+    .where(
+      and(
+        eq(taskRepoItemLinkTable.taskId, taskId),
+        eq(taskRepoItemLinkTable.syncEnabled, true),
+      ),
+    )
+    .limit(1);
+  const [integrationLink] = await db
+    .select({ id: externalLinkTable.id })
+    .from(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.resourceType, "issue"),
+      ),
+    )
+    .limit(1);
+  if (syncedIssue && !integrationLink) {
+    await createGitHubItemComment({
+      repoId: syncedIssue.repoId,
+      number: syncedIssue.number,
+      body: content,
+      userId,
     });
   }
 
