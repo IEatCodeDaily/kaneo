@@ -84,7 +84,7 @@
 				"errorToast": "Hubo un error al crear el espacio de trabajo"
 			},
 			"createTask": {
-				"breadcrumbTask": "TASK",
+				"breadcrumbTask": "TICKET",
 				"title": "Nueva tarea",
 				"description": "Crear una nueva tarea con título, descripción y otra información.",
 				"taskTitlePlaceholder": "Título de la tarea",
@@ -939,7 +939,7 @@
 		"events": {
 			"task_created": {
 				"title": "Se ha creado una nueva tarea",
-				"content": "La tarea \"{{taskTitle}}\" ha sido creada"
+				"content": "El ticket \"{{taskTitle}}\" ha sido creado"
 			},
 			"organization_created": {
 				"title": "Se ha creado un espacio de trabajo",
@@ -947,15 +947,15 @@
 			},
 			"task_status_changed": {
 				"title": "El estado de una tarea ha cambiado",
-				"content": "El estado de la tarea \"{{taskTitle}}\" ha cambiado de \"{{oldStatus}}\" a \"{{newStatus}}\""
+				"content": "El estado del ticket \"{{taskTitle}}\" ha cambiado de \"{{oldStatus}}\" a \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Se te ha asignado una tarea",
-				"content": "Se te ha asignado la tarea: {{taskTitle}}"
+				"content": "Se te ha asignado el ticket: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Monitoreo de tiempo activado",
-				"contentWithTask": "El monitoreo de la tarea se ha activado para: {{taskTitle}}",
+				"contentWithTask": "El monitoreo del ticket se ha activado para: {{taskTitle}}",
 				"contentWithoutTask": "Se ha activado el monitoreo de una tarea"
 			}
 		}
@@ -1603,7 +1603,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

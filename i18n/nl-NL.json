@@ -940,7 +940,7 @@
 		"events": {
 			"task_created": {
 				"title": "Nieuwe taak aangemaakt",
-				"content": "Taak \"{{taskTitle}}\" is aangemaakt"
+				"content": "Ticket \"{{taskTitle}}\" is aangemaakt"
 			},
 			"organization_created": {
 				"title": "Werkruimte aangemaakt",
@@ -948,15 +948,15 @@
 			},
 			"task_status_changed": {
 				"title": "Taakstatus gewijzigd",
-				"content": "Status van taak \"{{taskTitle}}\" gewijzigd van \"{{oldStatus}}\" naar \"{{newStatus}}\""
+				"content": "Status van ticket \"{{taskTitle}}\" gewijzigd van \"{{oldStatus}}\" naar \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Taak aan jou toegewezen",
-				"content": "Je bent toegewezen aan taak: {{taskTitle}}"
+				"content": "Je bent toegewezen aan ticket: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Tijdregistratie gestart",
-				"contentWithTask": "Tijdregistratie gestart voor taak: {{taskTitle}}",
+				"contentWithTask": "Tijdregistratie gestart voor ticket: {{taskTitle}}",
 				"contentWithoutTask": "Tijdregistratie gestart voor een taak"
 			}
 		}
@@ -1604,7 +1604,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

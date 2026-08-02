@@ -126,8 +126,8 @@ export function AiChatBubble() {
       )
         ?.map((action) =>
           action.type === "assign_task"
-            ? "Task assignment updated."
-            : "Task label added.",
+            ? "Ticket assignment updated."
+            : "Ticket label added.",
         )
         .join(" ");
       setHistory((old) => [

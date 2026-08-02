@@ -66,7 +66,7 @@ const CUSTOM_RESOURCES = (Object.keys(statement) as string[]).filter(
 
 const RESOURCE_LABELS: Record<string, string> = {
   board: "Boards",
-  task: "Tasks",
+  task: "Tickets",
   label: "Labels",
   organization: "Organization",
 };
@@ -96,32 +96,32 @@ const PERMISSION_LABELS: Record<
     description: "Make boards publicly accessible via share links.",
   },
   "task:create": {
-    label: "Create tasks",
-    description: "Create new tasks in any board.",
+    label: "Create tickets",
+    description: "Create new tickets in any board.",
   },
   "task:read": {
-    label: "View tasks",
-    description: "View tasks across boards.",
+    label: "View tickets",
+    description: "View tickets across boards.",
   },
   "task:update": {
-    label: "Edit tasks",
-    description: "Edit task content, status, priority, due date, and labels.",
+    label: "Edit tickets",
+    description: "Edit ticket content, status, priority, due date, and labels.",
   },
   "task:delete": {
-    label: "Delete tasks",
-    description: "Permanently delete tasks.",
+    label: "Delete tickets",
+    description: "Permanently delete tickets.",
   },
   "task:assign": {
-    label: "Assign tasks",
-    description: "Assign tasks to other organization members.",
+    label: "Assign tickets",
+    description: "Assign tickets to other organization members.",
   },
   "label:create": {
     label: "Create labels",
-    description: "Add new labels to tasks in this organization.",
+    description: "Add new labels to tickets in this organization.",
   },
   "label:read": {
     label: "View labels",
-    description: "View labels attached to tasks.",
+    description: "View labels attached to tickets.",
   },
   "label:update": {
     label: "Edit labels",
@@ -160,9 +160,9 @@ const DEFAULT_ROLE_NAME_SET = new Set<string>(DEFAULT_ROLE_NAMES);
 const RESERVED_ROLE_NAMES = [...DEFAULT_ROLE_NAMES, "owner"];
 
 const DEFAULT_ROLE_DESCRIPTIONS: Record<string, string> = {
-  viewer: "Read-only access to boards, tasks, and organization.",
-  member: "Can create and update boards and tasks.",
-  admin: "Full board and task management plus organization settings.",
+  viewer: "Read-only access to boards, tickets, and organization.",
+  member: "Can create and update boards and tickets.",
+  admin: "Full board and ticket management plus organization settings.",
 };
 
 function isDefaultRole(name: string) {

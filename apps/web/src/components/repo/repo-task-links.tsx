@@ -139,7 +139,7 @@ export default function RepoTaskLinks({
       await invalidate();
       setLinkOpen(false);
       setSearch("");
-      toast.success("Task linked.");
+      toast.success("Ticket linked.");
     },
     onError: (error) =>
       toast.error(
@@ -153,7 +153,7 @@ export default function RepoTaskLinks({
       }),
     onSuccess: async () => {
       await invalidate();
-      toast.success("Task link removed.");
+      toast.success("Ticket link removed.");
     },
   });
   const addSynced = useMutation({
@@ -166,7 +166,7 @@ export default function RepoTaskLinks({
       await invalidate();
       setSyncOpen(false);
       setBoardId("");
-      toast.success("Synced task created.");
+      toast.success("Synced ticket created.");
     },
     onError: (error) =>
       toast.error(
@@ -182,7 +182,7 @@ export default function RepoTaskLinks({
       }),
     onSuccess: async () => {
       await invalidate();
-      toast.success("Task synced from GitHub.");
+      toast.success("Ticket synced from GitHub.");
     },
   });
   const unsync = useMutation({
@@ -193,7 +193,7 @@ export default function RepoTaskLinks({
     onSuccess: async () => {
       await invalidate();
       setUnsyncLink(null);
-      toast.success("Task unsynced. The ordinary link remains.");
+      toast.success("Ticket unsynced. The ordinary link remains.");
     },
   });
 
@@ -273,7 +273,7 @@ export default function RepoTaskLinks({
         data-testid="repo-linked-tasks"
       >
         <div className="flex items-center gap-1.5 text-sm font-medium">
-          <Link2 className="size-4" /> Linked Tasks{" "}
+          <Link2 className="size-4" /> Linked Tickets{" "}
           {linked.length > 0 && (
             <span className="text-xs text-muted-foreground">
               {linked.length}
@@ -285,11 +285,11 @@ export default function RepoTaskLinks({
             <DialogTrigger
               render={<Button size={compact ? "xs" : "sm"} variant="outline" />}
             >
-              <Link2 className="size-3.5" /> Link task
+              <Link2 className="size-3.5" /> Link ticket
             </DialogTrigger>
             <DialogPopup>
               <DialogHeader>
-                <DialogTitle>Link an existing task</DialogTitle>
+                <DialogTitle>Link an existing ticket</DialogTitle>
                 <DialogDescription>
                   This creates a local Kaneo relation; the GitHub issue or pull
                   request remains authoritative.
@@ -297,21 +297,21 @@ export default function RepoTaskLinks({
               </DialogHeader>
               <DialogPanel className="space-y-3">
                 <Input
-                  aria-label="Search tasks"
+                  aria-label="Search tickets"
                   autoFocus
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search tasks across this organization…"
+                  placeholder="Search tickets across this organization…"
                   value={search}
                 />
                 <div className="max-h-72 overflow-y-auto rounded-md border">
                   {isLoading ? (
                     <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
                       <LoaderCircle className="size-4 animate-spin" /> Loading
-                      tasks…
+                      tickets…
                     </p>
                   ) : filtered.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">
-                      No unlinked tasks found.
+                      No unlinked tickets found.
                     </p>
                   ) : (
                     filtered.map((task) => (
@@ -346,7 +346,7 @@ export default function RepoTaskLinks({
         </div>
       </div>
       {linked.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No linked tasks yet.</p>
+        <p className="text-sm text-muted-foreground">No linked tickets yet.</p>
       ) : (
         <div className="space-y-1">
           {linked.map((link) => row(link, false))}
@@ -356,7 +356,7 @@ export default function RepoTaskLinks({
         <div className="border-t pt-3" data-testid="repo-synced-tasks">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium">
-              <RefreshCw className="size-4 shrink-0" /> Synced Tasks{" "}
+              <RefreshCw className="size-4 shrink-0" /> Synced Tickets{" "}
               {synced.length > 0 && (
                 <span className="text-xs text-muted-foreground">
                   {synced.length}
@@ -368,7 +368,7 @@ export default function RepoTaskLinks({
                 <DialogTrigger
                   render={
                     <Button
-                      aria-label="Add Synced Task"
+                      aria-label="Add Synced Ticket"
                       size={compact ? "xs" : "sm"}
                       variant="outline"
                     />
@@ -376,14 +376,14 @@ export default function RepoTaskLinks({
                 >
                   <RefreshCw className="size-3.5" />
                   <span className={compact ? "sr-only" : undefined}>
-                    Add Synced Task
+                    Add Synced Ticket
                   </span>
                 </DialogTrigger>
                 <DialogPopup>
                   <DialogHeader>
-                    <DialogTitle>Add Synced Task</DialogTitle>
+                    <DialogTitle>Add Synced Ticket</DialogTitle>
                     <DialogDescription>
-                      Create a new task that follows this GitHub issue. GitHub
+                      Create a new ticket that follows this GitHub issue. GitHub
                       updates overwrite its title and description.
                     </DialogDescription>
                   </DialogHeader>
@@ -391,7 +391,7 @@ export default function RepoTaskLinks({
                     <label className="space-y-2 text-sm">
                       <span>Board</span>
                       <select
-                        aria-label="Board for synced task"
+                        aria-label="Board for synced ticket"
                         className="w-full rounded-md border bg-background px-3 py-2"
                         onChange={(event) => setBoardId(event.target.value)}
                         value={boardId}
@@ -416,7 +416,9 @@ export default function RepoTaskLinks({
                       disabled={!boardId || addSynced.isPending}
                       onClick={() => addSynced.mutate()}
                     >
-                      {addSynced.isPending ? "Creating…" : "Create synced task"}
+                      {addSynced.isPending
+                        ? "Creating…"
+                        : "Create synced ticket"}
                     </Button>
                   </DialogFooter>
                 </DialogPopup>
@@ -425,7 +427,7 @@ export default function RepoTaskLinks({
           </div>
           {synced.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No tasks follow this issue.
+              No tickets follow this issue.
             </p>
           ) : (
             <div className="space-y-1">
@@ -440,9 +442,9 @@ export default function RepoTaskLinks({
       >
         <DialogPopup>
           <DialogHeader>
-            <DialogTitle>Unsync task?</DialogTitle>
+            <DialogTitle>Unsync ticket?</DialogTitle>
             <DialogDescription>
-              The task stops following GitHub updates. The task and ordinary
+              The ticket stops following GitHub updates. The ticket and ordinary
               link remain.
             </DialogDescription>
           </DialogHeader>
@@ -455,7 +457,7 @@ export default function RepoTaskLinks({
               onClick={() => unsyncLink && unsync.mutate(unsyncLink.taskId)}
               variant="destructive"
             >
-              Unsync task
+              Unsync ticket
             </Button>
           </DialogFooter>
         </DialogPopup>

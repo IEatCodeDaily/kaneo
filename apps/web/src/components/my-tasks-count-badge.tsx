@@ -1,24 +1,41 @@
 import { useTranslation } from "react-i18next";
+import useGetMyFlags from "@/hooks/queries/flag/use-get-my-flags";
 import useGetMyTasks from "@/hooks/queries/task/use-get-my-tasks";
 
 /**
- * Open-task count badge for the sidebar "My Tasks" entry (KFL-141).
+ * Count badge for the sidebar "My Tickets" entry (KFL-141).
  *
- * Mirrors InboxUnreadBadge: same markup and styling, and it renders nothing
- * at all when there is nothing to do — no "0" badge.
+ * The ticket is explicit about what each sidebar badge counts:
+ *   Inbox       -> everything (handled by InboxUnreadBadge)
+ *   My Tickets  -> "flagged and assigned tickets"
  *
- * The query uses the same defaults as the My Tasks page (relation "all",
- * completed tasks excluded), so the badge and the page agree on the number.
+ * So this counts tickets ASSIGNED to the signed-in user, plus any ticket
+ * flagged for them that they are not already assigned to. Flags are the
+ * "someone needs you on this" signal, so a flagged ticket belongs in the
+ * count even when it is assigned to somebody else — but a ticket that is
+ * both assigned and flagged must only be counted once.
+ *
+ * Mirrors InboxUnreadBadge's markup and styling, and renders nothing at all
+ * when there is nothing to do rather than showing a "0".
  */
 function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
   const { t } = useTranslation();
   const { data: tasks } = useGetMyTasks({
     organizationId,
-    relation: "all",
+    relation: "assigned",
     includeCompleted: false,
   });
+  const { data: flags } = useGetMyFlags();
 
-  const taskCount = (tasks ?? []).length;
+  // Union, not sum: a ticket both assigned to me and flagged for me is one
+  // item of work, not two. Resolved flags are done, so they do not count.
+  const workIds = new Set<string>(
+    (tasks ?? []).map((task: { id: string }) => task.id),
+  );
+  for (const flag of flags ?? []) {
+    if (!flag.resolvedAt) workIds.add(flag.taskId);
+  }
+  const taskCount = workIds.size;
 
   if (taskCount === 0) return null;
 

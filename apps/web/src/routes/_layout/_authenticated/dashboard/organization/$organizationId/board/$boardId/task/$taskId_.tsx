@@ -90,7 +90,7 @@ function RouteComponent() {
           <p className="text-muted-foreground max-w-md">
             {t("tasks:common.taskNotFoundDescription", {
               defaultValue:
-                "The task you are looking for does not exist or has been deleted.",
+                "The ticket you are looking for does not exist or has been deleted.",
             })}
           </p>
           <Button

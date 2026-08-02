@@ -1156,7 +1156,7 @@
 		"events": {
 			"task_created": {
 				"title": "새 작업 생성됨",
-				"content": "작업 \"{{taskTitle}}\"이(가) 생성되었습니다"
+				"content": "티켓 \"{{taskTitle}}\"이(가) 생성되었습니다"
 			},
 			"organization_created": {
 				"title": "워크스페이스 생성됨",
@@ -1164,15 +1164,15 @@
 			},
 			"task_status_changed": {
 				"title": "작업 상태 변경됨",
-				"content": "작업 \"{{taskTitle}}\"의 상태가 \"{{oldStatus}}\"에서 \"{{newStatus}}\"(으)로 변경되었습니다"
+				"content": "티켓 \"{{taskTitle}}\"의 상태가 \"{{oldStatus}}\"에서 \"{{newStatus}}\"(으)로 변경되었습니다"
 			},
 			"task_assignee_changed": {
 				"title": "작업이 나에게 할당됨",
-				"content": "다음 작업이 할당되었습니다: {{taskTitle}}"
+				"content": "다음 티켓이 할당되었습니다: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "시간 추적 시작됨",
-				"contentWithTask": "다음 작업의 시간 추적이 시작되었습니다: {{taskTitle}}",
+				"contentWithTask": "다음 티켓의 시간 추적이 시작되었습니다: {{taskTitle}}",
 				"contentWithoutTask": "작업의 시간 추적이 시작되었습니다"
 			}
 		}
@@ -1831,7 +1831,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

@@ -97,10 +97,10 @@ function buildDeliveryContent(notification: {
     case "task_created": {
       const taskTitle = getStringValue(notification.eventData, "taskTitle");
       return {
-        title: "New task created",
+        title: "New ticket created",
         body: taskTitle
-          ? `A new task was created: ${taskTitle}`
-          : "A new task was created in Kaneo.",
+          ? `A new ticket was created: ${taskTitle}`
+          : "A new ticket was created in Kaneo.",
       };
     }
     case "organization_created": {
@@ -120,20 +120,20 @@ function buildDeliveryContent(notification: {
       const oldStatus = getStringValue(notification.eventData, "oldStatus");
       const newStatus = getStringValue(notification.eventData, "newStatus");
       return {
-        title: "Task status changed",
+        title: "Ticket status changed",
         body:
           taskTitle && oldStatus && newStatus
             ? `${taskTitle} moved from ${oldStatus} to ${newStatus}.`
-            : "A task status changed in Kaneo.",
+            : "A ticket status changed in Kaneo.",
       };
     }
     case "task_assignee_changed": {
       const taskTitle = getStringValue(notification.eventData, "taskTitle");
       return {
-        title: "Task assigned to you",
+        title: "Ticket assigned to you",
         body: taskTitle
           ? `You were assigned to ${taskTitle}.`
-          : "A task was assigned to you in Kaneo.",
+          : "A ticket was assigned to you in Kaneo.",
       };
     }
     case "time_entry_created": {
@@ -151,19 +151,19 @@ function buildDeliveryContent(notification: {
         getNumberValue(notification.eventData, "leadTimeMinutes"),
       );
       return {
-        title: "Task due soon",
+        title: "Ticket due soon",
         body: taskTitle
           ? `"${taskTitle}" is due ${label}.`
-          : `A task is due ${label}.`,
+          : `A ticket is due ${label}.`,
       };
     }
     case "task_overdue": {
       const taskTitle = getStringValue(notification.eventData, "taskTitle");
       return {
-        title: "Task overdue",
+        title: "Ticket overdue",
         body: taskTitle
           ? `"${taskTitle}" is past its due date.`
-          : "A task is past its due date.",
+          : "A ticket is past its due date.",
       };
     }
     case "task_mention": {
@@ -178,7 +178,7 @@ function buildDeliveryContent(notification: {
           : "You were mentioned",
         body: taskTitle
           ? `You were mentioned in ${taskTitle}.`
-          : "You were mentioned in a Kaneo task.",
+          : "You were mentioned in a Kaneo ticket.",
       };
     }
     case "task_comment": {
@@ -189,11 +189,11 @@ function buildDeliveryContent(notification: {
       );
       return {
         title: commenterName
-          ? `${commenterName} commented on your task`
-          : "New task comment",
+          ? `${commenterName} commented on your ticket`
+          : "New ticket comment",
         body: taskTitle
           ? `A new comment was added to ${taskTitle}.`
-          : "A new comment was added to a Kaneo task.",
+          : "A new comment was added to a Kaneo ticket.",
       };
     }
     default:

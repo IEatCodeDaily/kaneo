@@ -33,9 +33,11 @@ vi.mock("@/hooks/queries/config/use-get-config", () => ({
 vi.mock("@/hooks/queries/invitation/use-pending-invitations", () => ({
   usePendingInvitations: () => ({ data: [] }),
 }));
-const mocks = { organization: { id: "org-1", name: "Org" } as
-  | { id: string; name: string }
-  | undefined };
+const mocks = {
+  organization: { id: "org-1", name: "Org" } as
+    | { id: string; name: string }
+    | undefined,
+};
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
   default: () => ({ data: mocks.organization }),
 }));

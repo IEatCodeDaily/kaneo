@@ -94,11 +94,11 @@ function getActivitySearchContent(
     case "priority_changed":
       return `changed priority from ${toDisplayCase(String(data.oldPriority ?? ""))} to ${toDisplayCase(String(data.newPriority ?? ""))}`;
     case "unassigned":
-      return "unassigned the task";
+      return "unassigned the ticket";
     case "assignee_changed":
       return data.isSelfAssigned
-        ? "assigned the task to themselves"
-        : `assigned the task to ${String(data.newAssignee ?? "someone")}`;
+        ? "assigned the ticket to themselves"
+        : `assigned the ticket to ${String(data.newAssignee ?? "someone")}`;
     case "due_date_changed":
       if (!data.newDueDate) {
         return "cleared the due date";
@@ -110,7 +110,7 @@ function getActivitySearchContent(
     case "title_changed":
       return `changed title from "${String(data.oldTitle ?? "")}" to "${String(data.newTitle ?? "")}"`;
     case "task":
-      return "created the task";
+      return "created the ticket";
     default:
       return undefined;
   }

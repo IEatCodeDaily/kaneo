@@ -1161,7 +1161,7 @@
 		"events": {
 			"task_created": {
 				"title": "Создана новая задача",
-				"content": "Задача «{{taskTitle}}» создана"
+				"content": "Тикет «{{taskTitle}}» создан"
 			},
 			"organization_created": {
 				"title": "Рабочая область создана",
@@ -1169,15 +1169,15 @@
 			},
 			"task_status_changed": {
 				"title": "Статус задачи изменён",
-				"content": "Статус задачи «{{taskTitle}}» изменён с «{{oldStatus}}» на «{{newStatus}}»"
+				"content": "Статус тикета «{{taskTitle}}» изменён с «{{oldStatus}}» на «{{newStatus}}»"
 			},
 			"task_assignee_changed": {
 				"title": "Задача назначена вам",
-				"content": "Вам назначена задача: {{taskTitle}}"
+				"content": "Вам назначен тикет: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Трекинг времени начат",
-				"contentWithTask": "Трекинг времени начат для задачи: {{taskTitle}}",
+				"contentWithTask": "Трекинг времени начат для тикета: {{taskTitle}}",
 				"contentWithoutTask": "Трекинг времени начат для задачи"
 			}
 		}
@@ -1872,7 +1872,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

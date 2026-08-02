@@ -1155,7 +1155,7 @@
 		"events": {
 			"task_created": {
 				"title": "Створено нове завдання",
-				"content": "Завдання «{{taskTitle}}» створено"
+				"content": "Тікет «{{taskTitle}}» створено"
 			},
 			"organization_created": {
 				"title": "Робочий простір створено",
@@ -1163,15 +1163,15 @@
 			},
 			"task_status_changed": {
 				"title": "Статус завдання змінено",
-				"content": "Статус завдання «{{taskTitle}}» змінено з «{{oldStatus}}» на «{{newStatus}}»"
+				"content": "Статус тікета «{{taskTitle}}» змінено з «{{oldStatus}}» на «{{newStatus}}»"
 			},
 			"task_assignee_changed": {
 				"title": "Завдання призначено вам",
-				"content": "Вас призначено на завдання: {{taskTitle}}"
+				"content": "Вас призначено на тікет: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Відлік часу розпочато",
-				"contentWithTask": "Відлік часу розпочато для завдання: {{taskTitle}}",
+				"contentWithTask": "Відлік часу розпочато для тікета: {{taskTitle}}",
 				"contentWithoutTask": "Відлік часу розпочато для завдання"
 			}
 		}
@@ -1830,7 +1830,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}

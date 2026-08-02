@@ -614,7 +614,7 @@
 			"githubSectionTitle": "GitHub-Integration",
 			"githubSectionSubtitle": "Synchronisiere Aufgaben mit GitHub-Issues und aktiviere die bidirektionale Synchronisierung.",
 			"giteaSectionTitle": "Gitea Integration",
-			"giteaSectionSubtitle": "Synchronize tasks with a self-hosted Gitea instance (issues, PRs, webhooks).",
+			"giteaSectionSubtitle": "Synchronize tickets with a self-hosted Gitea instance (issues, PRs, webhooks).",
 			"discordSectionTitle": "Discord-Integration",
 			"discordSectionSubtitle": "Sende Projektaktualisierungen per Webhook in einen Discord-Kanal.",
 			"genericWebhookSectionTitle": "Generische Webhooks",
@@ -758,8 +758,8 @@
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
-				"commentOnDisabled": "Task link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
+				"commentOnDisabled": "Ticket link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Kopiert",
 				"unableToCopySecret": "Geheimnis konnte nicht kopiert werden"
@@ -775,7 +775,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1020,7 +1020,7 @@
 			"githubHeading": "GitHub",
 			"githubHint": "Wenn ein GitHub-Ereignis eintritt, verschiebe die verknüpfte Aufgabe in eine Spalte.",
 			"giteaHeading": "Gitea",
-			"giteaHint": "When a Gitea webhook event occurs, move the linked task to a column.",
+			"giteaHint": "When a Gitea webhook event occurs, move the linked ticket to a column.",
 			"selectColumnPlaceholder": "Spalte auswählen...",
 			"toastUpdated": "Workflow-Regel aktualisiert",
 			"toastError": "Workflow-Regel konnte nicht aktualisiert werden",
@@ -1180,7 +1180,7 @@
 		"events": {
 			"task_created": {
 				"title": "Neue Aufgabe erstellt",
-				"content": "Die Aufgabe \"{{taskTitle}}\" wurde erstellt"
+				"content": "Das Ticket \"{{taskTitle}}\" wurde erstellt"
 			},
 			"organization_created": {
 				"title": "Organization erstellt",
@@ -1188,11 +1188,11 @@
 			},
 			"task_status_changed": {
 				"title": "Aufgabenstatus geändert",
-				"content": "Der Status der Aufgabe \"{{taskTitle}}\" wurde von \"{{oldStatus}}\" zu \"{{newStatus}}\" geändert"
+				"content": "Der Status des Tickets \"{{taskTitle}}\" wurde von \"{{oldStatus}}\" zu \"{{newStatus}}\" geändert"
 			},
 			"task_assignee_changed": {
 				"title": "Aufgabe wurde dir zugewiesen",
-				"content": "Dir wurde die Aufgabe \"{{taskTitle}}\" zugewiesen"
+				"content": "Dir wurde das Ticket \"{{taskTitle}}\" zugewiesen"
 			},
 			"task_mention": {
 				"title": "{{mentionerName}} hat dich erwähnt",
@@ -1212,7 +1212,7 @@
 			},
 			"time_entry_created": {
 				"title": "Zeiterfassung gestartet",
-				"contentWithTask": "Die Zeiterfassung für die Aufgabe \"{{taskTitle}}\" wurde gestartet",
+				"contentWithTask": "Die Zeiterfassung für das Ticket \"{{taskTitle}}\" wurde gestartet",
 				"contentWithoutTask": "Die Zeiterfassung für eine Aufgabe wurde gestartet"
 			}
 		}
@@ -1871,7 +1871,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
