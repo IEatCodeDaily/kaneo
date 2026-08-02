@@ -1668,7 +1668,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Aucun label disponible"
+			"empty": "Aucun label disponible",
+			"fromRepository": "Du dépôt lié"
 		},
 		"update": {
 			"success": "Tâche mise à jour avec succès",

@@ -1434,7 +1434,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Geen labels beschikbaar"
+			"empty": "Geen labels beschikbaar",
+			"fromRepository": "Uit gekoppelde repository"
 		},
 		"update": {
 			"success": "Taak succesvol bijgewerkt",

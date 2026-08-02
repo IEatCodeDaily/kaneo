@@ -1890,7 +1890,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "No labels available"
+			"empty": "No labels available",
+			"fromRepository": "From linked repository"
 		},
 		"update": {
 			"success": "Ticket updated successfully",

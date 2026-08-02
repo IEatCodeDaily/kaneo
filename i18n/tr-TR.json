@@ -1667,7 +1667,8 @@
 		},
 		"labels": {
 			"label": "Etiketler",
-			"empty": "Kullanılabilir etiket yok"
+			"empty": "Kullanılabilir etiket yok",
+			"fromRepository": "Bağlı depodan"
 		},
 		"update": {
 			"success": "Talep başarıyla güncellendi",

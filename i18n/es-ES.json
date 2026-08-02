@@ -1433,7 +1433,8 @@
 		},
 		"labels": {
 			"label": "Etiquetas",
-			"empty": "No hay etiquetas disponibles"
+			"empty": "No hay etiquetas disponibles",
+			"fromRepository": "Del repositorio vinculado"
 		},
 		"update": {
 			"success": "Tarea actualizada correctamente",

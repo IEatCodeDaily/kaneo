@@ -5,6 +5,7 @@ import {
   CalendarX,
   Copy,
   GitBranch,
+  Github,
   Plus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -33,6 +34,7 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
+import { isRepoLabel, labelSourceAttribute } from "./label-source";
 import TaskAssigneePopover from "./task-assignee-popover";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
@@ -92,7 +94,8 @@ export default function TaskPropertiesSidebar({
   const canMoveTask =
     Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
   const statusColumn = columns.find(
-    (column) => column.slug === task?.status || column.id === task?.status,
+    (column: { id: string; slug?: string }) =>
+      column.slug === task?.status || column.id === task?.status,
   );
   const statusLabel = getStatusDisplayLabel(
     task?.status ?? "",
@@ -716,7 +719,12 @@ export default function TaskPropertiesSidebar({
             {task &&
               taskLabels.length > 0 &&
               taskLabels.map(
-                (label: { id: string; name: string; color: string }) => (
+                (label: {
+                  id: string;
+                  name: string;
+                  color: string;
+                  source?: "kaneo" | "repo";
+                }) => (
                   <TaskLabelsPopover
                     key={`edit-${label.id}`}
                     task={task}
@@ -726,6 +734,12 @@ export default function TaskPropertiesSidebar({
                     <Badge
                       variant="outline"
                       className="flex items-center gap-1 px-1.5 py-0.5 cursor-pointer hover:bg-accent/50 transition-colors text-[10px]"
+                      data-label-source={labelSourceAttribute(label.source)}
+                      title={
+                        isRepoLabel(label.source)
+                          ? `${label.name} — ${t("tasks:labels.fromRepository")}`
+                          : label.name
+                      }
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -738,6 +752,18 @@ export default function TaskPropertiesSidebar({
                       <span className="truncate max-w-[60px]">
                         {label.name}
                       </span>
+                      {/*
+                        #147: repo-owned labels carry the source mark, Kaneo
+                        labels carry nothing. Deliberately an icon rather than
+                        a second text label next to the name.
+                      */}
+                      {isRepoLabel(label.source) && (
+                        <Github
+                          aria-hidden="true"
+                          className="size-2.5 shrink-0 opacity-60"
+                          data-testid="label-repo-mark"
+                        />
+                      )}
                     </Badge>
                   </TaskLabelsPopover>
                 ),

@@ -1805,7 +1805,8 @@
 		},
 		"labels": {
 			"label": "Label",
-			"empty": "Tidak ada label tersedia"
+			"empty": "Tidak ada label tersedia",
+			"fromRepository": "Dari repositori tertaut"
 		},
 		"update": {
 			"success": "Tugas berhasil diperbarui",

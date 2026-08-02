@@ -1701,7 +1701,8 @@
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Keine Labels verfügbar"
+			"empty": "Keine Labels verfügbar",
+			"fromRepository": "Aus verknüpftem Repository"
 		},
 		"update": {
 			"success": "Aufgabe erfolgreich aktualisiert",

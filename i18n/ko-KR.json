@@ -1661,7 +1661,8 @@
 		},
 		"labels": {
 			"label": "라벨",
-			"empty": "사용 가능한 라벨이 없습니다"
+			"empty": "사용 가능한 라벨이 없습니다",
+			"fromRepository": "연결된 저장소에서"
 		},
 		"update": {
 			"success": "작업이 업데이트되었습니다",
