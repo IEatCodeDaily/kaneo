@@ -1,6 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PanelRight } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import BoardPropertiesPanel from "@/components/board/board-properties-panel";
 import BoardToolbar from "@/components/board/board-toolbar";
@@ -14,7 +21,7 @@ import {
 import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { shortcuts } from "@/constants/shortcuts";
@@ -30,6 +37,10 @@ import {
 import { sortTasks } from "@/lib/sort-tasks";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
 
 type BoardSearchParams = {
   taskId?: string;
@@ -242,11 +253,15 @@ function RouteComponent() {
           />
         </div>
 
-        <CreateTaskModal
-          open={isTaskModalOpen}
-          boardId={boardId}
-          onClose={() => setIsTaskModalOpen(false)}
-        />
+        {isTaskModalOpen && (
+          <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+            <CreateTaskModal
+              open
+              boardId={boardId}
+              onClose={() => setIsTaskModalOpen(false)}
+            />
+          </Suspense>
+        )}
 
         <TaskDetailsSheet
           taskId={taskId}

@@ -1,8 +1,8 @@
 import { produce } from "immer";
 import { Archive, Plus } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
@@ -10,6 +10,10 @@ import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import type { BoardWithTasks } from "@/types/board";
 import { ArchiveTasksModal } from "../../shared/modals/archive-tasks-modal";
+
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
 
 type ColumnHeaderProps = {
   column: BoardWithTasks["columns"][number];
@@ -87,12 +91,16 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
         )}
       </div>
 
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        boardId={board?.id}
-        status={column.id}
-      />
+      {isTaskModalOpen && (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            onClose={() => setIsTaskModalOpen(false)}
+            boardId={board?.id}
+            status={column.id}
+          />
+        </Suspense>
+      )}
 
       <ArchiveTasksModal
         open={isArchiveModalOpen}

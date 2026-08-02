@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,8 +34,12 @@ import useBoardStore from "@/store/board";
 import type { BoardWithTasks } from "@/types/board";
 import type Task from "@/types/task";
 import BacklogBulkToolbar from "../bulk-selection/backlog-bulk-toolbar";
-import CreateTaskModal from "../shared/modals/create-task-modal";
+
 import BacklogTaskRow from "./backlog-task-row";
+
+const CreateTaskModal = lazy(
+  () => import("../shared/modals/create-task-modal"),
+);
 
 type BacklogListViewProps = {
   board?: BoardWithTasks;
@@ -474,12 +478,16 @@ function BacklogListView({
         )}
       </DragOverlay>
 
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        boardId={board?.id}
-        onClose={() => setIsTaskModalOpen(false)}
-        status={activeColumn ?? "planned"}
-      />
+      {isTaskModalOpen && (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            boardId={board?.id}
+            onClose={() => setIsTaskModalOpen(false)}
+            status={activeColumn ?? "planned"}
+          />
+        </Suspense>
+      )}
 
       <BacklogBulkToolbar />
       <PendingSyncIndicator pending={isReorderPending} />

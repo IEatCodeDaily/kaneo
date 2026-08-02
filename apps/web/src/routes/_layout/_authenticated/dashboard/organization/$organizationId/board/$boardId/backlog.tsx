@@ -1,15 +1,27 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Calendar, Filter, Plus, User, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
 
 import BoardLayout from "@/components/common/board-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
+
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
+
 import {
   AlertDialog,
   AlertDialogClose,
@@ -715,12 +727,16 @@ function RouteComponent() {
           )}
         </div>
 
-        <CreateTaskModal
-          open={isTaskModalOpen}
-          boardId={boardId}
-          onClose={() => setIsTaskModalOpen(false)}
-          status="planned"
-        />
+        {isTaskModalOpen && (
+          <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+            <CreateTaskModal
+              open
+              boardId={boardId}
+              onClose={() => setIsTaskModalOpen(false)}
+              status="planned"
+            />
+          </Suspense>
+        )}
 
         <TaskDetailsSheet
           taskId={taskId}

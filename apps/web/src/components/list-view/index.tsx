@@ -21,7 +21,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { Archive, ChevronDown, ChevronRight, Flag, Plus } from "lucide-react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,8 +42,12 @@ import useBulkSelectionStore from "@/store/bulk-selection";
 import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import { ArchiveTasksModal } from "../shared/modals/archive-tasks-modal";
-import CreateTaskModal from "../shared/modals/create-task-modal";
+
 import TaskRow from "./task-row";
+
+const CreateTaskModal = lazy(
+  () => import("../shared/modals/create-task-modal"),
+);
 
 type ListViewProps = {
   board: BoardWithTasks;
@@ -520,12 +524,16 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
         )}
       </DragOverlay>
 
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        boardId={board.id}
-        onClose={() => setIsTaskModalOpen(false)}
-        status={activeColumn ?? "done"}
-      />
+      {isTaskModalOpen && (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            boardId={board.id}
+            onClose={() => setIsTaskModalOpen(false)}
+            status={activeColumn ?? "done"}
+          />
+        </Suspense>
+      )}
       <ArchiveTasksModal
         open={isArchiveModalOpen}
         onClose={() => {
