@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, FileText, Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { useState } from "react";
 import PageTitle from "@/components/page-title";
 import type { TaskTemplateData } from "@/components/task/task-template-menu";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -32,6 +33,7 @@ import {
   SheetPanel,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { resolveLabelColor } from "@/constants/label-colors";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -66,6 +68,7 @@ function RouteComponent() {
   const [deleting, setDeleting] = useState<Template | null>(null);
   const [name, setName] = useState("");
   const [data, setData] = useState(empty);
+  const [labelSearch, setLabelSearch] = useState("");
   const { data: organizationLabels = [] } =
     useGetLabelsByOrganization(organizationId);
   const startOffsetValid = isTemplateDateOffset(data.startDateOffset ?? "");
@@ -146,6 +149,7 @@ function RouteComponent() {
                   setEditingId(null);
                   setName("");
                   setData(empty);
+                  setLabelSearch("");
                   setOpen(true);
                 }}
               >
@@ -176,6 +180,7 @@ function RouteComponent() {
                     setEditingId(template.id);
                     setName(template.name);
                     setData(template.data);
+                    setLabelSearch("");
                     setOpen(true);
                   }}
                   size="icon-sm"
@@ -213,162 +218,252 @@ function RouteComponent() {
               applying the template.
             </SheetDescription>
           </SheetHeader>
-          <SheetPanel className="grid flex-1 gap-4 px-5 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="template-name">Template name</Label>
+          <SheetPanel className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-5 pb-24">
+            <div className="rounded-xl border bg-muted/20 p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
+              <Label
+                className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
+                htmlFor="template-name"
+              >
+                Template name
+              </Label>
               <Input
                 id="template-name"
+                className="border-0 bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-0"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="Bug report"
+                placeholder="TEMPLATE NAME"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="template-title">Default title</Label>
+              <Label
+                className="mt-2 px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
+                htmlFor="template-title"
+              >
+                Ticket title
+              </Label>
               <Input
                 id="template-title"
+                className="h-11 border-0 bg-transparent px-3 text-base font-semibold shadow-none focus-visible:ring-0"
                 value={data.title}
                 onChange={(event) =>
                   setData({ ...data, title: event.target.value })
                 }
-                placeholder="Bug: "
+                placeholder="Ticket title"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="template-description">Default description</Label>
+              <Label
+                className="mt-2 px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
+                htmlFor="template-description"
+              >
+                Description
+              </Label>
               <textarea
                 id="template-description"
-                className="min-h-32 w-full resize-y rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="min-h-24 w-full resize-y rounded-md border-0 bg-transparent px-1 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
                 value={data.description ?? ""}
                 onChange={(event) =>
                   setData({ ...data, description: event.target.value || null })
                 }
+                placeholder="Add a description, steps, or acceptance criteria…"
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="template-status">Status</Label>
-                <Input
-                  id="template-status"
-                  value={data.status ?? ""}
-                  onChange={(event) =>
-                    setData({ ...data, status: event.target.value || null })
-                  }
-                  placeholder="To Do"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Resolved by column name or slug when applied.
-                </p>
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Properties
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="template-status">Status</Label>
+                  <Input
+                    id="template-status"
+                    value={data.status ?? ""}
+                    onChange={(event) =>
+                      setData({ ...data, status: event.target.value || null })
+                    }
+                    placeholder="To Do"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Match a target board column name or slug.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="template-priority">Priority</Label>
+                  <select
+                    id="template-priority"
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    value={data.priority ?? "no-priority"}
+                    onChange={(event) =>
+                      setData({ ...data, priority: event.target.value })
+                    }
+                  >
+                    <option value="no-priority">No priority</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="template-start">Start date offset</Label>
+                  <Input
+                    aria-describedby="template-start-help"
+                    aria-invalid={!startOffsetValid}
+                    id="template-start"
+                    value={data.startDateOffset ?? ""}
+                    onChange={(event) =>
+                      setData({
+                        ...data,
+                        startDate: null,
+                        startDateOffset: event.target.value || null,
+                      })
+                    }
+                    placeholder="+7d"
+                  />
+                  <p
+                    className={
+                      startOffsetValid
+                        ? "text-xs text-muted-foreground"
+                        : "text-xs text-destructive"
+                    }
+                    id="template-start-help"
+                  >
+                    Use +/−N followed by m, h, d, or w.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="template-due">Due date offset</Label>
+                  <Input
+                    aria-describedby="template-due-help"
+                    aria-invalid={!dueOffsetValid}
+                    id="template-due"
+                    value={data.dueDateOffset ?? ""}
+                    onChange={(event) =>
+                      setData({
+                        ...data,
+                        dueDate: null,
+                        dueDateOffset: event.target.value || null,
+                      })
+                    }
+                    placeholder="+14d"
+                  />
+                  <p
+                    className={
+                      dueOffsetValid
+                        ? "text-xs text-muted-foreground"
+                        : "text-xs text-destructive"
+                    }
+                    id="template-due-help"
+                  >
+                    Use +/−N followed by m, h, d, or w.
+                  </p>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="template-priority">Priority</Label>
-                <select
-                  id="template-priority"
-                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-                  value={data.priority ?? "no-priority"}
-                  onChange={(event) =>
-                    setData({ ...data, priority: event.target.value })
-                  }
-                >
-                  <option value="no-priority">No priority</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="template-start">Start date offset</Label>
-                <Input
-                  aria-describedby="template-start-help"
-                  aria-invalid={!startOffsetValid}
-                  id="template-start"
-                  value={data.startDateOffset ?? ""}
-                  onChange={(event) =>
-                    setData({
-                      ...data,
-                      startDate: null,
-                      startDateOffset: event.target.value || null,
-                    })
-                  }
-                  placeholder="+7d"
-                />
-                <p
-                  className={
-                    startOffsetValid
-                      ? "text-xs text-muted-foreground"
-                      : "text-xs text-destructive"
-                  }
-                  id="template-start-help"
-                >
-                  Use +/−N followed by m, h, d, or w.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="template-due">Due date offset</Label>
-                <Input
-                  aria-describedby="template-due-help"
-                  aria-invalid={!dueOffsetValid}
-                  id="template-due"
-                  value={data.dueDateOffset ?? ""}
-                  onChange={(event) =>
-                    setData({
-                      ...data,
-                      dueDate: null,
-                      dueDateOffset: event.target.value || null,
-                    })
-                  }
-                  placeholder="+14d"
-                />
-                <p
-                  className={
-                    dueOffsetValid
-                      ? "text-xs text-muted-foreground"
-                      : "text-xs text-destructive"
-                  }
-                  id="template-due-help"
-                >
-                  Use +/−N followed by m, h, d, or w.
-                </p>
+                <Label>Labels</Label>
+                <Popover onOpenChange={(open) => !open && setLabelSearch("")}>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        className="h-auto min-h-9 w-full justify-start gap-2 px-3 py-1.5 font-normal"
+                        variant="outline"
+                      />
+                    }
+                  >
+                    <Tags className="size-4 shrink-0 text-muted-foreground" />
+                    {data.labels?.length ? (
+                      <span className="flex flex-wrap gap-1">
+                        {data.labels.map((name) => (
+                          <span
+                            className="flex max-w-32 items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs"
+                            key={name}
+                          >
+                            <span
+                              className="size-1.5 shrink-0 rounded-full"
+                              style={{
+                                backgroundColor: resolveLabelColor(
+                                  organizationLabels.find(
+                                    (label) => label.name === name,
+                                  )?.color ?? "gray",
+                                ),
+                              }}
+                            />
+                            <span className="truncate">{name}</span>
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Add labels…</span>
+                    )}
+                  </PopoverTrigger>
+                  <PopoverPopup
+                    align="start"
+                    className="w-[min(18rem,var(--available-width))] flex-col p-0"
+                  >
+                    <Input
+                      aria-label="Search labels"
+                      autoFocus
+                      className="m-2 w-[calc(100%-1rem)]"
+                      onChange={(event) => setLabelSearch(event.target.value)}
+                      placeholder="Search labels…"
+                      value={labelSearch}
+                    />
+                    <div className="max-h-64 overflow-y-auto border-t p-1">
+                      {organizationLabels
+                        .filter(
+                          (label) =>
+                            !label.taskId &&
+                            label.name
+                              .toLowerCase()
+                              .includes(labelSearch.toLowerCase()),
+                        )
+                        .map((label) => {
+                          const selected =
+                            data.labels?.includes(label.name) ?? false;
+                          return (
+                            <button
+                              aria-pressed={selected}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted"
+                              key={label.id}
+                              onClick={() =>
+                                setData({
+                                  ...data,
+                                  labels: selected
+                                    ? (data.labels ?? []).filter(
+                                        (name) => name !== label.name,
+                                      )
+                                    : [...(data.labels ?? []), label.name],
+                                })
+                              }
+                              type="button"
+                            >
+                              <span
+                                className="size-2.5 rounded-full"
+                                style={{
+                                  backgroundColor: resolveLabelColor(
+                                    label.color,
+                                  ),
+                                }}
+                              />
+                              <span className="min-w-0 flex-1 truncate">
+                                {label.name}
+                              </span>
+                              {selected ? <Check className="size-4" /> : null}
+                            </button>
+                          );
+                        })}
+                      {!organizationLabels.some(
+                        (label) =>
+                          !label.taskId &&
+                          label.name
+                            .toLowerCase()
+                            .includes(labelSearch.toLowerCase()),
+                      ) ? (
+                        <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                          No labels found.
+                        </p>
+                      ) : null}
+                    </div>
+                  </PopoverPopup>
+                </Popover>
               </div>
             </div>
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Labels</legend>
-              <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto rounded-md border p-3">
-                {organizationLabels
-                  .filter((label) => !label.taskId)
-                  .map((label) => {
-                    const selected = data.labels?.includes(label.name) ?? false;
-                    return (
-                      <label
-                        className="flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1 text-sm"
-                        key={label.id}
-                      >
-                        <input
-                          checked={selected}
-                          onChange={() =>
-                            setData({
-                              ...data,
-                              labels: selected
-                                ? (data.labels ?? []).filter(
-                                    (name) => name !== label.name,
-                                  )
-                                : [...(data.labels ?? []), label.name],
-                            })
-                          }
-                          type="checkbox"
-                        />
-                        {label.name}
-                      </label>
-                    );
-                  })}
-                {!organizationLabels.some((label) => !label.taskId) && (
-                  <span className="text-xs text-muted-foreground">
-                    No organization labels.
-                  </span>
-                )}
-              </div>
-            </fieldset>
           </SheetPanel>
           <SheetFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
