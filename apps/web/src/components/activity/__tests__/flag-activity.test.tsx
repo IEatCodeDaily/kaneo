@@ -202,6 +202,7 @@ describe("flag activity entries (#107)", () => {
         targetUserId: "user-b",
         targetTeamId: null,
         resolvedBy: "user-a",
+        resolveNote: "Approved after the accessibility review",
       },
     };
 
@@ -213,6 +214,13 @@ describe("flag activity entries (#107)", () => {
     // next to its own coloured flag_raised entry.
     expect(chip.getAttribute("style")).toContain("rgb(59, 130, 246)");
     expect(screen.getByText("activity:flagResolved")).toBeTruthy();
+    // #167: the note is mandatory during unflag, so it must survive into the
+    // audit trail instead of disappearing after submit.
+    const note = screen.getByTestId("activity-flag-resolve-note");
+    expect(note.textContent).toContain("activity:resolutionNote");
+    expect(note.textContent).toContain(
+      "Approved after the accessibility review",
+    );
     expect(screen.queryByText("flags:dialog.unflag")).toBeNull();
   });
 });

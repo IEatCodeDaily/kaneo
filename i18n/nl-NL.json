@@ -1072,7 +1072,8 @@
 		},
 		"statusRun": "heeft dit van {{from}} naar {{to}} verplaatst",
 		"statusRunNoOp": "heeft de status meerdere keren gewijzigd, terug naar {{status}}",
-		"statusRunSteps": "{{count}} stappen"
+		"statusRunSteps": "{{count}} stappen",
+		"resolutionNote": "Oplossingsnotitie"
 	},
 	"tasks": {
 		"status": {

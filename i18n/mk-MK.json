@@ -1286,7 +1286,8 @@
 		},
 		"statusRun": "го премести од {{from}} во {{to}}",
 		"statusRunNoOp": "го смени статусот неколку пати, враќајќи се на {{status}}",
-		"statusRunSteps": "{{count}} чекори"
+		"statusRunSteps": "{{count}} чекори",
+		"resolutionNote": "Белешка за решавање"
 	},
 	"tasks": {
 		"status": {

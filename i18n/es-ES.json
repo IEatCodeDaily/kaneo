@@ -1071,7 +1071,8 @@
 		},
 		"statusRun": "lo movió de {{from}} a {{to}}",
 		"statusRunNoOp": "cambió el estado varias veces, volviendo a {{status}}",
-		"statusRunSteps": "{{count}} pasos"
+		"statusRunSteps": "{{count}} pasos",
+		"resolutionNote": "Nota de resolución"
 	},
 	"tasks": {
 		"status": {

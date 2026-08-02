@@ -486,6 +486,24 @@ function renderActivityContent({
             {t("activity:flagTarget", { target: targetName })}
           </span>
         )}
+        {/*
+          #167: resolving a flag requires a note, so hiding that note from the
+          audit trail made the mandatory field pointless. Keep it on its own
+          line under the resolved entry; raised/legacy entries are unchanged.
+        */}
+        {activity.type === "flag_resolved" &&
+          typeof eventData?.resolveNote === "string" &&
+          eventData.resolveNote.trim() && (
+            <span
+              data-testid="activity-flag-resolve-note"
+              className="basis-full rounded-md border border-border/70 bg-muted/40 px-2 py-1 text-foreground/80 text-xs"
+            >
+              <span className="font-medium text-muted-foreground">
+                {t("activity:resolutionNote")}:
+              </span>{" "}
+              {eventData.resolveNote.trim()}
+            </span>
+          )}
       </span>
     );
   }

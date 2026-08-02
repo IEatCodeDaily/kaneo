@@ -1510,7 +1510,8 @@
 		"flagTarget": "for {{target}}",
 		"statusRun": "moved this from {{from}} to {{to}}",
 		"statusRunNoOp": "changed the status a few times, ending back at {{status}}",
-		"statusRunSteps": "{{count}} steps"
+		"statusRunSteps": "{{count}} steps",
+		"resolutionNote": "Resolution note"
 	},
 	"tasks": {
 		"status": {

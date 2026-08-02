@@ -1285,7 +1285,8 @@
 		},
 		"statusRun": "перемістив це з {{from}} до {{to}}",
 		"statusRunNoOp": "кілька разів змінював статус і повернувся до {{status}}",
-		"statusRunSteps": "кроків: {{count}}"
+		"statusRunSteps": "кроків: {{count}}",
+		"resolutionNote": "Примітка до вирішення"
 	},
 	"tasks": {
 		"status": {
