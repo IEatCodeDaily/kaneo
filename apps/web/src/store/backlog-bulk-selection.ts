@@ -40,10 +40,7 @@ const useBacklogBulkSelectionStore = create<BacklogBulkSelectionState>(
       set((state) => {
         const newSet = new Set(state.selectedTaskIds);
         newSet.delete(taskId);
-        return {
-          selectedTaskIds: newSet,
-          isSelectMode: newSet.size > 0,
-        };
+        return { selectedTaskIds: newSet };
       }),
 
     toggleSelection: (taskId: string) => {

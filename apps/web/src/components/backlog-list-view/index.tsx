@@ -56,6 +56,7 @@ function BacklogListView({
     focusPrevious,
     focusedTaskId,
     clearFocus,
+    clearSelection,
     isSelectMode,
     selectedTaskIds,
     selectTasks,
@@ -91,7 +92,8 @@ function BacklogListView({
 
   useEffect(() => {
     clearFocus();
-  }, [clearFocus]);
+    return () => clearSelection();
+  }, [clearFocus, clearSelection]);
 
   useRegisterShortcuts({
     shortcuts: {
@@ -336,7 +338,13 @@ function BacklogListView({
             {isSelectMode && tasks.length > 0 && (
               <Checkbox
                 aria-label={`Select all ${title} tickets`}
-                checked={tasks.every((task) => selectedTaskIds.has(task.id))}
+                checked={
+                  tasks.every((task) => selectedTaskIds.has(task.id))
+                    ? true
+                    : tasks.some((task) => selectedTaskIds.has(task.id))
+                      ? "indeterminate"
+                      : false
+                }
                 onCheckedChange={(checked) => {
                   const sectionIds = new Set(tasks.map((task) => task.id));
                   selectTasks(

@@ -73,6 +73,7 @@ function RouteComponent() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   // #143: proper confirmation dialog for the bulk move (was window.confirm).
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [bulkMovePending, setBulkMovePending] = useState(false);
   const { bulkMoveToBoard } = useBulkOperations();
   const { selectedTaskIds, isSelectMode, setSelectMode, clearSelection } =
     useBacklogBulkSelectionStore();
@@ -330,14 +331,30 @@ function RouteComponent() {
     ...(board?.plannedTasks ?? []),
     ...(board?.archivedTasks ?? []),
   ].filter((task) => selectedTaskIds.has(task.id));
+  const todoColumn =
+    board?.columns?.find(
+      (column) => column.slug === "to-do" || column.name === "To Do",
+    ) ?? board?.columns?.find((column) => !column.isFinal);
 
   const confirmBulkMove = async () => {
-    await bulkMoveToBoard({ taskIds: [...selectedTaskIds], status: "to-do" });
-    setBulkMoveOpen(false);
-    clearSelection();
-    toast.success(
-      t("tasks:backlog.moveAllSuccess", { count: selectedTasks.length }),
-    );
+    if (bulkMovePending) return;
+    setBulkMovePending(true);
+    try {
+      if (!todoColumn) throw new Error("No destination column");
+      await bulkMoveToBoard({
+        taskIds: selectedTasks.map((task) => task.id),
+        status: todoColumn.id,
+      });
+      setBulkMoveOpen(false);
+      clearSelection();
+      toast.success(
+        t("tasks:backlog.moveAllSuccess", { count: selectedTasks.length }),
+      );
+    } catch {
+      toast.error(t("tasks:bulk.moveToBoardError"));
+    } finally {
+      setBulkMovePending(false);
+    }
   };
 
   return (
@@ -371,7 +388,9 @@ function RouteComponent() {
                       : setSelectMode(true)
                   }
                   className="h-6 px-2 text-xs text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  disabled={isSelectMode && selectedTaskIds.size === 0}
+                  disabled={
+                    (isSelectMode && selectedTaskIds.size === 0) || !todoColumn
+                  }
                 >
                   <ArrowRight className="h-3 w-3 mr-1" />
                   {isSelectMode
@@ -726,7 +745,8 @@ function RouteComponent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Move selected tickets?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will move {selectedTasks.length} tickets to To Do.
+                This will move {selectedTasks.length} tickets to{" "}
+                {todoColumn?.name}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <ul className="max-h-60 space-y-1 overflow-y-auto rounded-md border p-2 text-sm">
@@ -737,13 +757,12 @@ function RouteComponent() {
               ))}
             </ul>
             <AlertDialogFooter>
-              <AlertDialogClose>
-                <Button variant="outline" size="sm">
-                  {t("common:actions.cancel")}
-                </Button>
+              <AlertDialogClose render={<Button variant="outline" size="sm" />}>
+                {t("common:actions.cancel")}
               </AlertDialogClose>
               <Button
                 data-testid="backlog-move-all-confirm"
+                disabled={bulkMovePending}
                 onClick={() => void confirmBulkMove()}
                 size="sm"
               >
