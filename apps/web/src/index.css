@@ -149,8 +149,15 @@ input:-webkit-autofill:active {
     "Courier New",
     monospace;
   --radius: 0.625rem;
-  --accent: #2a2a2e;
-  --accent-foreground: #ffffff;
+  /*
+   * #162: `--accent` is the hover/highlight SURFACE. It was set to the solid
+   * inverse colour (identical to `--primary`), so every `hover:bg-accent` row
+   * painted a near-black/near-white slab under light text — unreadable. It is
+   * now a faint tint of the foreground, matching `--sidebar-accent`.
+   * Components that genuinely want the inverse fill use `--primary`.
+   */
+  --accent: --alpha(var(--color-black) / 6%);
+  --accent-foreground: #171719;
   --background: #f6f6f7;
   --border: #e2e2e5;
   --card: #ffffff;
@@ -201,8 +208,8 @@ input:-webkit-autofill:active {
 }
 
 .dark {
-  --accent: #c9c9c9;
-  --accent-foreground: #0a0a0b;
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: #e6e6e6;
   --background: #0a0a0b;
   --border: #262629;
   --card: #131315;
