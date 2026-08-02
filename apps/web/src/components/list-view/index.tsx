@@ -294,6 +294,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
   useRegisterShortcuts({
     shortcuts: {
       j: () => {
+        if (isSelectMode) return;
         focusNext();
         const state = useBulkSelectionStore.getState();
         if (state.focusedTaskId) {
@@ -301,6 +302,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
         }
       },
       k: () => {
+        if (isSelectMode) return;
         focusPrevious();
         const state = useBulkSelectionStore.getState();
         if (state.focusedTaskId) {
@@ -308,6 +310,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
         }
       },
       Enter: () => {
+        if (isSelectMode) return;
         if (focusedTaskId && board) {
           navigate({
             to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
@@ -324,11 +327,13 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      activationConstraint: { distance: disableDragDrop ? 999999 : 8 },
+      activationConstraint: {
+        distance: disableDragDrop || isSelectMode ? 999999 : 8,
+      },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: disableDragDrop ? 999999 : 200,
+        delay: disableDragDrop || isSelectMode ? 999999 : 200,
         tolerance: 8,
       },
     }),
@@ -436,7 +441,7 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
 
   return (
     <DndContext
-      sensors={sensors}
+      sensors={isSelectMode ? [] : sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
@@ -446,11 +451,12 @@ function ListView({ board, disableDragDrop = false }: ListViewProps) {
       <div className="w-full h-full overflow-auto bg-muted/20">
         <div className="sticky top-0 z-10 flex justify-end border-b bg-card/95 px-4 py-2 backdrop-blur">
           <button
+            aria-pressed={isSelectMode}
             className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-accent"
             onClick={() => setSelectMode(!isSelectMode)}
             type="button"
           >
-            {isSelectMode ? "Cancel Bulk Actions" : "Bulk Actions"}
+            {isSelectMode ? "Cancel" : "Bulk Actions"}
           </button>
         </div>
         <div className="divide-y divide-border/50">

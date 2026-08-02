@@ -201,6 +201,9 @@ const TaskRowContent = memo(function TaskRowContent({
               <Checkbox
                 aria-label={`Select ${task.title}`}
                 checked={isTaskSelected}
+                onCheckedChange={() => toggleSelection(task.id)}
+                onClick={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
               />
             )}
             {showTaskNumbers && (
