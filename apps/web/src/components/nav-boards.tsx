@@ -4,10 +4,10 @@ import {
   EyeOff,
   Folder,
   Forward,
-  LayoutGrid,
   MoreHorizontal,
   Plus,
   Settings,
+  SquareKanban,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -223,28 +223,32 @@ export function NavBoards() {
   return (
     <>
       {/*
-        #96: collapsed, the whole boards tree would be unreadable in a 64px
-        rail, but hiding it entirely left the rail with no way to reach a
-        board. Show a single "Boards" icon that opens the overview, with the
-        name on hover.
+        #96: the rail must expose every board, not a single aggregate entry.
+        One icon per board, each navigating straight to that board, with the
+        board name shown on hover.
       */}
       <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              data-testid="sidebar-boards-collapsed"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationId",
-                  params: { organizationId: organization.id },
-                })
-              }
-              tooltip={t("navigation:sidebar.boards")}
-            >
-              <LayoutGrid aria-hidden="true" />
-              <span>{t("navigation:sidebar.boards")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {visibleBoards.map((board) => (
+            <SidebarMenuItem key={board.id}>
+              <SidebarMenuButton
+                data-testid={`sidebar-board-collapsed-${board.id}`}
+                onClick={() =>
+                  navigate({
+                    to: "/dashboard/organization/$organizationId/board/$boardId",
+                    params: {
+                      organizationId: organization.id,
+                      boardId: board.id,
+                    },
+                  })
+                }
+                tooltip={board.name}
+              >
+                <SquareKanban aria-hidden="true" />
+                <span>{board.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarGroup>
 

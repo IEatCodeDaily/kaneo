@@ -111,24 +111,22 @@ export function NavRepos() {
 
   return (
     <>
-      {/* #96: collapsed, a single "Repos" icon that opens the overview. */}
+      {/* #96: one icon per repository, named on hover, instead of a single
+          aggregate "Repos" entry. */}
       <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              data-testid="sidebar-repos-collapsed"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationId/repo",
-                  params: { organizationId: organization?.id ?? "" },
-                })
-              }
-              tooltip={t("navigation:sidebar.repos")}
-            >
-              <GitBranch aria-hidden="true" />
-              <span>{t("navigation:sidebar.repos")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {visibleRepos.map((repo) => (
+            <SidebarMenuItem key={repo.id}>
+              <SidebarMenuButton
+                data-testid={`sidebar-repo-collapsed-${repo.id}`}
+                onClick={() => openRepo(repo.id)}
+                tooltip={repo.name}
+              >
+                <GitBranch aria-hidden="true" />
+                <span>{repo.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarGroup>
 
