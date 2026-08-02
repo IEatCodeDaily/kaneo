@@ -1101,7 +1101,14 @@ function CreateTaskModal({
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 py-2">
+            {/*
+              #180: the property chips (status, dates, priority, assignee,
+              labels) are the last child of the scrolling body, so on a long
+              description they scrolled out of reach. Pinning them to the bottom
+              of the scroll area keeps them available while typing, without
+              restructuring the popovers they own.
+            */}
+            <div className="sticky bottom-0 z-10 -mx-6 flex flex-wrap items-center gap-2 border-t border-border bg-background px-6 py-2">
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground rounded-md text-xs font-medium border border-border">
                 <div className="w-1.5 h-1.5 bg-foreground rounded-full" />
                 {statusLabel}
