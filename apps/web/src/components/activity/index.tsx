@@ -1,4 +1,5 @@
 import { Calendar, CircleAlert, Flag, History, UserRound } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getFlagColor, getFlagIcon } from "@/components/flag/flag-icon";
 import useGetTaskFlags from "@/hooks/queries/flag/use-get-task-flags";
@@ -15,10 +16,15 @@ import {
 } from "../ui/preview-card";
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
+import {
+  type ActivityGroup,
+  isCollapsedRun,
+  isNoOpRun,
+} from "./compact-activities";
 import UnflagControl from "./unflag-control";
 import { isCommentActivity } from "./utils";
 
-type ActivityItem = {
+export type ActivityItem = {
   type: string;
   content: string | null;
   eventData?: unknown;
@@ -495,12 +501,20 @@ function Activity({
   activity,
   step,
   showConnector = false,
+  group,
 }: {
   activity: ActivityItem;
   step: number;
   showConnector?: boolean;
+  /**
+   * #116: when several consecutive status changes were folded together, this
+   * carries the whole run so the row can show the net delta and expand to the
+   * individual steps.
+   */
+  group?: ActivityGroup<ActivityItem>;
 }) {
   const { t } = useTranslation();
+  const [runExpanded, setRunExpanded] = useState(false);
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetOrganizationMembers({
     organizationId: organization?.id,
@@ -575,13 +589,45 @@ function Activity({
       <ActorAvatar user={user || null} fallbackName={actorName} />
       <TimelineContent className="text-sm leading-6 text-foreground">
         <UserHoverName user={user || null} fallbackName={actorName} />{" "}
-        {renderActivityContent({
-          activity,
-          organizationMembers: organizationMembers as
-            | OrganizationMember[]
-            | undefined,
-          t,
-        })}{" "}
+        {/*
+          #116: a folded run reports the NET delta ("moved this from To Do to
+          Done") instead of five near-identical lines. A run that returned to
+          where it started says so rather than claiming a move.
+        */}
+        {group && isCollapsedRun(group) ? (
+          <>
+            {isNoOpRun(group)
+              ? t("activity:statusRunNoOp", {
+                  status: toDisplayCase(group.toStatus ?? ""),
+                  count: group.entries.length,
+                })
+              : t("activity:statusRun", {
+                  from: toDisplayCase(group.fromStatus ?? ""),
+                  to: toDisplayCase(group.toStatus ?? ""),
+                })}{" "}
+            <button
+              type="button"
+              data-testid="activity-run-toggle"
+              aria-expanded={runExpanded}
+              onClick={() => setRunExpanded((open) => !open)}
+              className="text-muted-foreground/70 text-xs underline-offset-2 hover:underline"
+            >
+              {t("activity:statusRunSteps", {
+                count: group.entries.length,
+              })}
+            </button>{" "}
+          </>
+        ) : (
+          <>
+            {renderActivityContent({
+              activity,
+              organizationMembers: organizationMembers as
+                | OrganizationMember[]
+                | undefined,
+              t,
+            })}{" "}
+          </>
+        )}
         <span className="whitespace-nowrap text-muted-foreground/70 text-xs">
           {formatRelativeTime(activity.createdAt)}
         </span>
@@ -593,6 +639,27 @@ function Activity({
           !isFlagResolved && (
             <UnflagControl flagId={eventData.flagId} taskId={activity.taskId} />
           )}
+        {/* #116: the folded steps, in order, when the run is expanded. */}
+        {group && isCollapsedRun(group) && runExpanded && (
+          <ol
+            data-testid="activity-run-steps"
+            className="mt-1 space-y-0.5 border-border/60 border-l pl-3 text-muted-foreground/80 text-xs"
+          >
+            {group.entries.map((entry) => {
+              const data = getEventDataRecord(entry.eventData);
+              return (
+                <li key={entry.id}>
+                  {toDisplayCase(String(data?.oldStatus ?? ""))}
+                  {" \u2192 "}
+                  {toDisplayCase(String(data?.newStatus ?? ""))}
+                  <span className="ml-2 whitespace-nowrap text-muted-foreground/60">
+                    {formatRelativeTime(entry.createdAt)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </TimelineContent>
     </TimelineItem>
   );

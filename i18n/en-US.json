@@ -1507,7 +1507,10 @@
 		},
 		"flagRaised": "flagged",
 		"flagResolved": "unflagged",
-		"flagTarget": "for {{target}}"
+		"flagTarget": "for {{target}}",
+		"statusRun": "moved this from {{from}} to {{to}}",
+		"statusRunNoOp": "changed the status a few times, ending back at {{status}}",
+		"statusRunSteps": "{{count}} steps"
 	},
 	"tasks": {
 		"status": {
@@ -2016,7 +2019,8 @@
 		},
 		"access": {
 			"title": "Board access",
-			"team": "Team"
+			"team": "Team",
+			"member": "Member"
 		},
 		"titleTokens": {
 			"labels": "Labels",

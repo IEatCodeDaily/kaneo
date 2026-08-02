@@ -1283,7 +1283,10 @@
 			},
 			"draftSaved": "Το πρόχειρο αποθηκεύτηκε",
 			"deleteDraft": "Διαγραφή προχείρου"
-		}
+		},
+		"statusRun": "το μετέφερε από {{from}} σε {{to}}",
+		"statusRunNoOp": "άλλαξε την κατάσταση αρκετές φορές, επιστρέφοντας σε {{status}}",
+		"statusRunSteps": "{{count}} βήματα"
 	},
 	"tasks": {
 		"status": {

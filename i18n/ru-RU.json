@@ -1288,7 +1288,10 @@
 			},
 			"draftSaved": "Черновик сохранён",
 			"deleteDraft": "Удалить черновик"
-		}
+		},
+		"statusRun": "переместил из {{from}} в {{to}}",
+		"statusRunNoOp": "несколько раз менял статус и вернулся к {{status}}",
+		"statusRunSteps": "шагов: {{count}}"
 	},
 	"tasks": {
 		"status": {

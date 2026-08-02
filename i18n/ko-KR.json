@@ -1285,7 +1285,10 @@
 			},
 			"draftSaved": "임시 저장됨",
 			"deleteDraft": "임시 저장 삭제"
-		}
+		},
+		"statusRun": "{{from}}에서 {{to}}(으)로 옮겼습니다",
+		"statusRunNoOp": "상태를 여러 번 변경했고 다시 {{status}}로 돌아왔습니다",
+		"statusRunSteps": "{{count}}단계"
 	},
 	"tasks": {
 		"status": {

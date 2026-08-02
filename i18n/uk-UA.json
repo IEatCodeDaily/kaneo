@@ -1282,7 +1282,10 @@
 			},
 			"draftSaved": "Чернетку збережено",
 			"deleteDraft": "Видалити чернетку"
-		}
+		},
+		"statusRun": "перемістив це з {{from}} до {{to}}",
+		"statusRunNoOp": "кілька разів змінював статус і повернувся до {{status}}",
+		"statusRunSteps": "кроків: {{count}}"
 	},
 	"tasks": {
 		"status": {

@@ -1325,7 +1325,10 @@
 			},
 			"draftSaved": "Entwurf gespeichert",
 			"deleteDraft": "Entwurf löschen"
-		}
+		},
+		"statusRun": "hat dies von {{from}} nach {{to}} verschoben",
+		"statusRunNoOp": "hat den Status mehrfach geändert, zurück zu {{status}}",
+		"statusRunSteps": "{{count}} Schritte"
 	},
 	"tasks": {
 		"status": {

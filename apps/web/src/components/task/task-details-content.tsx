@@ -1,8 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import Activity from "@/components/activity";
+import Activity, { type ActivityItem } from "@/components/activity";
 import CommentInput from "@/components/activity/comment-input";
+import { compactActivities } from "@/components/activity/compact-activities";
 import { isCommentActivity } from "@/components/activity/utils";
 import { ErrorBoundary } from "@/components/error-boundary";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
@@ -36,11 +38,17 @@ export default function TaskDetailsContent({
   const { data: task } = useGetTask(taskId ?? "");
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: activities = [] } = useGetActivitiesByTaskId(taskId ?? "");
+  // #116: fold consecutive same-user status changes for display only.
+  const activityGroups = useMemo(
+    () => compactActivities<ActivityItem>(activities as ActivityItem[]),
+    [activities],
+  );
   const { data: relations = [] } = useGetTaskRelations(taskId ?? "");
   const { user } = useAuth();
 
   const parentRelation = relations.find(
-    (rel) => rel.relationType === "subtask" && rel.targetTaskId === taskId,
+    (rel: { relationType: string; targetTaskId: string }) =>
+      rel.relationType === "subtask" && rel.targetTaskId === taskId,
   );
   const parentTask = parentRelation?.sourceTask;
 
@@ -106,19 +114,25 @@ export default function TaskDetailsContent({
         {user?.id && taskId && <CommentInput taskId={taskId} />}
         {activities.length > 0 ? (
           <Timeline>
-            {activities.map((activity, index) => {
-              const nextActivity = activities[index + 1];
+            {/*
+              #116: consecutive same-user status changes inside a minute render
+              as ONE entry showing the net delta, expandable to the individual
+              steps. Nothing is dropped — the folded entries live on the group.
+            */}
+            {activityGroups.map((group, index) => {
+              const nextGroup = activityGroups[index + 1];
               const showConnector =
-                !isCommentActivity(activity) &&
-                Boolean(nextActivity) &&
-                !isCommentActivity(nextActivity);
+                !isCommentActivity(group.head) &&
+                Boolean(nextGroup) &&
+                !isCommentActivity(nextGroup.head);
 
               return (
                 <Activity
-                  key={activity.id}
-                  activity={activity}
-                  step={activities.length - index}
+                  key={group.head.id}
+                  activity={group.head}
+                  step={activityGroups.length - index}
                   showConnector={showConnector}
+                  group={group}
                 />
               );
             })}

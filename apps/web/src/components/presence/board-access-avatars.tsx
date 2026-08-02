@@ -3,6 +3,11 @@ import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -128,51 +133,108 @@ export default function BoardAccessAvatars({
 
   return (
     <TooltipProvider>
-      <fieldset
-        data-testid="board-access-avatars"
-        data-slot="board-access-avatars"
-        aria-label={t("tasks:access.title")}
-        className={cn("m-0 flex min-w-0 items-center border-0 p-0", className)}
-      >
-        {visible.map((entry) => (
-          <Tooltip key={entry.key}>
-            <TooltipTrigger
-              render={
-                <span
-                  data-testid={`board-access-avatar-${entry.key}`}
-                  className="-ml-1.5 first:ml-0"
-                >
-                  <Avatar className="size-6 border border-background ring-1 ring-border">
-                    {entry.kind === "member" && entry.image ? (
-                      <AvatarImage src={entry.image} alt={entry.name} />
-                    ) : null}
-                    <AvatarFallback className="text-[10px]">
-                      {entry.kind === "team" ? (
-                        <Users className="size-3" aria-hidden="true" />
-                      ) : (
-                        getInitials(entry.name)
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
+      {/*
+        #91: the avatar stack is a dropdown trigger. The stack alone can only
+        show a handful of faces and hides the access TYPE entirely; the menu
+        lists every user and team with the privilege each one holds.
+      */}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              data-testid="board-access-trigger"
+              aria-label={t("tasks:access.title")}
+              className="cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <fieldset
+                data-testid="board-access-avatars"
+                data-slot="board-access-avatars"
+                aria-label={t("tasks:access.title")}
+                className={cn(
+                  "m-0 flex min-w-0 items-center border-0 p-0",
+                  className,
+                )}
+              >
+                {visible.map((entry) => (
+                  <Tooltip key={entry.key}>
+                    <TooltipTrigger
+                      render={
+                        <span
+                          data-testid={`board-access-avatar-${entry.key}`}
+                          className="-ml-1.5 first:ml-0"
+                        >
+                          <Avatar className="size-6 border border-background ring-1 ring-border">
+                            {entry.kind === "member" && entry.image ? (
+                              <AvatarImage src={entry.image} alt={entry.name} />
+                            ) : null}
+                            <AvatarFallback className="text-[10px]">
+                              {entry.kind === "team" ? (
+                                <Users className="size-3" aria-hidden="true" />
+                              ) : (
+                                getInitials(entry.name)
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                        </span>
+                      }
+                    />
+                    <TooltipContent>
+                      <span className="text-[10px]">
+                        {entry.detail
+                          ? `${entry.name} · ${entry.detail}`
+                          : entry.name}
+                      </span>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+                {overflow > 0 && (
+                  <span
+                    data-testid="board-access-avatar-overflow"
+                    className="-ml-1.5 flex size-6 items-center justify-center rounded-full border border-background bg-muted text-[10px] font-medium text-muted-foreground ring-1 ring-border"
+                  >
+                    +{overflow}
+                  </span>
+                )}
+              </fieldset>
+            </button>
+          }
+        />
+        <DropdownMenuContent align="end" className="w-64 p-0">
+          <div className="border-border border-b px-3 py-2">
+            <p className="font-medium text-xs">{t("tasks:access.title")}</p>
+          </div>
+          <ul className="max-h-72 overflow-y-auto py-1">
+            {entries.map((entry) => (
+              <li
+                key={entry.key}
+                data-testid={`board-access-row-${entry.key}`}
+                className="flex items-center gap-2 px-3 py-1.5"
+              >
+                <Avatar className="size-5 shrink-0">
+                  {entry.kind === "member" && entry.image ? (
+                    <AvatarImage src={entry.image} alt={entry.name} />
+                  ) : null}
+                  <AvatarFallback className="text-[9px]">
+                    {entry.kind === "team" ? (
+                      <Users className="size-2.5" aria-hidden="true" />
+                    ) : (
+                      getInitials(entry.name)
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="min-w-0 flex-1 truncate text-xs">
+                  {entry.name}
                 </span>
-              }
-            />
-            <TooltipContent>
-              <span className="text-[10px]">
-                {entry.detail ? `${entry.name} · ${entry.detail}` : entry.name}
-              </span>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-        {overflow > 0 && (
-          <span
-            data-testid="board-access-avatar-overflow"
-            className="-ml-1.5 flex size-6 items-center justify-center rounded-full border border-background bg-muted text-[10px] font-medium text-muted-foreground ring-1 ring-border"
-          >
-            +{overflow}
-          </span>
-        )}
-      </fieldset>
+                {/* The access type is the point of the list — always shown. */}
+                <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground capitalize">
+                  {entry.detail || t("tasks:access.member")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </TooltipProvider>
   );
 }

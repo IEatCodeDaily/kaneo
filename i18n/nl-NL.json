@@ -1069,7 +1069,10 @@
 			},
 			"draftSaved": "Concept opgeslagen",
 			"deleteDraft": "Concept verwijderen"
-		}
+		},
+		"statusRun": "heeft dit van {{from}} naar {{to}} verplaatst",
+		"statusRunNoOp": "heeft de status meerdere keren gewijzigd, terug naar {{status}}",
+		"statusRunSteps": "{{count}} stappen"
 	},
 	"tasks": {
 		"status": {
