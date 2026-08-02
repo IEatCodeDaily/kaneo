@@ -47,7 +47,8 @@ export default function TaskDetailsContent({
   const { user } = useAuth();
 
   const parentRelation = relations.find(
-    (rel) => rel.relationType === "subtask" && rel.targetTaskId === taskId,
+    (rel: { relationType: string; targetTaskId: string }) =>
+      rel.relationType === "subtask" && rel.targetTaskId === taskId,
   );
   const parentTask = parentRelation?.sourceTask;
 
