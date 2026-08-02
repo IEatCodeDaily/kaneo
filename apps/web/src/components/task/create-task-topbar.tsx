@@ -10,8 +10,15 @@ import {
 } from "@/components/ui/popover";
 import type { Milestone as MilestoneRow } from "@/fetchers/milestone/get-milestones-by-board";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { cn } from "@/lib/cn";
+import {
+  buildParentOptions,
+  formatParentLabel,
+  type ParentOption,
+} from "./parent-task-options";
 
 export type CreateTaskTopbarProps = {
   boardId: string;
@@ -77,15 +84,38 @@ export default function CreateTaskTopbar({
     return collected;
   }, [boardData]);
 
-  const filteredParents = useMemo(() => {
-    const term = parentSearch.trim().toLowerCase();
-    if (!term) return boardTasks;
-    return boardTasks.filter((task) =>
-      task.title?.toLowerCase().includes(term),
-    );
-  }, [boardTasks, parentSearch]);
+  /*
+   * #154: parents may live on other boards, so once the user types we also
+   * query the organization-wide search. Skipped while the query is empty —
+   * the board's own tickets are the sensible default.
+   */
+  const { data: activeOrganization } = useActiveOrganization();
+  const { data: searchData } = useGlobalSearch({
+    q: parentSearch.trim().length > 1 ? parentSearch.trim() : "",
+    type: "tasks",
+    // The API requires an organization scope; without it the request 400s and
+    // no cross-board results ever arrive.
+    organizationId: activeOrganization?.id,
+    limit: 20,
+  });
 
-  const selectedParent = boardTasks.find((task) => task.id === parentTaskId);
+  const [pinnedParent, setPinnedParent] = useState<ParentOption | null>(null);
+
+  const parentOptions = useMemo(
+    () =>
+      buildParentOptions({
+        boardTasks,
+        searchResults: searchData?.results ?? [],
+        selectedId: parentTaskId,
+        selectedOption: pinnedParent,
+        query: parentSearch,
+        currentBoardId: boardId,
+      }),
+    [boardTasks, searchData, parentTaskId, pinnedParent, parentSearch, boardId],
+  );
+
+  const selectedParent =
+    parentOptions.find((option) => option.id === parentTaskId) ?? null;
 
   return (
     <div
@@ -178,7 +208,7 @@ export default function CreateTaskTopbar({
               <Workflow className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="max-w-40 truncate text-xs font-medium">
                 {selectedParent
-                  ? selectedParent.title
+                  ? formatParentLabel(selectedParent)
                   : t("tasks:parentTask.none")}
               </span>
             </Button>
@@ -211,7 +241,7 @@ export default function CreateTaskTopbar({
               <X className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="truncate">{t("tasks:parentTask.clear")}</span>
             </button>
-            {filteredParents.length === 0 && (
+            {parentOptions.length === 0 && (
               <p
                 data-testid="create-task-parent-empty"
                 className="px-2 py-1.5 text-xs text-muted-foreground"
@@ -219,13 +249,19 @@ export default function CreateTaskTopbar({
                 {t("tasks:parentTask.empty")}
               </p>
             )}
-            {filteredParents.map((task) => (
+            {parentOptions.map((option) => (
               <button
-                key={task.id}
+                key={option.id}
                 type="button"
-                data-testid={`create-task-parent-option-${task.id}`}
+                data-testid={`create-task-parent-option-${option.id}`}
+                data-cross-board={option.crossBoard ? "true" : "false"}
                 onClick={() => {
-                  onParentTaskChange(task.id === parentTaskId ? null : task.id);
+                  const next = option.id === parentTaskId ? null : option.id;
+                  // Remember the choice so a cross-board parent stays pinned
+                  // once the search query is cleared and it drops out of the
+                  // result set.
+                  setPinnedParent(next ? option : null);
+                  onParentTaskChange(next);
                   setParentOpen(false);
                 }}
                 className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-accent"
@@ -233,11 +269,16 @@ export default function CreateTaskTopbar({
                 <Check
                   className={cn(
                     "size-3.5 shrink-0",
-                    task.id === parentTaskId ? "opacity-100" : "opacity-0",
+                    option.id === parentTaskId ? "opacity-100" : "opacity-0",
                   )}
                   aria-hidden="true"
                 />
-                <span className="truncate">{task.title}</span>
+                <span className="truncate">{formatParentLabel(option)}</span>
+                {option.crossBoard && option.boardSlug && (
+                  <span className="ms-auto shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    {option.boardSlug}
+                  </span>
+                )}
               </button>
             ))}
           </div>

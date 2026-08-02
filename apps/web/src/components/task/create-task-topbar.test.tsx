@@ -3,6 +3,19 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+/*
+ * #154: the parent picker now queries organization-wide search for
+ * cross-board parents. Both hooks need stubbing — useActiveOrganization
+ * reaches for router params this suite does not provide.
+ */
+vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
+  default: () => ({ data: { id: "org-1" } }),
+}));
+
+vi.mock("@/hooks/queries/search/use-global-search", () => ({
+  default: () => ({ data: { results: [] } }),
+}));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
