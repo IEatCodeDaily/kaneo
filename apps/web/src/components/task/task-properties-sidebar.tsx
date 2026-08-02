@@ -323,7 +323,13 @@ export default function TaskPropertiesSidebar({
                   </Button>
                 </TaskDueDatePopover>
               )}
-              {taskId && <TaskSyncedIssueProperty compact taskId={taskId} />}
+              {taskId && (
+                <TaskSyncedIssueProperty
+                  compact
+                  organizationId={organizationId}
+                  taskId={taskId}
+                />
+              )}
             </div>
           </div>
         )}
@@ -516,7 +522,13 @@ export default function TaskPropertiesSidebar({
                     </Button>
                   </TaskDueDatePopover>
                 )}
-                {taskId && <TaskSyncedIssueProperty compact taskId={taskId} />}
+                {taskId && (
+                  <TaskSyncedIssueProperty
+                    compact
+                    organizationId={organizationId}
+                    taskId={taskId}
+                  />
+                )}
               </div>
             </div>
 

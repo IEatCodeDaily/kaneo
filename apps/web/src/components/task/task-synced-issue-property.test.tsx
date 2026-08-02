@@ -27,9 +27,44 @@ vi.mock("@/hooks/queries/task/use-get-task-repo-links", () => ({
   default: () => ({ data: repoLinks }),
 }));
 
+/** #30: repositories connected to this organization. */
+const connectedRepos: Array<Record<string, unknown>> = [];
+vi.mock("@/hooks/queries/repo/use-get-repos", () => ({
+  default: () => ({ data: connectedRepos, isPending: false }),
+}));
+
+/**
+ * TanStack's Link needs a router. The synced-issue chip only has to prove
+ * WHICH route it targets, so render it as an anchor exposing the resolved
+ * in-app path.
+ */
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({
+    params,
+    to,
+    children,
+    ...rest
+  }: {
+    params: Record<string, string>;
+    to: string;
+    children: React.ReactNode;
+  } & Record<string, unknown>) => {
+    const href = Object.entries(params).reduce(
+      (path, [key, value]) => path.replace(`$${key}`, value),
+      to,
+    );
+    return (
+      <a data-internal="true" href={href} {...rest}>
+        {children}
+      </a>
+    );
+  },
+}));
+
 afterEach(() => {
   externalLinks.length = 0;
   repoLinks.length = 0;
+  connectedRepos.length = 0;
   cleanup();
 });
 
@@ -118,6 +153,62 @@ describe("#75 synced issue in the drawer status bar", () => {
 
     render(<TaskSyncedIssueProperty compact taskId="task-1" />);
     expect(screen.queryByTestId("task-synced-issue")).toBeNull();
+  });
+});
+
+describe("#30 synced issues open inside Kaneo when the repo is connected", () => {
+  const syncedIssue = () =>
+    externalLinks.push({
+      id: "l30",
+      resourceType: "issue",
+      externalId: "42",
+      url: "https://github.com/acme/widgets/issues/42",
+      title: "Broken widget",
+    } as ExternalLink);
+
+  it("routes to the in-app repo issue page for a connected repository", () => {
+    syncedIssue();
+    connectedRepos.push({ id: "repo-9", owner: "acme", name: "widgets" });
+
+    render(
+      <TaskSyncedIssueProperty
+        compact
+        organizationId="org-1"
+        taskId="task-1"
+      />,
+    );
+
+    const link = screen.getByTestId("task-synced-issue");
+    // The reported bug: this opened github.com in a new tab instead.
+    expect(link).toHaveAttribute("data-internal", "true");
+    expect(link).toHaveAttribute(
+      "href",
+      "/dashboard/organization/org-1/repo/repo-9/issues/42",
+    );
+    expect(link).not.toHaveAttribute("target", "_blank");
+  });
+
+  // NEGATIVE CONTROL: an unconnected repository must still leave the app,
+  // otherwise the assertion above would pass for a component that always
+  // renders an internal link.
+  it("keeps the GitHub link when the repository is not connected", () => {
+    syncedIssue();
+    connectedRepos.push({ id: "repo-other", owner: "acme", name: "unrelated" });
+
+    render(
+      <TaskSyncedIssueProperty
+        compact
+        organizationId="org-1"
+        taskId="task-1"
+      />,
+    );
+
+    const link = screen.getByTestId("task-synced-issue");
+    expect(link).toHaveAttribute(
+      "href",
+      "https://github.com/acme/widgets/issues/42",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
   });
 });
 
