@@ -7,7 +7,6 @@ import Layout from "@/components/common/layout";
 import PageTitle from "@/components/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -142,10 +141,6 @@ function InvitationsPage() {
       <Layout>
         <Layout.Header>
           <div className="flex items-center gap-1 w-full">
-            <Separator
-              orientation="vertical"
-              className="mx-1.5 data-[orientation=vertical]:h-2.5"
-            />
             <h1 className="text-xs text-card-foreground">
               {t("invitations:pendingInvitations")}
             </h1>

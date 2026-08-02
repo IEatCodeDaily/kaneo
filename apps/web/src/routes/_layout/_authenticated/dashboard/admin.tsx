@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import { authClient } from "@/lib/auth-client";
@@ -178,10 +177,6 @@ function AdminPage() {
       <Layout>
         <Layout.Header>
           <div className="flex w-full items-center gap-1">
-            <Separator
-              orientation="vertical"
-              className="mx-1.5 data-[orientation=vertical]:h-2.5"
-            />
             <Shield className="size-4" />
             <h1 className="text-xs text-card-foreground">
               System administration
