@@ -17,6 +17,8 @@ type PullRequestFileTreeProps = {
    * parent instead of using a viewport-derived height.
    */
   fillHeight?: boolean;
+  stickyTop?: number;
+  showHeader?: boolean;
 };
 
 /**
@@ -40,6 +42,8 @@ export default function PullRequestFileTree({
   open,
   onOpenChange,
   fillHeight = false,
+  stickyTop,
+  showHeader = true,
 }: PullRequestFileTreeProps) {
   // Directory paths must be present for @pierre/trees to nest children under a
   // folder; a bare list of file paths renders flat.
@@ -103,32 +107,39 @@ export default function PullRequestFileTree({
       aria-label="Changed files"
       // A real column to the LEFT of the diff (not an overlay): the diff sits
       // beside it and keeps its own scrolling.
-      className={`flex w-64 shrink-0 flex-col overflow-hidden rounded-md border border-border bg-card ${
-        fillHeight ? "h-full" : "self-start"
+      className={`w-64 shrink-0 flex-col overflow-hidden rounded-md border border-border bg-card ${
+        fillHeight ? "flex h-full" : "sticky hidden self-start md:flex"
       }`}
       data-testid={`${idPrefix}-file-tree-sidebar`}
+      style={
+        stickyTop === undefined
+          ? undefined
+          : { top: stickyTop, height: `calc(100dvh - ${stickyTop + 16}px)` }
+      }
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-2 py-1.5">
-        <span className="truncate text-xs font-medium text-muted-foreground">
-          {fileCount}
-        </span>
-        <Button
-          aria-expanded={true}
-          aria-label="Hide changed files"
-          data-testid={`${idPrefix}-file-tree-toggle`}
-          onClick={() => onOpenChange(false)}
-          size="icon-sm"
-          title="Hide changed files"
-          variant="ghost"
-        >
-          <PanelLeftClose className="size-4" />
-        </Button>
-      </div>
+      {showHeader ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-2 py-1.5">
+          <span className="truncate text-xs font-medium text-muted-foreground">
+            {fileCount}
+          </span>
+          <Button
+            aria-expanded={true}
+            aria-label="Hide changed files"
+            data-testid={`${idPrefix}-file-tree-toggle`}
+            onClick={() => onOpenChange(false)}
+            size="icon-sm"
+            title="Hide changed files"
+            variant="ghost"
+          >
+            <PanelLeftClose className="size-4" />
+          </Button>
+        </div>
+      ) : null}
       <div
         // The tree virtualizes against its own box, so it needs a resolved
         // height: with only max-height it collapses to zero and renders blank.
         className={
-          fillHeight
+          fillHeight || stickyTop !== undefined
             ? "min-h-0 flex-1 overflow-hidden p-1"
             : "h-[calc(100vh-16rem)] min-h-[16rem] overflow-hidden p-1"
         }

@@ -7,6 +7,8 @@ import {
   GitCommitHorizontal,
   ListTree,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelsTopLeft,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -184,9 +186,12 @@ export default function PullRequestLiveDetails({
   // Its height is content-driven (title wraps, labels, branch chip), so measure
   // it instead of hard-coding an offset.
   const tabsRef = useRef<HTMLDivElement>(null);
+  const propertiesRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [tabsHeight, setTabsHeight] = useState(0);
+  const [propertiesHeight, setPropertiesHeight] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the properties row mounts only when the Diffs tab becomes active
   useEffect(() => {
     const tabs = tabsRef.current;
     if (!tabs) return;
@@ -194,13 +199,17 @@ export default function PullRequestLiveDetails({
     const measure = () => {
       setHeaderHeight(header ? header.getBoundingClientRect().height : 0);
       setTabsHeight(tabs.getBoundingClientRect().height);
+      setPropertiesHeight(
+        propertiesRef.current?.getBoundingClientRect().height ?? 0,
+      );
     };
     measure();
     const observer = new ResizeObserver(measure);
     if (header) observer.observe(header);
     observer.observe(tabs);
+    if (propertiesRef.current) observer.observe(propertiesRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [activeTab]);
   const fileNames = (files.data?.files ?? []).map((file) => file.filename);
   const selectedFile =
     files.data?.files.find((file) => file.filename === selectedFilename) ??
@@ -372,9 +381,21 @@ export default function PullRequestLiveDetails({
             <div
               className="-mx-4 sticky z-[9] mb-3 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6"
               data-testid="pull-request-diff-properties"
+              ref={propertiesRef}
               style={{ top: headerHeight + tabsHeight }}
             >
-              <div className="text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Button
+                  aria-expanded={treeOpen}
+                  aria-label={
+                    treeOpen ? "Hide changed files" : "Show changed files"
+                  }
+                  onClick={() => setTreeOpen((open) => !open)}
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  {treeOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
+                </Button>
                 <span className="text-emerald-600">
                   +{files.data?.totals.additions}
                 </span>{" "}
@@ -415,19 +436,26 @@ export default function PullRequestLiveDetails({
               {/* GitHub-style: hideable tree column on the left, diff to its
                   right. Not an overlay — an overlay covered the code. */}
               <div className="flex min-w-0 items-start gap-4">
-                <PullRequestFileTree
-                  filenames={fileNames}
-                  idPrefix="inline"
-                  onOpenChange={setTreeOpen}
-                  onSelect={(path) => {
-                    setSelectedFilename(path);
-                    document
-                      .getElementById(`diff-file-${encodeURIComponent(path)}`)
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  open={treeOpen}
-                  selectedPath={selectedFile.filename}
-                />
+                {treeOpen ? (
+                  <PullRequestFileTree
+                    filenames={fileNames}
+                    idPrefix="inline"
+                    onOpenChange={setTreeOpen}
+                    onSelect={(path) => {
+                      setSelectedFilename(path);
+                      document
+                        .getElementById(`diff-file-${encodeURIComponent(path)}`)
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                    }}
+                    open
+                    selectedPath={selectedFile.filename}
+                    showHeader={false}
+                    stickyTop={headerHeight + tabsHeight + propertiesHeight}
+                  />
+                ) : null}
                 <div className="min-w-0 flex-1 space-y-4">
                   {files.data?.files.map((file) => (
                     <section
