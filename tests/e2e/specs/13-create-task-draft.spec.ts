@@ -35,7 +35,9 @@ test.describe("create task draft preservation", () => {
     const dialog = await openCreateModal(page);
     const titleInput = dialog.getByPlaceholder("Task title");
     const unique = `Draft survives close ${Date.now()}`;
+    const description = `Description survives close ${Date.now()}`;
     await titleInput.fill(unique);
+    await dialog.locator(".ProseMirror").fill(description);
 
     // Close without submitting.
     await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -47,6 +49,10 @@ test.describe("create task draft preservation", () => {
       reopened.getByPlaceholder("Task title"),
       "Draft title must survive closing the modal.",
     ).toHaveValue(unique);
+    await expect(
+      reopened.locator(".ProseMirror"),
+      "Draft description must survive closing the modal.",
+    ).toContainText(description);
 
     // An explicit discard must clear it for good.
     await reopened.getByRole("button", { name: "Discard draft" }).click();

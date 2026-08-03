@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, fireEvent } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { shortcuts } from "@/constants/shortcuts";
@@ -37,5 +39,29 @@ describe("create task title shortcut", () => {
     editor.focus();
     fireEvent.keyDown(editor, { key: shortcuts.task.focusTitle });
     expect(editor).toHaveFocus();
+  });
+});
+
+describe("create task modal layout", () => {
+  it("keeps properties inside the footer, outside the scroll body", () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/components/shared/modals/create-task-modal.tsx",
+      ),
+      "utf8",
+    );
+    const scrollBody = source.indexOf('data-testid="create-task-scroll-body"');
+    const stickyProperties = source.indexOf(
+      'data-testid="create-task-sticky-properties"',
+    );
+    const footer = source.lastIndexOf("<DialogFooter", stickyProperties);
+
+    expect(source.slice(scrollBody - 150, scrollBody)).toContain(
+      "overflow-y-auto",
+    );
+    expect(footer).toBeGreaterThan(scrollBody);
+    expect(stickyProperties).toBeGreaterThan(footer);
+    expect(source.slice(footer, stickyProperties)).not.toContain("sticky");
   });
 });

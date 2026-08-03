@@ -303,6 +303,7 @@ function CreateTaskModal({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const descriptionRef = useRef("");
   const [priority, setPriority] = useState<Priority>("no-priority");
   const [assigneeId, setAssigneeId] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -380,6 +381,7 @@ function CreateTaskModal({
   const clearFormState = () => {
     setTitle("");
     setDescription("");
+    descriptionRef.current = "";
     setPriority("no-priority");
     setTemplateStatus(null);
     setAssigneeId("");
@@ -400,7 +402,7 @@ function CreateTaskModal({
 
   const hasDraftContent = Boolean(
     title.trim() ||
-      description.trim() ||
+      descriptionRef.current.trim() ||
       assigneeId ||
       startDate ||
       dueDate ||
@@ -418,7 +420,7 @@ function CreateTaskModal({
     if (!didSubmitRef.current && !didDiscardRef.current && hasDraftContent) {
       saveDraft(draftKey, {
         title,
-        description,
+        description: descriptionRef.current,
         priority,
         assigneeId,
         startDate: startDate ? startDate.toISOString() : null,
@@ -690,6 +692,7 @@ function CreateTaskModal({
 
     setTitle(saved.title ?? "");
     setDescription(saved.description ?? "");
+    descriptionRef.current = saved.description ?? "";
     setPriority((saved.priority as Priority) ?? "no-priority");
     setAssigneeId(saved.assigneeId ?? "");
     setStartDate(saved.startDate ? new Date(saved.startDate) : undefined);
@@ -1003,7 +1006,10 @@ function CreateTaskModal({
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 min-h-0 space-y-6"
         >
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6">
+          <div
+            className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6"
+            data-testid="create-task-scroll-body"
+          >
             {resolvedBoardId && (
               <CreateTaskTopbar
                 boardId={resolvedBoardId}
@@ -1064,7 +1070,10 @@ function CreateTaskModal({
             <div className="min-h-[200px]">
               <TaskDescriptionEditor
                 value={description}
-                onChange={setDescription}
+                onChange={(value) => {
+                  descriptionRef.current = value;
+                  setDescription(value);
+                }}
                 placeholder={t(
                   "common:modals.createTask.descriptionPlaceholder",
                 )}
@@ -1072,16 +1081,14 @@ function CreateTaskModal({
                 ensureTaskId={ensureDraftTask}
               />
             </div>
+          </div>
 
-            {/* #180: labels and properties are one opaque sticky surface. */}
+          <DialogFooter className="flex-shrink-0 flex-col items-stretch gap-3 border-t border-border bg-background px-6 py-4 sm:flex-col">
+            {/* #180: properties and actions share one footer surface. */}
             <div
-              className="sticky bottom-0 z-[90] -mx-4 mt-4 isolate overflow-hidden rounded-xl border border-border px-4 py-3 shadow-[0_-12px_28px_-10px_rgba(0,0,0,0.9)]"
+              className="space-y-2"
               data-testid="create-task-sticky-properties"
             >
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 z-0 bg-background"
-              />
               {labels.length > 0 && (
                 <div
                   className="relative z-10 mb-2 flex flex-wrap gap-1.5"
@@ -1474,49 +1481,48 @@ function CreateTaskModal({
                 </Popover>
               </div>
             </div>
-          </div>
+            <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
+              <div className="flex items-center gap-3 mr-auto">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={createMore}
+                    onChange={(e) => setCreateMore(e.target.checked)}
+                    className="rounded border-border bg-background text-primary focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
+                  />
+                  {t("common:modals.createTask.createMore")}
+                </label>
+              </div>
 
-          <DialogFooter className="flex-shrink-0 border-t border-border bg-background px-6 py-4">
-            <div className="flex items-center gap-3 mr-auto">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                <input
-                  type="checkbox"
-                  checked={createMore}
-                  onChange={(e) => setCreateMore(e.target.checked)}
-                  className="rounded border-border bg-background text-primary focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
-                />
-                {t("common:modals.createTask.createMore")}
-              </label>
-            </div>
-
-            <Button
-              type="button"
-              onClick={handleClose}
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground hover:bg-accent"
-            >
-              {t("common:actions.cancel")}
-            </Button>
-            {hasDraftContent && (
               <Button
                 type="button"
-                onClick={handleDiscardDraft}
-                variant="ghost"
+                onClick={handleClose}
+                variant="outline"
                 size="sm"
-                className="text-muted-foreground hover:text-destructive"
+                className="border-border text-foreground hover:bg-accent"
               >
-                {t("common:modals.createTask.discardDraft")}
+                {t("common:actions.cancel")}
               </Button>
-            )}
-            <Button
-              type="submit"
-              disabled={!title.trim()}
-              size="sm"
-              className="disabled:opacity-50"
-            >
-              {t("common:modals.createTask.createButton")}
-            </Button>
+              {hasDraftContent && (
+                <Button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  {t("common:modals.createTask.discardDraft")}
+                </Button>
+              )}
+              <Button
+                type="submit"
+                disabled={!title.trim()}
+                size="sm"
+                className="disabled:opacity-50"
+              >
+                {t("common:modals.createTask.createButton")}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
