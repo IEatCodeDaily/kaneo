@@ -63,6 +63,7 @@ import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRolesRouteImpo
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTeamsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/teams'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/templates'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility'
@@ -416,6 +417,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute =
         LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport.update(
+    {
+      id: '/table/$tableId',
+      path: '/table/$tableId',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute =
   LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRouteImport.update({
     id: '/$boardId/general',
@@ -638,6 +648,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/dashboard/organization/$organizationId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
+  '/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
   '/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
@@ -709,6 +720,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/dashboard/organization/$organizationId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
+  '/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
   '/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
@@ -786,6 +798,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/_layout/_authenticated/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
@@ -862,6 +875,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
     | '/dashboard/organization/$organizationId/'
+    | '/dashboard/organization/$organizationId/table/$tableId'
     | '/dashboard/settings/boards/$boardId/general'
     | '/dashboard/settings/boards/$boardId/integrations'
     | '/dashboard/settings/boards/$boardId/visibility'
@@ -933,6 +947,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
     | '/dashboard/organization/$organizationId'
+    | '/dashboard/organization/$organizationId/table/$tableId'
     | '/dashboard/settings/boards/$boardId/general'
     | '/dashboard/settings/boards/$boardId/integrations'
     | '/dashboard/settings/boards/$boardId/visibility'
@@ -1009,6 +1024,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization/teams'
     | '/_layout/_authenticated/dashboard/settings/organization/templates'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility'
@@ -1423,6 +1439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
     }
+    '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
+      path: '/table/$tableId'
+      fullPath: '/dashboard/organization/$organizationId/table/$tableId'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    }
     '/_layout/_authenticated/dashboard/settings/boards/$boardId/general': {
       id: '/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
       path: '/$boardId/general'
@@ -1744,6 +1767,7 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren {
   LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
@@ -1774,6 +1798,8 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren: Layou
       LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute:

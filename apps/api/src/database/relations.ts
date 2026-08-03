@@ -7,6 +7,10 @@ import {
   boardTable,
   columnTable,
   commentTable,
+  dataTableCellTable,
+  dataTableFieldTable,
+  dataTableRowTable,
+  dataTableTable,
   externalLinkTable,
   githubIntegrationTable,
   integrationTable,
@@ -78,10 +82,59 @@ export const organizationTableRelations = relations(
     teams: many(teamTable),
     members: many(organizationMemberTable),
     boards: many(boardTable),
+    dataTables: many(dataTableTable),
     assets: many(assetTable),
     invitations: many(invitationTable),
     notificationOrganizationRules: many(userNotificationOrgRuleTable),
     githubInstallations: many(organizationGithubInstallationTable),
+  }),
+);
+
+export const dataTableTableRelations = relations(
+  dataTableTable,
+  ({ one, many }) => ({
+    organization: one(organizationTable, {
+      fields: [dataTableTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    fields: many(dataTableFieldTable),
+    rows: many(dataTableRowTable),
+  }),
+);
+
+export const dataTableFieldTableRelations = relations(
+  dataTableFieldTable,
+  ({ one, many }) => ({
+    table: one(dataTableTable, {
+      fields: [dataTableFieldTable.tableId],
+      references: [dataTableTable.id],
+    }),
+    cells: many(dataTableCellTable),
+  }),
+);
+
+export const dataTableRowTableRelations = relations(
+  dataTableRowTable,
+  ({ one, many }) => ({
+    table: one(dataTableTable, {
+      fields: [dataTableRowTable.tableId],
+      references: [dataTableTable.id],
+    }),
+    cells: many(dataTableCellTable),
+  }),
+);
+
+export const dataTableCellTableRelations = relations(
+  dataTableCellTable,
+  ({ one }) => ({
+    row: one(dataTableRowTable, {
+      fields: [dataTableCellTable.rowId],
+      references: [dataTableRowTable.id],
+    }),
+    field: one(dataTableFieldTable, {
+      fields: [dataTableCellTable.fieldId],
+      references: [dataTableFieldTable.id],
+    }),
   }),
 );
 
