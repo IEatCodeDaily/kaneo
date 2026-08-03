@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 
 const CreateTaskModal = lazy(
   () => import("@/components/shared/modals/create-task-modal"),
@@ -15,8 +16,11 @@ export default function CreateTaskAction({
   status?: "planned";
 }) {
   const { t } = useTranslation();
+  const { canCreateTasks } = useOrganizationPermission();
   const [open, setOpen] = useState(false);
   const label = t("navigation:commandPalette.createTask");
+
+  if (!canCreateTasks()) return null;
 
   return (
     <>

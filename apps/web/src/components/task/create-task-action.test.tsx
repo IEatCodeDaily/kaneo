@@ -2,8 +2,15 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CreateTaskAction from "./create-task-action";
 
+const permissions = vi.hoisted(() => ({ canCreateTasks: vi.fn(() => true) }));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: () => "Create ticket" }),
+}));
+vi.mock("@/hooks/use-organization-permission", () => ({
+  useOrganizationPermission: () => ({
+    canCreateTasks: permissions.canCreateTasks,
+  }),
 }));
 vi.mock("@/components/shared/modals/create-task-modal", () => ({
   default: ({
@@ -30,7 +37,10 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
     ) : null,
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  permissions.canCreateTasks.mockReturnValue(true);
+});
 
 describe("CreateTaskAction", () => {
   it("opens one create-ticket modal for the requested board", async () => {
@@ -48,5 +58,11 @@ describe("CreateTaskAction", () => {
       "data-status",
       "planned",
     );
+  });
+
+  it("hides creation without task-create permission", () => {
+    permissions.canCreateTasks.mockReturnValue(false);
+    render(<CreateTaskAction boardId="board-1" />);
+    expect(screen.queryByTestId("board-create-task")).not.toBeInTheDocument();
   });
 });

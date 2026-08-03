@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import MilestonesView from "@/components/board/milestones-view";
 import BoardLayout from "@/components/common/board-layout";
 import PageTitle from "@/components/page-title";
-import CreateTaskAction from "@/components/task/create-task-action";
+
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -48,12 +48,9 @@ function RouteComponent() {
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
         <div className="border-b border-border/80 px-4 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <h1 className="text-sm font-semibold">
-              {t("tasks:milestone.view.title")}
-            </h1>
-            <CreateTaskAction boardId={boardId} />
-          </div>
+          <h1 className="text-sm font-semibold">
+            {t("tasks:milestone.view.title")}
+          </h1>
           <p className="text-xs text-muted-foreground">
             {t("tasks:milestone.view.description")}
           </p>
