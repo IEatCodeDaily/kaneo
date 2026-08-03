@@ -217,7 +217,7 @@ describe("flag activity entries (#107)", () => {
     // #167: the note is mandatory during unflag, so it must survive into the
     // audit trail instead of disappearing after submit.
     const note = screen.getByTestId("activity-flag-resolve-note");
-    expect(note.textContent).toContain("activity:resolutionNote");
+    expect(note.textContent).toContain("flags:dialog.note:");
     expect(note.textContent).toContain(
       "Approved after the accessibility review",
     );
@@ -225,10 +225,11 @@ describe("flag activity entries (#107)", () => {
   });
 
   /**
-   * #167 round 2: the note first shipped as a full-width bordered, filled box,
-   * which read as a disabled text input rather than activity metadata.
+   * #167 rejection round 3: user explicitly asked for a small textbox that
+   * hugs the text, labelled simply "Note". Its width must not participate in
+   * the activity line, otherwise the timestamp drifts when note length changes.
    */
-  it("renders the note as inline metadata, not an input-like box", () => {
+  it("renders a content-hugging Note box below an independent timestamp", () => {
     const resolved = {
       ...baseActivity,
       type: "flag_resolved",
@@ -243,20 +244,15 @@ describe("flag activity entries (#107)", () => {
 
     const note = screen.getByTestId("activity-flag-resolve-note");
     const className = note.getAttribute("class") ?? "";
+    expect(className).toMatch(/\bw-fit\b/);
+    expect(className).toMatch(/\bmax-w-full\b/);
+    expect(className).toMatch(/\brounded-md\b/);
+    expect(note.textContent).toMatch(/^flags:dialog\.note:/);
 
-    // No filled, fully-bordered card: that was the input lookalike.
-    expect(className).not.toMatch(/\bbg-muted/);
-    expect(className).not.toMatch(/\brounded-md\b/);
-    /*
-      Only a left rule, never an all-sides border. `border-<colour>` sets the
-      rule's colour and is fine; what must not appear is a bare `border` or a
-      width on another edge.
-    */
-    const edgeUtilities = className
-      .split(/\s+/)
-      .filter((c) => /^border(-[trb])?(-\d+)?$/.test(c));
-    expect(edgeUtilities).toEqual([]);
-    // Hangs off a left accent rule instead.
-    expect(className).toMatch(/border-l-2/);
+    const time = screen.getByTestId("activity-time");
+    expect(time.parentElement).not.toBe(note);
+    expect(time.compareDocumentPosition(note)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 });

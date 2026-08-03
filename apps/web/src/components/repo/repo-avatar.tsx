@@ -3,22 +3,10 @@ import { cn } from "@/lib/cn";
 import type { Repo } from "@/types/repo";
 
 /**
- * Per-repository identity glyph for the sidebar rail (#96).
+ * Per-repository identity glyph for the sidebar rail (#96/#171/#173).
  *
- * #173: this used to render the owner's avatar from the hosting provider
- * (`https://github.com/<owner>.png`). That was a mistake:
- *   - every rail render fired cross-site requests to github.com;
- *   - owners without an avatar produced console 404s;
- *   - the browser logged rejected `_gh_sess` / `_octo` cookie warnings, i.e.
- *     we were leaking the user's presence to GitHub just to draw a 16px icon.
- *
- * Repositories carry no icon field of their own, so identity is now derived
- * locally: the owner/name initial over a deterministic colour from the shared
- * label palette. No network, no third-party cookies, works offline and for
- * self-hosted providers.
- *
- * #171 will make board/repo icons user-configurable (including emoji); this is
- * the neutral default until then.
+ * Repository identity is derived locally from owner/name: no avatar network
+ * request, no third-party cookie leakage, stable offline rendering.
  */
 export default function RepoAvatar({
   repo,
@@ -34,32 +22,40 @@ export default function RepoAvatar({
   }
 
   return (
-    <span
+    /*
+      #171 rejection: collapsed SidebarMenuButton deliberately hides every
+      direct child except SVG. Both the old span and the first attempted div
+      therefore existed in the DOM but had display:none. Keep the repository
+      initial inside an actual SVG so generic rail CSS treats it as a glyph.
+    */
+    <svg
       aria-hidden="true"
-      className={cn(
-        "flex size-4 shrink-0 items-center justify-center rounded-sm text-[9px] font-semibold uppercase leading-none text-white",
-        className,
-      )}
+      className={cn("size-4 shrink-0 overflow-visible", className)}
       data-testid="repo-avatar"
-      style={{ backgroundColor: repoColor(repo) }}
+      role="img"
+      viewBox="0 0 16 16"
     >
-      {initial}
-    </span>
+      <rect fill={repoColor(repo)} height="16" rx="3" width="16" />
+      <text
+        dominantBaseline="central"
+        fill="white"
+        fontSize="9"
+        fontWeight="700"
+        textAnchor="middle"
+        x="8"
+        y="8"
+      >
+        {initial.toUpperCase()}
+      </text>
+    </svg>
   );
 }
 
-/** First character of the repository name, or null when there isn't one. */
 export function repoInitial(repo: Pick<Repo, "name">) {
   const trimmed = (repo.name ?? "").trim();
   return trimmed ? Array.from(trimmed)[0] : null;
 }
 
-/**
- * Deterministic colour for a repository.
- *
- * Same repo always gets the same colour, so the rail is stable between renders
- * and reloads without storing anything.
- */
 export function repoColor(repo: Pick<Repo, "owner" | "name">) {
   const key = `${repo.owner ?? ""}/${repo.name ?? ""}`;
   let hash = 0;
