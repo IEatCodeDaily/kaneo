@@ -100,11 +100,13 @@ const task = new Hono<{
           v.picklist(["assigned", "created", "team", "all"]),
         ),
         includeCompleted: v.optional(v.picklist(["true", "false"])),
+        limit: v.optional(v.pipe(v.string(), v.transform(Number))),
+        offset: v.optional(v.pipe(v.string(), v.transform(Number))),
       }),
     ),
     async (c) => {
       const userId = c.get("userId");
-      const { organizationId, relation, includeCompleted } =
+      const { organizationId, relation, includeCompleted, limit, offset } =
         c.req.valid("query");
 
       const tasks = await getMyTasks({
@@ -112,6 +114,8 @@ const task = new Hono<{
         organizationId,
         relation: relation ?? "all",
         includeCompleted: includeCompleted === "true",
+        limit,
+        offset,
       });
 
       return c.json(tasks);

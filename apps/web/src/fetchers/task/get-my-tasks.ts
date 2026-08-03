@@ -6,6 +6,8 @@ export type MyTasksParams = {
   organizationId?: string;
   relation?: MyTasksRelation;
   includeCompleted?: boolean;
+  limit?: number;
+  offset?: number;
 };
 
 /**
@@ -16,12 +18,16 @@ async function getMyTasks({
   organizationId,
   relation = "all",
   includeCompleted = false,
+  limit = 50,
+  offset = 0,
 }: MyTasksParams = {}) {
   const response = await client.task["my-tasks"].$get({
     query: {
       ...(organizationId ? { organizationId } : {}),
       relation,
       includeCompleted: includeCompleted ? "true" : "false",
+      limit: String(limit),
+      offset: String(offset),
     },
   });
 

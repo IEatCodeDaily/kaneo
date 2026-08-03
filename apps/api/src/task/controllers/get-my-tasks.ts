@@ -22,12 +22,13 @@ type GetMyTasksOptions = {
    * - assigned: directly assigned to the user
    * - created:  the user raised it (derived from the `created` activity row)
    * - team:     assigned to a team the user belongs to
-   * - all:      any of the above
+   * - all:      any of the above, plus tasks the user participated in
    */
   relation?: MyTasksRelation;
   /** Include tasks sitting in a final (done) column. Defaults to false. */
   includeCompleted?: boolean;
   limit?: number;
+  offset?: number;
 };
 
 /**
@@ -46,6 +47,7 @@ async function getMyTasks({
   relation = "all",
   includeCompleted = false,
   limit = 100,
+  offset = 0,
 }: GetMyTasksOptions) {
   const teamRows = await db
     .select({ teamId: teamMemberTable.teamId })
@@ -72,6 +74,16 @@ async function getMyTasks({
       and ${activityTable.userId} = ${userId}
   )`;
 
+  // "Related" is meaningful user data here: a user who commented on or changed
+  // a ticket participated in it. Task-to-task relations have no user identity,
+  // so treating them as a user relation would be fiction.
+  const participatedByUser = sql`exists (
+    select 1 from ${activityTable}
+    where ${activityTable.taskId} = ${taskTable.id}
+      and ${activityTable.userId} = ${userId}
+      and ${activityTable.type} <> 'created'
+  )`;
+
   const relationFilter =
     relation === "assigned"
       ? assignedToUser
@@ -79,7 +91,12 @@ async function getMyTasks({
         ? assignedToUserTeam
         : relation === "created"
           ? createdByUser
-          : or(assignedToUser, assignedToUserTeam, createdByUser);
+          : or(
+              assignedToUser,
+              assignedToUserTeam,
+              createdByUser,
+              participatedByUser,
+            );
 
   const conditions = [
     // Membership gate: never leak tasks from an organization the user left.
@@ -135,7 +152,8 @@ async function getMyTasks({
     .leftJoin(milestoneTable, eq(taskTable.milestoneId, milestoneTable.id))
     .where(and(...conditions))
     .orderBy(desc(taskTable.updatedAt))
-    .limit(limit);
+    .limit(Math.min(Math.max(limit, 1), 100))
+    .offset(Math.max(offset, 0));
 }
 
 export default getMyTasks;

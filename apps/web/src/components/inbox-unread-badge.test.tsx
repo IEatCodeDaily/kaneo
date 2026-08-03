@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mockUseGetNotifications = vi.fn();
+const mockUseGetUnreadNotificationCount = vi.fn();
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -12,9 +12,12 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-vi.mock("@/hooks/queries/notification/use-get-notifications", () => ({
-  default: () => mockUseGetNotifications(),
-}));
+vi.mock(
+  "@/hooks/queries/notification/use-get-unread-notification-count",
+  () => ({
+    default: () => mockUseGetUnreadNotificationCount(),
+  }),
+);
 
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
 
@@ -23,58 +26,35 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-type Row = { id: string; isRead: boolean };
-
-function withNotifications(rows: Row[] | undefined) {
-  mockUseGetNotifications.mockReturnValue({ data: rows });
+function withUnreadCount(count: number | undefined) {
+  mockUseGetUnreadNotificationCount.mockReturnValue({
+    data: count === undefined ? undefined : { count },
+  });
 }
 
 describe("InboxUnreadBadge", () => {
-  it("renders the number of unread notifications, not the total row count", () => {
-    withNotifications([
-      { id: "a", isRead: false },
-      { id: "b", isRead: true },
-      { id: "c", isRead: false },
-      { id: "d", isRead: true },
-      { id: "e", isRead: true },
-    ]);
-
+  it("renders the complete server-side unread count", () => {
+    withUnreadCount(73);
     render(<InboxUnreadBadge />);
-
-    const badge = screen.getByTestId("inbox-unread-badge");
-    expect(badge.textContent).toBe("2");
+    expect(screen.getByTestId("inbox-unread-badge").textContent).toBe("73");
   });
 
-  it("renders nothing when every notification is read (no zero badge)", () => {
-    withNotifications([
-      { id: "a", isRead: true },
-      { id: "b", isRead: true },
-    ]);
-
+  it("renders nothing when every notification is read", () => {
+    withUnreadCount(0);
     const { container } = render(<InboxUnreadBadge />);
-
     expect(screen.queryByTestId("inbox-unread-badge")).toBeNull();
     expect(container.textContent).toBe("");
   });
 
-  it("renders nothing while notifications are still loading", () => {
-    withNotifications(undefined);
-
+  it("renders nothing while the unread count is loading", () => {
+    withUnreadCount(undefined);
     render(<InboxUnreadBadge />);
-
     expect(screen.queryByTestId("inbox-unread-badge")).toBeNull();
   });
 
-  it("caps the displayed count at 99+", () => {
-    withNotifications(
-      Array.from({ length: 120 }, (_, index) => ({
-        id: String(index),
-        isRead: false,
-      })),
-    );
-
+  it("caps a count larger than the 50-row inbox list at 99+", () => {
+    withUnreadCount(120);
     render(<InboxUnreadBadge />);
-
     expect(screen.getByTestId("inbox-unread-badge").textContent).toBe("99+");
   });
 });
