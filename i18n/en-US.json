@@ -761,6 +761,8 @@
 			"descriptionLabel": "Description",
 			"descriptionHint": "A brief description of your board",
 			"descriptionPlaceholder": "Enter board description",
+			"subtaskDepthLimitLabel": "Subtask nesting limit",
+			"subtaskDepthLimitHint": "Maximum number of nested subtask levels allowed (1–4).",
 			"dangerZone": "Danger zone",
 			"dangerZoneSubtitle": "Irreversible and destructive actions.",
 			"deleteBoard": "Delete board",

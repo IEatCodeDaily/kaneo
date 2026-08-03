@@ -583,6 +583,8 @@
 			"descriptionLabel": "Опис",
 			"descriptionHint": "Краток опис на твојот проект",
 			"descriptionPlaceholder": "Внеси опис на проект",
+			"subtaskDepthLimitLabel": "Ограничување на вгнездување подзадачи",
+			"subtaskDepthLimitHint": "Максимален број дозволени вгнездени нивоа на подзадачи (1–4).",
 			"dangerZone": "Опасна зона",
 			"dangerZoneSubtitle": "Неповратни и деструктивни акции.",
 			"deleteBoard": "Избриши проект",

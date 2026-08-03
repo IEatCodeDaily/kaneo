@@ -583,6 +583,8 @@
 			"descriptionLabel": "Описание",
 			"descriptionHint": "Краткое описание вашего проекта",
 			"descriptionPlaceholder": "Введите описание проекта",
+			"subtaskDepthLimitLabel": "Глубина вложенности подзадач",
+			"subtaskDepthLimitHint": "Максимальное число уровней вложенных подзадач (1–4).",
 			"dangerZone": "Опасная зона",
 			"dangerZoneSubtitle": "Необратимые и деструктивные действия.",
 			"deleteBoard": "Удалить проект",

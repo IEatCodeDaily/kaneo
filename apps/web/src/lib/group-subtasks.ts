@@ -1,50 +1,85 @@
 import type Task from "@/types/task";
 
-export type TaskGroup = {
-  parent: Task;
-  children: Task[];
+export type TaskTreeNode = {
+  task: Task;
+  children: TaskTreeNode[];
 };
 
 /**
- * Group children directly under a parent only when both occur in this exact
- * bucket/column. Cross-column subtasks stay standalone so grouping never lies
- * about their workflow status.
+ * Builds a task tree for one exact view bucket (a board column, or a group
+ * inside a column). A task is nested only when its immediate parent is present
+ * in the same input set. This keeps cross-column/cross-group children
+ * standalone instead of implying a false workflow relationship.
  *
- * The first occurrence determines group order, preserving the server/DnD task
- * order. Children are removed from the top level only when their parent exists
- * in the same input set.
+ * Input order remains authoritative: roots and siblings retain their server/DnD
+ * order, and every input task appears exactly once. The visited guard is only a
+ * defensive fallback for malformed cyclic metadata; the API enforces board
+ * depth and acyclic parent relations.
  */
-export function groupSameBucketSubtasks(tasks: Task[]): TaskGroup[] {
+export function groupSameBucketSubtasks(tasks: Task[]): TaskTreeNode[] {
   const byId = new Map(tasks.map((task) => [task.id, task]));
   const childrenByParent = new Map<string, Task[]>();
 
   for (const task of tasks) {
     const parentId = task.parentTask?.id;
-    if (!parentId || !byId.has(parentId)) continue;
-    childrenByParent.set(parentId, [
-      ...(childrenByParent.get(parentId) ?? []),
-      task,
-    ]);
+    if (!parentId || parentId === task.id || !byId.has(parentId)) continue;
+    const siblings = childrenByParent.get(parentId) ?? [];
+    siblings.push(task);
+    childrenByParent.set(parentId, siblings);
   }
 
-  return tasks
-    .filter((task) => {
-      const parentId = task.parentTask?.id;
-      return !parentId || !byId.has(parentId);
-    })
-    .map((parent) => ({
-      parent,
-      children: childrenByParent.get(parent.id) ?? [],
-    }));
+  const nestedIds = new Set(
+    [...childrenByParent.values()].flatMap((children) =>
+      children.map((child) => child.id),
+    ),
+  );
+  const rendered = new Set<string>();
+
+  const buildNode = (
+    task: Task,
+    ancestors: ReadonlySet<string>,
+  ): TaskTreeNode => {
+    rendered.add(task.id);
+    const nextAncestors = new Set(ancestors).add(task.id);
+    return {
+      task,
+      children: (childrenByParent.get(task.id) ?? [])
+        .filter((child) => !nextAncestors.has(child.id))
+        .map((child) => buildNode(child, nextAncestors)),
+    };
+  };
+
+  const roots = tasks
+    .filter((task) => !nestedIds.has(task.id))
+    .map((task) => buildNode(task, new Set()));
+
+  // Cyclic or otherwise malformed relations have no natural root. Keep those
+  // records visible as standalone roots rather than silently dropping IDs.
+  for (const task of tasks) {
+    if (!rendered.has(task.id)) roots.push({ task, children: [] });
+  }
+
+  return roots;
 }
 
-/** Flat visible sequence for a collapsed/expanded grouped view. */
+/** Flat visible sequence for a collapsed/expanded tree view. */
 export function visibleGroupedTasks(
-  groups: TaskGroup[],
+  groups: TaskTreeNode[],
   collapsedParentIds: ReadonlySet<string>,
 ): Task[] {
-  return groups.flatMap(({ parent, children }) =>
-    collapsedParentIds.has(parent.id) ? [parent] : [parent, ...children],
+  const flatten = (node: TaskTreeNode): Task[] => [
+    node.task,
+    ...(collapsedParentIds.has(node.task.id)
+      ? []
+      : node.children.flatMap(flatten)),
+  ];
+  return groups.flatMap(flatten);
+}
+
+export function countTreeTasks(nodes: TaskTreeNode[]): number {
+  return nodes.reduce(
+    (total, node) => total + 1 + countTreeTasks(node.children),
+    0,
   );
 }
 

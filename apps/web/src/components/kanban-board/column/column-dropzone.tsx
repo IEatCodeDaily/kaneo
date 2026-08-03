@@ -12,7 +12,9 @@ import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import {
   collapseToggleLabel,
+  countTreeTasks,
   groupSameBucketSubtasks,
+  type TaskTreeNode,
 } from "@/lib/group-subtasks";
 import { getPriorityIcon } from "@/lib/priority";
 import type { BoardWithTasks } from "@/types/board";
@@ -35,6 +37,8 @@ const CHUNK = 40;
 
 /** Approximate rendered height of one card, for the pending-space reservation. */
 const CARD_HEIGHT_PX = 102;
+
+const NESTED_INDENT = ["", "ml-4", "ml-8", "ml-12"] as const;
 
 export function ColumnDropzone({
   column,
@@ -146,19 +150,66 @@ export function ColumnDropzone({
     () =>
       groups
         .slice(mountCount)
-        .reduce((sum, group) => sum + 1 + group.children.length, 0),
+        .reduce((sum, group) => sum + countTreeTasks([group]), 0),
     [groups, mountCount],
   );
 
   /** Per-card Framer Motion cost ~1s on a 180-task column. Keep this plain. */
-  const renderCard = (task: (typeof column.tasks)[number], nested = false) => (
+  const renderCard = (task: (typeof column.tasks)[number], depth = 0) => (
     <div
       key={task.id}
-      className={nested ? "ml-4 border-l-2 border-border pl-2" : undefined}
+      className={cn(
+        NESTED_INDENT[Math.min(depth, 3)],
+        depth > 0 && "border-l-2 border-border pl-2",
+      )}
     >
       <TaskCard task={task} disableDragDrop={disableDragDrop} />
     </div>
   );
+
+  const renderTreeNode = (node: TaskTreeNode, depth = 0): React.ReactNode => {
+    const collapsed = collapsedParents.has(node.task.id);
+    return (
+      <div
+        className="flex flex-col gap-2"
+        data-testid={node.children.length ? "task-group" : undefined}
+        key={node.task.id}
+      >
+        {renderCard(node.task, depth)}
+        {node.children.length > 0 && (
+          <button
+            aria-expanded={!collapsed}
+            className={cn(
+              "flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground",
+              NESTED_INDENT[Math.min(depth, 3)],
+            )}
+            onClick={() =>
+              setCollapsedParents((current) => {
+                const next = new Set(current);
+                if (collapsed) next.delete(node.task.id);
+                else next.add(node.task.id);
+                return next;
+              })
+            }
+            type="button"
+          >
+            {collapsed ? (
+              <ChevronRight className="size-3" />
+            ) : (
+              <ChevronDown className="size-3" />
+            )}
+            {collapseToggleLabel({
+              parentId: node.task.id,
+              childCount: node.children.length,
+              collapsed,
+            })}
+          </button>
+        )}
+        {!collapsed &&
+          node.children.map((child) => renderTreeNode(child, depth + 1))}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -237,7 +288,9 @@ export function ColumnDropzone({
                   </button>
                   {!groupCollapsed ? (
                     <div className="flex flex-col gap-2" id={regionId}>
-                      {group.tasks.map((task) => renderCard(task))}
+                      {groupSameBucketSubtasks(group.tasks).map((node) =>
+                        renderTreeNode(node),
+                      )}
                     </div>
                   ) : null}
                 </section>
@@ -261,46 +314,7 @@ export function ColumnDropzone({
               "motion-reduce:starting:translate-y-0",
             )}
           >
-            {visibleGroups.map(({ parent, children }) => {
-              const collapsed = collapsedParents.has(parent.id);
-              return (
-                <div
-                  className="flex flex-col gap-2"
-                  data-testid={children.length ? "task-group" : undefined}
-                  key={parent.id}
-                >
-                  {renderCard(parent)}
-                  {children.length > 0 && (
-                    <button
-                      aria-expanded={!collapsed}
-                      className="flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                      onClick={() =>
-                        setCollapsedParents((current) => {
-                          const next = new Set(current);
-                          if (collapsed) next.delete(parent.id);
-                          else next.add(parent.id);
-                          return next;
-                        })
-                      }
-                      type="button"
-                    >
-                      {collapsed ? (
-                        <ChevronRight className="size-3" />
-                      ) : (
-                        <ChevronDown className="size-3" />
-                      )}
-                      {collapseToggleLabel({
-                        parentId: parent.id,
-                        childCount: children.length,
-                        collapsed,
-                      })}
-                    </button>
-                  )}
-                  {!collapsed &&
-                    children.map((child) => renderCard(child, true))}
-                </div>
-              );
-            })}
+            {visibleGroups.map((node) => renderTreeNode(node))}
             {pendingCards > 0 ? (
               <div
                 aria-hidden="true"

@@ -597,6 +597,8 @@
 			"descriptionLabel": "Beschreibung",
 			"descriptionHint": "Eine kurze Beschreibung deines Projekts",
 			"descriptionPlaceholder": "Projektbeschreibung eingeben",
+			"subtaskDepthLimitLabel": "Verschachtelungstiefe für Unteraufgaben",
+			"subtaskDepthLimitHint": "Maximal zulässige Anzahl verschachtelter Unteraufgabenebenen (1–4).",
 			"dangerZone": "Gefahrenbereich",
 			"dangerZoneSubtitle": "Unumkehrbare und destruktive Aktionen.",
 			"deleteBoard": "Projekt löschen",

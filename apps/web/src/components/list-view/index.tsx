@@ -34,6 +34,7 @@ import { getColumnIcon } from "@/lib/column";
 import {
   collapseToggleLabel,
   groupSameBucketSubtasks,
+  type TaskTreeNode,
 } from "@/lib/group-subtasks";
 import { reorderBoardTask } from "@/lib/reorder-board-task";
 import { toast } from "@/lib/toast";
@@ -53,6 +54,8 @@ type ListViewProps = {
   board: BoardWithTasks;
   disableDragDrop?: boolean;
 };
+
+const NESTED_ROW_INDENT = ["", "ml-6", "ml-12", "ml-[4.5rem]"] as const;
 
 type ColumnSectionProps = {
   active: boolean;
@@ -94,6 +97,49 @@ const ColumnSection = memo(function ColumnSection({
     [column.tasks],
   );
   const showDropIndicator = active;
+
+  const renderTreeNode = (node: TaskTreeNode, depth = 0): React.ReactNode => {
+    const collapsed = collapsedParentIds.has(node.task.id);
+    return (
+      <div
+        data-testid={node.children.length ? "list-task-group" : undefined}
+        key={node.task.id}
+      >
+        <div
+          className={cn(
+            NESTED_ROW_INDENT[Math.min(depth, 3)],
+            depth > 0 && "border-l-2 border-border",
+          )}
+        >
+          <TaskRow task={node.task} boardSlug={boardSlug} />
+        </div>
+        {node.children.length > 0 && (
+          <button
+            aria-expanded={!collapsed}
+            className={cn(
+              "flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground",
+              NESTED_ROW_INDENT[Math.min(depth, 3)],
+            )}
+            onClick={() => onToggleParent(node.task.id)}
+            type="button"
+          >
+            {collapsed ? (
+              <ChevronRight className="size-3" />
+            ) : (
+              <ChevronDown className="size-3" />
+            )}
+            {collapseToggleLabel({
+              parentId: node.task.id,
+              childCount: node.children.length,
+              collapsed,
+            })}
+          </button>
+        )}
+        {!collapsed &&
+          node.children.map((child) => renderTreeNode(child, depth + 1))}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -186,46 +232,7 @@ const ColumnSection = memo(function ColumnSection({
                 one Framer Motion instance per row cost ~3s of main-thread
                 blocking on a 180-task board. The CSS starting-style fade on
                 the container gives the same visual entry for free. */}
-            {groups.map(({ parent, children }) => {
-              const collapsed = collapsedParentIds.has(parent.id);
-              const visibleTasks = collapsed ? [parent] : [parent, ...children];
-              return (
-                <div
-                  data-testid={children.length ? "list-task-group" : undefined}
-                  key={parent.id}
-                >
-                  {visibleTasks.map((task, index) => (
-                    <div
-                      key={task.id}
-                      className={
-                        index > 0 ? "ml-6 border-l-2 border-border" : undefined
-                      }
-                    >
-                      <TaskRow task={task} boardSlug={boardSlug} />
-                    </div>
-                  ))}
-                  {children.length > 0 && (
-                    <button
-                      aria-expanded={!collapsed}
-                      className="ml-6 flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                      onClick={() => onToggleParent(parent.id)}
-                      type="button"
-                    >
-                      {collapsed ? (
-                        <ChevronRight className="size-3" />
-                      ) : (
-                        <ChevronDown className="size-3" />
-                      )}
-                      {collapseToggleLabel({
-                        parentId: parent.id,
-                        childCount: children.length,
-                        collapsed,
-                      })}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {groups.map((node) => renderTreeNode(node))}
           </SortableContext>
 
           {column.tasks.length === 0 && (
