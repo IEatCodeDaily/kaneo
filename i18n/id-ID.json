@@ -1732,7 +1732,8 @@
 					"violet": "Violet",
 					"orchid": "Orkid",
 					"cocoa": "Kakao"
-				}
+				},
+				"repoSource": "Label tersinkron GitHub"
 			}
 		},
 		"backlog": {

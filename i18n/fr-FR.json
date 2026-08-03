@@ -1595,7 +1595,8 @@
 					"violet": "Violet",
 					"orchid": "Orchidée",
 					"cocoa": "Cacao"
-				}
+				},
+				"repoSource": "Étiquette synchronisée avec GitHub"
 			}
 		},
 		"backlog": {

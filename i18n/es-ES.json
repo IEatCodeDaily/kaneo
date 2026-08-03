@@ -1360,7 +1360,8 @@
 					"violet": "Violeta",
 					"orchid": "Orquídea",
 					"cocoa": "Cacao"
-				}
+				},
+				"repoSource": "Etiqueta sincronizada con GitHub"
 			}
 		},
 		"backlog": {

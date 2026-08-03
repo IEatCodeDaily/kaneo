@@ -1628,7 +1628,8 @@
 					"violet": "Violett",
 					"orchid": "Orchidee",
 					"cocoa": "Kakao"
-				}
+				},
+				"repoSource": "Mit GitHub synchronisiertes Label"
 			}
 		},
 		"backlog": {

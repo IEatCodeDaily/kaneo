@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Search, X } from "lucide-react";
+import { Check, Github, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,11 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
-import { canSelectLabelSource } from "./label-source";
+import {
+  canSelectLabelSource,
+  isRepoLabel,
+  labelSourceAttribute,
+} from "./label-source";
 
 /**
  * Local copy carries a `key` for the i18n colour names in the swatch picker.
@@ -80,6 +84,24 @@ type TaskLabelsPopoverProps = {
 };
 
 type PopoverStep = "select" | "color";
+
+export function LabelSourceIndicator({
+  source,
+  label,
+}: {
+  source: string | null | undefined;
+  label: string;
+}) {
+  if (!isRepoLabel(source)) return null;
+
+  return (
+    <Github
+      aria-label={label}
+      className="ml-auto size-3.5 shrink-0 text-muted-foreground"
+      title={label}
+    />
+  );
+}
 
 export default function TaskLabelsPopover({
   task,
@@ -272,6 +294,7 @@ export default function TaskLabelsPopover({
           <button
             key={label.id}
             type="button"
+            data-label-source={labelSourceAttribute(label.source)}
             className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
             onClick={() => handleToggleLabel(label.id)}
           >
@@ -287,6 +310,10 @@ export default function TaskLabelsPopover({
               }}
             />
             <span className="max-w-20 truncate">{label.name}</span>
+            <LabelSourceIndicator
+              source={label.source}
+              label={t("tasks:popover.labels.repoSource")}
+            />
           </button>
         ))}
 

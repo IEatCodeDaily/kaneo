@@ -1583,7 +1583,8 @@
 					"violet": "Фіолет",
 					"orchid": "Орхідея",
 					"cocoa": "Какао"
-				}
+				},
+				"repoSource": "Мітка, синхронізована з GitHub"
 			}
 		},
 		"backlog": {

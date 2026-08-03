@@ -1814,7 +1814,8 @@
 					"violet": "Violet",
 					"orchid": "Orchid",
 					"cocoa": "Cocoa"
-				}
+				},
+				"repoSource": "GitHub-synced label"
 			}
 		},
 		"backlog": {

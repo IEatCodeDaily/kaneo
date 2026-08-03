@@ -1588,7 +1588,8 @@
 					"violet": "바이올렛",
 					"orchid": "오키드",
 					"cocoa": "코코아"
-				}
+				},
+				"repoSource": "GitHub 동기화 라벨"
 			}
 		},
 		"backlog": {
