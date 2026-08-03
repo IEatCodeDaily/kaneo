@@ -13,6 +13,7 @@ import {
   userTable,
 } from "../database/schema";
 import createLabel from "../label/controllers/create-label";
+import createTask from "../task/controllers/create-task";
 import updateTaskAssignee from "../task/controllers/update-task-assignee";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { hasOrganizationPermission } from "../utils/require-organization-permission";
@@ -33,6 +34,15 @@ const commandSchema = v.object({
           taskId: v.string(),
           labelName: v.string(),
           color: v.optional(v.string()),
+        }),
+        v.object({
+          type: v.literal("create_task"),
+          boardId: v.string(),
+          title: v.string(),
+          description: v.optional(v.string(), ""),
+          status: v.optional(v.string(), "to-do"),
+          priority: v.optional(v.string(), "no-priority"),
+          assigneeId: v.optional(v.nullable(v.string())),
         }),
       ]),
     ),
@@ -124,6 +134,10 @@ async function settings(organizationId: string, userId: string) {
 }
 
 async function buildContext(organizationId: string, taskId?: string) {
+  const boards = await db
+    .select({ id: boardTable.id, name: boardTable.name })
+    .from(boardTable)
+    .where(eq(boardTable.organizationId, organizationId));
   const members = await db
     .select({ id: userTable.id, name: userTable.name })
     .from(organizationMemberTable)
@@ -158,7 +172,7 @@ async function buildContext(organizationId: string, taskId?: string) {
         : eq(boardTable.organizationId, organizationId),
     )
     .limit(taskId ? 1 : 100);
-  return { members, labels, tasks };
+  return { boards, members, labels, tasks };
 }
 
 async function callProvider(
@@ -182,7 +196,7 @@ async function callProvider(
         {
           role: "system",
           content:
-            "You are Kaneo's organization assistant. Return JSON only: {message:string,actions:array}. Allowed actions: assign_task(taskId,assigneeId|null), add_label(taskId,labelName,color). Use only IDs/names in CONTEXT. Never invent IDs. Only propose actions explicitly requested by the user.",
+            "You are Kaneo's organization assistant. Return JSON only: {message:string,actions:array}. Allowed actions: assign_task(taskId,assigneeId|null), add_label(taskId,labelName,color), create_task(boardId,title,description,status,priority,assigneeId|null). Use only IDs/names in CONTEXT. Never invent IDs. Only propose actions explicitly requested by the user.",
         },
         { role: "system", content: `CONTEXT=${JSON.stringify(context)}` },
         { role: "user", content: message },
@@ -377,6 +391,45 @@ const ai = new Hono<{ Variables: Variables }>()
       }
       const executed: Array<Record<string, unknown>> = [];
       for (const action of result.actions) {
+        if (action.type === "create_task") {
+          if (!(await hasOrganizationPermission(c, { task: ["create"] })))
+            throw new HTTPException(403, { message: "Forbidden" });
+          const board = await db.query.boardTable.findFirst({
+            where: and(
+              eq(boardTable.id, action.boardId),
+              eq(boardTable.organizationId, organizationId),
+            ),
+          });
+          if (!board)
+            throw new HTTPException(404, { message: "Board not found" });
+          if (action.assigneeId) {
+            if (!(await hasOrganizationPermission(c, { task: ["assign"] })))
+              throw new HTTPException(403, { message: "Forbidden" });
+            const member = await db.query.organizationMemberTable.findFirst({
+              where: and(
+                eq(organizationMemberTable.organizationId, organizationId),
+                eq(organizationMemberTable.userId, action.assigneeId),
+              ),
+            });
+            if (!member)
+              throw new HTTPException(404, { message: "Assignee not found" });
+          }
+          const created = await createTask({
+            boardId: action.boardId,
+            currentUserId: userId,
+            userId: action.assigneeId ?? undefined,
+            title: action.title,
+            description: action.description,
+            status: action.status,
+            priority: action.priority,
+          });
+          executed.push({
+            ...action,
+            taskId: created.id,
+            number: created.number,
+          });
+          continue;
+        }
         const [task] = await db
           .select({ organizationId: boardTable.organizationId })
           .from(taskTable)
@@ -386,7 +439,7 @@ const ai = new Hono<{ Variables: Variables }>()
         if (!task || task.organizationId !== organizationId)
           throw new HTTPException(404, { message: "Task not found" });
         if (action.type === "assign_task") {
-          if (!(await hasOrganizationPermission(c, { task: ["update"] })))
+          if (!(await hasOrganizationPermission(c, { task: ["assign"] })))
             throw new HTTPException(403, { message: "Forbidden" });
           if (action.assigneeId) {
             const member = await db.query.organizationMemberTable.findFirst({

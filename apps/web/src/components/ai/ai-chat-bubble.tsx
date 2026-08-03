@@ -13,6 +13,16 @@ import {
 
 type ChatEntry = { id: string; role: "user" | "assistant"; text: string };
 
+export function describeAiActions(actions?: Array<{ type: string }>) {
+  return actions
+    ?.map((action) => {
+      if (action.type === "assign_task") return "Ticket assignment updated.";
+      if (action.type === "create_task") return "Ticket created.";
+      return "Ticket label added.";
+    })
+    .join(" ");
+}
+
 /** Entries are append-only, so a creation-time id is a stable React key. */
 const entryId = () =>
   globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -121,15 +131,9 @@ export function AiChatBubble() {
       );
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || "AI request failed");
-      const actionText = (
-        payload.actions as Array<{ type: string }> | undefined
-      )
-        ?.map((action) =>
-          action.type === "assign_task"
-            ? "Ticket assignment updated."
-            : "Ticket label added.",
-        )
-        .join(" ");
+      const actionText = describeAiActions(
+        payload.actions as Array<{ type: string }> | undefined,
+      );
       setHistory((old) => [
         ...old,
         {
