@@ -62,12 +62,7 @@ vi.mock("@/components/ui/sidebar", () => ({
   SidebarFooter: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-footer-slot">{children}</div>
   ),
-  SidebarSeparator: (props: Record<string, unknown>) => (
-    <hr
-      className={props.className as string}
-      data-testid={props["data-testid"] as string}
-    />
-  ),
+
   SidebarTrigger: (props: Record<string, unknown>) => (
     <button
       data-testid={(props["data-testid"] as string) ?? "sidebar-trigger"}
