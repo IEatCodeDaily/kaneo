@@ -28,6 +28,7 @@ export const taskSchema = v.object({
   number: v.nullable(v.number()),
   userId: v.nullable(v.string()),
   teamId: v.nullable(v.string()),
+  milestoneId: v.nullable(v.string()),
   title: v.string(),
   description: v.nullable(v.string()),
   descriptionHistory: v.array(

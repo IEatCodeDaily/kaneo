@@ -25,6 +25,7 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
       updatedAt: taskTable.updatedAt,
       userId: taskTable.userId,
       teamId: taskTable.teamId,
+      milestoneId: taskTable.milestoneId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,
       teamAssigneeName: teamTable.name,
