@@ -1,4 +1,11 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { Markdown } from "@tiptap/markdown";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -27,12 +34,21 @@ afterEach(cleanup);
 const CONTENT =
   '<p><img src="/api/asset/img-1" alt="Diagram" title="Diagram" width="320"></p>';
 
-function Harness({ extensions }: { extensions: unknown[] }) {
+function Harness({
+  extensions,
+  onUpdate,
+}: {
+  extensions: unknown[];
+  onUpdate?: (markdown: string) => void;
+}) {
   const editor = useEditor({
     immediatelyRender: true,
     // biome-ignore lint/suspicious/noExplicitAny: tiptap extension list
-    extensions: [StarterKit, ...(extensions as any[])],
+    extensions: [StarterKit, Markdown, ...(extensions as any[])],
     content: CONTENT,
+    onUpdate: ({ editor: activeEditor }) => {
+      onUpdate?.(activeEditor.getMarkdown());
+    },
   });
   return <EditorContent editor={editor} />;
 }
@@ -57,6 +73,36 @@ describe("#54 inline images mount a node view in a real editor", () => {
     render(<Harness extensions={[ResizableImage]} />);
     await waitFor(() => screen.getByTestId("editor-image-wrapper"));
     expect(ResizableImage.name).toBe("image");
+  });
+
+  it("persists a dragged width into serialized markdown", async () => {
+    const onUpdate = vi.fn();
+    render(<Harness extensions={[ResizableImage]} onUpdate={onUpdate} />);
+    const image = await waitFor(() => screen.getByAltText("Diagram"));
+    const handle = screen.getByTestId("editor-image-resize-handle");
+    vi.spyOn(image, "getBoundingClientRect").mockReturnValue({
+      bottom: 200,
+      height: 180,
+      left: 0,
+      right: 320,
+      top: 20,
+      width: 320,
+      x: 0,
+      y: 20,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.pointerDown(handle, { clientX: 320 });
+    fireEvent.pointerMove(window, { clientX: 420 });
+    fireEvent.pointerUp(window);
+
+    await waitFor(() => expect(image.style.width).toBe("420px"));
+    expect(image.getAttribute("width")).toBe("420");
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith(
+        expect.stringContaining('width="420"'),
+      ),
+    );
   });
 
   it("preserves an explicit width so resizing survives a reload", async () => {
