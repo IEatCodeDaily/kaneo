@@ -3,12 +3,25 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { VIRTUAL_STATUSES } from "../validate-task-fields";
 
 type TaskOrderUpdate = {
   id: string;
   position: number;
   status: string;
 };
+
+export function taskStatusColumnIds(
+  columns: { id: string; slug: string }[],
+): Map<string, string | null> {
+  const statuses = new Map<string, string | null>();
+  for (const column of columns) {
+    statuses.set(column.id, column.id);
+    statuses.set(column.slug, column.id);
+  }
+  for (const status of VIRTUAL_STATUSES) statuses.set(status, null);
+  return statuses;
+}
 
 export default async function reorderTasks(
   boardId: string,
@@ -36,11 +49,7 @@ export default async function reorderTasks(
     });
   }
 
-  const columnIds = new Map<string, string>();
-  for (const column of columns) {
-    columnIds.set(column.id, column.id);
-    columnIds.set(column.slug, column.id);
-  }
+  const columnIds = taskStatusColumnIds(columns);
   if (updates.some((update) => !columnIds.has(update.status))) {
     throw new HTTPException(400, { message: "Invalid task status" });
   }
