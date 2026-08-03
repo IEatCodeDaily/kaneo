@@ -208,66 +208,48 @@ function RouteComponent() {
         </CardFrame>
       </div>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className="flex w-full flex-col overflow-hidden p-0 sm:max-w-xl">
-          <SheetHeader>
+        <SheetContent className="flex w-full max-w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md md:max-w-xl lg:max-w-3xl">
+          <SheetHeader className="shrink-0 border-b border-border px-4 py-2.5">
             <SheetTitle>
               {editingId ? "Edit task template" : "New task template"}
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription className="sr-only">
               Set reusable defaults. Every value can still be changed after
               applying the template.
             </SheetDescription>
           </SheetHeader>
-          <SheetPanel className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pt-5 pb-24">
-            <div className="rounded-xl border bg-muted/20 p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring/50">
-              <Label
-                className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
-                htmlFor="template-name"
-              >
-                Template name
-              </Label>
-              <Input
-                id="template-name"
-                className="border-0 bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-0"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="TEMPLATE NAME"
-              />
-              <Label
-                className="mt-2 px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
-                htmlFor="template-title"
-              >
+          <SheetPanel className="min-h-0 flex-1 overflow-y-auto pb-24">
+            <div className="space-y-3 px-4 py-4">
+              <Label className="sr-only" htmlFor="template-title">
                 Ticket title
               </Label>
               <Input
                 id="template-title"
-                className="h-11 border-0 bg-transparent px-3 text-base font-semibold shadow-none focus-visible:ring-0"
+                className="h-auto border-0 bg-transparent px-0 py-1 text-xl font-semibold shadow-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 value={data.title}
                 onChange={(event) =>
                   setData({ ...data, title: event.target.value })
                 }
                 placeholder="Ticket title"
               />
-              <Label
-                className="mt-2 px-1 text-[10px] uppercase tracking-wider text-muted-foreground"
-                htmlFor="template-description"
-              >
-                Description
-              </Label>
-              <textarea
-                id="template-description"
-                className="min-h-24 w-full resize-y rounded-md border-0 bg-transparent px-1 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-                value={data.description ?? ""}
-                onChange={(event) =>
-                  setData({ ...data, description: event.target.value || null })
-                }
-                placeholder="Add a description, steps, or acceptance criteria…"
-              />
+              <div className="flex items-center gap-3">
+                <Label
+                  className="w-28 shrink-0 text-xs text-muted-foreground"
+                  htmlFor="template-name"
+                >
+                  Template name
+                </Label>
+                <Input
+                  id="template-name"
+                  className="h-8 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Template name"
+                />
+              </div>
             </div>
-            <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Properties
-              </p>
+            <div className="border-y border-border bg-sidebar px-4 py-3">
+              <p className="sr-only">Properties</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="template-status">Status</Label>
@@ -300,6 +282,8 @@ function RouteComponent() {
                     <option value="low">Low</option>
                   </select>
                 </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="template-start">Start date offset</Label>
                   <Input
@@ -463,6 +447,23 @@ function RouteComponent() {
                   </PopoverPopup>
                 </Popover>
               </div>
+            </div>
+            <div className="space-y-3 px-4 py-4">
+              <Label
+                className="text-sm font-medium"
+                htmlFor="template-description"
+              >
+                Description
+              </Label>
+              <textarea
+                id="template-description"
+                className="min-h-36 w-full resize-y rounded-md border border-border bg-transparent px-3 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                value={data.description ?? ""}
+                onChange={(event) =>
+                  setData({ ...data, description: event.target.value || null })
+                }
+                placeholder="Add a description, steps, or acceptance criteria…"
+              />
             </div>
           </SheetPanel>
           <SheetFooter>
