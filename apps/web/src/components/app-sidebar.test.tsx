@@ -91,12 +91,19 @@ describe("AppSidebar layout (#96)", () => {
     ).not.toBeNull();
   });
 
-  it("separates Boards from Repos only in the collapsed rail", () => {
+  it("separates main navigation, Boards, and Repos in the collapsed rail", () => {
     render(<AppSidebar />);
 
-    const divider = screen.getByTestId("sidebar-boards-repos-divider");
-    expect(divider.className).toContain("group-data-[collapsible=icon]:block");
-    expect(divider.className).toContain("hidden");
+    for (const testId of [
+      "sidebar-main-boards-divider",
+      "sidebar-boards-repos-divider",
+    ]) {
+      const divider = screen.getByTestId(testId);
+      expect(divider.className).toContain(
+        "group-data-[collapsible=icon]:block",
+      );
+      expect(divider.className).toContain("hidden");
+    }
   });
 
   it("does not render the organization selector at the sidebar top", () => {

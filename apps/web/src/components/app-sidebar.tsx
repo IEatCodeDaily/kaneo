@@ -87,6 +87,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="overflow-hidden gap-1 py-1">
         <Search />
         <NavMain />
+        <div
+          aria-hidden="true"
+          className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
+          data-testid="sidebar-main-boards-divider"
+        />
         <NavBoards />
         <div
           aria-hidden="true"
