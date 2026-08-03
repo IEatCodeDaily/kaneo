@@ -99,6 +99,7 @@ const raised = {
     flagTypeIcon: "ban",
     targetUserId: "user-b",
     targetTeamId: null,
+    note: "Waiting on the migration window",
   },
 };
 
@@ -117,6 +118,13 @@ describe("flag activity entries (#107)", () => {
     // "for Grace" — the target, resolved through org members.
     expect(screen.getByTestId("activity-flag-target").textContent).toBe(
       'activity:flagTarget:{"target":"Grace"}',
+    );
+  });
+
+  it("shows the flag note in the activity history", () => {
+    renderActivity(raised);
+    expect(screen.getByTestId("activity-flag-note").textContent).toContain(
+      "Waiting on the migration window",
     );
   });
 

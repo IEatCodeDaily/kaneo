@@ -65,10 +65,12 @@ describe("repoInitial", () => {
 });
 
 describe("RepoAvatar", () => {
-  it("uses the GitHub glyph for GitHub repositories", () => {
-    render(<RepoAvatar repo={repo({ provider: "github" })} />);
-    expect(document.querySelector("svg.lucide-github")).toBeInTheDocument();
+  it("keeps the unique initial for GitHub repositories", () => {
+    render(<RepoAvatar repo={repo({ provider: "github", name: "widgets" })} />);
+    expect(screen.getByTestId("repo-avatar")).toHaveTextContent("W");
+    expect(document.querySelector("svg.lucide-github")).not.toBeInTheDocument();
   });
+
   it("is deterministic for the same repository", () => {
     const a = repoColor({ owner: "acme", name: "widgets" });
     const b = repoColor({ owner: "acme", name: "widgets" });

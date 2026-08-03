@@ -252,12 +252,12 @@ export function NavRepos() {
                           </MenuTrigger>
                           <MenuPopup align="end" side="right">
                             <MenuItem
-                              onClick={() =>
-                                window.open(
-                                  repo.url,
-                                  "_blank",
-                                  "noopener,noreferrer",
-                                )
+                              render={
+                                <a
+                                  href={repo.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                />
                               }
                             >
                               <ExternalLink />
@@ -290,7 +290,15 @@ export function NavRepos() {
                       </SidebarMenuItem>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-44">
-                      <ContextMenuItem onClick={() => openRepo(repo.id)}>
+                      <ContextMenuItem
+                        render={
+                          <a
+                            href={repo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          />
+                        }
+                      >
                         <ExternalLink />
                         Open
                       </ContextMenuItem>

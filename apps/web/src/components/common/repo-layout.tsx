@@ -65,11 +65,23 @@ export default function RepoLayout({
 
   return (
     <Layout>
-      <Layout.Header className="h-11 border-border/80 px-2">
+      <Layout.Header className="sticky top-0 z-10 h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="hidden min-w-0 items-center gap-1 text-xs md:flex">
-              <span className="truncate text-foreground/75">{repoTitle}</span>
+              {repo ? (
+                <a
+                  aria-label={`Open ${repoTitle} in a new tab`}
+                  className="truncate text-foreground/75 hover:underline"
+                  href={repo.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {repoTitle}
+                </a>
+              ) : (
+                <span className="truncate text-foreground/75">{repoTitle}</span>
+              )}
             </div>
 
             <nav
