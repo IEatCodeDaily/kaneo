@@ -489,7 +489,9 @@ const repo = new Hono<{
         name: v.optional(v.string()),
         description: v.optional(v.string()),
         isActive: v.optional(v.boolean()),
-        config: v.optional(v.record(v.string(), v.unknown())),
+        config: v.optional(
+          v.object({ icon: v.optional(v.nullable(v.string())) }),
+        ),
         installationId: v.optional(v.number()),
       }),
     ),

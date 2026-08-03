@@ -1,5 +1,6 @@
 import { GitBranch } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { isKnownIconValue, resolveIcon } from "@/lib/resolve-icon";
 import type { Repo } from "@/types/repo";
 
 /**
@@ -15,6 +16,45 @@ export default function RepoAvatar({
   repo: Repo;
   className?: string;
 }) {
+  const configuredIcon = repo.config?.icon;
+
+  if (isKnownIconValue(configuredIcon)) {
+    const resolved = resolveIcon(configuredIcon);
+
+    if (resolved.kind === "emoji") {
+      return (
+        <svg
+          aria-hidden="true"
+          className={cn("size-4 shrink-0 overflow-visible", className)}
+          data-icon-kind="emoji"
+          data-testid="repo-avatar"
+          role="img"
+          viewBox="0 0 16 16"
+        >
+          <text
+            dominantBaseline="central"
+            fontSize="13"
+            textAnchor="middle"
+            x="8"
+            y="8"
+          >
+            {resolved.emoji}
+          </text>
+        </svg>
+      );
+    }
+
+    const { Icon } = resolved;
+    return (
+      <Icon
+        aria-hidden="true"
+        className={cn("size-4 shrink-0", className)}
+        data-icon-kind="lucide"
+        data-testid="repo-avatar"
+      />
+    );
+  }
+
   const initial = repoInitial(repo);
 
   if (!initial) {

@@ -10,6 +10,7 @@ export type Repo = {
   description: string | null;
   defaultBranch: string | null;
   isPrivate: boolean | null;
+  config: { icon?: string | null } | null;
   isActive: boolean | null;
   lastSyncedAt: string | null;
   openIssueCount: number;

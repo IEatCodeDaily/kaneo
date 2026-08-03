@@ -7,7 +7,7 @@ type UpdateRepoOptions = {
   name?: string;
   description?: string;
   isActive?: boolean;
-  config?: Record<string, unknown>;
+  config?: { icon?: string | null };
 };
 
 async function updateRepo(

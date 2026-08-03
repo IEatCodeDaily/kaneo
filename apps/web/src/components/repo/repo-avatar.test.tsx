@@ -65,6 +65,34 @@ describe("repoInitial", () => {
 });
 
 describe("RepoAvatar", () => {
+  it("renders a configured Lucide icon", () => {
+    render(<RepoAvatar repo={repo({ config: { icon: "Rocket" } })} />);
+
+    const avatar = screen.getByTestId("repo-avatar");
+    expect(avatar).toHaveAttribute("data-icon-kind", "lucide");
+    expect(avatar).toHaveClass("lucide-rocket");
+    expect(avatar.tagName).toBe("svg");
+    expect(avatar).not.toHaveTextContent("W");
+  });
+
+  it("renders a configured emoji inside an SVG for collapsed-sidebar visibility", () => {
+    render(<RepoAvatar repo={repo({ config: { icon: "🚀" } })} />);
+
+    const avatar = screen.getByTestId("repo-avatar");
+    expect(avatar.tagName).toBe("svg");
+    expect(avatar).toHaveAttribute("data-icon-kind", "emoji");
+    expect(avatar).toHaveTextContent("🚀");
+  });
+
+  it("falls back to the deterministic initial for invalid configured icons", () => {
+    render(<RepoAvatar repo={repo({ config: { icon: "not-an-icon" } })} />);
+
+    const avatar = screen.getByTestId("repo-avatar");
+    expect(avatar).toHaveTextContent("W");
+    expect(avatar).not.toHaveAttribute("data-icon-kind");
+    expect(avatar).not.toHaveClass("lucide-layout");
+  });
+
   it("keeps the unique initial for GitHub repositories", () => {
     render(<RepoAvatar repo={repo({ provider: "github", name: "widgets" })} />);
     expect(screen.getByTestId("repo-avatar")).toHaveTextContent("W");

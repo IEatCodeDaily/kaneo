@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,6 +36,7 @@ type BoardIconPickerProps = {
   align?: "start" | "center" | "end";
   side?: "top" | "right" | "bottom" | "left";
   showValue?: boolean;
+  triggerContent?: ReactNode;
 };
 
 function BoardIconPicker({
@@ -47,6 +48,7 @@ function BoardIconPicker({
   align = "start",
   side = "bottom",
   showValue = false,
+  triggerContent,
 }: BoardIconPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -83,7 +85,9 @@ function BoardIconPicker({
           type="button"
           variant="outline"
         >
-          <EntityIcon className="h-4 w-4 text-base" value={value} />
+          {triggerContent ?? (
+            <EntityIcon className="h-4 w-4 text-base" value={value} />
+          )}
           {showValue && (
             <span className="truncate text-xs">{value || "Layout"}</span>
           )}
