@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -39,8 +39,15 @@ vi.mock("@/hooks/use-keyboard-shortcuts", () => ({
 vi.mock("@/components/search", () => ({ default: () => <div /> }));
 vi.mock("./search", () => ({ default: () => <div /> }));
 vi.mock("@/components/nav-main", () => ({ NavMain: () => <div /> }));
-vi.mock("@/components/nav-boards", () => ({ NavBoards: () => <div /> }));
-vi.mock("@/components/nav-repos", () => ({ NavRepos: () => <div /> }));
+vi.mock("@/components/nav-boards", () => ({
+  NavBoards: () => <div data-testid="nav-boards" />,
+}));
+vi.mock("@/components/nav-repos", () => ({
+  NavRepos: () => <div data-testid="nav-repos" />,
+}));
+vi.mock("@/components/nav-tables", () => ({
+  NavTables: () => <div data-testid="nav-tables" />,
+}));
 
 vi.mock("@/components/team-view-selector", () => ({
   TeamViewSelector: () => <div data-testid="team-view-selector" />,
@@ -104,6 +111,23 @@ describe("AppSidebar layout (#96)", () => {
       );
       expect(divider.className).toContain("hidden");
     }
+  });
+
+  it("toggles Boards and Repos while keeping Tables visible", () => {
+    render(<AppSidebar />);
+    expect(screen.getByRole("tab", { name: "Boards" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Repos" }));
+
+    expect(screen.getByRole("tab", { name: "Repos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
   });
 
   it("does not render the organization selector at the sidebar top", () => {
