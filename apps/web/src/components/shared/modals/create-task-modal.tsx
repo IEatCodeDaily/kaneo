@@ -36,6 +36,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -75,7 +76,6 @@ import type Task from "@/types/task";
 export function resolveCreateTaskBoardId(
   explicitBoardId: string | undefined,
   routeBoardId: string | null,
-  _storedBoardId: string | undefined,
   selectedBoardId: string,
 ) {
   return explicitBoardId || routeBoardId || selectedBoardId;
@@ -342,8 +342,10 @@ function CreateTaskModal({
   const resolvedBoardId = resolveCreateTaskBoardId(
     boardId,
     routeBoardId,
-    board?.id,
     selectedBoardId,
+  );
+  const resolvedBoard = boards.find(
+    (candidate) => candidate.id === resolvedBoardId,
   );
   const selectedBoard = boards.find(
     (candidate) => candidate.id === selectedBoardId,
@@ -868,7 +870,7 @@ function CreateTaskModal({
 
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
-        if (title.trim() && board?.id && organization?.id) {
+        if (title.trim() && resolvedBoardId && organization?.id) {
           const form = document.querySelector("form");
           if (form) {
             form.dispatchEvent(
@@ -878,7 +880,7 @@ function CreateTaskModal({
         }
       }
     },
-    [open, title, board?.id, organization?.id],
+    [open, title, resolvedBoardId, organization?.id],
   );
 
   useEffect(() => {
@@ -981,8 +983,123 @@ function CreateTaskModal({
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="text-muted-foreground font-semibold tracking-wider text-sm">
-                    {board?.slug?.toUpperCase() ||
-                      t("common:modals.createTask.breadcrumbTask")}
+                    {!boardId && !routeBoardId ? (
+                      <Dialog
+                        open={boardPickerOpen}
+                        onOpenChange={setBoardPickerOpen}
+                      >
+                        <DialogTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label={t(
+                                "settings:boardSwitcher.selectBoard",
+                              )}
+                              className="h-7 px-2 text-sm"
+                            >
+                              {selectedBoard?.name ??
+                                t("settings:boardSwitcher.selectBoard")}
+                            </Button>
+                          }
+                        />
+                        <DialogContent className="max-w-3xl p-0">
+                          <DialogHeader className="border-b px-5 py-4">
+                            <DialogTitle>
+                              {t("settings:boardSwitcher.selectBoard")}
+                            </DialogTitle>
+                            <DialogDescription>
+                              {t("tasks:parentTask.searchPlaceholder")}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid min-h-96 sm:grid-cols-[12rem_1fr]">
+                            <nav
+                              aria-label="Boards"
+                              className="border-b p-2 sm:border-r sm:border-b-0"
+                            >
+                              {boards.map((candidate) => (
+                                <button
+                                  key={candidate.id}
+                                  type="button"
+                                  aria-pressed={
+                                    candidate.id === selectedBoardId
+                                  }
+                                  onClick={() =>
+                                    setSelectedBoardId(candidate.id)
+                                  }
+                                  className={cn(
+                                    "flex h-9 w-full items-center rounded-md px-3 text-left text-sm",
+                                    candidate.id === selectedBoardId
+                                      ? "bg-accent font-medium"
+                                      : "hover:bg-accent/60",
+                                  )}
+                                >
+                                  <span className="truncate">
+                                    {candidate.name}
+                                  </span>
+                                </button>
+                              ))}
+                            </nav>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 border-b p-3">
+                                <Search
+                                  className="size-4 text-muted-foreground"
+                                  aria-hidden="true"
+                                />
+                                <Input
+                                  value={boardSearch}
+                                  onChange={(event) =>
+                                    setBoardSearch(event.target.value)
+                                  }
+                                  placeholder={t(
+                                    "tasks:parentTask.searchPlaceholder",
+                                  )}
+                                  aria-label={t(
+                                    "settings:boardSwitcher.selectBoard",
+                                  )}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="max-h-80 overflow-y-auto p-2">
+                                {visibleBoards.map((candidate) => (
+                                  <button
+                                    key={candidate.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedBoardId(candidate.id);
+                                      setBoardPickerOpen(false);
+                                      setBoardSearch("");
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "size-4 shrink-0",
+                                        candidate.id === selectedBoardId
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                    <span className="truncate">
+                                      {candidate.name}
+                                    </span>
+                                  </button>
+                                ))}
+                                {visibleBoards.length === 0 ? (
+                                  <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                    {t("settings:boardSwitcher.noBoards")}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    ) : (
+                      resolvedBoard?.slug?.toUpperCase()
+                    )}
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem className="text-foreground font-medium text-sm">
@@ -1037,77 +1154,6 @@ function CreateTaskModal({
             className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6"
             data-testid="create-task-scroll-body"
           >
-            {!boardId && !routeBoardId && (
-              <Popover open={boardPickerOpen} onOpenChange={setBoardPickerOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-label={t("settings:boardSwitcher.selectBoard")}
-                      aria-expanded={boardPickerOpen}
-                      className="w-full justify-between font-normal"
-                    >
-                      <span className="truncate">
-                        {selectedBoard?.name ??
-                          t("settings:boardSwitcher.selectBoard")}
-                      </span>
-                    </Button>
-                  }
-                />
-                <PopoverContent
-                  className="w-(--anchor-width) p-0"
-                  align="start"
-                >
-                  <div className="flex items-center gap-2 border-b p-2">
-                    <Search
-                      className="size-4 shrink-0 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <Input
-                      autoFocus
-                      value={boardSearch}
-                      onChange={(event) => setBoardSearch(event.target.value)}
-                      placeholder={t("settings:boardSwitcher.selectBoard")}
-                      aria-label={t("settings:boardSwitcher.selectBoard")}
-                      className="h-8"
-                    />
-                  </div>
-                  <div className="max-h-64 overflow-y-auto p-1" role="listbox">
-                    {visibleBoards.map((candidate) => (
-                      <button
-                        key={candidate.id}
-                        type="button"
-                        aria-selected={candidate.id === selectedBoardId}
-                        role="option"
-                        onClick={() => {
-                          setSelectedBoardId(candidate.id);
-                          setBoardPickerOpen(false);
-                          setBoardSearch("");
-                        }}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
-                      >
-                        <Check
-                          className={cn(
-                            "size-4 shrink-0",
-                            candidate.id === selectedBoardId
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">{candidate.name}</span>
-                      </button>
-                    ))}
-                    {visibleBoards.length === 0 && (
-                      <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        {t("settings:boardSwitcher.noBoards")}
-                      </p>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
             {resolvedBoardId && (
               <CreateTaskTopbar
                 boardId={resolvedBoardId}

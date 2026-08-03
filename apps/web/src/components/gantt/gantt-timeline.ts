@@ -153,34 +153,34 @@ export function statusBarClasses(status: string): {
     return {
       fill: "bg-emerald-500/25 group-hover:bg-emerald-500/35",
       border: "border-emerald-500/45",
-      handle: "bg-emerald-500/20 hover:bg-emerald-500/35",
+      handle: "after:bg-emerald-500/20 hover:after:bg-emerald-500/35",
     };
   }
   if (normalized === "in-progress" || normalized === "in-review") {
     return {
       fill: "bg-blue-500/25 group-hover:bg-blue-500/35",
       border: "border-blue-500/45",
-      handle: "bg-blue-500/20 hover:bg-blue-500/35",
+      handle: "after:bg-blue-500/20 hover:after:bg-blue-500/35",
     };
   }
   if (normalized === "planned" || normalized === "backlog") {
     return {
       fill: "bg-violet-500/25 group-hover:bg-violet-500/35",
       border: "border-violet-500/45",
-      handle: "bg-violet-500/20 hover:bg-violet-500/35",
+      handle: "after:bg-violet-500/20 hover:after:bg-violet-500/35",
     };
   }
   if (normalized === "archived") {
     return {
       fill: "bg-muted-foreground/15 group-hover:bg-muted-foreground/25",
       border: "border-muted-foreground/30",
-      handle: "bg-muted-foreground/15 hover:bg-muted-foreground/25",
+      handle: "after:bg-muted-foreground/15 hover:after:bg-muted-foreground/25",
     };
   }
   return {
     fill: "bg-primary/20 group-hover:bg-primary/30",
     border: "border-primary/40",
-    handle: "bg-primary/15 hover:bg-primary/30",
+    handle: "after:bg-primary/15 hover:after:bg-primary/30",
   };
 }
 

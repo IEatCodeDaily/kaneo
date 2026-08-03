@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import BoardSyncIndicator from "@/components/board/board-sync-indicator";
+import { BoardViewTabs } from "@/components/board/board-view-tabs";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
 import MobileBoardNav from "@/components/common/header/mobile-board-nav";
@@ -19,11 +20,10 @@ import OrganizationCrumbSelect from "@/components/common/header/organization-cru
 import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
-import { Button } from "@/components/ui/button";
+
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
-import { cn } from "@/lib/cn";
 import { useNavigationStore } from "@/store/navigation";
 
 type BoardLayoutProps = {
@@ -154,70 +154,39 @@ export default function BoardLayout({
             {headerActions}
 
             {showViewSwitcher && (
-              <div className="hidden h-8 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5 sm:inline-flex">
-                <Button
-                  variant={resolvedView === "backlog" ? "secondary" : "ghost"}
-                  size="xs"
-                  onClick={handleNavigateToBacklog}
-                  className={cn(
-                    "h-6 gap-1.5 rounded-md px-2 text-xs",
-                    resolvedView !== "backlog" && "text-muted-foreground",
-                  )}
-                >
-                  <SquircleDashed className="size-3.5" />
-                  Backlog
-                </Button>
-                <Button
-                  variant={resolvedView === "board" ? "secondary" : "ghost"}
-                  size="xs"
-                  onClick={handleNavigateToBoard}
-                  className={cn(
-                    "h-6 gap-1.5 rounded-md px-2 text-xs",
-                    resolvedView !== "board" && "text-muted-foreground",
-                  )}
-                >
-                  <SquareKanban className="size-3.5" />
-                  Tasks
-                </Button>
-                <Button
-                  variant={resolvedView === "gantt" ? "secondary" : "ghost"}
-                  size="xs"
-                  onClick={handleNavigateToGantt}
-                  className={cn(
-                    "h-6 gap-1.5 rounded-md px-2 text-xs",
-                    resolvedView !== "gantt" && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarDays className="size-3.5" />
-                  Timeline
-                </Button>
-                <Button
-                  variant={resolvedView === "calendar" ? "secondary" : "ghost"}
-                  size="xs"
-                  onClick={handleNavigateToCalendar}
-                  className={cn(
-                    "h-6 gap-1.5 rounded-md px-2 text-xs",
-                    resolvedView !== "calendar" && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarRange className="size-3.5" />
-                  Calendar
-                </Button>
-                <Button
-                  variant={
-                    resolvedView === "milestones" ? "secondary" : "ghost"
-                  }
-                  size="xs"
-                  onClick={handleNavigateToMilestones}
-                  className={cn(
-                    "h-6 gap-1.5 rounded-md px-2 text-xs",
-                    resolvedView !== "milestones" && "text-muted-foreground",
-                  )}
-                >
-                  <Flag className="size-3.5" />
-                  Milestones
-                </Button>
-              </div>
+              <BoardViewTabs
+                aria-label="Board views"
+                className="hidden min-w-0 sm:flex"
+                value={resolvedView}
+                onValueChange={(value) => goToView(value as BoardView)}
+                views={[
+                  {
+                    value: "backlog",
+                    label: "Backlog",
+                    icon: <SquircleDashed className="size-3.5" />,
+                  },
+                  {
+                    value: "board",
+                    label: "Tasks",
+                    icon: <SquareKanban className="size-3.5" />,
+                  },
+                  {
+                    value: "gantt",
+                    label: "Timeline",
+                    icon: <CalendarDays className="size-3.5" />,
+                  },
+                  {
+                    value: "calendar",
+                    label: "Calendar",
+                    icon: <CalendarRange className="size-3.5" />,
+                  },
+                  {
+                    value: "milestones",
+                    label: "Milestones",
+                    icon: <Flag className="size-3.5" />,
+                  },
+                ]}
+              />
             )}
           </div>
 

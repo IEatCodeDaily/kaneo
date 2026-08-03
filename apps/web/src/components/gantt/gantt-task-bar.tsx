@@ -347,9 +347,8 @@ export function GanttTaskBar({
           aria-label={t("tasks:gantt.resizeStart")}
           onPointerDown={handleResizeLeftPointerDown}
           className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-black/5 dark:border-white/10",
+            "relative z-20 w-6 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:right-0 after:w-1.5 after:border-r after:border-black/5 dark:after:border-white/10",
             colors.handle,
-            "min-w-6 w-1.5",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
         />
@@ -378,9 +377,8 @@ export function GanttTaskBar({
           aria-label={t("tasks:gantt.resizeDue")}
           onPointerDown={handleResizeRightPointerDown}
           className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-black/5 dark:border-white/10",
+            "relative z-20 w-6 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:left-0 after:w-1.5 after:border-l after:border-black/5 dark:after:border-white/10",
             colors.handle,
-            "min-w-6 w-1.5",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           )}
         />

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BoardViewTabs } from "@/components/board/board-view-tabs";
 import BoardsTimeline from "@/components/board/boards-timeline";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
@@ -205,32 +206,28 @@ function RouteComponent() {
       <OrganizationLayout
         title={t("organization:boards.pageTitle")}
         headerActions={
-          <div className="flex items-center gap-1">
-            {/* Table vs timeline. Icon-only to keep the header compact. */}
-            <Button
-              aria-label={t("organization:boards.view.table", {
-                defaultValue: "Table view",
-              })}
-              aria-pressed={view === "table"}
-              data-testid="boards-view-table"
-              onClick={() => setView("table")}
-              size="icon-sm"
-              variant={view === "table" ? "secondary" : "ghost"}
-            >
-              <List className="w-3 h-3" />
-            </Button>
-            <Button
-              aria-label={t("organization:boards.view.timeline", {
-                defaultValue: "Timeline view",
-              })}
-              aria-pressed={view === "timeline"}
-              data-testid="boards-view-timeline"
-              onClick={() => setView("timeline")}
-              size="icon-sm"
-              variant={view === "timeline" ? "secondary" : "ghost"}
-            >
-              <CalendarRange className="w-3 h-3" />
-            </Button>
+          <div className="flex min-w-0 items-center gap-1">
+            <BoardViewTabs
+              aria-label={t("organization:boards.pageTitle")}
+              value={view}
+              onValueChange={(value) => setView(value as "table" | "timeline")}
+              views={[
+                {
+                  value: "table",
+                  label: t("organization:boards.view.table", {
+                    defaultValue: "Table",
+                  }),
+                  icon: <List className="size-3.5" />,
+                },
+                {
+                  value: "timeline",
+                  label: t("organization:boards.view.timeline", {
+                    defaultValue: "Timeline",
+                  }),
+                  icon: <CalendarRange className="size-3.5" />,
+                },
+              ]}
+            />
             {canCreate ? (
               <Button
                 variant="outline"
