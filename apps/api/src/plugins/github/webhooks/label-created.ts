@@ -57,6 +57,7 @@ export async function handleLabelCreated(payload: LabelCreatedPayload) {
         name: label.name,
         color,
         organizationId: board.organizationId,
+        source: "repo",
       })
       .onConflictDoNothing({
         target: [labelTable.organizationId, labelTable.name],
