@@ -17,8 +17,7 @@ describe("kanban drag hot path (#124)", () => {
     expect(board).toContain("activeTask.title");
   });
 
-  it("does not tween sortable transforms while any card is being dragged", () => {
-    expect(card).toContain("const { active } = useDndContext()");
-    expect(card).toContain('transition: active ? "none" : transition');
+  it("does not tween stale transforms on the active sortable card", () => {
+    expect(card).toContain('transition: isDragging ? "none" : transition');
   });
 });

@@ -1,4 +1,3 @@
-import { useDndContext } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useNavigate } from "@tanstack/react-router";
@@ -454,7 +453,6 @@ export const TaskCardContent = memo(function TaskCardContent({
 });
 
 function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
-  const { active } = useDndContext();
   const {
     attributes,
     listeners,
@@ -468,10 +466,7 @@ function TaskCard({ task, disableDragDrop = false }: TaskCardProps) {
 
     // Pointer updates arrive every frame. A 250ms transition queues stale
     // transforms behind the cursor and makes pickup/movement feel rubbery.
-    // Every sortable can receive a transform while one card moves. Animating
-    // all of them on every pointer update made Firefox queue transitions across
-    // the whole board; only animate the final settle after drop.
-    transition: active ? "none" : transition,
+    transition: isDragging ? "none" : transition,
     opacity: isDragging ? 0.6 : 1,
     touchAction: isDragging ? "none" : "auto",
     zIndex: isDragging ? 999 : "auto",
