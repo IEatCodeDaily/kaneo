@@ -421,6 +421,13 @@
       "when": 1785752930846,
       "tag": "0059_data_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1785761000000,
+      "tag": "0060_tables_feature_flag",
+      "breakpoints": true
     }
   ]
 }

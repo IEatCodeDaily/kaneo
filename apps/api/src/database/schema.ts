@@ -174,6 +174,7 @@ export const organizationTable = pgTable("organization", {
   metadata: text("metadata"),
   description: text("description"),
   reposEnabled: boolean("repos_enabled").default(false).notNull(),
+  tablesEnabled: boolean("tables_enabled").default(false).notNull(),
   aiEnabled: boolean("ai_enabled").default(false).notNull(),
   aiDefaultTokenLimit: integer("ai_default_token_limit")
     .default(1024)

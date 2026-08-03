@@ -373,6 +373,7 @@ function RouteComponent() {
                   searchPlaceholder={t(
                     "settings:boardGeneral.searchIconsPlaceholder",
                   )}
+                  side="top"
                   showValue
                   triggerLabel={t("settings:boardGeneral.pickIconTitle")}
                   value={boardForm.watch("icon")}

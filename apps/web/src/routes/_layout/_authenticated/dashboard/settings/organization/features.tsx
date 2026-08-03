@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FolderGit2 } from "lucide-react";
+import { FolderGit2, Table2 } from "lucide-react";
 import { useState } from "react";
 import PageTitle from "@/components/page-title";
 import { AiSettings } from "@/components/settings/ai-settings";
@@ -18,18 +18,27 @@ function RouteComponent() {
     useActiveOrganization();
   const { canManageOrganization } = useOrganizationPermission();
   const { mutateAsync: updateOrganization } = useUpdateOrganization();
-  const enabled = Boolean(
+  const reposEnabled = Boolean(
     (
       organization as
         | (typeof organization & { reposEnabled?: boolean })
         | undefined
     )?.reposEnabled,
   );
-  const [pending, setPending] = useState(false);
+  const tablesEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { tablesEnabled?: boolean })
+        | undefined
+    )?.tablesEnabled,
+  );
+  const [pendingFeature, setPendingFeature] = useState<
+    "repos" | "tables" | null
+  >(null);
 
   const updateRepos = async (checked: boolean) => {
     if (!organization?.id) return;
-    setPending(true);
+    setPendingFeature("repos");
     try {
       await updateOrganization({
         organizationId: organization.id,
@@ -42,7 +51,26 @@ function RouteComponent() {
         error instanceof Error ? error.message : "Could not update feature",
       );
     } finally {
-      setPending(false);
+      setPendingFeature(null);
+    }
+  };
+
+  const updateTables = async (checked: boolean) => {
+    if (!organization?.id) return;
+    setPendingFeature("tables");
+    try {
+      await updateOrganization({
+        organizationId: organization.id,
+        tablesEnabled: checked,
+      });
+      await refetchOrganization();
+      toast.success(checked ? "Tables enabled" : "Tables disabled");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not update feature",
+      );
+    } finally {
+      setPendingFeature(null);
     }
   };
 
@@ -79,9 +107,36 @@ function RouteComponent() {
             </div>
             <Switch
               aria-label="Enable Repos"
-              checked={enabled}
-              disabled={!canManageOrganization() || pending}
+              checked={reposEnabled}
+              disabled={!canManageOrganization() || pendingFeature !== null}
               onCheckedChange={updateRepos}
+            />
+          </div>
+          <div className="border-border border-t" />
+          <div className="flex items-start justify-between gap-6 px-4 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="mt-0.5 text-muted-foreground">
+                <Table2 aria-hidden="true" className="size-4" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-medium">Tables</h2>
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Alpha
+                  </span>
+                </div>
+                <p className="max-w-xl text-sm text-muted-foreground">
+                  Experimental standalone tables with editable text fields and
+                  rows. Disabled by default while the resource model is still
+                  evolving.
+                </p>
+              </div>
+            </div>
+            <Switch
+              aria-label="Enable Tables"
+              checked={tablesEnabled}
+              disabled={!canManageOrganization() || pendingFeature !== null}
+              onCheckedChange={updateTables}
             />
           </div>
         </section>

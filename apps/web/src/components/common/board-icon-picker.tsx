@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ type BoardIconPickerProps = {
   triggerLabel: string;
   disabled?: boolean;
   align?: "start" | "center" | "end";
+  side?: "top" | "right" | "bottom" | "left";
   showValue?: boolean;
 };
 
@@ -43,6 +45,7 @@ function BoardIconPicker({
   triggerLabel,
   disabled = false,
   align = "start",
+  side = "bottom",
   showValue = false,
 }: BoardIconPickerProps) {
   const [open, setOpen] = useState(false);
@@ -60,7 +63,6 @@ function BoardIconPicker({
 
   return (
     <Popover
-      modal
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
@@ -87,7 +89,12 @@ function BoardIconPicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align={align} className="w-80 p-2">
+      <PopoverContent
+        align={align}
+        side={side}
+        sideOffset={8}
+        className="max-h-[min(26rem,var(--available-height))] w-80 overflow-hidden p-2"
+      >
         <div className="space-y-2">
           <Input
             aria-label={searchPlaceholder}
@@ -110,7 +117,7 @@ function BoardIconPicker({
               {query}
             </Button>
           )}
-          <div className="max-h-[280px] overflow-y-auto pr-1">
+          <div className="max-h-[min(270px,calc(var(--available-height)-4rem))] overflow-y-scroll overscroll-contain pr-1 [scrollbar-gutter:stable]">
             <div className="grid grid-cols-6 gap-1.5">
               {EMOJI_SUGGESTIONS.filter(() => !query || isEmojiIcon(query)).map(
                 (emoji) => (
@@ -118,7 +125,7 @@ function BoardIconPicker({
                     aria-label={emoji}
                     aria-pressed={value === emoji}
                     className={cn(
-                      "h-10 items-center justify-center rounded-md p-0 text-base leading-none",
+                      "relative h-10 items-center justify-center rounded-md p-0 text-base leading-none",
                       value === emoji &&
                         "bg-sidebar-accent text-sidebar-accent-foreground",
                     )}
@@ -130,6 +137,9 @@ function BoardIconPicker({
                     variant="ghost"
                   >
                     {emoji}
+                    {value === emoji && (
+                      <Check className="absolute right-0.5 bottom-0.5 size-3 rounded-full bg-primary p-0.5 text-primary-foreground" />
+                    )}
                   </Button>
                 ),
               )}
@@ -138,7 +148,7 @@ function BoardIconPicker({
                   aria-label={name}
                   aria-pressed={value === name}
                   className={cn(
-                    "h-10 items-center justify-center rounded-md p-0",
+                    "relative h-10 items-center justify-center rounded-md p-0",
                     value === name &&
                       "bg-sidebar-accent text-sidebar-accent-foreground",
                   )}
@@ -150,6 +160,9 @@ function BoardIconPicker({
                   variant="ghost"
                 >
                   <Icon className="h-4 w-4" />
+                  {value === name && (
+                    <Check className="absolute right-0.5 bottom-0.5 size-3 rounded-full bg-primary p-0.5 text-primary-foreground" />
+                  )}
                 </Button>
               ))}
             </div>

@@ -151,8 +151,6 @@ export default function BoardLayout({
               />
             </div>
 
-            {headerActions}
-
             {showViewSwitcher && (
               <BoardViewTabs
                 aria-label="Board views"
@@ -205,6 +203,7 @@ export default function BoardLayout({
                 resourceId={boardId}
                 resourceType="board"
               />
+              {headerActions}
             </div>
           )}
         </div>

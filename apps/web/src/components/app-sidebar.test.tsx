@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -98,36 +98,15 @@ describe("AppSidebar layout (#96)", () => {
     ).not.toBeNull();
   });
 
-  it("separates main navigation, Boards, and Repos in the collapsed rail", () => {
+  it("keeps Boards, Tables, and Repos in one scrollable area with a divider", () => {
     render(<AppSidebar />);
-
-    for (const testId of [
-      "sidebar-main-boards-divider",
-      "sidebar-boards-repos-divider",
-    ]) {
-      const divider = screen.getByTestId(testId);
-      expect(divider.className).toContain(
-        "group-data-[collapsible=icon]:block",
-      );
-      expect(divider.className).toContain("hidden");
-    }
-  });
-
-  it("toggles Boards and Repos while keeping Tables visible", () => {
-    render(<AppSidebar />);
-    expect(screen.getByRole("tab", { name: "Boards" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.queryByRole("tab", { name: "Boards" })).toBeNull();
+    expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
     expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Repos" }));
-
-    expect(screen.getByRole("tab", { name: "Repos" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-repos")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("sidebar-boards-repos-divider").className,
+    ).not.toContain("hidden");
   });
 
   it("does not render the organization selector at the sidebar top", () => {

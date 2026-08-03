@@ -26,7 +26,7 @@ export function BoardViewTabs({
     <Tabs value={value} onValueChange={onValueChange} className={className}>
       <TabsList
         aria-label={ariaLabel}
-        className="h-8 max-w-full justify-start overflow-x-auto border border-border/80 bg-background"
+        className="h-8 max-w-full justify-start overflow-x-auto border border-border/80 bg-background [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {views.map((view) => (
           <TabsTrigger

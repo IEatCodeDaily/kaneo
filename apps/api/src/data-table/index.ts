@@ -16,6 +16,7 @@ import {
   updateDataTable,
   updateTextField,
 } from "./controllers";
+import { assertTablesEnabled } from "./require-tables-enabled";
 
 const idParams = v.object({ organizationId: v.string(), tableId: v.string() });
 const writePermission = requireOrganizationPermission({
@@ -24,6 +25,14 @@ const writePermission = requireOrganizationPermission({
 const nonEmptyName = v.pipe(v.string(), v.trim(), v.minLength(1));
 
 const dataTable = new Hono<{ Variables: { userId: string } }>()
+  .use("/organization/:organizationId", async (c, next) => {
+    await assertTablesEnabled(c.req.param("organizationId"));
+    await next();
+  })
+  .use("/organization/:organizationId/*", async (c, next) => {
+    await assertTablesEnabled(c.req.param("organizationId"));
+    await next();
+  })
   .get(
     "/organization/:organizationId",
     validator("param", v.object({ organizationId: v.string() })),

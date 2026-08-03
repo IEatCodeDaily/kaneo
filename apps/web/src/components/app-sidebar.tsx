@@ -13,7 +13,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
 import { VersionDisplay } from "@/components/version-display";
 import { shortcuts } from "@/constants/shortcuts";
@@ -86,7 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           />
         </div>
       </SidebarHeader>
-      <SidebarContent className="overflow-hidden gap-1 py-1">
+      <SidebarContent className="gap-1 overflow-y-auto py-1">
         <Search />
         <NavMain />
         <div
@@ -94,41 +93,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
           data-testid="sidebar-main-boards-divider"
         />
-        {isCollapsed ? (
-          <>
-            <NavBoards />
-            <NavTables />
-            <NavRepos />
-          </>
-        ) : (
-          <>
-            <Tabs className="gap-0" defaultValue="boards">
-              <TabsList
-                aria-label="Sidebar views"
-                className="mx-2 grid w-auto grid-cols-2"
-              >
-                <TabsTab className="h-7" value="boards">
-                  Boards
-                </TabsTab>
-                <TabsTab className="h-7" value="repos">
-                  Repos
-                </TabsTab>
-              </TabsList>
-              <TabsPanel value="boards">
-                <NavBoards />
-              </TabsPanel>
-              <TabsPanel value="repos">
-                <NavRepos />
-              </TabsPanel>
-            </Tabs>
-            <NavTables />
-          </>
-        )}
+        <NavBoards />
+        <NavTables />
         <div
           aria-hidden="true"
-          className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
+          className="mx-2 h-px shrink-0 bg-sidebar-border"
           data-testid="sidebar-boards-repos-divider"
         />
+        <NavRepos />
       </SidebarContent>
       <SidebarFooter data-testid="sidebar-footer">
         <div className="flex items-center gap-2">

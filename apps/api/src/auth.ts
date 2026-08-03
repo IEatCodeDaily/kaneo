@@ -309,6 +309,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            tablesEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {

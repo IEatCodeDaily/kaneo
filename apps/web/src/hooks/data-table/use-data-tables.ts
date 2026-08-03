@@ -20,11 +20,11 @@ export const dataTableKeys = {
     ["data-table", organizationId, tableId] as const,
 };
 
-export function useDataTables(organizationId: string) {
+export function useDataTables(organizationId: string, enabled = true) {
   return useQuery({
     queryKey: dataTableKeys.list(organizationId),
     queryFn: () => getDataTables(organizationId),
-    enabled: Boolean(organizationId),
+    enabled: Boolean(organizationId) && enabled,
   });
 }
 

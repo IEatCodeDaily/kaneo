@@ -10,6 +10,7 @@ type UpdateOrganizationRequest = {
   logo?: string;
   metadata?: Record<string, unknown>;
   reposEnabled?: boolean;
+  tablesEnabled?: boolean;
 };
 
 function useUpdateOrganization() {
@@ -22,6 +23,7 @@ function useUpdateOrganization() {
       logo,
       metadata,
       reposEnabled,
+      tablesEnabled,
     }: UpdateOrganizationRequest) => {
       const updateData: {
         name?: string;
@@ -30,6 +32,7 @@ function useUpdateOrganization() {
         logo?: string;
         metadata?: Record<string, unknown>;
         reposEnabled?: boolean;
+        tablesEnabled?: boolean;
       } = {};
 
       if (name !== undefined) {
@@ -56,6 +59,9 @@ function useUpdateOrganization() {
       }
       if (reposEnabled !== undefined) {
         updateData.reposEnabled = reposEnabled;
+      }
+      if (tablesEnabled !== undefined) {
+        updateData.tablesEnabled = tablesEnabled;
       }
 
       const { data, error } = await authClient.organization.update({

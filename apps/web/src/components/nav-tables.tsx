@@ -22,14 +22,21 @@ export function NavTables() {
   const navigate = useNavigate();
   const { canCreateBoards } = useOrganizationPermission();
   const [createOpen, setCreateOpen] = useState(false);
+  const tablesEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { tablesEnabled?: boolean })
+        | undefined
+    )?.tablesEnabled,
+  );
   const {
     data: tables = [],
     isLoading,
     isError,
     refetch,
-  } = useDataTables(organization?.id ?? "");
+  } = useDataTables(organization?.id ?? "", tablesEnabled);
 
-  if (!organization) return null;
+  if (!organization || !tablesEnabled) return null;
 
   return (
     <>
@@ -37,6 +44,9 @@ export function NavTables() {
         <div className="relative flex items-center">
           <SidebarGroupLabel className="h-7 flex-1 px-0 text-sidebar-accent-foreground">
             {t("navigation:tables.title")}
+            <span className="ml-2 rounded-full border border-sidebar-border px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Alpha
+            </span>
           </SidebarGroupLabel>
           {canCreateBoards() && (
             <button
