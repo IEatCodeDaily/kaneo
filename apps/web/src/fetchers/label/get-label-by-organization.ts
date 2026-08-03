@@ -14,6 +14,7 @@ export type OrganizationLabel = {
   id: string;
   name: string;
   color: string;
+  source: "kaneo" | "repo";
   taskId: string | null;
   organizationId: string;
   createdAt: string;

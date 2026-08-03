@@ -13,7 +13,7 @@ import {
  * rather than silently marking every label as native.
  */
 describe("#147 label source distinction", () => {
-  it("hides repo labels from normal tickets but allows synced tickets", () => {
+  it("shows repo labels only on repo-synced boards", () => {
     expect(canSelectLabelSource("repo", false)).toBe(false);
     expect(canSelectLabelSource("repo", true)).toBe(true);
     expect(canSelectLabelSource("kaneo", false)).toBe(true);

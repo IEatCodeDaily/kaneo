@@ -17,10 +17,9 @@ import {
   boardTable,
   columnTable,
   externalLinkTable,
+  integrationTable,
   labelTable,
-  repoIssueTable,
   taskRelationTable,
-  taskRepoItemLinkTable,
   taskTable,
   teamTable,
   userTable,
@@ -50,10 +49,9 @@ type GetTasksOptions = {
 
 export function shouldIncludeTaskLabel(
   source: string,
-  integrationSynced: boolean,
-  manuallySynced: boolean,
+  boardIsRepoSynced: boolean,
 ) {
-  return source !== "repo" || integrationSynced || manuallySynced;
+  return source !== "repo" || boardIsRepoSynced;
 }
 
 const priorityCaseExpr = sql<number>`CASE
@@ -96,6 +94,16 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
       message: "Board not found",
     });
   }
+
+  const boardIsRepoSynced = Boolean(
+    await db.query.integrationTable.findFirst({
+      columns: { id: true },
+      where: and(
+        eq(integrationTable.boardId, boardId),
+        eq(integrationTable.type, "github"),
+      ),
+    }),
+  );
 
   const conditions = [
     eq(taskTable.boardId, boardId),
@@ -207,44 +215,13 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
         ])
       : [[], [], []];
 
-  const manuallySyncedIssueTaskIds = new Set(
-    taskIds.length
-      ? (
-          await db
-            .select({ taskId: taskRepoItemLinkTable.taskId })
-            .from(taskRepoItemLinkTable)
-            .innerJoin(
-              repoIssueTable,
-              eq(taskRepoItemLinkTable.repoIssueId, repoIssueTable.id),
-            )
-            .where(
-              and(
-                inArray(taskRepoItemLinkTable.taskId, taskIds),
-                eq(taskRepoItemLinkTable.syncEnabled, true),
-              ),
-            )
-        ).map(({ taskId }) => taskId)
-      : [],
-  );
-  const integrationSyncedIssueTaskIds = new Set(
-    externalLinksData
-      .filter((link) => link.resourceType === "issue")
-      .map((link) => link.taskId),
-  );
-
   const taskLabelsMap = new Map<
     string,
     Array<{ id: string; name: string; color: string; source: string }>
   >();
   for (const label of labelsData) {
     if (label.taskId) {
-      if (
-        !shouldIncludeTaskLabel(
-          label.source,
-          integrationSyncedIssueTaskIds.has(label.taskId),
-          manuallySyncedIssueTaskIds.has(label.taskId),
-        )
-      ) {
+      if (!shouldIncludeTaskLabel(label.source, boardIsRepoSynced)) {
         continue;
       }
       if (!taskLabelsMap.has(label.taskId)) {

@@ -19,15 +19,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import labelColors, { resolveLabelColor } from "@/constants/label-colors";
+import { resolveLabelColor } from "@/constants/label-colors";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
+import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
+
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -47,7 +47,7 @@ import TaskLabelsPopover from "./task-labels-popover";
 import TaskLabelsRow from "./task-labels-row";
 import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
-import { isRepoSyncedTask } from "./task-repo-label-visibility";
+
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
 import TaskSyncedIssueProperty from "./task-synced-issue-property";
@@ -97,13 +97,9 @@ export default function TaskPropertiesSidebar({
   const { data: organizationMembers } =
     useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
-  const { data: externalLinks = [] } = useExternalLinks(taskId ?? "");
-  const { data: repoLinks = [] } = useGetTaskRepoLinks(taskId ?? "");
+  const { data: boardIntegration } = useGetGithubIntegration(boardId);
   const visibleTaskLabels = taskLabels.filter((label) =>
-    canSelectLabelSource(
-      label.source,
-      isRepoSyncedTask(externalLinks, repoLinks),
-    ),
+    canSelectLabelSource(label.source, Boolean(boardIntegration)),
   );
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
   // Milestone and flag controls live together in the task-detail topbar.

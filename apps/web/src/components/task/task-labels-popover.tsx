@@ -11,16 +11,15 @@ import {
 import { resolveLabelColor } from "@/constants/label-colors";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
+import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
-import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
+
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
 import { canSelectLabelSource } from "./label-source";
-import { isRepoSyncedTask } from "./task-repo-label-visibility";
 
 /**
  * Local copy carries a `key` for the i18n colour names in the swatch picker.
@@ -109,9 +108,7 @@ export default function TaskLabelsPopover({
   const canCreateLabels = canManageLabels();
 
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
-  const { data: externalLinks = [] } = useExternalLinks(task.id);
-  const { data: repoLinks = [] } = useGetTaskRepoLinks(task.id);
-  const isSyncedTicket = isRepoSyncedTask(externalLinks, repoLinks);
+  const { data: boardIntegration } = useGetGithubIntegration(task.boardId);
   const { data: organizationLabels = [] } = useGetLabelsByOrganization(
     organizationId,
     { includeRepo: true },
@@ -125,7 +122,7 @@ export default function TaskLabelsPopover({
   const filteredLabels = useMemo(() => {
     const searchFiltered = organizationLabels.filter(
       (label) =>
-        canSelectLabelSource(label.source, isSyncedTicket) &&
+        canSelectLabelSource(label.source, Boolean(boardIntegration)) &&
         label.name.toLowerCase().includes(searchValue.toLowerCase()),
     );
 
@@ -138,7 +135,7 @@ export default function TaskLabelsPopover({
     }
 
     return Array.from(labelMap.values());
-  }, [organizationLabels, searchValue, isSyncedTicket]);
+  }, [organizationLabels, searchValue, boardIntegration]);
 
   const isCreatingNewLabel = useMemo(
     () =>
