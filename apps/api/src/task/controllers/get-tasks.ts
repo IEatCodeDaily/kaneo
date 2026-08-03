@@ -163,6 +163,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     detailVersion: taskTable.updatedAt,
     userId: taskTable.userId,
     teamId: taskTable.teamId,
+    milestoneId: taskTable.milestoneId,
     assigneeName: userTable.name,
     assigneeId: userTable.id,
     assigneeImage: userTable.image,

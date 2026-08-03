@@ -1538,6 +1538,11 @@
 			"dueDate": "Vervaldatum",
 			"noDueDate": "Geen vervaldatum",
 			"noLabel": "Geen label"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Vervaldatum"
+			}
 		}
 	},
 	"invitations": {

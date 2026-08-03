@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import assignMilestoneToTask from "./controllers/assign-milestone-to-task";
 import createMilestone from "./controllers/create-milestone";
 import deleteMilestone from "./controllers/delete-milestone";
@@ -15,6 +16,10 @@ const milestoneStatusSchema = v.picklist([
   "completed",
   "archived",
 ]);
+const milestoneDueDateSchema = v.pipe(
+  v.string(),
+  v.regex(/^\d{4}-\d{2}-\d{2}$/, "dueDate must use YYYY-MM-DD"),
+);
 
 const milestoneSchema = v.object({
   id: v.string(),
@@ -82,11 +87,12 @@ const milestone = new Hono<{
       v.object({
         name: v.pipe(v.string(), v.minLength(1)),
         description: v.optional(v.nullable(v.string())),
-        dueDate: v.optional(v.nullable(v.string())),
+        dueDate: v.optional(v.nullable(milestoneDueDateSchema)),
         status: v.optional(milestoneStatusSchema),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { boardId } = c.req.valid("param");
       const { name, description, dueDate, status } = c.req.valid("json");
@@ -137,10 +143,11 @@ const milestone = new Hono<{
     validator("param", v.object({ boardId: v.string(), taskId: v.string() })),
     validator("json", v.object({ milestoneId: v.nullable(v.string()) })),
     organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ task: ["update"] }),
     async (c) => {
-      const { taskId } = c.req.valid("param");
+      const { boardId, taskId } = c.req.valid("param");
       const { milestoneId } = c.req.valid("json");
-      const task = await assignMilestoneToTask(taskId, milestoneId);
+      const task = await assignMilestoneToTask(boardId, taskId, milestoneId);
       return c.json(task);
     },
   )
@@ -165,12 +172,13 @@ const milestone = new Hono<{
       v.object({
         name: v.optional(v.pipe(v.string(), v.minLength(1))),
         description: v.optional(v.nullable(v.string())),
-        dueDate: v.optional(v.nullable(v.string())),
+        dueDate: v.optional(v.nullable(milestoneDueDateSchema)),
         status: v.optional(milestoneStatusSchema),
         position: v.optional(v.number()),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { boardId, id } = c.req.valid("param");
       const updates = c.req.valid("json");
@@ -194,6 +202,7 @@ const milestone = new Hono<{
     }),
     validator("param", v.object({ boardId: v.string(), id: v.string() })),
     organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { boardId, id } = c.req.valid("param");
       return c.json(await deleteMilestone(boardId, id));

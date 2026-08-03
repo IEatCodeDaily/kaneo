@@ -58,8 +58,10 @@ export default function BoardMilestonesSection({
 
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [editingDueDate, setEditingDueDate] = useState("");
 
   const handleCreate = async () => {
     const name = newName.trim();
@@ -69,10 +71,11 @@ export default function BoardMilestonesSection({
         boardId,
         name,
         description: null,
-        dueDate: null,
+        dueDate: newDueDate || null,
         status: "planned",
       });
       setNewName("");
+      setNewDueDate("");
       setIsCreating(false);
       toast.success(t("tasks:milestone.manage.created"));
     } catch {
@@ -82,12 +85,17 @@ export default function BoardMilestonesSection({
 
   const handleRename = async (milestone: MilestoneRow) => {
     const name = editingName.trim();
-    if (!name || name === milestone.name) {
+    if (!name) {
       setEditingId(null);
       return;
     }
     try {
-      await updateMilestone.mutateAsync({ boardId, id: milestone.id, name });
+      await updateMilestone.mutateAsync({
+        boardId,
+        id: milestone.id,
+        name,
+        dueDate: editingDueDate || null,
+      });
       setEditingId(null);
       toast.success(t("tasks:milestone.manage.updated"));
     } catch {
@@ -145,6 +153,13 @@ export default function BoardMilestonesSection({
               if (event.key === "Enter") void handleCreate();
               if (event.key === "Escape") setIsCreating(false);
             }}
+          />
+          <Input
+            type="date"
+            value={newDueDate}
+            aria-label={t("tasks:milestone.manage.dueDate")}
+            data-testid="board-milestone-due-date-input"
+            onChange={(event) => setNewDueDate(event.target.value)}
           />
           <Button
             type="button"
@@ -218,6 +233,11 @@ export default function BoardMilestonesSection({
                       onClick={() => {
                         setEditingId(milestone.id);
                         setEditingName(milestone.name);
+                        setEditingDueDate(
+                          milestone.dueDate
+                            ? String(milestone.dueDate).slice(0, 10)
+                            : "",
+                        );
                       }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -234,6 +254,25 @@ export default function BoardMilestonesSection({
                   </Button>
                 </div>
               </div>
+
+              {editingId === milestone.id ? (
+                <Input
+                  className="mt-1.5"
+                  type="date"
+                  value={editingDueDate}
+                  aria-label={t("tasks:milestone.manage.dueDate")}
+                  data-testid={`board-milestone-due-date-${milestone.id}`}
+                  onChange={(event) => setEditingDueDate(event.target.value)}
+                />
+              ) : milestone.dueDate ? (
+                <p
+                  className="mt-1.5 text-[11px] text-muted-foreground"
+                  data-testid={`board-milestone-due-${milestone.id}`}
+                >
+                  {t("tasks:milestone.manage.dueDate")}:{" "}
+                  {String(milestone.dueDate).slice(0, 10)}
+                </p>
+              ) : null}
 
               <div className="mt-1.5 flex items-center gap-1">
                 {MILESTONE_STATUSES.map((status) => (
@@ -254,7 +293,7 @@ export default function BoardMilestonesSection({
                 ))}
               </div>
 
-              {/* Inferred, never typed in. */}
+              {/* Task-derived range and progress coexist with the explicit due date. */}
               <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
                 <span data-testid={`board-milestone-range-${milestone.id}`}>
                   {formatRange(

@@ -1763,6 +1763,11 @@
 			"dueDate": "Краен рок",
 			"noDueDate": "Без краен рок",
 			"noLabel": "Без етикета"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Краен рок"
+			}
 		}
 	},
 	"invitations": {

@@ -1762,6 +1762,11 @@
 			"dueDate": "Термін виконання",
 			"noDueDate": "Без терміну виконання",
 			"noLabel": "Без мітки"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Кінцевий термін"
+			}
 		}
 	},
 	"invitations": {

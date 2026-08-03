@@ -8,6 +8,7 @@ import { milestoneTable, taskTable } from "../../database/schema";
  * A task may only reference a milestone that lives on the SAME board.
  */
 async function assignMilestoneToTask(
+  boardId: string,
   taskId: string,
   milestoneId: string | null,
 ) {
@@ -17,8 +18,8 @@ async function assignMilestoneToTask(
     .where(eq(taskTable.id, taskId))
     .limit(1);
 
-  if (!task) {
-    throw new HTTPException(404, { message: "Task not found" });
+  if (!task || task.boardId !== boardId) {
+    throw new HTTPException(404, { message: "Task not found on this board" });
   }
 
   if (milestoneId) {

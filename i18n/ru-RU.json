@@ -1804,6 +1804,11 @@
 			"dueDate": "Срок выполнения",
 			"noDueDate": "Без срока выполнения",
 			"noLabel": "Без метки"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Срок"
+			}
 		}
 	},
 	"invitations": {

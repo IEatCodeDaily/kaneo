@@ -1772,6 +1772,11 @@
 			"dueDate": "Date d’échéance",
 			"noDueDate": "Aucune date d’échéance",
 			"noLabel": "Aucun label"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Date d’échéance"
+			}
 		}
 	},
 	"invitations": {

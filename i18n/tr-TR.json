@@ -1771,6 +1771,11 @@
 			"dueDate": "Son tarih",
 			"noDueDate": "Son tarih yok",
 			"noLabel": "Etiket yok"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Son tarih"
+			}
 		}
 	},
 	"invitations": {

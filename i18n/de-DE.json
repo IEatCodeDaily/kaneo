@@ -1805,6 +1805,11 @@
 			"dueDate": "Fälligkeitsdatum",
 			"noDueDate": "Kein Fälligkeitsdatum",
 			"noLabel": "Kein Label"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Fälligkeitsdatum"
+			}
 		}
 	},
 	"invitations": {

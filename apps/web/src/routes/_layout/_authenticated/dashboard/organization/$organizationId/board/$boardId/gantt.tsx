@@ -21,6 +21,12 @@ import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
+import { GanttMilestoneRow } from "@/components/gantt/gantt-milestone-row";
+import {
+  buildGanttMilestones,
+  milestoneMatchesQuery,
+  milestoneTimelineDates,
+} from "@/components/gantt/gantt-milestones";
 import {
   matchesTaskQuery,
   partitionTasksBySchedule,
@@ -38,6 +44,7 @@ import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -87,6 +94,8 @@ type ScheduledTask = {
   isForeign?: boolean;
   boardName?: string;
   boardSlug?: string;
+  milestoneId?: string | null;
+  milestoneName?: string | null;
 };
 
 type FlatRow = ScheduledTask & {
@@ -352,6 +361,7 @@ function RouteComponent() {
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: board, isPlaceholderData } = useGetTasks(boardId);
+  const { data: boardMilestones } = useGetMilestonesByBoard(boardId);
   const { data: relationData } = useGetBoardTaskRelations(boardId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
@@ -404,6 +414,10 @@ function RouteComponent() {
       ...(board?.plannedTasks ?? []),
     ],
     [board],
+  );
+  const ganttMilestones = useMemo(
+    () => buildGanttMilestones(boardMilestones, allTasks),
+    [boardMilestones, allTasks],
   );
 
   const foreignRows = useMemo(() => {
@@ -460,6 +474,22 @@ function RouteComponent() {
       matchesTaskQuery(task, searchQuery, board?.slug),
     );
   }, [visibleRows, searching, board?.slug, searchQuery]);
+  const matchingTaskIds = useMemo(
+    () =>
+      new Set(
+        allTasks
+          .filter((task) => matchesTaskQuery(task, searchQuery, board?.slug))
+          .map((task) => task.id),
+      ),
+    [allTasks, searchQuery, board?.slug],
+  );
+  const visibleMilestones = useMemo(
+    () =>
+      ganttMilestones.filter((milestone) =>
+        milestoneMatchesQuery(milestone, searchQuery, matchingTaskIds),
+      ),
+    [ganttMilestones, searchQuery, matchingTaskIds],
+  );
 
   // Unscheduled tasks are a flat lane — no nesting, no collapse, they have no
   // bars to relate to. They obey sort and search like every other row.
@@ -497,10 +527,11 @@ function RouteComponent() {
   const rowsAreStale = deferredRows !== scheduledTasks;
 
   const timeline = useMemo(() => {
+    const milestoneDates = milestoneTimelineDates(ganttMilestones);
     // A board of only-unscheduled tasks still needs a grid to hang rows off,
     // otherwise the whole view falls back to the empty state and the tasks
     // disappear again. Anchor that grid on today.
-    if (parsedTasks.length === 0) {
+    if (parsedTasks.length === 0 && milestoneDates.length === 0) {
       if (unscheduledTasks.length === 0) return null;
       const today = startOfDay(new Date());
       return buildTimeline({
@@ -511,15 +542,15 @@ function RouteComponent() {
         weekStartsOn,
       });
     }
-    const earliest = parsedTasks.reduce(
-      (current, task) =>
-        task.scheduleStart < current ? task.scheduleStart : current,
-      parsedTasks[0].scheduleStart,
+    const dates = [
+      ...parsedTasks.flatMap((task) => [task.scheduleStart, task.scheduleEnd]),
+      ...milestoneDates,
+    ];
+    const earliest = dates.reduce((current, date) =>
+      date < current ? date : current,
     );
-    const latest = parsedTasks.reduce(
-      (current, task) =>
-        task.scheduleEnd > current ? task.scheduleEnd : current,
-      parsedTasks[0].scheduleEnd,
+    const latest = dates.reduce((current, date) =>
+      date > current ? date : current,
     );
     return buildTimeline({
       earliest,
@@ -528,7 +559,14 @@ function RouteComponent() {
       isMobile,
       weekStartsOn,
     });
-  }, [parsedTasks, unscheduledTasks.length, zoom, isMobile, weekStartsOn]);
+  }, [
+    parsedTasks,
+    unscheduledTasks.length,
+    ganttMilestones,
+    zoom,
+    isMobile,
+    weekStartsOn,
+  ]);
 
   useLayoutEffect(() => {
     const element = timelineTrackRef.current;
@@ -677,7 +715,9 @@ function RouteComponent() {
         </div>
 
         {!timeline ||
-        (parsedTasks.length === 0 && unscheduledTasks.length === 0) ? (
+        (parsedTasks.length === 0 &&
+          unscheduledTasks.length === 0 &&
+          ganttMilestones.length === 0) ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -688,7 +728,9 @@ function RouteComponent() {
               </p>
             </div>
           </div>
-        ) : scheduledTasks.length === 0 && unscheduledRows.length === 0 ? (
+        ) : scheduledTasks.length === 0 &&
+          unscheduledRows.length === 0 &&
+          visibleMilestones.length === 0 ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -861,6 +903,16 @@ function RouteComponent() {
                     rowsAreStale && "opacity-60 transition-opacity",
                   )}
                 >
+                  {visibleMilestones.map((milestone) => (
+                    <GanttMilestoneRow
+                      key={`milestone-${milestone.id}`}
+                      milestone={milestone}
+                      timeline={timeline}
+                      showTaskRail={showTaskRail}
+                      taskColumnWidthRem={taskColumnWidthRem}
+                      isMobile={isMobile}
+                    />
+                  ))}
                   {deferredRows.map((task) => (
                     <GanttRow
                       key={task.id}

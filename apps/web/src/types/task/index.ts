@@ -42,6 +42,8 @@ type Task = {
   assigneeImage?: string | null;
   teamAssigneeName?: string | null;
   boardId: string;
+  milestoneId?: string | null;
+  milestoneName?: string | null;
   columnId?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
