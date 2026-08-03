@@ -129,7 +129,12 @@ function RouteComponent() {
       <PageTitle title="Task templates" />
       <div className="mx-auto max-w-4xl space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">Task templates</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold">Task templates</h1>
+            <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Beta
+            </span>
+          </div>
           <p className="text-muted-foreground">
             Reusable starting values for tickets in this organization.
           </p>

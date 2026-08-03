@@ -13,6 +13,7 @@ describe("task template drawer (#118)", () => {
     expect(source).toContain('id="template-title"');
     expect(source).toContain("text-xl font-semibold");
     expect(source).toContain("border-y border-border bg-sidebar");
+    expect(source.match(/\bBeta\b/g)).toHaveLength(1);
     expect(source).not.toContain("rounded-xl border bg-muted/20");
   });
 });
