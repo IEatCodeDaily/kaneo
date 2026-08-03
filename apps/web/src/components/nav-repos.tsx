@@ -251,7 +251,15 @@ export function NavRepos() {
                             <MoreHorizontal />
                           </MenuTrigger>
                           <MenuPopup align="end" side="right">
-                            <MenuItem onClick={() => openRepo(repo.id)}>
+                            <MenuItem
+                              onClick={() =>
+                                window.open(
+                                  repo.url,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                )
+                              }
+                            >
                               <ExternalLink />
                               Open
                             </MenuItem>

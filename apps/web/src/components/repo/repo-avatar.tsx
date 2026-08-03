@@ -1,4 +1,4 @@
-import { GitBranch } from "lucide-react";
+import { GitBranch, Github } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Repo } from "@/types/repo";
 
@@ -15,6 +15,10 @@ export default function RepoAvatar({
   repo: Repo;
   className?: string;
 }) {
+  if (repo.provider?.toLowerCase() === "github") {
+    return <Github aria-hidden="true" className={cn("size-4", className)} />;
+  }
+
   const initial = repoInitial(repo);
 
   if (!initial) {

@@ -63,10 +63,14 @@ import { Timeline } from "@/components/ui/timeline";
 
 // TimelineItem reads context from its Timeline parent; render the real one
 // rather than stubbing it, so the activity row is exercised as shipped.
-function renderActivity(activity: unknown) {
+function renderActivity(activity: unknown, showConnector = false) {
   return render(
     <Timeline>
-      <Activity activity={activity as never} step={1} />
+      <Activity
+        activity={activity as never}
+        step={1}
+        showConnector={showConnector}
+      />
     </Timeline>,
   );
 }
@@ -229,6 +233,20 @@ describe("flag activity entries (#107)", () => {
    * hugs the text, labelled simply "Note". Its width must not participate in
    * the activity line, otherwise the timestamp drifts when note length changes.
    */
+  it("keeps the timestamp beside the sentence and the connector behind the icon", () => {
+    renderActivity(raised, true);
+
+    const time = screen.getByTestId("activity-time");
+    expect(time.parentElement?.className).toContain("inline-flex");
+    expect(time.previousElementSibling?.className).toContain(
+      "whitespace-nowrap",
+    );
+
+    const connector = screen.getByTestId("activity-connector");
+    expect(connector.className).toContain("top-10");
+    expect(connector.className).not.toContain("top-9");
+  });
+
   it("renders a content-hugging Note box below an independent timestamp", () => {
     const resolved = {
       ...baseActivity,

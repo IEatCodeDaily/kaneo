@@ -51,6 +51,7 @@ import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -70,6 +71,15 @@ import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import useTaskDraftStore from "@/store/task-draft";
 import type Task from "@/types/task";
+
+export function resolveCreateTaskBoardId(
+  explicitBoardId: string | undefined,
+  routeBoardId: string | null,
+  _storedBoardId: string | undefined,
+  selectedBoardId: string,
+) {
+  return explicitBoardId || routeBoardId || selectedBoardId;
+}
 
 type CreateTaskModalProps = {
   open: boolean;
@@ -323,7 +333,16 @@ function CreateTaskModal({
   const [newLabelName, setNewLabelName] = useState("");
 
   const routeBoardId = location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
-  const resolvedBoardId = boardId || board?.id || routeBoardId || "";
+  const [selectedBoardId, setSelectedBoardId] = useState("");
+  const { data: boards = [] } = useGetBoards({
+    organizationId: organization?.id || "",
+  });
+  const resolvedBoardId = resolveCreateTaskBoardId(
+    boardId,
+    routeBoardId,
+    board?.id,
+    selectedBoardId,
+  );
   const { data: templateColumns = [] } = useGetColumns(resolvedBoardId);
   const [templateStatus, setTemplateStatus] = useState<string | null>(null);
 
@@ -1010,6 +1029,26 @@ function CreateTaskModal({
             className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6"
             data-testid="create-task-scroll-body"
           >
+            {!boardId && !routeBoardId && (
+              <label className="grid gap-1.5 text-sm font-medium">
+                {t("navigation:boardSwitcher.selectBoard")}
+                <select
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  onChange={(event) => setSelectedBoardId(event.target.value)}
+                  required
+                  value={selectedBoardId}
+                >
+                  <option value="">
+                    {t("navigation:boardSwitcher.selectBoard")}
+                  </option>
+                  {boards.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {resolvedBoardId && (
               <CreateTaskTopbar
                 boardId={resolvedBoardId}

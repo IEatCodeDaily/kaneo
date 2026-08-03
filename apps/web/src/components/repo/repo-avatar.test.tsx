@@ -64,7 +64,11 @@ describe("repoInitial", () => {
   });
 });
 
-describe("repoColor", () => {
+describe("RepoAvatar", () => {
+  it("uses the GitHub glyph for GitHub repositories", () => {
+    render(<RepoAvatar repo={repo({ provider: "github" })} />);
+    expect(document.querySelector("svg.lucide-github")).toBeInTheDocument();
+  });
   it("is deterministic for the same repository", () => {
     const a = repoColor({ owner: "acme", name: "widgets" });
     const b = repoColor({ owner: "acme", name: "widgets" });

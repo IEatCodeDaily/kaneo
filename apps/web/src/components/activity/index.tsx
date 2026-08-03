@@ -581,21 +581,24 @@ function Activity({
       step={step}
     >
       {showConnector && (
-        <span className="-translate-x-1/2 absolute top-9 bottom-0 left-3 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--foreground)_26%,transparent)]" />
+        <span
+          className="-translate-x-1/2 absolute top-10 bottom-0 left-3 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--foreground)_26%,transparent)]"
+          data-testid="activity-connector"
+        />
       )}
       <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/80">
         {activityIcon}
       </span>
       <ActorAvatar user={user || null} fallbackName={actorName} />
-      <TimelineContent className="min-w-0 text-sm text-foreground">
+      <TimelineContent className="min-w-0 flex-1 text-sm text-foreground">
         {/*
           #167 rejection round 3: the timestamp used to follow the note inside
           one wrapping inline flow, so a wider/narrower note physically moved
           the datetime. The event and its time are now one line; the note is a
           separate second row and cannot affect timestamp placement.
         */}
-        <div className="flex min-w-0 items-baseline gap-1.5 leading-6">
-          <span className="min-w-0 flex-1">
+        <div className="inline-flex max-w-full items-baseline gap-1.5 leading-6">
+          <span className="whitespace-nowrap">
             <UserHoverName user={user || null} fallbackName={actorName} />{" "}
             {/*
               #116: a folded run reports the NET delta ("moved this from To Do to
