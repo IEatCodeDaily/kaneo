@@ -10,11 +10,7 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@/components/flag/task-flag-badges", () => ({ default: () => null }));
-vi.mock("@/components/kanban-board/task-hover-preview", () => ({
-  default: ({ children }: { children: React.ReactNode }) => children,
-  TASK_PREVIEW_CLOSE_DELAY: 100,
-  TASK_PREVIEW_OPEN_DELAY: 200,
-}));
+
 vi.mock("@/components/task/subtask-of-badge", () => ({ default: () => null }));
 vi.mock("@/components/task/task-due-date-badge", () => ({
   default: () => null,

@@ -1,5 +1,10 @@
 import { format } from "date-fns";
-import { type ReactElement, useEffect, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactElement,
+  useEffect,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,7 +38,7 @@ type TaskHoverPreviewProps = {
    * drop targets you are aiming at.
    */
   isDragging?: boolean;
-};
+} & Omit<ComponentProps<typeof HoverCardTrigger>, "asChild" | "children">;
 
 /**
  * Wraps a task card in a hover preview. Pointer-only on purpose: a touch
@@ -47,6 +52,7 @@ function TaskHoverPreview({
   assigneeImage,
   children,
   isDragging = false,
+  ...triggerProps
 }: TaskHoverPreviewProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -64,7 +70,9 @@ function TaskHoverPreview({
       openDelay={TASK_PREVIEW_OPEN_DELAY}
       closeDelay={TASK_PREVIEW_CLOSE_DELAY}
     >
-      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardTrigger asChild {...triggerProps}>
+        {children}
+      </HoverCardTrigger>
       <HoverCardContent
         className="w-80 p-3"
         side="right"
