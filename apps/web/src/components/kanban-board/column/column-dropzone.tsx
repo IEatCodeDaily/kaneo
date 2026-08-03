@@ -1,8 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, type SortingStrategy } from "@dnd-kit/sortable";
 import { CalendarDays, ChevronDown, ChevronRight, Tag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,6 +32,11 @@ const CHUNK = 40;
 
 /** Approximate rendered height of one card, for the pending-space reservation. */
 const CARD_HEIGHT_PX = 102;
+
+// The overlay follows the pointer and collision detection still chooses the
+// drop target. Avoid publishing sibling transforms to every card on every
+// pointer move; handleDragEnd still applies the optimistic final reorder.
+const staticSortingStrategy: SortingStrategy = () => null;
 
 export function ColumnDropzone({
   column,
@@ -169,10 +171,7 @@ export function ColumnDropzone({
       data-column-id={column.id}
       ref={setNodeRef}
     >
-      <SortableContext
-        items={column.tasks}
-        strategy={verticalListSortingStrategy}
-      >
+      <SortableContext items={column.tasks} strategy={staticSortingStrategy}>
         {groupBy !== "none" ? (
           <div className="flex flex-col gap-3" data-slot="task-group-list">
             {visibleTaskGroups.map((group) => {
