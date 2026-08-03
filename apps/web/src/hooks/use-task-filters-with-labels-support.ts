@@ -306,6 +306,8 @@ export function useTaskFiltersWithLabelsSupport(
 
     return {
       ...board,
+      plannedTasks: filterTasks(board.plannedTasks ?? []),
+      archivedTasks: filterTasks(board.archivedTasks ?? []),
       columns:
         board.columns?.map((column) => ({
           ...column,

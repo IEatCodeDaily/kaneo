@@ -35,6 +35,19 @@ const baseProps = {
 };
 
 describe("BoardToolbar", () => {
+  it("embeds filter controls without duplicating the Tasks toolbar chrome", () => {
+    render(<BoardToolbar {...baseProps} filtersOnly />);
+
+    expect(screen.getByTestId("board-filter-controls")).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/boardSearchPlaceholder/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /groupBy\.label/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/view\.board/)).not.toBeInTheDocument();
+  });
+
   it("puts search and view options in the same bar as filter and sort", () => {
     const { container } = render(<BoardToolbar {...baseProps} />);
 

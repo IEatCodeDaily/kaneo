@@ -73,6 +73,7 @@ type BoardToolbarProps = {
   searchInputRef?: Ref<HTMLInputElement>;
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
+  filtersOnly?: boolean;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -162,6 +163,7 @@ export default function BoardToolbar({
   searchInputRef,
   groupBy,
   onGroupByChange,
+  filtersOnly = false,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -271,8 +273,21 @@ export default function BoardToolbar({
   };
 
   return (
-    <div className="border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-      <div className="flex min-h-10 items-center px-2 py-1.5 md:px-3">
+    <div
+      className={
+        filtersOnly
+          ? "min-w-0"
+          : "border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70"
+      }
+      data-testid={filtersOnly ? "board-filter-controls" : "board-toolbar"}
+    >
+      <div
+        className={
+          filtersOnly
+            ? "flex min-w-0 items-center"
+            : "flex min-h-10 items-center px-2 py-1.5 md:px-3"
+        }
+      >
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <DropdownMenu>
@@ -287,7 +302,10 @@ export default function BoardToolbar({
                 <Filter className="h-3 w-3" />
                 {t("common:actions.filter")}
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuContent
+                className="max-h-[min(28rem,calc(100vh-6rem))] w-56 overflow-y-auto"
+                align="start"
+              >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
                     {t("tasks:boardFilters.filterBy")}
@@ -545,34 +563,40 @@ export default function BoardToolbar({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <SortControl sort={sort} onSortChange={onSortChange} />
+            {!filtersOnly && (
+              <SortControl sort={sort} onSortChange={onSortChange} />
+            )}
 
-            <BoardViewOptions
-              groupBy={groupBy}
-              onGroupByChange={onGroupByChange}
-            />
-
-            <div className="relative w-[200px]">
-              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={(event) => onSearchQueryChange(event.target.value)}
-                placeholder={t("tasks:boardSearchPlaceholder")}
-                aria-label={t("tasks:boardSearchPlaceholder")}
-                className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:pr-7 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
+            {!filtersOnly && (
+              <BoardViewOptions
+                groupBy={groupBy}
+                onGroupByChange={onGroupByChange}
               />
-              {searchQuery ? (
-                <button
-                  aria-label={t("tasks:boardClearSearch")}
-                  className="-translate-y-1/2 absolute top-1/2 right-1.5 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  onClick={() => onSearchQueryChange("")}
-                  type="button"
-                >
-                  <X className="size-3.5" />
-                </button>
-              ) : null}
-            </div>
+            )}
+
+            {!filtersOnly && (
+              <div className="relative w-[200px]">
+                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(event) => onSearchQueryChange(event.target.value)}
+                  placeholder={t("tasks:boardSearchPlaceholder")}
+                  aria-label={t("tasks:boardSearchPlaceholder")}
+                  className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:pr-7 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
+                />
+                {searchQuery ? (
+                  <button
+                    aria-label={t("tasks:boardClearSearch")}
+                    className="-translate-y-1/2 absolute top-1/2 right-1.5 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    onClick={() => onSearchQueryChange("")}
+                    type="button"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            )}
 
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip
@@ -687,32 +711,34 @@ export default function BoardToolbar({
             )}
           </div>
 
-          <div className="inline-flex items-center gap-1">
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "board"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("board")}
-            >
-              <PanelsTopLeft className="h-3 w-3" />
-              {t("tasks:view.board")}
-            </button>
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "list"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("list")}
-            >
-              <Rows3 className="h-3 w-3" />
-              {t("tasks:view.list")}
-            </button>
-          </div>
+          {!filtersOnly && (
+            <div className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
+                  viewMode === "board"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                }`}
+                onClick={() => setViewMode("board")}
+              >
+                <PanelsTopLeft className="h-3 w-3" />
+                {t("tasks:view.board")}
+              </button>
+              <button
+                type="button"
+                className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
+                  viewMode === "list"
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                }`}
+                onClick={() => setViewMode("list")}
+              >
+                <Rows3 className="h-3 w-3" />
+                {t("tasks:view.list")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

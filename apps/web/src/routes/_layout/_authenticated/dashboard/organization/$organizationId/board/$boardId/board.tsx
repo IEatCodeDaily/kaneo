@@ -1,15 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PanelRight } from "lucide-react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import BoardPropertiesPanel from "@/components/board/board-properties-panel";
 import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
@@ -33,10 +24,6 @@ import {
 import { sortTasks } from "@/lib/sort-tasks";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
-
-const CreateTaskModal = lazy(
-  () => import("@/components/shared/modals/create-task-modal"),
-);
 
 type BoardSearchParams = {
   taskId?: string;
@@ -63,8 +50,6 @@ function RouteComponent() {
   const { data, isPlaceholderData } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
   const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
 
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
@@ -150,39 +135,11 @@ function RouteComponent() {
     };
   }, [filteredBoard, sort]);
 
-  // Flat list of every task on the board. Milestone dates/progress are derived
-  // from these in the properties panel - they are never entered by hand.
-  const allBoardTasks = useMemo(
-    () =>
-      board
-        ? [
-            ...board.columns.flatMap((column) => column.tasks),
-            ...(board.plannedTasks ?? []),
-            ...(board.archivedTasks ?? []),
-          ]
-        : [],
-    [board],
-  );
-
   return (
     <BoardLayout
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
-      headerActions={
-        !isPropertiesPanelOpen ? (
-          <button
-            type="button"
-            aria-label={t("organization:boards.properties.open")}
-            title={t("organization:boards.properties.title")}
-            data-testid="board-properties-toggle"
-            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-            onClick={() => setIsPropertiesPanelOpen(true)}
-          >
-            <PanelRight className="h-3.5 w-3.5" />
-          </button>
-        ) : null
-      }
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
@@ -236,25 +193,7 @@ function RouteComponent() {
               <BoardSkeleton />
             )}
           </div>
-
-          <BoardPropertiesPanel
-            open={isPropertiesPanelOpen}
-            onClose={() => setIsPropertiesPanelOpen(false)}
-            board={board}
-            organizationId={organizationId}
-            tasks={allBoardTasks}
-          />
         </div>
-
-        {isTaskModalOpen && (
-          <Suspense fallback={<span className="sr-only">Loading editor</span>}>
-            <CreateTaskModal
-              open
-              boardId={boardId}
-              onClose={() => setIsTaskModalOpen(false)}
-            />
-          </Suspense>
-        )}
 
         <TaskDetailsSheet
           taskId={taskId}

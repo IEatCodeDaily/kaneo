@@ -7,10 +7,21 @@ import {
   CalendarDays,
   CalendarRange,
   Flag,
+  PanelRight,
+  Plus,
   SquareKanban,
   SquircleDashed,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import {
+  lazy,
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
+import BoardPropertiesPanel from "@/components/board/board-properties-panel";
 import BoardSyncIndicator from "@/components/board/board-sync-indicator";
 import { BoardViewTabs } from "@/components/board/board-view-tabs";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
@@ -20,11 +31,18 @@ import OrganizationCrumbSelect from "@/components/common/header/organization-cru
 import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
+import { Button } from "@/components/ui/button";
 
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
+import { useBoardLayoutStore } from "@/store/board-layout";
 import { useNavigationStore } from "@/store/navigation";
+
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
 
 type BoardLayoutProps = {
   boardId: string;
@@ -43,10 +61,34 @@ export default function BoardLayout({
   showViewSwitcher = true,
   activeView,
 }: BoardLayoutProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: board } = useGetBoard({ id: boardId, organizationId });
+  const { data: boardWithTasks } = useGetTasks(boardId);
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const propertiesPanelBoardId = useBoardLayoutStore(
+    (state) => state.propertiesPanelBoardId,
+  );
+  const openPropertiesPanel = useBoardLayoutStore(
+    (state) => state.openPropertiesPanel,
+  );
+  const closePropertiesPanel = useBoardLayoutStore(
+    (state) => state.closePropertiesPanel,
+  );
+  const isPropertiesPanelOpen = propertiesPanelBoardId === boardId;
+  const allBoardTasks = useMemo(
+    () =>
+      boardWithTasks
+        ? [
+            ...boardWithTasks.columns.flatMap((column) => column.tasks),
+            ...(boardWithTasks.plannedTasks ?? []),
+            ...(boardWithTasks.archivedTasks ?? []),
+          ]
+        : [],
+    [boardWithTasks],
+  );
 
   useBoardWebSocket(boardId);
 
@@ -203,6 +245,31 @@ export default function BoardLayout({
                 resourceId={boardId}
                 resourceType="board"
               />
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 gap-1.5 px-2"
+                aria-label={t("navigation:commandPalette.createTask")}
+                data-testid="board-create-task"
+                onClick={() => setIsTaskModalOpen(true)}
+              >
+                <Plus className="size-3.5" />
+                <span className="hidden lg:inline">
+                  {t("navigation:commandPalette.createTask")}
+                </span>
+              </Button>
+              {!isPropertiesPanelOpen ? (
+                <button
+                  type="button"
+                  aria-label={t("organization:boards.properties.open")}
+                  title={t("organization:boards.properties.title")}
+                  data-testid="board-properties-toggle"
+                  className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  onClick={() => openPropertiesPanel(boardId)}
+                >
+                  <PanelRight className="size-3.5" />
+                </button>
+              ) : null}
               {headerActions}
             </div>
           )}
@@ -225,14 +292,32 @@ export default function BoardLayout({
           committed the new one yet), so its cards would otherwise sit under the
           new board's name for the whole render. Drop them the moment the click
           lands and let the incoming view's own skeleton take over. */}
-      <Layout.Content>
-        {pendingBoardId ? <BoardSkeleton /> : children}
+      <Layout.Content className="min-h-0 overflow-hidden [&>div]:flex [&>div]:h-full [&>div]:min-h-0 [&>div]:overflow-hidden">
+        <div className="h-full min-w-0 flex-1 overflow-hidden">
+          {pendingBoardId ? <BoardSkeleton /> : children}
+        </div>
+        <BoardPropertiesPanel
+          open={isPropertiesPanelOpen}
+          onClose={closePropertiesPanel}
+          board={board}
+          organizationId={organizationId}
+          tasks={allBoardTasks}
+        />
       </Layout.Content>
 
       <CreateBoardModal
         open={isCreateBoardModalOpen}
         onClose={() => setIsCreateBoardModalOpen(false)}
       />
+      {isTaskModalOpen ? (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            boardId={boardId}
+            onClose={() => setIsTaskModalOpen(false)}
+          />
+        </Suspense>
+      ) : null}
     </Layout>
   );
 }
