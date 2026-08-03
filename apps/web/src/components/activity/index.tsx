@@ -486,32 +486,6 @@ function renderActivityContent({
             {t("activity:flagTarget", { target: targetName })}
           </span>
         )}
-        {/*
-          #167: resolving a flag requires a note, so hiding that note from the
-          audit trail made the mandatory field pointless.
-
-          Styling (#167 round 2): this was a full-width bordered box, which read
-          as a disabled text input — an empty dark field far wider than the note
-          itself, misaligned against the sentence above it. It is now a quiet
-          inline note that shrinks to its content and hangs off a left accent
-          rule, so it reads as metadata belonging to the entry rather than a
-          form control.
-        */}
-        {activity.type === "flag_resolved" &&
-          typeof eventData?.resolveNote === "string" &&
-          eventData.resolveNote.trim() && (
-            <span
-              data-testid="activity-flag-resolve-note"
-              className="mt-0.5 flex basis-full items-baseline gap-1.5 border-l-2 border-border/60 pl-2 text-xs"
-            >
-              <span className="shrink-0 text-muted-foreground">
-                {t("activity:resolutionNote")}
-              </span>
-              <span className="min-w-0 text-foreground/90 italic">
-                {eventData.resolveNote.trim()}
-              </span>
-            </span>
-          )}
       </span>
     );
   }
@@ -613,50 +587,76 @@ function Activity({
         {activityIcon}
       </span>
       <ActorAvatar user={user || null} fallbackName={actorName} />
-      <TimelineContent className="text-sm leading-6 text-foreground">
-        <UserHoverName user={user || null} fallbackName={actorName} />{" "}
+      <TimelineContent className="min-w-0 text-sm text-foreground">
         {/*
-          #116: a folded run reports the NET delta ("moved this from To Do to
-          Done") instead of five near-identical lines. A run that returned to
-          where it started says so rather than claiming a move.
+          #167 rejection round 3: the timestamp used to follow the note inside
+          one wrapping inline flow, so a wider/narrower note physically moved
+          the datetime. The event and its time are now one line; the note is a
+          separate second row and cannot affect timestamp placement.
         */}
-        {group && isCollapsedRun(group) ? (
-          <>
-            {isNoOpRun(group)
-              ? t("activity:statusRunNoOp", {
-                  status: toDisplayCase(group.toStatus ?? ""),
-                  count: group.entries.length,
-                })
-              : t("activity:statusRun", {
-                  from: toDisplayCase(group.fromStatus ?? ""),
-                  to: toDisplayCase(group.toStatus ?? ""),
-                })}{" "}
-            <button
-              type="button"
-              data-testid="activity-run-toggle"
-              aria-expanded={runExpanded}
-              onClick={() => setRunExpanded((open) => !open)}
-              className="text-muted-foreground/70 text-xs underline-offset-2 hover:underline"
+        <div className="flex min-w-0 items-baseline gap-1.5 leading-6">
+          <span className="min-w-0 flex-1">
+            <UserHoverName user={user || null} fallbackName={actorName} />{" "}
+            {/*
+              #116: a folded run reports the NET delta ("moved this from To Do to
+              Done") instead of five near-identical lines. A run that returned to
+              where it started says so rather than claiming a move.
+            */}
+            {group && isCollapsedRun(group) ? (
+              <>
+                {isNoOpRun(group)
+                  ? t("activity:statusRunNoOp", {
+                      status: toDisplayCase(group.toStatus ?? ""),
+                      count: group.entries.length,
+                    })
+                  : t("activity:statusRun", {
+                      from: toDisplayCase(group.fromStatus ?? ""),
+                      to: toDisplayCase(group.toStatus ?? ""),
+                    })}{" "}
+                <button
+                  type="button"
+                  data-testid="activity-run-toggle"
+                  aria-expanded={runExpanded}
+                  onClick={() => setRunExpanded((open) => !open)}
+                  className="text-muted-foreground/70 text-xs underline-offset-2 hover:underline"
+                >
+                  {t("activity:statusRunSteps", {
+                    count: group.entries.length,
+                  })}
+                </button>
+              </>
+            ) : (
+              renderActivityContent({
+                activity,
+                organizationMembers: organizationMembers as
+                  | OrganizationMember[]
+                  | undefined,
+                t,
+              })
+            )}
+          </span>
+          <span
+            className="shrink-0 whitespace-nowrap text-muted-foreground/70 text-xs"
+            data-testid="activity-time"
+          >
+            {formatRelativeTime(activity.createdAt)}
+          </span>
+        </div>
+        {activity.type === "flag_resolved" &&
+          typeof activity.eventData?.resolveNote === "string" &&
+          activity.eventData.resolveNote.trim() && (
+            <div
+              className="mt-1 w-fit max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
+              data-testid="activity-flag-resolve-note"
             >
-              {t("activity:statusRunSteps", {
-                count: group.entries.length,
-              })}
-            </button>{" "}
-          </>
-        ) : (
-          <>
-            {renderActivityContent({
-              activity,
-              organizationMembers: organizationMembers as
-                | OrganizationMember[]
-                | undefined,
-              t,
-            })}{" "}
-          </>
-        )}
-        <span className="whitespace-nowrap text-muted-foreground/70 text-xs">
-          {formatRelativeTime(activity.createdAt)}
-        </span>
+              <span className="me-1.5 font-medium text-muted-foreground">
+                {t("flags:dialog.note")}:
+              </span>
+              <span className="text-foreground/90">
+                {activity.eventData.resolveNote.trim()}
+              </span>
+            </div>
+          )}
         {/* #107: the unflag action sits on its OWN row beneath the flag it
             resolves, with a mandatory Notes field — not inline in the
             sentence. Only rendered while the flag is still active. */}
