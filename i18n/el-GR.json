@@ -583,6 +583,8 @@
 			"descriptionLabel": "Περιγραφή",
 			"descriptionHint": "Μια σύντομη περιγραφή του έργου σας",
 			"descriptionPlaceholder": "Εισαγάγετε περιγραφή έργου",
+			"subtaskDepthLimitLabel": "Όριο ένθεσης υποεργασιών",
+			"subtaskDepthLimitHint": "Μέγιστος αριθμός επιτρεπόμενων ένθετων επιπέδων υποεργασιών (1–4).",
 			"dangerZone": "Ζώνη κινδύνου",
 			"dangerZoneSubtitle": "Μη αναστρέψιμες και καταστροφικές ενέργειες.",
 			"deleteBoard": "Διαγραφή έργου",

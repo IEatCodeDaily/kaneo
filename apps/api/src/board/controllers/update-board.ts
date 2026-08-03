@@ -11,6 +11,7 @@ async function updateBoard(
   description: string,
   isPublic: boolean,
   organizationId: string,
+  subtaskDepthLimit?: number,
 ) {
   const [existingBoard] = await db
     .select()
@@ -36,6 +37,7 @@ async function updateBoard(
       slug,
       description,
       isPublic,
+      ...(subtaskDepthLimit === undefined ? {} : { subtaskDepthLimit }),
     })
     .where(eq(boardTable.id, id))
     .returning();

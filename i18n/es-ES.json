@@ -493,6 +493,8 @@
 			"descriptionLabel": "Descripción",
 			"descriptionHint": "Una breve descripción de tu proyecto",
 			"descriptionPlaceholder": "Introduce la descripción de tu proyecto",
+			"subtaskDepthLimitLabel": "Límite de anidamiento de subtareas",
+			"subtaskDepthLimitHint": "Número máximo de niveles de subtareas anidadas permitidos (1–4).",
 			"dangerZone": "Zona peligrosa",
 			"dangerZoneSubtitle": "Acciones irreversibles y destructivas.",
 			"deleteBoard": "Eliminar proyecto",

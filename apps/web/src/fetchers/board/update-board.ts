@@ -13,10 +13,11 @@ async function updateBoard({
   slug,
   description,
   isPublic,
+  subtaskDepthLimit,
 }: UpdateBoardRequest) {
   const response = await client.board[":id"].$put({
     param: { id },
-    json: { name, icon, slug, description, isPublic },
+    json: { name, icon, slug, description, isPublic, subtaskDepthLimit },
   });
 
   if (!response.ok) {

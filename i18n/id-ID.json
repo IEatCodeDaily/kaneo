@@ -585,6 +585,8 @@
 			"descriptionLabel": "Deskripsi",
 			"descriptionHint": "Deskripsi singkat proyek Anda",
 			"descriptionPlaceholder": "Masukkan deskripsi proyek",
+			"subtaskDepthLimitLabel": "Batas kedalaman subtugas",
+			"subtaskDepthLimitHint": "Jumlah maksimum tingkat subtugas bertingkat yang diizinkan (1–4).",
 			"dangerZone": "Zona berbahaya",
 			"dangerZoneSubtitle": "Tindakan destruktif dan tidak dapat dibatalkan.",
 			"deleteBoard": "Hapus proyek",

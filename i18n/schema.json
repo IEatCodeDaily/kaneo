@@ -2946,6 +2946,12 @@
 						"descriptionPlaceholder": {
 							"type": "string"
 						},
+						"subtaskDepthLimitLabel": {
+							"type": "string"
+						},
+						"subtaskDepthLimitHint": {
+							"type": "string"
+						},
 						"dangerZone": {
 							"type": "string"
 						},
@@ -3038,6 +3044,8 @@
 						"descriptionLabel",
 						"descriptionHint",
 						"descriptionPlaceholder",
+						"subtaskDepthLimitLabel",
+						"subtaskDepthLimitHint",
 						"dangerZone",
 						"dangerZoneSubtitle",
 						"deleteBoard",

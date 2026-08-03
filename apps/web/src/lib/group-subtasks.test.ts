@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type Task from "@/types/task";
-import { groupSameBucketSubtasks, visibleGroupedTasks } from "./group-subtasks";
+import {
+  countTreeTasks,
+  groupSameBucketSubtasks,
+  visibleGroupedTasks,
+} from "./group-subtasks";
 
 const task = (id: string, parentId?: string): Task => ({
   id,
@@ -22,54 +26,85 @@ const task = (id: string, parentId?: string): Task => ({
     : null,
 });
 
+const ids = (nodes: ReturnType<typeof groupSameBucketSubtasks>): unknown[] =>
+  nodes.map((node) => [node.task.id, ids(node.children)]);
+
 describe("groupSameBucketSubtasks", () => {
-  it("groups children beneath a parent in the same bucket", () => {
+  it("builds nested chains through the backend-supported board depth", () => {
     const groups = groupSameBucketSubtasks([
-      task("parent"),
-      task("child-1", "parent"),
-      task("other"),
-      task("child-2", "parent"),
+      task("root"),
+      task("sibling", "root"),
+      task("child", "root"),
+      task("grandchild", "child"),
+      task("great-grandchild", "grandchild"),
     ]);
 
-    expect(groups.map((group) => group.parent.id)).toEqual(["parent", "other"]);
-    expect(groups[0].children.map((child) => child.id)).toEqual([
-      "child-1",
-      "child-2",
+    expect(ids(groups)).toEqual([
+      [
+        "root",
+        [
+          ["sibling", []],
+          ["child", [["grandchild", [["great-grandchild", []]]]]],
+        ],
+      ],
     ]);
+    expect(countTreeTasks(groups)).toBe(5);
   });
 
-  it("leaves a child standalone when its parent is in another bucket", () => {
-    const groups = groupSameBucketSubtasks([task("child", "parent-elsewhere")]);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0].parent.id).toBe("child");
-    expect(groups[0].children).toEqual([]);
-  });
-
-  it("preserves top-level order", () => {
+  it("keeps a child standalone when its immediate parent is outside the bucket", () => {
     const groups = groupSameBucketSubtasks([
+      task("child", "parent-elsewhere"),
+      task("grandchild", "child"),
+    ]);
+
+    expect(ids(groups)).toEqual([["child", [["grandchild", []]]]]);
+  });
+
+  it("preserves root and sibling DnD order without losing identities", () => {
+    const tasks = [
       task("first"),
-      task("child", "last"),
+      task("child-2", "last"),
       task("last"),
+      task("child-1", "last"),
+    ];
+    const groups = groupSameBucketSubtasks(tasks);
+
+    expect(groups.map((node) => node.task.id)).toEqual(["first", "last"]);
+    expect(groups[1].children.map((node) => node.task.id)).toEqual([
+      "child-2",
+      "child-1",
+    ]);
+    expect(countTreeTasks(groups)).toBe(tasks.length);
+  });
+
+  it("keeps malformed cyclic records visible instead of dropping IDs", () => {
+    const groups = groupSameBucketSubtasks([
+      task("one", "two"),
+      task("two", "one"),
     ]);
 
-    expect(groups.map((group) => group.parent.id)).toEqual(["first", "last"]);
+    expect(groups.map((node) => node.task.id)).toEqual(["one", "two"]);
+    expect(countTreeTasks(groups)).toBe(2);
   });
 });
 
 describe("visibleGroupedTasks", () => {
-  it("hides children only for collapsed parents", () => {
+  it("collapses descendants at any nested parent independently", () => {
     const groups = groupSameBucketSubtasks([
-      task("parent"),
-      task("child", "parent"),
+      task("root"),
+      task("child", "root"),
+      task("grandchild", "child"),
       task("other"),
     ]);
 
     expect(
-      visibleGroupedTasks(groups, new Set(["parent"])).map((entry) => entry.id),
-    ).toEqual(["parent", "other"]);
+      visibleGroupedTasks(groups, new Set(["child"])).map((entry) => entry.id),
+    ).toEqual(["root", "child", "other"]);
+    expect(
+      visibleGroupedTasks(groups, new Set(["root"])).map((entry) => entry.id),
+    ).toEqual(["root", "other"]);
     expect(
       visibleGroupedTasks(groups, new Set()).map((entry) => entry.id),
-    ).toEqual(["parent", "child", "other"]);
+    ).toEqual(["root", "child", "grandchild", "other"]);
   });
 });

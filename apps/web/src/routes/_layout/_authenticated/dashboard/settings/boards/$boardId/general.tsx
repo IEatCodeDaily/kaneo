@@ -80,6 +80,7 @@ type BoardFormValues = {
   slug: string;
   description?: string;
   icon: string;
+  subtaskDepthLimit: number;
 };
 
 type NormalizedBoardValues = {
@@ -87,6 +88,7 @@ type NormalizedBoardValues = {
   slug: string;
   description: string;
   icon: string;
+  subtaskDepthLimit: number;
 };
 
 function normalizeBoardValues(data: BoardFormValues): NormalizedBoardValues {
@@ -95,6 +97,7 @@ function normalizeBoardValues(data: BoardFormValues): NormalizedBoardValues {
     slug: data.slug.trim(),
     description: (data.description ?? "").trim(),
     icon: data.icon || "Layout",
+    subtaskDepthLimit: data.subtaskDepthLimit,
   };
 }
 
@@ -116,6 +119,7 @@ function RouteComponent() {
         icon: z
           .string()
           .min(1, t("settings:boardGeneral.validation.iconRequired")),
+        subtaskDepthLimit: z.number().int().min(1).max(4),
       }),
     [t],
   );
@@ -156,6 +160,7 @@ function RouteComponent() {
       slug: board?.slug || "",
       description: board?.description || "",
       icon: board?.icon || "Layout",
+      subtaskDepthLimit: board?.subtaskDepthLimit ?? 4,
     },
   });
 
@@ -167,6 +172,7 @@ function RouteComponent() {
       slug: board.slug || "",
       description: board.description || "",
       icon: board.icon || "Layout",
+      subtaskDepthLimit: board.subtaskDepthLimit ?? 4,
     };
     lastSavedRef.current = normalizeBoardValues(nextValues);
 
@@ -189,8 +195,15 @@ function RouteComponent() {
       const descriptionChanged =
         lastSavedRef.current?.description !== normalizedData.description;
       const iconChanged = lastSavedRef.current?.icon !== normalizedData.icon;
+      const subtaskDepthLimitChanged =
+        lastSavedRef.current?.subtaskDepthLimit !==
+        normalizedData.subtaskDepthLimit;
       const hasChanges =
-        nameChanged || slugChanged || descriptionChanged || iconChanged;
+        nameChanged ||
+        slugChanged ||
+        descriptionChanged ||
+        iconChanged ||
+        subtaskDepthLimitChanged;
 
       if (!hasChanges) return;
 
@@ -211,6 +224,9 @@ function RouteComponent() {
             : (board.description ?? ""),
           icon: iconChanged ? normalizedData.icon : (board.icon ?? "Layout"),
           isPublic: !!board.isPublic,
+          subtaskDepthLimit: subtaskDepthLimitChanged
+            ? normalizedData.subtaskDepthLimit
+            : (board.subtaskDepthLimit ?? 4),
         };
 
         await updateBoard(updatePayload);
@@ -252,6 +268,7 @@ function RouteComponent() {
       board?.slug,
       board?.description,
       board?.icon,
+      board?.subtaskDepthLimit,
       updateBoard,
       queryClient,
       organization?.id,
@@ -307,7 +324,8 @@ function RouteComponent() {
           last.name !== normalized.name ||
           last.slug !== normalized.slug ||
           last.description !== normalized.description ||
-          last.icon !== normalized.icon;
+          last.icon !== normalized.icon ||
+          last.subtaskDepthLimit !== normalized.subtaskDepthLimit;
         if (!hasPendingChanges) return;
 
         const isValid = await boardFormRef.current.trigger();
@@ -570,6 +588,44 @@ function RouteComponent() {
                             )}
                             disabled={!canEdit}
                             {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <FormField
+                  control={boardForm.control}
+                  name="subtaskDepthLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm font-medium">
+                            {t("settings:boardGeneral.subtaskDepthLimitLabel")}
+                          </FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            {t("settings:boardGeneral.subtaskDepthLimitHint")}
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Input
+                            aria-label={t(
+                              "settings:boardGeneral.subtaskDepthLimitLabel",
+                            )}
+                            className="w-20 text-center"
+                            disabled={!canEdit}
+                            max={4}
+                            min={1}
+                            type="number"
+                            {...field}
+                            onChange={(event) =>
+                              field.onChange(event.target.valueAsNumber)
+                            }
                           />
                         </FormControl>
                       </div>

@@ -493,6 +493,8 @@
 			"descriptionLabel": "Beschrijving",
 			"descriptionHint": "Een korte beschrijving van je board",
 			"descriptionPlaceholder": "Voer boardbeschrijving in",
+			"subtaskDepthLimitLabel": "Limiet voor geneste subtaken",
+			"subtaskDepthLimitHint": "Maximaal aantal toegestane niveaus van geneste subtaken (1–4).",
 			"dangerZone": "Gevarenzone",
 			"dangerZoneSubtitle": "Onomkeerbare en destructieve acties.",
 			"deleteBoard": "Board verwijderen",

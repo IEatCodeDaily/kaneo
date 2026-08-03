@@ -585,6 +585,8 @@
 			"descriptionLabel": "Description",
 			"descriptionHint": "Une brève description de votre projet",
 			"descriptionPlaceholder": "Entrez la description du projet",
+			"subtaskDepthLimitLabel": "Limite d’imbrication des sous-tâches",
+			"subtaskDepthLimitHint": "Nombre maximal de niveaux de sous-tâches imbriquées autorisés (1–4).",
 			"dangerZone": "Zone dangereuse",
 			"dangerZoneSubtitle": "Actions irréversibles et destructrices.",
 			"deleteBoard": "Supprimer le projet",
