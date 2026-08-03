@@ -7,6 +7,7 @@ import {
   type PrincipalOption,
   PrincipalSelector,
 } from "@/components/principal-selector";
+import { resolveTeamMembersResult } from "@/components/team/resolve-team-members-result";
 import TeamMemberCount from "@/components/team/team-member-count";
 import {
   AlertDialog,
@@ -297,9 +298,7 @@ function TeamCard({
       const { data, error } = await authClient.organization.listTeamMembers({
         query: { teamId: team.id },
       });
-      if (error)
-        throw new Error(error.message || "Failed to load team members");
-      return data;
+      return resolveTeamMembersResult({ data, error });
     },
   });
   const membership = teamMembersQuery.data ?? [];
