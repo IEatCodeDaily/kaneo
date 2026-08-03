@@ -1031,7 +1031,7 @@ function CreateTaskModal({
           >
             {!boardId && !routeBoardId && (
               <label className="grid gap-1.5 text-sm font-medium">
-                {t("navigation:boardSwitcher.selectBoard")}
+                {t("settings:boardSwitcher.selectBoard")}
                 <select
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                   onChange={(event) => setSelectedBoardId(event.target.value)}
@@ -1039,7 +1039,7 @@ function CreateTaskModal({
                   value={selectedBoardId}
                 >
                   <option value="">
-                    {t("navigation:boardSwitcher.selectBoard")}
+                    {t("settings:boardSwitcher.selectBoard")}
                   </option>
                   {boards.map((candidate) => (
                     <option key={candidate.id} value={candidate.id}>

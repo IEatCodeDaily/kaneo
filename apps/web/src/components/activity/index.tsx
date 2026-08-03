@@ -648,15 +648,17 @@ function Activity({
         {activity.type === "flag_resolved" &&
           typeof activity.eventData?.resolveNote === "string" &&
           activity.eventData.resolveNote.trim() && (
-            <div
-              className="mt-1 w-fit max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
-              data-testid="activity-flag-resolve-note"
-            >
-              <span className="me-1.5 font-medium text-muted-foreground">
-                {t("flags:dialog.note")}:
-              </span>
-              <span className="text-foreground/90">
-                {activity.eventData.resolveNote.trim()}
+            <div className="mt-1">
+              <span
+                className="inline-flex max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
+                data-testid="activity-flag-resolve-note"
+              >
+                <span className="me-1.5 font-medium text-muted-foreground">
+                  {t("flags:dialog.note")}:
+                </span>
+                <span className="text-foreground/90">
+                  {activity.eventData.resolveNote.trim()}
+                </span>
               </span>
             </div>
           )}

@@ -262,7 +262,7 @@ describe("flag activity entries (#107)", () => {
 
     const note = screen.getByTestId("activity-flag-resolve-note");
     const className = note.getAttribute("class") ?? "";
-    expect(className).toMatch(/\bw-fit\b/);
+    expect(className).toMatch(/\binline-flex\b/);
     expect(className).toMatch(/\bmax-w-full\b/);
     expect(className).toMatch(/\brounded-md\b/);
     expect(note.textContent).toMatch(/^flags:dialog\.note:/);
