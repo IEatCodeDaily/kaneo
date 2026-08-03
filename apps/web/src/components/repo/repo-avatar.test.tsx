@@ -33,9 +33,11 @@ describe("#173 repo glyph makes no third-party requests", () => {
     expect(container.innerHTML).not.toContain("http");
   });
 
-  it("shows the repository initial", () => {
+  it("shows the repository initial as the shipped uppercase SVG glyph", () => {
     render(<RepoAvatar repo={repo({ name: "widgets" })} />);
-    expect(screen.getByTestId("repo-avatar").textContent).toBe("w");
+    const avatar = screen.getByTestId("repo-avatar");
+    expect(avatar.tagName).toBe("svg");
+    expect(avatar.textContent).toBe("W");
   });
 
   it("falls back to the generic glyph when there is no name", () => {
