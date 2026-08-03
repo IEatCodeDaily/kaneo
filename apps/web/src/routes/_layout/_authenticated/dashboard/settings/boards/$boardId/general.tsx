@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { TasksImportExport } from "@/components/board/tasks-import-export.tsx";
-import EntityIcon from "@/components/common/entity-icon";
+import BoardIconPicker from "@/components/common/board-icon-picker";
 import PageTitle from "@/components/page-title";
 import {
   AlertDialog,
@@ -31,43 +31,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import icons from "@/constants/board-icons";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useUpdateBoard from "@/hooks/mutations/board/use-update-board";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
-import { cn } from "@/lib/cn";
-import { isEmojiIcon } from "@/lib/resolve-icon";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board.ts";
-
-/**
- * #171: a starter set of emoji for the board icon picker.
- *
- * Any emoji works — typing one into the search box offers it directly — but a
- * visible set makes the capability discoverable instead of hidden.
- */
-const EMOJI_SUGGESTIONS = [
-  "🚀",
-  "🎯",
-  "🐛",
-  "🔥",
-  "✨",
-  "📦",
-  "🧪",
-  "🛠️",
-  "📊",
-  "🔐",
-  "💡",
-  "⚡",
-];
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/boards/$boardId/general",
@@ -131,8 +102,6 @@ function RouteComponent() {
   const queuedSaveRef = useRef<BoardFormValues | null>(null);
   const lastSavedRef = useRef<NormalizedBoardValues | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const [iconSearch, setIconSearch] = useState("");
 
   const { data: organization } = useActiveOrganization();
   const { boardId: rawBoardId } = useParams({ strict: false });
@@ -392,139 +361,22 @@ function RouteComponent() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Popover
-                  open={iconPopoverOpen}
-                  onOpenChange={(open) => {
-                    setIconPopoverOpen(open);
-                    if (!open) setIconSearch("");
-                  }}
-                  modal={true}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-auto justify-start gap-2 font-normal"
-                      title={t("settings:boardGeneral.pickIconTitle")}
-                      disabled={!canEdit}
-                    >
-                      <EntityIcon
-                        className="h-4 w-4 text-base"
-                        value={boardForm.watch("icon")}
-                      />
-                      <span className="truncate text-xs">
-                        {boardForm.watch("icon") || "Layout"}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
-                    <div className="space-y-2">
-                      <Input
-                        value={iconSearch}
-                        onChange={(e) => setIconSearch(e.target.value)}
-                        placeholder={t(
-                          "settings:boardGeneral.searchIconsPlaceholder",
-                        )}
-                        className="h-8 text-xs"
-                      />
-                      {/*
-                        #171: an icon may also be an emoji. Typing or pasting one
-                        into the search box offers it directly, so the whole
-                        emoji space is available without shipping a picker.
-                      */}
-                      {isEmojiIcon(iconSearch) && (
-                        <Button
-                          className="h-10 w-full justify-start gap-2 text-xs"
-                          onClick={() => {
-                            boardForm.setValue("icon", iconSearch.trim(), {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            });
-                            setIconPopoverOpen(false);
-                            setIconSearch("");
-                          }}
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                        >
-                          <span className="text-base leading-none">
-                            {iconSearch.trim()}
-                          </span>
-                          {t("settings:boardGeneral.useEmoji")}
-                        </Button>
-                      )}
-                      <div className="max-h-[280px] overflow-y-auto pr-1">
-                        <div className="grid grid-cols-6 gap-1.5">
-                          {EMOJI_SUGGESTIONS.filter(
-                            () => !iconSearch.trim() || isEmojiIcon(iconSearch),
-                          ).map((emoji) => {
-                            const isSelected =
-                              boardForm.getValues("icon") === emoji;
-                            return (
-                              <Button
-                                className={cn(
-                                  "h-10 items-center justify-center rounded-md p-0 text-base leading-none",
-                                  isSelected &&
-                                    "bg-sidebar-accent text-sidebar-accent-foreground",
-                                )}
-                                key={emoji}
-                                onClick={() => {
-                                  boardForm.setValue("icon", emoji, {
-                                    shouldDirty: true,
-                                    shouldValidate: true,
-                                  });
-                                  setIconPopoverOpen(false);
-                                  setIconSearch("");
-                                }}
-                                size="sm"
-                                title={emoji}
-                                type="button"
-                                variant="ghost"
-                              >
-                                {emoji}
-                              </Button>
-                            );
-                          })}
-                          {Object.entries(icons)
-                            .filter(([iconName]) =>
-                              iconName
-                                .toLowerCase()
-                                .includes(iconSearch.trim().toLowerCase()),
-                            )
-                            .map(([iconName, Icon]) => {
-                              const isSelected =
-                                boardForm.getValues("icon") === iconName;
-                              return (
-                                <Button
-                                  key={iconName}
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    boardForm.setValue("icon", iconName, {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    });
-                                    setIconPopoverOpen(false);
-                                    setIconSearch("");
-                                  }}
-                                  className={cn(
-                                    "h-10 items-center justify-center rounded-md p-0",
-                                    isSelected &&
-                                      "bg-sidebar-accent text-sidebar-accent-foreground",
-                                  )}
-                                  title={iconName}
-                                >
-                                  <Icon className="h-4 w-4" />
-                                </Button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <BoardIconPicker
+                  align="end"
+                  disabled={!canEdit}
+                  onValueChange={(icon) =>
+                    boardForm.setValue("icon", icon, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  searchPlaceholder={t(
+                    "settings:boardGeneral.searchIconsPlaceholder",
+                  )}
+                  showValue
+                  triggerLabel={t("settings:boardGeneral.pickIconTitle")}
+                  value={boardForm.watch("icon")}
+                />
               </div>
             </div>
 

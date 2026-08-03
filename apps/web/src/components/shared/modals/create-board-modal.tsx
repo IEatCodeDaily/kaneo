@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import BoardIconPicker from "@/components/common/board-icon-picker";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,15 +19,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import icons from "@/constants/board-icons";
+
 import useCreateBoard from "@/hooks/mutations/board/use-create-board";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { cn } from "@/lib/cn";
+
 import generateBoardSlug from "@/lib/generate-board-id";
 import { toast } from "@/lib/toast";
 
@@ -40,8 +36,7 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("Layout");
-  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const [iconSearch, setIconSearch] = useState("");
+
   const queryClient = useQueryClient();
   const { data: organization } = useActiveOrganization();
   const { mutateAsync } = useCreateBoard({
@@ -50,19 +45,14 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
     organizationId: organization?.id ?? "",
     icon: selectedIcon,
   });
-  const SelectedIcon =
-    icons[selectedIcon as keyof typeof icons] || icons.Layout;
-  const filteredIcons = Object.entries(icons).filter(([iconName]) =>
-    iconName.toLowerCase().includes(iconSearch.trim().toLowerCase()),
-  );
+
   const navigate = useNavigate();
 
   const handleClose = () => {
     setName("");
     setSlug("");
     setSelectedIcon("Layout");
-    setIconPopoverOpen(false);
-    setIconSearch("");
+
     onClose();
   };
 
@@ -125,64 +115,12 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-6 px-3 pt-2">
-            <Popover
-              open={iconPopoverOpen}
-              onOpenChange={(open) => {
-                setIconPopoverOpen(open);
-                if (!open) setIconSearch("");
-              }}
-              modal={true}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  className="h-8 w-8 p-0"
-                  title={t("common:modals.createBoard.pickIcon")}
-                >
-                  <SelectedIcon className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2" align="start">
-                <div className="space-y-2">
-                  <Input
-                    value={iconSearch}
-                    onChange={(e) => setIconSearch(e.target.value)}
-                    placeholder={t("common:modals.createBoard.searchIcons")}
-                    className="h-8 text-xs"
-                  />
-                  <div className="max-h-[280px] overflow-y-auto pr-1">
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {filteredIcons.map(([iconName, Icon]) => {
-                        const isSelected = selectedIcon === iconName;
-                        return (
-                          <Button
-                            key={iconName}
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedIcon(iconName);
-                              setIconPopoverOpen(false);
-                              setIconSearch("");
-                            }}
-                            className={cn(
-                              "h-10 items-center justify-center rounded-md p-0",
-                              isSelected &&
-                                "bg-sidebar-accent text-sidebar-accent-foreground",
-                            )}
-                            title={iconName}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <BoardIconPicker
+              onValueChange={setSelectedIcon}
+              searchPlaceholder={t("common:modals.createBoard.searchIcons")}
+              triggerLabel={t("common:modals.createBoard.pickIcon")}
+              value={selectedIcon}
+            />
 
             <Input
               unstyled
