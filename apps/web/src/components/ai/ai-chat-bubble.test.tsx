@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AiChatBubble } from "./ai-chat-bubble";
+import { AiChatBubble, describeAiActions } from "./ai-chat-bubble";
 
 // This suite does not auto-cleanup between cases, so a bubble rendered by an
 // earlier case leaks into the next one and makes absence assertions lie.
@@ -42,6 +42,18 @@ function mockSettingsResponse(body: AiSettings | null, ok = true) {
 }
 
 const BUBBLE_LABEL = "Open organization AI assistant";
+
+describe("describeAiActions", () => {
+  it("reports created tickets distinctly from assignments and labels", () => {
+    expect(
+      describeAiActions([
+        { type: "create_task" },
+        { type: "assign_task" },
+        { type: "add_label" },
+      ]),
+    ).toBe("Ticket created. Ticket assignment updated. Ticket label added.");
+  });
+});
 
 function renderBubble() {
   const queryClient = new QueryClient({

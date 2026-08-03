@@ -417,6 +417,9 @@ export function registerMcpTools(
       if (args.userId !== undefined) body.userId = args.userId;
       return run(async () => {
         await guardBoard(args.boardId, { task: ["create"] });
+        if (args.userId !== undefined) {
+          await guardBoard(args.boardId, { task: ["assign"] });
+        }
         return client.json(`/api/task/${encodeURIComponent(args.boardId)}`, {
           method: "POST",
           body: JSON.stringify(body),
@@ -429,7 +432,7 @@ export function registerMcpTools(
     "assign_task",
     {
       description:
-        "Assign a task to a user (or unassign by omitting userId). Requires task:update in the task's organization.",
+        "Assign a task to a user (or unassign by omitting userId). Requires task:assign in the task's organization.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         userId: nullableOptionalNonEmptyString,
@@ -437,18 +440,17 @@ export function registerMcpTools(
     },
     async (args) =>
       run(async () => {
-        await guardTask(args.taskId, { task: ["update"] });
-        const existing = (await client.json(
-          `/api/task/${encodeURIComponent(args.taskId)}`,
-          { method: "GET" },
-        )) as Record<string, unknown>;
-        const body = buildFullTaskUpdateBody(existing, {
-          userId: args.userId === undefined ? null : args.userId,
-        });
-        return client.json(`/api/task/${encodeURIComponent(args.taskId)}`, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        });
+        await guardTask(args.taskId, { task: ["assign"] });
+        return client.json(
+          `/api/task/assignee/${encodeURIComponent(args.taskId)}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              userId: args.userId === undefined ? null : args.userId,
+              teamId: null,
+            }),
+          },
+        );
       }),
   );
 
@@ -474,6 +476,9 @@ export function registerMcpTools(
       const { taskId, ...patch } = args;
       return run(async () => {
         await guardTask(taskId, { task: ["update"] });
+        if (patch.userId !== undefined) {
+          await guardTask(taskId, { task: ["assign"] });
+        }
         const existing = (await client.json(
           `/api/task/${encodeURIComponent(taskId)}`,
           { method: "GET" },
