@@ -32,8 +32,6 @@ const baseProps = {
   onSearchQueryChange: vi.fn(),
   groupBy: "none" as never,
   onGroupByChange: vi.fn(),
-  density: "comfortable" as never,
-  onDensityChange: vi.fn(),
 };
 
 describe("BoardToolbar", () => {

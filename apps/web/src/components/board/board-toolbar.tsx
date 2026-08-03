@@ -3,7 +3,7 @@ import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import BoardViewOptions from "@/components/board/board-view-options";
 import SortControl from "@/components/common/sort-control";
-import type { BoardDensity } from "@/components/kanban-board/board-density";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
@@ -73,8 +73,6 @@ type BoardToolbarProps = {
   searchInputRef?: Ref<HTMLInputElement>;
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
-  density: BoardDensity;
-  onDensityChange: (density: BoardDensity) => void;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -164,8 +162,6 @@ export default function BoardToolbar({
   searchInputRef,
   groupBy,
   onGroupByChange,
-  density,
-  onDensityChange,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -554,8 +550,6 @@ export default function BoardToolbar({
             <BoardViewOptions
               groupBy={groupBy}
               onGroupByChange={onGroupByChange}
-              density={density}
-              onDensityChange={onDensityChange}
             />
 
             <div className="relative w-[200px]">

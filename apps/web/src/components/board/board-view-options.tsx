@@ -4,33 +4,27 @@ import {
   Eye,
   Flag,
   Group,
-  LayoutGrid,
-  Rows3,
   Tag,
   User,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { BoardDensity } from "@/components/kanban-board/board-density";
-import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
 import { BOARD_GROUP_BY_VALUES } from "@/hooks/use-task-filters-with-labels-support";
-import { cn } from "@/lib/cn";
+
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type BoardViewOptionsProps = {
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
-  density: BoardDensity;
-  onDensityChange: (density: BoardDensity) => void;
 };
 
 const GROUP_BY_OPTIONS: Record<
@@ -44,12 +38,7 @@ const GROUP_BY_OPTIONS: Record<
   dueDate: { icon: CalendarDays, labelKey: "tasks:groupBy.dueDate" },
 };
 
-function BoardViewOptions({
-  groupBy,
-  onGroupByChange,
-  density,
-  onDensityChange,
-}: BoardViewOptionsProps) {
+function BoardViewOptions({ groupBy, onGroupByChange }: BoardViewOptionsProps) {
   const { t } = useTranslation();
   const display = useUserPreferencesStore();
   const fields = [
@@ -107,30 +96,6 @@ function BoardViewOptions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
-          <div className="flex gap-1 px-2 pb-2">
-            {(["comfortable", "compact"] as const).map((value) => (
-              <Button
-                aria-pressed={density === value}
-                className={cn(
-                  "h-6 flex-1 gap-1.5 px-2 text-xs",
-                  density !== value && "text-muted-foreground",
-                )}
-                key={value}
-                onClick={() => onDensityChange(value)}
-                size="xs"
-                type="button"
-                variant={density === value ? "secondary" : "ghost"}
-              >
-                {value === "comfortable" ? (
-                  <LayoutGrid className="size-3.5" />
-                ) : (
-                  <Rows3 className="size-3.5" />
-                )}
-                {t(`tasks:display.${value}`)}
-              </Button>
-            ))}
-          </div>
-          <DropdownMenuSeparator />
           {fields.map(([label, checked, toggle]) => (
             <DropdownMenuCheckboxItem
               checked={checked}

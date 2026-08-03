@@ -14,10 +14,7 @@ import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
-import {
-  type BoardDensity,
-  BoardDensityProvider,
-} from "@/components/kanban-board/board-density";
+
 import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
@@ -70,7 +67,7 @@ function RouteComponent() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
   const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
-  const [density, setDensity] = useState<BoardDensity>("comfortable");
+
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const [boardSearchInput, setBoardSearchInput] =
     useState<HTMLInputElement | null>(null);
@@ -204,8 +201,6 @@ function RouteComponent() {
           searchInputRef={setBoardSearchInput}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
-          density={density}
-          onDensityChange={setDensity}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
@@ -225,19 +220,17 @@ function RouteComponent() {
             ) : null}
             {sortedBoard && !isPlaceholderData ? (
               <BoardGroupByProvider groupBy={groupBy}>
-                <BoardDensityProvider density={density}>
-                  {viewMode === "board" ? (
-                    <KanbanBoard
-                      board={sortedBoard}
-                      disableDragDrop={sort.field !== "position"}
-                    />
-                  ) : (
-                    <ListView
-                      board={sortedBoard}
-                      disableDragDrop={sort.field !== "position"}
-                    />
-                  )}
-                </BoardDensityProvider>
+                {viewMode === "board" ? (
+                  <KanbanBoard
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                  />
+                ) : (
+                  <ListView
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                  />
+                )}
               </BoardGroupByProvider>
             ) : (
               <BoardSkeleton />

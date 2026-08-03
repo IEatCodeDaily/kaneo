@@ -7222,12 +7222,6 @@
 						"label": {
 							"type": "string"
 						},
-						"comfortable": {
-							"type": "string"
-						},
-						"compact": {
-							"type": "string"
-						},
 						"taskNumbers": {
 							"type": "string"
 						},
@@ -7249,8 +7243,6 @@
 					},
 					"required": [
 						"label",
-						"comfortable",
-						"compact",
 						"taskNumbers",
 						"show",
 						"assignee",

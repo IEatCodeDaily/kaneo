@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BoardDensity } from "@/components/kanban-board/board-density";
+
 import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import BoardViewOptions from "./board-view-options";
@@ -13,8 +13,6 @@ vi.mock("react-i18next", () => ({
 const baseProps = {
   groupBy: "none" as BoardGroupBy,
   onGroupByChange: vi.fn(),
-  density: "comfortable" as BoardDensity,
-  onDensityChange: vi.fn(),
 };
 
 function renderOptions(props: Partial<typeof baseProps> = {}) {
@@ -42,18 +40,6 @@ describe("BoardViewOptions (#61)", () => {
       screen.getByRole("menuitemradio", { name: "tasks:groupBy.priority" }),
     );
     expect(onGroupByChange).toHaveBeenCalledWith("priority");
-  });
-
-  it("reports density from the Display menu", () => {
-    const onDensityChange = vi.fn();
-    renderOptions({ onDensityChange });
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:display.label" }),
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:display.compact" }),
-    );
-    expect(onDensityChange).toHaveBeenCalledWith("compact");
   });
 
   it("toggles fields shown on task cards", () => {
