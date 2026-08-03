@@ -1701,9 +1701,9 @@
 			"clearSuccess": "Talep bitiş tarihi temizlendi",
 			"clearError": "Bitiş tarihi temizlenemedi",
 			"outcome": {
-					"early": "Erken",
-					"on-time": "Zamanında",
-					"late": "Geç"
+				"early": "Erken",
+				"on-time": "Zamanında",
+				"late": "Geç"
 			}
 		},
 		"labels": {
@@ -1767,7 +1767,8 @@
 		},
 		"groupBy": {
 			"dueDate": "Son tarih",
-			"noDueDate": "Son tarih yok"
+			"noDueDate": "Son tarih yok",
+			"noLabel": "Etiket yok"
 		}
 	},
 	"invitations": {

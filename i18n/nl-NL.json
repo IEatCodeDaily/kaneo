@@ -1468,9 +1468,9 @@
 			"clearSuccess": "Einddatum taak verwijderd",
 			"clearError": "Verwijderen einddatum mislukt",
 			"outcome": {
-					"early": "Vroeg",
-					"on-time": "Op tijd",
-					"late": "Te laat"
+				"early": "Vroeg",
+				"on-time": "Op tijd",
+				"late": "Te laat"
 			}
 		},
 		"labels": {
@@ -1534,7 +1534,8 @@
 		},
 		"groupBy": {
 			"dueDate": "Vervaldatum",
-			"noDueDate": "Geen vervaldatum"
+			"noDueDate": "Geen vervaldatum",
+			"noLabel": "Geen label"
 		}
 	},
 	"invitations": {

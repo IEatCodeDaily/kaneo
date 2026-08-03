@@ -23,6 +23,19 @@ describe("groupTasks", () => {
     });
   });
 
+  it("uses the translated no-label bucket for unlabeled tasks", () => {
+    const task = {
+      id: "unlabeled",
+      title: "Unlabeled task",
+      labels: [],
+    };
+
+    expect(groupTasks([task as never], "label")[0]).toMatchObject({
+      key: "",
+      labelKey: "tasks:groupBy.noLabel",
+    });
+  });
+
   it("groups due dates by the same local calendar day the card displays", () => {
     const previousTimezone = process.env.TZ;
     process.env.TZ = "Pacific/Kiritimati";

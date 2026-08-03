@@ -1,4 +1,14 @@
-import { CalendarDays, Eye, Group, LayoutGrid, Rows3 } from "lucide-react";
+import {
+  CalendarDays,
+  CircleOff,
+  Eye,
+  Flag,
+  Group,
+  LayoutGrid,
+  Rows3,
+  Tag,
+  User,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { BoardDensity } from "@/components/kanban-board/board-density";
 import { Button } from "@/components/ui/button";
@@ -23,12 +33,15 @@ type BoardViewOptionsProps = {
   onDensityChange: (density: BoardDensity) => void;
 };
 
-const GROUP_BY_LABEL_KEYS: Record<BoardGroupBy, string> = {
-  none: "tasks:groupBy.none",
-  assignee: "tasks:groupBy.assignee",
-  priority: "tasks:groupBy.priority",
-  label: "tasks:groupBy.byLabel",
-  dueDate: "tasks:groupBy.dueDate",
+const GROUP_BY_OPTIONS: Record<
+  BoardGroupBy,
+  { icon: typeof Group; labelKey: string }
+> = {
+  none: { icon: CircleOff, labelKey: "tasks:groupBy.none" },
+  assignee: { icon: User, labelKey: "tasks:groupBy.assignee" },
+  priority: { icon: Flag, labelKey: "tasks:groupBy.priority" },
+  label: { icon: Tag, labelKey: "tasks:groupBy.byLabel" },
+  dueDate: { icon: CalendarDays, labelKey: "tasks:groupBy.dueDate" },
 };
 
 function BoardViewOptions({
@@ -68,14 +81,17 @@ function BoardViewOptions({
             value={groupBy}
             onValueChange={(value) => onGroupByChange(value as BoardGroupBy)}
           >
-            {BOARD_GROUP_BY_VALUES.map((value) => (
-              <DropdownMenuRadioItem key={value} value={value}>
-                {value === "dueDate" ? (
-                  <CalendarDays className="size-4" />
-                ) : null}
-                {t(GROUP_BY_LABEL_KEYS[value])}
-              </DropdownMenuRadioItem>
-            ))}
+            {BOARD_GROUP_BY_VALUES.map((value) => {
+              const { icon: OptionIcon, labelKey } = GROUP_BY_OPTIONS[value];
+              return (
+                <DropdownMenuRadioItem key={value} value={value}>
+                  <span className="inline-flex items-center gap-2">
+                    <OptionIcon className="size-4 text-muted-foreground" />
+                    {t(labelKey)}
+                  </span>
+                </DropdownMenuRadioItem>
+              );
+            })}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

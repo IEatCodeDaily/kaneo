@@ -1926,9 +1926,9 @@
 			"clearSuccess": "Ticket due date cleared",
 			"clearError": "Failed to clear due date",
 			"outcome": {
-					"early": "Early",
-					"on-time": "On time",
-					"late": "Late"
+				"early": "Early",
+				"on-time": "On time",
+				"late": "Late"
 			}
 		},
 		"labels": {
@@ -2006,7 +2006,8 @@
 			"priority": "Priority",
 			"byLabel": "Label",
 			"dueDate": "Due date",
-			"noDueDate": "No due date"
+			"noDueDate": "No due date",
+			"noLabel": "No label"
 		},
 		"preview": {
 			"assignee": "Assignee",

@@ -1702,9 +1702,9 @@
 			"clearSuccess": "Date d'échéance de la tâche effacée",
 			"clearError": "Échec de l'effacement de la date d'échéance",
 			"outcome": {
-					"early": "En avance",
-					"on-time": "À temps",
-					"late": "En retard"
+				"early": "En avance",
+				"on-time": "À temps",
+				"late": "En retard"
 			}
 		},
 		"labels": {
@@ -1768,7 +1768,8 @@
 		},
 		"groupBy": {
 			"dueDate": "Date d’échéance",
-			"noDueDate": "Aucune date d’échéance"
+			"noDueDate": "Aucune date d’échéance",
+			"noLabel": "Aucun label"
 		}
 	},
 	"invitations": {

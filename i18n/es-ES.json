@@ -1467,9 +1467,9 @@
 			"clearSuccess": "Fecha de vencimiento eliminada correctamente",
 			"clearError": "Error al eliminar fecha de vencimiento",
 			"outcome": {
-					"early": "Antes",
-					"on-time": "A tiempo",
-					"late": "Tarde"
+				"early": "Antes",
+				"on-time": "A tiempo",
+				"late": "Tarde"
 			}
 		},
 		"labels": {
@@ -1533,7 +1533,8 @@
 		},
 		"groupBy": {
 			"dueDate": "Fecha de vencimiento",
-			"noDueDate": "Sin fecha de vencimiento"
+			"noDueDate": "Sin fecha de vencimiento",
+			"noLabel": "Sin etiqueta"
 		}
 	},
 	"invitations": {

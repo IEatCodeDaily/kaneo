@@ -1735,9 +1735,9 @@
 			"clearSuccess": "Fälligkeitsdatum entfernt",
 			"clearError": "Fälligkeitsdatum konnte nicht entfernt werden",
 			"outcome": {
-					"early": "Früh",
-					"on-time": "Pünktlich",
-					"late": "Verspätet"
+				"early": "Früh",
+				"on-time": "Pünktlich",
+				"late": "Verspätet"
 			}
 		},
 		"labels": {
@@ -1801,7 +1801,8 @@
 		},
 		"groupBy": {
 			"dueDate": "Fälligkeitsdatum",
-			"noDueDate": "Kein Fälligkeitsdatum"
+			"noDueDate": "Kein Fälligkeitsdatum",
+			"noLabel": "Kein Label"
 		}
 	},
 	"invitations": {

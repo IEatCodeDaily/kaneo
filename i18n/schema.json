@@ -7598,11 +7598,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"early",
-								"on-time",
-								"late"
-							]
+							"required": ["early", "on-time", "late"]
 						}
 					},
 					"required": [
@@ -7897,6 +7893,9 @@
 						},
 						"noDueDate": {
 							"type": "string"
+						},
+						"noLabel": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -7906,7 +7905,8 @@
 						"priority",
 						"byLabel",
 						"dueDate",
-						"noDueDate"
+						"noDueDate",
+						"noLabel"
 					]
 				},
 				"preview": {
