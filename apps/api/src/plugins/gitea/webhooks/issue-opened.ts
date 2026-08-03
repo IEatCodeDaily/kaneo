@@ -3,6 +3,7 @@ import db from "../../../database";
 import { boardTable, columnTable, taskTable } from "../../../database/schema";
 import { publishEvent } from "../../../events";
 import { claimTaskNumber } from "../../../task/controllers/claim-task-numbers";
+import { getTaskUrl } from "../../../utils/task-url";
 import {
   createExternalLink,
   findExternalLink,
@@ -159,8 +160,12 @@ export async function handleGiteaIssueOpened(
       continue;
     }
 
-    const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-    const taskUrl = `${clientUrl}/dashboard/workspace/${project.workspaceId}/project/${boardId}/task/${createdTask.id}`;
+    const taskUrl = getTaskUrl(
+      process.env.KANEO_CLIENT_URL || "http://localhost:5173",
+      project.organizationId,
+      boardId,
+      createdTask.id,
+    );
     const taskIdentifier = `${project.slug.toUpperCase()}-${createdTask.number}`;
 
     try {

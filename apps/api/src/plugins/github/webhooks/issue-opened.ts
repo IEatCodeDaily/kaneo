@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import db from "../../../database";
 import { boardTable, columnTable, taskTable } from "../../../database/schema";
 import { claimTaskNumber } from "../../../task/controllers/claim-task-numbers";
+import { getTaskUrl } from "../../../utils/task-url";
 import type { GitHubConfig } from "../config";
 import { createExternalLink, findExternalLink } from "../services/link-manager";
 import { findAllIntegrationsByRepo } from "../services/task-service";
@@ -138,8 +139,12 @@ export async function handleIssueOpened(payload: IssueOpenedPayload) {
       continue;
     }
 
-    const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
-    const taskUrl = `${clientUrl}/dashboard/workspace/${project.workspaceId}/project/${boardId}/task/${createdTask.id}`;
+    const taskUrl = getTaskUrl(
+      process.env.KANEO_CLIENT_URL || "http://localhost:5173",
+      project.organizationId,
+      boardId,
+      createdTask.id,
+    );
     const taskIdentifier = `${project.slug.toUpperCase()}-${createdTask.number}`;
 
     try {
