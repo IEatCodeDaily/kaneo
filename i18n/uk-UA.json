@@ -648,7 +648,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Обрати проєкт",
-			"noBoards": "Немає проєктів"
+			"noBoards": "Немає проєктів",
+			"searchBoards": "Пошук дощок..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колонку створено",

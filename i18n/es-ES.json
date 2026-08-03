@@ -556,7 +556,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Selecciona proyecto",
-			"noBoards": "No hay proyectos"
+			"noBoards": "No hay proyectos",
+			"searchBoards": "Buscar tableros..."
 		},
 		"columnEditor": {
 			"toastCreated": "Columna creada",

@@ -648,7 +648,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Выберите проект",
-			"noBoards": "Нет проектов"
+			"noBoards": "Нет проектов",
+			"searchBoards": "Поиск досок..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колонка создана",

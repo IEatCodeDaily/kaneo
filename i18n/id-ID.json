@@ -652,7 +652,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Pilih proyek",
-			"noBoards": "Tidak ada proyek"
+			"noBoards": "Tidak ada proyek",
+			"searchBoards": "Cari papan..."
 		},
 		"columnEditor": {
 			"toastCreated": "Kolom dibuat",

@@ -1010,89 +1010,60 @@ function CreateTaskModal({
                               {t("settings:boardSwitcher.selectBoard")}
                             </DialogTitle>
                             <DialogDescription>
-                              {t("tasks:parentTask.searchPlaceholder")}
+                              {t("settings:boardSwitcher.searchBoards")}
                             </DialogDescription>
                           </DialogHeader>
-                          <div className="grid min-h-96 sm:grid-cols-[12rem_1fr]">
-                            <nav
-                              aria-label="Boards"
-                              className="border-b p-2 sm:border-r sm:border-b-0"
-                            >
-                              {boards.map((candidate) => (
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 border-b p-3">
+                              <Search
+                                className="size-4 text-muted-foreground"
+                                aria-hidden="true"
+                              />
+                              <Input
+                                value={boardSearch}
+                                onChange={(event) =>
+                                  setBoardSearch(event.target.value)
+                                }
+                                placeholder={t(
+                                  "settings:boardSwitcher.searchBoards",
+                                )}
+                                aria-label={t(
+                                  "settings:boardSwitcher.selectBoard",
+                                )}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="max-h-80 overflow-y-auto p-2">
+                              {visibleBoards.map((candidate) => (
                                 <button
                                   key={candidate.id}
                                   type="button"
-                                  aria-pressed={
-                                    candidate.id === selectedBoardId
-                                  }
-                                  onClick={() =>
-                                    setSelectedBoardId(candidate.id)
-                                  }
-                                  className={cn(
-                                    "flex h-9 w-full items-center rounded-md px-3 text-left text-sm",
-                                    candidate.id === selectedBoardId
-                                      ? "bg-accent font-medium"
-                                      : "hover:bg-accent/60",
-                                  )}
+                                  onClick={() => {
+                                    setSelectedBoardId(candidate.id);
+                                    setBoardPickerOpen(false);
+                                    setBoardSearch("");
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
                                 >
+                                  <Check
+                                    className={cn(
+                                      "size-4 shrink-0",
+                                      candidate.id === selectedBoardId
+                                        ? "opacity-100"
+                                        : "opacity-0",
+                                    )}
+                                    aria-hidden="true"
+                                  />
                                   <span className="truncate">
                                     {candidate.name}
                                   </span>
                                 </button>
                               ))}
-                            </nav>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 border-b p-3">
-                                <Search
-                                  className="size-4 text-muted-foreground"
-                                  aria-hidden="true"
-                                />
-                                <Input
-                                  value={boardSearch}
-                                  onChange={(event) =>
-                                    setBoardSearch(event.target.value)
-                                  }
-                                  placeholder={t(
-                                    "tasks:parentTask.searchPlaceholder",
-                                  )}
-                                  aria-label={t(
-                                    "settings:boardSwitcher.selectBoard",
-                                  )}
-                                  className="h-8"
-                                />
-                              </div>
-                              <div className="max-h-80 overflow-y-auto p-2">
-                                {visibleBoards.map((candidate) => (
-                                  <button
-                                    key={candidate.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedBoardId(candidate.id);
-                                      setBoardPickerOpen(false);
-                                      setBoardSearch("");
-                                    }}
-                                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "size-4 shrink-0",
-                                        candidate.id === selectedBoardId
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                      aria-hidden="true"
-                                    />
-                                    <span className="truncate">
-                                      {candidate.name}
-                                    </span>
-                                  </button>
-                                ))}
-                                {visibleBoards.length === 0 ? (
-                                  <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                    {t("settings:boardSwitcher.noBoards")}
-                                  </p>
-                                ) : null}
-                              </div>
+                              {visibleBoards.length === 0 ? (
+                                <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                  {t("settings:boardSwitcher.noBoards")}
+                                </p>
+                              ) : null}
                             </div>
                           </div>
                         </DialogContent>

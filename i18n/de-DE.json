@@ -664,7 +664,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Projekt auswählen",
-			"noBoards": "Keine Projekte"
+			"noBoards": "Keine Projekte",
+			"searchBoards": "Boards durchsuchen..."
 		},
 		"columnEditor": {
 			"toastCreated": "Spalte erstellt",

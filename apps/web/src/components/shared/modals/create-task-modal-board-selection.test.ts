@@ -40,8 +40,9 @@ describe("create task board selection", () => {
 
     expect(breadcrumb).toContain("settings:boardSwitcher.selectBoard");
     expect(breadcrumb).toContain("<Dialog");
-    expect(breadcrumb).toContain('aria-label="Boards"');
-    expect(breadcrumb).toContain("tasks:parentTask.searchPlaceholder");
+    expect(breadcrumb).not.toContain('<nav aria-label="Boards"');
+    expect(breadcrumb).toContain("settings:boardSwitcher.searchBoards");
+    expect(breadcrumb).not.toContain("tasks:parentTask.searchPlaceholder");
     expect(body).not.toContain("boardPickerOpen");
   });
 

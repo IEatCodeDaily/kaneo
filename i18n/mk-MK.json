@@ -650,7 +650,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Избери проект",
-			"noBoards": "Нема проекти"
+			"noBoards": "Нема проекти",
+			"searchBoards": "Пребарај табли..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колоната е креирана",

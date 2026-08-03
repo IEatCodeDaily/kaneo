@@ -650,7 +650,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "프로젝트 선택",
-			"noBoards": "프로젝트 없음"
+			"noBoards": "프로젝트 없음",
+			"searchBoards": "보드 검색..."
 		},
 		"columnEditor": {
 			"toastCreated": "컬럼이 생성되었습니다",

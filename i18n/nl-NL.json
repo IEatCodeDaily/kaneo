@@ -556,7 +556,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Board selecteren",
-			"noBoards": "Geen boarden"
+			"noBoards": "Geen boarden",
+			"searchBoards": "Borden zoeken..."
 		},
 		"columnEditor": {
 			"toastCreated": "Kolom aangemaakt",

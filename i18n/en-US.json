@@ -828,7 +828,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Select board",
-			"noBoards": "No boards"
+			"noBoards": "No boards",
+			"searchBoards": "Search boards..."
 		},
 		"columnEditor": {
 			"toastCreated": "Column created",

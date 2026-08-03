@@ -650,7 +650,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Επιλέξτε έργο",
-			"noBoards": "Δεν υπάρχουν έργα"
+			"noBoards": "Δεν υπάρχουν έργα",
+			"searchBoards": "Αναζήτηση πινάκων..."
 		},
 		"columnEditor": {
 			"toastCreated": "Η στήλη δημιουργήθηκε",

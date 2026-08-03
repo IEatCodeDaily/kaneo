@@ -651,7 +651,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Proje seç",
-			"noBoards": "Proje yok"
+			"noBoards": "Proje yok",
+			"searchBoards": "Panolarda ara..."
 		},
 		"columnEditor": {
 			"toastCreated": "Sütun oluşturuldu",

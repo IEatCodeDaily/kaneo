@@ -205,41 +205,41 @@ function RouteComponent() {
       <PageTitle title={t("organization:boards.pageTitle")} />
       <OrganizationLayout
         title={t("organization:boards.pageTitle")}
+        headerNavigation={
+          <BoardViewTabs
+            aria-label={t("organization:boards.pageTitle")}
+            value={view}
+            onValueChange={(value) => setView(value as "table" | "timeline")}
+            views={[
+              {
+                value: "table",
+                label: t("organization:boards.view.table", {
+                  defaultValue: "Table",
+                }),
+                icon: <List className="size-3.5" />,
+              },
+              {
+                value: "timeline",
+                label: t("organization:boards.view.timeline", {
+                  defaultValue: "Timeline",
+                }),
+                icon: <CalendarRange className="size-3.5" />,
+              },
+            ]}
+          />
+        }
         headerActions={
-          <div className="flex min-w-0 items-center gap-1">
-            <BoardViewTabs
-              aria-label={t("organization:boards.pageTitle")}
-              value={view}
-              onValueChange={(value) => setView(value as "table" | "timeline")}
-              views={[
-                {
-                  value: "table",
-                  label: t("organization:boards.view.table", {
-                    defaultValue: "Table",
-                  }),
-                  icon: <List className="size-3.5" />,
-                },
-                {
-                  value: "timeline",
-                  label: t("organization:boards.view.timeline", {
-                    defaultValue: "Timeline",
-                  }),
-                  icon: <CalendarRange className="size-3.5" />,
-                },
-              ]}
-            />
-            {canCreate ? (
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={handleCreateBoard}
-                className="ml-1 gap-1"
-              >
-                <Plus className="w-3 h-3" />
-                {t("organization:boards.createBoard")}
-              </Button>
-            ) : null}
-          </div>
+          canCreate ? (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleCreateBoard}
+              className="gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              {t("organization:boards.createBoard")}
+            </Button>
+          ) : null
         }
       >
         {view === "timeline" ? (

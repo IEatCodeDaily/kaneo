@@ -652,7 +652,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Sélectionner un projet",
-			"noBoards": "Aucun projet"
+			"noBoards": "Aucun projet",
+			"searchBoards": "Rechercher des tableaux..."
 		},
 		"columnEditor": {
 			"toastCreated": "Colonne créée",
