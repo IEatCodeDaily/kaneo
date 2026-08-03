@@ -8,18 +8,10 @@ import {
   CalendarRange,
   Flag,
   PanelRight,
-  Plus,
   SquareKanban,
   SquircleDashed,
 } from "lucide-react";
-import {
-  lazy,
-  type ReactNode,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardPropertiesPanel from "@/components/board/board-properties-panel";
 import BoardSyncIndicator from "@/components/board/board-sync-indicator";
@@ -31,7 +23,6 @@ import OrganizationCrumbSelect from "@/components/common/header/organization-cru
 import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
-import { Button } from "@/components/ui/button";
 
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -39,10 +30,6 @@ import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
 import { useBoardLayoutStore } from "@/store/board-layout";
 import { useNavigationStore } from "@/store/navigation";
-
-const CreateTaskModal = lazy(
-  () => import("@/components/shared/modals/create-task-modal"),
-);
 
 type BoardLayoutProps = {
   boardId: string;
@@ -67,12 +54,12 @@ export default function BoardLayout({
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: boardWithTasks } = useGetTasks(boardId);
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   const propertiesPanelBoardId = useBoardLayoutStore(
     (state) => state.propertiesPanelBoardId,
   );
-  const openPropertiesPanel = useBoardLayoutStore(
-    (state) => state.openPropertiesPanel,
+  const togglePropertiesPanel = useBoardLayoutStore(
+    (state) => state.togglePropertiesPanel,
   );
   const closePropertiesPanel = useBoardLayoutStore(
     (state) => state.closePropertiesPanel,
@@ -245,31 +232,24 @@ export default function BoardLayout({
                 resourceId={boardId}
                 resourceType="board"
               />
-              <Button
+
+              <button
                 type="button"
-                size="sm"
-                className="h-7 gap-1.5 px-2"
-                aria-label={t("navigation:commandPalette.createTask")}
-                data-testid="board-create-task"
-                onClick={() => setIsTaskModalOpen(true)}
+                aria-label={t("organization:boards.properties.title")}
+                aria-pressed={isPropertiesPanelOpen}
+                aria-expanded={isPropertiesPanelOpen}
+                aria-controls="board-properties-panel"
+                title={t("organization:boards.properties.title")}
+                data-testid="board-properties-toggle"
+                className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-accent/60 hover:text-foreground ${
+                  isPropertiesPanelOpen
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => togglePropertiesPanel(boardId)}
               >
-                <Plus className="size-3.5" />
-                <span className="hidden lg:inline">
-                  {t("navigation:commandPalette.createTask")}
-                </span>
-              </Button>
-              {!isPropertiesPanelOpen ? (
-                <button
-                  type="button"
-                  aria-label={t("organization:boards.properties.open")}
-                  title={t("organization:boards.properties.title")}
-                  data-testid="board-properties-toggle"
-                  className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  onClick={() => openPropertiesPanel(boardId)}
-                >
-                  <PanelRight className="size-3.5" />
-                </button>
-              ) : null}
+                <PanelRight className="size-3.5" />
+              </button>
               {headerActions}
             </div>
           )}
@@ -309,15 +289,6 @@ export default function BoardLayout({
         open={isCreateBoardModalOpen}
         onClose={() => setIsCreateBoardModalOpen(false)}
       />
-      {isTaskModalOpen ? (
-        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
-          <CreateTaskModal
-            open
-            boardId={boardId}
-            onClose={() => setIsTaskModalOpen(false)}
-          />
-        </Suspense>
-      ) : null}
     </Layout>
   );
 }

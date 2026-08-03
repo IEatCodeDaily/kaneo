@@ -48,6 +48,19 @@ describe("BoardToolbar", () => {
     expect(screen.queryByText(/view\.board/)).not.toBeInTheDocument();
   });
 
+  it("mounts view-specific actions beside the shared filter and sort controls", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const action = screen.getByRole("button", { name: "Create ticket" });
+    const filter = screen.getByRole("button", { name: /filter/i });
+    expect(action.parentElement).toBe(filter.parentElement);
+  });
+
   it("puts search and view options in the same bar as filter and sort", () => {
     const { container } = render(<BoardToolbar {...baseProps} />);
 

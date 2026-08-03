@@ -74,6 +74,7 @@ type BoardToolbarProps = {
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
   filtersOnly?: boolean;
+  actions?: ReactNode;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -164,6 +165,7 @@ export default function BoardToolbar({
   groupBy,
   onGroupByChange,
   filtersOnly = false,
+  actions,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -566,6 +568,7 @@ export default function BoardToolbar({
             {!filtersOnly && (
               <SortControl sort={sort} onSortChange={onSortChange} />
             )}
+            {actions}
 
             {!filtersOnly && (
               <BoardViewOptions

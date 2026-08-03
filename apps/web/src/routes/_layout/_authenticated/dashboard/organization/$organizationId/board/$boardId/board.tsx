@@ -5,10 +5,10 @@ import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
-
 import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
+import CreateTaskAction from "@/components/task/create-task-action";
 
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { shortcuts } from "@/constants/shortcuts";
@@ -171,6 +171,7 @@ function RouteComponent() {
           searchInputRef={setBoardSearchInput}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
+          actions={<CreateTaskAction boardId={boardId} />}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">

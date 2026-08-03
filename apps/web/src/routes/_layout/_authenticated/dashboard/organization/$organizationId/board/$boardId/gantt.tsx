@@ -40,6 +40,7 @@ import {
   weekendTintGradient,
 } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
+import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -676,6 +677,7 @@ function RouteComponent() {
               />
             </div>
             <div className="ml-auto flex items-center gap-2">
+              <CreateTaskAction boardId={boardId} />
               <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
                 {ZOOM_LEVELS.map((level) => (
                   <Button

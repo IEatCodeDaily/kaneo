@@ -64,7 +64,9 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
 }));
 vi.mock("@/components/board/board-properties-panel", () => ({
   default: ({ open }: { open: boolean }) =>
-    open ? <aside data-testid="board-properties-panel" /> : null,
+    open ? (
+      <aside id="board-properties-panel" data-testid="board-properties-panel" />
+    ) : null,
 }));
 
 afterEach(() => {
@@ -73,15 +75,32 @@ afterEach(() => {
 });
 
 describe("BoardLayout shared actions", () => {
-  it("owns create and properties actions for every child view", async () => {
+  it("keeps Properties mounted and uses it as a pressed-state toggle", () => {
     render(
       <BoardLayout boardId="board-1" organizationId="org-1" activeView="board">
         <div>Tasks</div>
       </BoardLayout>,
     );
-    fireEvent.click(screen.getByTestId("board-create-task"));
-    expect(await screen.findByTestId("create-task-modal")).toBeInTheDocument();
-    expect(screen.getByTestId("board-properties-toggle")).toBeInTheDocument();
+    const toggle = screen.getByTestId("board-properties-toggle");
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-controls", "board-properties-panel");
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(toggle).toHaveClass("bg-accent");
+    expect(screen.getByTestId("board-properties-panel")).toHaveAttribute(
+      "id",
+      "board-properties-panel",
+    );
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(toggle).not.toHaveClass("bg-accent");
+    expect(
+      screen.queryByTestId("board-properties-panel"),
+    ).not.toBeInTheDocument();
   });
 
   it("preserves the properties panel across navigation-like child/view rerenders", () => {
@@ -124,8 +143,9 @@ describe("BoardLayout shared actions", () => {
     );
 
     expect(screen.getByTestId("board-properties-panel")).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("board-properties-toggle"),
-    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("board-properties-toggle")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });

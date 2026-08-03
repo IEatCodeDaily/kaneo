@@ -27,6 +27,7 @@ import BoardLayout from "@/components/common/board-layout";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { statusBarClasses } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
+import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -150,8 +151,8 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex items-center justify-between gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -208,14 +209,17 @@ function RouteComponent() {
               ))}
             </div>
           </div>
-          <TaskViewControls
-            sort={sort}
-            onSortChange={setSort}
-            group={group}
-            onGroupChange={setGroup}
-            display={display}
-            onDisplayChange={setDisplay}
-          />
+          <div className="flex items-center gap-2">
+            <TaskViewControls
+              sort={sort}
+              onSortChange={setSort}
+              group={group}
+              onGroupChange={setGroup}
+              display={display}
+              onDisplayChange={setDisplay}
+            />
+            <CreateTaskAction boardId={boardId} />
+          </div>
         </div>
 
         <div

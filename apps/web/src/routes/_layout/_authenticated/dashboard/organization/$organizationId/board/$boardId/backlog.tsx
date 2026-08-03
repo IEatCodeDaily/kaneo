@@ -1,13 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Plus } from "lucide-react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
 import BoardToolbar from "@/components/board/board-toolbar";
@@ -15,12 +8,8 @@ import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
-
+import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-
-const CreateTaskModal = lazy(
-  () => import("@/components/shared/modals/create-task-modal"),
-);
 
 import {
   AlertDialog,
@@ -66,7 +55,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
   // #143: proper confirmation dialog for the bulk move (was window.confirm).
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
   const [bulkMovePending, setBulkMovePending] = useState(false);
@@ -191,15 +180,7 @@ function RouteComponent() {
           <div className="flex min-h-12 items-center px-3 py-2 md:px-4">
             <div className="flex w-full items-center gap-2">
               <div className="flex w-full flex-wrap items-center gap-1.5">
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setIsTaskModalOpen(true)}
-                  className="h-6 px-2 text-xs text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  {t("tasks:backlog.plan")}
-                </Button>
+                <CreateTaskAction boardId={boardId} status="planned" />
 
                 <Button
                   variant="ghost"
@@ -265,17 +246,6 @@ function RouteComponent() {
             </div>
           )}
         </div>
-
-        {isTaskModalOpen && (
-          <Suspense fallback={<span className="sr-only">Loading editor</span>}>
-            <CreateTaskModal
-              open
-              boardId={boardId}
-              onClose={() => setIsTaskModalOpen(false)}
-              status="planned"
-            />
-          </Suspense>
-        )}
 
         <TaskDetailsSheet
           taskId={taskId}

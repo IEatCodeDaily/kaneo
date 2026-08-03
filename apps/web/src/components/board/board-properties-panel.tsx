@@ -79,6 +79,7 @@ export default function BoardPropertiesPanel({
 
   return (
     <aside
+      id="board-properties-panel"
       data-testid="board-properties-panel"
       aria-label={t("organization:boards.properties.title")}
       className="flex h-full w-80 shrink-0 flex-col gap-4 overflow-y-auto border-border border-l bg-background p-4"
