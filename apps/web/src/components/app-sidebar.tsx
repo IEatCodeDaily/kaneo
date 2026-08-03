@@ -97,7 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavTables />
         <div
           aria-hidden="true"
-          className="mx-2 h-px shrink-0 bg-sidebar-border"
+          className="mx-2 hidden h-px shrink-0 bg-sidebar-border group-data-[collapsible=icon]:block"
           data-testid="sidebar-boards-repos-divider"
         />
         <NavRepos />

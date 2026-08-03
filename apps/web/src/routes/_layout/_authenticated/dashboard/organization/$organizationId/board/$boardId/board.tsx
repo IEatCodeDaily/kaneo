@@ -174,14 +174,12 @@ function RouteComponent() {
           <button
             type="button"
             aria-label={t("organization:boards.properties.open")}
+            title={t("organization:boards.properties.title")}
             data-testid="board-properties-toggle"
-            className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground text-xs font-medium hover:bg-accent/60 hover:text-foreground"
+            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
             onClick={() => setIsPropertiesPanelOpen(true)}
           >
             <PanelRight className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">
-              {t("organization:boards.properties.title")}
-            </span>
           </button>
         ) : null
       }

@@ -104,9 +104,9 @@ describe("AppSidebar layout (#96)", () => {
     expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
     expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
     expect(screen.getByTestId("nav-repos")).toBeInTheDocument();
-    expect(
-      screen.getByTestId("sidebar-boards-repos-divider").className,
-    ).not.toContain("hidden");
+    const divider = screen.getByTestId("sidebar-boards-repos-divider");
+    expect(divider.className).toContain("hidden");
+    expect(divider.className).toContain("group-data-[collapsible=icon]:block");
   });
 
   it("does not render the organization selector at the sidebar top", () => {
