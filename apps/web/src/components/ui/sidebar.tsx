@@ -517,9 +517,9 @@ const sidebarMenuButtonVariants = cva(
     },
     variants: {
       size: {
-        default: "h-11 text-sm md:h-7 md:text-xs!",
+        default: "h-11 text-sm md:h-7 md:!text-xs",
         lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
-        sm: "h-11 text-sm md:h-7 md:text-xs!",
+        sm: "h-11 text-sm md:h-7 md:!text-xs",
       },
       variant: {
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

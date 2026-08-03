@@ -20,7 +20,7 @@ describe("sidebar menu density", () => {
     );
 
     const button = screen.getByRole("button", { name: "Boards" });
-    expect(button).toHaveClass("h-11", "md:h-7", "text-sm", "md:text-xs!");
+    expect(button).toHaveClass("h-11", "md:h-7", "text-sm", "md:!text-xs");
     expect(button).toHaveClass(
       "focus-visible:ring-2",
       "group-data-[collapsible=icon]:size-8!",
