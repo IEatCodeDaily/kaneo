@@ -138,6 +138,27 @@ export const ResizableImage = Image.extend({
   addNodeView() {
     return ReactNodeViewRenderer(ResizableImageView);
   },
+  renderMarkdown(node: {
+    attrs?: {
+      src?: string;
+      alt?: string | null;
+      title?: string | null;
+      width?: number | null;
+    };
+  }) {
+    const attrs = node.attrs ?? {};
+    const escapeHtml = (value: string) =>
+      value
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    const src = escapeHtml(attrs.src || "");
+    const alt = escapeHtml(attrs.alt || "");
+    const title = attrs.title ? ` title="${escapeHtml(attrs.title)}"` : "";
+    const width = attrs.width ? ` width="${attrs.width}"` : "";
+    return `<img src="${src}" alt="${alt}"${title}${width}>`;
+  },
 });
 
 export default ResizableImage;
