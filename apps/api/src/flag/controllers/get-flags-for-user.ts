@@ -6,6 +6,7 @@ import {
   taskFlagTable,
   taskTable,
   teamMemberTable,
+  teamTable,
 } from "../../database/schema";
 
 /**
@@ -19,7 +20,15 @@ async function getFlagsForUser(userId: string, organizationId?: string) {
   const teams = await db
     .select({ teamId: teamMemberTable.teamId })
     .from(teamMemberTable)
-    .where(eq(teamMemberTable.userId, userId));
+    .innerJoin(teamTable, eq(teamMemberTable.teamId, teamTable.id))
+    .where(
+      and(
+        eq(teamMemberTable.userId, userId),
+        organizationId
+          ? eq(teamTable.organizationId, organizationId)
+          : undefined,
+      ),
+    );
 
   const teamIds = teams.map((team) => team.teamId);
 

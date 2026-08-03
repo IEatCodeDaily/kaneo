@@ -18,7 +18,7 @@ vi.mock("@/hooks/queries/task/use-get-my-tasks", () => ({
 }));
 
 vi.mock("@/hooks/queries/flag/use-get-my-flags", () => ({
-  default: () => mockUseGetMyFlags(),
+  default: (organizationId?: string) => mockUseGetMyFlags(organizationId),
 }));
 
 import MyTasksCountBadge from "@/components/my-tasks-count-badge";
@@ -139,6 +139,7 @@ describe("MyTasksCountBadge", () => {
       relation: "assigned",
       includeCompleted: false,
     });
+    expect(mockUseGetMyFlags).toHaveBeenCalledWith("org-1");
   });
 
   it("ignores resolved flags", () => {

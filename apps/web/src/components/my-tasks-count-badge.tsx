@@ -23,7 +23,7 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
     relation: "assigned",
     includeCompleted: false,
   });
-  const { data: flags } = useGetMyFlags();
+  const { data: flags } = useGetMyFlags(organizationId);
 
   const assignedCount = (tasks ?? []).length;
   // Resolved flags are finished work and must not be counted.

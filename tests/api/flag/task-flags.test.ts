@@ -20,6 +20,7 @@ vi.mock("../../../apps/api/src/events", () => ({
 }));
 
 import getFlagTypesByBoardId from "../../../apps/api/src/flag/controllers/get-flag-types-by-board-id";
+import getFlagsForUser from "../../../apps/api/src/flag/controllers/get-flags-for-user";
 import getTaskFlags from "../../../apps/api/src/flag/controllers/get-task-flags";
 import resolveTaskFlag from "../../../apps/api/src/flag/controllers/resolve-task-flag";
 
@@ -177,6 +178,21 @@ describe("task flags", () => {
       const rendered = describeSql(captured[0]);
       expect(rendered).toContain("task_flag.task_id");
       expect(rendered).not.toContain("task_flag.resolved_at");
+    });
+  });
+
+  describe("getFlagsForUser organization filtering", () => {
+    it("scopes active flags and team membership to the selected organization", async () => {
+      const captured: unknown[] = [];
+      mockSelect
+        .mockReturnValueOnce(makeSelectChain([{ teamId: "team-1" }], captured))
+        .mockReturnValueOnce(makeSelectChain([ACTIVE_FLAG], captured));
+
+      await getFlagsForUser("user-b", "org-1");
+
+      expect(captured).toHaveLength(2);
+      expect(describeSql(captured[0])).toContain("team.organization_id");
+      expect(describeSql(captured[1])).toContain("board.organization_id");
     });
   });
 

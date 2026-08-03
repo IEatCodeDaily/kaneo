@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import getMyFlags from "@/fetchers/flag/get-my-flags";
 
-function useGetMyFlags() {
+function useGetMyFlags(organizationId?: string) {
   return useQuery({
-    queryKey: ["my-flags"],
-    queryFn: () => getMyFlags(),
+    queryKey: ["my-flags", organizationId],
+    queryFn: () => getMyFlags(organizationId),
   });
 }
 
