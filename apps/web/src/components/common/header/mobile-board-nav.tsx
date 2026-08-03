@@ -2,6 +2,7 @@ import {
   CalendarDays,
   CalendarRange,
   Check,
+  Flag,
   Menu,
   Plus,
   SquareKanban,
@@ -19,11 +20,12 @@ import { cn } from "@/lib/cn";
 type MobileBoardNavProps = {
   organizationId: string;
   boardId: string;
-  activeView: "backlog" | "board" | "gantt" | "calendar";
+  activeView: "backlog" | "board" | "gantt" | "calendar" | "milestones";
   onSelectBoardView: () => void;
   onSelectBacklog: () => void;
   onSelectGantt: () => void;
   onSelectCalendar: () => void;
+  onSelectMilestones: () => void;
   onSelectBoard: (boardId: string) => void;
   onAddBoard: () => void;
 };
@@ -36,6 +38,7 @@ export default function MobileBoardNav({
   onSelectBacklog,
   onSelectGantt,
   onSelectCalendar,
+  onSelectMilestones,
   onSelectBoard,
   onAddBoard,
 }: MobileBoardNavProps) {
@@ -111,6 +114,19 @@ export default function MobileBoardNav({
               >
                 <CalendarRange className="size-3.5" />
                 Calendar
+              </button>
+              <button
+                type="button"
+                onClick={onSelectMilestones}
+                className={cn(
+                  "flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                  activeView === "milestones"
+                    ? "border-border bg-secondary text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-accent",
+                )}
+              >
+                <Flag className="size-3.5" />
+                Milestones
               </button>
             </div>
           </div>

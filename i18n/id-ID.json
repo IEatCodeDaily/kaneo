@@ -1909,6 +1909,11 @@
 			"dueDate": "Tanggal jatuh tempo",
 			"noDueDate": "Tanpa tanggal jatuh tempo",
 			"noLabel": "Tanpa label"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Tanggal jatuh tempo"
+			}
 		}
 	},
 	"invitations": {

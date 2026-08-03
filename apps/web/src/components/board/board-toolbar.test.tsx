@@ -32,6 +32,8 @@ const baseProps = {
   onSearchQueryChange: vi.fn(),
   groupBy: "none" as never,
   onGroupByChange: vi.fn(),
+  isPropertiesPanelOpen: false,
+  onPropertiesPanelOpen: vi.fn(),
 };
 
 describe("BoardToolbar", () => {
@@ -50,9 +52,24 @@ describe("BoardToolbar", () => {
     expect(scope(/sort/i).length).toBeGreaterThan(0);
     expect(scope(/groupBy\.label/).length).toBeGreaterThan(0);
     expect(scope(/display\.label/).length).toBeGreaterThan(0);
+    expect(bar.contains(screen.getByTestId("board-properties-toggle"))).toBe(
+      true,
+    );
     expect(
       bar.querySelector('input[placeholder="tasks:boardSearchPlaceholder"]'),
     ).toBeTruthy();
+  });
+
+  it("opens board properties from the toolbar", () => {
+    const onPropertiesPanelOpen = vi.fn();
+    render(
+      <BoardToolbar
+        {...baseProps}
+        onPropertiesPanelOpen={onPropertiesPanelOpen}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("board-properties-toggle"));
+    expect(onPropertiesPanelOpen).toHaveBeenCalledOnce();
   });
 
   it("reports search typing upward", () => {

@@ -1765,6 +1765,11 @@
 			"dueDate": "마감일",
 			"noDueDate": "마감일 없음",
 			"noLabel": "라벨 없음"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "마감일"
+			}
 		}
 	},
 	"invitations": {

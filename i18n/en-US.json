@@ -2028,6 +2028,21 @@
 			"cleared": "Milestone removed",
 			"assignFailed": "Failed to update milestone",
 			"badgeTooltip": "Milestone: {{name}} ({{status}})",
+			"view": {
+				"title": "Milestones",
+				"description": "Track milestone dates and progress inferred from related tasks.",
+				"pageTitle": "{{name}} — Milestones",
+				"caption": "Board milestones and their related tasks",
+				"milestone": "Milestone",
+				"dueDate": "Due date",
+				"progress": "Progress",
+				"progressLabel": "{{percent}} percent complete, {{completed}} of {{total}} tasks",
+				"status": "Status",
+				"tasks": "Related tasks",
+				"noDueDate": "No due date",
+				"noTasks": "No related tasks",
+				"empty": "No milestones on this board yet."
+			},
 			"manage": {
 				"title": "Milestones",
 				"namePlaceholder": "Milestone name",
@@ -2036,7 +2051,8 @@
 				"deleted": "Milestone deleted",
 				"saveFailed": "Failed to save milestone",
 				"deleteFailed": "Failed to delete milestone",
-				"noDates": "No dates yet"
+				"noDates": "No dates yet",
+				"dueDate": "Due date"
 			},
 			"status": {
 				"planned": "Planned",

@@ -1,4 +1,11 @@
-import { Filter, PanelsTopLeft, Rows3, Search, X } from "lucide-react";
+import {
+  Filter,
+  PanelRight,
+  PanelsTopLeft,
+  Rows3,
+  Search,
+  X,
+} from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import BoardViewOptions from "@/components/board/board-view-options";
@@ -18,7 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import labelColors, { resolveLabelColor } from "@/constants/label-colors";
+import { resolveLabelColor } from "@/constants/label-colors";
 import {
   type BoardFilters,
   DUE_DATE_FILTER_VALUES,
@@ -73,6 +80,8 @@ type BoardToolbarProps = {
   searchInputRef?: Ref<HTMLInputElement>;
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
+  isPropertiesPanelOpen: boolean;
+  onPropertiesPanelOpen: () => void;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -162,6 +171,8 @@ export default function BoardToolbar({
   searchInputRef,
   groupBy,
   onGroupByChange,
+  isPropertiesPanelOpen,
+  onPropertiesPanelOpen,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -688,6 +699,18 @@ export default function BoardToolbar({
           </div>
 
           <div className="inline-flex items-center gap-1">
+            {!isPropertiesPanelOpen ? (
+              <button
+                type="button"
+                aria-label={t("organization:boards.properties.open")}
+                data-testid="board-properties-toggle"
+                className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground text-xs font-medium hover:bg-accent/60 hover:text-foreground"
+                onClick={onPropertiesPanelOpen}
+              >
+                <PanelRight className="h-3.5 w-3.5" />
+                {t("organization:boards.properties.title")}
+              </button>
+            ) : null}
             <button
               type="button"
               className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${

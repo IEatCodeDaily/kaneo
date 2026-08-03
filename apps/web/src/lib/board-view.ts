@@ -1,4 +1,10 @@
-export const BOARD_VIEWS = ["board", "gantt", "calendar", "backlog"] as const;
+export const BOARD_VIEWS = [
+  "board",
+  "gantt",
+  "calendar",
+  "milestones",
+  "backlog",
+] as const;
 
 export type BoardView = (typeof BOARD_VIEWS)[number];
 
@@ -18,7 +24,7 @@ export type RepoView = (typeof REPO_VIEWS)[number];
  */
 export function boardViewFromPathname(pathname: string): BoardView | null {
   const match = pathname.match(
-    /\/board\/[^/]+\/(board|gantt|calendar|backlog)(?:\/|$)/,
+    /\/board\/[^/]+\/(board|gantt|calendar|milestones|backlog)(?:\/|$)/,
   );
   return (match?.[1] as BoardView) ?? null;
 }

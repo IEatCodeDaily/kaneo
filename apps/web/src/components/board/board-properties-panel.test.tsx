@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     name: string;
     status: string;
     boardId?: string;
+    dueDate?: string | null;
   }>,
   members: [] as Array<{ id: string; role: string; user: { name: string } }>,
   create: vi.fn(),
@@ -170,11 +171,48 @@ describe("BoardPropertiesPanel", () => {
     fireEvent.change(screen.getByTestId("board-milestone-name-input"), {
       target: { value: "Launch" },
     });
+    fireEvent.change(screen.getByTestId("board-milestone-due-date-input"), {
+      target: { value: "2026-06-30" },
+    });
     fireEvent.click(screen.getByTestId("board-milestone-create-submit"));
 
     expect(mocks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ boardId: "board-1", name: "Launch" }),
+      expect.objectContaining({
+        boardId: "board-1",
+        name: "Launch",
+        dueDate: "2026-06-30",
+      }),
     );
+  });
+
+  it("edits an explicit due date without hiding the inferred task range", () => {
+    mocks.milestones.push({
+      id: "m-1",
+      name: "Beta",
+      status: "active",
+      dueDate: "2026-06-15",
+    });
+    mocks.update.mockResolvedValue({});
+    renderPanel();
+
+    expect(screen.getByTestId("board-milestone-due-m-1")).toHaveTextContent(
+      "2026-06-15",
+    );
+    expect(screen.getByTestId("board-milestone-range-m-1")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("board-milestone-edit-m-1"));
+    fireEvent.change(screen.getByTestId("board-milestone-due-date-m-1"), {
+      target: { value: "2026-07-01" },
+    });
+    fireEvent.keyDown(screen.getByTestId("board-milestone-rename-m-1"), {
+      key: "Enter",
+    });
+
+    expect(mocks.update).toHaveBeenCalledWith({
+      boardId: "board-1",
+      id: "m-1",
+      name: "Beta",
+      dueDate: "2026-07-01",
+    });
   });
 
   it("deletes a milestone", () => {

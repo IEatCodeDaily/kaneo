@@ -6,6 +6,7 @@ import {
 import {
   CalendarDays,
   CalendarRange,
+  Flag,
   SquareKanban,
   SquircleDashed,
 } from "lucide-react";
@@ -31,7 +32,7 @@ type BoardLayoutProps = {
   headerActions?: ReactNode;
   children: ReactNode;
   showViewSwitcher?: boolean;
-  activeView?: "backlog" | "board" | "gantt" | "calendar";
+  activeView?: BoardView;
 };
 
 export default function BoardLayout({
@@ -104,6 +105,7 @@ export default function BoardLayout({
   const handleNavigateToBoard = () => goToView("board");
   const handleNavigateToGantt = () => goToView("gantt");
   const handleNavigateToCalendar = () => goToView("calendar");
+  const handleNavigateToMilestones = () => goToView("milestones");
 
   const handleBoardSwitch = (nextBoardId: string) => {
     if (nextBoardId === boardId) return;
@@ -143,6 +145,7 @@ export default function BoardLayout({
                 onSelectBoardView={handleNavigateToBoard}
                 onSelectGantt={handleNavigateToGantt}
                 onSelectCalendar={handleNavigateToCalendar}
+                onSelectMilestones={handleNavigateToMilestones}
                 onSelectBoard={handleBoardSwitch}
                 onAddBoard={() => setIsCreateBoardModalOpen(true)}
               />
@@ -199,6 +202,20 @@ export default function BoardLayout({
                 >
                   <CalendarRange className="size-3.5" />
                   Calendar
+                </Button>
+                <Button
+                  variant={
+                    resolvedView === "milestones" ? "secondary" : "ghost"
+                  }
+                  size="xs"
+                  onClick={handleNavigateToMilestones}
+                  className={cn(
+                    "h-6 gap-1.5 rounded-md px-2 text-xs",
+                    resolvedView !== "milestones" && "text-muted-foreground",
+                  )}
+                >
+                  <Flag className="size-3.5" />
+                  Milestones
                 </Button>
               </div>
             )}

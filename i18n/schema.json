@@ -8002,6 +8002,9 @@
 								},
 								"noDates": {
 									"type": "string"
+								},
+								"dueDate": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -8012,7 +8015,8 @@
 								"deleted",
 								"saveFailed",
 								"deleteFailed",
-								"noDates"
+								"noDates",
+								"dueDate"
 							]
 						},
 						"status": {

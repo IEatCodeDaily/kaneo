@@ -1763,6 +1763,11 @@
 			"dueDate": "Ημερομηνία λήξης",
 			"noDueDate": "Χωρίς ημερομηνία λήξης",
 			"noLabel": "Χωρίς ετικέτα"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Ημερομηνία λήξης"
+			}
 		}
 	},
 	"invitations": {

@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PanelRight } from "lucide-react";
 import {
   lazy,
   Suspense,
@@ -20,7 +19,6 @@ import ListView from "@/components/list-view";
 import PageTitle from "@/components/page-title";
 
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-import { Button } from "@/components/ui/button";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -201,23 +199,12 @@ function RouteComponent() {
           searchInputRef={setBoardSearchInput}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
+          isPropertiesPanelOpen={isPropertiesPanelOpen}
+          onPropertiesPanelOpen={() => setIsPropertiesPanelOpen(true)}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
           <div className="relative flex h-full min-w-0 flex-1 overflow-hidden">
-            {!isPropertiesPanelOpen ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={t("organization:boards.properties.open")}
-                data-testid="board-properties-toggle"
-                className="absolute top-2 right-2 z-10"
-                onClick={() => setIsPropertiesPanelOpen(true)}
-              >
-                <PanelRight className="h-4 w-4" />
-              </Button>
-            ) : null}
             {sortedBoard && !isPlaceholderData ? (
               <BoardGroupByProvider groupBy={groupBy}>
                 {viewMode === "board" ? (

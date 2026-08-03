@@ -1537,6 +1537,11 @@
 			"dueDate": "Fecha de vencimiento",
 			"noDueDate": "Sin fecha de vencimiento",
 			"noLabel": "Sin etiqueta"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Fecha de vencimiento"
+			}
 		}
 	},
 	"invitations": {
