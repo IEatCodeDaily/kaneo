@@ -12,11 +12,14 @@ test.describe("create task draft preservation", () => {
     `/dashboard/organization/${fixtures.organizationId}/board/${fixtures.boardId}`;
 
   async function openCreateModal(page: import("@playwright/test").Page) {
-    const dialog = page.getByRole("dialog");
-    if (await dialog.count()) return dialog.first();
-    await page.getByTitle("Add task").first().click();
-    await expect(dialog.first()).toBeVisible({ timeout: 10_000 });
-    return dialog.first();
+    const visibleDialog = page.locator('[role="dialog"]:visible');
+    if (await visibleDialog.count()) return visibleDialog.first();
+    await page
+      .getByRole("button", { name: "Create ticket", exact: true })
+      .first()
+      .click();
+    await expect(visibleDialog.first()).toBeVisible({ timeout: 10_000 });
+    return visibleDialog.first();
   }
 
   test("a closed draft is restored on reopen instead of being discarded", async ({
@@ -33,7 +36,7 @@ test.describe("create task draft preservation", () => {
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const dialog = await openCreateModal(page);
-    const titleInput = dialog.getByPlaceholder("Task title");
+    const titleInput = dialog.getByPlaceholder("Ticket title");
     const unique = `Draft survives close ${Date.now()}`;
     const description = `Description survives close ${Date.now()}`;
     await titleInput.fill(unique);
@@ -42,11 +45,23 @@ test.describe("create task draft preservation", () => {
     // Close without submitting.
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const drafts = JSON.parse(
+            window.localStorage.getItem("task-drafts") ?? "{}",
+          );
+          return Object.values(drafts.state?.drafts ?? {}).map(
+            (draft: { description?: string }) => draft.description,
+          );
+        }),
+      )
+      .toContain(description);
 
     // Reopening must restore what was typed.
     const reopened = await openCreateModal(page);
     await expect(
-      reopened.getByPlaceholder("Task title"),
+      reopened.getByPlaceholder("Ticket title"),
       "Draft title must survive closing the modal.",
     ).toHaveValue(unique);
     await expect(
@@ -60,7 +75,7 @@ test.describe("create task draft preservation", () => {
 
     const afterDiscard = await openCreateModal(page);
     await expect(
-      afterDiscard.getByPlaceholder("Task title"),
+      afterDiscard.getByPlaceholder("Ticket title"),
       "Discarding must not leave the draft behind.",
     ).toHaveValue("");
     await afterDiscard.getByRole("button", { name: "Cancel" }).click();
@@ -82,13 +97,13 @@ test.describe("create task draft preservation", () => {
 
     const dialog = await openCreateModal(page);
     const unique = `Submitted draft cleanup ${Date.now()}`;
-    await dialog.getByPlaceholder("Task title").fill(unique);
-    await dialog.getByRole("button", { name: "Create Task" }).click();
+    await dialog.getByPlaceholder("Ticket title").fill(unique);
+    await dialog.getByRole("button", { name: "Create Ticket" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
 
     const reopened = await openCreateModal(page);
     await expect(
-      reopened.getByPlaceholder("Task title"),
+      reopened.getByPlaceholder("Ticket title"),
       "Creating a task must clear the draft.",
     ).toHaveValue("");
     await reopened.getByRole("button", { name: "Cancel" }).click();

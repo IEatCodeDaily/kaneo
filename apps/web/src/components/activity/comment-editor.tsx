@@ -638,6 +638,8 @@ export default function CommentEditor({
       immediatelyRender: false,
       autofocus: autoFocus,
       editable: !readOnly && !disabled,
+      content: normalizeMarkdown(value || ""),
+      contentType: "markdown",
       extensions: [
         StarterKit.configure({
           // Link is configured separately below; StarterKit v3 already ships it.

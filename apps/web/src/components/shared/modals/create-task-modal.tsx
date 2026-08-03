@@ -313,6 +313,7 @@ function CreateTaskModal({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
   const descriptionRef = useRef("");
   const [priority, setPriority] = useState<Priority>("no-priority");
   const [assigneeId, setAssigneeId] = useState("");
@@ -710,6 +711,7 @@ function CreateTaskModal({
   useEffect(() => {
     if (!open) {
       restoredForRef.current = null;
+
       return;
     }
     // Restore once per opening, and never clobber in-progress typing.
