@@ -2,6 +2,7 @@ import type * as React from "react";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
+import { NavTables } from "@/components/nav-tables";
 import { TeamViewSelector } from "@/components/team-view-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -93,6 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           data-testid="sidebar-main-boards-divider"
         />
         <NavBoards />
+        <NavTables />
         <div
           aria-hidden="true"
           className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"

@@ -447,6 +447,99 @@ export const boardTable = pgTable(
   ],
 );
 
+export const dataTableTable = pgTable(
+  "data_table",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    icon: text("icon"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("data_table_organization_idx").on(table.organizationId)],
+);
+
+export const dataTableFieldTable = pgTable(
+  "data_table_field",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => dataTableTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    position: integer("position").notNull().default(0),
+    type: text("type").notNull().default("text"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("data_table_field_table_position_idx").on(
+      table.tableId,
+      table.position,
+    ),
+    check("data_table_field_type_check", sql`${table.type} = 'text'`),
+  ],
+);
+
+export const dataTableRowTable = pgTable(
+  "data_table_row",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => dataTableTable.id, { onDelete: "cascade" }),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("data_table_row_table_position_idx").on(
+      table.tableId,
+      table.position,
+    ),
+  ],
+);
+
+export const dataTableCellTable = pgTable(
+  "data_table_cell",
+  {
+    rowId: text("row_id")
+      .notNull()
+      .references(() => dataTableRowTable.id, { onDelete: "cascade" }),
+    fieldId: text("field_id")
+      .notNull()
+      .references(() => dataTableFieldTable.id, { onDelete: "cascade" }),
+    value: text("value"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("data_table_cell_row_field_unique").on(table.rowId, table.fieldId),
+    index("data_table_cell_field_idx").on(table.fieldId),
+  ],
+);
+
 export const columnTable = pgTable(
   "column",
   {

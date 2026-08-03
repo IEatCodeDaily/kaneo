@@ -29,6 +29,7 @@ import { getPublicBoard } from "./board/controllers/get-public-board";
 import column from "./column";
 import comment from "./comment";
 import config from "./config";
+import dataTable from "./data-table";
 import db, { getDatabase, schema } from "./database";
 import { prepareDatabaseStartup } from "./database/prepare-database-startup";
 import { waitForDatabase } from "./database/wait-for-database";
@@ -615,6 +616,7 @@ export function createApp() {
   const activityApi = api.route("/activity", activity);
   const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
+  const dataTableApi = api.route("/data-table", dataTable);
   const timeEntryApi = api.route("/time-entry", timeEntry);
   const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
@@ -812,6 +814,7 @@ export function createApp() {
     activityApi,
     columnApi,
     commentApi,
+    dataTableApi,
     configApi,
     discordIntegrationApi,
     externalLinkApi,
@@ -937,6 +940,7 @@ const {
   aiApi,
   columnApi,
   commentApi,
+  dataTableApi,
   configApi,
   discordIntegrationApi,
   externalLinkApi,
@@ -981,6 +985,7 @@ export type AppType =
   | typeof activityApi
   | typeof aiApi
   | typeof commentApi
+  | typeof dataTableApi
   | typeof timeEntryApi
   | typeof flagApi
   | typeof labelApi
