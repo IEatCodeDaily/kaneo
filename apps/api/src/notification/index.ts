@@ -9,6 +9,7 @@ import { notificationSchema } from "../schemas";
 import clearNotifications from "./controllers/clear-notifications";
 import createNotification from "./controllers/create-notification";
 import getNotifications from "./controllers/get-notifications";
+import getUnreadNotificationCount from "./controllers/get-unread-notification-count";
 import markAllNotificationsAsRead from "./controllers/mark-all-notifications-as-read";
 import markAsRead from "./controllers/mark-notification-as-read";
 
@@ -43,6 +44,30 @@ const notification = new Hono<{
       const userId = c.get("userId");
       const notifications = await getNotifications(userId);
       return c.json(notifications);
+    },
+  )
+  .get(
+    "/unread-count",
+    describeRoute({
+      operationId: "getUnreadNotificationCount",
+      tags: ["Notifications"],
+      description:
+        "Get the complete unread notification count for the current user",
+      responses: {
+        200: {
+          description: "Unread notification count",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ count: v.number() })),
+            },
+          },
+        },
+      },
+    }),
+    async (c) => {
+      const userId = c.get("userId");
+      const count = await getUnreadNotificationCount(userId);
+      return c.json({ count });
     },
   )
   .post(

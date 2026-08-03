@@ -63,7 +63,8 @@ function makeChain(rows: unknown[], captured: unknown[]) {
     innerJoin: vi.fn(() => chain),
     leftJoin: vi.fn(() => chain),
     orderBy: vi.fn(() => chain),
-    limit: vi.fn(() => Promise.resolve(rows)),
+    limit: vi.fn(() => chain),
+    offset: vi.fn(() => Promise.resolve(rows)),
     execute: vi.fn(() => Promise.resolve(rows)),
     // biome-ignore lint/suspicious/noThenProperty: drizzle query builders are thenable; the mock must mimic that.
     then: undefined as unknown as Mock,
@@ -93,10 +94,10 @@ describe("getMyTasks (#58 cross-board My Tasks)", () => {
   function setup(teamRows: unknown[] = []) {
     const teamCaptured: unknown[] = [];
     const taskCaptured: unknown[] = [];
-    mockSelect
-      .mockReturnValueOnce(makeChain(teamRows, teamCaptured))
-      .mockReturnValue(makeChain([], taskCaptured));
-    return { teamCaptured, taskCaptured };
+    const teamChain = makeChain(teamRows, teamCaptured);
+    const taskChain = makeChain([], taskCaptured);
+    mockSelect.mockReturnValueOnce(teamChain).mockReturnValue(taskChain);
+    return { teamCaptured, taskCaptured, taskChain };
   }
 
   it("gates results on organization membership so tasks from left orgs cannot leak", async () => {
@@ -138,6 +139,18 @@ describe("getMyTasks (#58 cross-board My Tasks)", () => {
     expect(sql).not.toContain("assignee_id = user-1");
   });
 
+  it("includes tickets the user participated in under the all filter", async () => {
+    const { taskCaptured } = setup();
+
+    await getMyTasks({ userId: "user-1", relation: "all" });
+
+    const sql = describeSql(taskCaptured[0]);
+    expect(sql).toContain("user_id = user-1");
+    // The test SQL renderer omits nested column names, but preserves the
+    // participation predicate's exclusion operator and created-event literal.
+    expect(sql).toContain("<> 'created'");
+  });
+
   it("does not emit an empty IN list when the user has no teams", async () => {
     const { taskCaptured } = setup([]);
 
@@ -159,6 +172,15 @@ describe("getMyTasks (#58 cross-board My Tasks)", () => {
 
     const sql = describeSql(taskCaptured[0]);
     expect(sql).toContain("team_assignee_id");
+  });
+
+  it("clamps page size and applies the requested offset", async () => {
+    const { taskChain } = setup();
+
+    await getMyTasks({ userId: "user-1", limit: 500, offset: 150 });
+
+    expect(taskChain.limit).toHaveBeenCalledWith(100);
+    expect(taskChain.offset).toHaveBeenCalledWith(150);
   });
 
   it("hides tasks in final columns unless completed are requested", async () => {

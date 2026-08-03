@@ -21,17 +21,12 @@ vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "u-1", role: "member" } }),
 }));
 
-// The Inbox entry now renders InboxUnreadBadge, which calls useGetNotifications
-// (a real useQuery). This suite renders without a QueryClientProvider, so the
-// hook must be mocked or every case dies with "No QueryClient set".
-vi.mock("@/hooks/queries/notification/use-get-notifications", () => ({
-  default: () => ({
-    data: [
-      { id: "n-1", isRead: false },
-      { id: "n-2", isRead: true },
-    ],
-  }),
-}));
+// InboxUnreadBadge uses a real unread-count query. This suite renders without
+// a QueryClientProvider, so mock the mounted hook directly.
+vi.mock(
+  "@/hooks/queries/notification/use-get-unread-notification-count",
+  () => ({ default: () => ({ data: { count: 1 } }) }),
+);
 
 // Same story for the My Tasks entry, which renders MyTasksCountBadge on top of
 // useGetMyTasks (KFL-141).

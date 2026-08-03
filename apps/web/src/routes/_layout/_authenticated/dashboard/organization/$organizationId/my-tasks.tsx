@@ -6,7 +6,7 @@ import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
-import useGetMyTasks from "@/hooks/queries/task/use-get-my-tasks";
+import useInfiniteMyTasks from "@/hooks/queries/task/use-infinite-my-tasks";
 import { getColumnIcon } from "@/lib/column";
 import { getPriorityIcon } from "@/lib/priority";
 
@@ -34,17 +34,17 @@ function MyTasksComponent() {
   const [relation, setRelation] = useState<MyTasksRelation>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
 
-  const { data, isLoading, isFetching } = useGetMyTasks({
-    organizationId,
-    relation,
-    includeCompleted,
-  });
+  const {
+    data,
+    isLoading,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteMyTasks({ organizationId, relation, includeCompleted });
 
-  // `data` is the fetcher's json() result, so derive the row type from it
-  // rather than restating the shape — an untyped Map value widened `task` to
-  // `any` and tripped noImplicitAny under tsconfig.app.json.
-  type MyTask = NonNullable<typeof data>[number];
-  const tasks: MyTask[] = data ?? [];
+  type MyTask = NonNullable<typeof data>["pages"][number][number];
+  const tasks: MyTask[] = data?.pages.flat() ?? [];
 
   const byBoard = new Map<string, MyTask[]>();
   for (const task of tasks) {
@@ -192,6 +192,21 @@ function MyTasksComponent() {
                   </ul>
                 </section>
               ))}
+              {hasNextPage ? (
+                <div className="flex justify-center pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isFetchingNextPage}
+                    onClick={() => fetchNextPage()}
+                  >
+                    {isFetchingNextPage
+                      ? t("myTasks:loading")
+                      : t("common:pagination.next")}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
         </div>

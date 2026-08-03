@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
+import useGetUnreadNotificationCount from "@/hooks/queries/notification/use-get-unread-notification-count";
 
 /**
  * Unread-count badge for the sidebar Inbox entry (#58).
@@ -10,11 +10,8 @@ import useGetNotifications from "@/hooks/queries/notification/use-get-notificati
  */
 function InboxUnreadBadge() {
   const { t } = useTranslation();
-  const { data: notifications } = useGetNotifications();
-
-  const unreadCount = (notifications ?? []).filter(
-    (notification) => !notification.isRead,
-  ).length;
+  const { data } = useGetUnreadNotificationCount();
+  const unreadCount = data?.count ?? 0;
 
   if (unreadCount === 0) return null;
 

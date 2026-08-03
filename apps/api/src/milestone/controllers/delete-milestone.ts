@@ -1,14 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { milestoneTable, taskTable } from "../../database/schema";
+import { milestoneTable } from "../../database/schema";
 
 async function deleteMilestone(boardId: string, id: string) {
-  await db
-    .update(taskTable)
-    .set({ milestoneId: null })
-    .where(eq(taskTable.milestoneId, id));
-
+  // Delete only after board ownership is proven by the predicate. The foreign
+  // key clears task assignments with ON DELETE SET NULL; pre-clearing them
+  // would let a mismatched boardId mutate another board before returning 404.
   const [milestone] = await db
     .delete(milestoneTable)
     .where(and(eq(milestoneTable.id, id), eq(milestoneTable.boardId, boardId)))
