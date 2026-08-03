@@ -62,6 +62,12 @@ vi.mock("@/components/ui/sidebar", () => ({
   SidebarFooter: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-footer-slot">{children}</div>
   ),
+  SidebarSeparator: (props: Record<string, unknown>) => (
+    <hr
+      className={props.className as string}
+      data-testid={props["data-testid"] as string}
+    />
+  ),
   SidebarTrigger: (props: Record<string, unknown>) => (
     <button
       data-testid={(props["data-testid"] as string) ?? "sidebar-trigger"}
@@ -88,6 +94,14 @@ describe("AppSidebar layout (#96)", () => {
     expect(
       header.querySelector("[data-testid='sidebar-toggle']"),
     ).not.toBeNull();
+  });
+
+  it("separates Boards from Repos only in the collapsed rail", () => {
+    render(<AppSidebar />);
+
+    const divider = screen.getByTestId("sidebar-boards-repos-divider");
+    expect(divider.className).toContain("group-data-[collapsible=icon]:block");
+    expect(divider.className).toContain("hidden");
   });
 
   it("does not render the organization selector at the sidebar top", () => {

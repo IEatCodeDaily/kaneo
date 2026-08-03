@@ -9,6 +9,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -88,6 +89,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Search />
         <NavMain />
         <NavBoards />
+        <SidebarSeparator
+          className="hidden group-data-[collapsible=icon]:block"
+          data-testid="sidebar-boards-repos-divider"
+        />
         <NavRepos />
       </SidebarContent>
       <SidebarFooter data-testid="sidebar-footer">
