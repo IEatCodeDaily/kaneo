@@ -48,7 +48,7 @@ describe("BoardToolbar", () => {
     expect(screen.queryByText(/view\.board/)).not.toBeInTheDocument();
   });
 
-  it("mounts view-specific actions beside the shared filter and sort controls", () => {
+  it("mounts view-specific actions at the far right of the toolbar", () => {
     render(
       <BoardToolbar
         {...baseProps}
@@ -56,9 +56,11 @@ describe("BoardToolbar", () => {
       />,
     );
 
-    const action = screen.getByRole("button", { name: "Create ticket" });
-    const filter = screen.getByRole("button", { name: /filter/i });
-    expect(action.parentElement).toBe(filter.parentElement);
+    const actionSlot = screen.getByTestId("board-toolbar-actions");
+    expect(actionSlot).toContainElement(
+      screen.getByRole("button", { name: "Create ticket" }),
+    );
+    expect(actionSlot).toBe(actionSlot.parentElement?.lastElementChild);
   });
 
   it("puts search and view options in the same bar as filter and sort", () => {

@@ -180,8 +180,6 @@ function RouteComponent() {
           <div className="flex min-h-12 items-center px-3 py-2 md:px-4">
             <div className="flex w-full items-center gap-2">
               <div className="flex w-full flex-wrap items-center gap-1.5">
-                <CreateTaskAction boardId={boardId} status="planned" />
-
                 <Button
                   variant="ghost"
                   size="xs"
@@ -222,6 +220,9 @@ function RouteComponent() {
                     onGroupByChange={() => {}}
                     filtersOnly
                   />
+                </div>
+                <div className="ml-auto shrink-0">
+                  <CreateTaskAction boardId={boardId} status="planned" />
                 </div>
               </div>
             </div>

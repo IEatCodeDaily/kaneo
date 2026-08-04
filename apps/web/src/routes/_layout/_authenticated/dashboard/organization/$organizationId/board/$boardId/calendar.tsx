@@ -209,7 +209,7 @@ function RouteComponent() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <TaskViewControls
               sort={sort}
               onSortChange={setSort}

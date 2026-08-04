@@ -568,8 +568,6 @@ export default function BoardToolbar({
             {!filtersOnly && (
               <SortControl sort={sort} onSortChange={onSortChange} />
             )}
-            {actions}
-
             {!filtersOnly && (
               <BoardViewOptions
                 groupBy={groupBy}
@@ -715,7 +713,7 @@ export default function BoardToolbar({
           </div>
 
           {!filtersOnly && (
-            <div className="inline-flex items-center gap-1">
+            <div className="ml-auto inline-flex items-center gap-1">
               <button
                 type="button"
                 className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
@@ -742,6 +740,11 @@ export default function BoardToolbar({
               </button>
             </div>
           )}
+          {!filtersOnly && actions ? (
+            <div className="shrink-0" data-testid="board-toolbar-actions">
+              {actions}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

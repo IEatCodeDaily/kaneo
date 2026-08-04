@@ -658,7 +658,7 @@ function RouteComponent() {
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
         <div className="border-b border-border/80 px-3 py-2 sm:px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <TaskViewControls
               sort={sort}
               onSortChange={setSort}
@@ -676,8 +676,7 @@ function RouteComponent() {
                 className="h-7 min-h-0 [&_[data-slot=input]]:pl-7 [&_[data-slot=input]]:text-xs"
               />
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              <CreateTaskAction boardId={boardId} />
+            <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
               <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
                 {ZOOM_LEVELS.map((level) => (
                   <Button
@@ -712,6 +711,9 @@ function RouteComponent() {
                   ? t("tasks:gantt.hideTasks")
                   : t("tasks:gantt.showTasks")}
               </Button>
+            </div>
+            <div className="ml-auto shrink-0">
+              <CreateTaskAction boardId={boardId} />
             </div>
           </div>
         </div>
