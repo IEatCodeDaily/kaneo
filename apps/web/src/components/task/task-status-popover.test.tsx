@@ -95,6 +95,9 @@ describe("TaskStatusPopover", () => {
     expect(
       screen.getByTestId("task-status-trigger").querySelector("svg"),
     ).toHaveClass("text-muted-foreground/60");
+    expect(screen.getByTestId("task-status-trigger")).toHaveTextContent(
+      "tasks:status.label",
+    );
   });
 
   it("loads status options for the task board without relying on board state", async () => {

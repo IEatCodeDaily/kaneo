@@ -137,7 +137,7 @@ export default function TaskStatusPopover({
                     selectedOption.value,
                     selectedOption.label,
                   )
-                : t("tasks:properties.status")}
+                : t("tasks:status.label")}
             </span>
           </Button>
         )}
