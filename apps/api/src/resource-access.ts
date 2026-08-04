@@ -6,10 +6,13 @@ import {
   teamMemberTable,
   userTable,
 } from "./database/schema";
+import { hasOrganizationWideResourceAccess } from "./resource-access-roles";
 
 export const RESOURCE_PRIVILEGES = ["none", "view", "edit", "manage"] as const;
 export type ResourcePrivilege = (typeof RESOURCE_PRIVILEGES)[number];
 export type ResourceType = "board" | "repo";
+
+export { hasOrganizationWideResourceAccess };
 
 const rank = new Map(RESOURCE_PRIVILEGES.map((value, index) => [value, index]));
 
@@ -76,7 +79,7 @@ export async function getResourcePrivilege(input: {
       .where(eq(teamMemberTable.userId, input.userId)),
   ]);
 
-  if (user[0]?.role === "admin" || membership[0]?.role === "owner") {
+  if (hasOrganizationWideResourceAccess(user[0]?.role, membership[0]?.role)) {
     return "manage";
   }
 
