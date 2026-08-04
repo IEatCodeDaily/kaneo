@@ -60,8 +60,10 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
+import { getColumnIcon } from "@/lib/column";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
+import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { resolveTemplateDate } from "@/lib/task-template-date-offset";
 import {
@@ -763,11 +765,9 @@ function CreateTaskModal({
   const selectedPriority = priorityOptions.find((p) => p.value === priority);
 
   const selectedStatus = templateStatus ?? status;
-  const statusLabel =
-    templateColumns.find((column) => column.id === selectedStatus)?.name ??
-    (selectedStatus
-      ? t(`tasks:status.${selectedStatus}`)
-      : t("common:modals.createTask.status"));
+  const selectedStatusColumn = templateColumns.find(
+    (column) => column.id === selectedStatus,
+  );
   const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
   );
@@ -1247,25 +1247,50 @@ function CreateTaskModal({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground"
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent/50",
+                        selectedStatusColumn
+                          ? "bg-accent/30 text-foreground"
+                          : "text-muted-foreground",
+                      )}
                     >
-                      <span className="size-1.5 rounded-full bg-foreground" />
-                      {statusLabel}
+                      {selectedStatusColumn ? (
+                        <>
+                          {getColumnIcon(
+                            selectedStatusColumn.id,
+                            selectedStatusColumn.isFinal,
+                            selectedStatusColumn.icon,
+                          )}
+                          <span>
+                            {getStatusDisplayLabel(
+                              selectedStatusColumn.id,
+                              selectedStatusColumn.name,
+                            )}
+                          </span>
+                        </>
+                      ) : (
+                        <span>Status</span>
+                      )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="start">
+                  <PopoverContent className="w-48 p-0" align="start">
                     {templateColumns.map((column) => (
-                      <button
+                      <Button
                         key={column.id}
                         type="button"
-                        className="flex h-8 w-full items-center gap-2 px-2 text-left text-sm hover:bg-accent/50"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-full justify-start gap-2 rounded-none px-2 first:rounded-t-md last:rounded-b-md"
                         onClick={() => setTemplateStatus(column.id)}
                       >
-                        <span>{column.name}</span>
+                        {getColumnIcon(column.id, column.isFinal, column.icon)}
+                        <span className="text-sm">
+                          {getStatusDisplayLabel(column.id, column.name)}
+                        </span>
                         {selectedStatus === column.id && (
-                          <Check className="ml-auto size-4" />
+                          <Check className="ml-auto h-4 w-4" />
                         )}
-                      </button>
+                      </Button>
                     ))}
                   </PopoverContent>
                 </Popover>
