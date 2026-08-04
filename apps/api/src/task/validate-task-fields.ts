@@ -2,6 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { columnTable } from "../database/schema";
+import { NON_COLUMN_STATUS_SLUGS } from "./status-taxonomy";
 
 export const VALID_PRIORITIES = [
   "no-priority",
@@ -11,7 +12,15 @@ export const VALID_PRIORITIES = [
   "urgent",
 ] as const;
 
-export const VIRTUAL_STATUSES = ["planned", "archived"] as const;
+/**
+ * #226: statuses that exist without a Kanban `column` row — the backlog states
+ * (Planned, Triage) plus the terminal Canceled/Duplicate outcomes.
+ *
+ * Was `["planned", "archived"]`. `archived` is gone because archival is now
+ * `task.archived_at` and orthogonal to status: an archived ticket keeps its real
+ * workflow status (see migration 0062 and `status-taxonomy.ts`).
+ */
+export const VIRTUAL_STATUSES = NON_COLUMN_STATUS_SLUGS;
 
 export function assertValidPriority(priority: string): void {
   if (!(VALID_PRIORITIES as readonly string[]).includes(priority)) {

@@ -2,6 +2,10 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { boardSchema } from "../schemas";
+import {
+  BACKLOG_STATUS_SLUGS,
+  STATUS_DEFINITIONS,
+} from "../task/status-taxonomy";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import archiveBoardCtrl from "./controllers/archive-board";
@@ -11,6 +15,31 @@ import getBoardCtrl from "./controllers/get-board";
 import getBoardsCtrl from "./controllers/get-boards";
 import unarchiveBoardCtrl from "./controllers/unarchive-board";
 import updateBoardCtrl from "./controllers/update-board";
+
+const TASK_STATUS_ORDER_SLUGS = STATUS_DEFINITIONS.filter(
+  (status) => !status.isBacklog,
+).map((status) => status.slug);
+
+/**
+ * #226: a board stores ordering only — never arbitrary status definitions.
+ * Reject unknown/duplicate slugs so one malformed PUT cannot make a status
+ * appear twice or disappear. Partial arrays are valid; readers append omitted
+ * statuses canonically, making future vocabulary additions safe.
+ */
+function statusOrderValidator(allowed: readonly string[]) {
+  return v.pipe(
+    v.array(v.string()),
+    v.maxLength(64),
+    v.check(
+      (values) => new Set(values).size === values.length,
+      "Status order cannot contain duplicates",
+    ),
+    v.check(
+      (values) => values.every((value) => allowed.includes(value)),
+      "Status order contains an unknown or wrong-surface status",
+    ),
+  );
+}
 
 const board = new Hono<{
   Variables: {
@@ -146,14 +175,29 @@ const board = new Hono<{
             v.maxValue(4, "subtaskDepthLimit must be between 1 and 4"),
           ),
         ),
+        // #226: board-owned ordering only; vocabulary remains global.
+        taskStatusOrder: v.optional(
+          statusOrderValidator(TASK_STATUS_ORDER_SLUGS),
+        ),
+        backlogStatusOrder: v.optional(
+          statusOrderValidator(BACKLOG_STATUS_SLUGS),
+        ),
       }),
     ),
     organizationAccess.fromBoard(),
     requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { name, icon, slug, description, isPublic, subtaskDepthLimit } =
-        c.req.valid("json");
+      const {
+        name,
+        icon,
+        slug,
+        description,
+        isPublic,
+        subtaskDepthLimit,
+        taskStatusOrder,
+        backlogStatusOrder,
+      } = c.req.valid("json");
       const organizationId = c.get("organizationId");
       const updatedBoard = await updateBoardCtrl(
         id,
@@ -164,6 +208,8 @@ const board = new Hono<{
         isPublic,
         organizationId,
         subtaskDepthLimit,
+        taskStatusOrder,
+        backlogStatusOrder,
       );
       return c.json(updatedBoard);
     },

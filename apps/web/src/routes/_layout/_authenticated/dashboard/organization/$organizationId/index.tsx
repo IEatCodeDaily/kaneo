@@ -7,7 +7,7 @@ import {
   List,
   Plus,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BoardViewTabs } from "@/components/board/board-view-tabs";
 import BoardsTimeline from "@/components/board/boards-timeline";
@@ -38,6 +38,7 @@ import {
 import icons from "@/constants/board-icons";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import useMilestonesByBoardIds from "@/hooks/queries/milestone/use-milestones-by-board-ids";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { formatDateMedium } from "@/lib/format";
@@ -64,6 +65,16 @@ function RouteComponent() {
     useUserPreferencesStore();
   // Table stays the default; the timeline is the opt-in planning view.
   const [view, setView] = useState<"table" | "timeline">("table");
+  /**
+   * Milestone diamonds for the timeline. Only fetched while the timeline is the
+   * active view — the table doesn't show milestones, and this costs one request
+   * per board.
+   */
+  const timelineBoardIds = useMemo(
+    () => (view === "timeline" ? (boards ?? []).map((board) => board.id) : []),
+    [view, boards],
+  );
+  const milestonesByBoardId = useMilestonesByBoardIds(timelineBoardIds);
 
   const handleCreateBoard = () => {
     if (!canCreate) return;
@@ -245,6 +256,7 @@ function RouteComponent() {
         {view === "timeline" ? (
           <BoardsTimeline
             boards={boards ?? []}
+            milestonesByBoardId={milestonesByBoardId}
             onBoardClick={handleBoardClick}
             zoom="week"
           />

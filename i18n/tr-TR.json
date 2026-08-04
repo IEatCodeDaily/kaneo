@@ -1244,6 +1244,30 @@
 				"title": "Zaman takibi başlatıldı",
 				"contentWithTask": "Şu talepte zaman takibi başlatıldı: {{taskTitle}}",
 				"contentWithoutTask": "Bir talepte zaman takibi başlatıldı"
+			},
+			"task_title_changed": {
+				"title": "Talep başlığı değiştirildi",
+				"content": "“{{oldTitle}}”, “{{newTitle}}” olarak yeniden adlandırıldı"
+			},
+			"task_description_changed": {
+				"title": "Talep açıklaması güncellendi",
+				"content": "“{{taskTitle}}” açıklaması güncellendi"
+			},
+			"task_priority_changed": {
+				"title": "Talep önceliği değiştirildi",
+				"content": "“{{taskTitle}}” önceliği {{oldPriority}} değerinden {{newPriority}} değerine değiştirildi"
+			},
+			"task_due_date_changed": {
+				"title": "Talep son tarihi değiştirildi",
+				"content": "“{{taskTitle}}” son tarihi güncellendi"
+			},
+			"task_flag_raised": {
+				"title": "Talebe işaret eklendi",
+				"content": "“{{taskTitle}}” için {{flagTypeName}} işareti eklendi"
+			},
+			"task_flag_resolved": {
+				"title": "Talepteki işaret çözüldü",
+				"content": "“{{taskTitle}}” için {{flagTypeName}} işareti çözüldü"
 			}
 		}
 	},
@@ -1691,6 +1715,8 @@
 			"noTasksFound": "Talep bulunamadı",
 			"noTasksMatch": "\"{{query}}\" ile eşleşen zamanlanmış talep yok",
 			"taskHeader": "Talep",
+			"unscheduledHint": "Tarih yok - planlamak için sürükleyin",
+			"dragToScheduleHint": "Bu talebi planlamak için zaman çizelgesinde sürükleyin",
 			"updateDatesError": "Talep tarihleri güncellenemedi",
 			"resizeStart": "Başlangıç tarihini yeniden boyutlandır",
 			"resizeDue": "Bitiş tarihini yeniden boyutlandır",

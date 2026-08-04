@@ -5,6 +5,7 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockPublishEvent = vi.fn();
 const mockBoardFindFirst = vi.fn();
+const mockIntegrationFindFirst = vi.fn();
 const mockGetTaskAssetKeys = vi.fn();
 const mockDeleteS3Keys = vi.fn();
 
@@ -13,6 +14,9 @@ vi.mock("../../../apps/api/src/database", () => ({
     query: {
       boardTable: {
         findFirst: (...args: unknown[]) => mockBoardFindFirst(...args),
+      },
+      integrationTable: {
+        findFirst: (...args: unknown[]) => mockIntegrationFindFirst(...args),
       },
     },
     select: (...args: unknown[]) => mockSelect(...args),
@@ -176,6 +180,7 @@ describe("task soft delete + recycle bin", () => {
     vi.clearAllMocks();
     mockGetTaskAssetKeys.mockResolvedValue([]);
     mockBoardFindFirst.mockResolvedValue({ id: "board-1", name: "Board" });
+    mockIntegrationFindFirst.mockResolvedValue(null);
     mockDeleteS3Keys.mockResolvedValue(undefined);
   });
 
@@ -240,8 +245,9 @@ describe("task soft delete + recycle bin", () => {
       const expected = describeSql(isNull(taskTable.deletedAt));
       expect(expected).toContain("deleted_at");
       expect(expected).toContain("is null");
-      const found = captured.some((cond) =>
-        describeSql(cond).includes(expected),
+      const renderedConditions = captured.map(describeSql);
+      const found = renderedConditions.some(
+        (sql) => sql.includes("deleted_at") && sql.includes("is null"),
       );
       expect(found).toBe(true);
     });

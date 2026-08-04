@@ -34,6 +34,7 @@ import moveTask from "./controllers/move-task";
 import permanentlyDeleteTask from "./controllers/permanently-delete-task";
 import reorderTasks from "./controllers/reorder-tasks";
 import restoreTask from "./controllers/restore-task";
+import setTaskArchived from "./controllers/set-task-archived";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
 import updateTaskDescription from "./controllers/update-task-description";
@@ -740,6 +741,38 @@ const task = new Hono<{
       const currentUserId = c.get("userId");
 
       const task = await updateTaskStatus({ id, status, currentUserId });
+
+      return c.json(task);
+    },
+  )
+  .put(
+    "/archived/:id",
+    describeRoute({
+      operationId: "setTaskArchived",
+      tags: ["Tasks"],
+      description:
+        "Archive or unarchive a task. Archival is separate from status: an archived task retains its status and is hidden everywhere except the backlog's archived section.",
+      responses: {
+        200: {
+          description: "Task archival state updated successfully",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ archived: v.boolean() })),
+    organizationAccess.fromTask(),
+    // Archiving hides a task from every view, so it is gated on the same
+    // permission as any other task mutation.
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { archived } = c.req.valid("json");
+      const currentUserId = c.get("userId");
+
+      const task = await setTaskArchived({ id, archived, currentUserId });
 
       return c.json(task);
     },

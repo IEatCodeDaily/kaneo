@@ -11,7 +11,7 @@ describe("taskStatusColumnIds", () => {
     expect(statuses.get("in-progress")).toBe("column-id");
     expect(statuses.has("planned")).toBe(true);
     expect(statuses.get("planned")).toBeNull();
-    expect(statuses.has("archived")).toBe(true);
-    expect(statuses.get("archived")).toBeNull();
+    // Archive is orthogonal state, not a virtual workflow status.
+    expect(statuses.has("archived")).toBe(false);
   });
 });

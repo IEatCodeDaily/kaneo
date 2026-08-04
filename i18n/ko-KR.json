@@ -1239,6 +1239,30 @@
 				"title": "시간 추적 시작됨",
 				"contentWithTask": "다음 티켓의 시간 추적이 시작되었습니다: {{taskTitle}}",
 				"contentWithoutTask": "작업의 시간 추적이 시작되었습니다"
+			},
+			"task_title_changed": {
+				"title": "티켓 제목 변경됨",
+				"content": "“{{oldTitle}}”의 이름이 “{{newTitle}}”(으)로 변경되었습니다"
+			},
+			"task_description_changed": {
+				"title": "티켓 설명 업데이트됨",
+				"content": "“{{taskTitle}}”의 설명이 업데이트되었습니다"
+			},
+			"task_priority_changed": {
+				"title": "티켓 우선순위 변경됨",
+				"content": "“{{taskTitle}}”의 우선순위가 {{oldPriority}}에서 {{newPriority}}(으)로 변경되었습니다"
+			},
+			"task_due_date_changed": {
+				"title": "티켓 마감일 변경됨",
+				"content": "“{{taskTitle}}”의 마감일이 업데이트되었습니다"
+			},
+			"task_flag_raised": {
+				"title": "티켓에 플래그 지정됨",
+				"content": "“{{taskTitle}}”에 {{flagTypeName}} 플래그가 지정되었습니다"
+			},
+			"task_flag_resolved": {
+				"title": "티켓의 플래그 해결됨",
+				"content": "“{{taskTitle}}”의 {{flagTypeName}} 플래그가 해결되었습니다"
 			}
 		}
 	},
@@ -1685,6 +1709,8 @@
 			"noTasksFound": "작업을 찾을 수 없음",
 			"noTasksMatch": "\"{{query}}\"와(과) 일치하는 예약된 작업이 없습니다",
 			"taskHeader": "작업",
+			"unscheduledHint": "날짜 없음 - 드래그하여 일정 지정",
+			"dragToScheduleHint": "타임라인에서 드래그하여 이 티켓의 일정을 지정하세요",
 			"updateDatesError": "작업 날짜 업데이트에 실패했습니다",
 			"resizeStart": "시작일 크기 조정",
 			"resizeDue": "마감일 크기 조정",

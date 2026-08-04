@@ -1,7 +1,4 @@
-import type { Milestone as MilestoneRow } from "@/fetchers/milestone/get-milestones-by-board";
-import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import MilestoneBadge from "./milestone-badge";
 import TaskMilestonePicker from "./task-milestone-picker";
 
 type TaskTopbarMilestoneProps = {
@@ -22,10 +19,6 @@ export default function TaskTopbarMilestone({
   const resolvedBoardId = task?.boardId ?? boardId;
   const milestoneId =
     (task as { milestoneId?: string | null } | undefined)?.milestoneId ?? null;
-  const { data: milestones = [] } = useGetMilestonesByBoard(resolvedBoardId);
-  const selectedMilestone = milestones.find(
-    (milestone: MilestoneRow) => milestone.id === milestoneId,
-  );
 
   if (!taskId) return null;
 
@@ -35,12 +28,17 @@ export default function TaskTopbarMilestone({
       data-slot="task-topbar-milestone"
       className="flex min-w-0 items-center gap-1.5"
     >
+      {/*
+        #258 follow-up: this used to render a read-only MilestoneBadge next to
+        the picker, but the picker trigger *already* shows the milestone name,
+        so the header printed the same milestone twice. The picker is the single
+        source of truth — it shows the name and can also change it.
+      */}
       <TaskMilestonePicker
         taskId={taskId}
         boardId={resolvedBoardId}
         milestoneId={milestoneId}
       />
-      <MilestoneBadge milestone={selectedMilestone} />
     </div>
   );
 }

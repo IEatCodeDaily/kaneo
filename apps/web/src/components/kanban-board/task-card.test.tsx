@@ -1,9 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Task from "@/types/task";
 import { TaskCardContent } from "./task-card";
 
+// This repo does not install Testing Library's automatic DOM cleanup.
+afterEach(cleanup);
+
 const navigate = vi.fn();
+let showTaskNumbers = false;
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("react-i18next", () => ({
@@ -40,7 +44,7 @@ vi.mock("@/store/user-preferences", () => ({
       showPriority: false,
       showDueDates: false,
       showLabels: false,
-      showTaskNumbers: false,
+      showTaskNumbers,
     }),
 }));
 vi.mock("./task-card-context-menu/task-card-context-menu-content", () => ({
@@ -65,7 +69,22 @@ const task = {
 describe("TaskCardContent", () => {
   beforeEach(() => {
     navigate.mockClear();
+    showTaskNumbers = false;
     window.history.replaceState({}, "", "/dashboard");
+  });
+
+  it("shows the milestone beside the ticket id", () => {
+    showTaskNumbers = true;
+    render(
+      <TaskCardContent
+        task={{ ...task, milestoneId: "m1", milestoneName: "August launch" }}
+        isDragging={false}
+      />,
+    );
+
+    const milestone = screen.getByTestId("task-card-milestone");
+    expect(milestone).toHaveTextContent("August launch");
+    expect(milestone.parentElement).toHaveTextContent("KAN-253");
   });
 
   it("opens the existing task actions on right click without changing left click", async () => {

@@ -1244,6 +1244,30 @@
 				"title": "Трекинг времени начат",
 				"contentWithTask": "Трекинг времени начат для тикета: {{taskTitle}}",
 				"contentWithoutTask": "Трекинг времени начат для задачи"
+			},
+			"task_title_changed": {
+				"title": "Название тикета изменено",
+				"content": "«{{oldTitle}}» переименован в «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Описание тикета обновлено",
+				"content": "Описание тикета «{{taskTitle}}» обновлено"
+			},
+			"task_priority_changed": {
+				"title": "Приоритет тикета изменён",
+				"content": "Приоритет тикета «{{taskTitle}}» изменён с {{oldPriority}} на {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Срок выполнения тикета изменён",
+				"content": "Срок выполнения тикета «{{taskTitle}}» обновлён"
+			},
+			"task_flag_raised": {
+				"title": "На тикете установлен флаг",
+				"content": "Флаг {{flagTypeName}} установлен на тикете «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Флаг на тикете снят",
+				"content": "Флаг {{flagTypeName}} снят с тикета «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1692,6 +1716,8 @@
 			"noTasksFound": "Задачи не найдены",
 			"noTasksMatch": "Нет запланированных задач, соответствующих «{{query}}»",
 			"taskHeader": "Задача",
+			"unscheduledHint": "Нет дат — перетащите, чтобы запланировать",
+			"dragToScheduleHint": "Перетащите по шкале времени, чтобы запланировать эту задачу",
 			"updateDatesError": "Не удалось обновить даты задачи",
 			"resizeStart": "Изменить дату начала",
 			"resizeDue": "Изменить срок выполнения",

@@ -1023,6 +1023,30 @@
 				"title": "Tijdregistratie gestart",
 				"contentWithTask": "Tijdregistratie gestart voor ticket: {{taskTitle}}",
 				"contentWithoutTask": "Tijdregistratie gestart voor een taak"
+			},
+			"task_title_changed": {
+				"title": "Tickettitel gewijzigd",
+				"content": "‘{{oldTitle}}’ is hernoemd naar ‘{{newTitle}}’"
+			},
+			"task_description_changed": {
+				"title": "Ticketbeschrijving bijgewerkt",
+				"content": "De beschrijving van ‘{{taskTitle}}’ is bijgewerkt"
+			},
+			"task_priority_changed": {
+				"title": "Ticketprioriteit gewijzigd",
+				"content": "De prioriteit van ‘{{taskTitle}}’ is gewijzigd van {{oldPriority}} naar {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Vervaldatum van ticket gewijzigd",
+				"content": "De vervaldatum van ‘{{taskTitle}}’ is bijgewerkt"
+			},
+			"task_flag_raised": {
+				"title": "Markering toegevoegd aan ticket",
+				"content": "{{flagTypeName}} is toegevoegd aan ‘{{taskTitle}}’"
+			},
+			"task_flag_resolved": {
+				"title": "Markering op ticket opgelost",
+				"content": "{{flagTypeName}} is opgelost op ‘{{taskTitle}}’"
 			}
 		}
 	},
@@ -1458,6 +1482,8 @@
 			"noTasksFound": "Geen taken gevonden",
 			"noTasksMatch": "Geen geplande taken die overeenkomen met \"{{query}}\"",
 			"taskHeader": "Taak",
+			"unscheduledHint": "Geen datums - sleep om te plannen",
+			"dragToScheduleHint": "Sleep over de tijdlijn om dit ticket te plannen",
 			"updateDatesError": "Bijwerken taakdatums mislukt",
 			"resizeStart": "Startdatum wijzigen",
 			"resizeDue": "Einddatum wijzigen",

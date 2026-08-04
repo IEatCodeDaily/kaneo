@@ -23,6 +23,9 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
       position: taskTable.position,
       createdAt: taskTable.createdAt,
       updatedAt: taskTable.updatedAt,
+      // #226: callers need this to render Archive/Unarchive without inventing a
+      // fake `status="archived"`. Archival is orthogonal to status.
+      archivedAt: taskTable.archivedAt,
       userId: taskTable.userId,
       teamId: taskTable.teamId,
       milestoneId: taskTable.milestoneId,

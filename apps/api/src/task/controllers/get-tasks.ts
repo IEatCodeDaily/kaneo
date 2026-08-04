@@ -19,6 +19,7 @@ import {
   externalLinkTable,
   integrationTable,
   labelTable,
+  milestoneTable,
   repoIssueTable,
   repoPullRequestTable,
   taskRelationTable,
@@ -164,9 +165,12 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     position: taskTable.position,
     createdAt: taskTable.createdAt,
     detailVersion: taskTable.updatedAt,
+    // #226: archival flag, orthogonal to status.
+    archivedAt: taskTable.archivedAt,
     userId: taskTable.userId,
     teamId: taskTable.teamId,
     milestoneId: taskTable.milestoneId,
+    milestoneName: milestoneTable.name,
     assigneeName: userTable.name,
     assigneeId: userTable.id,
     assigneeImage: userTable.image,
@@ -179,6 +183,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
     .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
+    .leftJoin(milestoneTable, eq(taskTable.milestoneId, milestoneTable.id))
     .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(whereClause)
     .orderBy(orderByClause);
@@ -382,6 +387,15 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     parentTask: parentByChildId.get(task.id) ?? null,
   });
 
+  /*
+    #226: archival is orthogonal to status. Archived tasks are excluded from
+    every Kanban column and from Planned — "Archived tickets isn't shown
+    anywhere other than Backlog dropdown" — while KEEPING their real status, so
+    an archived In Progress ticket is still In Progress when restored.
+  */
+  const isArchived = (task: { archivedAt?: Date | null }) =>
+    task.archivedAt != null;
+
   const columns = boardColumns.map((column) => ({
     id: column.slug,
     slug: column.slug,
@@ -389,16 +403,19 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     icon: column.icon,
     isFinal: column.isFinal,
     tasks: paginatedTasks
-      .filter((task) => task.status === column.slug)
+      .filter((task) => task.status === column.slug && !isArchived(task))
       .map(withRelations),
   }));
 
-  const archivedTasks = paginatedTasks
-    .filter((task) => task.status === "archived")
-    .map(withRelations);
+  // The backlog's archived dropdown: the ONLY surface that shows these.
+  const archivedTasks = paginatedTasks.filter(isArchived).map(withRelations);
 
   const plannedTasks = paginatedTasks
-    .filter((task) => task.status === "planned")
+    .filter((task) => task.status === "planned" && !isArchived(task))
+    .map(withRelations);
+
+  const triageTasks = paginatedTasks
+    .filter((task) => task.status === "triage" && !isArchived(task))
     .map(withRelations);
 
   return {
@@ -414,6 +431,8 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
 
       archivedTasks,
       plannedTasks,
+      // #226: Triage is a backlog section of its own, above Planned.
+      triageTasks,
     },
     pagination: usePagination
       ? {

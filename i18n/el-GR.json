@@ -1237,6 +1237,30 @@
 				"title": "Η χρονομέτρηση ξεκίνησε",
 				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την τικέτα: {{taskTitle}}",
 				"contentWithoutTask": "Η χρονομέτρηση ξεκίνησε για μια εργασία"
+			},
+			"task_title_changed": {
+				"title": "Ο τίτλος του αιτήματος άλλαξε",
+				"content": "Το «{{oldTitle}}» μετονομάστηκε σε «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Η περιγραφή του αιτήματος ενημερώθηκε",
+				"content": "Η περιγραφή του «{{taskTitle}}» ενημερώθηκε"
+			},
+			"task_priority_changed": {
+				"title": "Η προτεραιότητα του αιτήματος άλλαξε",
+				"content": "Η προτεραιότητα του «{{taskTitle}}» άλλαξε από {{oldPriority}} σε {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Η ημερομηνία λήξης του αιτήματος άλλαξε",
+				"content": "Η ημερομηνία λήξης του «{{taskTitle}}» ενημερώθηκε"
+			},
+			"task_flag_raised": {
+				"title": "Σήμανση προστέθηκε στο αίτημα",
+				"content": "Η σήμανση {{flagTypeName}} προστέθηκε στο «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Σήμανση επιλύθηκε στο αίτημα",
+				"content": "Η σήμανση {{flagTypeName}} επιλύθηκε στο «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1683,6 +1707,8 @@
 			"noTasksFound": "Δεν βρέθηκαν εργασίες",
 			"noTasksMatch": "Δεν υπάρχουν προγραμματισμένες εργασίες που να ταιριάζουν με \"{{query}}\"",
 			"taskHeader": "Εργασία",
+			"unscheduledHint": "Χωρίς ημερομηνίες - σύρετε για προγραμματισμό",
+			"dragToScheduleHint": "Σύρετε κατά μήκος του χρονοδιαγράμματος για να προγραμματίσετε αυτό το αίτημα",
 			"updateDatesError": "Αποτυχία ενημέρωσης ημερομηνιών εργασίας",
 			"resizeStart": "Αλλαγή μεγέθους ημερομηνίας έναρξης",
 			"resizeDue": "Αλλαγή μεγέθους ημερομηνίας λήξης",

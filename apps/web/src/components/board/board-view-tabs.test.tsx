@@ -31,9 +31,13 @@ describe("BoardViewTabs", () => {
     fireEvent.click(timeline);
     expect(onValueChange.mock.calls[0]?.[0]).toBe("timeline");
     expect(table.getAttribute("tabindex")).toBe("0");
-    expect(timeline.closest("[data-slot=tabs-list]")?.className).toContain(
+    expect(screen.getByTestId("board-view-tabs-scroller").className).toContain(
       "overflow-x-auto",
     );
+    const tabList = timeline.closest("[data-slot=tabs-list]");
+    expect(tabList?.className.split(/\s+/)).toContain("rounded-full");
+    expect(tabList?.className).not.toContain("overflow-x-auto");
+    expect(table.className.split(/\s+/)).toContain("rounded-full");
     expect(table).toHaveAccessibleName(/Table/);
     expect(screen.getByText("Table")).toHaveClass("hidden", "2xl:inline");
   });

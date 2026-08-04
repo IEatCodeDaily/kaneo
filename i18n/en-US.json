@@ -1953,6 +1953,7 @@
 			"noTasksMatch": "No scheduled tickets match \"{{query}}\"",
 			"taskHeader": "Ticket",
 			"unscheduledGroup": "Unscheduled",
+			"noMilestoneGroup": "No milestone",
 			"unscheduledHint": "No dates - drag to schedule",
 			"dragToScheduleHint": "Drag across the timeline to schedule this ticket",
 			"updateDatesError": "Failed to update ticket dates",

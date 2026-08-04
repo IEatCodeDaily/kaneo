@@ -15,6 +15,51 @@ import { statusBarClasses } from "./gantt-timeline";
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
 
+/**
+ * Resize handles are sized as a share of ONE DAY column, so they stay slim and
+ * consistent whether the bar spans one day or three weeks.
+ *
+ * History: they were a fixed 24px each. Two of those need 48px, but a
+ * single-day bar is only ~36px wide, so the handles ate the whole bar and
+ * drag-to-move was impossible. Hiding them on short bars fixed dragging but
+ * left a single-day bar with no way to resize at all. A slim handle only needs
+ * to read as an edge, so both fit even on the narrowest bar.
+ */
+const RESIZE_HANDLE_DAY_FRACTION = 0.15;
+/** Thin enough to look like an edge, wide enough to hit. */
+const RESIZE_HANDLE_MIN_PX = 4;
+/** Never let a handle dominate a narrow bar. */
+const RESIZE_HANDLE_MAX_PX = 10;
+/** Dragging must always be possible, so the move zone gets first claim. */
+const MIN_MOVE_ZONE_PX = 12;
+
+/**
+ * @param pixelsPerDay width of one day column
+ * @param barWidthPx   width of this bar, used only to guarantee the move zone
+ *                     survives. At week/month zoom a day column is 16px/6px, so
+ *                     a single-day bar cannot afford two handles at all.
+ */
+export function resolveResizeHandleWidth(
+  pixelsPerDay: number,
+  barWidthPx?: number,
+): number {
+  if (!Number.isFinite(pixelsPerDay) || pixelsPerDay <= 0) {
+    return RESIZE_HANDLE_MIN_PX;
+  }
+  const proportional = Math.round(pixelsPerDay * RESIZE_HANDLE_DAY_FRACTION);
+  const preferred = Math.max(
+    RESIZE_HANDLE_MIN_PX,
+    Math.min(RESIZE_HANDLE_MAX_PX, proportional),
+  );
+  if (!Number.isFinite(barWidthPx) || barWidthPx === undefined) {
+    return preferred;
+  }
+  // Two handles plus a draggable middle must fit, otherwise drop the handles.
+  const affordable = Math.floor((barWidthPx - MIN_MOVE_ZONE_PX) / 2);
+  if (affordable < RESIZE_HANDLE_MIN_PX) return 0;
+  return Math.min(preferred, affordable);
+}
+
 type ScheduledTask = Task & {
   scheduleStart: Date;
   scheduleEnd: Date;
@@ -291,6 +336,12 @@ export function GanttTaskBar({
 
   const colors = statusBarClasses(task.status);
 
+  // Handles are sized off a single day column so they stay slim on every bar,
+  // but never at the cost of the draggable middle (week/month zoom is narrow).
+  const barWidthPx = (lineEnd - lineStart) * pixelsPerDay - 8;
+  const resizeHandlePx = resolveResizeHandleWidth(pixelsPerDay, barWidthPx);
+  const showResizeHandles = resizeHandlePx > 0;
+
   // Foreign tasks render as a plain, non-interactive band with no drag handles.
   if (readOnly) {
     return (
@@ -301,7 +352,7 @@ export function GanttTaskBar({
         <div
           style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
           className={cn(
-            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded border border-dashed bg-background/60 px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
+            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded border border-dashed bg-card px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
             colors.border,
           )}
         >
@@ -342,16 +393,19 @@ export function GanttTaskBar({
               : ` → ${format(displayEnd, "MMM d")}`}
           </div>
         ) : null}
-        <button
-          type="button"
-          aria-label={t("tasks:gantt.resizeStart")}
-          onPointerDown={handleResizeLeftPointerDown}
-          className={cn(
-            "relative z-20 w-6 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:right-0 after:w-1.5 after:border-r after:border-black/5 dark:after:border-white/10",
-            colors.handle,
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-          )}
-        />
+        {showResizeHandles ? (
+          <button
+            type="button"
+            aria-label={t("tasks:gantt.resizeStart")}
+            onPointerDown={handleResizeLeftPointerDown}
+            style={{ width: `${resizeHandlePx}px` }}
+            className={cn(
+              "relative z-20 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:right-0 after:w-1.5 after:border-r after:border-black/5 dark:after:border-white/10",
+              colors.handle,
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+            )}
+          />
+        ) : null}
         <button
           type="button"
           aria-label={t("tasks:gantt.taskAriaLabel", { title: task.title })}
@@ -372,16 +426,19 @@ export function GanttTaskBar({
           />
           <span className="relative z-10 block truncate">{task.title}</span>
         </button>
-        <button
-          type="button"
-          aria-label={t("tasks:gantt.resizeDue")}
-          onPointerDown={handleResizeRightPointerDown}
-          className={cn(
-            "relative z-20 w-6 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:left-0 after:w-1.5 after:border-l after:border-black/5 dark:after:border-white/10",
-            colors.handle,
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-          )}
-        />
+        {showResizeHandles ? (
+          <button
+            type="button"
+            aria-label={t("tasks:gantt.resizeDue")}
+            onPointerDown={handleResizeRightPointerDown}
+            style={{ width: `${resizeHandlePx}px` }}
+            className={cn(
+              "relative z-20 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:left-0 after:w-1.5 after:border-l after:border-black/5 dark:after:border-white/10",
+              colors.handle,
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+            )}
+          />
+        ) : null}
       </div>
     </div>
   );

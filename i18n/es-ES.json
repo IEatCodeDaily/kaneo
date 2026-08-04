@@ -1022,6 +1022,30 @@
 				"title": "Monitoreo de tiempo activado",
 				"contentWithTask": "El monitoreo del ticket se ha activado para: {{taskTitle}}",
 				"contentWithoutTask": "Se ha activado el monitoreo de una tarea"
+			},
+			"task_title_changed": {
+				"title": "Título del ticket cambiado",
+				"content": "«{{oldTitle}}» se renombró como «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Descripción del ticket actualizada",
+				"content": "Se actualizó la descripción de «{{taskTitle}}»"
+			},
+			"task_priority_changed": {
+				"title": "Prioridad del ticket cambiada",
+				"content": "La prioridad de «{{taskTitle}}» cambió de {{oldPriority}} a {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Fecha de vencimiento del ticket cambiada",
+				"content": "Se actualizó la fecha de vencimiento de «{{taskTitle}}»"
+			},
+			"task_flag_raised": {
+				"title": "Indicador añadido al ticket",
+				"content": "Se añadió {{flagTypeName}} a «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Indicador resuelto en el ticket",
+				"content": "Se resolvió {{flagTypeName}} en «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1457,6 +1481,8 @@
 			"noTasksFound": "No se han encontrado tareas",
 			"noTasksMatch": "Ninguna tarea encaja con \"{{query}}\"",
 			"taskHeader": "Tarea",
+			"unscheduledHint": "Sin fechas: arrastra para programar",
+			"dragToScheduleHint": "Arrastra por la línea de tiempo para programar este ticket",
 			"updateDatesError": "Error al actualizar las fechas de la tarea",
 			"resizeStart": "Cambiar la fecha de comienzo",
 			"resizeDue": "Cambiar la fecha de vencimiento",

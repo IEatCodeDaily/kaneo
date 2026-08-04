@@ -1238,6 +1238,30 @@
 				"title": "Відлік часу розпочато",
 				"contentWithTask": "Відлік часу розпочато для тікета: {{taskTitle}}",
 				"contentWithoutTask": "Відлік часу розпочато для завдання"
+			},
+			"task_title_changed": {
+				"title": "Назву тікета змінено",
+				"content": "«{{oldTitle}}» перейменовано на «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Опис тікета оновлено",
+				"content": "Опис тікета «{{taskTitle}}» оновлено"
+			},
+			"task_priority_changed": {
+				"title": "Пріоритет тікета змінено",
+				"content": "Пріоритет тікета «{{taskTitle}}» змінено з {{oldPriority}} на {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Термін виконання тікета змінено",
+				"content": "Термін виконання тікета «{{taskTitle}}» оновлено"
+			},
+			"task_flag_raised": {
+				"title": "На тікеті встановлено прапорець",
+				"content": "Прапорець {{flagTypeName}} встановлено на тікеті «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Прапорець на тікеті знято",
+				"content": "Прапорець {{flagTypeName}} знято з тікета «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1680,6 +1704,8 @@
 			"noTasksFound": "Завдання не знайдено",
 			"noTasksMatch": "Жодне заплановане завдання не відповідає «{{query}}»",
 			"taskHeader": "Завдання",
+			"unscheduledHint": "Немає дат — перетягніть, щоб запланувати",
+			"dragToScheduleHint": "Перетягніть шкалою часу, щоб запланувати це завдання",
 			"updateDatesError": "Не вдалося оновити дати завдання",
 			"resizeStart": "Змінити дату початку",
 			"resizeDue": "Змінити дату завершення",

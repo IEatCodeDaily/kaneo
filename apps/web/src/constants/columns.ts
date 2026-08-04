@@ -1,8 +1,8 @@
-import { Check, Circle, CircleDot, Search } from "lucide-react";
-
-export const DEFAULT_COLUMNS = [
-  { id: "to-do", name: "To Do", icon: Circle },
-  { id: "in-progress", name: "In Progress", icon: CircleDot },
-  { id: "in-review", name: "In Review", icon: Search },
-  { id: "done", name: "Done", icon: Check },
-] as const;
+/**
+ * Backward-compatible export for the four Kanban lanes.
+ *
+ * #226 moved the full persisted vocabulary (including Triage, Canceled and
+ * Duplicate) to `task-statuses.ts`. Existing callers that only need the board
+ * lanes can keep importing DEFAULT_COLUMNS from here.
+ */
+export { DEFAULT_COLUMNS } from "./task-statuses";

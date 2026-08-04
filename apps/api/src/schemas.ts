@@ -19,6 +19,11 @@ export const boardSchema = v.object({
   createdAt: v.date(),
   isPublic: v.nullable(v.boolean()),
   archivedAt: v.nullable(v.date()),
+  subtaskDepthLimit: v.number(),
+  /** #226: persisted order for regular task status choices. */
+  taskStatusOrder: v.array(v.string()),
+  /** #226: persisted Backlog order; Triage defaults above Planned. */
+  backlogStatusOrder: v.array(v.string()),
 });
 
 export const taskSchema = v.object({
@@ -48,6 +53,12 @@ export const taskSchema = v.object({
   ] as const),
   startDate: v.optional(v.date()),
   dueDate: v.optional(v.date()),
+  /**
+   * #226: set when the task is archived. Archival is separate from status — an
+   * archived task retains its real workflow status and is hidden everywhere
+   * except the backlog's archived section.
+   */
+  archivedAt: v.nullish(v.date()),
   createdAt: v.date(),
 });
 

@@ -1,3 +1,4 @@
+import { isClosedStatus } from "../../../task/status-taxonomy";
 import {
   findExternalLinksByTask,
   updateExternalLink,
@@ -39,7 +40,12 @@ export async function handleTaskStatusChanged(
       `status:${event.newStatus}`,
     ]);
 
-    if (event.newStatus === "done") {
+    const wasClosed = isClosedStatus(event.oldStatus);
+    const isClosed = isClosedStatus(event.newStatus);
+
+    // #226: terminal-to-terminal transitions only change labels; they must not
+    // spuriously close/reopen the upstream issue.
+    if (!wasClosed && isClosed) {
       await client.updateIssue(repositoryOwner, repositoryName, issueNumber, {
         state: "closed",
       });
@@ -51,7 +57,7 @@ export async function handleTaskStatusChanged(
           lastOutboundStateSyncAt: Date.now(),
         },
       });
-    } else if (event.oldStatus === "done" && event.newStatus !== "done") {
+    } else if (wasClosed && !isClosed) {
       await client.updateIssue(repositoryOwner, repositoryName, issueNumber, {
         state: "open",
       });

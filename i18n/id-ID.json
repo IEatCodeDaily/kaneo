@@ -1382,6 +1382,30 @@
 				"title": "Pelacakan waktu dimulai",
 				"contentWithTask": "Pelacakan waktu dimulai pada tiket: {{taskTitle}}",
 				"contentWithoutTask": "Pelacakan waktu dimulai pada sebuah tugas"
+			},
+			"task_title_changed": {
+				"title": "Judul tiket diubah",
+				"content": "“{{oldTitle}}” diubah namanya menjadi “{{newTitle}}”"
+			},
+			"task_description_changed": {
+				"title": "Deskripsi tiket diperbarui",
+				"content": "Deskripsi “{{taskTitle}}” telah diperbarui"
+			},
+			"task_priority_changed": {
+				"title": "Prioritas tiket diubah",
+				"content": "Prioritas “{{taskTitle}}” diubah dari {{oldPriority}} menjadi {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Tanggal jatuh tempo tiket diubah",
+				"content": "Tanggal jatuh tempo “{{taskTitle}}” telah diperbarui"
+			},
+			"task_flag_raised": {
+				"title": "Tanda ditambahkan pada tiket",
+				"content": "{{flagTypeName}} ditambahkan pada “{{taskTitle}}”"
+			},
+			"task_flag_resolved": {
+				"title": "Tanda pada tiket diselesaikan",
+				"content": "{{flagTypeName}} diselesaikan pada “{{taskTitle}}”"
 			}
 		}
 	},
@@ -1829,6 +1853,8 @@
 			"noTasksFound": "Tugas tidak ditemukan",
 			"noTasksMatch": "Tidak ada tugas terjadwal yang cocok dengan \"{{query}}\"",
 			"taskHeader": "Tugas",
+			"unscheduledHint": "Tanpa tanggal - geser untuk menjadwalkan",
+			"dragToScheduleHint": "Geser di sepanjang timeline untuk menjadwalkan tiket ini",
 			"updateDatesError": "Gagal memperbarui tanggal tugas",
 			"resizeStart": "Ubah ukuran tanggal mulai",
 			"resizeDue": "Ubah ukuran tenggat",

@@ -43,6 +43,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { ResizableImage } from "@/components/task/extensions/resizable-image";
+import {
+  matchSlashTrigger,
+  shouldSlashMenuCaptureEnter,
+} from "@/components/task/slash-trigger";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -1000,13 +1004,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         "\n",
         "\0",
       );
-      const match = /(?:^|\s)\/([^\s/]*)$/.exec(textBeforeCursor);
-      if (!match) {
+      const trigger = matchSlashTrigger(textBeforeCursor);
+      if (!trigger) {
         setSlashMenu(null);
         return;
       }
 
-      const query = match[1] || "";
+      const query = trigger.query;
       const from = $from.pos - query.length - 1;
       const to = $from.pos;
       const coords = getOverlayPosition(view, $from.pos);
@@ -1196,7 +1200,17 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         return;
       }
 
-      if (!commands.length) return;
+      // #267: never intercept Enter unless there is a command to run. Otherwise
+      // an open-but-empty menu silently swallowed Enter, so a checklist item
+      // could not be split.
+      if (
+        !shouldSlashMenuCaptureEnter({
+          hasMenu: true,
+          commandCount: commands.length,
+        })
+      ) {
+        return;
+      }
 
       if (event.key === "ArrowDown") {
         event.preventDefault();

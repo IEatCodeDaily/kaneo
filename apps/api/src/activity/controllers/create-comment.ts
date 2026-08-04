@@ -13,6 +13,7 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import createNotification from "../../notification/controllers/create-notification";
+import { getTaskNotificationRecipientIds } from "../../notification/task-notification-recipients";
 import { createGitHubItemComment } from "../../repo/controllers/manage-github-repo";
 import { parseMentionIds } from "../../utils/parse-mentions";
 
@@ -109,24 +110,32 @@ async function createComment(taskId: string, userId: string, content: string) {
     });
   }
 
-  if (
-    task?.assigneeId &&
-    task.assigneeId !== userId &&
-    !mentionedIds.includes(task.assigneeId)
-  ) {
-    await createNotification({
-      userId: task.assigneeId,
-      type: "task_comment",
-      eventData: {
-        taskTitle: task.title,
-        commenterName: user?.name ?? null,
-        commentPreview: content.slice(0, 160),
-        boardId: task.boardId,
-        organizationId: task.organizationId,
-      },
-      resourceId: taskId,
-      resourceType: "task",
+  if (task) {
+    const recipients = await getTaskNotificationRecipientIds({
+      taskId,
+      actorId: userId,
+      directUserIds: [task.assigneeId],
     });
+    const commentRecipients = recipients.filter(
+      (recipientId) => !mentionedIds.includes(recipientId),
+    );
+    await Promise.all(
+      commentRecipients.map((recipientId) =>
+        createNotification({
+          userId: recipientId,
+          type: "task_comment",
+          eventData: {
+            taskTitle: task.title,
+            commenterName: user?.name ?? null,
+            commentPreview: content.slice(0, 160),
+            boardId: task.boardId,
+            organizationId: task.organizationId,
+          },
+          resourceId: taskId,
+          resourceType: "task",
+        }),
+      ),
+    );
   }
 
   return activity;

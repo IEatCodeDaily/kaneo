@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useNavigate } from "@tanstack/react-router";
-import { GitMerge, GitPullRequest } from "lucide-react";
+import { Diamond, GitMerge, GitPullRequest } from "lucide-react";
 import { type CSSProperties, memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskFlagBadges from "@/components/flag/task-flag-badges";
@@ -205,9 +205,23 @@ export const TaskCardContent = memo(function TaskCardContent({
                 }
               }}
             >
-              {showTaskNumbers && (
-                <div className="mb-2 text-[10px] font-mono text-muted-foreground/90">
-                  {boardSlug}-{task.number}
+              {(showTaskNumbers || task.milestoneName) && (
+                <div className="mb-2 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground/90">
+                  {showTaskNumbers ? (
+                    <span className="shrink-0 font-mono">
+                      {boardSlug}-{task.number}
+                    </span>
+                  ) : null}
+                  {task.milestoneName ? (
+                    <span
+                      className="inline-flex min-w-0 items-center gap-1 rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-indigo-400"
+                      data-testid="task-card-milestone"
+                      title={task.milestoneName}
+                    >
+                      <Diamond className="size-2.5 shrink-0 fill-current" />
+                      <span className="truncate">{task.milestoneName}</span>
+                    </span>
+                  ) : null}
                 </div>
               )}
 

@@ -25,6 +25,15 @@ function makeFakeWs() {
   } as never;
 }
 
+async function clearPresenceMessages(
+  ...sockets: ReturnType<typeof makeFakeWs>[]
+) {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  for (const socket of sockets) {
+    (socket as { send: ReturnType<typeof vi.fn> }).send.mockClear();
+  }
+}
+
 describe("broadcastToBoard", () => {
   beforeEach(async () => {
     // Ensure no REDIS_URL so InMemoryBroadcastAdapter is used
@@ -39,6 +48,7 @@ describe("broadcastToBoard", () => {
   it("delivers messages to connected clients after batch timeout", async () => {
     const ws = makeFakeWs();
     const conn = addConnection("board-1", ws, "user-1", "init-1");
+    await clearPresenceMessages(ws);
 
     broadcastToBoard("board-1", {
       type: "TASK_CREATED",
@@ -75,6 +85,7 @@ describe("broadcastToBoard", () => {
     const ws2 = makeFakeWs();
     const conn1 = addConnection("board-1", ws1, "user-1", "init-excluded");
     const conn2 = addConnection("board-1", ws2, "user-2", "init-other");
+    await clearPresenceMessages(ws1, ws2);
 
     broadcastToBoard(
       "board-1",
@@ -102,6 +113,7 @@ describe("broadcastToBoard", () => {
   it("deduplicates messages with the same key in a batch window", async () => {
     const ws = makeFakeWs();
     const conn = addConnection("board-1", ws, "user-1", "init-1");
+    await clearPresenceMessages(ws);
 
     // Send two messages with the same type+taskId — should be deduplicated
     broadcastToBoard("board-1", {
@@ -135,6 +147,7 @@ describe("broadcastToBoard", () => {
   it("does not deliver to connections on a different project", async () => {
     const ws = makeFakeWs();
     const conn = addConnection("board-2", ws, "user-1", "init-1");
+    await clearPresenceMessages(ws);
 
     broadcastToBoard("board-1", {
       type: "TASK_CREATED",

@@ -1245,6 +1245,30 @@
 				"title": "Suivi du temps démarré",
 				"contentWithTask": "Le suivi du temps a démarré sur le ticket : {{taskTitle}}",
 				"contentWithoutTask": "Le suivi du temps a démarré sur une tâche"
+			},
+			"task_title_changed": {
+				"title": "Titre du ticket modifié",
+				"content": "« {{oldTitle}} » a été renommé en « {{newTitle}} »"
+			},
+			"task_description_changed": {
+				"title": "Description du ticket mise à jour",
+				"content": "La description de « {{taskTitle}} » a été mise à jour"
+			},
+			"task_priority_changed": {
+				"title": "Priorité du ticket modifiée",
+				"content": "La priorité de « {{taskTitle}} » est passée de {{oldPriority}} à {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Date d’échéance du ticket modifiée",
+				"content": "La date d’échéance de « {{taskTitle}} » a été mise à jour"
+			},
+			"task_flag_raised": {
+				"title": "Signalement ajouté au ticket",
+				"content": "{{flagTypeName}} a été ajouté à « {{taskTitle}} »"
+			},
+			"task_flag_resolved": {
+				"title": "Signalement résolu sur le ticket",
+				"content": "{{flagTypeName}} a été résolu sur « {{taskTitle}} »"
 			}
 		}
 	},
@@ -1692,6 +1716,8 @@
 			"noTasksFound": "Aucune tâche trouvée",
 			"noTasksMatch": "Aucune tâche planifiée ne correspond à \"{{query}}\"",
 			"taskHeader": "Tâche",
+			"unscheduledHint": "Aucune date - faites glisser pour planifier",
+			"dragToScheduleHint": "Faites glisser sur la chronologie pour planifier ce ticket",
 			"updateDatesError": "Échec de la mise à jour des dates de la tâche",
 			"resizeStart": "Redimensionner la date de début",
 			"resizeDue": "Redimensionner la date d'échéance",

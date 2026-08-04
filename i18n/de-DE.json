@@ -1279,6 +1279,30 @@
 				"title": "Zeiterfassung gestartet",
 				"contentWithTask": "Die Zeiterfassung für das Ticket \"{{taskTitle}}\" wurde gestartet",
 				"contentWithoutTask": "Die Zeiterfassung für eine Aufgabe wurde gestartet"
+			},
+			"task_title_changed": {
+				"title": "Ticket-Titel geändert",
+				"content": "„{{oldTitle}}“ wurde in „{{newTitle}}“ umbenannt"
+			},
+			"task_description_changed": {
+				"title": "Ticket-Beschreibung aktualisiert",
+				"content": "Die Beschreibung von „{{taskTitle}}“ wurde aktualisiert"
+			},
+			"task_priority_changed": {
+				"title": "Ticket-Priorität geändert",
+				"content": "Die Priorität von „{{taskTitle}}“ wurde von {{oldPriority}} auf {{newPriority}} geändert"
+			},
+			"task_due_date_changed": {
+				"title": "Fälligkeitsdatum des Tickets geändert",
+				"content": "Das Fälligkeitsdatum von „{{taskTitle}}“ wurde aktualisiert"
+			},
+			"task_flag_raised": {
+				"title": "Markierung für Ticket gesetzt",
+				"content": "{{flagTypeName}} wurde für „{{taskTitle}}“ gesetzt"
+			},
+			"task_flag_resolved": {
+				"title": "Markierung für Ticket geklärt",
+				"content": "{{flagTypeName}} wurde für „{{taskTitle}}“ geklärt"
 			}
 		}
 	},
@@ -1725,6 +1749,8 @@
 			"noTasksFound": "Keine Aufgaben gefunden",
 			"noTasksMatch": "Keine geplanten Aufgaben entsprechen \"{{query}}\"",
 			"taskHeader": "Aufgabe",
+			"unscheduledHint": "Keine Daten – zum Planen ziehen",
+			"dragToScheduleHint": "Zieh über die Zeitleiste, um dieses Ticket zu planen",
 			"updateDatesError": "Aufgabendaten konnten nicht aktualisiert werden",
 			"resizeStart": "Startdatum anpassen",
 			"resizeDue": "Fälligkeitsdatum anpassen",

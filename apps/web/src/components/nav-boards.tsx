@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
+  Archive,
   EyeOff,
   Folder,
   Forward,
@@ -37,6 +38,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import useArchiveBoard from "@/hooks/mutations/board/use-archive-board";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -81,9 +83,13 @@ export function NavBoards() {
   });
   const queryClient = useQueryClient();
   const { mutateAsync: deleteBoard } = useDeleteBoard();
-  const { canCreateBoards, canDeleteBoards } = useOrganizationPermission();
+  const { mutateAsync: archiveBoard, isPending: isArchivePending } =
+    useArchiveBoard();
+  const { canCreateBoards, canDeleteBoards, canUpdateBoards } =
+    useOrganizationPermission();
   const canCreate = canCreateBoards();
   const canDeleteBoard = canDeleteBoards();
+  const canArchiveBoard = canUpdateBoards();
   const {
     hiddenBoardIds,
     setBoardSidebarVisibility,
@@ -99,6 +105,9 @@ export function NavBoards() {
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDeleteId, setBoardToDeleteID] = useState<string | null>(null);
+  const [boardToArchive, setBoardToArchive] = useState<BoardWithTasks | null>(
+    null,
+  );
 
   // Switching boards keeps the current view; arriving from elsewhere uses the
   // last board view this user was in (persisted in localStorage).
@@ -424,6 +433,18 @@ export function NavBoards() {
                                 <EyeOff className="text-muted-foreground" />
                                 <span>Hide from sidebar</span>
                               </DropdownMenuItem>
+                              {canArchiveBoard && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="h-7 items-start cursor-pointer text-sm"
+                                    onClick={() => setBoardToArchive(board)}
+                                  >
+                                    <Archive className="text-muted-foreground" />
+                                    <span>Archive board</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                               {canDeleteBoard && (
                                 <>
                                   <DropdownMenuSeparator />
@@ -473,6 +494,17 @@ export function NavBoards() {
                           <EyeOff className="text-muted-foreground" />
                           Hide from sidebar
                         </ContextMenuItem>
+                        {canArchiveBoard && (
+                          <>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem
+                              onClick={() => setBoardToArchive(board)}
+                            >
+                              <Archive className="text-muted-foreground" />
+                              Archive board
+                            </ContextMenuItem>
+                          </>
+                        )}
                         {canDeleteBoard && (
                           <>
                             <ContextMenuSeparator />
@@ -512,6 +544,22 @@ export function NavBoards() {
       <CreateBoardModal
         open={isCreateBoardModalOpen}
         onClose={() => setIsCreateBoardModalOpen(false)}
+      />
+
+      <ArchiveBoardDialog
+        board={boardToArchive}
+        isPending={isArchivePending}
+        onClose={() => setBoardToArchive(null)}
+        onArchive={async (board) => {
+          await archiveBoard({ id: board.id });
+          toast.success("Board archived");
+          setBoardToArchive(null);
+          if (currentBoardId === board.id)
+            navigate({
+              to: "/dashboard/organization/$organizationId",
+              params: { organizationId: organization.id },
+            });
+        }}
       />
 
       <AlertDialog
@@ -558,5 +606,64 @@ export function NavBoards() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+type ArchiveBoardDialogProps = {
+  board: BoardWithTasks | null;
+  isPending: boolean;
+  onArchive: (board: BoardWithTasks) => Promise<void>;
+  onClose: () => void;
+};
+
+export function ArchiveBoardDialog({
+  board,
+  isPending,
+  onArchive,
+  onClose,
+}: ArchiveBoardDialogProps) {
+  const handleArchive = async () => {
+    if (!board || isPending) return;
+    try {
+      await onArchive(board);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to archive board",
+      );
+    }
+  };
+
+  return (
+    <AlertDialog
+      open={!!board}
+      onOpenChange={(open) => !open && !isPending && onClose()}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Archive board?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {board?.name} will be hidden from active board lists. Its tasks and
+            settings will be preserved.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isPending}
+            render={<AlertDialogClose />}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            disabled={isPending}
+            onClick={() => void handleArchive()}
+          >
+            {isPending ? "Archiving…" : "Archive board"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

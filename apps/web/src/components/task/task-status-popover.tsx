@@ -120,7 +120,12 @@ export default function TaskStatusPopover({
             data-testid="task-status-trigger"
             variant="ghost"
             size="sm"
-            className="h-7 justify-start gap-1.5 px-1.5"
+            /*
+             * Status is a task property, not a bare toolbar link. Match the
+             * outlined property-chip contract used by Start date, Due date,
+             * Priority, Assign and Labels in the create-ticket modal.
+             */
+            className="h-7 justify-start gap-1.5 rounded-md border border-border bg-transparent px-2.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
           >
             {selectedOption ? (
               getColumnIcon(

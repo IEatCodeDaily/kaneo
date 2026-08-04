@@ -50,6 +50,10 @@ import {
   ShikiCodeBlock,
 } from "@/components/task/extensions/shiki-code-block";
 import { TaskItemWithCheckbox } from "@/components/task/extensions/task-item-with-checkbox";
+import {
+  matchSlashTrigger,
+  shouldSlashMenuCaptureEnter,
+} from "@/components/task/slash-trigger";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -869,9 +873,14 @@ export default function CommentEditor({
               return true;
             }
 
+            // #267: Enter is only intercepted when a command is actually
+            // available, so an open-but-empty menu can never swallow it.
             if (
               (event.key === "Enter" || event.key === "Tab") &&
-              filteredSlashCommands.length
+              shouldSlashMenuCaptureEnter({
+                hasMenu: true,
+                commandCount: filteredSlashCommands.length,
+              })
             ) {
               event.preventDefault();
               const activeEditor = editorInstanceRef.current;
@@ -1046,14 +1055,14 @@ export default function CommentEditor({
         "\0",
         "\0",
       );
-      const match = textBefore.match(/(?:^|\s)\/([^\s/]*)$/);
-      if (!match) {
+      const trigger = matchSlashTrigger(textBefore);
+      if (!trigger) {
         setSlashMenu(null);
         return;
       }
 
-      const query = match[1] || "";
-      const matchText = match[0];
+      const query = trigger.query;
+      const matchText = trigger.matchText;
       const startsWithSpace = matchText.startsWith(" ");
       const slashOffset =
         $from.parentOffset - matchText.length + (startsWithSpace ? 1 : 0);

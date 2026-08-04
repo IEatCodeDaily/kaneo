@@ -12,6 +12,51 @@ import getNotifications from "./controllers/get-notifications";
 import getUnreadNotificationCount from "./controllers/get-unread-notification-count";
 import markAllNotificationsAsRead from "./controllers/mark-all-notifications-as-read";
 import markAsRead from "./controllers/mark-notification-as-read";
+import {
+  getAssignmentNotificationRecipientIds,
+  getTaskNotificationContext,
+  getTaskNotificationRecipientIds,
+} from "./task-notification-recipients";
+
+type TaskChangeNotification = {
+  taskId: string;
+  userId: string;
+  type: string;
+  [key: string]: unknown;
+};
+
+async function notifyTaskParticipants(
+  data: TaskChangeNotification,
+  notificationType: string,
+  eventData: Record<string, unknown>,
+  directUserIds: Array<string | null | undefined> = [],
+) {
+  const context = await getTaskNotificationContext(data.taskId);
+  if (!context) return;
+  const recipients = await getTaskNotificationRecipientIds({
+    taskId: data.taskId,
+    actorId: data.userId,
+    directUserIds,
+  });
+
+  await Promise.all(
+    recipients.map((userId) =>
+      createNotification({
+        userId,
+        type: notificationType,
+        eventData: {
+          taskTitle: context.title,
+          taskNumber: context.number,
+          boardId: context.boardId,
+          organizationId: context.organizationId,
+          ...eventData,
+        },
+        resourceId: data.taskId,
+        resourceType: "task",
+      }),
+    ),
+  );
+}
 
 const bulkResultSchema = v.object({
   success: v.boolean(),
@@ -239,35 +284,12 @@ subscribeToEvent<{
   title: string;
   assigneeId?: string;
 }>("task.status_changed", async (data) => {
-  if (data.assigneeId && data.assigneeId !== data.userId) {
-    const [task] = await db
-      .select({ boardId: taskTable.boardId })
-      .from(taskTable)
-      .where(eq(taskTable.id, data.taskId))
-      .limit(1);
-
-    const [board] = task
-      ? await db
-          .select({ organizationId: boardTable.organizationId })
-          .from(boardTable)
-          .where(eq(boardTable.id, task.boardId))
-          .limit(1)
-      : [];
-
-    await createNotification({
-      userId: data.assigneeId,
-      type: "task_status_changed",
-      eventData: {
-        taskTitle: data.title,
-        oldStatus: data.oldStatus,
-        newStatus: data.newStatus,
-        boardId: task?.boardId ?? null,
-        organizationId: board?.organizationId ?? null,
-      },
-      resourceId: data.taskId,
-      resourceType: "task",
-    });
-  }
+  await notifyTaskParticipants(
+    data,
+    "task_status_changed",
+    { oldStatus: data.oldStatus, newStatus: data.newStatus },
+    [data.assigneeId],
+  );
 });
 
 subscribeToEvent<{
@@ -278,34 +300,106 @@ subscribeToEvent<{
   newAssigneeId: string;
   title: string;
 }>("task.assignee_changed", async (data) => {
-  if (data.newAssigneeId) {
-    const [task] = await db
-      .select({ boardId: taskTable.boardId })
-      .from(taskTable)
-      .where(eq(taskTable.id, data.taskId))
-      .limit(1);
+  const context = await getTaskNotificationContext(data.taskId);
+  if (!context) return;
 
-    const [board] = task
-      ? await db
-          .select({ organizationId: boardTable.organizationId })
-          .from(boardTable)
-          .where(eq(boardTable.id, task.boardId))
-          .limit(1)
-      : [];
-
-    await createNotification({
-      userId: data.newAssigneeId,
-      type: "task_assignee_changed",
-      eventData: {
-        taskTitle: data.title,
-        boardId: task?.boardId ?? null,
-        organizationId: board?.organizationId ?? null,
-      },
-      resourceId: data.taskId,
-      resourceType: "task",
-    });
-  }
+  const recipients = getAssignmentNotificationRecipientIds({
+    actorId: data.userId,
+    newAssigneeId: data.newAssigneeId,
+  });
+  await Promise.all(
+    recipients.map((userId) =>
+      createNotification({
+        userId,
+        type: "task_assignee_changed",
+        eventData: {
+          taskTitle: context.title,
+          taskNumber: context.number,
+          boardId: context.boardId,
+          organizationId: context.organizationId,
+        },
+        resourceId: data.taskId,
+        resourceType: "task",
+      }),
+    ),
+  );
 });
+
+subscribeToEvent<TaskChangeNotification>("task.title_changed", async (data) => {
+  await notifyTaskParticipants(data, "task_title_changed", {
+    oldTitle: data.oldTitle,
+    newTitle: data.newTitle,
+  });
+});
+
+subscribeToEvent<TaskChangeNotification>(
+  "task.description_changed",
+  async (data) => {
+    await notifyTaskParticipants(data, "task_description_changed", {});
+  },
+);
+
+subscribeToEvent<TaskChangeNotification>(
+  "task.priority_changed",
+  async (data) => {
+    await notifyTaskParticipants(data, "task_priority_changed", {
+      oldPriority: data.oldPriority,
+      newPriority: data.newPriority,
+    });
+  },
+);
+
+subscribeToEvent<TaskChangeNotification>(
+  "task.due_date_changed",
+  async (data) => {
+    await notifyTaskParticipants(data, "task_due_date_changed", {
+      oldDueDate: data.oldDueDate,
+      newDueDate: data.newDueDate,
+    });
+  },
+);
+
+subscribeToEvent<TaskChangeNotification>("task.flag_raised", async (data) => {
+  await notifyTaskParticipants(
+    data,
+    "task_flag_raised",
+    { flagTypeName: data.flagTypeName, note: data.note },
+    [typeof data.targetUserId === "string" ? data.targetUserId : null],
+  );
+});
+
+subscribeToEvent<TaskChangeNotification>("task.flag_resolved", async (data) => {
+  await notifyTaskParticipants(data, "task_flag_resolved", {
+    flagTypeName: data.flagTypeName,
+    resolveNote: data.resolveNote,
+  });
+});
+
+subscribeToEvent<TaskChangeNotification>("task.unassigned", async (data) => {
+  await notifyTaskParticipants(data, "task_unassigned", {});
+});
+
+subscribeToEvent<TaskChangeNotification>("task.moved", async (data) => {
+  await notifyTaskParticipants(data, "task_moved", {
+    fromBoardName: data.fromBoardName ?? data.fromProjectName,
+    toBoardName: data.toBoardName ?? data.toProjectName,
+  });
+});
+
+for (const eventName of [
+  "task.label_assigned",
+  "task.label_unassigned",
+] as const) {
+  subscribeToEvent<TaskChangeNotification>(eventName, async (data) => {
+    await notifyTaskParticipants(
+      data,
+      eventName === "task.label_assigned"
+        ? "task_label_assigned"
+        : "task_label_unassigned",
+      {},
+    );
+  });
+}
 
 subscribeToEvent<{
   timeEntryId: string;

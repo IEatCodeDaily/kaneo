@@ -436,6 +436,28 @@ export const boardTable = pgTable(
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     lastTaskNumber: integer("last_task_number").notNull().default(0),
+    /**
+     * #226: per-board ordering for statuses shown in regular Task surfaces.
+     * JSON is intentional: this is a small ordered list of global, append-only
+     * slugs, not board-owned status definitions. Missing future statuses are
+     * appended canonically by readers, so configured boards never hide them.
+     */
+    taskStatusOrder: jsonb("task_status_order")
+      .$type<string[]>()
+      .default([
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done",
+        "canceled",
+        "duplicate",
+      ])
+      .notNull(),
+    /** #226: Triage defaults above Planned, exactly as specified. */
+    backlogStatusOrder: jsonb("backlog_status_order")
+      .$type<string[]>()
+      .default(["triage", "planned"])
+      .notNull(),
     // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
     // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
     subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
@@ -676,6 +698,16 @@ export const taskTable = pgTable(
       onDelete: "set null",
       onUpdate: "cascade",
     }),
+    /**
+     * #226: archival is ORTHOGONAL to status, not a status value.
+     *
+     * Archiving used to overwrite `status` with "archived", which destroyed the
+     * ticket's real workflow state. Per the ticket: "Archive is a separate
+     * status to hide it from all views. Archived item retains its status."
+     * Archived tasks are hidden everywhere except the backlog's archived
+     * dropdown; `status` keeps meaning workflow state only.
+     */
+    archivedAt: timestamp("archived_at", { mode: "date" }),
     deletedAt: timestamp("deleted_at", { mode: "date" }),
     deletedBy: text("deleted_by").references(() => userTable.id, {
       onDelete: "set null",

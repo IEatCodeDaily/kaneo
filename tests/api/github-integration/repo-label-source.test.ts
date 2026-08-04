@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+const repositoryRoot = resolve(import.meta.dirname, "../../..");
 const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+  readFileSync(resolve(repositoryRoot, path), "utf8");
 
 describe("GitHub label provenance (#147)", () => {
   it("marks every GitHub label insertion as repo-owned", () => {

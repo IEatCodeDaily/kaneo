@@ -10,7 +10,6 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
-import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import TaskDescription from "./task-description";
@@ -36,7 +35,6 @@ export default function TaskDetailsContent({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: task } = useGetTask(taskId ?? "");
-  const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: activities = [] } = useGetActivitiesByTaskId(taskId ?? "");
   // #116: fold consecutive same-user status changes for display only.
   const activityGroups = useMemo(
@@ -79,9 +77,12 @@ export default function TaskDetailsContent({
             </span>
           </button>
         )}
-        <p className="text-xs font-semibold text-foreground/70">
-          {board?.slug}-{task?.number}
-        </p>
+        {/*
+          #258 follow-up: the task identifier used to be repeated here, directly
+          above the title. Both hosts of this component already render it in
+          their header — the drawer topbar and TaskLayout's breadcrumb — so it
+          appeared twice on screen. The header is the single source.
+        */}
         <TaskTitle taskId={taskId} />
         <TaskDescription taskId={taskId} />
         <TaskDescriptionHistory taskId={taskId} />

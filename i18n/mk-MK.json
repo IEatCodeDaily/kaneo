@@ -1237,6 +1237,30 @@
 				"title": "Следењето на време е започнато",
 				"contentWithTask": "Следењето на време е започнато на тикетот: {{taskTitle}}",
 				"contentWithoutTask": "Следењето на време е започнато на задача"
+			},
+			"task_title_changed": {
+				"title": "Насловот на тикетот е променет",
+				"content": "„{{oldTitle}}“ е преименуван во „{{newTitle}}“"
+			},
+			"task_description_changed": {
+				"title": "Описот на тикетот е ажуриран",
+				"content": "Описот на „{{taskTitle}}“ е ажуриран"
+			},
+			"task_priority_changed": {
+				"title": "Приоритетот на тикетот е променет",
+				"content": "Приоритетот на „{{taskTitle}}“ е променет од {{oldPriority}} во {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Крајниот рок на тикетот е променет",
+				"content": "Крајниот рок на „{{taskTitle}}“ е ажуриран"
+			},
+			"task_flag_raised": {
+				"title": "Поставено е знаменце на тикетот",
+				"content": "{{flagTypeName}} е поставено на „{{taskTitle}}“"
+			},
+			"task_flag_resolved": {
+				"title": "Знаменцето на тикетот е разрешено",
+				"content": "{{flagTypeName}} е разрешено на „{{taskTitle}}“"
 			}
 		}
 	},
@@ -1683,6 +1707,8 @@
 			"noTasksFound": "Не се пронајдени задачи",
 			"noTasksMatch": "Нема закажани задачи што одговараат на \"{{query}}\"",
 			"taskHeader": "Задача",
+			"unscheduledHint": "Без датуми - влечете за распоред",
+			"dragToScheduleHint": "Влечете по временската линија за да го распоредите овој тикет",
 			"updateDatesError": "Неуспешно ажурирање на датуми на задача",
 			"resizeStart": "Промени почетен датум",
 			"resizeDue": "Промени краен рок",

@@ -211,7 +211,7 @@ export default function TaskPropertiesSidebar({
                     data-testid="task-status-trigger"
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {getColumnIcon(
                       task.status ?? "",
@@ -229,7 +229,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {getPriorityIcon(task.priority ?? "")}
                     <span className="text-xs font-semibold truncate">
@@ -246,7 +246,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {task.userId ? (
                       <Avatar className={cn("h-[16px] w-[16px]", assigneeTone)}>
@@ -281,7 +281,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
                     <span
@@ -299,7 +299,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {task.dueDate ? (
                       <>
@@ -402,7 +402,7 @@ export default function TaskPropertiesSidebar({
                       data-testid="task-status-trigger"
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {getColumnIcon(
                         task.status ?? "",
@@ -420,7 +420,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {getPriorityIcon(task.priority ?? "")}
                       <span className="text-xs font-semibold truncate">
@@ -437,7 +437,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {task.userId ? (
                         <Avatar
@@ -474,7 +474,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
                       <span
@@ -492,7 +492,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {task.dueDate ? (
                         <>

@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import db from "../../database";
 import { boardTable } from "../../database/schema";
 import { listAccessibleResourceIds } from "../../resource-access";
+import { isClosedStatus } from "../../task/status-taxonomy";
 
 async function getBoards(
   organizationId: string,
@@ -34,14 +35,21 @@ async function getBoards(
   const boardsWithStatistics = boards
     .filter((board) => accessibleIds.has(board.id))
     .map((board) => {
-      const totalTasks = board.tasks.length;
-      const completedTasks = board.tasks.filter(
-        (task) => task.status === "done" || task.status === "archived",
+      /*
+        #226: archived tasks are hidden everywhere except the backlog archive
+        dropdown, so they must not distort board totals, completion percentage,
+        deadline, or timeline span. Archive itself is NOT completion — the
+        retained status decides that.
+      */
+      const activeTasks = board.tasks.filter((task) => task.archivedAt == null);
+      const totalTasks = activeTasks.length;
+      const completedTasks = activeTasks.filter((task) =>
+        isClosedStatus(task.status),
       ).length;
       const completionPercentage =
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      const dueDate = board.tasks.reduce((earliest: Date | null, task) => {
+      const dueDate = activeTasks.reduce((earliest: Date | null, task) => {
         if (!earliest || (task.dueDate && task.dueDate < earliest))
           return task.dueDate;
         return earliest;
@@ -59,7 +67,7 @@ async function getBoards(
        */
       let startsAt: Date | null = null;
       let endsAt: Date | null = null;
-      for (const task of board.tasks) {
+      for (const task of activeTasks) {
         const taskStart = task.startDate ?? task.dueDate;
         const taskEnd = task.dueDate ?? task.startDate;
         if (taskStart && (!startsAt || taskStart < startsAt))
@@ -78,6 +86,7 @@ async function getBoards(
         },
         archivedTasks: [],
         plannedTasks: [],
+        triageTasks: [],
         columns: [],
       };
     });

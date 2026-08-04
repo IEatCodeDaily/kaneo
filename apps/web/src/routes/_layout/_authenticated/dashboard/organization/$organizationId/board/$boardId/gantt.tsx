@@ -1,3 +1,22 @@
+import {
+  closestCorners,
+  DndContext,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragStartEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { format, isSameMonth, isToday, isWeekend, startOfDay } from "date-fns";
 import {
@@ -5,9 +24,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronRight as ChevronRightIcon,
+  Loader2,
   Search,
 } from "lucide-react";
 import {
+  Fragment,
   memo,
   useCallback,
   useDeferredValue,
@@ -31,7 +52,16 @@ import {
   matchesTaskQuery,
   partitionTasksBySchedule,
 } from "@/components/gantt/gantt-scheduling";
+import {
+  buildGanttSections,
+  visibleSectionRows,
+} from "@/components/gantt/gantt-sections";
 import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
+import {
+  applyGanttOrder,
+  planGanttTaskDrop,
+  removeChildrenOf,
+} from "@/components/gantt/gantt-task-rail-dnd";
 import {
   buildTimeline,
   dayOffsetRem,
@@ -39,12 +69,16 @@ import {
   gridLineGradient,
   weekendTintGradient,
 } from "@/components/gantt/gantt-timeline";
+import { GanttUnscheduledTrack } from "@/components/gantt/gantt-unscheduled-track";
 import PageTitle from "@/components/page-title";
 import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
+import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
@@ -60,6 +94,10 @@ import {
   type SortConfig,
   sortTasks,
 } from "@/lib/sort-tasks";
+import {
+  getDragDepth,
+  INDENTATION_WIDTH_PX,
+} from "@/lib/task-nesting-projection";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 
@@ -69,7 +107,6 @@ type GanttSearchParams = {
 
 const ZOOM_LEVELS: GanttZoom[] = ["day", "week", "month"];
 const ROW_HEIGHT_PX = 30;
-const INDENT_PX = 16;
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt",
@@ -200,6 +237,13 @@ type RowProps = {
   unscheduledHint: string;
   onToggleCollapse: (id: string) => void;
   onOpenTask: (task: FlatRow) => void;
+  projectedDepth?: number;
+  prospectiveParent?: boolean;
+  /**
+   * Rows outside a DndContext (the unscheduled lane) must not advertise a drag
+   * affordance they cannot honour, so reordering is opt-in per lane.
+   */
+  sortable?: boolean;
 };
 
 const GanttRow = memo(function GanttRow({
@@ -215,29 +259,66 @@ const GanttRow = memo(function GanttRow({
   unscheduledHint,
   onToggleCollapse,
   onOpenTask,
+  projectedDepth,
+  prospectiveParent,
+  sortable = false,
 }: RowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    disabled: !sortable || Boolean(task.isForeign),
+  });
+  const dragEnabled = sortable && !task.isForeign;
   const isScheduled = Boolean(task.scheduleStart && task.scheduleEnd);
   return (
     <div
+      ref={setNodeRef}
+      data-testid={`gantt-row-${task.id}`}
       className="grid items-stretch border-b border-border/60"
       style={{
         height: `${ROW_HEIGHT_PX}px`,
-        contentVisibility: "auto",
-        containIntrinsicSize: `auto ${ROW_HEIGHT_PX}px`,
+        // `content-visibility: auto` skips rendering off-screen rows, but a row
+        // being dragged must stay painted or it flickers mid-drag.
+        contentVisibility: isDragging ? undefined : "auto",
+        containIntrinsicSize: isDragging
+          ? undefined
+          : `auto ${ROW_HEIGHT_PX}px`,
         gridTemplateColumns: showTaskRail
           ? isMobile
             ? `${taskColumnWidthRem}rem max-content`
             : "20rem max-content"
           : "max-content",
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.45 : undefined,
+        zIndex: isDragging ? 20 : undefined,
       }}
     >
       {showTaskRail ? (
-        <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
+        <div
+          {...(dragEnabled ? attributes : {})}
+          {...(dragEnabled ? listeners : {})}
+          data-testid={`gantt-task-rail-${task.id}`}
+          className={cn(
+            "sticky left-0 z-[11] h-full border-r border-border bg-background",
+            dragEnabled && "cursor-grab touch-none active:cursor-grabbing",
+            prospectiveParent &&
+              "bg-primary/10 ring-1 ring-inset ring-primary/50",
+          )}
+        >
           {/* Chevron and label are siblings, not nested: a <button> inside a
               <button> is invalid HTML and breaks hydration. */}
           <div
             className="flex h-full w-full min-w-0 items-center gap-1 pr-2"
-            style={{ paddingLeft: `${task.depth * INDENT_PX + 4}px` }}
+            style={{
+              paddingLeft: `${(projectedDepth ?? task.depth) * INDENTATION_WIDTH_PX + 4}px`,
+            }}
           >
             {task.hasChildren ? (
               <button
@@ -347,17 +428,18 @@ const GanttRow = memo(function GanttRow({
             onOpenTask={() => onOpenTask(task)}
           />
         ) : (
-          // No dates means no bar to place. Keep the row present with a muted
-          // hint pinned to the left of the track so the task is visible and
-          // one click away from being scheduled.
-          <button
-            type="button"
-            onClick={() => onOpenTask(task)}
-            className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded border border-dashed border-border bg-background/80 px-2 text-[10px] text-muted-foreground transition-colors hover:bg-muted"
-            style={{ width: "max-content" }}
-          >
-            {unscheduledHint}
-          </button>
+          // #244: no dates means no bar — but the row still owns a full track,
+          // so dragging across it paints and commits a range, which is the only
+          // way to schedule from this view on a mostly-unscheduled board.
+          <GanttUnscheduledTrack
+            task={task as unknown as Task}
+            timeline={timeline}
+            pixelsPerDay={pixelsPerDay}
+            isMobile={isMobile}
+            readOnly={task.isForeign}
+            hint={unscheduledHint}
+            onOpenTask={() => onOpenTask(task)}
+          />
         )}
       </div>
     </div>
@@ -369,6 +451,10 @@ function RouteComponent() {
   const { boardId, organizationId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { mutateAsync: reorderTasks } = useReorderTasks();
+  const { mutateAsync: createTaskRelation } = useCreateTaskRelation();
+  const { mutateAsync: deleteTaskRelation } = useDeleteTaskRelation(boardId);
   const { data: board, isPlaceholderData } = useGetTasks(boardId);
   const { data: boardMilestones } = useGetMilestonesByBoard(boardId);
   const { data: relationData } = useGetBoardTaskRelations(boardId);
@@ -391,6 +477,31 @@ function RouteComponent() {
   const isMobile = useIsMobile();
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  /** Milestone sections the user has folded shut. */
+  const [collapsedMilestoneIds, setCollapsedMilestoneIds] = useState<
+    Set<string>
+  >(new Set());
+  const [drag, setDrag] = useState<{
+    activeId: string;
+    overId: string;
+    deltaX: number;
+    /**
+     * Intent-box level carried between move events. Hysteresis needs the
+     * previous level, so it lives in drag state rather than being recomputed
+     * from deltaX alone.
+     */
+    dragDepth: number;
+  } | null>(null);
+  const [dropPending, setDropPending] = useState(false);
+  const sensors = useSensors(
+    // 8px of travel before a drag starts, so a plain click still opens the task
+    // instead of being swallowed as a micro-drag.
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor),
+  );
 
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
@@ -500,6 +611,32 @@ function RouteComponent() {
     [ganttMilestones, searchQuery, matchingTaskIds],
   );
 
+  /**
+   * Milestone sections: each milestone is a header with its member tasks
+   * directly beneath it, and the remainder falls into a trailing ungrouped
+   * section. Searching force-expands so matches can't hide inside a collapsed
+   * section, mirroring how subtask collapse already behaves.
+   */
+  const sections = useMemo(
+    () =>
+      buildGanttSections({
+        rows: scheduledTasks,
+        milestones: visibleMilestones,
+        collapsedMilestoneIds: searching
+          ? new Set<string>()
+          : collapsedMilestoneIds,
+      }),
+    [scheduledTasks, visibleMilestones, collapsedMilestoneIds, searching],
+  );
+  const toggleMilestone = useCallback((milestoneId: string) => {
+    setCollapsedMilestoneIds((current) => {
+      const next = new Set(current);
+      if (next.has(milestoneId)) next.delete(milestoneId);
+      else next.add(milestoneId);
+      return next;
+    });
+  }, []);
+
   // Unscheduled tasks are a flat lane — no nesting, no collapse, they have no
   // bars to relate to. They obey sort and search like every other row.
   const unscheduledRows = useMemo<FlatRow[]>(() => {
@@ -521,7 +658,14 @@ function RouteComponent() {
   // shell (toolbar, header, skeleton) with the previous/empty list, then renders
   // the real rows in a low-priority pass — the click no longer blocks on 185
   // rows of layout. `isStale` is what drives the skeleton below.
-  const deferredRows = useDeferredValue(scheduledTasks);
+  // Rows are grouped into milestone sections first, so the deferred value must
+  // be the SECTION rows — deferring the ungrouped list would render tasks that
+  // a collapsed section is meant to hide.
+  const deferredSections = useDeferredValue(sections);
+  const deferredRows = useMemo(
+    () => visibleSectionRows(deferredSections),
+    [deferredSections],
+  );
   // Dependency arrows are drawn between bars, so only rows that actually have
   // both dates can participate. Narrow with a guard instead of casting: the
   // unscheduled lane deliberately carries rows with no dates at all.
@@ -533,7 +677,93 @@ function RouteComponent() {
       ),
     [deferredRows],
   );
-  const rowsAreStale = deferredRows !== scheduledTasks;
+  const rowsAreStale = deferredSections !== sections;
+  /**
+   * Manual order can only be honoured when the view is showing manual order.
+   * Same rule the board/list views apply (`disableDragDrop={sort.field !==
+   * "position"}`) — dragging under a title/date sort would save a position the
+   * user never sees, so the gesture is disabled instead of lying.
+   */
+  const dragDropEnabled = sort.field === "position";
+  const collisionRows = useMemo(
+    () => (drag ? removeChildrenOf(deferredRows, drag.activeId) : deferredRows),
+    [deferredRows, drag],
+  );
+  const dragProjection = useMemo(() => {
+    if (!drag) return null;
+    return planGanttTaskDrop({
+      rows: nestedRows,
+      relations: relationData?.relations ?? [],
+      maxNestDepth: board?.subtaskDepthLimit,
+      activeId: drag.activeId,
+      overId: drag.overId,
+      deltaX: drag.deltaX,
+      previousDragDepth: drag.dragDepth,
+    });
+  }, [board?.subtaskDepthLimit, drag, nestedRows, relationData?.relations]);
+
+  const finishDrag = useCallback(
+    async (event: DragEndEvent) => {
+      const preservedScrollLeft = scrollRef.current?.scrollLeft ?? 0;
+      const activeId = event.active.id.toString();
+      const overId = event.over?.id.toString();
+      const deltaX = event.delta.x;
+      // Drop with the SAME intent-box level the preview settled on, otherwise
+      // the committed nesting can disagree with what the user just saw.
+      const previousDragDepth = drag?.dragDepth ?? 0;
+      setDrag(null);
+      if (!overId || !board) return;
+      const plan = planGanttTaskDrop({
+        rows: nestedRows,
+        relations: relationData?.relations ?? [],
+        activeId,
+        overId,
+        deltaX,
+        maxNestDepth: board.subtaskDepthLimit,
+        previousDragDepth,
+      });
+      if (!plan) return;
+
+      const reordered = applyGanttOrder(board, plan.orderedIds);
+      setDropPending(true);
+      try {
+        await reorderTasks({
+          boardId,
+          board: reordered.board,
+          tasks: reordered.updates,
+        });
+        if (plan.deleteRelationId)
+          await deleteTaskRelation(plan.deleteRelationId);
+        if (plan.createRelation) await createTaskRelation(plan.createRelation);
+        const affected = [activeId, plan.parentId].filter(Boolean) as string[];
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ["board-task-relations", boardId],
+          }),
+          ...affected.map((id) =>
+            queryClient.invalidateQueries({ queryKey: ["task-relations", id] }),
+          ),
+        ]);
+      } finally {
+        requestAnimationFrame(() => {
+          if (scrollRef.current)
+            scrollRef.current.scrollLeft = preservedScrollLeft;
+        });
+        setDropPending(false);
+      }
+    },
+    [
+      board,
+      boardId,
+      createTaskRelation,
+      deleteTaskRelation,
+      drag?.dragDepth,
+      nestedRows,
+      queryClient,
+      relationData?.relations,
+      reorderTasks,
+    ],
+  );
 
   const timeline = useMemo(() => {
     const milestoneDates = milestoneTimelineDates(ganttMilestones);
@@ -756,12 +986,24 @@ function RouteComponent() {
         ) : (
           <div
             ref={scrollRef}
+            aria-busy={dropPending}
             className={cn(
               "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
               // Showing the previous board's rows while the new ones load.
               isPlaceholderData && "pointer-events-none opacity-50",
+              dropPending && "pointer-events-none",
             )}
           >
+            {dropPending ? (
+              <div
+                className="sticky left-2 top-2 z-50 flex w-fit items-center gap-1.5 rounded-full border bg-popover px-2.5 py-1 text-xs text-popover-foreground shadow-md"
+                data-testid="gantt-drop-pending"
+                role="status"
+              >
+                <Loader2 className="size-3.5 animate-spin" />
+                Saving move…
+              </div>
+            ) : null}
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               {/* Sticky header: month row + day row */}
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
@@ -915,33 +1157,131 @@ function RouteComponent() {
                     rowsAreStale && "opacity-60 transition-opacity",
                   )}
                 >
-                  {visibleMilestones.map((milestone) => (
-                    <GanttMilestoneRow
-                      key={`milestone-${milestone.id}`}
-                      milestone={milestone}
-                      timeline={timeline}
-                      showTaskRail={showTaskRail}
-                      taskColumnWidthRem={taskColumnWidthRem}
-                      isMobile={isMobile}
-                    />
-                  ))}
-                  {deferredRows.map((task) => (
-                    <GanttRow
-                      key={task.id}
-                      task={task}
-                      timeline={timeline}
-                      pixelsPerDay={pixelsPerDay}
-                      isMobile={isMobile}
-                      showTaskRail={showTaskRail}
-                      taskColumnWidthRem={taskColumnWidthRem}
-                      boardSlug={board?.slug}
-                      collapsed={collapsedIds.has(task.id)}
-                      display={display}
-                      unscheduledHint={t("tasks:gantt.unscheduledHint")}
-                      onToggleCollapse={toggleCollapse}
-                      onOpenTask={openTask}
-                    />
-                  ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCorners}
+                    onDragStart={(event: DragStartEvent) => {
+                      const id = event.active.id.toString();
+                      setDrag({
+                        activeId: id,
+                        overId: id,
+                        deltaX: 0,
+                        dragDepth: 0,
+                      });
+                    }}
+                    onDragMove={(event: DragMoveEvent) =>
+                      setDrag((current) =>
+                        current
+                          ? {
+                              ...current,
+                              deltaX: event.delta.x,
+                              // Advance the intent box from its PREVIOUS level so
+                              // the dead zone has hysteresis instead of snapping
+                              // at the midpoint on every wobble.
+                              dragDepth: getDragDepth(
+                                event.delta.x,
+                                INDENTATION_WIDTH_PX,
+                                current.dragDepth,
+                              ),
+                            }
+                          : current,
+                      )
+                    }
+                    onDragOver={(event) =>
+                      setDrag((current) =>
+                        current && event.over
+                          ? { ...current, overId: event.over.id.toString() }
+                          : current,
+                      )
+                    }
+                    onDragCancel={() => setDrag(null)}
+                    onDragEnd={finishDrag}
+                  >
+                    <SortableContext
+                      items={collisionRows.map((row) => row.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {/* Milestone sections: header, then that milestone's own
+                          tasks, then the ungrouped remainder last. Sections live
+                          INSIDE the SortableContext so a task can still be
+                          dragged across section boundaries. */}
+                      {deferredSections.map((section) => {
+                        const sectionKey =
+                          section.kind === "milestone"
+                            ? `milestone-${section.milestone.id}`
+                            : "ungrouped";
+                        return (
+                          <Fragment key={sectionKey}>
+                            {section.kind === "milestone" ? (
+                              <GanttMilestoneRow
+                                milestone={section.milestone}
+                                timeline={timeline}
+                                showTaskRail={showTaskRail}
+                                taskColumnWidthRem={taskColumnWidthRem}
+                                isMobile={isMobile}
+                                collapsed={section.collapsed}
+                                taskCount={section.rows.length}
+                                onToggleCollapse={toggleMilestone}
+                              />
+                            ) : section.labelled ? (
+                              <div
+                                className="grid h-9 items-stretch border-y border-border bg-muted/35"
+                                data-testid="gantt-no-milestone-section"
+                                style={{
+                                  gridTemplateColumns: showTaskRail
+                                    ? isMobile
+                                      ? `${taskColumnWidthRem}rem max-content`
+                                      : "20rem max-content"
+                                    : "max-content",
+                                }}
+                              >
+                                {showTaskRail ? (
+                                  <div className="sticky left-0 z-[13] flex items-center border-r border-border bg-card px-3 text-xs font-semibold">
+                                    {t("tasks:gantt.noMilestoneGroup")}
+                                  </div>
+                                ) : null}
+                                <div
+                                  style={{
+                                    minWidth: `${timeline.timelineMinWidthRem}rem`,
+                                  }}
+                                />
+                              </div>
+                            ) : null}
+                            {section.kind === "milestone" && section.collapsed
+                              ? null
+                              : section.rows.map((task) => (
+                                  <GanttRow
+                                    key={task.id}
+                                    task={task}
+                                    timeline={timeline}
+                                    pixelsPerDay={pixelsPerDay}
+                                    isMobile={isMobile}
+                                    showTaskRail={showTaskRail}
+                                    taskColumnWidthRem={taskColumnWidthRem}
+                                    boardSlug={board?.slug}
+                                    collapsed={collapsedIds.has(task.id)}
+                                    display={display}
+                                    unscheduledHint={t(
+                                      "tasks:gantt.unscheduledHint",
+                                    )}
+                                    onToggleCollapse={toggleCollapse}
+                                    onOpenTask={openTask}
+                                    sortable={dragDropEnabled}
+                                    projectedDepth={
+                                      drag?.activeId === task.id
+                                        ? dragProjection?.depth
+                                        : undefined
+                                    }
+                                    prospectiveParent={
+                                      dragProjection?.parentId === task.id
+                                    }
+                                  />
+                                ))}
+                          </Fragment>
+                        );
+                      })}
+                    </SortableContext>
+                  </DndContext>
 
                   {/* Unscheduled lane. Same rows, no bars — a labelled divider
                       keeps them from reading as an unexplained gap at the top
@@ -953,13 +1293,21 @@ function RouteComponent() {
                         top of the scroll area, and toggles its rows. It was
                         only `sticky left-0`, so it scrolled out of view
                         vertically and could not be collapsed.
+
+                        The header also sits ON TOP of the scrolling grid, so its
+                        background must stay fully opaque. `--accent` is a 6%
+                        alpha tint (see #162), so `hover:bg-accent` REPLACED the
+                        opaque `bg-card` with a near-transparent wash and the
+                        grid lines showed straight through on hover. Keep
+                        `bg-card` and layer the hover tint as a pseudo-element on
+                        top instead.
                       */}
                       <button
                         type="button"
                         aria-expanded={!unscheduledCollapsed}
                         data-testid="gantt-section-unscheduled"
                         onClick={() => setUnscheduledCollapsed((open) => !open)}
-                        className="sticky top-0 z-[14] flex w-full items-center border-y border-border bg-card py-1 text-left hover:bg-accent"
+                        className="sticky top-0 z-[14] flex w-full items-center border-y border-border bg-card py-1 text-left before:pointer-events-none before:absolute before:inset-0 before:bg-accent before:opacity-0 hover:before:opacity-100"
                         style={{ width: showTaskRail ? undefined : "100%" }}
                       >
                         {/*

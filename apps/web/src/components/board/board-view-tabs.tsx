@@ -23,22 +23,27 @@ export function BoardViewTabs({
   className,
 }: BoardViewTabsProps) {
   return (
-    <Tabs value={value} onValueChange={onValueChange} className={className}>
-      <TabsList
-        aria-label={ariaLabel}
-        className="h-8 max-w-full justify-start overflow-x-auto border border-border/80 bg-background [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {views.map((view) => (
-          <TabsTrigger
-            key={view.value}
-            value={view.value}
-            className="h-6 gap-1.5 px-2 text-xs"
-          >
-            {view.icon}
-            <span className="hidden 2xl:inline">{view.label}</span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
+    <div
+      className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      data-testid="board-view-tabs-scroller"
+    >
+      <Tabs value={value} onValueChange={onValueChange} className={className}>
+        <TabsList
+          aria-label={ariaLabel}
+          className="h-8 shrink-0 justify-start rounded-full border border-border/80 bg-muted/55 p-1 [&_[data-slot=tab-indicator]]:rounded-full"
+        >
+          {views.map((view) => (
+            <TabsTrigger
+              key={view.value}
+              value={view.value}
+              className="h-6 gap-1.5 rounded-full px-2 text-xs"
+            >
+              {view.icon}
+              <span className="hidden 2xl:inline">{view.label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+    </div>
   );
 }
