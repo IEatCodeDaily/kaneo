@@ -114,7 +114,12 @@ export const TaskRowContent = memo(function TaskRowContent({
   const handleClick = (e: React.MouseEvent) => {
     if (!boardId || !task) return;
     if (e.defaultPrevented) return;
-    if ((e.target as Element).closest('[data-slot="checkbox"]')) return;
+    if (
+      (e.target as Element).closest(
+        '[data-slot="checkbox"], input[type="checkbox"]',
+      )
+    )
+      return;
 
     if (isSelectMode) {
       e.preventDefault();

@@ -72,5 +72,12 @@ describe("list task checkbox", () => {
     fireEvent.pointerDown(checkbox);
 
     expect(onPointerDown).toHaveBeenCalledOnce();
+
+    const hiddenInput = checkbox.parentElement?.querySelector(
+      'input[type="checkbox"]',
+    );
+    expect(hiddenInput).not.toBeNull();
+    fireEvent.click(hiddenInput as HTMLInputElement);
+    expect(toggleSelection).toHaveBeenCalledOnce();
   });
 });
