@@ -1,10 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Octokit } from "octokit";
 import db from "../../database";
-import {
-  githubUserGrantTable,
-  organizationGithubInstallationTable,
-} from "../../database/schema";
+import { githubUserGrantTable } from "../../database/schema";
 import { getGithubApp } from "../../plugins/github/utils/github-app";
 
 type Installation = {
@@ -35,7 +32,6 @@ type Installation = {
  * per account instead.
  */
 export async function listAdministeredInstallations({
-  organizationId,
   userId,
 }: {
   organizationId: string;
@@ -68,21 +64,8 @@ export async function listAdministeredInstallations({
     { per_page: 100 },
   )) as Installation[];
 
-  const claimed = await db
-    .select({
-      installationId: organizationGithubInstallationTable.installationId,
-      organizationId: organizationGithubInstallationTable.organizationId,
-    })
-    .from(organizationGithubInstallationTable);
-  const claimedElsewhere = new Set(
-    claimed
-      .filter((row) => row.organizationId !== organizationId)
-      .map((row) => row.installationId),
-  );
-
   const checked = await Promise.all(
     installations.map(async (installation) => {
-      if (claimedElsewhere.has(installation.id)) return null;
       const login = installation.account?.login;
       if (!login) return null;
 

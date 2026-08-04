@@ -55,8 +55,10 @@ export function OrganizationGithubConnection() {
     useOrganizationGithubInstallations(organizationId);
   // Installations that exist on GitHub but aren't linked to this org yet.
   // Without surfacing these, a freshly installed App is invisible in Kaneo.
-  const { data: available = [] } =
-    useAvailableOrganizationGithubInstallations(organizationId);
+  const { data: available = [] } = useAvailableOrganizationGithubInstallations(
+    organizationId,
+    canManage,
+  );
   const { data: appInfo } = useQuery({
     queryFn: getGitHubAppInfo,
     queryKey: ["github-app-info"],

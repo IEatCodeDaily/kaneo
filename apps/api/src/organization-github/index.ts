@@ -78,25 +78,6 @@ const organizationGithub = new Hono<{
         });
       }
 
-      // An installation belongs to exactly one Kaneo organization.
-      const [existing] = await db
-        .select({
-          organizationId: organizationGithubInstallationTable.organizationId,
-        })
-        .from(organizationGithubInstallationTable)
-        .where(
-          eq(
-            organizationGithubInstallationTable.installationId,
-            installationId,
-          ),
-        )
-        .limit(1);
-      if (existing && existing.organizationId !== organizationId) {
-        throw new HTTPException(409, {
-          message:
-            "This GitHub installation is already linked to another organization",
-        });
-      }
       const { data: installation } =
         await app.octokit.rest.apps.getInstallation({
           installation_id: installationId,
