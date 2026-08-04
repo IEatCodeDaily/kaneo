@@ -1,4 +1,5 @@
 import TaskFlagSection from "@/components/flag/task-flag-section";
+import TaskSyncedIssueProperty from "./task-synced-issue-property";
 import TaskTopbarMilestone from "./task-topbar-milestone";
 
 type TaskTopbarControlsProps = {
@@ -22,6 +23,11 @@ export default function TaskTopbarControls({
         taskId={taskId}
         boardId={boardId}
         organizationId={organizationId}
+      />
+      <TaskSyncedIssueProperty
+        compact
+        organizationId={organizationId}
+        taskId={taskId}
       />
     </div>
   );

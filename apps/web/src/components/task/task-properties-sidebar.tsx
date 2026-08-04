@@ -51,7 +51,6 @@ import TaskPriorityPopover from "./task-priority-popover";
 
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
-import TaskSyncedIssueProperty from "./task-synced-issue-property";
 
 function slugify(text: string | undefined): string {
   if (!text) return "";
@@ -335,13 +334,6 @@ export default function TaskPropertiesSidebar({
                   </Button>
                 </TaskDueDatePopover>
               )}
-              {taskId && (
-                <TaskSyncedIssueProperty
-                  compact
-                  organizationId={organizationId}
-                  taskId={taskId}
-                />
-              )}
             </div>
           </div>
         )}
@@ -535,13 +527,6 @@ export default function TaskPropertiesSidebar({
                       )}
                     </Button>
                   </TaskDueDatePopover>
-                )}
-                {taskId && (
-                  <TaskSyncedIssueProperty
-                    compact
-                    organizationId={organizationId}
-                    taskId={taskId}
-                  />
                 )}
               </div>
             </div>
