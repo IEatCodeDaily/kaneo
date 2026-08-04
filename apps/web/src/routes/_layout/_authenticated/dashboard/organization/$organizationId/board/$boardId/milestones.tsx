@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import MilestonesView from "@/components/board/milestones-view";
 import BoardLayout from "@/components/common/board-layout";
 import PageTitle from "@/components/page-title";
-import CreateTaskAction from "@/components/task/create-task-action";
 
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
@@ -48,18 +47,13 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex items-center gap-3 border-b border-border/80 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm font-semibold">
-              {t("tasks:milestone.view.title")}
-            </h1>
-            <p className="truncate text-xs text-muted-foreground">
-              {t("tasks:milestone.view.description")}
-            </p>
-          </div>
-          <div className="ml-auto shrink-0">
-            <CreateTaskAction boardId={boardId} />
-          </div>
+        <div className="border-b border-border/80 px-4 py-3">
+          <h1 className="text-sm font-semibold">
+            {t("tasks:milestone.view.title")}
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            {t("tasks:milestone.view.description")}
+          </p>
         </div>
         {isLoading ? (
           <div className="p-5 text-sm text-muted-foreground" role="status">

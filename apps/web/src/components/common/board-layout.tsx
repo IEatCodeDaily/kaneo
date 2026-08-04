@@ -6,7 +6,6 @@ import {
 import {
   CalendarDays,
   CalendarRange,
-  Flag,
   PanelRight,
   SquareKanban,
   SquircleDashed,
@@ -134,7 +133,6 @@ export default function BoardLayout({
   const handleNavigateToBoard = () => goToView("board");
   const handleNavigateToGantt = () => goToView("gantt");
   const handleNavigateToCalendar = () => goToView("calendar");
-  const handleNavigateToMilestones = () => goToView("milestones");
 
   const handleBoardSwitch = (nextBoardId: string) => {
     if (nextBoardId === boardId) return;
@@ -174,7 +172,6 @@ export default function BoardLayout({
                 onSelectBoardView={handleNavigateToBoard}
                 onSelectGantt={handleNavigateToGantt}
                 onSelectCalendar={handleNavigateToCalendar}
-                onSelectMilestones={handleNavigateToMilestones}
                 onSelectBoard={handleBoardSwitch}
                 onAddBoard={() => setIsCreateBoardModalOpen(true)}
               />
@@ -206,11 +203,6 @@ export default function BoardLayout({
                     value: "calendar",
                     label: "Calendar",
                     icon: <CalendarRange className="size-3.5" />,
-                  },
-                  {
-                    value: "milestones",
-                    label: "Milestones",
-                    icon: <Flag className="size-3.5" />,
                   },
                 ]}
               />
