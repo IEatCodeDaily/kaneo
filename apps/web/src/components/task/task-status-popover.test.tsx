@@ -50,6 +50,53 @@ const task: Task = {
 };
 
 describe("TaskStatusPopover", () => {
+  it("uses the same dropdown in controlled create mode without updating a task", async () => {
+    useGetColumns.mockReturnValue({
+      data: [
+        {
+          id: "column-1",
+          slug: "to-do",
+          name: "Ready",
+          icon: null,
+          isFinal: false,
+        },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+    const onChange = vi.fn();
+    updateTaskStatus.mockClear();
+
+    render(
+      <TaskStatusPopover boardId="board-1" value="to-do" onChange={onChange} />,
+    );
+
+    fireEvent.click(screen.getByTestId("task-status-trigger"));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /tasks:actions.moveToBacklog/,
+      }),
+    );
+
+    expect(useGetColumns).toHaveBeenCalledWith("board-1");
+    expect(onChange).toHaveBeenCalledWith("planned");
+    expect(updateTaskStatus).not.toHaveBeenCalled();
+  });
+
+  it("shows a faint circle when controlled create mode has no status", () => {
+    useGetColumns.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<TaskStatusPopover boardId="board-1" onChange={vi.fn()} />);
+
+    expect(
+      screen.getByTestId("task-status-trigger").querySelector("svg"),
+    ).toHaveClass("text-muted-foreground/60");
+  });
+
   it("loads status options for the task board without relying on board state", async () => {
     useGetColumns.mockReturnValue({
       data: [

@@ -3,7 +3,6 @@ import { produce } from "immer";
 import {
   CalendarIcon,
   Check,
-  CircleDashed,
   Plus,
   Search,
   Tag,
@@ -19,6 +18,7 @@ import TitleTokenSuggestions, {
 import CreateTaskTopbar from "@/components/task/create-task-topbar";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
 import { formatTaskMarkdown } from "@/components/task/task-markdown";
+import TaskStatusPopover from "@/components/task/task-status-popover";
 import TaskTemplateMenu from "@/components/task/task-template-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -61,10 +61,10 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
-import { getColumnIcon } from "@/lib/column";
+
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
-import { getStatusDisplayLabel } from "@/lib/i18n/domain";
+
 import { getPriorityIcon } from "@/lib/priority";
 import { resolveTemplateDate } from "@/lib/task-template-date-offset";
 import {
@@ -766,9 +766,6 @@ function CreateTaskModal({
   const selectedPriority = priorityOptions.find((p) => p.value === priority);
 
   const selectedStatus = templateStatus ?? status;
-  const selectedStatusColumn = templateColumns.find(
-    (column) => column.slug === selectedStatus,
-  );
   const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
   );
@@ -1244,77 +1241,11 @@ function CreateTaskModal({
               restructuring the popovers they own.
             */}
               <div className="relative z-10 flex flex-wrap items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent/50",
-                        selectedStatusColumn
-                          ? "bg-accent/30 text-foreground"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {selectedStatusColumn ? (
-                        <>
-                          {getColumnIcon(
-                            selectedStatusColumn.slug,
-                            selectedStatusColumn.isFinal,
-                            selectedStatusColumn.icon,
-                          )}
-                          <span>
-                            {getStatusDisplayLabel(
-                              selectedStatusColumn.slug,
-                              selectedStatusColumn.name,
-                            )}
-                          </span>
-                        </>
-                      ) : (
-                        <span>Status</span>
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 p-0" align="start">
-                    {templateColumns.map((column) => (
-                      <Button
-                        key={column.id}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-full justify-start gap-2 rounded-none px-2 first:rounded-t-md last:rounded-b-md"
-                        onClick={() => setTemplateStatus(column.slug)}
-                      >
-                        {getColumnIcon(
-                          column.slug,
-                          column.isFinal,
-                          column.icon,
-                        )}
-                        <span className="text-sm">
-                          {getStatusDisplayLabel(column.slug, column.name)}
-                        </span>
-                        {selectedStatus === column.slug && (
-                          <Check className="ml-auto h-4 w-4" />
-                        )}
-                      </Button>
-                    ))}
-                    <div className="my-1 h-px bg-border" />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-full justify-start gap-2 rounded-b-md rounded-t-none px-2"
-                      onClick={() => setTemplateStatus("planned")}
-                    >
-                      <CircleDashed className="size-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {t("tasks:actions.moveToBacklog")}
-                      </span>
-                      {selectedStatus === "planned" && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </Button>
-                  </PopoverContent>
-                </Popover>
+                <TaskStatusPopover
+                  boardId={resolvedBoardId}
+                  value={selectedStatus}
+                  onChange={setTemplateStatus}
+                />
 
                 {/* Start and due date belong together, so they are grouped in
                   their own row instead of being separated by the other
