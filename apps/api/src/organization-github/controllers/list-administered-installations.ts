@@ -1,9 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import { Octokit } from "octokit";
-import db from "../../database";
-import { githubUserGrantTable } from "../../database/schema";
 import { getUsableDelegatedToken } from "../../github-delegation";
-import { getGithubApp } from "../../plugins/github/utils/github-app";
 
 type Installation = {
   id: number;
@@ -17,82 +13,22 @@ type Installation = {
   permissions?: Record<string, string>;
 };
 
-/**
- * Installations belong to the GitHub App, not to a single Kaneo organization.
- * Listing them unscoped leaked every tenant's GitHub account into every org's
- * settings page (and let any org claim any installation).
- *
- * An installation may be offered to an organization only when the acting user
- * demonstrably administers the GitHub account behind it:
- *   - personal account: the login matches the user's connected GitHub login
- *   - organization account: the user has an active `admin` membership
- *
- * `GET /user/installations` would be the natural check, but it requires a
- * GitHub App user-to-server token while our delegation grant is an OAuth App
- * token, so it returns 403. We enumerate App installations and verify control
- * per account instead.
- */
+/** List only GitHub App installations visible to the acting GitHub user. */
 export async function listAdministeredInstallations({
   userId,
 }: {
   organizationId: string;
   userId: string;
 }) {
-  const app = getGithubApp();
-  if (!app) return [];
-
-  const [grant] = await db
-    .select({
-      accessToken: githubUserGrantTable.accessToken,
-      githubLogin: githubUserGrantTable.githubLogin,
-    })
-    .from(githubUserGrantTable)
-    .where(
-      and(
-        eq(githubUserGrantTable.userId, userId),
-        eq(githubUserGrantTable.providerId, "github-delegation"),
-      ),
-    )
-    .limit(1);
-
-  // Without a delegated identity we cannot prove control of anything, so offer
-  // nothing rather than leaking the full installation list.
   const accessToken = await getUsableDelegatedToken(userId);
-  if (!grant || !accessToken) return [];
+  if (!accessToken) return [];
 
-  const userOctokit = new Octokit({ auth: accessToken });
-  const installations = (await app.octokit.paginate(
-    app.octokit.rest.apps.listInstallations,
+  const octokit = new Octokit({ auth: accessToken });
+  const installations = await octokit.paginate(
+    octokit.rest.apps.listInstallationsForAuthenticatedUser,
     { per_page: 100 },
-  )) as Installation[];
-
-  const checked = await Promise.all(
-    installations.map(async (installation) => {
-      const login = installation.account?.login;
-      if (!login) return null;
-
-      if (installation.account?.type !== "Organization") {
-        return login.toLowerCase() === grant.githubLogin.toLowerCase()
-          ? installation
-          : null;
-      }
-
-      try {
-        const { data } = await userOctokit.request(
-          "GET /user/memberships/orgs/{org}",
-          { org: login },
-        );
-        return data.role === "admin" && data.state === "active"
-          ? installation
-          : null;
-      } catch {
-        // Not a member, or the grant lacks read:org — do not offer it.
-        return null;
-      }
-    }),
   );
-
-  return checked.filter((item): item is Installation => item !== null);
+  return installations as Installation[];
 }
 
 export function toInstallationResponse(installation: Installation) {
