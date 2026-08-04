@@ -270,7 +270,8 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     Array<{
       id: string;
       taskId: string;
-      integrationId: string;
+      // #265: null for a manually added resource link, which has no integration.
+      integrationId: string | null;
       resourceType: string;
       externalId: string;
       url: string;

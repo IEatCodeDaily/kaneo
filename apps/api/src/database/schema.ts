@@ -1245,13 +1245,21 @@ export const externalLinkTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    integrationId: text("integration_id")
-      .notNull()
-      .references(() => integrationTable.id, {
+    // #265: nullable so a plain user-pasted link can exist as a resource.
+    // Integration-owned links (synced GitHub issues, PRs, branches) still set
+    // this; a manually linked URL has no integration to point at.
+    integrationId: text("integration_id").references(
+      () => integrationTable.id,
+      {
         onDelete: "cascade",
         onUpdate: "cascade",
-      }),
+      },
+    ),
     resourceType: text("resource_type").notNull(),
+    // #265: stays NOT NULL. For an integration link this is the upstream id
+    // (issue/PR number); for a manual link the URL *is* its own identifier.
+    // Widening this to nullable broke 14 integration sync call sites that
+    // legitimately treat it as a string, for no gain.
     externalId: text("external_id").notNull(),
     url: text("url").notNull(),
     title: text("title"),

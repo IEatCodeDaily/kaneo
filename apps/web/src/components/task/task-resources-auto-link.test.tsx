@@ -91,7 +91,71 @@ function row() {
   return screen.getByText("Check for Board-Issue sync").closest("a");
 }
 
-describe("#30 auto-linked Resources row", () => {
+describe("#265 generic link resources", () => {
+  it("renders a manually added link with its label and remove action", () => {
+    externalLinks.push({
+      id: "manual-1",
+      taskId: "task-1",
+      integrationId: null,
+      resourceType: "link",
+      externalId: "https://example.com/design",
+      url: "https://example.com/design",
+      title: "Design doc",
+      metadata: null,
+    });
+
+    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+
+    const link = screen.getByTestId("manual-resource-link");
+    expect(link).toHaveAttribute("href", "https://example.com/design");
+    expect(link).toHaveTextContent("Design doc");
+    expect(screen.getByLabelText("Remove Design doc")).toBeInTheDocument();
+  });
+
+  it("surfaces links and attachments from the description", () => {
+    render(
+      <TaskResources
+        description={
+          '[spec](https://example.com/spec)\n<img src="https://example.com/shot.png" alt="screenshot">'
+        }
+        organizationId="org-1"
+        taskId="task-1"
+      />,
+    );
+
+    const rows = screen.getAllByTestId("description-resource-link");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("spec");
+    expect(rows[1]).toHaveTextContent("screenshot");
+    expect(screen.getAllByText("From description")).toHaveLength(2);
+  });
+
+  it("keeps the existing issue/PR linker beside the generic Add link action", () => {
+    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+
+    expect(screen.getByTestId("add-resource-link")).toHaveTextContent(
+      "Add link",
+    );
+    expect(
+      screen.getByRole("button", { name: "Link issue or pull request" }),
+    ).toBeInTheDocument();
+  });
+
+  /** NEGATIVE CONTROL: plain prose must not invent a description resource. */
+  it("renders no description rows for plain prose", () => {
+    render(
+      <TaskResources
+        description="plain description"
+        organizationId="org-1"
+        taskId="task-1"
+      />,
+    );
+
+    expect(screen.queryByTestId("description-resource-link")).toBeNull();
+  });
+});
+
+describe("auto-linked resource routing", () => {
   it("opens inside Kaneo when the repository is connected", () => {
     autoLinkedIssue();
     repos.push({ id: "repo-9", owner: "acme", name: "widgets" });

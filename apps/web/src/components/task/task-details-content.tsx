@@ -105,7 +105,11 @@ export default function TaskDetailsContent({
           fallbackDescription="Linked GitHub issues and pull requests could not be rendered."
           fallbackTitle="Resources unavailable"
         >
-          <TaskResources organizationId={organizationId} taskId={taskId} />
+          <TaskResources
+            description={task?.description}
+            organizationId={organizationId}
+            taskId={taskId}
+          />
         </ErrorBoundary>
       </div>
       <span className="text-sm font-medium text-muted-foreground h-[1px] bg-border w-full block shrink-0" />

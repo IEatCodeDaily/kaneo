@@ -300,7 +300,9 @@ export async function resolveIntegrationsForTask(
   const seen = new Set(boardIntegrations.map((row) => row.id));
   const missing = linkedIntegrationIds
     .map((row) => row.integrationId)
-    .filter((id): id is string => Boolean(id) && !seen.has(id));
+    // #265: manual resource links have a null integrationId; the guard already
+    // drops them, it just has to accept null as an input now.
+    .filter((id): id is string => Boolean(id) && !seen.has(id as string));
 
   if (missing.length === 0) return boardIntegrations;
 

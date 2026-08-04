@@ -8,6 +8,7 @@ import {
   GitMerge,
   GitPullRequest,
   GitPullRequestCreateArrow,
+  Image as ImageIcon,
   Link2,
   Search,
   Trash2,
@@ -47,6 +48,9 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import createResourceLink from "@/fetchers/external-link/create-resource-link";
+import deleteResourceLink from "@/fetchers/external-link/delete-resource-link";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import getRepoIssues from "@/fetchers/repo/get-repo-issues";
 import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
@@ -56,6 +60,7 @@ import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
 import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
+import { extractDescriptionResources } from "./description-resources";
 import { ResourceSyncBadge } from "./resource-sync-badge";
 import { selectResourceAutoLinks } from "./task-resource-links";
 
@@ -64,6 +69,11 @@ type ResourceType = "issues" | "pull-requests";
 type TaskResourcesProps = {
   taskId: string;
   organizationId: string;
+  /**
+   * #265: links/attachments in the description surface as resources. Optional so
+   * the section still renders for callers that do not have it to hand.
+   */
+  description?: string | null;
 };
 
 type ResourceItem = {
@@ -166,12 +176,17 @@ async function createSyncedIssue({
 export default function TaskResources({
   taskId,
   organizationId,
+  description,
 }: TaskResourcesProps) {
   const [commandOpen, setCommandOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createRepoId, setCreateRepoId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [resourceType, setResourceType] = useState<ResourceType>("issues");
+  // #265: the generic "just paste a link" path.
+  const [addLinkOpen, setAddLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
   const queryClient = useQueryClient();
   const { data: links = [] } = useGetTaskRepoLinks(taskId);
   const { data: externalLinks = [] } = useExternalLinks(taskId);
@@ -287,6 +302,43 @@ export default function TaskResources({
     },
   });
 
+  /**
+   * #265: a resource is literally a link to wherever something already lives,
+   * so the generic path is just "paste a URL". Issues and PRs keep their own
+   * richer pickers above; this is the escape hatch for everything else —
+   * boards, tickets, repos, files, tables, a Figma doc, whatever.
+   */
+  const addLink = useMutation({
+    mutationFn: createResourceLink,
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Could not add the link.",
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["external-links", taskId],
+      });
+      setLinkUrl("");
+      setLinkTitle("");
+      setAddLinkOpen(false);
+      toast.success("Resource linked.");
+    },
+  });
+
+  const removeLink = useMutation({
+    mutationFn: deleteResourceLink,
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Could not remove the link.",
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["external-links", taskId],
+      });
+      toast.success("Resource removed.");
+    },
+  });
+
   // Keyed by repo as well as number: issue #13 in one repository has nothing to
   // do with issue #13 in another, so an existing link must not hide it there.
   const linkedKeys = useMemo(
@@ -305,12 +357,50 @@ export default function TaskResources({
    * Only manual links can be unlinked here — an auto-synced link would just be
    * recreated by the next sync, so offering the action would be a lie.
    */
-  const autoLinks = useMemo(
+  const allAutoLinks = useMemo(
     () => selectResourceAutoLinks(externalLinks as ExternalLinkType[], links),
     [externalLinks, links],
   );
 
-  const hasAnyResource = links.length > 0 || autoLinks.length > 0;
+  /**
+   * #265: manual links live in the same table as integration-owned ones, but
+   * they are NOT auto-synced, so they must not render with the "linked
+   * automatically" badge and they DO get a remove action. Splitting them here
+   * keeps the existing auto-link row rendering untouched.
+   */
+  const manualLinks = useMemo(
+    () => allAutoLinks.filter((link) => link.resourceType === "link"),
+    [allAutoLinks],
+  );
+
+  const autoLinks = useMemo(
+    () => allAutoLinks.filter((link) => link.resourceType !== "link"),
+    [allAutoLinks],
+  );
+
+  /**
+   * #265: links and attachments already in the description surface as
+   * resources. Derived, never persisted — the description stays the source of
+   * truth, so these cannot drift from the text. Anything already linked
+   * explicitly is dropped so the same URL is not listed twice.
+   */
+  const descriptionResources = useMemo(() => {
+    const known = new Set([
+      ...manualLinks.map((link) => link.url),
+      ...autoLinks.map((link) => link.url),
+      ...links.map((item) => item.url),
+    ]);
+
+    return extractDescriptionResources(description).filter(
+      (resource) => !known.has(resource.url),
+    );
+  }, [autoLinks, description, links, manualLinks]);
+
+  const hasAnyResource =
+    links.length > 0 ||
+    autoLinks.length > 0 ||
+    manualLinks.length > 0 ||
+    descriptionResources.length > 0;
 
   /** repoId -> "owner/name", so manual links can show their repository. */
   const repoLabelById = useMemo(
@@ -557,7 +647,88 @@ export default function TaskResources({
         </div>
       )}
 
+      {/*
+        #265: manually added links. Same table as integration rows, but no
+        "linked automatically" badge and a remove action, because these are the
+        only external_link rows a user owns.
+      */}
+      {manualLinks.length > 0 && (
+        <div className="flex flex-col">
+          {manualLinks.map((link) => (
+            <div
+              className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
+              key={link.id}
+            >
+              <a
+                className="flex min-w-0 flex-1 items-center gap-2"
+                data-testid="manual-resource-link"
+                href={link.url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <Link2 className="size-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">
+                  {link.title || link.url}
+                </span>
+                <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              </a>
+              <Button
+                aria-label={`Remove ${link.title || link.url}`}
+                disabled={removeLink.isPending}
+                onClick={() => removeLink.mutate({ id: link.id, taskId })}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/*
+        #265: links and attachments found in the description. Derived from the
+        description on every render, so there is no remove action — the way to
+        remove one is to edit the description, which keeps the text and this
+        list from ever disagreeing.
+      */}
+      {descriptionResources.length > 0 && (
+        <div className="flex flex-col">
+          {descriptionResources.map((resource) => (
+            <a
+              className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
+              data-testid="description-resource-link"
+              href={resource.url}
+              key={resource.id}
+              rel="noreferrer"
+              target="_blank"
+              title={resource.url}
+            >
+              {resource.kind === "image" ? (
+                <ImageIcon className="size-4 shrink-0 text-muted-foreground" />
+              ) : (
+                <Link2 className="size-4 shrink-0 text-muted-foreground" />
+              )}
+              <span className="min-w-0 flex-1 truncate">{resource.title}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                From description
+              </span>
+              <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+            </a>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-1">
+        <button
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          data-testid="add-resource-link"
+          onClick={() => setAddLinkOpen(true)}
+          type="button"
+        >
+          <Link2 className="size-4" />
+          <span>Add link</span>
+        </button>
         <button
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           onClick={() => setCommandOpen(true)}
@@ -635,6 +806,76 @@ export default function TaskResources({
               }
             >
               {createIssue.isPending ? "Creating…" : "Create issue"}
+            </Button>
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
+
+      {/*
+        #265: the generic add-a-resource path. Deliberately just a URL and an
+        optional label — a resource records WHERE something is, not the bytes.
+      */}
+      <Dialog open={addLinkOpen} onOpenChange={setAddLinkOpen}>
+        <DialogPopup>
+          <DialogHeader>
+            <DialogTitle>Add link</DialogTitle>
+            <DialogDescription>
+              Link anything that already lives somewhere else — a board, ticket,
+              repository, file, table or any other URL.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel>
+            <form
+              className="flex flex-col gap-3 text-sm"
+              id="add-resource-link-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!linkUrl.trim() || addLink.isPending) return;
+                addLink.mutate({
+                  taskId,
+                  title: linkTitle.trim() || undefined,
+                  url: linkUrl.trim(),
+                });
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <label htmlFor="add-resource-link-url">URL</label>
+                <Input
+                  autoFocus
+                  data-testid="add-resource-link-url"
+                  id="add-resource-link-url"
+                  onChange={(event) => setLinkUrl(event.target.value)}
+                  placeholder="https://…"
+                  type="url"
+                  value={linkUrl}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="add-resource-link-title">
+                  Label{" "}
+                  <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <Input
+                  data-testid="add-resource-link-title"
+                  id="add-resource-link-title"
+                  onChange={(event) => setLinkTitle(event.target.value)}
+                  placeholder="Design doc"
+                  value={linkTitle}
+                />
+              </div>
+            </form>
+          </DialogPanel>
+          <DialogFooter>
+            <Button onClick={() => setAddLinkOpen(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              data-testid="add-resource-link-submit"
+              disabled={!linkUrl.trim() || addLink.isPending}
+              form="add-resource-link-form"
+              type="submit"
+            >
+              {addLink.isPending ? "Adding…" : "Add link"}
             </Button>
           </DialogFooter>
         </DialogPopup>

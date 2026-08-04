@@ -428,6 +428,13 @@
       "when": 1785761000000,
       "tag": "0060_tables_feature_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1785847400000,
+      "tag": "0061_manual_resource_links",
+      "breakpoints": true
     }
   ]
 }
