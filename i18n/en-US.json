@@ -2454,7 +2454,8 @@
 			"team": "Team"
 		},
 		"flaggedCount": "{{count}} flagged ticket",
-		"flaggedCount_other": "{{count}} flagged tickets"
+		"flaggedCount_other": "{{count}} flagged tickets",
+		"flagged": "Flagged"
 	},
 	"flags": {
 		"title": "Flags",

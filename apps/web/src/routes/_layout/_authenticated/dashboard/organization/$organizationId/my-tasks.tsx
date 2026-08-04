@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Flag, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
@@ -33,6 +33,7 @@ export function MyTasksComponent() {
   const { organizationId } = Route.useParams();
   const [relation, setRelation] = useState<MyTasksRelation>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [collapsedBoards, setCollapsedBoards] = useState<Set<string>>(
     new Set(),
   );
@@ -47,7 +48,12 @@ export function MyTasksComponent() {
   } = useInfiniteMyTasks({ organizationId, relation, includeCompleted });
 
   type MyTask = NonNullable<typeof data>["pages"][number][number];
-  const tasks: MyTask[] = data?.pages.flat() ?? [];
+  const allTasks: MyTask[] = data?.pages.flat() ?? [];
+  // Flagged is a client-side filter over the already-fetched page: cheap, and
+  // it keeps the flag state visible in the count without another round trip.
+  const tasks: MyTask[] = flaggedOnly
+    ? allTasks.filter((task) => task.flagged)
+    : allTasks;
 
   const byBoard = new Map<string, MyTask[]>();
   for (const task of tasks) {
@@ -97,6 +103,21 @@ export function MyTasksComponent() {
               }`}
             />
             {t("myTasks:includeCompleted")}
+          </Button>
+
+          <Button
+            type="button"
+            size="xs"
+            variant={flaggedOnly ? "secondary" : "outline"}
+            aria-pressed={flaggedOnly}
+            onClick={() => setFlaggedOnly((previous) => !previous)}
+            className="h-7 gap-1.5 rounded-md px-2 text-xs"
+          >
+            <Flag
+              aria-hidden
+              className={`size-3.5 ${flaggedOnly ? "opacity-100" : "opacity-40"}`}
+            />
+            {t("myTasks:flagged")}
           </Button>
 
           {isFetching ? (
@@ -217,6 +238,15 @@ export function MyTasksComponent() {
                               >
                                 {task.title}
                               </span>
+                              {task.flagged ? (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-[10px] text-destructive uppercase tracking-wide"
+                                  title={t("myTasks:flagged")}
+                                >
+                                  <Flag className="size-3" aria-hidden />
+                                  {t("myTasks:flagged")}
+                                </span>
+                              ) : null}
                             </Link>
                           </li>
                         ))}

@@ -6,6 +6,7 @@ import {
   columnTable,
   milestoneTable,
   organizationMemberTable,
+  taskFlagTable,
   taskTable,
   teamMemberTable,
   userTable,
@@ -144,6 +145,13 @@ async function getMyTasks({
       teamId: taskTable.teamId,
       milestoneId: taskTable.milestoneId,
       milestoneName: milestoneTable.name,
+      // A ticket is flagged when it has at least one unresolved flag. EXISTS
+      // avoids a join fan-out that would duplicate a task per active flag.
+      flagged: sql<boolean>`exists (
+        select 1 from ${taskFlagTable}
+        where ${taskFlagTable.taskId} = ${taskTable.id}
+          and ${taskFlagTable.resolvedAt} is null
+      )`,
     })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))

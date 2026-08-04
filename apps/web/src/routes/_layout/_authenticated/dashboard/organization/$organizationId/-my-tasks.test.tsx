@@ -20,6 +20,15 @@ vi.mock("@/hooks/queries/task/use-infinite-my-tasks", () => ({
             number: 1,
             boardId: "board-1",
             boardName: "Board one",
+            flagged: false,
+          },
+          {
+            id: "task-2",
+            title: "Flagged ticket",
+            number: 2,
+            boardId: "board-1",
+            boardName: "Board one",
+            flagged: true,
           },
         ],
       ],
@@ -62,5 +71,20 @@ describe("My Tickets board groups", () => {
 
     fireEvent.click(board);
     expect(screen.getByText("Ticket one")).toBeInTheDocument();
+  });
+
+  it("filters to flagged tickets and shows a flag badge", () => {
+    render(<MyTasksComponent />);
+    // Both tickets visible initially.
+    expect(screen.getByText("Ticket one")).toBeInTheDocument();
+    expect(screen.getByText("Flagged ticket")).toBeInTheDocument();
+    // The flagged ticket carries a visible flag badge (label text repeats the
+    // key via the mocked t()).
+    expect(screen.getAllByText("myTasks:flagged").length).toBeGreaterThan(1);
+
+    // Toggle the Flagged filter (first occurrence is the toolbar button).
+    fireEvent.click(screen.getAllByText("myTasks:flagged")[0]);
+    expect(screen.queryByText("Ticket one")).not.toBeInTheDocument();
+    expect(screen.getByText("Flagged ticket")).toBeInTheDocument();
   });
 });

@@ -9892,6 +9892,9 @@
 				},
 				"flaggedCount_other": {
 					"type": "string"
+				},
+				"flagged": {
+					"type": "string"
 				}
 			},
 			"required": [
