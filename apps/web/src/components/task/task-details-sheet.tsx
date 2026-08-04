@@ -170,9 +170,12 @@ export default function TaskDetailsSheet({
           onPointerDown={startResize}
           className="absolute inset-y-0 left-0 z-50 w-1.5 cursor-col-resize hover:bg-primary/40 active:bg-primary/60"
         />
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-background shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-background shrink-0">
+          {/* #276: on mobile the milestone/flag/sync cluster is wider than the
+              drawer, pushing the close button off-screen. Let this group scroll
+              horizontally instead, so the actions on the right stay reachable. */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="shrink-0 text-sm font-medium text-muted-foreground">
               {board?.slug}-{task?.number}
             </span>
             {currentTaskId && (
@@ -183,7 +186,7 @@ export default function TaskDetailsSheet({
               />
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             {task ? (
               <TaskTemplateMenu
                 iconOnly
