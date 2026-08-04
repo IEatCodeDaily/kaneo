@@ -1,4 +1,4 @@
-import { Filter, PanelsTopLeft, Rows3, Search, X } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import BoardViewOptions from "@/components/board/board-view-options";
@@ -59,8 +59,6 @@ type BoardToolbarProps = {
   hasActiveFilters: boolean;
   users?: ActiveUsers;
   organizationLabels: OrganizationLabel[];
-  viewMode: "board" | "list";
-  setViewMode: (mode: "board" | "list") => void;
   sort: SortConfig;
   onSortChange: (sort: SortConfig) => void;
   /**
@@ -155,8 +153,6 @@ export default function BoardToolbar({
   hasActiveFilters,
   users,
   organizationLabels,
-  viewMode,
-  setViewMode,
   sort,
   onSortChange,
   searchQuery,
@@ -712,34 +708,6 @@ export default function BoardToolbar({
             )}
           </div>
 
-          {!filtersOnly && (
-            <div className="ml-auto inline-flex items-center gap-1">
-              <button
-                type="button"
-                className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                  viewMode === "board"
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                }`}
-                onClick={() => setViewMode("board")}
-              >
-                <PanelsTopLeft className="h-3 w-3" />
-                {t("tasks:view.board")}
-              </button>
-              <button
-                type="button"
-                className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                  viewMode === "list"
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                }`}
-                onClick={() => setViewMode("list")}
-              >
-                <Rows3 className="h-3 w-3" />
-                {t("tasks:view.list")}
-              </button>
-            </div>
-          )}
           {!filtersOnly && actions ? (
             <div className="shrink-0" data-testid="board-toolbar-actions">
               {actions}

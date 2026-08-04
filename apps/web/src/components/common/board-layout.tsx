@@ -30,6 +30,7 @@ import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
 import { useBoardLayoutStore } from "@/store/board-layout";
 import { useNavigationStore } from "@/store/navigation";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type BoardLayoutProps = {
   boardId: string;
@@ -38,8 +39,6 @@ type BoardLayoutProps = {
   children: ReactNode;
   showViewSwitcher?: boolean;
   activeView?: BoardView;
-  boardDisplayMode?: "board" | "list";
-  onBoardDisplayModeChange?: (mode: "board" | "list") => void;
 };
 
 export default function BoardLayout({
@@ -49,8 +48,6 @@ export default function BoardLayout({
   children,
   showViewSwitcher = true,
   activeView,
-  boardDisplayMode,
-  onBoardDisplayModeChange,
 }: BoardLayoutProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -58,6 +55,7 @@ export default function BoardLayout({
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: boardWithTasks } = useGetTasks(boardId);
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
+  const { viewMode, setViewMode } = useUserPreferencesStore();
 
   const propertiesPanelBoardId = useBoardLayoutStore(
     (state) => state.propertiesPanelBoardId,
@@ -186,17 +184,14 @@ export default function BoardLayout({
               <BoardViewTabs
                 aria-label="Board views"
                 className="hidden min-w-0 sm:flex"
-                value={
-                  resolvedView === "board"
-                    ? (boardDisplayMode ?? "board")
-                    : resolvedView
-                }
+                value={resolvedView === "board" ? viewMode : resolvedView}
                 onValueChange={(value) => {
                   if (value === "list") {
-                    onBoardDisplayModeChange?.("list");
+                    setViewMode("list");
+                    goToView("board");
                     return;
                   }
-                  if (value === "board") onBoardDisplayModeChange?.("board");
+                  if (value === "board") setViewMode("board");
                   goToView(value as BoardView);
                 }}
                 views={[
@@ -207,18 +202,14 @@ export default function BoardLayout({
                   },
                   {
                     value: "board",
-                    label: boardDisplayMode ? "Board" : "Tasks",
+                    label: "Board",
                     icon: <SquareKanban className="size-3.5" />,
                   },
-                  ...(boardDisplayMode && onBoardDisplayModeChange
-                    ? [
-                        {
-                          value: "list",
-                          label: "List",
-                          icon: <Rows3 className="size-3.5" />,
-                        },
-                      ]
-                    : []),
+                  {
+                    value: "list",
+                    label: "List",
+                    icon: <Rows3 className="size-3.5" />,
+                  },
                   {
                     value: "gantt",
                     label: "Timeline",

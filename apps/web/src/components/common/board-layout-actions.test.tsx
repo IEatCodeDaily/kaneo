@@ -95,23 +95,34 @@ afterEach(() => {
 });
 
 describe("BoardLayout shared actions", () => {
-  it("offers Board and List as separate header views", () => {
-    const onModeChange = vi.fn();
-    render(
+  it("always offers the same Backlog, Board, List, Timeline, Calendar views", () => {
+    const expected = ["Backlog", "Board", "List", "Timeline", "Calendar"];
+    const calendar = render(
       <BoardLayout
         boardId="board-1"
         organizationId="org-1"
-        activeView="board"
-        boardDisplayMode="board"
-        onBoardDisplayModeChange={onModeChange}
+        activeView="calendar"
       >
-        <div>Tasks</div>
+        <div>Calendar</div>
       </BoardLayout>,
     );
 
-    expect(screen.getByText("Board")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("List"));
-    expect(onModeChange).toHaveBeenCalledWith("list");
+    expect(
+      Array.from(
+        screen.getByTestId("board-view-tabs").querySelectorAll("button"),
+      ).map((button) => button.textContent),
+    ).toEqual(expected);
+
+    calendar.rerender(
+      <BoardLayout boardId="board-1" organizationId="org-1" activeView="board">
+        <div>Tasks</div>
+      </BoardLayout>,
+    );
+    expect(
+      Array.from(
+        screen.getByTestId("board-view-tabs").querySelectorAll("button"),
+      ).map((button) => button.textContent),
+    ).toEqual(expected);
   });
 
   it("keeps Properties mounted and uses it as a pressed-state toggle", () => {

@@ -140,8 +140,6 @@ function RouteComponent() {
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
-      boardDisplayMode={viewMode}
-      onBoardDisplayModeChange={setViewMode}
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
@@ -164,8 +162,6 @@ function RouteComponent() {
           hasActiveFilters={hasActiveFilters}
           users={users}
           organizationLabels={organizationLabels}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
           sort={sort}
           onSortChange={setSort}
           searchQuery={boardSearchQuery}
