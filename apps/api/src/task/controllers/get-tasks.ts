@@ -19,7 +19,10 @@ import {
   externalLinkTable,
   integrationTable,
   labelTable,
+  repoIssueTable,
+  repoPullRequestTable,
   taskRelationTable,
+  taskRepoItemLinkTable,
   taskTable,
   teamTable,
   userTable,
@@ -186,7 +189,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
 
   const taskIds = paginatedTasks.map((task) => task.id);
 
-  const [labelsData, externalLinksData, activeFlags] =
+  const [labelsData, externalLinksData, repoLinksData, activeFlags] =
     taskIds.length > 0
       ? await Promise.all([
           db
@@ -212,9 +215,34 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
             })
             .from(externalLinkTable)
             .where(inArray(externalLinkTable.taskId, taskIds)),
+          db
+            .select({
+              id: taskRepoItemLinkTable.id,
+              taskId: taskRepoItemLinkTable.taskId,
+              syncEnabled: taskRepoItemLinkTable.syncEnabled,
+              issueNumber: repoIssueTable.number,
+              issueTitle: repoIssueTable.title,
+              issueUrl: repoIssueTable.url,
+              pullRequestNumber: repoPullRequestTable.number,
+              pullRequestTitle: repoPullRequestTable.title,
+              pullRequestUrl: repoPullRequestTable.url,
+            })
+            .from(taskRepoItemLinkTable)
+            .leftJoin(
+              repoIssueTable,
+              eq(taskRepoItemLinkTable.repoIssueId, repoIssueTable.id),
+            )
+            .leftJoin(
+              repoPullRequestTable,
+              eq(
+                taskRepoItemLinkTable.repoPullRequestId,
+                repoPullRequestTable.id,
+              ),
+            )
+            .where(inArray(taskRepoItemLinkTable.taskId, taskIds)),
           getTaskFlags(taskIds),
         ])
-      : [[], [], []];
+      : [[], [], [], []];
 
   const taskLabelsMap = new Map<
     string,
@@ -260,6 +288,37 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
         ? JSON.parse(externalLink.metadata)
         : null,
     });
+  }
+
+  const taskRepoLinksMap = new Map<
+    string,
+    Array<{
+      id: string;
+      itemType: "issues" | "pull-requests";
+      number: number;
+      title: string;
+      url: string;
+      syncEnabled: boolean;
+    }>
+  >();
+  for (const link of repoLinksData) {
+    const isIssue = link.issueNumber != null;
+    const number = isIssue ? link.issueNumber : link.pullRequestNumber;
+    const title = isIssue ? link.issueTitle : link.pullRequestTitle;
+    const url = isIssue ? link.issueUrl : link.pullRequestUrl;
+    // A dangling left join is not a resource and must not become an "#0" row.
+    if (number == null || !url) continue;
+
+    const links = taskRepoLinksMap.get(link.taskId) ?? [];
+    links.push({
+      id: link.id,
+      itemType: isIssue ? "issues" : "pull-requests",
+      number,
+      title: title ?? "",
+      url,
+      syncEnabled: link.syncEnabled,
+    });
+    taskRepoLinksMap.set(link.taskId, links);
   }
 
   const taskFlagsMap = new Map<string, typeof activeFlags>();
@@ -317,6 +376,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     ...task,
     labels: taskLabelsMap.get(task.id) || [],
     externalLinks: taskExternalLinksMap.get(task.id) || [],
+    repoLinks: taskRepoLinksMap.get(task.id) || [],
     flags: taskFlagsMap.get(task.id) || [],
     parentTask: parentByChildId.get(task.id) ?? null,
   });
@@ -350,6 +410,7 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
       isPublic: board.isPublic,
       organizationId: board.organizationId,
       columns,
+
       archivedTasks,
       plannedTasks,
     },

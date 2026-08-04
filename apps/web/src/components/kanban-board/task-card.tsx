@@ -11,6 +11,7 @@ import TaskHoverPreview, {
 } from "@/components/kanban-board/task-hover-preview";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
+import TaskResourceIndicators from "@/components/task/task-resource-indicators";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import {
   intentPrefetchHandlers,
@@ -224,12 +226,12 @@ export const TaskCardContent = memo(function TaskCardContent({
               {showAssignees && (
                 <div className="absolute top-3 right-3">
                   {task.userId ? (
-                    <Avatar className="h-5 w-5">
+                    <Avatar className={`h-5 w-5 ${getAvatarTone(task.userId)}`}>
                       <AvatarImage
                         src={task.assigneeImage ?? ""}
                         alt={task.assigneeName ?? ""}
                       />
-                      <AvatarFallback className="text-xs font-medium border border-border/30">
+                      <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                         {getInitials(task.assigneeName)}
                       </AvatarFallback>
                     </Avatar>
@@ -272,6 +274,7 @@ export const TaskCardContent = memo(function TaskCardContent({
               </div>
 
               <div className="flex items-center gap-1.5">
+                <TaskResourceIndicators task={task} />
                 {showPriority && (
                   <span className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground">
                     {getPriorityIcon(task.priority ?? "")}

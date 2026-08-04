@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
+import TaskResourceIndicators from "@/components/task/task-resource-indicators";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import {
@@ -184,15 +186,22 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
               />
             )}
 
+            <TaskResourceIndicators task={task} compact />
+
             {showAssignees && (
               <div className="flex-shrink-0">
                 {task.userId ? (
-                  <Avatar className="h-6 w-6">
+                  <Avatar
+                    className={cn(
+                      "h-6 w-6",
+                      getAvatarTone(task.userId, task.assigneeId),
+                    )}
+                  >
                     <AvatarImage
                       src={task.assigneeImage ?? ""}
                       alt={task.assigneeName ?? ""}
                     />
-                    <AvatarFallback className="text-xs font-medium border border-border/30">
+                    <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                       {getInitials(task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>

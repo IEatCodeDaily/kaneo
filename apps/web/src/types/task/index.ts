@@ -15,6 +15,15 @@ type TaskExternalLink = {
   metadata: Record<string, unknown> | null;
 };
 
+export type TaskRepoLinkSummary = {
+  id: string;
+  itemType: "issues" | "pull-requests";
+  number: number;
+  title: string;
+  url: string;
+  syncEnabled: boolean;
+};
+
 type TaskParent = {
   id: string;
   number: number | null;
@@ -47,6 +56,7 @@ type Task = {
   columnId?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
+  repoLinks?: TaskRepoLinkSummary[];
   flags?: TaskFlag[];
   /** Parent of a `subtask` relation, when this task is a child. */
   parentTask?: TaskParent | null;
