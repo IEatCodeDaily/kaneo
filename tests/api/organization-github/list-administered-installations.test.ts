@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { select, paginate } = vi.hoisted(() => ({
-  select: vi.fn(),
-  paginate: vi.fn(),
-}));
+const { select, paginate, getUsableDelegatedToken, Octokit } = vi.hoisted(
+  () => ({
+    select: vi.fn(),
+    paginate: vi.fn(),
+    getUsableDelegatedToken: vi.fn(),
+    Octokit: vi.fn(),
+  }),
+);
 
 vi.mock("../../../apps/api/src/database", () => ({ default: { select } }));
 vi.mock("../../../apps/api/src/plugins/github/utils/github-app", () => ({
@@ -14,15 +18,18 @@ vi.mock("../../../apps/api/src/plugins/github/utils/github-app", () => ({
     },
   }),
 }));
-vi.mock("octokit", () => ({
-  Octokit: class {},
+vi.mock("../../../apps/api/src/github-delegation", () => ({
+  getUsableDelegatedToken,
 }));
+vi.mock("octokit", () => ({ Octokit }));
 
 import { listAdministeredInstallations } from "../../../apps/api/src/organization-github/controllers/list-administered-installations";
 
 describe("listAdministeredInstallations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getUsableDelegatedToken.mockResolvedValue("refreshed-token");
+    Octokit.mockImplementation(() => ({}));
     select.mockReturnValue({
       from: () => ({
         where: () => ({
@@ -56,5 +63,7 @@ describe("listAdministeredInstallations", () => {
     expect(first.map(({ id }) => id)).toEqual([42]);
     expect(second.map(({ id }) => id)).toEqual([42]);
     expect(select).toHaveBeenCalledTimes(2);
+    expect(getUsableDelegatedToken).toHaveBeenCalledTimes(2);
+    expect(Octokit).toHaveBeenCalledWith({ auth: "refreshed-token" });
   });
 });

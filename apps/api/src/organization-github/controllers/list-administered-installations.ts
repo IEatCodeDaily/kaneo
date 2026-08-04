@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Octokit } from "octokit";
 import db from "../../database";
 import { githubUserGrantTable } from "../../database/schema";
+import { getUsableDelegatedToken } from "../../github-delegation";
 import { getGithubApp } from "../../plugins/github/utils/github-app";
 
 type Installation = {
@@ -56,9 +57,10 @@ export async function listAdministeredInstallations({
 
   // Without a delegated identity we cannot prove control of anything, so offer
   // nothing rather than leaking the full installation list.
-  if (!grant?.accessToken) return [];
+  const accessToken = await getUsableDelegatedToken(userId);
+  if (!grant || !accessToken) return [];
 
-  const userOctokit = new Octokit({ auth: grant.accessToken });
+  const userOctokit = new Octokit({ auth: accessToken });
   const installations = (await app.octokit.paginate(
     app.octokit.rest.apps.listInstallations,
     { per_page: 100 },
