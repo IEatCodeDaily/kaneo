@@ -12,6 +12,7 @@ async function getNotifications(userId: string) {
     .select({
       notification: notificationTable,
       boardId: boardTable.id,
+      boardName: boardTable.name,
       organizationId: organizationTable.id,
     })
     .from(notificationTable)
@@ -31,7 +32,7 @@ async function getNotifications(userId: string) {
     .orderBy(desc(notificationTable.createdAt))
     .limit(50);
 
-  return rows.map(({ notification, boardId, organizationId }) => {
+  return rows.map(({ notification, boardId, boardName, organizationId }) => {
     if (!boardId && !organizationId) {
       return notification;
     }
@@ -48,6 +49,7 @@ async function getNotifications(userId: string) {
       eventData: {
         ...existing,
         boardId: boardId ?? existing.boardId ?? null,
+        boardName: boardName ?? existing.boardName ?? null,
         organizationId: organizationId ?? existing.organizationId ?? null,
       },
     };
