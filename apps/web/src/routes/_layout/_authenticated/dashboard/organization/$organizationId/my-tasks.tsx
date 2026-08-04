@@ -28,7 +28,7 @@ const RELATIONS: { value: MyTasksRelation; labelKey: string }[] = [
  * cross-board nature is visible at a glance rather than being a flat list
  * where every row needs a board label.
  */
-function MyTasksComponent() {
+export function MyTasksComponent() {
   const { t } = useTranslation();
   const { organizationId } = Route.useParams();
   const [relation, setRelation] = useState<MyTasksRelation>("all");
