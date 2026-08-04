@@ -20,6 +20,9 @@ vi.mock("react-i18next", () => ({
 
 afterEach(() => {
   cleanup();
+  // Portaled panels mount outside the RTL container, so cleanup() alone leaves
+  // them behind and the next getByTestId resolves a stale duplicate.
+  document.body.innerHTML = "";
   vi.clearAllMocks();
 });
 
@@ -163,14 +166,18 @@ describe("#72 title token picker", () => {
    * #72 (second round): "make the popup an overlay and not an inline
    * component. right now when the popup shows up it increases the size of the
    * ticket creation modal."
+   *
+   * #266 updated this contract: the panel is now `fixed` and portaled rather
+   * than `absolute` inside the modal body. Both satisfy "does not take part in
+   * layout"; only the portal also escapes the body's overflow clipping.
    */
   it("overlays instead of taking part in layout", () => {
     setup("Fix #b");
     const panel = screen.getByTestId("title-token-suggestions");
     const classes = Array.from(panel.classList);
-    // Whole tokens, not substrings: absolute removes it from flow, and it
-    // needs a stacking context to sit above the modal body.
-    expect(classes).toContain("absolute");
+    // Whole tokens, not substrings: fixed removes it from flow, and it needs a
+    // stacking context to sit above the modal body.
+    expect(classes).toContain("fixed");
     expect(classes.some((c) => c.startsWith("z-"))).toBe(true);
   });
 

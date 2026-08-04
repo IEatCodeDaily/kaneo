@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import {
@@ -34,12 +35,32 @@ const KIND_LABEL: Record<TitleTokenKind, string> = {
 };
 
 /**
+ * #266: the panel is portaled to `document.body`, so it can no longer be
+ * positioned by an `absolute` offset from its JSX parent — it is measured off a
+ * zero-height anchor left behind at the original spot and painted with
+ * `position: fixed`.
+ */
+type AnchorRect = { top: number; left: number; width: number };
+
+function readAnchorRect(element: HTMLElement | null): AnchorRect | null {
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return { top: rect.bottom, left: rect.left, width: rect.width };
+}
+
+/**
  * #72: the inline picker shown while a `#` / `@` / `>` token is being typed in
  * the Create Task title.
  *
  * Rendered inline beneath the title rather than as a popover, so it cannot
  * steal focus from the input — the input keeps the caret and forwards
  * navigation keys through the handler registered here.
+ *
+ * #266: the panel itself is PORTALED to `document.body`. It used to be an
+ * `absolute` child of the create-task modal's scrolling body
+ * (`overflow-y-auto`), and `overflow` clips descendants regardless of
+ * `z-index` — so the list was cut off by the modal footer. A portal is the
+ * only fix that escapes the clip; bumping `z-index` cannot.
  */
 export function TitleTokenSuggestions({
   token,
@@ -50,6 +71,8 @@ export function TitleTokenSuggestions({
 }: TitleTokenSuggestionsProps) {
   const { t } = useTranslation();
   const [rawHighlighted, setHighlighted] = useState(0);
+  const anchorRef = useRef<HTMLSpanElement | null>(null);
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
 
   const matches = useMemo(
     () => (token ? filterTitleTokenOptions(options, token.query) : []),
@@ -114,19 +137,54 @@ export function TitleTokenSuggestions({
     return () => onRegisterKeyHandler(null);
   }, [token, matches, highlighted, onCommit, onDismiss, onRegisterKeyHandler]);
 
-  if (!token || matches.length === 0) return null;
+  const isOpen = Boolean(token) && matches.length > 0;
 
-  return (
+  // The anchor only exists while the picker is open, so measure in a layout
+  // effect (before paint) to avoid a frame at the wrong position, and keep it
+  // in sync while the modal body scrolls or the window resizes.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setAnchorRect(null);
+      return;
+    }
+
+    const sync = () => setAnchorRect(readAnchorRect(anchorRef.current));
+    sync();
+
+    window.addEventListener("scroll", sync, true);
+    window.addEventListener("resize", sync);
+    return () => {
+      window.removeEventListener("scroll", sync, true);
+      window.removeEventListener("resize", sync);
+    };
+  }, [isOpen]);
+
+  if (!token || !isOpen) return null;
+
+  const panel = (
     /*
-      #72: absolutely positioned so it OVERLAYS the modal instead of taking
-      part in its layout. As an inline block it pushed the description and
-      footer down, visibly resizing the Create Task modal every time the
-      picker opened.
+      #72: taken out of flow so it OVERLAYS the modal instead of taking part in
+      its layout. As an inline block it pushed the description and footer down,
+      visibly resizing the Create Task modal every time the picker opened.
+
+      #266: `fixed` + portal rather than `absolute` inside the modal body. The
+      body scrolls (`overflow-y-auto`), and an overflow container clips its
+      descendants no matter how high their `z-index` is — that clipping is what
+      hid the list behind the footer.
     */
     <div
-      className="absolute left-0 top-0 z-50 max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
+      className="fixed z-[60] max-h-56 w-full max-w-xs overflow-y-auto rounded-md border border-border bg-popover shadow-lg"
       data-testid="title-token-suggestions"
       data-token-kind={token.kind}
+      style={
+        anchorRect
+          ? {
+              top: anchorRect.top,
+              left: anchorRect.left,
+              width: anchorRect.width || undefined,
+            }
+          : { visibility: "hidden" }
+      }
     >
       <div className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
         {t(KIND_LABEL[token.kind])}
@@ -158,6 +216,23 @@ export function TitleTokenSuggestions({
         </button>
       ))}
     </div>
+  );
+
+  return (
+    <>
+      {/*
+        Zero-size marker left at the original DOM position. It carries no
+        visuals; it exists only so the portaled panel can be positioned
+        relative to the title input the way the inline version was.
+      */}
+      <span
+        aria-hidden="true"
+        className="block h-0 w-full"
+        data-testid="title-token-suggestions-anchor"
+        ref={anchorRef}
+      />
+      {createPortal(panel, document.body)}
+    </>
   );
 }
 
