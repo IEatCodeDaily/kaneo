@@ -3,6 +3,7 @@ import { produce } from "immer";
 import {
   CalendarIcon,
   Check,
+  CircleDashed,
   Plus,
   Search,
   Tag,
@@ -766,7 +767,7 @@ function CreateTaskModal({
 
   const selectedStatus = templateStatus ?? status;
   const selectedStatusColumn = templateColumns.find(
-    (column) => column.id === selectedStatus,
+    (column) => column.slug === selectedStatus,
   );
   const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
@@ -1257,13 +1258,13 @@ function CreateTaskModal({
                       {selectedStatusColumn ? (
                         <>
                           {getColumnIcon(
-                            selectedStatusColumn.id,
+                            selectedStatusColumn.slug,
                             selectedStatusColumn.isFinal,
                             selectedStatusColumn.icon,
                           )}
                           <span>
                             {getStatusDisplayLabel(
-                              selectedStatusColumn.id,
+                              selectedStatusColumn.slug,
                               selectedStatusColumn.name,
                             )}
                           </span>
@@ -1281,17 +1282,37 @@ function CreateTaskModal({
                         variant="ghost"
                         size="sm"
                         className="h-8 w-full justify-start gap-2 rounded-none px-2 first:rounded-t-md last:rounded-b-md"
-                        onClick={() => setTemplateStatus(column.id)}
+                        onClick={() => setTemplateStatus(column.slug)}
                       >
-                        {getColumnIcon(column.id, column.isFinal, column.icon)}
+                        {getColumnIcon(
+                          column.slug,
+                          column.isFinal,
+                          column.icon,
+                        )}
                         <span className="text-sm">
-                          {getStatusDisplayLabel(column.id, column.name)}
+                          {getStatusDisplayLabel(column.slug, column.name)}
                         </span>
-                        {selectedStatus === column.id && (
+                        {selectedStatus === column.slug && (
                           <Check className="ml-auto h-4 w-4" />
                         )}
                       </Button>
                     ))}
+                    <div className="my-1 h-px bg-border" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-full justify-start gap-2 rounded-b-md rounded-t-none px-2"
+                      onClick={() => setTemplateStatus("planned")}
+                    >
+                      <CircleDashed className="size-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {t("tasks:actions.moveToBacklog")}
+                      </span>
+                      {selectedStatus === "planned" && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </Button>
                   </PopoverContent>
                 </Popover>
 
