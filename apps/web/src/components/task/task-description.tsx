@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { ResizableImage } from "@/components/task/extensions/resizable-image";
 import { Button } from "@/components/ui/button";
@@ -364,19 +365,23 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       })),
     [shikiSupportedLanguages, t, toShikiLanguage],
   );
+  /**
+   * #266: overlay coordinates are VIEWPORT-relative, because the overlays that
+   * use them (the slash menu, the embed composer) are portaled to
+   * `document.body` and positioned `fixed`.
+   *
+   * They used to be measured relative to `editorShellRef` and positioned
+   * `absolute` inside it. That made them descendants of the create-task modal's
+   * scrolling body (`overflow-y-auto`), which clips every descendant to its
+   * padding box — so the menu was cut off mid-item. `z-index` cannot lift a
+   * descendant out of an ancestor's overflow clip, which is why the menu was
+   * already `z-50` and still clipped.
+   */
   const getOverlayPosition = useCallback(
     (editorView: Editor["view"], pos: number) => {
       const coords = editorView.coordsAtPos(pos);
-      const shellRect = editorShellRef.current?.getBoundingClientRect();
 
-      if (!shellRect) {
-        return { top: coords.bottom + 8, left: coords.left };
-      }
-
-      return {
-        top: coords.bottom - shellRect.top + 8,
-        left: coords.left - shellRect.left,
-      };
+      return { top: coords.bottom + 8, left: coords.left };
     },
     [],
   );
@@ -1787,157 +1792,186 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         </BubbleMenu>
       )}
 
-      {editor && slashMenu && (
-        <div
-          className="kaneo-tiptap-slash-menu"
-          style={{
-            top: slashMenu.top,
-            left: slashMenu.left,
-            position: "absolute",
-          }}
-        >
-          {filteredSlashCommands.length > 0 ? (
-            groupedSlashCommands.map((group) => {
-              if (!group.items.length) return null;
-              return (
-                <div key={group.title} className="kaneo-tiptap-slash-group">
-                  <div className="kaneo-tiptap-slash-group-title">
-                    {group.title}
-                  </div>
-                  {group.items.map((command) => {
-                    const index = filteredSlashCommands.findIndex(
-                      (candidate) => candidate.id === command.id,
-                    );
-                    return (
-                      <button
-                        key={command.id}
-                        type="button"
-                        className={cn(
-                          "kaneo-tiptap-slash-item",
-                          slashMenu.selectedIndex === index && "is-selected",
-                        )}
-                        onMouseEnter={() =>
-                          setSlashMenu((current) =>
-                            current
-                              ? { ...current, selectedIndex: index }
-                              : current,
-                          )
-                        }
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          runSlashCommand(command);
-                        }}
-                      >
-                        <span className="kaneo-tiptap-slash-label">
-                          {command.label}
-                        </span>
-                        {command.shortcut && (
-                          <span className="kaneo-tiptap-slash-shortcut">
-                            {command.shortcut}
+      {editor &&
+        slashMenu &&
+        /*
+          #266: portaled to `document.body`. Rendered inline it was a descendant
+          of the create-task modal's scrolling body (`overflow-y-auto`), which
+          clips descendants to its padding box — the menu was sliced mid-item
+          with modal background still visible below the cut, which is the
+          giveaway that an inner scroll container was clipping it rather than
+          the modal's own edge. A portal is the only way out of that clip;
+          raising `z-index` cannot escape an ancestor's overflow.
+        */
+        createPortal(
+          <div
+            className="kaneo-tiptap-slash-menu"
+            data-testid="tiptap-slash-menu"
+            style={{
+              top: slashMenu.top,
+              left: slashMenu.left,
+              position: "fixed",
+            }}
+          >
+            {filteredSlashCommands.length > 0 ? (
+              groupedSlashCommands.map((group) => {
+                if (!group.items.length) return null;
+                return (
+                  <div key={group.title} className="kaneo-tiptap-slash-group">
+                    <div className="kaneo-tiptap-slash-group-title">
+                      {group.title}
+                    </div>
+                    {group.items.map((command) => {
+                      const index = filteredSlashCommands.findIndex(
+                        (candidate) => candidate.id === command.id,
+                      );
+                      return (
+                        <button
+                          key={command.id}
+                          type="button"
+                          className={cn(
+                            "kaneo-tiptap-slash-item",
+                            slashMenu.selectedIndex === index && "is-selected",
+                          )}
+                          onMouseEnter={() =>
+                            setSlashMenu((current) =>
+                              current
+                                ? { ...current, selectedIndex: index }
+                                : current,
+                            )
+                          }
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            runSlashCommand(command);
+                          }}
+                        >
+                          <span className="kaneo-tiptap-slash-label">
+                            {command.label}
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })
-          ) : (
-            <div className="kaneo-tiptap-slash-empty">
-              {t("tasks:detail.editor.slash.empty")}
-            </div>
-          )}
-        </div>
-      )}
+                          {command.shortcut && (
+                            <span className="kaneo-tiptap-slash-shortcut">
+                              {command.shortcut}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="kaneo-tiptap-slash-empty">
+                {t("tasks:detail.editor.slash.empty")}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
 
-      {editor && embedComposer && (
-        <div
-          className="kaneo-embed-composer"
-          style={{
-            top: embedComposer.top,
-            left: embedComposer.left,
-            position: "absolute",
-          }}
-        >
-          {embedComposer.mode === "choice" ? (
-            <div className="kaneo-embed-choice-menu">
-              <button
-                type="button"
-                className="kaneo-embed-choice-item is-primary"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  submitEmbedComposer("embed");
-                }}
-              >
-                <span>{t("tasks:detail.editor.embed.choice.embedVideo")}</span>
-                <span className="kaneo-embed-choice-hint">Tab</span>
-              </button>
-              <button
-                type="button"
-                className="kaneo-embed-choice-item"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  setEmbedComposer(null);
-                  setEmbedComposerError("");
-                }}
-              >
-                <span>{t("tasks:detail.editor.embed.choice.keepAsLink")}</span>
-                <span className="kaneo-embed-choice-hint">Esc</span>
-              </button>
-            </div>
-          ) : (
-            <form
-              className="kaneo-embed-composer-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitEmbedComposer("embed");
-              }}
-            >
-              <Input
-                size="sm"
-                value={embedComposer.url}
-                onChange={(event) => {
-                  setEmbedComposer((current) =>
-                    current ? { ...current, url: event.target.value } : current,
-                  );
-                  if (embedComposerError) setEmbedComposerError("");
-                }}
-                placeholder={t("tasks:detail.editor.embed.inputPlaceholder")}
-                autoFocus
-              />
-              <div className="kaneo-embed-composer-actions">
-                <Button
+      {editor &&
+        embedComposer &&
+        /*
+          #266: portaled and `fixed` for the same reason as the slash menu, and
+          because it shares `getOverlayPosition` — which now returns
+          viewport-relative coordinates. Leaving this one `absolute` inside the
+          editor shell would have silently mispositioned it.
+        */
+        createPortal(
+          <div
+            className="kaneo-embed-composer"
+            data-testid="embed-composer"
+            style={{
+              top: embedComposer.top,
+              left: embedComposer.left,
+              position: "fixed",
+            }}
+          >
+            {embedComposer.mode === "choice" ? (
+              <div className="kaneo-embed-choice-menu">
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => submitEmbedComposer("link")}
+                  className="kaneo-embed-choice-item is-primary"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    submitEmbedComposer("embed");
+                  }}
                 >
-                  {t("tasks:detail.editor.embed.asLink")}
-                </Button>
-                <Button type="submit" size="xs">
-                  {t("tasks:detail.editor.embed.submit")}
-                </Button>
-                <Button
+                  <span>
+                    {t("tasks:detail.editor.embed.choice.embedVideo")}
+                  </span>
+                  <span className="kaneo-embed-choice-hint">Tab</span>
+                </button>
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => {
+                  className="kaneo-embed-choice-item"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
                     setEmbedComposer(null);
                     setEmbedComposerError("");
                   }}
                 >
-                  {t("common:actions.cancel")}
-                </Button>
+                  <span>
+                    {t("tasks:detail.editor.embed.choice.keepAsLink")}
+                  </span>
+                  <span className="kaneo-embed-choice-hint">Esc</span>
+                </button>
               </div>
-              {embedComposerError && (
-                <p className="kaneo-embed-composer-error">
-                  {embedComposerError}
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-      )}
+            ) : (
+              <form
+                className="kaneo-embed-composer-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitEmbedComposer("embed");
+                }}
+              >
+                <Input
+                  size="sm"
+                  value={embedComposer.url}
+                  onChange={(event) => {
+                    setEmbedComposer((current) =>
+                      current
+                        ? { ...current, url: event.target.value }
+                        : current,
+                    );
+                    if (embedComposerError) setEmbedComposerError("");
+                  }}
+                  placeholder={t("tasks:detail.editor.embed.inputPlaceholder")}
+                  autoFocus
+                />
+                <div className="kaneo-embed-composer-actions">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => submitEmbedComposer("link")}
+                  >
+                    {t("tasks:detail.editor.embed.asLink")}
+                  </Button>
+                  <Button type="submit" size="xs">
+                    {t("tasks:detail.editor.embed.submit")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      setEmbedComposer(null);
+                      setEmbedComposerError("");
+                    }}
+                  >
+                    {t("common:actions.cancel")}
+                  </Button>
+                </div>
+                {embedComposerError && (
+                  <p className="kaneo-embed-composer-error">
+                    {embedComposerError}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>,
+          document.body,
+        )}
 
       <EditorContent
         editor={editor}

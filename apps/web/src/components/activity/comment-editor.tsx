@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AttachmentCard } from "@/components/task/extensions/attachment-card";
 import { EmbedBlock } from "@/components/task/extensions/embed-block";
@@ -88,7 +89,6 @@ type CommentEditorProps = {
   disabled?: boolean;
   readOnly?: boolean;
   showBubbleMenu?: boolean;
-  slashMenuPosition?: "absolute" | "fixed";
   onSubmitShortcut?: () => void;
   onCancelShortcut?: () => void;
   taskId?: string;
@@ -186,7 +186,6 @@ export default function CommentEditor({
   disabled = false,
   readOnly = false,
   showBubbleMenu = true,
-  slashMenuPosition = "absolute",
   onSubmitShortcut,
   onCancelShortcut,
   taskId,
@@ -288,21 +287,18 @@ export default function CommentEditor({
     },
     [availableShikiLanguages],
   );
+  /**
+   * #266: always VIEWPORT-relative, because the slash menu is portaled to
+   * `document.body` and positioned `fixed`. Shell-relative coordinates would
+   * place it at the wrong spot once it is no longer a child of the shell.
+   */
   const getOverlayPosition = useCallback(
     (editorView: Editor["view"], pos: number) => {
       const coords = editorView.coordsAtPos(pos);
-      const shellRect = editorShellRef.current?.getBoundingClientRect();
 
-      if (slashMenuPosition === "fixed" || !shellRect) {
-        return { top: coords.bottom + 8, left: coords.left };
-      }
-
-      return {
-        top: coords.bottom - shellRect.top + 8,
-        left: coords.left - shellRect.left,
-      };
+      return { top: coords.bottom + 8, left: coords.left };
     },
-    [slashMenuPosition],
+    [],
   );
 
   useEffect(() => {
@@ -1184,15 +1180,9 @@ export default function CommentEditor({
       if (!nodeData) return;
 
       const rect = element.getBoundingClientRect();
-      const shellRect = editorShellRef.current?.getBoundingClientRect();
-      const top =
-        slashMenuPosition === "fixed" || !shellRect
-          ? rect.top + 6
-          : rect.top - shellRect.top + 6;
-      const left =
-        slashMenuPosition === "fixed" || !shellRect
-          ? rect.right - 12
-          : rect.right - shellRect.left - 12;
+      // #266: viewport-relative, matching the portaled `fixed` overlay.
+      const top = rect.top + 6;
+      const left = rect.right - 12;
       setHoveredCodeBlock((current) => {
         if (current?.nodePos !== nodeData.nodePos) {
           setIsCodeCopied(false);
@@ -1207,12 +1197,7 @@ export default function CommentEditor({
       });
       hoveredCodeBlockElementRef.current = element;
     },
-    [
-      editor,
-      isCodeLanguageMenuOpen,
-      resolveCodeBlockNodeData,
-      slashMenuPosition,
-    ],
+    [editor, isCodeLanguageMenuOpen, resolveCodeBlockNodeData],
   );
 
   const setCodeLanguage = useCallback(
@@ -1528,80 +1513,90 @@ export default function CommentEditor({
           }}
         />
       )}
-      {editor && hoveredCodeBlock && !disabled && (
-        <div
-          className="kaneo-codeblock-language"
-          style={{
-            top: hoveredCodeBlock.top,
-            left: hoveredCodeBlock.left,
-            position: slashMenuPosition,
-          }}
-        >
-          <button
-            type="button"
-            className="kaneo-codeblock-language-trigger kaneo-codeblock-copy-trigger"
-            aria-label={
-              isCodeCopied
-                ? t("activity:comment.editor.ariaCopied")
-                : t("activity:comment.editor.ariaCopyCode")
-            }
-            onMouseDown={(event) => {
-              event.preventDefault();
-            }}
-            onClick={() => {
-              void copyHoveredCodeBlock();
+      {editor &&
+        hoveredCodeBlock &&
+        !disabled &&
+        /*
+          #266: portaled and `fixed` like the other floating overlays. It is
+          anchored to a code block that can sit anywhere in a scrolling
+          container, so the same overflow clip applies, and it read its
+          coordinates from the same `slashMenuPosition` switch being removed.
+        */
+        createPortal(
+          <div
+            className="kaneo-codeblock-language"
+            style={{
+              top: hoveredCodeBlock.top,
+              left: hoveredCodeBlock.left,
+              position: "fixed",
             }}
           >
-            {isCodeCopied ? (
-              <Check className="size-3.5" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-            <span>
-              {isCodeCopied
-                ? t("activity:comment.editor.copied")
-                : t("activity:comment.editor.copy")}
-            </span>
-          </button>
-          {!readOnly && (
-            <DropdownMenu
-              open={isCodeLanguageMenuOpen}
-              onOpenChange={setIsCodeLanguageMenuOpen}
+            <button
+              type="button"
+              className="kaneo-codeblock-language-trigger kaneo-codeblock-copy-trigger"
+              aria-label={
+                isCodeCopied
+                  ? t("activity:comment.editor.ariaCopied")
+                  : t("activity:comment.editor.ariaCopyCode")
+              }
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={() => {
+                void copyHoveredCodeBlock();
+              }}
             >
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="kaneo-codeblock-language-trigger"
-                >
-                  <span className="truncate">{activeCodeLanguageLabel}</span>
-                  <ChevronDown className="size-3.5 opacity-70" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                side="bottom"
-                sideOffset={6}
-                className="max-h-72 w-48 overflow-y-auto"
+              {isCodeCopied ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+              <span>
+                {isCodeCopied
+                  ? t("activity:comment.editor.copied")
+                  : t("activity:comment.editor.copy")}
+              </span>
+            </button>
+            {!readOnly && (
+              <DropdownMenu
+                open={isCodeLanguageMenuOpen}
+                onOpenChange={setIsCodeLanguageMenuOpen}
               >
-                <DropdownMenuRadioGroup
-                  value={hoveredCodeBlock.language}
-                  onValueChange={setCodeLanguage}
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="kaneo-codeblock-language-trigger"
+                  >
+                    <span className="truncate">{activeCodeLanguageLabel}</span>
+                    <ChevronDown className="size-3.5 opacity-70" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="bottom"
+                  sideOffset={6}
+                  className="max-h-72 w-48 overflow-y-auto"
                 >
-                  <DropdownMenuRadioItem value="auto">
-                    {t("activity:comment.editor.autoDetect")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuSeparator />
-                  {codeLanguages.map(({ value, label }) => (
-                    <DropdownMenuRadioItem key={value} value={value}>
-                      {label}
+                  <DropdownMenuRadioGroup
+                    value={hoveredCodeBlock.language}
+                    onValueChange={setCodeLanguage}
+                  >
+                    <DropdownMenuRadioItem value="auto">
+                      {t("activity:comment.editor.autoDetect")}
                     </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      )}
+                    <DropdownMenuSeparator />
+                    {codeLanguages.map(({ value, label }) => (
+                      <DropdownMenuRadioItem key={value} value={value}>
+                        {label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>,
+          document.body,
+        )}
       {editor && !readOnly && !disabled && showBubbleMenu && (
         <BubbleMenu
           editor={editor}
@@ -1817,165 +1812,192 @@ export default function CommentEditor({
           </Button>
         </BubbleMenu>
       )}
-      {slashMenu && !readOnly && !disabled && (
-        <div
-          className="kaneo-tiptap-slash-menu"
-          style={{
-            top: slashMenu.top,
-            left: slashMenu.left,
-            position: slashMenuPosition,
-          }}
-        >
-          {filteredSlashCommands.length > 0 ? (
-            groupedSlashCommands.map((group) => {
-              if (!group.items.length) return null;
-              return (
-                <div key={group.title} className="kaneo-tiptap-slash-group">
-                  <div className="kaneo-tiptap-slash-group-title">
-                    {group.title}
-                  </div>
-                  {group.items.map((command) => {
-                    const index = filteredSlashCommands.findIndex(
-                      (candidate) => candidate.id === command.id,
-                    );
-                    return (
-                      <button
-                        key={command.id}
-                        type="button"
-                        className={cn(
-                          "kaneo-tiptap-slash-item",
-                          slashMenu.selectedIndex === index && "is-selected",
-                        )}
-                        onMouseEnter={() =>
-                          setSlashMenu((current) =>
-                            current
-                              ? { ...current, selectedIndex: index }
-                              : current,
-                          )
-                        }
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          if (!editor) return;
-                          command.run(editor, {
-                            from: slashMenu.from,
-                            to: slashMenu.to,
-                          });
-                          setSlashMenu(null);
-                        }}
-                      >
-                        <span className="kaneo-tiptap-slash-label">
-                          {command.label}
-                        </span>
-                        {command.shortcut && (
-                          <span className="kaneo-tiptap-slash-shortcut">
-                            {command.shortcut}
+      {slashMenu &&
+        !readOnly &&
+        !disabled &&
+        /*
+          #266: portaled to `document.body` and always `fixed`.
+
+          A `slashMenuPosition="fixed"` prop existed for this, but nothing ever
+          passed it AND the menu was never portaled — and `fixed` alone does not
+          escape an ancestor's `overflow` clip, so the escape hatch could not
+          have worked even if a caller had opted in. The comment editor sits
+          inside scrolling containers just like the description editor, so the
+          menu is portaled unconditionally rather than behind an opt-in nobody
+          uses.
+        */
+        createPortal(
+          <div
+            className="kaneo-tiptap-slash-menu"
+            data-testid="tiptap-slash-menu"
+            style={{
+              top: slashMenu.top,
+              left: slashMenu.left,
+              position: "fixed",
+            }}
+          >
+            {filteredSlashCommands.length > 0 ? (
+              groupedSlashCommands.map((group) => {
+                if (!group.items.length) return null;
+                return (
+                  <div key={group.title} className="kaneo-tiptap-slash-group">
+                    <div className="kaneo-tiptap-slash-group-title">
+                      {group.title}
+                    </div>
+                    {group.items.map((command) => {
+                      const index = filteredSlashCommands.findIndex(
+                        (candidate) => candidate.id === command.id,
+                      );
+                      return (
+                        <button
+                          key={command.id}
+                          type="button"
+                          className={cn(
+                            "kaneo-tiptap-slash-item",
+                            slashMenu.selectedIndex === index && "is-selected",
+                          )}
+                          onMouseEnter={() =>
+                            setSlashMenu((current) =>
+                              current
+                                ? { ...current, selectedIndex: index }
+                                : current,
+                            )
+                          }
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            if (!editor) return;
+                            command.run(editor, {
+                              from: slashMenu.from,
+                              to: slashMenu.to,
+                            });
+                            setSlashMenu(null);
+                          }}
+                        >
+                          <span className="kaneo-tiptap-slash-label">
+                            {command.label}
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })
-          ) : (
-            <div className="kaneo-tiptap-slash-empty">
-              {t("activity:comment.editor.noCommands")}
-            </div>
-          )}
-        </div>
-      )}
-      {editor && embedComposer && (
-        <div
-          className="kaneo-embed-composer"
-          style={{
-            top: embedComposer.top,
-            left: embedComposer.left,
-            position: slashMenuPosition,
-          }}
-        >
-          {embedComposer.mode === "choice" ? (
-            <div className="kaneo-embed-choice-menu">
-              <button
-                type="button"
-                className="kaneo-embed-choice-item is-primary"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  submitEmbedComposer("embed");
-                }}
-              >
-                <span>{t("activity:comment.editor.embedVideo")}</span>
-                <span className="kaneo-embed-choice-hint">
-                  {t("activity:comment.editor.hintTab")}
-                </span>
-              </button>
-              <button
-                type="button"
-                className="kaneo-embed-choice-item"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  setEmbedComposer(null);
-                  setEmbedComposerError(null);
-                }}
-              >
-                <span>{t("activity:comment.editor.keepAsLink")}</span>
-                <span className="kaneo-embed-choice-hint">
-                  {t("activity:comment.editor.hintEsc")}
-                </span>
-              </button>
-            </div>
-          ) : (
-            <form
-              className="kaneo-embed-composer-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitEmbedComposer("embed");
-              }}
-            >
-              <Input
-                size="sm"
-                value={embedComposer.url}
-                onChange={(event) => {
-                  setEmbedComposer((current) =>
-                    current ? { ...current, url: event.target.value } : current,
-                  );
-                  if (embedComposerError) setEmbedComposerError(null);
-                }}
-                placeholder={t("activity:comment.editor.pasteUrl")}
-                autoFocus
-              />
-              <div className="kaneo-embed-composer-actions">
-                <Button
+                          {command.shortcut && (
+                            <span className="kaneo-tiptap-slash-shortcut">
+                              {command.shortcut}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="kaneo-tiptap-slash-empty">
+                {t("activity:comment.editor.noCommands")}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
+      {editor &&
+        embedComposer &&
+        /*
+          #266: portaled and `fixed` alongside the slash menu, since it shares
+          `getOverlayPosition` and would otherwise be positioned with
+          viewport coordinates while still living inside the clipped shell.
+        */
+        createPortal(
+          <div
+            className="kaneo-embed-composer"
+            data-testid="embed-composer"
+            style={{
+              top: embedComposer.top,
+              left: embedComposer.left,
+              position: "fixed",
+            }}
+          >
+            {embedComposer.mode === "choice" ? (
+              <div className="kaneo-embed-choice-menu">
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => submitEmbedComposer("link")}
+                  className="kaneo-embed-choice-item is-primary"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    submitEmbedComposer("embed");
+                  }}
                 >
-                  {t("activity:comment.editor.asLink")}
-                </Button>
-                <Button type="submit" size="xs">
-                  {t("activity:comment.editor.embed")}
-                </Button>
-                <Button
+                  <span>{t("activity:comment.editor.embedVideo")}</span>
+                  <span className="kaneo-embed-choice-hint">
+                    {t("activity:comment.editor.hintTab")}
+                  </span>
+                </button>
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => {
+                  className="kaneo-embed-choice-item"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
                     setEmbedComposer(null);
                     setEmbedComposerError(null);
                   }}
                 >
-                  {t("common:actions.cancel")}
-                </Button>
+                  <span>{t("activity:comment.editor.keepAsLink")}</span>
+                  <span className="kaneo-embed-choice-hint">
+                    {t("activity:comment.editor.hintEsc")}
+                  </span>
+                </button>
               </div>
-              {embedComposerError && (
-                <p className="kaneo-embed-composer-error">
-                  {t(`activity:comment.editor.${embedComposerError}`)}
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-      )}
+            ) : (
+              <form
+                className="kaneo-embed-composer-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitEmbedComposer("embed");
+                }}
+              >
+                <Input
+                  size="sm"
+                  value={embedComposer.url}
+                  onChange={(event) => {
+                    setEmbedComposer((current) =>
+                      current
+                        ? { ...current, url: event.target.value }
+                        : current,
+                    );
+                    if (embedComposerError) setEmbedComposerError(null);
+                  }}
+                  placeholder={t("activity:comment.editor.pasteUrl")}
+                  autoFocus
+                />
+                <div className="kaneo-embed-composer-actions">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => submitEmbedComposer("link")}
+                  >
+                    {t("activity:comment.editor.asLink")}
+                  </Button>
+                  <Button type="submit" size="xs">
+                    {t("activity:comment.editor.embed")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      setEmbedComposer(null);
+                      setEmbedComposerError(null);
+                    }}
+                  >
+                    {t("common:actions.cancel")}
+                  </Button>
+                </div>
+                {embedComposerError && (
+                  <p className="kaneo-embed-composer-error">
+                    {t(`activity:comment.editor.${embedComposerError}`)}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>,
+          document.body,
+        )}
       <EditorContent
         editor={editor}
         className={cn("kaneo-comment-editor-content", contentClassName)}
