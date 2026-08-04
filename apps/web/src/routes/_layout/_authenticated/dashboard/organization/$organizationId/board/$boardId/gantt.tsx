@@ -49,6 +49,7 @@ import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestone
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
@@ -87,6 +88,8 @@ type ScheduledTask = {
   priority: string | null;
   startDate: string | null;
   dueDate: string | null;
+  userId?: string | null;
+  assigneeId?: string | null;
   assigneeName: string | null;
   assigneeImage: string | null;
   boardId: string;
@@ -302,12 +305,17 @@ const GanttRow = memo(function GanttRow({
                   className="shrink-0"
                   title={task.assigneeName ?? undefined}
                 >
-                  <Avatar className="size-4">
+                  <Avatar
+                    className={cn(
+                      "size-4",
+                      getAvatarTone(task.userId, task.assigneeId),
+                    )}
+                  >
                     <AvatarImage
                       src={task.assigneeImage ?? ""}
                       alt={task.assigneeName}
                     />
-                    <AvatarFallback className="text-[8px] font-medium">
+                    <AvatarFallback className="bg-transparent text-[8px] font-medium">
                       {getInitials(task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>

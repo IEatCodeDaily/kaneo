@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/menu";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepoGithubMetadata from "@/hooks/queries/repo/use-get-repo-github-metadata";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { toast } from "@/lib/toast";
 import type { RepoLabel } from "@/types/repo";
 
@@ -300,8 +301,8 @@ export function RepoIssueSidebar({
               {assignees.length > 0 ? (
                 assignees.map((login) => (
                   <span className="flex items-center gap-1 text-xs" key={login}>
-                    <Avatar className="size-4">
-                      <AvatarFallback className="text-[7px]">
+                    <Avatar className={`size-4 ${getAvatarTone(login)}`}>
+                      <AvatarFallback className="bg-transparent text-[7px]">
                         {login.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -332,9 +333,9 @@ export function RepoIssueSidebar({
                   }
                 >
                   <span className="flex items-center gap-2">
-                    <Avatar className="size-5">
+                    <Avatar className={`size-5 ${getAvatarTone(user.login)}`}>
                       <AvatarImage alt={user.login} src={user.avatarUrl} />
-                      <AvatarFallback className="text-[8px]">
+                      <AvatarFallback className="bg-transparent text-[8px]">
                         {user.login.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

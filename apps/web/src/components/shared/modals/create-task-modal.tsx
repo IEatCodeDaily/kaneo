@@ -58,6 +58,7 @@ import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
@@ -1391,12 +1392,20 @@ function CreateTaskModal({
                     >
                       {selectedUser ? (
                         <>
-                          <Avatar className="h-4 w-4">
+                          <Avatar
+                            className={cn(
+                              "h-4 w-4",
+                              getAvatarTone(
+                                selectedUser.userId,
+                                selectedUser.user?.email,
+                              ),
+                            )}
+                          >
                             <AvatarImage
                               src={selectedUser?.user?.image ?? ""}
                               alt={selectedUser?.user?.name || ""}
                             />
-                            <AvatarFallback className="text-[10px] font-medium border border-border/30">
+                            <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
                               {getInitials(selectedUser?.user?.name)}
                             </AvatarFallback>
                           </Avatar>
@@ -1439,12 +1448,17 @@ function CreateTaskModal({
                           className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
                           onClick={() => setAssigneeId(member.userId || "")}
                         >
-                          <Avatar className="h-6 w-6">
+                          <Avatar
+                            className={cn(
+                              "h-6 w-6",
+                              getAvatarTone(member.userId, member.user?.email),
+                            )}
+                          >
                             <AvatarImage
                               src={member?.user?.image ?? ""}
                               alt={member?.user?.name || ""}
                             />
-                            <AvatarFallback className="text-xs font-medium border border-border/30">
+                            <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                               {getInitials(member?.user?.name)}
                             </AvatarFallback>
                           </Avatar>

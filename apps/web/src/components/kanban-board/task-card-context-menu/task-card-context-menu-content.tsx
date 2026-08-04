@@ -22,6 +22,7 @@ import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { generateLink } from "@/lib/generate-link";
 import { getInitials } from "@/lib/get-initials";
@@ -94,6 +95,7 @@ export default function TaskCardContextMenuContent({
       value: member.userId,
       image: member?.user?.image ?? "",
       name: member?.user?.name ?? "",
+      email: member?.user?.email ?? "",
     }));
   }, [organizationMembers]);
 
@@ -289,9 +291,11 @@ export default function TaskCardContextMenuContent({
                 onCheckedChange={() => handleChange("userId", user.value ?? "")}
                 closeOnClick
               >
-                <Avatar className="h-6 w-6">
+                <Avatar
+                  className={`h-6 w-6 ${getAvatarTone(user.value, user.email)}`}
+                >
                   <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                  <AvatarFallback className="text-xs font-medium border border-border/30">
+                  <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>

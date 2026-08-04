@@ -22,6 +22,7 @@ import useSignOut from "@/hooks/mutations/use-sign-out";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
 import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -65,6 +66,7 @@ export function UserAvatar() {
   };
 
   const initials = getInitials(user.name || user.email, "UN");
+  const tone = getAvatarTone(user.id, user.email);
 
   return (
     <>
@@ -76,9 +78,9 @@ export function UserAvatar() {
             size="icon"
             className="h-8 w-8 rounded-full p-0 hover:bg-sidebar-accent/70"
           >
-            <Avatar className="h-8 w-8">
+            <Avatar className={`h-8 w-8 ${tone}`}>
               <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-              <AvatarFallback className="text-xs font-medium border border-border/30">
+              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -87,9 +89,9 @@ export function UserAvatar() {
         <DropdownMenuContent className="w-52 p-0" side="bottom" align="start">
           <div className="px-2.5 py-2">
             <div className="flex items-center gap-2 text-left text-sm">
-              <Avatar className="h-7 w-7 rounded-full">
+              <Avatar className={`h-7 w-7 rounded-full ${tone}`}>
                 <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                <AvatarFallback className="rounded-full border border-border/30">
+                <AvatarFallback className="rounded-full bg-transparent border border-border/30">
                   {initials}
                 </AvatarFallback>
               </Avatar>

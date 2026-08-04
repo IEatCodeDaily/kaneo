@@ -28,6 +28,7 @@ import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -125,6 +126,7 @@ export default function TaskPropertiesSidebar({
   const assignee = organizationMembers?.members?.find(
     (member) => member.userId === task?.userId,
   );
+  const assigneeTone = getAvatarTone(task?.userId, assignee?.user?.email);
 
   const handleCopyTaskLink = () => {
     navigator.clipboard.writeText(
@@ -248,12 +250,12 @@ export default function TaskPropertiesSidebar({
                     className="justify-start h-7 px-1.5 gap-1.5"
                   >
                     {task.userId ? (
-                      <Avatar className="h-[16px] w-[16px]">
+                      <Avatar className={cn("h-[16px] w-[16px]", assigneeTone)}>
                         <AvatarImage
                           src={assignee?.user?.image ?? ""}
                           alt={assignee?.user?.name || ""}
                         />
-                        <AvatarFallback className="text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
+                        <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
                           {getInitials(
                             assignee?.user?.name || task.assigneeName,
                           )}
@@ -446,12 +448,14 @@ export default function TaskPropertiesSidebar({
                       className="justify-start h-7 px-1.5 gap-1.5"
                     >
                       {task.userId ? (
-                        <Avatar className="h-[16px] w-[16px]">
+                        <Avatar
+                          className={cn("h-[16px] w-[16px]", assigneeTone)}
+                        >
                           <AvatarImage
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}
@@ -647,12 +651,14 @@ export default function TaskPropertiesSidebar({
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"
                     >
                       {task.userId ? (
-                        <Avatar className="h-[16px] w-[16px]">
+                        <Avatar
+                          className={cn("h-[16px] w-[16px]", assigneeTone)}
+                        >
                           <AvatarImage
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}

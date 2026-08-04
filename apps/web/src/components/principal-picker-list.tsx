@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
@@ -114,9 +115,16 @@ export function PrincipalPickerList({
                     <Users className="h-4 w-4" />
                   </span>
                 ) : (
-                  <Avatar className="h-6 w-6 shrink-0">
+                  <Avatar
+                    className={cn(
+                      "h-6 w-6 shrink-0",
+                      getAvatarTone(option.value),
+                    )}
+                  >
                     <AvatarImage alt={option.label} src={option.image} />
-                    <AvatarFallback>{getInitials(option.label)}</AvatarFallback>
+                    <AvatarFallback className="bg-transparent">
+                      {getInitials(option.label)}
+                    </AvatarFallback>
                   </Avatar>
                 )}
                 <span className="min-w-0 truncate">{option.label}</span>

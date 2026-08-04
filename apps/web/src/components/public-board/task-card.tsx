@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
 import type { ExternalLink } from "@/types/external-link";
@@ -75,12 +76,14 @@ export function PublicTaskCard({
 
       {task.assigneeName && (
         <div className="flex items-center gap-1.5 mb-2">
-          <Avatar className="h-5 w-5">
+          <Avatar
+            className={`h-5 w-5 ${getAvatarTone(task.userId, task.assigneeId)}`}
+          >
             <AvatarImage
               src={task.assigneeImage ?? ""}
               alt={task.assigneeName ?? ""}
             />
-            <AvatarFallback className="text-[10px] font-medium border border-border/30">
+            <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
               {getInitials(task.assigneeName)}
             </AvatarFallback>
           </Avatar>

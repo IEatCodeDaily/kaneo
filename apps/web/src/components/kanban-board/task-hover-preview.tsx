@@ -12,6 +12,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/preview-card";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import type Task from "@/types/task";
 
@@ -98,9 +99,9 @@ function TaskHoverPreview({
               <dd className="flex min-w-0 items-center gap-1.5">
                 {assigneeName ? (
                   <>
-                    <Avatar className="h-4 w-4">
+                    <Avatar className={`h-4 w-4 ${getAvatarTone(task.userId)}`}>
                       <AvatarImage src={assigneeImage ?? ""} alt="" />
-                      <AvatarFallback className="text-[8px]">
+                      <AvatarFallback className="bg-transparent text-[8px]">
                         {getInitials(assigneeName)}
                       </AvatarFallback>
                     </Avatar>

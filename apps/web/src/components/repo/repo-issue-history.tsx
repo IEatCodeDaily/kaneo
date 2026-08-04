@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import type { RepoIssueGithub, RepoIssueGithubActor } from "@/types/repo";
 
 type RepoIssueHistoryProps = { github?: RepoIssueGithub };
@@ -90,9 +91,9 @@ function Actor({ actor }: { actor?: RepoIssueGithubActor }) {
   const login = actor?.login ?? "GitHub";
   return (
     <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-      <Avatar className="size-5">
+      <Avatar className={`size-5 ${getAvatarTone(actor?.login)}`}>
         <AvatarImage alt={login} src={actor?.avatar_url ?? undefined} />
-        <AvatarFallback className="text-[8px]">
+        <AvatarFallback className="bg-transparent text-[8px]">
           {login.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

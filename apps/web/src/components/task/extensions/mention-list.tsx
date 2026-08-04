@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 
 export type MentionMember = {
@@ -60,9 +61,9 @@ const MentionList = forwardRef<MentionListRef, MentionListProps>(
             onClick={() => select(index)}
             onMouseEnter={() => setSelected(index)}
           >
-            <Avatar className="h-5 w-5">
+            <Avatar className={`h-5 w-5 ${getAvatarTone(item.id)}`}>
               <AvatarImage src={item.image ?? ""} alt={item.label} />
-              <AvatarFallback className="text-[9px] font-medium">
+              <AvatarFallback className="bg-transparent text-[9px] font-medium">
                 {getInitials(item.label)}
               </AvatarFallback>
             </Avatar>

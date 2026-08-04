@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 
@@ -442,9 +443,11 @@ function TeamCard({
                   className="flex items-center justify-between gap-3 px-3 py-2"
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <Avatar className="size-7">
+                    <Avatar
+                      className={`size-7 ${getAvatarTone(member?.userId, member?.user.email)}`}
+                    >
                       <AvatarImage src={member?.user.image ?? ""} />
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="bg-transparent text-[10px]">
                         {getInitials(member?.user.name)}
                       </AvatarFallback>
                     </Avatar>

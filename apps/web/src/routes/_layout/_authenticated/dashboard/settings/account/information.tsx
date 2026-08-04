@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import useUpdateUserProfile from "@/hooks/mutations/use-update-user-profile";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 
@@ -195,9 +196,11 @@ function RouteComponent() {
                   {t("settings:informationPage.profilePicture")}
                 </p>
               </div>
-              <Avatar className="h-10 w-10">
+              <Avatar
+                className={`h-10 w-10 ${getAvatarTone(user?.id, user?.email)}`}
+              >
                 <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                <AvatarFallback className="text-xs font-medium border border-border/30">
+                <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                   {getInitials(user?.name)}
                 </AvatarFallback>
               </Avatar>

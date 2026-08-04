@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium } from "@/lib/format";
 import type { RepoIssueStateFilter } from "@/types/repo";
 
@@ -118,11 +119,13 @@ function RouteComponent() {
                         <>
                           {issue.authorLogin && (
                             <span className="flex items-center gap-1.5">
-                              <Avatar className="size-4">
+                              <Avatar
+                                className={`size-4 ${getAvatarTone(issue.authorLogin)}`}
+                              >
                                 {issue.authorAvatarUrl && (
                                   <AvatarImage src={issue.authorAvatarUrl} />
                                 )}
-                                <AvatarFallback className="text-[8px]">
+                                <AvatarFallback className="bg-transparent text-[8px]">
                                   {issue.authorLogin.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>

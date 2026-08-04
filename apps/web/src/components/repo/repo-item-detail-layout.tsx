@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { toast } from "@/lib/toast";
@@ -316,9 +317,9 @@ export function RepoItemAuthor({
       className="flex items-center gap-2 text-sm text-muted-foreground"
       data-testid="repo-item-author"
     >
-      <Avatar className="size-6">
+      <Avatar className={cn("size-6", getAvatarTone(login))}>
         {avatarUrl && <AvatarImage src={avatarUrl} />}
-        <AvatarFallback className="text-[9px]">
+        <AvatarFallback className="bg-transparent text-[9px]">
           {login.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

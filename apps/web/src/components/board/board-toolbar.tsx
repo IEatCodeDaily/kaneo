@@ -24,6 +24,7 @@ import {
   DUE_DATE_FILTER_VALUES,
 } from "@/hooks/use-task-filters";
 import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
@@ -188,12 +189,14 @@ export default function BoardToolbar({
   const getAssigneeAvatar = (userId: string) => {
     const member = users?.members?.find((m) => m.userId === userId);
     return (
-      <Avatar className="h-4 w-4">
+      <Avatar
+        className={`h-4 w-4 ${getAvatarTone(userId, member?.user?.email)}`}
+      >
         <AvatarImage
           src={member?.user?.image ?? ""}
           alt={member?.user?.name || ""}
         />
-        <AvatarFallback className="border border-border/30 text-[9px] font-medium">
+        <AvatarFallback className="bg-transparent border border-border/30 text-[9px] font-medium">
           {getInitials(member?.user?.name)}
         </AvatarFallback>
       </Avatar>
@@ -432,12 +435,14 @@ export default function BoardToolbar({
                             )}
                           />
                           <span className="inline-flex items-center gap-2">
-                            <Avatar className="h-5 w-5">
+                            <Avatar
+                              className={`h-5 w-5 ${getAvatarTone(member.userId, member.user?.email)}`}
+                            >
                               <AvatarImage
                                 src={member.user?.image ?? ""}
                                 alt={member.user?.name || ""}
                               />
-                              <AvatarFallback className="border border-border/30 text-[10px] font-medium">
+                              <AvatarFallback className="bg-transparent border border-border/30 text-[10px] font-medium">
                                 {getInitials(member.user?.name)}
                               </AvatarFallback>
                             </Avatar>

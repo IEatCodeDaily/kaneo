@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import useDeleteComment from "@/hooks/mutations/comment/use-delete-comment";
 import useUpdateComment from "@/hooks/mutations/comment/use-update-comment";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
@@ -64,6 +65,7 @@ export default function CommentCard({
     isFromGitHub && user?.name ? `https://github.com/${user.name}` : null;
   const commentUrl = externalUrl || null;
   const fullTimestamp = formatDateTime(createdAt);
+  const avatarTone = getAvatarTone(user?.id, user?.email);
 
   const handleEdit = useCallback(() => {
     setEditedContent(content);
@@ -116,9 +118,9 @@ export default function CommentCard({
           <HoverCard>
             <HoverCardTrigger>
               <div className="flex cursor-pointer items-center gap-2">
-                <Avatar className="h-6 w-6">
+                <Avatar className={`h-6 w-6 ${avatarTone}`}>
                   <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                  <AvatarFallback className="bg-muted text-xs font-medium">
+                  <AvatarFallback className="bg-transparent text-xs font-medium">
                     {getInitials(user?.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -129,9 +131,9 @@ export default function CommentCard({
             </HoverCardTrigger>
             <HoverCardContent className="w-64 p-3">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className={`h-10 w-10 ${avatarTone}`}>
                   <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                  <AvatarFallback className="bg-muted text-xs font-medium">
+                  <AvatarFallback className="bg-transparent text-xs font-medium">
                     {getInitials(user?.name)}
                   </AvatarFallback>
                 </Avatar>

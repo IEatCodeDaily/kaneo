@@ -13,6 +13,7 @@ import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-as
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
@@ -48,6 +49,7 @@ export default function SubtaskAssigneePopover({
       value: member.userId,
       image: member?.user?.image ?? "",
       name: member?.user?.name ?? "",
+      email: member?.user?.email ?? "",
     }));
   }, [organizationMembers]);
 
@@ -156,9 +158,11 @@ export default function SubtaskAssigneePopover({
               className="w-full justify-start gap-2 h-8 px-2"
               onClick={() => handleAssigneeChange(user.value)}
             >
-              <Avatar className="h-6 w-6">
+              <Avatar
+                className={`h-6 w-6 ${getAvatarTone(user.value, user.email)}`}
+              >
                 <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                <AvatarFallback className="text-xs font-medium border border-border/30">
+                <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>

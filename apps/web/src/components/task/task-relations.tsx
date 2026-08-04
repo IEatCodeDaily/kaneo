@@ -46,6 +46,7 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
@@ -432,12 +433,14 @@ export default function TaskRelations({
                               className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
                             >
                               {item.task.userId && assignee ? (
-                                <Avatar className="h-5 w-5">
+                                <Avatar
+                                  className={`h-5 w-5 ${getAvatarTone(item.task.userId, assignee?.user?.email)}`}
+                                >
                                   <AvatarImage
                                     src={assignee?.user?.image ?? ""}
                                     alt={assignee?.user?.name || ""}
                                   />
-                                  <AvatarFallback className="text-[9px] font-medium border border-border/30">
+                                  <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30">
                                     {getInitials(assignee?.user?.name)}
                                   </AvatarFallback>
                                 </Avatar>

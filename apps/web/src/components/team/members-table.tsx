@@ -7,6 +7,7 @@ import useDeleteOrganizationMember from "@/hooks/mutations/organization-member/u
 import useUpdateOrganizationMemberRole from "@/hooks/mutations/organization-member/use-update-organization-member-role";
 import useOrganizationRoles from "@/hooks/queries/organization/use-organization-roles";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
@@ -51,32 +52,11 @@ type Props = {
   users: OrganizationMember[];
 };
 
-// Stable per-user pastel for the avatar fallback. Picks one of a curated set
-// of Tailwind tone pairs from a cheap string hash so the same user keeps the
-// same color across re-renders without server-side state.
-const AVATAR_TONES = [
-  "bg-rose-500/15 text-rose-600 dark:text-rose-300",
-  "bg-amber-500/15 text-amber-600 dark:text-amber-300",
-  "bg-sky-500/15 text-sky-600 dark:text-sky-300",
-  "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
-  "bg-violet-500/15 text-violet-600 dark:text-violet-300",
-  "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300",
-] as const;
-
 // Names that are NOT "truly custom" — viewer/member/admin are seeded as
 // editable organization_role rows on every organization creation, and owner is a
 // static built-in. The Select already lists them as built-ins, so we filter
 // them out of the custom-roles tail to avoid duplicate options.
 const RESERVED_ROLE_NAMES = new Set<string>([...DEFAULT_ROLE_NAMES, "owner"]);
-
-function toneFor(value: string): string {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return AVATAR_TONES[Math.abs(hash) % AVATAR_TONES.length];
-}
 
 function capitalize(value: string): string {
   if (!value) return value;
@@ -199,7 +179,7 @@ function MembersTable({ organizationId, invitations, users }: Props) {
             const isSelf = currentUser?.id === member.userId;
             const showRoleSelect =
               canChangeRoles && !isSelf && member.role !== "owner";
-            const tone = toneFor(member.user.email);
+            const tone = getAvatarTone(member.userId, member.user.email);
             return (
               <TableRow key={member.user.email}>
                 <TableCell className="ps-6 py-3">

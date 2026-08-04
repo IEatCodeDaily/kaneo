@@ -16,6 +16,7 @@ import {
 import { getApiUrl } from "@/fetchers/get-api-url";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { authClient } from "@/lib/auth-client";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
@@ -35,6 +36,7 @@ type AccessEntry = {
   detail: string;
   image?: string | null;
   userId?: string;
+  email?: string | null;
 };
 
 type BoardAccessAvatarsProps = {
@@ -116,6 +118,7 @@ export default function BoardAccessAvatars({
     detail: member.role ?? "",
     image: member.user?.image ?? null,
     userId: member.userId,
+    email: member.user?.email ?? null,
   }));
 
   const teamEntries: AccessEntry[] = grants
@@ -170,11 +173,22 @@ export default function BoardAccessAvatars({
                           data-testid={`board-access-avatar-${entry.key}`}
                           className="relative -ml-1.5 inline-flex first:ml-0"
                         >
-                          <Avatar className="size-6 border border-background ring-1 ring-border">
+                          <Avatar
+                            className={cn(
+                              "size-6 border border-background ring-1 ring-border",
+                              entry.kind === "member" &&
+                                getAvatarTone(entry.userId, entry.email),
+                            )}
+                          >
                             {entry.kind === "member" && entry.image ? (
                               <AvatarImage src={entry.image} alt={entry.name} />
                             ) : null}
-                            <AvatarFallback className="text-[10px]">
+                            <AvatarFallback
+                              className={cn(
+                                "text-[10px]",
+                                entry.kind === "member" && "bg-transparent",
+                              )}
+                            >
                               {entry.kind === "team" ? (
                                 <Users className="size-3" aria-hidden="true" />
                               ) : (
@@ -224,11 +238,22 @@ export default function BoardAccessAvatars({
                 data-testid={`board-access-row-${entry.key}`}
                 className="flex items-center gap-2 px-3 py-1.5"
               >
-                <Avatar className="size-5 shrink-0">
+                <Avatar
+                  className={cn(
+                    "size-5 shrink-0",
+                    entry.kind === "member" &&
+                      getAvatarTone(entry.userId, entry.email),
+                  )}
+                >
                   {entry.kind === "member" && entry.image ? (
                     <AvatarImage src={entry.image} alt={entry.name} />
                   ) : null}
-                  <AvatarFallback className="text-[9px]">
+                  <AvatarFallback
+                    className={cn(
+                      "text-[9px]",
+                      entry.kind === "member" && "bg-transparent",
+                    )}
+                  >
                     {entry.kind === "team" ? (
                       <Users className="size-2.5" aria-hidden="true" />
                     ) : (

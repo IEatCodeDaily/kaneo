@@ -9,6 +9,7 @@ import type {
   RepoPullRequestReviewComment,
 } from "@/fetchers/repo/get-pull-request-reviews";
 import useGetPullRequestReviews from "@/hooks/queries/repo/use-get-pull-request-reviews";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium } from "@/lib/format";
 import { toast } from "@/lib/toast";
 
@@ -41,9 +42,9 @@ function Author({
 }) {
   return (
     <span className="flex items-center gap-1.5 font-medium">
-      <Avatar className="size-5">
+      <Avatar className={`size-5 ${getAvatarTone(login)}`}>
         {avatarUrl && <AvatarImage src={avatarUrl} />}
-        <AvatarFallback className="text-[9px]">
+        <AvatarFallback className="bg-transparent text-[9px]">
           {(login ?? "?").slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

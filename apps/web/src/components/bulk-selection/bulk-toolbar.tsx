@@ -42,6 +42,7 @@ import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
@@ -310,12 +311,14 @@ function BulkToolbar() {
           value: `assign-${member.userId}`,
           label: member.user?.name || t("common:people.someone"),
           icon: (
-            <Avatar className="h-5 w-5">
+            <Avatar
+              className={`h-5 w-5 ${getAvatarTone(member.userId, member.user?.email)}`}
+            >
               <AvatarImage
                 src={member.user?.image ?? ""}
                 alt={member.user?.name || ""}
               />
-              <AvatarFallback className="text-xs font-medium border border-border/30">
+              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                 {getInitials(member.user?.name)}
               </AvatarFallback>
             </Avatar>

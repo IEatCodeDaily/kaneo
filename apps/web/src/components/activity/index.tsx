@@ -5,6 +5,7 @@ import { getFlagColor, getFlagIcon } from "@/components/flag/flag-icon";
 import useGetTaskFlags from "@/hooks/queries/flag/use-get-task-flags";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium, formatRelativeTime } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusLabel } from "@/lib/i18n/domain";
@@ -155,12 +156,14 @@ function UserHoverName({
       </HoverCardTrigger>
       <HoverCardContent className="w-52 p-3">
         <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
+          <Avatar
+            className={`h-8 w-8 ${getAvatarTone(user.user.id, user.user.email)}`}
+          >
             <AvatarImage
               src={user.user.image ?? ""}
               alt={user.user.name || ""}
             />
-            <AvatarFallback className="bg-muted text-xs font-medium">
+            <AvatarFallback className="bg-transparent text-xs font-medium">
               {getInitials(user.user.name)}
             </AvatarFallback>
           </Avatar>
@@ -186,9 +189,11 @@ function ActorAvatar({
   fallbackName: string;
 }) {
   return (
-    <Avatar className="size-6">
+    <Avatar
+      className={`size-6 ${getAvatarTone(user?.user?.id, user?.user?.email)}`}
+    >
       <AvatarImage src={user?.user?.image ?? ""} alt={fallbackName} />
-      <AvatarFallback className="bg-muted text-[11px] font-medium">
+      <AvatarFallback className="bg-transparent text-[11px] font-medium">
         {getInitials(fallbackName)}
       </AvatarFallback>
     </Avatar>

@@ -4,6 +4,7 @@ import TaskCardContextMenuContent from "@/components/kanban-board/task-card-cont
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityIcon } from "@/lib/priority";
@@ -131,12 +132,12 @@ export default function SubtaskRow({
                 className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
               >
                 {task.userId && assignee ? (
-                  <Avatar className="h-5 w-5">
+                  <Avatar className={`h-5 w-5 ${getAvatarTone(task.userId)}`}>
                     <AvatarImage
                       src={assignee?.user?.image ?? ""}
                       alt={assignee?.user?.name || ""}
                     />
-                    <AvatarFallback className="text-[9px] font-medium border border-border/30">
+                    <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30">
                       {getInitials(assignee?.user?.name)}
                     </AvatarFallback>
                   </Avatar>

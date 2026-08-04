@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { groupTasks } from "@/hooks/use-task-filters-with-labels-support";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import {
@@ -235,9 +236,11 @@ export function ColumnDropzone({
               const firstTask = group.tasks[0];
               const groupIcon =
                 groupBy === "assignee" ? (
-                  <Avatar className="size-4">
+                  <Avatar
+                    className={cn("size-4", getAvatarTone(firstTask?.userId))}
+                  >
                     <AvatarImage alt="" src={firstTask?.assigneeImage ?? ""} />
-                    <AvatarFallback className="text-[8px]">
+                    <AvatarFallback className="bg-transparent text-[8px]">
                       {getInitials(groupTitle)}
                     </AvatarFallback>
                   </Avatar>

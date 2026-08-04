@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import useUpdateBoard from "@/hooks/mutations/board/use-update-board";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
 import type { MilestoneTaskLike } from "@/lib/milestone-progress";
 import { toast } from "@/lib/toast";
@@ -167,9 +168,11 @@ export default function BoardPropertiesPanel({
                     key={member.id ?? member.userId}
                     className="flex items-center gap-2"
                   >
-                    <Avatar className="h-6 w-6">
+                    <Avatar
+                      className={`h-6 w-6 ${getAvatarTone(member.userId, member.user?.email)}`}
+                    >
                       <AvatarImage src={member.user?.image ?? undefined} />
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="bg-transparent text-[10px]">
                         {getInitials(label)}
                       </AvatarFallback>
                     </Avatar>
