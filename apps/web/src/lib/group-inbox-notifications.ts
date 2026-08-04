@@ -4,6 +4,7 @@ export type InboxTicketGroup = {
   key: string;
   title: string;
   number: number | null;
+  statusName: string | null;
   notifications: Notification[];
 };
 
@@ -52,8 +53,14 @@ export function groupInboxNotifications(
           ? data.taskTitle
           : (notification.title ?? notification.type),
       number: typeof data.taskNumber === "number" ? data.taskNumber : null,
+      statusName:
+        typeof data.taskStatusName === "string" ? data.taskStatusName : null,
       notifications: [],
     };
+    // A later notification carries the freshest status for the same ticket.
+    if (typeof data.taskStatusName === "string") {
+      ticket.statusName = data.taskStatusName;
+    }
     ticket.notifications.push(notification);
     board.ticketsByKey.set(taskKey, ticket);
     if (!boards.has(boardId)) boards.set(boardId, board);

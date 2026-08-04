@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Check,
+  CheckCheck,
   ChevronDown,
   Inbox as InboxIcon,
   LayoutDashboard,
+  Trash2,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -117,24 +119,26 @@ function InboxComponent() {
           <span className="text-muted-foreground text-xs">
             {t("inbox:count", { count: notifications.length })}
           </span>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
             {unreadCount > 0 ? (
               <Button
                 size="sm"
-                variant="ghost"
-                className="text-muted-foreground text-xs"
+                variant="outline"
+                className="gap-1.5 text-xs"
                 onClick={() => markAllAsRead()}
               >
+                <CheckCheck className="size-3.5" />
                 {t("common:actions.markAllRead")}
               </Button>
             ) : null}
             {notifications.length > 0 ? (
               <Button
                 size="sm"
-                variant="ghost"
-                className="text-muted-foreground text-xs"
+                variant="outline"
+                className="gap-1.5 text-xs"
                 onClick={() => setShowClearDialog(true)}
               >
+                <Trash2 className="size-3.5" />
                 {t("notifications:clearAll")}
               </Button>
             ) : null}
@@ -205,12 +209,17 @@ function InboxComponent() {
                             key={ticket.key}
                             className="border-border/60 border-b last:border-b-0"
                           >
-                            <div className="bg-muted/20 px-3 py-2 text-sm">
+                            <div className="flex items-center gap-2 bg-muted/20 px-3 py-2 text-sm">
                               <span className="font-medium">
                                 {ticket.number ? `#${ticket.number} · ` : ""}
                                 {ticket.title}
                               </span>
-                              <span className="ml-2 text-muted-foreground text-xs">
+                              {ticket.statusName ? (
+                                <span className="shrink-0 rounded-full border border-border/70 bg-background px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  {ticket.statusName}
+                                </span>
+                              ) : null}
+                              <span className="ml-auto text-muted-foreground text-xs">
                                 {ticket.notifications.length} events
                               </span>
                             </div>

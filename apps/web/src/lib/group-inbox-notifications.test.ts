@@ -7,6 +7,7 @@ const notification = (
   boardId: string,
   taskId: string,
   isRead = false,
+  taskStatusName?: string,
 ) =>
   ({
     id,
@@ -21,6 +22,7 @@ const notification = (
       boardName: `Board ${boardId}`,
       taskTitle: `Ticket ${taskId}`,
       taskNumber: Number(taskId),
+      ...(taskStatusName ? { taskStatusName } : {}),
     },
   }) as Notification;
 
@@ -40,5 +42,15 @@ describe("groupInboxNotifications", () => {
     ]);
     expect(groups[0].tickets[0].notifications).toHaveLength(2);
     expect(groups[0].unreadCount).toBe(2);
+  });
+
+  it("carries the ticket's latest status onto its group", () => {
+    const groups = groupInboxNotifications([
+      notification("1", "a", "1", false, "To Do"),
+      notification("2", "a", "1", false, "In Progress"),
+    ]);
+
+    // Latest notification (id 2) reflects the current column.
+    expect(groups[0].tickets[0].statusName).toBe("In Progress");
   });
 });

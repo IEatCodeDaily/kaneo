@@ -10060,6 +10060,9 @@
 				},
 				"count": {
 					"type": "string"
+				},
+				"markAsRead": {
+					"type": "string"
 				}
 			},
 			"required": [

@@ -1456,6 +1456,46 @@
 				"title": "Time tracking started",
 				"contentWithTask": "Time tracking started on ticket: {{taskTitle}}",
 				"contentWithoutTask": "Time tracking started on a ticket"
+			},
+			"task_title_changed": {
+				"title": "Ticket title changed",
+				"content": "“{{oldTitle}}” was renamed to “{{newTitle}}”"
+			},
+			"task_description_changed": {
+				"title": "Ticket description updated",
+				"content": "The description of “{{taskTitle}}” was updated"
+			},
+			"task_priority_changed": {
+				"title": "Ticket priority changed",
+				"content": "“{{taskTitle}}” priority changed from {{oldPriority}} to {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Ticket due date changed",
+				"content": "The due date of “{{taskTitle}}” was updated"
+			},
+			"task_flag_raised": {
+				"title": "Flag raised on ticket",
+				"content": "{{flagTypeName}} was raised on “{{taskTitle}}”"
+			},
+			"task_flag_resolved": {
+				"title": "Flag resolved on ticket",
+				"content": "{{flagTypeName}} was resolved on “{{taskTitle}}”"
+			},
+			"task_unassigned": {
+				"title": "Ticket unassigned",
+				"content": "“{{taskTitle}}” is no longer assigned"
+			},
+			"task_moved": {
+				"title": "Ticket moved",
+				"content": "“{{taskTitle}}” moved from {{fromBoardName}} to {{toBoardName}}"
+			},
+			"task_label_assigned": {
+				"title": "Label added to ticket",
+				"content": "A label was added to “{{taskTitle}}”"
+			},
+			"task_label_unassigned": {
+				"title": "Label removed from ticket",
+				"content": "A label was removed from “{{taskTitle}}”"
 			}
 		}
 	},
@@ -1913,7 +1953,8 @@
 			"noTasksMatch": "No scheduled tickets match \"{{query}}\"",
 			"taskHeader": "Ticket",
 			"unscheduledGroup": "Unscheduled",
-			"unscheduledHint": "No dates - click to schedule",
+			"unscheduledHint": "No dates - drag to schedule",
+			"dragToScheduleHint": "Drag across the timeline to schedule this ticket",
 			"updateDatesError": "Failed to update ticket dates",
 			"resizeStart": "Resize start date",
 			"resizeDue": "Resize due date",
@@ -2183,8 +2224,8 @@
 				"saveFailed": "Failed to update board"
 			},
 			"view": {
-				"table": "Table view",
-				"timeline": "Timeline view"
+				"table": "Table",
+				"timeline": "Timeline"
 			},
 			"timeline": {
 				"boardColumn": "Board",
@@ -2453,7 +2494,8 @@
 		"title": "Inbox",
 		"loading": "Loading your inbox…",
 		"empty": "No updates yet.",
-		"count": "{{count}} updates"
+		"count": "{{count}} updates",
+		"markAsRead": "Mark as read"
 	},
 	"trash": {
 		"title": "Recycle Bin",
