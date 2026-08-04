@@ -16,6 +16,7 @@ import {
   getNotificationTitle,
 } from "@/components/notification/notification-dropdown";
 import PageTitle from "@/components/page-title";
+import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -39,10 +40,19 @@ import {
 } from "@/lib/group-inbox-notifications";
 import type { Notification } from "@/types/notification";
 
+type InboxSearch = {
+  taskId?: string;
+  boardId?: string;
+};
+
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/inbox",
 )({
   component: InboxComponent,
+  validateSearch: (search: Record<string, unknown>): InboxSearch => ({
+    taskId: typeof search.taskId === "string" ? search.taskId : undefined,
+    boardId: typeof search.boardId === "string" ? search.boardId : undefined,
+  }),
 });
 
 function getEventDataRecord(
@@ -52,6 +62,19 @@ function getEventDataRecord(
     return null;
   }
   return eventData as Record<string, unknown>;
+}
+
+/** Flag name + colour for a raised-flag notification (resolved live by the API
+ *  from the task's active flag). Colour falls back to the destructive token. */
+function getFlagMeta(notification: Notification): {
+  name: string | null;
+  color: string | null;
+} {
+  const data = getEventDataRecord(notification.eventData);
+  return {
+    name: typeof data?.flagTypeName === "string" ? data.flagTypeName : null,
+    color: typeof data?.flagTypeColor === "string" ? data.flagTypeColor : null,
+  };
 }
 
 /**
@@ -66,6 +89,8 @@ function getEventDataRecord(
 function InboxComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { organizationId } = Route.useParams();
+  const { taskId: openTaskId, boardId: openBoardId } = Route.useSearch();
   const { data, isLoading } = useGetNotifications();
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [collapsedBoards, setCollapsedBoards] = useState<Set<string>>(
@@ -94,31 +119,22 @@ function InboxComponent() {
       }
 
       const eventData = getEventDataRecord(notification.eventData);
-      const organizationId =
-        typeof eventData?.organizationId === "string"
-          ? eventData.organizationId
-          : null;
       const boardId =
         typeof eventData?.boardId === "string" ? eventData.boardId : null;
       const taskId = notification.resourceId ?? null;
 
-      if (
-        notification.resourceType === "task" &&
-        organizationId &&
-        boardId &&
-        taskId
-      ) {
-        // Open the ticket DRAWER over the board (search param), not the
-        // full-page task route.
-        navigate({
-          to: "/dashboard/organization/$organizationId/board/$boardId/board",
-          params: { organizationId, boardId },
-          search: { taskId },
-        });
+      if (notification.resourceType === "task" && boardId && taskId) {
+        // Open the ticket drawer OVER the inbox — stay on this route, just set
+        // the search param the mounted TaskDetailsSheet reacts to.
+        navigate({ to: ".", search: { taskId, boardId } });
       }
     },
     [markAsRead, navigate],
   );
+
+  const handleCloseTaskSheet = useCallback(() => {
+    navigate({ to: ".", search: {} });
+  }, [navigate]);
 
   const handleClearAll = () => {
     clearAll();
@@ -291,6 +307,10 @@ function InboxComponent() {
                                 );
                                 const flagged =
                                   isFlaggedNotification(notification);
+                                const flagMeta = flagged
+                                  ? getFlagMeta(notification)
+                                  : null;
+                                const flagColor = flagMeta?.color ?? undefined;
                                 return (
                                   <li
                                     className={cn(
@@ -310,7 +330,12 @@ function InboxComponent() {
                                       {flagged ? (
                                         <Flag
                                           aria-hidden
-                                          className="mt-0.5 size-3.5 shrink-0 text-destructive"
+                                          className="mt-0.5 size-3.5 shrink-0"
+                                          style={
+                                            flagColor
+                                              ? { color: flagColor }
+                                              : undefined
+                                          }
                                         />
                                       ) : (
                                         <span
@@ -324,20 +349,42 @@ function InboxComponent() {
                                         />
                                       )}
                                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                        <span
-                                          className={cn(
-                                            "truncate",
-                                            flagged
-                                              ? "font-medium text-destructive"
-                                              : notification.isRead
-                                                ? "text-muted-foreground"
-                                                : "font-medium text-foreground",
-                                          )}
-                                        >
-                                          {getNotificationTitle(
-                                            notification,
-                                            t,
-                                          )}
+                                        <span className="flex min-w-0 items-center gap-1.5">
+                                          {/* Flag notifications lead with a
+                                              coloured chip naming the flag type
+                                              (Blocked, Need Help, …). */}
+                                          {flagged && flagMeta?.name ? (
+                                            <span
+                                              className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-[10px] uppercase tracking-wide"
+                                              style={{
+                                                color: flagColor ?? undefined,
+                                                backgroundColor: flagColor
+                                                  ? `${flagColor}22`
+                                                  : undefined,
+                                              }}
+                                            >
+                                              <Flag
+                                                className="size-2.5"
+                                                aria-hidden
+                                              />
+                                              {flagMeta.name}
+                                            </span>
+                                          ) : null}
+                                          <span
+                                            className={cn(
+                                              "truncate",
+                                              flagged
+                                                ? "font-medium text-foreground"
+                                                : notification.isRead
+                                                  ? "text-muted-foreground"
+                                                  : "font-medium text-foreground",
+                                            )}
+                                          >
+                                            {getNotificationTitle(
+                                              notification,
+                                              t,
+                                            )}
+                                          </span>
                                         </span>
                                         {content ? (
                                           <span className="truncate text-muted-foreground text-xs">
@@ -411,6 +458,16 @@ function InboxComponent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Ticket drawer opens over the inbox — never leaves this route. */}
+      {openTaskId && openBoardId ? (
+        <TaskDetailsSheet
+          taskId={openTaskId}
+          boardId={openBoardId}
+          organizationId={organizationId}
+          onClose={handleCloseTaskSheet}
+        />
+      ) : null}
     </OrganizationLayout>
   );
 }
