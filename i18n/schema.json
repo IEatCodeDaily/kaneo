@@ -10066,6 +10066,21 @@
 				},
 				"markAsRead": {
 					"type": "string"
+				},
+				"unreadCount_one": {
+					"type": "string"
+				},
+				"unreadCount_other": {
+					"type": "string"
+				},
+				"flaggedCount_one": {
+					"type": "string"
+				},
+				"flaggedCount_other": {
+					"type": "string"
+				},
+				"unflagHint": {
+					"type": "string"
 				}
 			},
 			"required": [

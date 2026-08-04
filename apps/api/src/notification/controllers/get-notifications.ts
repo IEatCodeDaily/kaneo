@@ -17,6 +17,8 @@ async function getNotifications(userId: string) {
       organizationId: organizationTable.id,
       taskStatus: taskTable.status,
       taskStatusName: columnTable.name,
+      taskStatusIcon: columnTable.icon,
+      taskStatusIsFinal: columnTable.isFinal,
     })
     .from(notificationTable)
     .leftJoin(
@@ -44,6 +46,8 @@ async function getNotifications(userId: string) {
       organizationId,
       taskStatus,
       taskStatusName,
+      taskStatusIcon,
+      taskStatusIsFinal,
     }) => {
       if (!boardId && !organizationId) {
         return notification;
@@ -70,6 +74,11 @@ async function getNotifications(userId: string) {
           // has no column (e.g. Backlog) so the UI always has something to show.
           taskStatusName:
             taskStatusName ?? taskStatus ?? existing.taskStatusName ?? null,
+          // Column icon + final flag let the inbox render the same status icon
+          // the board uses, instead of a text label.
+          taskStatusIcon: taskStatusIcon ?? existing.taskStatusIcon ?? null,
+          taskStatusIsFinal:
+            taskStatusIsFinal ?? existing.taskStatusIsFinal ?? false,
         },
       };
     },

@@ -3,6 +3,7 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
+  Flag,
   Inbox as InboxIcon,
   LayoutDashboard,
   Trash2,
@@ -30,8 +31,12 @@ import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-ma
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
 import { cn } from "@/lib/cn";
+import { getColumnIcon } from "@/lib/column";
 import { formatRelativeTime } from "@/lib/format";
-import { groupInboxNotifications } from "@/lib/group-inbox-notifications";
+import {
+  groupInboxNotifications,
+  isFlaggedNotification,
+} from "@/lib/group-inbox-notifications";
 import type { Notification } from "@/types/notification";
 
 export const Route = createFileRoute(
@@ -72,12 +77,19 @@ function InboxComponent() {
   const { mutate: clearAll } = useClearNotifications();
 
   const notifications: Notification[] = data ?? [];
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // Flagged items are standing alerts, not "unread": they are excluded from the
+  // unread count and get their own counter.
+  const unreadCount = notifications.filter(
+    (n) => !n.isRead && !isFlaggedNotification(n),
+  ).length;
+  const flaggedCount = notifications.filter(isFlaggedNotification).length;
   const boardGroups = groupInboxNotifications(notifications);
 
   const handleNotificationClick = useCallback(
     (notification: Notification) => {
-      if (!notification.isRead) {
+      // A raised flag can't be dismissed from the inbox; the user resolves it
+      // by opening the ticket and unflagging. Only non-flagged items mark read.
+      if (!notification.isRead && !isFlaggedNotification(notification)) {
         markAsRead(notification.id);
       }
 
@@ -96,9 +108,12 @@ function InboxComponent() {
         boardId &&
         taskId
       ) {
+        // Open the ticket DRAWER over the board (search param), not the
+        // full-page task route.
         navigate({
-          to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
-          params: { organizationId, boardId, taskId },
+          to: "/dashboard/organization/$organizationId/board/$boardId/board",
+          params: { organizationId, boardId },
+          search: { taskId },
         });
       }
     },
@@ -119,6 +134,17 @@ function InboxComponent() {
           <span className="text-muted-foreground text-xs">
             {t("inbox:count", { count: notifications.length })}
           </span>
+          {unreadCount > 0 ? (
+            <span className="rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
+              {t("inbox:unreadCount", { count: unreadCount })}
+            </span>
+          ) : null}
+          {flaggedCount > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 font-medium text-destructive text-xs">
+              <Flag className="size-3" aria-hidden />
+              {t("inbox:flaggedCount", { count: flaggedCount })}
+            </span>
+          ) : null}
           <div className="ml-auto flex items-center gap-2">
             {unreadCount > 0 ? (
               <Button
@@ -187,13 +213,23 @@ function InboxComponent() {
                       <span className="text-muted-foreground text-xs">
                         {board.tickets.length} tickets
                       </span>
-                      {board.unreadCount > 0 ? (
-                        <span className="ml-auto rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
-                          {board.unreadCount} unread
-                        </span>
-                      ) : (
-                        <span className="ml-auto" />
-                      )}
+                      <div className="ml-auto flex items-center gap-1.5">
+                        {board.flaggedCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 font-medium text-destructive text-xs">
+                            <Flag className="size-3" aria-hidden />
+                            {t("inbox:flaggedCount", {
+                              count: board.flaggedCount,
+                            })}
+                          </span>
+                        ) : null}
+                        {board.unreadCount > 0 ? (
+                          <span className="rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
+                            {t("inbox:unreadCount", {
+                              count: board.unreadCount,
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
                       <ChevronDown
                         className={cn(
                           "size-4 text-muted-foreground transition-transform",
@@ -210,13 +246,37 @@ function InboxComponent() {
                             className="border-border/60 border-b last:border-b-0"
                           >
                             <div className="flex items-center gap-2 bg-muted/20 px-3 py-2 text-sm">
+                              {/* Status icon (not text) — same glyph the board
+                                  uses, far faster to scan. Keyed on the status
+                                  slug; the column name is the tooltip. */}
+                              {ticket.statusSlug ? (
+                                <span
+                                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                                  title={
+                                    ticket.statusName ??
+                                    ticket.statusSlug ??
+                                    undefined
+                                  }
+                                >
+                                  {getColumnIcon(
+                                    ticket.statusSlug,
+                                    ticket.statusIsFinal,
+                                    ticket.statusIcon,
+                                  )}
+                                </span>
+                              ) : null}
                               <span className="font-medium">
                                 {ticket.number ? `#${ticket.number} · ` : ""}
                                 {ticket.title}
                               </span>
-                              {ticket.statusName ? (
-                                <span className="shrink-0 rounded-full border border-border/70 bg-background px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  {ticket.statusName}
+                              {ticket.flaggedCount > 0 ? (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 font-medium text-[10px] text-destructive"
+                                  title={t("inbox:flaggedCount", {
+                                    count: ticket.flaggedCount,
+                                  })}
+                                >
+                                  <Flag className="size-3" aria-hidden />
                                 </span>
                               ) : null}
                               <span className="ml-auto text-muted-foreground text-xs">
@@ -229,9 +289,15 @@ function InboxComponent() {
                                   notification,
                                   t,
                                 );
+                                const flagged =
+                                  isFlaggedNotification(notification);
                                 return (
                                   <li
-                                    className="flex items-center"
+                                    className={cn(
+                                      "flex items-center",
+                                      flagged &&
+                                        "bg-destructive/5 border-destructive/30 border-l-2",
+                                    )}
                                     key={notification.id}
                                   >
                                     <button
@@ -241,22 +307,31 @@ function InboxComponent() {
                                       }
                                       className="flex min-w-0 flex-1 items-start gap-2.5 px-3 py-2.5 text-left text-sm hover:bg-muted/40"
                                     >
-                                      <span
-                                        aria-hidden
-                                        className={cn(
-                                          "mt-1.5 size-1.5 shrink-0 rounded-full",
-                                          notification.isRead
-                                            ? "bg-transparent"
-                                            : "bg-info",
-                                        )}
-                                      />
+                                      {flagged ? (
+                                        <Flag
+                                          aria-hidden
+                                          className="mt-0.5 size-3.5 shrink-0 text-destructive"
+                                        />
+                                      ) : (
+                                        <span
+                                          aria-hidden
+                                          className={cn(
+                                            "mt-1.5 size-1.5 shrink-0 rounded-full",
+                                            notification.isRead
+                                              ? "bg-transparent"
+                                              : "bg-info",
+                                          )}
+                                        />
+                                      )}
                                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                                         <span
                                           className={cn(
                                             "truncate",
-                                            notification.isRead
-                                              ? "text-muted-foreground"
-                                              : "font-medium text-foreground",
+                                            flagged
+                                              ? "font-medium text-destructive"
+                                              : notification.isRead
+                                                ? "text-muted-foreground"
+                                                : "font-medium text-foreground",
                                           )}
                                         >
                                           {getNotificationTitle(
@@ -276,7 +351,14 @@ function InboxComponent() {
                                         )}
                                       </span>
                                     </button>
-                                    {notification.isRead ? null : (
+                                    {/* Flagged items have no mark-as-read: the
+                                        user must open the ticket and unflag. A
+                                        hint replaces the button. */}
+                                    {flagged ? (
+                                      <span className="mr-3 shrink-0 whitespace-nowrap text-[10px] text-destructive/80">
+                                        {t("inbox:unflagHint")}
+                                      </span>
+                                    ) : notification.isRead ? null : (
                                       <Button
                                         className="mr-3 shrink-0 gap-1.5 text-xs"
                                         onClick={() =>

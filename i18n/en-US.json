@@ -2496,7 +2496,12 @@
 		"loading": "Loading your inbox…",
 		"empty": "No updates yet.",
 		"count": "{{count}} updates",
-		"markAsRead": "Mark as read"
+		"markAsRead": "Mark as read",
+		"unreadCount_one": "{{count}} unread",
+		"unreadCount_other": "{{count}} unread",
+		"flaggedCount_one": "{{count}} flagged",
+		"flaggedCount_other": "{{count}} flagged",
+		"unflagHint": "Open to unflag"
 	},
 	"trash": {
 		"title": "Recycle Bin",

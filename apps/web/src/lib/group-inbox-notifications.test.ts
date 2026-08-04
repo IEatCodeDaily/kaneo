@@ -8,6 +8,7 @@ const notification = (
   taskId: string,
   isRead = false,
   taskStatusName?: string,
+  type = "task_updated",
 ) =>
   ({
     id,
@@ -15,7 +16,7 @@ const notification = (
     resourceType: "task",
     isRead,
     title: "Changed",
-    type: "task_updated",
+    type,
     createdAt: `2026-08-04T00:00:0${id}.000Z`,
     eventData: {
       boardId,
@@ -52,5 +53,18 @@ describe("groupInboxNotifications", () => {
 
     // Latest notification (id 2) reflects the current column.
     expect(groups[0].tickets[0].statusName).toBe("In Progress");
+  });
+
+  it("counts flags separately from unread and never as unread", () => {
+    const groups = groupInboxNotifications([
+      // one plain unread, one raised flag on the same ticket
+      notification("1", "a", "1", false),
+      notification("2", "a", "1", false, undefined, "task_flag_raised"),
+    ]);
+
+    // The flag is a standing alert: 1 unread, 1 flagged, not 2 unread.
+    expect(groups[0].unreadCount).toBe(1);
+    expect(groups[0].flaggedCount).toBe(1);
+    expect(groups[0].tickets[0].flaggedCount).toBe(1);
   });
 });
