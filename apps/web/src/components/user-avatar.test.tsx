@@ -55,7 +55,21 @@ vi.mock("@/store/board", () => ({
 }));
 
 vi.mock("@/components/organization-switcher", () => ({
-  OrganizationMenuSection: () => <div data-testid="organization-selector" />,
+  OrganizationMenuSection: ({
+    onCreateOrganization,
+  }: {
+    onCreateOrganization: () => void;
+  }) => (
+    <div data-testid="organization-selector">
+      <button type="button" onClick={onCreateOrganization}>
+        Add organization
+      </button>
+    </div>
+  ),
+}));
+vi.mock("@/components/shared/modals/create-organization-modal", () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="create-organization-modal" /> : null,
 }));
 vi.mock("@/components/theme-toggle-dropdown", () => ({
   ThemeToggleDropdown: () => <div data-testid="theme-toggle" />,
@@ -83,10 +97,10 @@ describe("UserAvatar menu (#96)", () => {
     expect(screen.getByText("ada@example.com")).toBeTruthy();
   });
 
-  it("contains the organization selector", () => {
+  it("keeps the create organization modal outside the closing profile popup", () => {
     openMenu();
-
-    expect(screen.getByTestId("organization-selector")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Add organization" }));
+    expect(screen.getByTestId("create-organization-modal")).toBeTruthy();
   });
 
   it("contains the theme toggle", () => {

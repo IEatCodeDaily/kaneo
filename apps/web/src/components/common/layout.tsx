@@ -3,7 +3,11 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileUserFab } from "@/components/common/mobile-user-fab";
 import { DemoAlert } from "@/components/demo-alert";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { isDemoMode } from "@/constants/urls";
 import { cn } from "@/lib/cn";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -31,6 +35,10 @@ function LayoutHeader({ children, className }: HeaderProps) {
         className,
       )}
     >
+      <SidebarTrigger
+        className="shrink-0 md:hidden"
+        data-testid="mobile-sidebar-toggle"
+      />
       {children}
     </header>
   );

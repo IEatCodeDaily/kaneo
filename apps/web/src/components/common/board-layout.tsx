@@ -150,7 +150,7 @@ export default function BoardLayout({
 
   return (
     <Layout>
-      <Layout.Header className="h-11 border-border/80 px-2">
+      <Layout.Header className="sticky top-0 z-10 h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="hidden min-w-0 items-center gap-1 md:flex">

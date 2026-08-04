@@ -34,5 +34,7 @@ describe("BoardViewTabs", () => {
     expect(timeline.closest("[data-slot=tabs-list]")?.className).toContain(
       "overflow-x-auto",
     );
+    expect(table).toHaveAccessibleName(/Table/);
+    expect(screen.getByText("Table")).toHaveClass("hidden", "2xl:inline");
   });
 });

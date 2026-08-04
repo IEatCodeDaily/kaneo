@@ -35,7 +35,7 @@ export function BoardViewTabs({
             className="h-6 gap-1.5 px-2 text-xs"
           >
             {view.icon}
-            {view.label}
+            <span className="hidden 2xl:inline">{view.label}</span>
           </TabsTrigger>
         ))}
       </TabsList>

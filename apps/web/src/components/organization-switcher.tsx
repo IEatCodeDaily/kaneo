@@ -17,7 +17,6 @@ import {
 } from "@/hooks/use-keyboard-shortcuts";
 import { authClient } from "@/lib/auth-client";
 import type { Organization } from "@/types/organization";
-import CreateOrganizationModal from "./shared/modals/create-organization-modal";
 
 /**
  * #96: the organization selector no longer lives at the top of the sidebar —
@@ -25,13 +24,16 @@ import CreateOrganizationModal from "./shared/modals/create-organization-modal";
  * a section inside the user avatar popup menu at the bottom of the sidebar,
  * which is what this component provides.
  */
-export function OrganizationMenuSection() {
+export function OrganizationMenuSection({
+  onCreateOrganization,
+}: {
+  onCreateOrganization: () => void;
+}) {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
   const { data: organizations } = useGetOrganizations();
   const navigate = useNavigate();
-  const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
-    React.useState(false);
+
   const [isSwitching, setIsSwitching] = React.useState(false);
 
   const handleOrganizationChange = React.useCallback(
@@ -63,7 +65,7 @@ export function OrganizationMenuSection() {
     sequentialShortcuts: {
       [shortcuts.organization.prefix]: {
         [shortcuts.organization.create]: () => {
-          setIsCreateOrganizationModalOpen(true);
+          onCreateOrganization();
         },
       },
     },
@@ -101,17 +103,12 @@ export function OrganizationMenuSection() {
         ))}
         <DropdownMenuItem
           className="h-7 text-sm"
-          onClick={() => setIsCreateOrganizationModalOpen(true)}
+          onClick={onCreateOrganization}
         >
           <span>{t("navigation:organizationSwitcher.addOrganization")}</span>
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-
-      <CreateOrganizationModal
-        onClose={() => setIsCreateOrganizationModalOpen(false)}
-        open={isCreateOrganizationModalOpen}
-      />
     </div>
   );
 }
