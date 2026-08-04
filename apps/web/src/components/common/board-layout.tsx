@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarRange,
   PanelRight,
+  Rows3,
   SquareKanban,
   SquircleDashed,
 } from "lucide-react";
@@ -37,6 +38,8 @@ type BoardLayoutProps = {
   children: ReactNode;
   showViewSwitcher?: boolean;
   activeView?: BoardView;
+  boardDisplayMode?: "board" | "list";
+  onBoardDisplayModeChange?: (mode: "board" | "list") => void;
 };
 
 export default function BoardLayout({
@@ -46,6 +49,8 @@ export default function BoardLayout({
   children,
   showViewSwitcher = true,
   activeView,
+  boardDisplayMode,
+  onBoardDisplayModeChange,
 }: BoardLayoutProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -181,8 +186,19 @@ export default function BoardLayout({
               <BoardViewTabs
                 aria-label="Board views"
                 className="hidden min-w-0 sm:flex"
-                value={resolvedView}
-                onValueChange={(value) => goToView(value as BoardView)}
+                value={
+                  resolvedView === "board"
+                    ? (boardDisplayMode ?? "board")
+                    : resolvedView
+                }
+                onValueChange={(value) => {
+                  if (value === "list") {
+                    onBoardDisplayModeChange?.("list");
+                    return;
+                  }
+                  if (value === "board") onBoardDisplayModeChange?.("board");
+                  goToView(value as BoardView);
+                }}
                 views={[
                   {
                     value: "backlog",
@@ -191,9 +207,18 @@ export default function BoardLayout({
                   },
                   {
                     value: "board",
-                    label: "Tasks",
+                    label: boardDisplayMode ? "Board" : "Tasks",
                     icon: <SquareKanban className="size-3.5" />,
                   },
+                  ...(boardDisplayMode && onBoardDisplayModeChange
+                    ? [
+                        {
+                          value: "list",
+                          label: "List",
+                          icon: <Rows3 className="size-3.5" />,
+                        },
+                      ]
+                    : []),
                   {
                     value: "gantt",
                     label: "Timeline",

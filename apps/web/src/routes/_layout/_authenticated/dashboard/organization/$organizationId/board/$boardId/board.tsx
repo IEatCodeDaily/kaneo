@@ -140,6 +140,8 @@ function RouteComponent() {
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
+      boardDisplayMode={viewMode}
+      onBoardDisplayModeChange={setViewMode}
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}

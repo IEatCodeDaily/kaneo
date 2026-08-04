@@ -38,7 +38,27 @@ vi.mock("@/components/common/layout", () => {
   return { default: Layout };
 });
 vi.mock("@/components/board/board-view-tabs", () => ({
-  BoardViewTabs: () => null,
+  BoardViewTabs: ({
+    value,
+    views,
+    onValueChange,
+  }: {
+    value: string;
+    views: { value: string; label: string }[];
+    onValueChange: (value: string) => void;
+  }) => (
+    <div data-testid="board-view-tabs" data-value={value}>
+      {views.map((view) => (
+        <button
+          key={view.value}
+          type="button"
+          onClick={() => onValueChange(view.value)}
+        >
+          {view.label}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 vi.mock("@/components/board/board-sync-indicator", () => ({
   default: () => null,
@@ -75,6 +95,25 @@ afterEach(() => {
 });
 
 describe("BoardLayout shared actions", () => {
+  it("offers Board and List as separate header views", () => {
+    const onModeChange = vi.fn();
+    render(
+      <BoardLayout
+        boardId="board-1"
+        organizationId="org-1"
+        activeView="board"
+        boardDisplayMode="board"
+        onBoardDisplayModeChange={onModeChange}
+      >
+        <div>Tasks</div>
+      </BoardLayout>,
+    );
+
+    expect(screen.getByText("Board")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("List"));
+    expect(onModeChange).toHaveBeenCalledWith("list");
+  });
+
   it("keeps Properties mounted and uses it as a pressed-state toggle", () => {
     render(
       <BoardLayout boardId="board-1" organizationId="org-1" activeView="board">
@@ -120,7 +159,7 @@ describe("BoardLayout shared actions", () => {
       </BoardLayout>,
     );
     expect(screen.getByTestId("board-properties-panel")).toBeInTheDocument();
-    expect(screen.getByText("Calendar")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveTextContent("Calendar");
   });
 
   it("preserves properties when route-owned layouts unmount and remount", () => {
