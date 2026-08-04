@@ -762,12 +762,12 @@ function CreateTaskModal({
 
   const selectedPriority = priorityOptions.find((p) => p.value === priority);
 
-  const statusLabel = useMemo(() => {
-    if (status) {
-      return t(`tasks:status.${status}`);
-    }
-    return t("tasks:status.in-progress");
-  }, [status, t]);
+  const selectedStatus = templateStatus ?? status;
+  const statusLabel =
+    templateColumns.find((column) => column.id === selectedStatus)?.name ??
+    (selectedStatus
+      ? t(`tasks:status.${selectedStatus}`)
+      : t("common:modals.createTask.status"));
   const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
   );
@@ -1243,10 +1243,32 @@ function CreateTaskModal({
               restructuring the popovers they own.
             */}
               <div className="relative z-10 flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted text-foreground rounded-md text-xs font-medium border border-border">
-                  <div className="w-1.5 h-1.5 bg-foreground rounded-full" />
-                  {statusLabel}
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground"
+                    >
+                      <span className="size-1.5 rounded-full bg-foreground" />
+                      {statusLabel}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-1" align="start">
+                    {templateColumns.map((column) => (
+                      <button
+                        key={column.id}
+                        type="button"
+                        className="flex h-8 w-full items-center gap-2 px-2 text-left text-sm hover:bg-accent/50"
+                        onClick={() => setTemplateStatus(column.id)}
+                      >
+                        <span>{column.name}</span>
+                        {selectedStatus === column.id && (
+                          <Check className="ml-auto size-4" />
+                        )}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
 
                 {/* Start and due date belong together, so they are grouped in
                   their own row instead of being separated by the other
