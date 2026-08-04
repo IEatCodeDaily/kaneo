@@ -2501,7 +2501,7 @@
 		"unreadCount_other": "{{count}} unread",
 		"flaggedCount_one": "{{count}} flagged",
 		"flaggedCount_other": "{{count}} flagged",
-		"unflagHint": "Open to unflag"
+		"unflagAction": "Unflag"
 	},
 	"trash": {
 		"title": "Recycle Bin",

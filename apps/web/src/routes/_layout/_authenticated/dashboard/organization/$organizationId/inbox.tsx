@@ -392,32 +392,48 @@ function InboxComponent() {
                                           </span>
                                         ) : null}
                                       </div>
-                                      <span className="shrink-0 text-muted-foreground text-xs">
+                                    </button>
+                                    {/* Timestamp + action live at the row level
+                                        (items-center) so they align with each
+                                        other, instead of top-aligning inside
+                                        the multi-line title button. */}
+                                    <span className="mr-3 flex shrink-0 items-center gap-3">
+                                      <span className="whitespace-nowrap text-muted-foreground text-xs">
                                         {formatRelativeTime(
                                           notification.createdAt,
                                         )}
                                       </span>
-                                    </button>
-                                    {/* Flagged items have no mark-as-read: the
-                                        user must open the ticket and unflag. A
-                                        hint replaces the button. */}
-                                    {flagged ? (
-                                      <span className="mr-3 shrink-0 whitespace-nowrap text-[10px] text-destructive/80">
-                                        {t("inbox:unflagHint")}
-                                      </span>
-                                    ) : notification.isRead ? null : (
-                                      <Button
-                                        className="mr-3 shrink-0 gap-1.5 text-xs"
-                                        onClick={() =>
-                                          markAsRead(notification.id)
-                                        }
-                                        size="sm"
-                                        variant="outline"
-                                      >
-                                        <Check className="size-3.5" />
-                                        {t("inbox:markAsRead")}
-                                      </Button>
-                                    )}
+                                      {/* Flagged items can't be marked read: the
+                                          button opens the ticket so the user can
+                                          unflag it. */}
+                                      {flagged ? (
+                                        <Button
+                                          className="shrink-0 gap-1.5 text-xs"
+                                          onClick={() =>
+                                            handleNotificationClick(
+                                              notification,
+                                            )
+                                          }
+                                          size="sm"
+                                          variant="outline"
+                                        >
+                                          <Flag className="size-3.5" />
+                                          {t("inbox:unflagAction")}
+                                        </Button>
+                                      ) : notification.isRead ? null : (
+                                        <Button
+                                          className="shrink-0 gap-1.5 text-xs"
+                                          onClick={() =>
+                                            markAsRead(notification.id)
+                                          }
+                                          size="sm"
+                                          variant="outline"
+                                        >
+                                          <Check className="size-3.5" />
+                                          {t("inbox:markAsRead")}
+                                        </Button>
+                                      )}
+                                    </span>
                                   </li>
                                 );
                               })}

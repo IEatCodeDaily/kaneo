@@ -10079,7 +10079,7 @@
 				"flaggedCount_other": {
 					"type": "string"
 				},
-				"unflagHint": {
+				"unflagAction": {
 					"type": "string"
 				}
 			},
