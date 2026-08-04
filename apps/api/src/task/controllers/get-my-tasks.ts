@@ -4,6 +4,7 @@ import {
   activityTable,
   boardTable,
   columnTable,
+  flagTypeTable,
   milestoneTable,
   organizationMemberTable,
   taskFlagTable,
@@ -151,6 +152,26 @@ async function getMyTasks({
         select 1 from ${taskFlagTable}
         where ${taskFlagTable.taskId} = ${taskTable.id}
           and ${taskFlagTable.resolvedAt} is null
+      )`,
+      // Newest active flag's name + colour, so the row can label and tint like
+      // the inbox. Correlated scalar subqueries keep one row per task.
+      flagName: sql<string | null>`(
+        select ${flagTypeTable.name}
+        from ${taskFlagTable}
+        join ${flagTypeTable} on ${flagTypeTable.id} = ${taskFlagTable.flagTypeId}
+        where ${taskFlagTable.taskId} = ${taskTable.id}
+          and ${taskFlagTable.resolvedAt} is null
+        order by ${taskFlagTable.createdAt} desc
+        limit 1
+      )`,
+      flagColor: sql<string | null>`(
+        select ${flagTypeTable.color}
+        from ${taskFlagTable}
+        join ${flagTypeTable} on ${flagTypeTable.id} = ${taskFlagTable.flagTypeId}
+        where ${taskFlagTable.taskId} = ${taskTable.id}
+          and ${taskFlagTable.resolvedAt} is null
+        order by ${taskFlagTable.createdAt} desc
+        limit 1
       )`,
     })
     .from(taskTable)

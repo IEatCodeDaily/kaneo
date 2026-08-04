@@ -313,11 +313,19 @@ function InboxComponent() {
                                 const flagColor = flagMeta?.color ?? undefined;
                                 return (
                                   <li
-                                    className={cn(
-                                      "flex items-center",
-                                      flagged &&
-                                        "bg-destructive/5 border-destructive/30 border-l-2",
-                                    )}
+                                    className="flex items-center border-l-2 border-l-transparent"
+                                    // Flagged rows tint + accent in the flag's
+                                    // own colour (not a fixed red), and the left
+                                    // accent is always a 2px slot so unflagged
+                                    // rows stay aligned — no lopsided outline.
+                                    style={
+                                      flagged && flagColor
+                                        ? {
+                                            backgroundColor: `${flagColor}14`,
+                                            borderLeftColor: flagColor,
+                                          }
+                                        : undefined
+                                    }
                                     key={notification.id}
                                   >
                                     <button

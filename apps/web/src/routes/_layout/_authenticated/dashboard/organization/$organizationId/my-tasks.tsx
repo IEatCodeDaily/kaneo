@@ -175,81 +175,106 @@ export function MyTasksComponent() {
                     </button>
                     {collapsed ? null : (
                       <ul className="flex flex-col divide-y divide-border/60 border-t border-border/80">
-                        {boardTasks.map((task) => (
-                          <li key={task.id}>
-                            <Link
-                              to="/dashboard/organization/$organizationId/board/$boardId/board"
-                              params={{ organizationId, boardId: task.boardId }}
-                              search={{ taskId: task.id }}
-                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/40"
-                            >
-                              {/* Board-scoped ids can be long (slug + number), so
-                              this column is fixed-width and clips instead of
-                              wrapping into several ragged lines. */}
-                              <span
-                                className="w-28 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
-                                title={
-                                  task.boardSlug
-                                    ? `${task.boardSlug}-${task.number}`
-                                    : `#${task.number}`
+                        {boardTasks.map((task) => {
+                          const flagColor = task.flagColor ?? undefined;
+                          const flagLabel =
+                            task.flagName ?? t("myTasks:flagged");
+                          return (
+                            <li key={task.id}>
+                              <Link
+                                to="/dashboard/organization/$organizationId/board/$boardId/board"
+                                params={{
+                                  organizationId,
+                                  boardId: task.boardId,
+                                }}
+                                search={{ taskId: task.id }}
+                                className="flex items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-sm hover:bg-muted/40"
+                                // Flagged rows are tinted in the flag's own
+                                // colour (faint bg + a matching left accent),
+                                // so the flag reads at a glance.
+                                style={
+                                  task.flagged && flagColor
+                                    ? {
+                                        backgroundColor: `${flagColor}14`,
+                                        borderLeftColor: flagColor,
+                                      }
+                                    : undefined
                                 }
                               >
-                                {task.boardSlug
-                                  ? `${task.boardSlug}-${task.number}`
-                                  : `#${task.number}`}
-                              </span>
-                              {/*
+                                {/* Board-scoped ids can be long (slug + number), so
+                              this column is fixed-width and clips instead of
+                              wrapping into several ragged lines. */}
+                                <span
+                                  className="w-28 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
+                                  title={
+                                    task.boardSlug
+                                      ? `${task.boardSlug}-${task.number}`
+                                      : `#${task.number}`
+                                  }
+                                >
+                                  {task.boardSlug
+                                    ? `${task.boardSlug}-${task.number}`
+                                    : `#${task.number}`}
+                                </span>
+                                {/*
                             #120: status icon sits to the LEFT of priority, so
                             the row reads id -> status -> priority -> title.
                             Muted text was "extra information"; the board's own
                             icon (colour + shape) is far faster to scan and the
                             name stays as the tooltip, not a second label.
                           */}
-                              {/*
+                                {/*
                             #120 (round 3): the slot is ALWAYS rendered, even
                             for planned/archived tickets that carry no column —
                             skipping it collapsed the row and broke the column
                             alignment against its neighbours.
                           */}
-                              <span
-                                className="inline-flex size-4 shrink-0 items-center justify-center"
-                                data-testid="my-task-status-icon"
-                                title={
-                                  task.columnName ?? task.status ?? undefined
-                                }
-                              >
-                                {getColumnIcon(
-                                  // Colour and default-icon lookup is keyed on the
-                                  // column SLUG ("to-do", "in-review"), which lives
-                                  // on `status`. `columnId` is a CUID and matches
-                                  // nothing, so passing it renders every status the
-                                  // same muted grey.
-                                  task.status ?? "",
-                                  task.isFinal ?? false,
-                                  task.columnIcon ?? null,
-                                )}
-                              </span>
-                              {getPriorityIcon(task.priority ?? "")}
-                              {/* Long titles clip rather than overflowing the row;
-                              the full value stays available as a tooltip. */}
-                              <span
-                                className="min-w-0 flex-1 truncate"
-                                title={task.title}
-                              >
-                                {task.title}
-                              </span>
-                              {task.flagged ? (
                                 <span
-                                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-[10px] text-destructive uppercase tracking-wide"
-                                  title={t("myTasks:flagged")}
+                                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                                  data-testid="my-task-status-icon"
+                                  title={
+                                    task.columnName ?? task.status ?? undefined
+                                  }
                                 >
-                                  <Flag className="size-3" aria-hidden />
-                                  {t("myTasks:flagged")}
+                                  {getColumnIcon(
+                                    // Colour and default-icon lookup is keyed on the
+                                    // column SLUG ("to-do", "in-review"), which lives
+                                    // on `status`. `columnId` is a CUID and matches
+                                    // nothing, so passing it renders every status the
+                                    // same muted grey.
+                                    task.status ?? "",
+                                    task.isFinal ?? false,
+                                    task.columnIcon ?? null,
+                                  )}
                                 </span>
-                              ) : null}
-                            </Link>
-                          </li>
-                        ))}
+                                {getPriorityIcon(task.priority ?? "")}
+                                {/* Long titles clip rather than overflowing the row;
+                              the full value stays available as a tooltip. */}
+                                <span
+                                  className="min-w-0 flex-1 truncate"
+                                  title={task.title}
+                                >
+                                  {task.title}
+                                </span>
+                                {task.flagged ? (
+                                  <span
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-[10px] uppercase tracking-wide"
+                                    title={flagLabel}
+                                    style={{
+                                      color: flagColor,
+                                      backgroundColor: flagColor
+                                        ? `${flagColor}22`
+                                        : undefined,
+                                    }}
+                                  >
+                                    <Flag className="size-3" aria-hidden />
+                                    {flagLabel}
+                                  </span>
+                                ) : null}
+                              </Link>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </section>
