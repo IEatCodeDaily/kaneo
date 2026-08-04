@@ -29,6 +29,12 @@ export function getOrganizationGithubInstallations(organizationId: string) {
   );
 }
 
+export function getOrganizationGithubInstallUrl(organizationId: string) {
+  return request<{ url: string }>(
+    `/organization-github/install-url?organizationId=${encodeURIComponent(organizationId)}`,
+  );
+}
+
 export function getAvailableOrganizationGithubInstallations(
   organizationId: string,
 ) {

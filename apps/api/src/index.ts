@@ -57,6 +57,7 @@ import oauth from "./oauth";
 import oidcTeamSync from "./oidc-team-sync";
 import organization from "./organization";
 import organizationGithub from "./organization-github";
+import { handleOrganizationGithubInstallCallback } from "./organization-github/install-callback";
 import { initializePlugins } from "./plugins";
 import repo from "./repo";
 import { getResourcePrivilege, privilegeAllows } from "./resource-access";
@@ -257,6 +258,10 @@ export function createApp() {
   // GitHub returns here as a browser navigation, before API auth middleware.
   // The handler revalidates the initiating Better Auth session and OAuth state.
   api.get("/github-delegation/callback", handleGitHubDelegationCallback);
+  api.get(
+    "/organization-github/install-callback",
+    handleOrganizationGithubInstallCallback,
+  );
 
   api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
