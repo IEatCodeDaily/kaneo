@@ -47,7 +47,7 @@ type TaskRowProps = {
   boardSlug: string;
 };
 
-const TaskRowContent = memo(function TaskRowContent({
+export const TaskRowContent = memo(function TaskRowContent({
   task,
   boardSlug,
   isDragging,
@@ -114,6 +114,7 @@ const TaskRowContent = memo(function TaskRowContent({
   const handleClick = (e: React.MouseEvent) => {
     if (!boardId || !task) return;
     if (e.defaultPrevented) return;
+    if ((e.target as Element).closest('[data-slot="checkbox"]')) return;
 
     if (isSelectMode) {
       e.preventDefault();
@@ -195,8 +196,6 @@ const TaskRowContent = memo(function TaskRowContent({
                 aria-label={`Select ${task.title}`}
                 checked={isTaskSelected}
                 onCheckedChange={() => toggleSelection(task.id)}
-                onClick={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
               />
             )}
             {showTaskNumbers && (
