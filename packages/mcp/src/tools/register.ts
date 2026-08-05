@@ -314,8 +314,7 @@ export function registerTools(
   server.registerTool(
     "move_task",
     {
-      description:
-        "Move a task to another board (and optional column status).",
+      description: "Move a task to another board (and optional column status).",
       inputSchema: z.object({
         taskId: nonEmptyString,
         destinationBoardId: nonEmptyString,
