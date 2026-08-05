@@ -138,7 +138,8 @@
 					"cocoa": "Kakao"
 				}
 			}
-		}
+		},
+		"unknown": "Bilinmiyor"
 	},
 	"auth": {
 		"signIn": {
@@ -1507,7 +1508,8 @@
 					},
 					"onlyYoutubeInline": "Yalnızca YouTube URL'leri gömülebilir. Bağlantı modunu kullanın."
 				}
-			}
+			},
+			"close": "Talep detaylarını kapat"
 		},
 		"entity": {
 			"task": "Talep"
@@ -1529,7 +1531,8 @@
 				"blocked_by": "engellenen",
 				"related": "ilişkilidir"
 			},
-			"otherBoard": "diğer pano"
+			"otherBoard": "diğer pano",
+			"blockedBy": "Engelleyen"
 		},
 		"subtasks": {
 			"title": "Alt talepler",
@@ -1725,7 +1728,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Kilometre taşı yok"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1743,7 +1747,8 @@
 			"error": "Talep silinemedi"
 		},
 		"archive": {
-			"success": "{{count}} talep arşivlendi"
+			"success": "{{count}} talep arşivlendi",
+			"error": "Talepler arşivlenemedi"
 		},
 		"listView": {
 			"addTask": "Talep ekle",
@@ -1794,7 +1799,8 @@
 		"actions": {
 			"archive": "Arşivle",
 			"markAsPlanned": "Planlandı olarak işaretle",
-			"delete": "Sil..."
+			"delete": "Sil...",
+			"unarchive": "Arşivden çıkar"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} seçili",
@@ -1840,12 +1846,21 @@
 		"groupBy": {
 			"dueDate": "Son tarih",
 			"noDueDate": "Son tarih yok",
-			"noLabel": "Etiket yok"
+			"noLabel": "Etiket yok",
+			"status": "Durum",
+			"milestone": "Kilometre taşı"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Son tarih"
 			}
+		},
+		"nest": {
+			"willNestUnder": "{{title}} altına yerleştir",
+			"releaseToNest": "Bu talebi {{title}} altına yerleştirmek için bırakın.",
+			"cannotNestHere": "Buraya yerleştirilemez",
+			"cannotNestReason": "Bu talep seçilen hedefin altına yerleştirilemez. Başka bir üst talep seçin.",
+			"unknownTarget": "bu talep"
 		}
 	},
 	"invitations": {

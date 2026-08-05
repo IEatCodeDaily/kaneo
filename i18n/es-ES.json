@@ -137,7 +137,8 @@
 					"cocoa": "Cacao"
 				}
 			}
-		}
+		},
+		"unknown": "Desconocido"
 	},
 	"auth": {
 		"signIn": {
@@ -1285,7 +1286,8 @@
 					},
 					"onlyYoutubeInline": "Sólo los enlaces de YouTube pueden ser incrustados. Añádelo como enlace."
 				}
-			}
+			},
+			"close": "Cerrar detalles del ticket"
 		},
 		"entity": {
 			"task": "Tarea"
@@ -1306,7 +1308,8 @@
 				"blocks": "bloquea",
 				"related": "relacionada con"
 			},
-			"otherBoard": "otro tablero"
+			"otherBoard": "otro tablero",
+			"blockedBy": "Bloqueado por"
 		},
 		"subtasks": {
 			"title": "Sub-tareas",
@@ -1491,7 +1494,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Sin hito"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1509,7 +1513,8 @@
 			"error": "Error al eliminar la tarea"
 		},
 		"archive": {
-			"success": "Se han archivado {{count}} tareas"
+			"success": "Se han archivado {{count}} tareas",
+			"error": "No se pudieron archivar los tickets"
 		},
 		"listView": {
 			"addTask": "Añadir tarea",
@@ -1560,7 +1565,8 @@
 		"actions": {
 			"archive": "Archivar",
 			"markAsPlanned": "Marcar como planeada",
-			"delete": "Eliminar..."
+			"delete": "Eliminar...",
+			"unarchive": "Desarchivar"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} seleccionadas",
@@ -1606,12 +1612,21 @@
 		"groupBy": {
 			"dueDate": "Fecha de vencimiento",
 			"noDueDate": "Sin fecha de vencimiento",
-			"noLabel": "Sin etiqueta"
+			"noLabel": "Sin etiqueta",
+			"status": "Estado",
+			"milestone": "Hito"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Fecha de vencimiento"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Anidar bajo {{title}}",
+			"releaseToNest": "Suelta para anidar este ticket bajo {{title}}.",
+			"cannotNestHere": "No se puede anidar aquí",
+			"cannotNestReason": "Este ticket no se puede anidar bajo ese destino. Elige otro ticket principal.",
+			"unknownTarget": "este ticket"
 		}
 	},
 	"invitations": {

@@ -138,7 +138,8 @@
 					"cocoa": "Cocoa"
 				}
 			}
-		}
+		},
+		"unknown": "Unknown"
 	},
 	"auth": {
 		"signIn": {
@@ -1741,7 +1742,8 @@
 					},
 					"onlyYoutubeInline": "Only YouTube URLs can be embedded. Use link mode instead."
 				}
-			}
+			},
+			"close": "Close ticket details"
 		},
 		"entity": {
 			"task": "Ticket"
@@ -1763,7 +1765,8 @@
 				"blocked_by": "blocked by",
 				"related": "relates to"
 			},
-			"otherBoard": "other board"
+			"otherBoard": "other board",
+			"blockedBy": "Blocked by"
 		},
 		"subtasks": {
 			"title": "Sub-tickets",
@@ -1805,7 +1808,8 @@
 		"popover": {
 			"assignee": {
 				"unassigned": "Unassigned",
-				"updateError": "Failed to update ticket assignee"
+				"updateError": "Failed to update ticket assignee",
+				"team": "Team"
 			},
 			"status": {
 				"updateError": "Failed to update ticket status"
@@ -1964,7 +1968,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "No milestone"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1982,7 +1987,8 @@
 			"error": "Failed to delete ticket"
 		},
 		"archive": {
-			"success": "Archived {{count}} tickets"
+			"success": "Archived {{count}} tickets",
+			"error": "Failed to archive tickets"
 		},
 		"listView": {
 			"addTask": "Add ticket",
@@ -2045,7 +2051,8 @@
 			"moveToBacklog": "Move to Backlog",
 			"unlink": "Unlink",
 			"unlinkSubtask": "Unlink sub-ticket",
-			"delete": "Delete..."
+			"delete": "Delete...",
+			"unarchive": "Unarchive"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} selected",
@@ -2093,7 +2100,9 @@
 			"byLabel": "Label",
 			"dueDate": "Due date",
 			"noDueDate": "No due date",
-			"noLabel": "No label"
+			"noLabel": "No label",
+			"status": "Status",
+			"milestone": "Milestone"
 		},
 		"preview": {
 			"assignee": "Assignee",
@@ -2178,6 +2187,16 @@
 		},
 		"boardSync": {
 			"syncedWith": "Synced with {{repo}}"
+		},
+		"nest": {
+			"hint": "Ctrl + drag to nest",
+			"tooltip": "Hold Ctrl (or Cmd) while dropping a ticket onto another to make it a sub-ticket.",
+			"error": "Failed to nest ticket",
+			"willNestUnder": "Nest under {{title}}",
+			"releaseToNest": "Release to nest this ticket under {{title}}.",
+			"cannotNestHere": "Can't nest here",
+			"cannotNestReason": "This ticket can't be nested under that target. Pick a different parent.",
+			"unknownTarget": "this ticket"
 		}
 	},
 	"invitations": {
@@ -2377,7 +2396,16 @@
 			"emailPlaceholder": "colleague@company.com",
 			"sendInvitation": "Send Invitation",
 			"success": "Invitation sent successfully",
-			"error": "Failed to invite team member"
+			"error": "Failed to invite team member",
+			"emailsLabel": "Emails",
+			"emailsPlaceholder": "alice@company.com\nbob@company.com",
+			"emailsHint": "Add several at once — separate with commas, semicolons or new lines.",
+			"invalidEmails": "Not valid email addresses: {{emails}}",
+			"emailRequired": "Enter at least one email address.",
+			"successCount": "{{count}} invitation sent",
+			"successCount_plural": "{{count}} invitations sent",
+			"failedCount": "{{count}} invitation could not be sent",
+			"failedCount_plural": "{{count}} invitations could not be sent"
 		},
 		"membersTable": {
 			"emptyTitle": "No team members yet",

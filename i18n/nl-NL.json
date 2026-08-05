@@ -137,7 +137,8 @@
 					"cocoa": "Cacao"
 				}
 			}
-		}
+		},
+		"unknown": "Onbekend"
 	},
 	"auth": {
 		"signIn": {
@@ -1286,7 +1287,8 @@
 					},
 					"onlyYoutubeInline": "Alleen YouTube URL's kunnen worden ingesloten. Gebruik link-modus."
 				}
-			}
+			},
+			"close": "Ticketdetails sluiten"
 		},
 		"entity": {
 			"task": "Taak"
@@ -1307,7 +1309,8 @@
 				"blocks": "blokkeert",
 				"related": "is gerelateerd aan"
 			},
-			"otherBoard": "ander bord"
+			"otherBoard": "ander bord",
+			"blockedBy": "Geblokkeerd door"
 		},
 		"subtasks": {
 			"title": "Subtaken",
@@ -1492,7 +1495,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Geen mijlpaal"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1510,7 +1514,8 @@
 			"error": "Verwijderen taak mislukt"
 		},
 		"archive": {
-			"success": "{{count}} taken gearchiveerd"
+			"success": "{{count}} taken gearchiveerd",
+			"error": "Tickets archiveren mislukt"
 		},
 		"listView": {
 			"addTask": "Taak toevoegen",
@@ -1561,7 +1566,8 @@
 		"actions": {
 			"archive": "Archiveren",
 			"markAsPlanned": "Markeren als gepland",
-			"delete": "Verwijderen..."
+			"delete": "Verwijderen...",
+			"unarchive": "Uit archief halen"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} geselecteerd",
@@ -1607,12 +1613,21 @@
 		"groupBy": {
 			"dueDate": "Vervaldatum",
 			"noDueDate": "Geen vervaldatum",
-			"noLabel": "Geen label"
+			"noLabel": "Geen label",
+			"status": "Status",
+			"milestone": "Mijlpaal"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Vervaldatum"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Nesten onder {{title}}",
+			"releaseToNest": "Laat los om dit ticket onder {{title}} te nesten.",
+			"cannotNestHere": "Hier niet mogelijk",
+			"cannotNestReason": "Dit ticket kan niet onder dat doel worden genest. Kies een ander bovenliggend ticket.",
+			"unknownTarget": "dit ticket"
 		}
 	},
 	"invitations": {

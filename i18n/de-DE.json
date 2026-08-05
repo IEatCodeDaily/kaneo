@@ -138,7 +138,8 @@
 					"cocoa": "Kakao"
 				}
 			}
-		}
+		},
+		"unknown": "Unbekannt"
 	},
 	"auth": {
 		"signIn": {
@@ -1542,7 +1543,8 @@
 					},
 					"onlyYoutubeInline": "Nur YouTube-URLs können eingebettet werden. Verwende stattdessen den Link-Modus."
 				}
-			}
+			},
+			"close": "Ticketdetails schließen"
 		},
 		"entity": {
 			"task": "Aufgabe"
@@ -1563,7 +1565,8 @@
 				"blocks": "blockiert",
 				"related": "steht in Beziehung zu"
 			},
-			"otherBoard": "anderes Board"
+			"otherBoard": "anderes Board",
+			"blockedBy": "Blockiert von"
 		},
 		"subtasks": {
 			"title": "Teilaufgaben",
@@ -1759,7 +1762,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Kein Meilenstein"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1777,7 +1781,8 @@
 			"error": "Aufgabe konnte nicht gelöscht werden"
 		},
 		"archive": {
-			"success": "{{count}} Aufgaben archiviert"
+			"success": "{{count}} Aufgaben archiviert",
+			"error": "Tickets konnten nicht archiviert werden"
 		},
 		"listView": {
 			"addTask": "Aufgabe hinzufügen",
@@ -1828,7 +1833,8 @@
 		"actions": {
 			"archive": "Archivieren",
 			"markAsPlanned": "Als geplant markieren",
-			"delete": "Löschen..."
+			"delete": "Löschen...",
+			"unarchive": "Archivierung aufheben"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} ausgewählt",
@@ -1874,12 +1880,21 @@
 		"groupBy": {
 			"dueDate": "Fälligkeitsdatum",
 			"noDueDate": "Kein Fälligkeitsdatum",
-			"noLabel": "Kein Label"
+			"noLabel": "Kein Label",
+			"status": "Status",
+			"milestone": "Meilenstein"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Fälligkeitsdatum"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Unter {{title}} einordnen",
+			"releaseToNest": "Loslassen, um dieses Ticket unter {{title}} einzuordnen.",
+			"cannotNestHere": "Hier nicht möglich",
+			"cannotNestReason": "Dieses Ticket kann nicht unter diesem Ziel eingeordnet werden. Wähle ein anderes übergeordnetes Ticket.",
+			"unknownTarget": "dieses Ticket"
 		}
 	},
 	"invitations": {

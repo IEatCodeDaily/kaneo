@@ -138,7 +138,8 @@
 					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Неизвестно"
 	},
 	"auth": {
 		"signIn": {
@@ -1503,7 +1504,8 @@
 					},
 					"onlyYoutubeInline": "Можно встраивать только URL YouTube. Используйте режим ссылки."
 				}
-			}
+			},
+			"close": "Закрыть детали тикета"
 		},
 		"entity": {
 			"task": "Задача"
@@ -1524,7 +1526,8 @@
 				"blocks": "блокирует",
 				"related": "связана с"
 			},
-			"otherBoard": "другая доска"
+			"otherBoard": "другая доска",
+			"blockedBy": "Заблокирован"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1726,7 +1729,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Без вехи"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1747,7 +1751,8 @@
 			"success_one": "{{count}} задача архивирована",
 			"success_few": "{{count}} задачи архивированы",
 			"success_many": "{{count}} задач архивировано",
-			"success_other": "{{count}} задач архивировано"
+			"success_other": "{{count}} задач архивировано",
+			"error": "Не удалось архивировать тикеты"
 		},
 		"listView": {
 			"addTask": "Добавить задачу",
@@ -1800,7 +1805,8 @@
 		"actions": {
 			"archive": "Архивировать",
 			"markAsPlanned": "Отметить как запланированную",
-			"delete": "Удалить..."
+			"delete": "Удалить...",
+			"unarchive": "Разархивировать"
 		},
 		"bulk": {
 			"selectedCount_one": "{{count}} выбрана",
@@ -1873,12 +1879,21 @@
 		"groupBy": {
 			"dueDate": "Срок выполнения",
 			"noDueDate": "Без срока выполнения",
-			"noLabel": "Без метки"
+			"noLabel": "Без метки",
+			"status": "Статус",
+			"milestone": "Веха"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Срок"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Вложить в {{title}}",
+			"releaseToNest": "Отпустите, чтобы вложить этот тикет в {{title}}.",
+			"cannotNestHere": "Здесь вложить нельзя",
+			"cannotNestReason": "Этот тикет нельзя вложить в выбранную цель. Выберите другой родительский тикет.",
+			"unknownTarget": "этот тикет"
 		}
 	},
 	"invitations": {

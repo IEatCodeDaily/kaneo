@@ -138,7 +138,8 @@
 					"cocoa": "코코아"
 				}
 			}
-		}
+		},
+		"unknown": "알 수 없음"
 	},
 	"auth": {
 		"signIn": {
@@ -1502,7 +1503,8 @@
 					},
 					"onlyYoutubeInline": "YouTube URL만 임베드할 수 있습니다. 대신 링크 모드를 사용하세요."
 				}
-			}
+			},
+			"close": "티켓 상세 닫기"
 		},
 		"entity": {
 			"task": "작업"
@@ -1523,7 +1525,8 @@
 				"blocks": "차단함",
 				"related": "관련됨"
 			},
-			"otherBoard": "다른 보드"
+			"otherBoard": "다른 보드",
+			"blockedBy": "차단됨"
 		},
 		"subtasks": {
 			"title": "하위 작업",
@@ -1719,7 +1722,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "마일스톤 없음"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1737,7 +1741,8 @@
 			"error": "작업 삭제에 실패했습니다"
 		},
 		"archive": {
-			"success": "작업 {{count}}개를 보관했습니다"
+			"success": "작업 {{count}}개를 보관했습니다",
+			"error": "티켓 보관에 실패했습니다"
 		},
 		"listView": {
 			"addTask": "작업 추가",
@@ -1788,7 +1793,8 @@
 		"actions": {
 			"archive": "보관",
 			"markAsPlanned": "계획됨으로 표시",
-			"delete": "삭제..."
+			"delete": "삭제...",
+			"unarchive": "보관 취소"
 		},
 		"bulk": {
 			"selectedCount": "{{count}}개 선택됨",
@@ -1834,12 +1840,21 @@
 		"groupBy": {
 			"dueDate": "마감일",
 			"noDueDate": "마감일 없음",
-			"noLabel": "라벨 없음"
+			"noLabel": "라벨 없음",
+			"status": "상태",
+			"milestone": "마일스톤"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "마감일"
 			}
+		},
+		"nest": {
+			"willNestUnder": "{{title}} 하위로 이동",
+			"releaseToNest": "놓으면 이 티켓이 {{title}}의 하위 티켓이 됩니다.",
+			"cannotNestHere": "여기에는 넣을 수 없음",
+			"cannotNestReason": "이 티켓은 해당 대상의 하위로 넣을 수 없습니다. 다른 상위 티켓을 선택하세요.",
+			"unknownTarget": "이 티켓"
 		}
 	},
 	"invitations": {

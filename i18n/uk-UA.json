@@ -138,7 +138,8 @@
 					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Невідомо"
 	},
 	"auth": {
 		"signIn": {
@@ -1497,7 +1498,8 @@
 					},
 					"onlyYoutubeInline": "Можна вбудовувати лише URL-адреси YouTube. Натомість використовуйте режим посилання."
 				}
-			}
+			},
+			"close": "Закрити деталі тікета"
 		},
 		"entity": {
 			"task": "Завдання"
@@ -1518,7 +1520,8 @@
 				"blocks": "блокує",
 				"related": "пов'язано з"
 			},
-			"otherBoard": "інша дошка"
+			"otherBoard": "інша дошка",
+			"blockedBy": "Заблоковано"
 		},
 		"subtasks": {
 			"title": "Підзавдання",
@@ -1714,7 +1717,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Без етапу"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1732,7 +1736,8 @@
 			"error": "Не вдалося видалити завдання"
 		},
 		"archive": {
-			"success": "Архівовано {{count}} завдань"
+			"success": "Архівовано {{count}} завдань",
+			"error": "Не вдалося архівувати тікети"
 		},
 		"listView": {
 			"addTask": "Додати завдання",
@@ -1785,7 +1790,8 @@
 		"actions": {
 			"archive": "Архівувати",
 			"markAsPlanned": "Позначити як заплановане",
-			"delete": "Видалити..."
+			"delete": "Видалити...",
+			"unarchive": "Розархівувати"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} обрано",
@@ -1831,12 +1837,21 @@
 		"groupBy": {
 			"dueDate": "Термін виконання",
 			"noDueDate": "Без терміну виконання",
-			"noLabel": "Без мітки"
+			"noLabel": "Без мітки",
+			"status": "Статус",
+			"milestone": "Етап"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Кінцевий термін"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Вкласти в {{title}}",
+			"releaseToNest": "Відпустіть, щоб вкласти цей тікет у {{title}}.",
+			"cannotNestHere": "Тут вкласти не можна",
+			"cannotNestReason": "Цей тікет не можна вкласти в цю ціль. Виберіть інший батьківський тікет.",
+			"unknownTarget": "цей тікет"
 		}
 	},
 	"invitations": {

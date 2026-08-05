@@ -138,7 +138,8 @@
 					"cocoa": "Kakao"
 				}
 			}
-		}
+		},
+		"unknown": "Tidak diketahui"
 	},
 	"auth": {
 		"signIn": {
@@ -1645,7 +1646,8 @@
 					},
 					"onlyYoutubeInline": "Hanya URL YouTube yang dapat disematkan. Gunakan mode tautan."
 				}
-			}
+			},
+			"close": "Tutup detail tiket"
 		},
 		"entity": {
 			"task": "Tugas"
@@ -1667,7 +1669,8 @@
 				"blocked_by": "diblokir oleh",
 				"related": "terkait dengan"
 			},
-			"otherBoard": "papan lain"
+			"otherBoard": "papan lain",
+			"blockedBy": "Diblokir oleh"
 		},
 		"subtasks": {
 			"title": "Subtugas",
@@ -1863,7 +1866,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Tanpa milestone"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1881,7 +1885,8 @@
 			"error": "Gagal menghapus tugas"
 		},
 		"archive": {
-			"success": "{{count}} tugas diarsipkan"
+			"success": "{{count}} tugas diarsipkan",
+			"error": "Gagal mengarsipkan tiket"
 		},
 		"listView": {
 			"addTask": "Tambah tugas",
@@ -1932,7 +1937,8 @@
 		"actions": {
 			"archive": "Arsipkan",
 			"markAsPlanned": "Tandai sebagai direncanakan",
-			"delete": "Hapus..."
+			"delete": "Hapus...",
+			"unarchive": "Keluarkan dari arsip"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} dipilih",
@@ -1978,12 +1984,21 @@
 		"groupBy": {
 			"dueDate": "Tanggal jatuh tempo",
 			"noDueDate": "Tanpa tanggal jatuh tempo",
-			"noLabel": "Tanpa label"
+			"noLabel": "Tanpa label",
+			"status": "Status",
+			"milestone": "Milestone"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Tanggal jatuh tempo"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Jadikan sub-tiket dari {{title}}",
+			"releaseToNest": "Lepaskan untuk menjadikan tiket ini sub-tiket dari {{title}}.",
+			"cannotNestHere": "Tidak bisa disarangkan di sini",
+			"cannotNestReason": "Tiket ini tidak bisa dijadikan sub-tiket dari target tersebut. Pilih induk lain.",
+			"unknownTarget": "tiket ini"
 		}
 	},
 	"invitations": {

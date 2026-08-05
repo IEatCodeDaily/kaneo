@@ -138,7 +138,8 @@
 					"cocoa": "Cacao"
 				}
 			}
-		}
+		},
+		"unknown": "Inconnu"
 	},
 	"auth": {
 		"signIn": {
@@ -1508,7 +1509,8 @@
 					},
 					"onlyYoutubeInline": "Seuls les liens YouTube peuvent être intégrés. Utilisez le mode lien à la place."
 				}
-			}
+			},
+			"close": "Fermer les détails du ticket"
 		},
 		"entity": {
 			"task": "Tâche"
@@ -1530,7 +1532,8 @@
 				"blocked_by": "bloqué par",
 				"related": "relatif à"
 			},
-			"otherBoard": "autre tableau"
+			"otherBoard": "autre tableau",
+			"blockedBy": "Bloqué par"
 		},
 		"subtasks": {
 			"title": "Sous-tâches",
@@ -1726,7 +1729,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Aucun jalon"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1744,7 +1748,8 @@
 			"error": "Échec de la suppression de la tâche"
 		},
 		"archive": {
-			"success": "{{count}} tâches archivées"
+			"success": "{{count}} tâches archivées",
+			"error": "Échec de l'archivage des tickets"
 		},
 		"listView": {
 			"addTask": "Ajouter une tâche",
@@ -1795,7 +1800,8 @@
 		"actions": {
 			"archive": "Archiver",
 			"markAsPlanned": "Marquer comme planifié",
-			"delete": "Supprimer..."
+			"delete": "Supprimer...",
+			"unarchive": "Désarchiver"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} sélectionné",
@@ -1841,12 +1847,21 @@
 		"groupBy": {
 			"dueDate": "Date d’échéance",
 			"noDueDate": "Aucune date d’échéance",
-			"noLabel": "Aucun label"
+			"noLabel": "Aucun label",
+			"status": "Statut",
+			"milestone": "Jalon"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Date d’échéance"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Imbriquer sous {{title}}",
+			"releaseToNest": "Relâchez pour imbriquer ce ticket sous {{title}}.",
+			"cannotNestHere": "Imbrication impossible ici",
+			"cannotNestReason": "Ce ticket ne peut pas être imbriqué sous cette cible. Choisissez un autre parent.",
+			"unknownTarget": "ce ticket"
 		}
 	},
 	"invitations": {

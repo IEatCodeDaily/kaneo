@@ -138,7 +138,8 @@
 					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Непознато"
 	},
 	"auth": {
 		"signIn": {
@@ -1500,7 +1501,8 @@
 					},
 					"onlyYoutubeInline": "Само YouTube URL може да се вградат. Користи режим на линк наместо тоа."
 				}
-			}
+			},
+			"close": "Затвори детали за тикетот"
 		},
 		"entity": {
 			"task": "Задача"
@@ -1521,7 +1523,8 @@
 				"blocks": "блокира",
 				"related": "е поврзана со"
 			},
-			"otherBoard": "друга табла"
+			"otherBoard": "друга табла",
+			"blockedBy": "Блокиран од"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1717,7 +1720,8 @@
 				"day": "Day",
 				"week": "Week",
 				"month": "Month"
-			}
+			},
+			"noMilestone": "Без пресвртница"
 		},
 		"calendar": {
 			"pageTitle": "{{name}} — Calendar",
@@ -1735,7 +1739,8 @@
 			"error": "Неуспешно бришење на задача"
 		},
 		"archive": {
-			"success": "Архивирани {{count}} задачи"
+			"success": "Архивирани {{count}} задачи",
+			"error": "Неуспешно архивирање на тикетите"
 		},
 		"listView": {
 			"addTask": "Додади задача",
@@ -1786,7 +1791,8 @@
 		"actions": {
 			"archive": "Архивирај",
 			"markAsPlanned": "Означи како планирана",
-			"delete": "Избриши..."
+			"delete": "Избриши...",
+			"unarchive": "Врати од архива"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} избрани",
@@ -1832,12 +1838,21 @@
 		"groupBy": {
 			"dueDate": "Краен рок",
 			"noDueDate": "Без краен рок",
-			"noLabel": "Без етикета"
+			"noLabel": "Без етикета",
+			"status": "Статус",
+			"milestone": "Пресвртница"
 		},
 		"milestone": {
 			"manage": {
 				"dueDate": "Краен рок"
 			}
+		},
+		"nest": {
+			"willNestUnder": "Вгнезди под {{title}}",
+			"releaseToNest": "Отпуштете за да го вгнездите овој тикет под {{title}}.",
+			"cannotNestHere": "Не може да се вгнезди тука",
+			"cannotNestReason": "Овој тикет не може да се вгнезди под таа цел. Изберете друг родител.",
+			"unknownTarget": "овој тикет"
 		}
 	},
 	"invitations": {
