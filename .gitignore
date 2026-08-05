@@ -28,6 +28,10 @@ coverage
 out/
 build
 dist
+# Timestamped build backups from deploy/rollback runs (dist.rollback-*, dist.prev-*).
+# `dist` alone does not match these, so they showed up as untracked noise and were
+# scanned by biome/tsc.
+dist.*
 .source
 
 # Debug

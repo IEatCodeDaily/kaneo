@@ -66,7 +66,8 @@ OrganizationInvitationEmail.PreviewProps = {
   invitationLink: "https://kaneo.app/invite/abc123",
   to: "invitee@example.com",
   copy: {
-    subject: "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
+    subject:
+      "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
     preview: "You're invited to {{organizationName}} on Kaneo",
     title: "Join {{organizationName}}",
     subtitle:

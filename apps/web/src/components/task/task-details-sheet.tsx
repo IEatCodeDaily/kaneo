@@ -164,7 +164,7 @@ export default function TaskDetailsSheet({
         // user has dragged; until hydration finishes we keep the CSS default.
         style={width ? { width: `${width}px`, maxWidth: "100vw" } : undefined}
       >
-        {/** biome-ignore lint/a11y/noStaticElementInteractions: resize grip is a pointer affordance mirrored by the width controls */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: resize grip is a pointer affordance mirrored by the width controls */}
         <div
           data-testid="task-drawer-resize-handle"
           onPointerDown={startResize}

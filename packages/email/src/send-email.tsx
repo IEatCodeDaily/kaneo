@@ -6,14 +6,14 @@ import MagicLinkEmail from "./templates/magic-link";
 import NotificationEmail, {
   type NotificationEmailProps,
 } from "./templates/notification";
+import OrganizationInvitationEmail, {
+  type OrganizationInvitationEmailProps,
+} from "./templates/organization-invitation";
 import type { OtpEmailProps } from "./templates/otp";
 import OtpEmail from "./templates/otp";
 import PasswordResetEmail, {
   type PasswordResetEmailProps,
 } from "./templates/password-reset";
-import OrganizationInvitationEmail, {
-  type OrganizationInvitationEmailProps,
-} from "./templates/organization-invitation";
 
 config();
 

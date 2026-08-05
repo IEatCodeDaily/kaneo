@@ -13,13 +13,10 @@ vi.mock("../../../apps/api/src/database", () => ({
   },
 }));
 
-vi.mock(
-  "../../../apps/api/src/utils/require-organization-permission",
-  () => ({
-    hasOrganizationPermission: (...args: unknown[]) =>
-      mockHasOrganizationPermission(...args),
-  }),
-);
+vi.mock("../../../apps/api/src/utils/require-organization-permission", () => ({
+  hasOrganizationPermission: (...args: unknown[]) =>
+    mockHasOrganizationPermission(...args),
+}));
 
 import {
   assertBoardPermission,
@@ -38,7 +35,8 @@ function selectReturning(rows: unknown[]) {
     where: () => builder,
     limit: () => Promise.resolve(rows),
     // biome-ignore lint/suspicious/noThenProperty: drizzle query builders are thenable; the mock must mimic that.
-    then: (resolve: (value: unknown) => unknown) => Promise.resolve(rows).then(resolve),
+    then: (resolve: (value: unknown) => unknown) =>
+      Promise.resolve(rows).then(resolve),
   };
   return builder;
 }

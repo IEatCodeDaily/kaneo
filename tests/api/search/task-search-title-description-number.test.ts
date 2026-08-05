@@ -51,6 +51,7 @@ vi.mock("../../../apps/api/src/database", async () => {
       limit: () => Promise.resolve(rows),
       orderBy: () => self,
       leftJoin: () => self,
+      // biome-ignore lint/suspicious/noThenProperty: deliberately thenable — this stubs Drizzle's awaitable query builder
       then: (
         onFulfilled?: (value: unknown) => unknown,
         onRejected?: (reason: unknown) => unknown,

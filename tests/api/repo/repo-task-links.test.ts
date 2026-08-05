@@ -34,6 +34,7 @@ function makeChain(rows: Row[]) {
     chain[method] = () => chain;
   }
   // Awaiting the builder resolves to the rows.
+  // biome-ignore lint/suspicious/noThenProperty: deliberately thenable — this stubs Drizzle's awaitable query builder
   chain.then = (resolve: (value: Row[]) => unknown) => resolve(rows);
   return chain;
 }

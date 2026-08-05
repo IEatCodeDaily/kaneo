@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
 import { createPortal } from "react-dom";
+import { afterEach, describe, expect, it } from "vitest";
 
 /**
  * #266 REGRESSION TEST — the `/` command menu clipped inside the create-ticket

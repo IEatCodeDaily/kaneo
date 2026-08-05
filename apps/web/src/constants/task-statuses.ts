@@ -125,7 +125,9 @@ export function applyTaskStatusOrder<T extends { slug: string }>(
 ): T[] {
   if (!configuredOrder?.length) return [...definitions];
 
-  const bySlug = new Map(definitions.map((definition) => [definition.slug, definition]));
+  const bySlug = new Map(
+    definitions.map((definition) => [definition.slug, definition]),
+  );
   const ordered: T[] = [];
 
   for (const slug of configuredOrder) {
