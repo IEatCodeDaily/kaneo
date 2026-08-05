@@ -179,8 +179,9 @@ export function createApp() {
       return err.getResponse();
     }
 
+    console.error("[unhandled error]", err);
     Sentry.captureException(err);
-    return c.json({ message: "Internal Server Error" }, 500);
+    return c.json({ message: "Internal Server Error", error: err instanceof Error ? err.message : String(err) }, 500);
   });
   const nodeWs = createNodeWebSocket({ app });
   const { upgradeWebSocket, injectWebSocket } = nodeWs;
