@@ -5,6 +5,7 @@ import { GitMerge, GitPullRequest } from "lucide-react";
 import { type CSSProperties, memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
+import TaskAssigneeAvatar from "@/components/task/task-assignee-avatar";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import {
   AlertDialog,
@@ -15,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -25,9 +25,7 @@ import {
 } from "@/components/ui/preview-card";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
-import { getInitials } from "@/lib/get-initials";
 import {
   intentPrefetchHandlers,
   prefetchTaskNavigation,
@@ -46,11 +44,14 @@ import { ContextMenu, ContextMenuTrigger } from "../ui/context-menu";
 type TaskRowProps = {
   task: Task;
   boardSlug: string;
+  /** Status is structural information in list view and is never hideable. */
+  statusBadge?: React.ReactNode;
 };
 
 export const TaskRowContent = memo(function TaskRowContent({
   task,
   boardSlug,
+  statusBadge,
   isDragging,
 }: TaskRowProps & { isDragging: boolean }) {
   const { t } = useTranslation();
@@ -204,6 +205,11 @@ export const TaskRowContent = memo(function TaskRowContent({
                 onCheckedChange={() => toggleSelection(task.id)}
               />
             )}
+            {/* Status leads the row, immediately left of the ticket ID: it is
+                structural metadata, so it belongs with priority and the ID
+                rather than trailing after the title with labels and PRs, where
+                its position drifted with title length. */}
+            {statusBadge}
             {showTaskNumbers && (
               <div className="text-xs font-mono text-muted-foreground flex-shrink-0">
                 {boardSlug}-{task.number}
@@ -355,31 +361,7 @@ export const TaskRowContent = memo(function TaskRowContent({
 
             {showAssignees && (
               <div className="flex-shrink-0">
-                {task.userId ? (
-                  <Avatar
-                    className={cn(
-                      "h-6 w-6",
-                      getAvatarTone(task.userId, task.assigneeId),
-                    )}
-                  >
-                    <AvatarImage
-                      src={task.assigneeImage ?? ""}
-                      alt={task.assigneeName ?? ""}
-                    />
-                    <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
-                      {getInitials(task.assigneeName)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <div
-                    className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                    title={t("tasks:assignee.unassigned")}
-                  >
-                    <span className="text-[10px] font-medium text-muted-foreground">
-                      ?
-                    </span>
-                  </div>
-                )}
+                <TaskAssigneeAvatar task={task} />
               </div>
             )}
           </div>
@@ -428,7 +410,7 @@ export const TaskRowContent = memo(function TaskRowContent({
   );
 });
 
-function TaskRow({ task, boardSlug }: TaskRowProps) {
+function TaskRow({ task, boardSlug, statusBadge }: TaskRowProps) {
   const {
     attributes,
     listeners,
@@ -463,6 +445,7 @@ function TaskRow({ task, boardSlug }: TaskRowProps) {
       <TaskRowContent
         boardSlug={boardSlug}
         isDragging={isDragging}
+        statusBadge={statusBadge}
         task={task}
       />
     </div>
