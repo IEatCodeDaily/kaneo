@@ -181,6 +181,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
       try {
         const snapshot = createVerificationSnapshot(data);
         const result = await verifyAccess({
+          projectId,
           baseUrl: snapshot.baseUrl,
           accessToken: snapshot.accessToken,
           repositoryOwner: snapshot.repositoryOwner,
@@ -214,7 +215,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
         setVerificationResult(null);
       }
     },
-    [verifyAccess, integration, t],
+    [verifyAccess, integration, projectId, t],
   );
 
   const baseUrl = form.watch("baseUrl");
@@ -299,6 +300,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
 
       if (data.accessToken.trim() && !hasMatchingVerification) {
         const verification = await verifyAccess({
+          projectId,
           baseUrl: snapshot.baseUrl,
           accessToken: snapshot.accessToken,
           repositoryOwner: snapshot.repositoryOwner,
@@ -885,6 +887,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
 
       <GiteaRepositoryBrowserModal
         open={showRepositoryBrowser}
+        projectId={projectId}
         onOpenChange={setShowRepositoryBrowser}
         onSelectRepository={handleRepositorySelect}
         selectedRepository={
