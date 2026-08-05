@@ -33,12 +33,16 @@ import {
   Rows3,
   UnderlineIcon,
 } from "lucide-react";
+import { marked } from "marked";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AttachmentCard } from "@/components/task/extensions/attachment-card";
-import { DetailsExtensions } from "@/components/task/extensions/details-block";
+import {
+  DetailsExtensions,
+  inlineDetailsBlocks,
+} from "@/components/task/extensions/details-block";
 import { EmbedBlock } from "@/components/task/extensions/embed-block";
 import { KaneoIssueLink } from "@/components/task/extensions/kaneo-issue-link";
 import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
@@ -162,6 +166,17 @@ const COMMENT_SHIKI_LANGUAGE_ALIASES: Record<string, string> = {
   plaintext: "text",
 };
 
+/**
+ * Render markdown to HTML for the `<details>` pre-pass.
+ *
+ * `marked` is already a dependency and is only used here to convert the *body*
+ * of a collapsible section, which markdown-it would otherwise refuse to keep
+ * inside the fold. Kept local so `details-block` stays renderer-agnostic.
+ */
+function renderMarkdownFragment(markdown: string) {
+  return marked.parse(markdown, { async: false, breaks: false, gfm: true });
+}
+
 function normalizeMarkdown(markdown: string) {
   return markdown
     .replace(/\r\n/g, "\n")
@@ -169,6 +184,25 @@ function normalizeMarkdown(markdown: string) {
     .replace(/\u00A0/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\n{2,}$/g, "\n");
+}
+
+/**
+ * Markdown prepared for LOADING into the editor.
+ *
+ * Kept separate from `normalizeMarkdown` because that function also runs on
+ * every keystroke over `getMarkdown()` output. Collapsing `<details>` there
+ * would rewrite the user's own source as they typed.
+ */
+function normalizeMarkdownForLoad(markdown: string) {
+  /*
+    GitHub and CodeRabbit bodies put blank lines inside `<details>`. markdown-it
+    ends an HTML block at the first blank line, so the body escaped the fold and
+    rendered flat below an empty collapsible. Collapse those blocks first.
+  */
+  return inlineDetailsBlocks(
+    normalizeMarkdown(markdown),
+    renderMarkdownFragment,
+  );
 }
 
 type EmbedComposerState = {
@@ -639,7 +673,7 @@ export default function CommentEditor({
       immediatelyRender: false,
       autofocus: autoFocus,
       editable: !readOnly && !disabled,
-      content: normalizeMarkdown(value || ""),
+      content: normalizeMarkdownForLoad(value || ""),
       contentType: "markdown",
       extensions: [
         StarterKit.configure({
@@ -1118,11 +1152,16 @@ export default function CommentEditor({
       lastEditorRef.current = editor;
     }
 
+    /*
+      `incoming` stays the plain-normalised markdown because it is compared
+      against `latestValueRef` (which holds editor output). Only the value
+      handed to setContent is collapsed, so the comparison cannot drift.
+    */
     const incoming = normalizeMarkdown(value || "");
     if (!hasHydratedRef.current) {
       isSyncingRef.current = true;
       latestValueRef.current = incoming;
-      editor.commands.setContent(incoming, {
+      editor.commands.setContent(normalizeMarkdownForLoad(value || ""), {
         emitUpdate: false,
         contentType: "markdown",
       });
@@ -1135,7 +1174,7 @@ export default function CommentEditor({
 
     if (incoming === latestValueRef.current) return;
     isSyncingRef.current = true;
-    editor.commands.setContent(incoming, {
+    editor.commands.setContent(normalizeMarkdownForLoad(value || ""), {
       emitUpdate: false,
       contentType: "markdown",
     });

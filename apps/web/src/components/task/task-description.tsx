@@ -38,10 +38,15 @@ import {
   Table2,
   Underline as UnderlineIcon,
 } from "lucide-react";
+import { marked } from "marked";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import {
+  DetailsExtensions,
+  inlineDetailsBlocks,
+} from "@/components/task/extensions/details-block";
 import { ResizableImage } from "@/components/task/extensions/resizable-image";
 import {
   matchSlashTrigger,
@@ -129,6 +134,27 @@ type SlashMenuState = {
 
 function formatMarkdown(markdown: string) {
   return formatTaskMarkdown(markdown);
+}
+
+/**
+ * Render markdown to HTML for the `<details>` pre-pass. Same rationale as the
+ * copy in comment-editor: `marked` only converts the *body* of a collapsible
+ * section, which markdown-it would otherwise refuse to keep inside the fold.
+ */
+function renderMarkdownFragment(markdown: string) {
+  return marked.parse(markdown, { async: false, breaks: false, gfm: true });
+}
+
+/**
+ * Markdown prepared for LOADING into the editor.
+ *
+ * Kept separate from `formatMarkdown` because that also runs over
+ * `getMarkdown()` output on every keystroke (the save path) and against the
+ * sync refs; collapsing `<details>` there would rewrite the user's own source
+ * and break the changed-content comparison.
+ */
+function formatMarkdownForLoad(markdown: string) {
+  return inlineDetailsBlocks(formatMarkdown(markdown), renderMarkdownFragment);
 }
 
 type EmbedComposerState = {
@@ -628,6 +654,12 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
             gfm: true,
           },
         }),
+        /*
+          Same collapsible-sections support the comment editor has. Without
+          these nodes a task description containing <details> (GitHub-imported
+          issues, pasted CodeRabbit plans) rendered the wrapper as plain text.
+        */
+        ...DetailsExtensions,
         ShikiCodeBlock.configure({
           highlighter: () => shikiHighlighterRef.current,
           resolveLanguage: toShikiLanguage,
@@ -1055,10 +1087,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     if (!hasHydratedRef.current) {
       isSyncingExternalContentRef.current = true;
       latestSyncedMarkdownRef.current = incomingMarkdown;
-      editor.commands.setContent(incomingMarkdown, {
-        emitUpdate: false,
-        contentType: "markdown",
-      });
+      editor.commands.setContent(
+        formatMarkdownForLoad(task?.description || ""),
+        {
+          emitUpdate: false,
+          contentType: "markdown",
+        },
+      );
       hasHydratedRef.current = true;
       requestAnimationFrame(() => {
         isSyncingExternalContentRef.current = false;
@@ -1071,7 +1106,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
 
     isSyncingExternalContentRef.current = true;
     latestSyncedMarkdownRef.current = incomingMarkdown;
-    editor.commands.setContent(incomingMarkdown, {
+    editor.commands.setContent(formatMarkdownForLoad(task?.description || ""), {
       emitUpdate: false,
       contentType: "markdown",
     });
