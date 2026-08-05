@@ -43,9 +43,16 @@ function TabsList({
       {children}
       <TabsPrimitive.Indicator
         className={cn(
-          "-translate-y-(--active-tab-bottom) absolute bottom-0 left-0 h-(--active-tab-height) w-(--active-tab-width) translate-x-(--active-tab-left) transition-[width,translate] duration-200 ease-in-out",
+          // `bottom-0` anchors the indicator to the list's PADDING box while
+          // Base UI derives --active-tab-bottom/-height from the tab's border
+          // box. On a TabsList with a border (the rounded pill view switcher)
+          // the two boxes differ by the border width, so the highlight sat
+          // visibly offset vertically from the tab it was highlighting.
+          // `top-0` + an explicit translate measures from the same edge Base UI
+          // does, so the pill lines up on bordered and borderless lists alike.
+          "absolute top-0 left-0 h-(--active-tab-height) w-(--active-tab-width) translate-x-(--active-tab-left) translate-y-(--active-tab-top) transition-[width,translate] duration-200 ease-in-out",
           variant === "underline"
-            ? "data-[orientation=vertical]:-translate-x-px z-10 bg-primary data-[orientation=horizontal]:h-0.5 data-[orientation=vertical]:w-0.5 data-[orientation=horizontal]:translate-y-px"
+            ? "data-[orientation=vertical]:-translate-x-px z-10 bg-primary data-[orientation=horizontal]:h-0.5 data-[orientation=vertical]:w-0.5"
             : "-z-1 rounded-md bg-background shadow-sm/5 dark:bg-input",
         )}
         data-slot="tab-indicator"

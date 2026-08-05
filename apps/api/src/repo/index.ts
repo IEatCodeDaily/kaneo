@@ -1156,7 +1156,7 @@ const repo = new Hono<{
       operationId: "syncRepo",
       tags: ["Repos"],
       description:
-        "Pull the repository's issues and pull requests from its provider. Upserts on (repo, number); never creates tasks.",
+        "Pull the repository's issues and pull requests from its provider. Upserts on (repo, number); never creates tasks. Pass background=true to start the mirror and return immediately — a first sync of a large repository takes longer than an edge proxy will hold the request open.",
       responses: {
         200: {
           description: "Sync completed",
@@ -1168,13 +1168,40 @@ const repo = new Hono<{
             },
           },
         },
+        202: {
+          description: "Sync started in the background",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ started: v.boolean() })),
+            },
+          },
+        },
       },
     }),
     validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(v.object({ background: v.optional(v.string()) })),
+    ),
     repoOrganizationAccess(),
     requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { id } = c.req.valid("param");
+      const background = c.req.valid("query")?.background === "true";
+
+      // Connecting a repository must not hang on the first mirror. A real
+      // repository's full issue+PR pagination runs well past the 60s an edge
+      // proxy will hold a request open, which surfaced as a 504 on connect even
+      // though the repo row had already been created. Kick the mirror off and
+      // let the repo populate; failures are logged, never surfaced as a failed
+      // connect for work that is still in flight.
+      if (background) {
+        void syncRepo(id).catch((error) => {
+          console.error(`Background sync failed for repo ${id}:`, error);
+        });
+        return c.json({ started: true }, 202);
+      }
+
       const result = await syncRepo(id);
       return c.json(result);
     },

@@ -7,6 +7,7 @@ import {
   GitBranch,
   Github,
   Plus,
+  Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,6 +37,7 @@ import { formatDateShort } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
+import { resolveAssignee } from "@/lib/resolve-assignee";
 import { toast } from "@/lib/toast";
 import {
   canSelectLabelSource,
@@ -126,6 +128,19 @@ export default function TaskPropertiesSidebar({
     (member) => member.userId === task?.userId,
   );
   const assigneeTone = getAvatarTone(task?.userId, assignee?.user?.email);
+  // A task can be assigned to a USER or a TEAM (mutually exclusive columns).
+  // Every site here used to branch on `task.userId` alone, so a team assignment
+  // rendered "Unassigned". See lib/resolve-assignee.
+  const {
+    label: assigneeLabel,
+    hasAssignee,
+    teamName: teamAssigneeName,
+  } = resolveAssignee({
+    task,
+    memberName: assignee?.user?.name,
+    unassignedLabel: t("tasks:popover.assignee.unassigned"),
+    teamFallbackLabel: t("tasks:popover.assignee.team"),
+  });
 
   const handleCopyTaskLink = () => {
     navigator.clipboard.writeText(
@@ -248,7 +263,14 @@ export default function TaskPropertiesSidebar({
                     size="sm"
                     className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
-                    {task.userId ? (
+                    {teamAssigneeName ? (
+                      <div
+                        className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                        title={teamAssigneeName}
+                      >
+                        <Users className="h-2.5 w-2.5" />
+                      </div>
+                    ) : hasAssignee ? (
                       <Avatar className={cn("h-[16px] w-[16px]", assigneeTone)}>
                         <AvatarImage
                           src={assignee?.user?.image ?? ""}
@@ -269,9 +291,7 @@ export default function TaskPropertiesSidebar({
                       </div>
                     )}
                     <span className="text-xs font-semibold truncate max-w-[100px]">
-                      {assignee?.user?.name ||
-                        task.assigneeName ||
-                        t("tasks:popover.assignee.unassigned")}
+                      {assigneeLabel}
                     </span>
                   </Button>
                 </TaskAssigneePopover>
@@ -439,7 +459,14 @@ export default function TaskPropertiesSidebar({
                       size="sm"
                       className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
-                      {task.userId ? (
+                      {teamAssigneeName ? (
+                        <div
+                          className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                          title={teamAssigneeName}
+                        >
+                          <Users className="h-2.5 w-2.5" />
+                        </div>
+                      ) : hasAssignee ? (
                         <Avatar
                           className={cn("h-[16px] w-[16px]", assigneeTone)}
                         >
@@ -462,9 +489,7 @@ export default function TaskPropertiesSidebar({
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
-                        {assignee?.user?.name ||
-                          task.assigneeName ||
-                          t("tasks:popover.assignee.unassigned")}
+                        {assigneeLabel}
                       </span>
                     </Button>
                   </TaskAssigneePopover>
@@ -635,7 +660,14 @@ export default function TaskPropertiesSidebar({
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"
                     >
-                      {task.userId ? (
+                      {teamAssigneeName ? (
+                        <div
+                          className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                          title={teamAssigneeName}
+                        >
+                          <Users className="h-2.5 w-2.5" />
+                        </div>
+                      ) : hasAssignee ? (
                         <Avatar
                           className={cn("h-[16px] w-[16px]", assigneeTone)}
                         >
@@ -658,9 +690,7 @@ export default function TaskPropertiesSidebar({
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
-                        {assignee?.user?.name ||
-                          task.assigneeName ||
-                          t("tasks:popover.assignee.unassigned")}
+                        {assigneeLabel}
                       </span>
                     </Button>
                   </TaskAssigneePopover>

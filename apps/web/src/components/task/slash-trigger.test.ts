@@ -10,14 +10,22 @@ import {
  * The old detector was `/(?:^|\s)\/([^\s/]*)$/`, whose `*` matched an empty
  * query — so a trailing `/` counted as an open slash menu, and the capture-phase
  * Enter handler ran a slash command instead of splitting the task item.
+ *
+ * That was first fixed by refusing to open the menu on a lone `/`, which
+ * pre-filtered the list: you had to already know a command's name to see it.
+ * Now a bare `/` opens the menu (empty query = show everything) and the Enter
+ * capture is gated on `hasQuery` instead, so both behaviours hold at once.
  */
 describe("matchSlashTrigger", () => {
-  it("does not trigger on a bare trailing slash (the #267 bug)", () => {
-    expect(matchSlashTrigger("ship it /")).toBeNull();
+  it("opens the menu on a bare trailing slash so the full list is browsable", () => {
+    expect(matchSlashTrigger("ship it /")).toEqual({
+      query: "",
+      matchText: " /",
+    });
   });
 
-  it("does not trigger on a slash alone at the start of a line", () => {
-    expect(matchSlashTrigger("/")).toBeNull();
+  it("opens the menu on a slash alone at the start of a line", () => {
+    expect(matchSlashTrigger("/")).toEqual({ query: "", matchText: "/" });
   });
 
   it("triggers as soon as a command character is typed", () => {
@@ -69,9 +77,13 @@ describe("matchSlashTrigger", () => {
 });
 
 describe("shouldSlashMenuCaptureEnter", () => {
-  it("captures Enter when the menu has commands", () => {
+  it("captures Enter when the menu has commands and a query was typed", () => {
     expect(
-      shouldSlashMenuCaptureEnter({ hasMenu: true, commandCount: 3 }),
+      shouldSlashMenuCaptureEnter({
+        hasMenu: true,
+        commandCount: 3,
+        hasQuery: true,
+      }),
     ).toBe(true);
   });
 
@@ -87,5 +99,51 @@ describe("shouldSlashMenuCaptureEnter", () => {
     expect(
       shouldSlashMenuCaptureEnter({ hasMenu: false, commandCount: 5 }),
     ).toBe(false);
+  });
+
+  it("releases Enter for a bare-slash menu even though every command matches", () => {
+    // THE #267 REGRESSION GUARD. A bare `/` now opens the menu with an empty
+    // query, so `commandCount` is the FULL command list — the old
+    // `commandCount > 0` check alone would capture Enter here and re-break
+    // splitting a checklist item that ends in a slash.
+    expect(
+      shouldSlashMenuCaptureEnter({
+        hasMenu: true,
+        commandCount: 12,
+        hasQuery: false,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("#267 end-to-end rule: bare slash opens the menu but never eats Enter", () => {
+  it("a checklist item ending in a slash shows the menu yet leaves Enter alone", () => {
+    const trigger = matchSlashTrigger("- [ ] ship it /");
+
+    // The menu opens, so the command list is browsable...
+    expect(trigger).not.toBeNull();
+    expect(trigger?.query).toBe("");
+
+    // ...but Enter still belongs to the document, so the item splits.
+    expect(
+      shouldSlashMenuCaptureEnter({
+        hasMenu: true,
+        commandCount: 12,
+        hasQuery: (trigger?.query.length ?? 0) > 0,
+      }),
+    ).toBe(false);
+  });
+
+  it("once a command is typed, Enter accepts it", () => {
+    const trigger = matchSlashTrigger("- [ ] ship it /tod");
+
+    expect(trigger?.query).toBe("tod");
+    expect(
+      shouldSlashMenuCaptureEnter({
+        hasMenu: true,
+        commandCount: 1,
+        hasQuery: (trigger?.query.length ?? 0) > 0,
+      }),
+    ).toBe(true);
   });
 });

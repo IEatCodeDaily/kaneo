@@ -1327,6 +1327,61 @@ input:-webkit-autofill:active {
     font-family: var(--font-mono);
   }
 
+  /*
+   * Collapsible <details> sections from GitHub issue/PR bodies. Slim by
+   * design: a marker, a clickable summary row, and an indented body — no
+   * chunky card treatment competing with the surrounding prose.
+   */
+  .kaneo-details {
+    margin: 0.5rem 0;
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    padding: 0.15rem 0.5rem;
+  }
+
+  .kaneo-details-summary {
+    cursor: pointer;
+    padding: 0.25rem 0;
+    font-size: 0.86em;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 90%, transparent);
+    list-style: none;
+  }
+
+  /* Replace the default triangle with a marker that follows the open state. */
+  .kaneo-details-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .kaneo-details-summary::before {
+    content: "▸";
+    display: inline-block;
+    width: 0.85em;
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
+    transition: transform 120ms ease;
+  }
+
+  .kaneo-details[open] > .kaneo-details-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .kaneo-details-summary:hover {
+    color: var(--foreground);
+  }
+
+  .kaneo-details-content {
+    padding: 0.1rem 0 0.3rem 0.85rem;
+  }
+
+  .kaneo-details-content > :first-child {
+    margin-top: 0;
+  }
+
+  .kaneo-details-content > :last-child {
+    margin-bottom: 0;
+  }
+
   .kaneo-comment-editor-prose pre {
     margin: 0.12rem 0 0;
     border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);

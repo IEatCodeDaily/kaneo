@@ -1200,15 +1200,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         return;
       }
 
-      // #267: never intercept Enter unless there is a command to run. Otherwise
-      // an open-but-empty menu silently swallowed Enter, so a checklist item
-      // could not be split.
-      if (
-        !shouldSlashMenuCaptureEnter({
-          hasMenu: true,
-          commandCount: commands.length,
-        })
-      ) {
+      // #267: never intercept keys unless there is a command to act on.
+      // Otherwise an open-but-empty menu silently swallowed Enter, so a
+      // checklist item could not be split. The Enter/Tab branch below applies
+      // the additional `hasQuery` rule; arrow navigation only needs commands.
+      if (commands.length === 0) {
         return;
       }
 
@@ -1240,6 +1236,18 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       }
 
       if (event.key === "Enter" || event.key === "Tab") {
+        // #267: a menu opened by a bare `/` is a browsable list — Enter still
+        // belongs to the document so a checklist item ending in a slash can be
+        // split. Arrow navigation above stays available either way.
+        if (
+          !shouldSlashMenuCaptureEnter({
+            hasMenu: true,
+            commandCount: commands.length,
+            hasQuery: current.query.length > 0,
+          })
+        ) {
+          return;
+        }
         event.preventDefault();
         const command = commands[current.selectedIndex] || commands[0];
         if (!command) return;

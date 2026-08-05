@@ -1,6 +1,18 @@
 import type { ReactNode } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ViewTabs } from "@/components/common/view-tabs";
 
+/**
+ * Board view switcher.
+ *
+ * This is now a thin adapter over the shared `ViewTabs` so board and repo
+ * surfaces render one identical control. It previously used Radix `Tabs` with a
+ * fully-rounded pill on `bg-muted/55`, which had visibly drifted from the repo
+ * switcher's square-cornered nav on `bg-background`.
+ *
+ * The prop shape is unchanged so existing call sites keep working: board views
+ * are state-driven (`list` and `board` share a route and differ by `viewMode`),
+ * so items carry no `to` and selection flows through `onValueChange`.
+ */
 type View = {
   value: string;
   label: string;
@@ -23,27 +35,12 @@ export function BoardViewTabs({
   className,
 }: BoardViewTabsProps) {
   return (
-    <div
-      className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      data-testid="board-view-tabs-scroller"
-    >
-      <Tabs value={value} onValueChange={onValueChange} className={className}>
-        <TabsList
-          aria-label={ariaLabel}
-          className="h-8 shrink-0 justify-start rounded-full border border-border/80 bg-muted/55 p-1 [&_[data-slot=tab-indicator]]:rounded-full"
-        >
-          {views.map((view) => (
-            <TabsTrigger
-              key={view.value}
-              value={view.value}
-              className="h-6 gap-1.5 rounded-full px-2 text-xs"
-            >
-              {view.icon}
-              <span className="hidden 2xl:inline">{view.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-    </div>
+    <ViewTabs
+      aria-label={ariaLabel}
+      className={className}
+      items={views}
+      onValueChange={onValueChange}
+      value={value}
+    />
   );
 }

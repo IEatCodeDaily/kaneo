@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import {
   CircleDot,
   Code2,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
+import { ViewTabs } from "@/components/common/view-tabs";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 
 type RepoLayoutProps = {
@@ -84,27 +85,20 @@ export default function RepoLayout({
               )}
             </div>
 
-            <nav
+            <ViewTabs
               aria-label="Repository views"
-              className="inline-flex h-8 min-w-0 items-center gap-0.5 overflow-hidden rounded-lg border border-border/80 bg-background p-0.5"
-            >
-              {VIEWS.map((view) => {
+              items={VIEWS.map((view) => {
                 const Icon = view.icon;
-                const isActive = activeView === view.key;
-                return (
-                  <Link
-                    className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-medium transition-colors sm:px-2 ${isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
-                    key={view.key}
-                    params={{ organizationId, repoId }}
-                    to={view.to}
-                  >
-                    <Icon className="size-3.5" />
-                    {/* Constrained widths collapse the tabs to icons only. */}
-                    <span className="hidden 2xl:inline">{view.label}</span>
-                  </Link>
-                );
+                return {
+                  value: view.key,
+                  label: view.label,
+                  icon: <Icon className="size-3.5" />,
+                  to: view.to,
+                  params: { organizationId, repoId },
+                };
               })}
-            </nav>
+              value={activeView}
+            />
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">

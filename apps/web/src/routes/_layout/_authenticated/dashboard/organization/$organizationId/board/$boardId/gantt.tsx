@@ -1160,6 +1160,19 @@ function RouteComponent() {
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCorners}
+                    /*
+                      dnd-kit's auto-scroll inspects the full sortable row. Our
+                      row spans the sticky task rail AND the wide timeline grid,
+                      while its activator lives in `sticky left-0`. During a held
+                      drag the library therefore sees the dragged rectangle at
+                      the scroller's left edge and repeatedly drives scrollLeft
+                      toward zero — even when the pointer has not moved there.
+
+                      Disable library auto-scroll for this vertical rail reorder.
+                      The timeline remains manually scrollable, and finishDrag
+                      still restores the exact viewport after async persistence.
+                    */
+                    autoScroll={false}
                     onDragStart={(event: DragStartEvent) => {
                       const id = event.active.id.toString();
                       setDrag({

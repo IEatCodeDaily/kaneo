@@ -38,6 +38,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AttachmentCard } from "@/components/task/extensions/attachment-card";
+import { DetailsExtensions } from "@/components/task/extensions/details-block";
 import { EmbedBlock } from "@/components/task/extensions/embed-block";
 import { KaneoIssueLink } from "@/components/task/extensions/kaneo-issue-link";
 import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
@@ -650,6 +651,10 @@ export default function CommentEditor({
             HTMLAttributes: { class: "kaneo-tiptap-codeblock" },
           },
         }),
+        // GitHub issue/PR bodies use raw <details> for collapsible sections.
+        // Without these nodes the wrapper is stripped and the summary renders
+        // as an ordinary paragraph, so the section is not collapsible at all.
+        ...DetailsExtensions,
         Link.configure({
           autolink: true,
           defaultProtocol: "https",
@@ -874,12 +879,15 @@ export default function CommentEditor({
             }
 
             // #267: Enter is only intercepted when a command is actually
-            // available, so an open-but-empty menu can never swallow it.
+            // available AND the user has typed a query. A menu opened by a bare
+            // `/` is a browsable list, so Enter still belongs to the document
+            // (e.g. splitting a checklist item that ends in a slash).
             if (
               (event.key === "Enter" || event.key === "Tab") &&
               shouldSlashMenuCaptureEnter({
                 hasMenu: true,
                 commandCount: filteredSlashCommands.length,
+                hasQuery: slashMenu.query.length > 0,
               })
             ) {
               event.preventDefault();

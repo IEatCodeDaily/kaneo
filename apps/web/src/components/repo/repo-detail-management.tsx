@@ -191,6 +191,7 @@ export function RepoIssueSidebar({
     <aside
       className="space-y-4 border-border/80 p-5 sm:p-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:border-l"
       aria-label={`${name} metadata`}
+      id="repo-item-metadata-sidebar"
     >
       {/* Labels */}
       <div>

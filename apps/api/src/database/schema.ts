@@ -260,6 +260,14 @@ export const teamTable = pgTable(
       .notNull()
       .references(() => organizationTable.id, { onDelete: "cascade" }),
     source: text("source").notNull().default("kaneo"),
+    /*
+      Team avatar glyph. Nullable rather than defaulted so existing teams keep
+      rendering their initials-based avatar until a glyph is chosen, instead of
+      every team suddenly showing the same generic icon. Accepts a lucide name
+      from `board-icons` or an emoji — `lib/resolve-icon` already resolves both
+      for boards and repos.
+    */
+    icon: text("icon"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(
       () => /* @__PURE__ */ new Date(),

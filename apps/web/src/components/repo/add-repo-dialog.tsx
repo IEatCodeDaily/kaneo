@@ -65,10 +65,16 @@ export function AddRepoDialog({
       });
       if (!response.ok) throw new Error(await response.text());
       const repo = (await response.json()) as { id: string };
-      const sync = await fetch(getApiUrl(`/repo/${repo.id}/sync`), {
-        method: "POST",
-        credentials: "include",
-      });
+      // The first mirror of a real repository paginates every issue and pull
+      // request, which runs past the 60s an edge proxy holds a request open —
+      // connecting returned 504 even though the repo had been created. Start
+      // the mirror in the background and let the repo populate.
+      const sync = await fetch(
+        getApiUrl(`/repo/${repo.id}/sync?background=true`),
+        { method: "POST", credentials: "include" },
+      );
+      // The repo exists at this point. A failed *kick-off* is worth surfacing,
+      // but never treat a still-running mirror as a failed connect.
       if (!sync.ok) throw new Error(await sync.text());
       return repo;
     },

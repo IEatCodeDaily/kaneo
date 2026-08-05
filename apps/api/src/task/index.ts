@@ -841,8 +841,16 @@ const task = new Hono<{
     requireOrganizationPermission({ task: ["assign"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { userId = null, teamId = null } = c.req.valid("json");
+      const raw = c.req.valid("json");
       const currentUserId = c.get("userId");
+
+      // Treat "" as "no assignee". assignee_id/team_assignee_id are FK columns,
+      // so an empty string is not a valid id and reaches Postgres as a literal
+      // value that matches no row — the UPDATE then fails with a 500 instead of
+      // unassigning. Normalising here keeps every client (web, mobile, API
+      // consumers, older cached bundles) from being able to trigger that.
+      const userId = raw.userId ? raw.userId : null;
+      const teamId = raw.teamId ? raw.teamId : null;
 
       const task = await updateTaskAssignee({
         id,

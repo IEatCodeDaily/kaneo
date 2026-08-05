@@ -31,14 +31,52 @@ describe("BoardViewTabs", () => {
     fireEvent.click(timeline);
     expect(onValueChange.mock.calls[0]?.[0]).toBe("timeline");
     expect(table.getAttribute("tabindex")).toBe("0");
-    expect(screen.getByTestId("board-view-tabs-scroller").className).toContain(
+    expect(screen.getByTestId("view-tabs-scroller").className).toContain(
       "overflow-x-auto",
     );
     const tabList = timeline.closest("[data-slot=tabs-list]");
-    expect(tabList?.className.split(/\s+/)).toContain("rounded-full");
+    // Board and repo switchers now render ONE shared control, so the geometry
+    // asserted here is the repo switcher's: a square-cornered `rounded-lg` nav
+    // rather than the board's former fully-rounded pill.
+    expect(tabList?.className.split(/\s+/)).toContain("rounded-lg");
     expect(tabList?.className).not.toContain("overflow-x-auto");
-    expect(table.className.split(/\s+/)).toContain("rounded-full");
+    expect(table.className.split(/\s+/)).toContain("rounded-md");
     expect(table).toHaveAccessibleName(/Table/);
     expect(screen.getByText("Table")).toHaveClass("hidden", "2xl:inline");
+  });
+
+  it("renders the same control the repo switcher uses", () => {
+    // Guards the unification: if board tabs ever regrow their own markup, the
+    // shared component's testid disappears and this fails.
+    render(
+      <BoardViewTabs
+        aria-label="Board overview views"
+        value="table"
+        views={views}
+        onValueChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("view-tabs")).toBeTruthy();
+    expect(screen.getByTestId("view-tab-table")).toBeTruthy();
+    expect(screen.getByTestId("view-tab-timeline")).toBeTruthy();
+  });
+
+  it("marks only the inactive tabs out of the tab order", () => {
+    render(
+      <BoardViewTabs
+        aria-label="Board overview views"
+        value="table"
+        views={views}
+        onValueChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("view-tab-table").getAttribute("tabindex")).toBe(
+      "0",
+    );
+    expect(
+      screen.getByTestId("view-tab-timeline").getAttribute("tabindex"),
+    ).toBe("-1");
   });
 });

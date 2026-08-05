@@ -341,6 +341,23 @@ export const auth = betterAuth({
           fields: {
             organizationId: "organizationId",
           },
+          additionalFields: {
+            /*
+              KFL-257: team avatar glyph. Registered here rather than behind a
+              bespoke endpoint because teams are owned by the organization
+              plugin — a custom route would bypass its permission checks.
+
+              `required: false` and no default: existing teams keep rendering
+              initials until an icon is chosen. Values share the board/repo
+              vocabulary (a lucide name or an emoji) so `lib/resolve-icon`
+              handles them with no second implementation.
+            */
+            icon: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+          },
         },
       },
       allowUserToCreateOrganization: (user) => user.role === "admin",

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageSquare } from "lucide-react";
-import type { ComponentProps, ReactNode } from "react";
+import { ArrowLeft, MessageSquare, PanelRight } from "lucide-react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
 import { RepoIssueSidebar } from "@/components/repo/repo-detail-management";
@@ -114,6 +114,12 @@ export function RepoItemDetailLayout({
   hideSidebar = false,
 }: RepoItemDetailLayoutProps) {
   const copy = REPO_ITEM_COPY[kind];
+  // The metadata sidebar is hideable on BOTH the issue and pull request detail
+  // surfaces, the same way the board header hides its properties panel. It was
+  // previously only ever force-hidden by the PR diff view, so the user had no
+  // control at all. `hideSidebar` still wins so the diff keeps the full width.
+  const [userHidden, setUserHidden] = useState(false);
+  const sidebarHidden = hideSidebar || userHidden;
 
   return (
     <main
@@ -134,13 +140,41 @@ export function RepoItemDetailLayout({
         <header className="flex flex-col gap-3 border-b border-border/80 bg-background px-4 py-3 sm:px-6 sm:py-4 md:sticky md:top-0 md:z-20 md:bg-background/95 md:backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">{header}</div>
-            <RepoItemHeaderActions {...management} />
+            <div className="flex shrink-0 items-center gap-2">
+              <RepoItemHeaderActions {...management} />
+              {/* Trailing edge of the header, matching the board's properties
+                  toggle placement. Hidden on the diff view, which owns the
+                  sidebar's visibility itself. */}
+              {!hideSidebar && (
+                <button
+                  aria-controls="repo-item-metadata-sidebar"
+                  aria-expanded={!sidebarHidden}
+                  aria-label={`${copy.nounTitle} metadata`}
+                  aria-pressed={!sidebarHidden}
+                  className={`hidden size-7 items-center justify-center rounded-md hover:bg-accent/60 hover:text-foreground lg:inline-flex ${
+                    sidebarHidden
+                      ? "text-muted-foreground"
+                      : "bg-accent text-foreground"
+                  }`}
+                  data-testid="repo-item-sidebar-toggle"
+                  onClick={() => setUserHidden((hidden) => !hidden)}
+                  title={
+                    sidebarHidden
+                      ? `Show ${copy.noun} metadata`
+                      : `Hide ${copy.noun} metadata`
+                  }
+                  type="button"
+                >
+                  <PanelRight className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </header>
         <div
           className={cn(
             "grid flex-1 grid-cols-1",
-            !hideSidebar && "lg:grid-cols-[minmax(0,1fr)_18rem]",
+            !sidebarHidden && "lg:grid-cols-[minmax(0,1fr)_18rem]",
           )}
         >
           {/* Main body column. Every section below uses the same px-6 py-5
@@ -176,8 +210,9 @@ export function RepoItemDetailLayout({
             )}
           </div>
           {/* Right sidebar: metadata only. Omitted entirely on the diff view so
-              the diff column is not competing with it for width. */}
-          {!hideSidebar && (
+              the diff column is not competing with it for width, and hideable
+              by the user via the header toggle. */}
+          {!sidebarHidden && (
             <ErrorBoundary
               className="m-4"
               fallbackDescription={`${copy.nounTitle} metadata could not be rendered.`}
