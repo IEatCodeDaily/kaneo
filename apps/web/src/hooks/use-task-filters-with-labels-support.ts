@@ -27,12 +27,26 @@ const FILTER_KEYS: Array<keyof BoardFilters> = [
   "labels",
 ];
 
+/**
+ * Grouping vocabulary shared by BOTH the board and the list.
+ *
+ * These used to be two separate sets — the board grouped by
+ * assignee/priority/label/dueDate while the list grouped by status/milestone —
+ * rendered as two different "Group by" controls. Switching view silently changed
+ * which options existed. They are now one list so a view switch preserves the
+ * user's choice.
+ *
+ * APPEND-ONLY: the value is persisted per board in localStorage, so renaming or
+ * re-pointing an entry silently changes what a saved preference means.
+ */
 export const BOARD_GROUP_BY_VALUES = [
   "none",
+  "status",
   "assignee",
   "priority",
   "label",
   "dueDate",
+  "milestone",
 ] as const;
 
 export type BoardGroupBy = (typeof BOARD_GROUP_BY_VALUES)[number];
@@ -51,6 +65,8 @@ export type TaskGroup = {
 
 function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
   switch (groupBy) {
+    case "status":
+      return [task.status ?? ""];
     case "assignee":
       return [task.assigneeName ?? ""];
     case "priority":
@@ -61,6 +77,8 @@ function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
     }
     case "dueDate":
       return [task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""];
+    case "milestone":
+      return [task.milestoneName ?? ""];
     default:
       return [""];
   }
@@ -68,18 +86,28 @@ function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
 
 const UNSET_LABEL_KEYS: Record<BoardGroupBy, string> = {
   none: "tasks:groupBy.all",
+  status: "tasks:groupBy.noStatus",
   assignee: "tasks:assignee.unassigned",
   priority: "tasks:groupBy.noPriority",
   label: "tasks:groupBy.noLabel",
   dueDate: "tasks:groupBy.noDueDate",
+  milestone: "tasks:gantt.noMilestone",
 };
 
 /**
- * Buckets a column's tasks for the board "group by" control. `none` returns a
+ * Buckets a column's tasks for the shared "group by" control. `none` returns a
  * single bucket so callers can render one code path regardless of grouping.
  * A task with several labels appears in each of its label groups.
+ *
+ * `displayNames` maps a raw key to what the user should see — used for status,
+ * where the stored value is a slug (`to-do`) but the UI must show the column's
+ * name (`To Do`). Keys with no entry fall back to the raw value.
  */
-export function groupTasks(tasks: Task[], groupBy: BoardGroupBy): TaskGroup[] {
+export function groupTasks(
+  tasks: Task[],
+  groupBy: BoardGroupBy,
+  displayNames?: Record<string, string>,
+): TaskGroup[] {
   if (groupBy === "none") {
     return [{ key: "", labelKey: UNSET_LABEL_KEYS.none, tasks }];
   }
@@ -114,7 +142,7 @@ export function groupTasks(tasks: Task[], groupBy: BoardGroupBy): TaskGroup[] {
                 ? new Intl.DateTimeFormat(undefined, {
                     dateStyle: "medium",
                   }).format(new Date(`${key}T00:00:00`))
-                : key,
+                : (displayNames?.[key] ?? key),
           }),
       tasks: groupedTasks,
     }));

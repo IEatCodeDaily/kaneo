@@ -4,6 +4,8 @@ import {
   Eye,
   Flag,
   Group,
+  Milestone,
+  Rows3,
   Tag,
   User,
 } from "lucide-react";
@@ -32,10 +34,12 @@ const GROUP_BY_OPTIONS: Record<
   { icon: typeof Group; labelKey: string }
 > = {
   none: { icon: CircleOff, labelKey: "tasks:groupBy.none" },
+  status: { icon: Rows3, labelKey: "tasks:groupBy.status" },
   assignee: { icon: User, labelKey: "tasks:groupBy.assignee" },
   priority: { icon: Flag, labelKey: "tasks:groupBy.priority" },
   label: { icon: Tag, labelKey: "tasks:groupBy.byLabel" },
   dueDate: { icon: CalendarDays, labelKey: "tasks:groupBy.dueDate" },
+  milestone: { icon: Milestone, labelKey: "tasks:groupBy.milestone" },
 };
 
 function BoardViewOptions({ groupBy, onGroupByChange }: BoardViewOptionsProps) {

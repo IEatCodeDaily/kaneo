@@ -3,13 +3,20 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CalendarDays, ChevronDown, ChevronRight, Tag } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  Milestone,
+  Tag,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { groupTasks } from "@/hooks/use-task-filters-with-labels-support";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
+import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import {
   collapseToggleLabel,
@@ -64,9 +71,21 @@ export function ColumnDropzone({
     [column.tasks],
   );
 
+  /*
+    Status is stored as a slug (`to-do`) but must display as the column's name
+    (`To Do`). Every column on this board supplies the mapping.
+  */
+  const statusDisplayNames = useMemo(
+    () => ({ [column.id]: column.name }),
+    [column.id, column.name],
+  );
+
   const taskGroups = useMemo(
-    () => (groupBy === "none" ? [] : groupTasks(column.tasks, groupBy)),
-    [column.tasks, groupBy],
+    () =>
+      groupBy === "none"
+        ? []
+        : groupTasks(column.tasks, groupBy, statusDisplayNames),
+    [column.tasks, groupBy, statusDisplayNames],
   );
   const totalGroups =
     groupBy === "none"
@@ -252,6 +271,12 @@ export function ColumnDropzone({
                   <Tag className="size-3.5" />
                 ) : groupBy === "dueDate" ? (
                   <CalendarDays className="size-3.5" />
+                ) : groupBy === "status" && groupKey ? (
+                  <span className="flex size-4 items-center justify-center [&>svg]:size-3.5">
+                    {getColumnIcon(groupKey)}
+                  </span>
+                ) : groupBy === "milestone" ? (
+                  <Milestone className="size-3.5" />
                 ) : null;
               return (
                 <section
