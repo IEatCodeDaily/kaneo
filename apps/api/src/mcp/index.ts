@@ -4,6 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import { auth } from "../auth";
+import { verifyApiKey } from "../utils/verify-api-key";
 import {
   beginMcpAuthorization,
   decideMcpAuthorizationRequest,
@@ -41,21 +42,53 @@ function createMcpServerForUser(token: string, userId?: string): McpServer {
   return server;
 }
 
-async function validateBearerToken(
+/**
+ * Resolve the caller of an MCP request.
+ *
+ * Two principal types reach this endpoint and BOTH must work:
+ *
+ *   - humans, via an OAuth/session bearer token from the consent flow
+ *   - agents, via a `kaneo_agent_*` API key
+ *
+ * Agents used to 401 here. `/api/mcp` is deliberately skipped by the global
+ * `authenticateApiRequest` middleware (it runs its own OAuth flow), and this
+ * function only ever tried `auth.api.getSession`, which does not resolve API
+ * keys. So an agent holding a perfectly valid key could not list or call a
+ * single tool — it could not even discover what actions were available to it.
+ *
+ * Agent keys are accepted from `Authorization: Bearer` AND the `x-api-key`
+ * header that the rest of the API documents, so agents authenticate the same
+ * way everywhere instead of MCP being a special case.
+ *
+ * Authorization is unchanged: the returned userId keys the same permission
+ * guards as any other caller (#38), so an agent still only gets what its role
+ * and key permissions allow.
+ */
+export async function validateBearerToken(
   req: Request,
 ): Promise<{ userId: string; token: string } | null> {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) return null;
-  const match = authHeader.match(/^Bearer\s+(\S+)$/i);
-  if (!match?.[1]) return null;
-  const token = match[1];
+  const bearer = authHeader?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  const apiKeyHeader = req.headers.get("x-api-key")?.trim();
+
+  // An API key may arrive as either header; try the key path first because
+  // getSession cannot resolve keys and would reject them outright.
+  for (const candidate of [bearer, apiKeyHeader]) {
+    if (!candidate) continue;
+    const result = await verifyApiKey(candidate);
+    if (result?.valid && result.key) {
+      return { userId: result.key.userId, token: candidate };
+    }
+  }
+
+  if (!bearer) return null;
 
   const headers = new Headers();
-  headers.set("authorization", `Bearer ${token}`);
+  headers.set("authorization", `Bearer ${bearer}`);
   const session = await auth.api.getSession({ headers });
 
   if (!session?.user?.id) return null;
-  return { userId: session.user.id, token };
+  return { userId: session.user.id, token: bearer };
 }
 
 const mcp = new Hono();
