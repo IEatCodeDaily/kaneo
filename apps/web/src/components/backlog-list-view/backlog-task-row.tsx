@@ -4,6 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { type CSSProperties, memo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import SubtaskOfBadge from "@/components/task/subtask-of-badge";
+import TaskAssigneeAvatar from "@/components/task/task-assignee-avatar";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import TaskResourceIndicators from "@/components/task/task-resource-indicators";
 import {
@@ -15,14 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
-import { getInitials } from "@/lib/get-initials";
 import {
   intentPrefetchHandlers,
   prefetchTaskNavigation,
@@ -166,8 +165,21 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
 
             <div className="flex-1 min-w-0 flex items-center gap-2">
               <div className="flex items-center gap-2 justify-between w-full">
-                <span className="text-sm text-foreground truncate">
-                  {task.title}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="text-sm text-foreground truncate">
+                    {task.title}
+                  </span>
+                  {/* Inline beside the title, matching the list row: a backlog
+                      row has no second line to spend, and the badge already
+                      reads as secondary. */}
+                  {task.parentTask && organization?.id && boardSlug && (
+                    <SubtaskOfBadge
+                      boardId={task.boardId}
+                      boardSlug={boardSlug}
+                      organizationId={organization.id}
+                      parent={task.parentTask}
+                    />
+                  )}
                 </span>
                 {showLabels && (
                   <div className="flex items-center gap-1">
@@ -190,31 +202,7 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
 
             {showAssignees && (
               <div className="flex-shrink-0">
-                {task.userId ? (
-                  <Avatar
-                    className={cn(
-                      "h-6 w-6",
-                      getAvatarTone(task.userId, task.assigneeId),
-                    )}
-                  >
-                    <AvatarImage
-                      src={task.assigneeImage ?? ""}
-                      alt={task.assigneeName ?? ""}
-                    />
-                    <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
-                      {getInitials(task.assigneeName)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <div
-                    className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                    title={t("tasks:assignee.unassigned")}
-                  >
-                    <span className="text-[10px] font-medium text-muted-foreground">
-                      ?
-                    </span>
-                  </div>
-                )}
+                <TaskAssigneeAvatar task={task} />
               </div>
             )}
           </div>
