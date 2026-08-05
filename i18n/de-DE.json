@@ -1882,7 +1882,8 @@
 			"noDueDate": "Kein Fälligkeitsdatum",
 			"noLabel": "Kein Label",
 			"status": "Status",
-			"milestone": "Meilenstein"
+			"milestone": "Meilenstein",
+			"noStatus": "Kein Status"
 		},
 		"milestone": {
 			"manage": {
@@ -1895,6 +1896,9 @@
 			"cannotNestHere": "Hier nicht möglich",
 			"cannotNestReason": "Dieses Ticket kann nicht unter diesem Ziel eingeordnet werden. Wähle ein anderes übergeordnetes Ticket.",
 			"unknownTarget": "dieses Ticket"
+		},
+		"bulkActions": {
+			"label": "Massenaktionen"
 		}
 	},
 	"invitations": {

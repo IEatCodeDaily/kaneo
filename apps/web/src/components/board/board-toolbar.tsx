@@ -72,6 +72,17 @@ type BoardToolbarProps = {
   searchInputRef?: Ref<HTMLInputElement>;
   groupBy: BoardGroupBy;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
+  /**
+   * Rendered immediately after the search field. List view uses it for the
+   * "Ctrl + drag to nest" hint, which previously sat in a second toolbar row
+   * below this one.
+   */
+  searchAdornment?: ReactNode;
+  /**
+   * Rendered immediately before `actions` (i.e. left of Create ticket). List
+   * view uses it for Bulk Actions, previously in that same second row.
+   */
+  secondaryActions?: ReactNode;
   filtersOnly?: boolean;
   actions?: ReactNode;
 };
@@ -161,6 +172,8 @@ export default function BoardToolbar({
   searchInputRef,
   groupBy,
   onGroupByChange,
+  searchAdornment,
+  secondaryActions,
   filtersOnly = false,
   actions,
 }: BoardToolbarProps) {
@@ -600,6 +613,15 @@ export default function BoardToolbar({
               </div>
             )}
 
+            {!filtersOnly && searchAdornment ? (
+              <div
+                className="shrink-0"
+                data-testid="board-toolbar-search-adornment"
+              >
+                {searchAdornment}
+              </div>
+            ) : null}
+
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip
                 subject={t("tasks:boardFilters.subjects.status")}
@@ -713,8 +735,12 @@ export default function BoardToolbar({
             )}
           </div>
 
-          {!filtersOnly && actions ? (
-            <div className="shrink-0" data-testid="board-toolbar-actions">
+          {!filtersOnly && (secondaryActions || actions) ? (
+            <div
+              className="flex shrink-0 items-center gap-2"
+              data-testid="board-toolbar-actions"
+            >
+              {secondaryActions}
               {actions}
             </div>
           ) : null}

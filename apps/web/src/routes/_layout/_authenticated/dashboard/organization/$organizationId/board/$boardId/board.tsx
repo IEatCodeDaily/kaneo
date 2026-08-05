@@ -7,6 +7,12 @@ import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
 import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
+import ListBulkActionsToggle from "@/components/list-view/list-bulk-actions-toggle";
+import {
+  readListGroupBy,
+  writeListGroupBy,
+} from "@/components/list-view/list-grouping";
+import ListNestHint from "@/components/list-view/list-nest-hint";
 import PageTitle from "@/components/page-title";
 import CreateTaskAction from "@/components/task/create-task-action";
 
@@ -50,7 +56,24 @@ function RouteComponent() {
   const { data, isPlaceholderData } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
-  const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
+  /*
+    ONE grouping choice drives both Board and List. They used to keep separate
+    state with different vocabularies, so switching view silently changed the
+    grouping. Persisted per board, which the list-only state already did.
+  */
+  const [groupBy, setGroupByState] = useState<BoardGroupBy>(() =>
+    readListGroupBy(boardId),
+  );
+  useEffect(() => {
+    setGroupByState(readListGroupBy(boardId));
+  }, [boardId]);
+  const setGroupBy = useCallback(
+    (value: BoardGroupBy) => {
+      setGroupByState(value);
+      writeListGroupBy(boardId, value);
+    },
+    [boardId],
+  );
 
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
   const [boardSearchInput, setBoardSearchInput] =
@@ -169,6 +192,12 @@ function RouteComponent() {
           searchInputRef={setBoardSearchInput}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
+          // List-only affordances, hosted in the shared toolbar so List does
+          // not need a second bar of its own.
+          searchAdornment={viewMode === "list" ? <ListNestHint /> : undefined}
+          secondaryActions={
+            viewMode === "list" ? <ListBulkActionsToggle /> : undefined
+          }
           actions={<CreateTaskAction boardId={boardId} />}
         />
 
@@ -185,6 +214,7 @@ function RouteComponent() {
                   <ListView
                     board={sortedBoard}
                     disableDragDrop={sort.field !== "position"}
+                    listGroupBy={groupBy}
                   />
                 )}
               </BoardGroupByProvider>

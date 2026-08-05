@@ -1848,7 +1848,8 @@
 			"noDueDate": "Son tarih yok",
 			"noLabel": "Etiket yok",
 			"status": "Durum",
-			"milestone": "Kilometre taşı"
+			"milestone": "Kilometre taşı",
+			"noStatus": "Durum yok"
 		},
 		"milestone": {
 			"manage": {
@@ -1861,6 +1862,9 @@
 			"cannotNestHere": "Buraya yerleştirilemez",
 			"cannotNestReason": "Bu talep seçilen hedefin altına yerleştirilemez. Başka bir üst talep seçin.",
 			"unknownTarget": "bu talep"
+		},
+		"bulkActions": {
+			"label": "Toplu İşlemler"
 		}
 	},
 	"invitations": {

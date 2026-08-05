@@ -1615,7 +1615,8 @@
 			"noDueDate": "Geen vervaldatum",
 			"noLabel": "Geen label",
 			"status": "Status",
-			"milestone": "Mijlpaal"
+			"milestone": "Mijlpaal",
+			"noStatus": "Geen status"
 		},
 		"milestone": {
 			"manage": {
@@ -1628,6 +1629,9 @@
 			"cannotNestHere": "Hier niet mogelijk",
 			"cannotNestReason": "Dit ticket kan niet onder dat doel worden genest. Kies een ander bovenliggend ticket.",
 			"unknownTarget": "dit ticket"
+		},
+		"bulkActions": {
+			"label": "Bulkacties"
 		}
 	},
 	"invitations": {

@@ -1881,7 +1881,8 @@
 			"noDueDate": "Без срока выполнения",
 			"noLabel": "Без метки",
 			"status": "Статус",
-			"milestone": "Веха"
+			"milestone": "Веха",
+			"noStatus": "Без статуса"
 		},
 		"milestone": {
 			"manage": {
@@ -1894,6 +1895,9 @@
 			"cannotNestHere": "Здесь вложить нельзя",
 			"cannotNestReason": "Этот тикет нельзя вложить в выбранную цель. Выберите другой родительский тикет.",
 			"unknownTarget": "этот тикет"
+		},
+		"bulkActions": {
+			"label": "Массовые действия"
 		}
 	},
 	"invitations": {

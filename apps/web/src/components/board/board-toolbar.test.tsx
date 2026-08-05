@@ -126,3 +126,71 @@ describe("BoardToolbar", () => {
     expect(onGroupByChange).toHaveBeenCalledWith("priority");
   });
 });
+
+describe("BoardToolbar list-view slots", () => {
+  /*
+    List view used to render a SECOND toolbar row of its own, holding only the
+    "Ctrl + drag to nest" hint and Bulk Actions. Both now mount into this
+    toolbar: the hint beside the search field, Bulk Actions immediately left of
+    the Create ticket action.
+  */
+  it("renders the search adornment next to the search field", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        searchAdornment={<span data-testid="nest-hint">hint</span>}
+      />,
+    );
+
+    const adornment = screen.getByTestId("board-toolbar-search-adornment");
+    expect(adornment).toContainElement(screen.getByTestId("nest-hint"));
+
+    // position, not mere presence: it must follow the search input
+    const search = screen.getByPlaceholderText("tasks:boardSearchPlaceholder");
+    expect(
+      search.compareDocumentPosition(adornment) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("places secondary actions to the LEFT of the primary action", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        secondaryActions={<button type="button">Bulk Actions</button>}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const bulk = screen.getByRole("button", { name: "Bulk Actions" });
+    const create = screen.getByRole("button", { name: "Create ticket" });
+    const slot = screen.getByTestId("board-toolbar-actions");
+
+    expect(slot).toContainElement(bulk);
+    expect(slot).toContainElement(create);
+    expect(
+      bulk.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("omits both slots when the view supplies neither", () => {
+    render(<BoardToolbar {...baseProps} />);
+
+    expect(
+      screen.queryByTestId("board-toolbar-search-adornment"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the action slot last in the toolbar", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        secondaryActions={<button type="button">Bulk Actions</button>}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const slot = screen.getByTestId("board-toolbar-actions");
+    expect(slot).toBe(slot.parentElement?.lastElementChild);
+  });
+});

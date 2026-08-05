@@ -1614,7 +1614,8 @@
 			"noDueDate": "Sin fecha de vencimiento",
 			"noLabel": "Sin etiqueta",
 			"status": "Estado",
-			"milestone": "Hito"
+			"milestone": "Hito",
+			"noStatus": "Sin estado"
 		},
 		"milestone": {
 			"manage": {
@@ -1627,6 +1628,9 @@
 			"cannotNestHere": "No se puede anidar aquí",
 			"cannotNestReason": "Este ticket no se puede anidar bajo ese destino. Elige otro ticket principal.",
 			"unknownTarget": "este ticket"
+		},
+		"bulkActions": {
+			"label": "Acciones masivas"
 		}
 	},
 	"invitations": {

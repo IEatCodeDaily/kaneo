@@ -1849,7 +1849,8 @@
 			"noDueDate": "Aucune date d’échéance",
 			"noLabel": "Aucun label",
 			"status": "Statut",
-			"milestone": "Jalon"
+			"milestone": "Jalon",
+			"noStatus": "Sans statut"
 		},
 		"milestone": {
 			"manage": {
@@ -1862,6 +1863,9 @@
 			"cannotNestHere": "Imbrication impossible ici",
 			"cannotNestReason": "Ce ticket ne peut pas être imbriqué sous cette cible. Choisissez un autre parent.",
 			"unknownTarget": "ce ticket"
+		},
+		"bulkActions": {
+			"label": "Actions groupées"
 		}
 	},
 	"invitations": {

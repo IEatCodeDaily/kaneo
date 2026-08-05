@@ -2102,7 +2102,8 @@
 			"noDueDate": "No due date",
 			"noLabel": "No label",
 			"status": "Status",
-			"milestone": "Milestone"
+			"milestone": "Milestone",
+			"noStatus": "No status"
 		},
 		"preview": {
 			"assignee": "Assignee",
@@ -2197,6 +2198,9 @@
 			"cannotNestHere": "Can't nest here",
 			"cannotNestReason": "This ticket can't be nested under that target. Pick a different parent.",
 			"unknownTarget": "this ticket"
+		},
+		"bulkActions": {
+			"label": "Bulk Actions"
 		}
 	},
 	"invitations": {

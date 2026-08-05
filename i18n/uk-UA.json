@@ -1839,7 +1839,8 @@
 			"noDueDate": "Без терміну виконання",
 			"noLabel": "Без мітки",
 			"status": "Статус",
-			"milestone": "Етап"
+			"milestone": "Етап",
+			"noStatus": "Без статусу"
 		},
 		"milestone": {
 			"manage": {
@@ -1852,6 +1853,9 @@
 			"cannotNestHere": "Тут вкласти не можна",
 			"cannotNestReason": "Цей тікет не можна вкласти в цю ціль. Виберіть інший батьківський тікет.",
 			"unknownTarget": "цей тікет"
+		},
+		"bulkActions": {
+			"label": "Масові дії"
 		}
 	},
 	"invitations": {

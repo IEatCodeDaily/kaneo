@@ -1840,7 +1840,8 @@
 			"noDueDate": "Без краен рок",
 			"noLabel": "Без етикета",
 			"status": "Статус",
-			"milestone": "Пресвртница"
+			"milestone": "Пресвртница",
+			"noStatus": "Без статус"
 		},
 		"milestone": {
 			"manage": {
@@ -1853,6 +1854,9 @@
 			"cannotNestHere": "Не може да се вгнезди тука",
 			"cannotNestReason": "Овој тикет не може да се вгнезди под таа цел. Изберете друг родител.",
 			"unknownTarget": "овој тикет"
+		},
+		"bulkActions": {
+			"label": "Масовни дејства"
 		}
 	},
 	"invitations": {

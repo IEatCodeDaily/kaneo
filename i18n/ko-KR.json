@@ -1842,7 +1842,8 @@
 			"noDueDate": "마감일 없음",
 			"noLabel": "라벨 없음",
 			"status": "상태",
-			"milestone": "마일스톤"
+			"milestone": "마일스톤",
+			"noStatus": "상태 없음"
 		},
 		"milestone": {
 			"manage": {
@@ -1855,6 +1856,9 @@
 			"cannotNestHere": "여기에는 넣을 수 없음",
 			"cannotNestReason": "이 티켓은 해당 대상의 하위로 넣을 수 없습니다. 다른 상위 티켓을 선택하세요.",
 			"unknownTarget": "이 티켓"
+		},
+		"bulkActions": {
+			"label": "일괄 작업"
 		}
 	},
 	"invitations": {
