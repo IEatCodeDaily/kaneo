@@ -250,6 +250,10 @@ const task = new Hono<{
           "addLabel",
           "removeLabel",
           "updateDueDate",
+          // #226: archival is orthogonal to status, so it needs its own
+          // operations — `updateStatus: "archived"` is no longer valid.
+          "archive",
+          "unarchive",
         ] as const),
         value: v.optional(v.nullable(v.string())),
       }),
@@ -265,6 +269,10 @@ const task = new Hono<{
       if (
         operation !== "delete" &&
         operation !== "updateDueDate" &&
+        // archive/unarchive carry their intent in the operation name itself;
+        // they take no value, so requiring one would reject every call.
+        operation !== "archive" &&
+        operation !== "unarchive" &&
         value === undefined
       ) {
         throw new HTTPException(400, {

@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ShortcutNumber } from "@/components/ui/shortcut-number";
+import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
@@ -50,6 +51,7 @@ export default function TaskStatusPopover({
     [columns],
   );
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
+  const { mutateAsync: setArchived } = useSetTaskArchived();
   const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const currentStatus = task?.status ?? value;
@@ -58,9 +60,15 @@ export default function TaskStatusPopover({
   );
 
   /**
-   * Backlog and archive are virtual statuses, not board columns, so they are
-   * offered as explicit actions below a divider rather than mixed in with the
-   * column list. `planned` is the status the Backlog view reads.
+   * `planned` IS a real status (the one the Backlog view reads), it just has no
+   * board column, so it is offered below a divider instead of in the column
+   * list.
+   *
+   * #226: Archive is deliberately NOT here. Archival is orthogonal to status —
+   * it writes `task.archived_at` and leaves the workflow status intact — so it
+   * gets its own action that calls the archive mutation. Sending
+   * `status: "archived"` fails validation ("archived" is not a status) and would
+   * destroy the ticket's real state.
    */
   const virtualActions = [
     {
@@ -68,12 +76,25 @@ export default function TaskStatusPopover({
       label: t("tasks:actions.moveToBacklog"),
       icon: <CircleDashed className="size-4 text-muted-foreground" />,
     },
-    {
-      value: "archived",
-      label: t("tasks:actions.archive"),
-      icon: <Archive className="size-4 text-muted-foreground" />,
-    },
   ];
+
+  const isArchived = Boolean(task?.archivedAt);
+
+  const handleArchiveToggle = useCallback(async () => {
+    if (!task) return;
+    try {
+      await setArchived({
+        taskId: task.id,
+        archived: !isArchived,
+        boardId: task.boardId,
+      });
+      setOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("tasks:archive.error"),
+      );
+    }
+  }, [isArchived, setArchived, t, task]);
 
   const handleStatusChange = useCallback(
     async (newStatus: string) => {
@@ -197,6 +218,23 @@ export default function TaskStatusPopover({
                   )}
                 </Button>
               ))}
+              {task && (
+                <Button
+                  data-testid="task-archive-action"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
+                  onClick={handleArchiveToggle}
+                >
+                  <Archive className="size-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {isArchived
+                      ? t("tasks:actions.unarchive")
+                      : t("tasks:actions.archive")}
+                  </span>
+                  {isArchived && <Check className="ml-auto h-4 w-4" />}
+                </Button>
+              )}
             </>
           )}
         </div>

@@ -12,6 +12,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
+import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
@@ -85,6 +86,7 @@ export default function TaskCardContextMenuContent({
   const { mutateAsync: updateTaskTitle } = useUpdateTaskTitle();
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
   const { mutateAsync: updateTaskDueDate } = useUpdateTaskDueDate();
+  const { mutateAsync: setArchived } = useSetTaskArchived();
   const { canManageTasks, canAssignTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canAssign = canAssignTasks();
@@ -311,8 +313,32 @@ export default function TaskCardContextMenuContent({
         <>
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={() => handleChange("status", "archived")}>
-            <span>{t("tasks:actions.archive")}</span>
+          {/*
+            #226: archival writes `task.archived_at`, NOT status. This used to
+            call handleChange("status", "archived"), which now 400s because
+            "archived" is not a valid status.
+          */}
+          <ContextMenuItem
+            data-testid="context-menu-archive"
+            onClick={() => {
+              setArchived({
+                taskId: task.id,
+                archived: !task.archivedAt,
+                boardId: task.boardId,
+              }).catch((error) => {
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : t("tasks:archive.error"),
+                );
+              });
+            }}
+          >
+            <span>
+              {task.archivedAt
+                ? t("tasks:actions.unarchive")
+                : t("tasks:actions.archive")}
+            </span>
           </ContextMenuItem>
 
           <ContextMenuItem onClick={() => handleChange("status", "planned")}>

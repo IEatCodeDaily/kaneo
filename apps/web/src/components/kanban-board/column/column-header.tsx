@@ -3,7 +3,7 @@ import { Archive, Plus } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { toast } from "@/lib/toast";
@@ -22,7 +22,7 @@ type ColumnHeaderProps = {
 export function ColumnHeader({ column }: ColumnHeaderProps) {
   const { t } = useTranslation();
   const { board, setBoard } = useBoardStore();
-  const { mutate: updateTask } = useUpdateTask();
+  const { bulkArchive } = useBulkOperations();
   const { canManageTasks, canCreateTasks } = useOrganizationPermission();
   const canTask = canManageTasks();
   const canCreate = canCreateTasks();
@@ -33,24 +33,39 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
   const handleConfirmArchive = () => {
     if (!column.isFinal || !board) return;
 
+    const taskIds = column.tasks.map((task) => task.id);
+
+    /*
+      #226: archival writes `task.archived_at` and leaves `status` alone, so a
+      Done ticket stays Done while archived. This used to loop `updateTask` with
+      `status: "archived"`, which now fails validation because "archived" is not
+      a status — the whole action 400'd.
+    */
     const updatedBoard = produce(board, (draft) => {
       const archivedColumn = draft?.columns?.find(
         (col) => col.id === column.id,
       );
       if (!archivedColumn) return;
-
-      for (const task of archivedColumn.tasks) {
-        updateTask({
-          ...task,
-          status: "archived",
-        });
-      }
-
       archivedColumn.tasks = [];
     });
 
+    if (taskIds.length === 0) {
+      setIsArchiveModalOpen(false);
+      return;
+    }
+
     setBoard(updatedBoard);
-    toast.success(t("tasks:archive.success", { count: column.tasks.length }));
+
+    bulkArchive(taskIds)
+      .then(() => {
+        toast.success(t("tasks:archive.success", { count: taskIds.length }));
+      })
+      .catch(() => {
+        // put the column back: the server rejected the archive
+        setBoard(board);
+        toast.error(t("tasks:archive.error"));
+      });
+
     setIsArchiveModalOpen(false);
   };
 

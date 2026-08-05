@@ -6,6 +6,7 @@ import TaskStatusPopover from "./task-status-popover";
 
 const useGetColumns = vi.fn();
 const updateTaskStatus = vi.fn();
+const setTaskArchived = vi.fn();
 
 afterEach(() => {
   cleanup();
@@ -18,6 +19,10 @@ vi.mock("@/hooks/queries/column/use-get-columns", () => ({
 
 vi.mock("@/hooks/mutations/task/use-update-task-status", () => ({
   useUpdateTaskStatus: () => ({ mutateAsync: updateTaskStatus }),
+}));
+
+vi.mock("@/hooks/mutations/task/use-set-task-archived", () => ({
+  useSetTaskArchived: () => ({ mutateAsync: setTaskArchived }),
 }));
 
 vi.mock("@/hooks/use-numbered-shortcuts", () => ({
@@ -240,13 +245,15 @@ describe("TaskStatusPopover", () => {
       );
     });
 
-    it("archives the task", async () => {
+    it("archives via archived_at and never as a status", async () => {
       useGetColumns.mockReturnValue({
         data: columns,
         isLoading: false,
         isError: false,
       });
       updateTaskStatus.mockClear();
+      setTaskArchived.mockClear();
+      setTaskArchived.mockResolvedValue({});
 
       render(
         <TaskStatusPopover task={task}>
@@ -258,9 +265,68 @@ describe("TaskStatusPopover", () => {
         await screen.findByRole("button", { name: /tasks:actions.archive/ }),
       );
 
-      expect(updateTaskStatus).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "task-1", status: "archived" }),
+      /*
+        #226: archival is orthogonal to status. This test previously asserted
+        `status: "archived"`, which is exactly the defect — migration 0062 dropped
+        "archived" from the vocabulary, so that call 400s with
+        `Invalid status "archived"`.
+      */
+      expect(setTaskArchived).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: "task-1", archived: true }),
       );
+      expect(updateTaskStatus).not.toHaveBeenCalled();
+      expect(JSON.stringify(setTaskArchived.mock.calls)).not.toContain(
+        '"archived":"archived"',
+      );
+    });
+
+    it("offers unarchive for an already archived task", async () => {
+      useGetColumns.mockReturnValue({
+        data: columns,
+        isLoading: false,
+        isError: false,
+      });
+      setTaskArchived.mockClear();
+      setTaskArchived.mockResolvedValue({});
+
+      render(
+        <TaskStatusPopover
+          task={{ ...task, archivedAt: "2026-08-05T00:00:00.000Z" }}
+        >
+          <Button>Status</Button>
+        </TaskStatusPopover>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: /tasks:actions.unarchive/ }),
+      );
+
+      expect(setTaskArchived).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: "task-1", archived: false }),
+      );
+    });
+
+    it("keeps the archive action out of the status option list", async () => {
+      useGetColumns.mockReturnValue({
+        data: columns,
+        isLoading: false,
+        isError: false,
+      });
+
+      render(
+        <TaskStatusPopover task={task}>
+          <Button>Status</Button>
+        </TaskStatusPopover>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+
+      // archive is an action, not a selectable status: it must not be rendered
+      // as one of the status buttons the shortcut list indexes
+      const archive = await screen.findByTestId("task-archive-action");
+      expect(archive).toBeVisible();
+      expect(
+        screen.queryByRole("button", { name: /tasks:status.archived/ }),
+      ).toBeNull();
     });
   });
 });

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
@@ -22,7 +22,14 @@ type BulkOperation =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateDueDate";
+  | "updateDueDate"
+  /**
+   * #226: archival is orthogonal to status, so bulk archive CANNOT be expressed
+   * as `updateStatus: "archived"` — `"archived"` is not a valid status and would
+   * be rejected by `assertValidTaskStatus`. These write `archived_at` only.
+   */
+  | "archive"
+  | "unarchive";
 
 async function bulkUpdateTasks({
   taskIds,
@@ -311,6 +318,42 @@ async function bulkUpdateTasks({
           title: task.title,
           type: "due_date_changed",
         });
+      }
+      break;
+    }
+
+    case "archive":
+    case "unarchive": {
+      const archived = operation === "archive";
+
+      /*
+        Only `archived_at` moves. Status is deliberately untouched so an
+        archived In Progress ticket is still In Progress when restored.
+
+        Idempotent in the same spirit as `set-task-archived`: rows already in
+        the desired state are skipped so re-archiving does not reset the
+        original timestamp and disturb backlog ordering.
+      */
+      const result = await db
+        .update(taskTable)
+        .set({ archivedAt: archived ? new Date() : null })
+        .where(
+          and(
+            inArray(taskTable.id, foundIds),
+            archived
+              ? isNull(taskTable.archivedAt)
+              : isNotNull(taskTable.archivedAt),
+          ),
+        );
+
+      updatedCount = result.rowCount ?? 0;
+
+      /*
+        NOT `task.status_changed` — the workflow state did not move, and
+        emitting that would corrupt the activity trail.
+      */
+      for (const boardId of new Set(tasks.map((t) => t.boardId))) {
+        await publishEvent("task-relation.refresh", { boardId, userId });
       }
       break;
     }

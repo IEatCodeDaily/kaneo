@@ -54,6 +54,12 @@ type Task = {
   milestoneId?: string | null;
   milestoneName?: string | null;
   columnId?: string | null;
+  /**
+   * #226: archival is ORTHOGONAL to status — an archived ticket keeps its real
+   * workflow status. Non-null means archived, so it is hidden everywhere except
+   * the backlog's archived section. Never encode archival in `status`.
+   */
+  archivedAt?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
   repoLinks?: TaskRepoLinkSummary[];

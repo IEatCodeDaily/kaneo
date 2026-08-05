@@ -19,10 +19,12 @@ export function useBulkOperations() {
 
   const bulkArchive = useMutation({
     mutationFn: async (taskIds: string[]) => {
+      // #226: archival writes `archived_at`, NOT status. Sending
+      // `updateStatus: "archived"` fails validation ("archived" is not a
+      // status) and would also destroy each ticket's real workflow state.
       await bulkOperation({
         taskIds,
-        operation: "updateStatus",
-        value: "archived",
+        operation: "archive",
       });
     },
     onSuccess: invalidateCommon,

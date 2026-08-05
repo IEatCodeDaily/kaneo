@@ -27,8 +27,16 @@ import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator
 import { Checkbox } from "@/components/ui/checkbox";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
+import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
+import {
+  type BacklogSection,
+  backlogSectionOf,
+  isArchived,
+  sectionCrossPayload,
+} from "@/lib/task-archival";
+import { toast } from "@/lib/toast";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
 import useBoardStore from "@/store/board";
 import type { BoardWithTasks } from "@/types/board";
@@ -53,6 +61,7 @@ function BacklogListView({
   const { t } = useTranslation();
   const { isPending: isReorderPending, mutate: reorderTasks } =
     useReorderTasks();
+  const { mutateAsync: setArchived } = useSetTaskArchived();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -163,6 +172,8 @@ function BacklogListView({
     const plannedTasks = board?.plannedTasks || [];
     const archivedTasks = board?.archivedTasks || [];
 
+    // membership is decided by which bucket the API returned the task in, which
+    // is driven by `archivedAt` — never by status.
     if (plannedTasks.some((task) => task.id === taskId)) {
       setOverColumnId("planned");
     } else if (archivedTasks.some((task) => task.id === taskId)) {
@@ -190,6 +201,15 @@ function BacklogListView({
 
     if (!activeTask) return;
 
+    /*
+      #226: which section a ticket is in is decided by `archivedAt`, NOT status.
+      Archived tickets retain their real workflow status, so the old
+      `activeTask.status === "planned"` test mis-classified any archived ticket
+      whose status was not literally "planned" and moved the wrong row.
+    */
+    const sourceIsArchived = isArchived(activeTask);
+    const sourceSectionId = backlogSectionOf(activeTask);
+
     let targetSection = overId;
     if (overId !== "planned" && overId !== "archived") {
       if (plannedTasks.some((task) => task.id === overId)) {
@@ -201,11 +221,12 @@ function BacklogListView({
       }
     }
 
+    const crossesSection = sourceSectionId !== targetSection;
+
     const updatedBoard = produce(board, (draft) => {
-      const sourceSection =
-        activeTask.status === "planned"
-          ? draft.plannedTasks || []
-          : draft.archivedTasks || [];
+      const sourceSection = sourceIsArchived
+        ? draft.archivedTasks || []
+        : draft.plannedTasks || [];
 
       const sourceTaskIndex = sourceSection.findIndex(
         (task) => task.id === activeTaskId,
@@ -214,19 +235,18 @@ function BacklogListView({
 
       if (!task) return;
 
-      if (activeTask.status === "planned") {
-        draft.plannedTasks =
-          draft.plannedTasks?.filter((t) => t.id !== activeTaskId) || [];
-      } else {
+      if (sourceIsArchived) {
         draft.archivedTasks =
           draft.archivedTasks?.filter((t) => t.id !== activeTaskId) || [];
+      } else {
+        draft.plannedTasks =
+          draft.plannedTasks?.filter((t) => t.id !== activeTaskId) || [];
       }
 
-      if (activeTask.status === targetSection) {
-        const targetSectionTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
+      if (!crossesSection) {
+        const targetSectionTasks = sourceIsArchived
+          ? draft.archivedTasks || []
+          : draft.plannedTasks || [];
 
         let destinationIndex = targetSectionTasks.findIndex(
           (t) => t.id === overId,
@@ -236,31 +256,66 @@ function BacklogListView({
           destinationIndex += 1;
         }
 
-        if (activeTask.status === "planned") {
-          draft.plannedTasks?.splice(destinationIndex, 0, task);
-        } else {
+        if (sourceIsArchived) {
           draft.archivedTasks?.splice(destinationIndex, 0, task);
-        }
-      } else {
-        task.status = targetSection;
-
-        if (targetSection === "planned") {
-          draft.plannedTasks = [...(draft.plannedTasks || []), task];
         } else {
-          draft.archivedTasks = [...(draft.archivedTasks || []), task];
+          draft.plannedTasks?.splice(destinationIndex, 0, task);
         }
+        return;
+      }
+
+      /*
+        Crossing between Planned and Archived toggles `archivedAt` only. Status
+        is deliberately left alone: dragging a Done ticket into Archived must
+        keep it Done, and dragging it back out must not invent a status.
+
+        Moving OUT of Archived into Planned is the one case that also changes
+        status, because Planned is a real status the ticket must actually adopt.
+      */
+      const crossPayload = sectionCrossPayload({
+        task,
+        targetSection: targetSection as BacklogSection,
+      });
+      task.status = crossPayload.status;
+
+      if (crossPayload.archived) {
+        task.archivedAt = new Date().toISOString();
+        draft.archivedTasks = [...(draft.archivedTasks || []), task];
+      } else {
+        task.archivedAt = null;
+        draft.plannedTasks = [...(draft.plannedTasks || []), task];
       }
     });
 
     setBoard(updatedBoard);
-    const affected =
-      activeTask.status === targetSection
-        ? [
-            targetSection === "planned"
-              ? updatedBoard.plannedTasks || []
-              : updatedBoard.archivedTasks || [],
-          ]
-        : [updatedBoard.plannedTasks || [], updatedBoard.archivedTasks || []];
+
+    if (crossesSection) {
+      setArchived({
+        taskId: activeTaskId,
+        archived: targetSection === "archived",
+        boardId: board.id,
+      }).catch((error) => {
+        setBoard(board);
+        toast.error(
+          error instanceof Error ? error.message : t("tasks:archive.error"),
+        );
+      });
+    }
+
+    /*
+      Reorder persists position within the sections. Archived rows keep their
+      own status, so this sends each task's ACTUAL status rather than the
+      section name — sending "archived" here is what produced the
+      `Invalid status "archived"` 400.
+    */
+    const affected = crossesSection
+      ? [updatedBoard.plannedTasks || [], updatedBoard.archivedTasks || []]
+      : [
+          targetSection === "planned"
+            ? updatedBoard.plannedTasks || []
+            : updatedBoard.archivedTasks || [],
+        ];
+
     reorderTasks({
       boardId: board.id,
       board: updatedBoard,
