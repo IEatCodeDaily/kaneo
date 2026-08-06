@@ -115,24 +115,40 @@ export async function getRepoIssue(
     per_page: 100,
     headers: { accept: "application/vnd.github+json" },
   };
-  const [comments, timeline, relations, detail] = await Promise.all([
-    octokit.paginate(
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
-      request,
-    ),
-    octokit.paginate(
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline",
-      request,
-    ),
-    getGitHubIssueRelations(octokit, request),
-    // The mirror has no milestone column, so read the current assignment
-    // live rather than letting the UI assume "no milestone".
-    octokit.rest.issues.get({
-      owner: repo.owner,
-      repo: repo.name,
-      issue_number: number,
-    }),
-  ]);
+  /*
+    Same fallback contract as the client acquisition above: enrichment is
+    best-effort. These calls 404 when the issue exists only in the mirror
+    (deleted upstream, or a locally seeded row), and previously that rejected
+    the whole handler into a 500 — the detail page went blank even though the
+    mirror had everything needed to render it.
+  */
+  let comments: unknown[];
+  let timeline: unknown[];
+  let relations: Awaited<ReturnType<typeof getGitHubIssueRelations>>;
+  let detail: Awaited<ReturnType<typeof octokit.rest.issues.get>>;
+  try {
+    [comments, timeline, relations, detail] = await Promise.all([
+      octokit.paginate(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        request,
+      ),
+      octokit.paginate(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline",
+        request,
+      ),
+      getGitHubIssueRelations(octokit, request),
+      // The mirror has no milestone column, so read the current assignment
+      // live rather than letting the UI assume "no milestone".
+      octokit.rest.issues.get({
+        owner: repo.owner,
+        repo: repo.name,
+        issue_number: number,
+      }),
+    ]);
+  } catch (error) {
+    console.warn("GitHub issue enrichment failed; using mirror", error);
+    return result;
+  }
 
   // GitHub represents development relationships as cross-reference timeline
   // events. Expose linked PRs separately while retaining raw timeline data.

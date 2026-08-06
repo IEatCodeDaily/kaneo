@@ -142,6 +142,12 @@ export const Details = Node.create({
           "summary",
         );
         if (!summary || !dom.contains(summary)) return;
+        /*
+          Nested details: a click on the INNER fold's summary bubbles up to
+          this listener too. Only the details that directly owns the summary
+          may toggle, otherwise one click flips every ancestor fold at once.
+        */
+        if (summary.closest("details") !== dom) return;
         // Native toggling is unreliable under contenteditable; do it ourselves.
         event.preventDefault();
         const pos = typeof getPos === "function" ? getPos() : undefined;
