@@ -8,7 +8,7 @@ import {
   getGithubApp,
   getInstallationOctokit,
 } from "../../plugins/github/utils/github-app";
-import { syncGitHubRepo } from "../services/sync-github-repo";
+import { syncGitHubIssue, syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
 import { getRepoPullRequest } from "./get-repo-pull-request";
 import {
@@ -283,9 +283,27 @@ export async function createGitHubItemComment({
     installationOctokit,
   });
 
-  // Comments are represented by the mirror's comment count, so refresh before
-  // returning rather than making a local count assumption.
-  await syncGitHubRepo(repoId);
+  /*
+    Refresh the mirror's comment count for THIS issue only. This used to call
+    syncGitHubRepo(repoId) — a full re-mirror that paginates every issue and
+    every pull request in the repository — inside the comment request, so
+    posting one comment on a synced task took as long as an initial repo sync.
+    Fire-and-forget: the comment is already on GitHub, and a count refresh is
+    not worth holding the response for (same pattern as the background sync
+    kick-off above).
+  */
+  void installationOctokit
+    .request("GET /repos/{owner}/{repo}/issues/{issue_number}", {
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+    })
+    .then(({ data: issue }) =>
+      syncGitHubIssue(repoId, issue as Record<string, unknown>),
+    )
+    .catch((error) => {
+      console.warn("Failed to refresh mirrored issue after comment", error);
+    });
   return result;
 }
 
