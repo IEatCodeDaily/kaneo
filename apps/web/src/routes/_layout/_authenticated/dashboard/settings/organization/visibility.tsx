@@ -149,7 +149,11 @@ function RouteComponent() {
                   id="org-default-privilege"
                   aria-label="Organization-wide default access"
                 >
-                  <SelectValue />
+                  <SelectValue>
+                    {data
+                      ? PRIVILEGE_LABELS[data.defaultResourcePrivilege]
+                      : ""}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(PRIVILEGE_LABELS) as Privilege[]).map(
@@ -203,7 +207,11 @@ function RouteComponent() {
                         id={`override-${resourceType}`}
                         aria-label={`Default access for ${RESOURCE_LABELS[resourceType]}`}
                       >
-                        <SelectValue />
+                        <SelectValue>
+                          {override
+                            ? PRIVILEGE_LABELS[override]
+                            : "Use organization default"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={INHERIT}>
