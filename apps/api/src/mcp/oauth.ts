@@ -2,6 +2,16 @@ import { createHash, randomUUID } from "node:crypto";
 import { createId } from "@paralleldrive/cuid2";
 import db from "../database";
 import { sessionTable } from "../database/schema";
+<<<<<<< HEAD
+=======
+import {
+  consumeState,
+  deleteExpiredStates,
+  enforceStateCap,
+  getState,
+  putState,
+} from "./oauth-store";
+>>>>>>> 3da2ac5f (fix(mcp): cap pending OAuth authorization requests)
 
 type RegisteredClient = {
   clientId: string;
@@ -26,9 +36,17 @@ export type AuthorizationRequest = {
   expiresAt: number;
 };
 
+<<<<<<< HEAD
 const clients = new Map<string, RegisteredClient>();
 const codes = new Map<string, AuthCode>();
 const authorizationRequests = new Map<string, AuthorizationRequest>();
+=======
+// Clients re-register on invalid_client, so the TTL only bounds table growth.
+const clientTtlMs = 30 * 24 * 60 * 60 * 1000;
+const codeTtlMs = 5 * 60 * 1000;
+const requestTtlMs = 10 * 60 * 1000;
+// Same bound the in-memory store enforced; authorize is reachable without a session.
+>>>>>>> 3da2ac5f (fix(mcp): cap pending OAuth authorization requests)
 const maxAuthorizationRequests = 10_000;
 
 function pruneAuthorizationRequests(now = Date.now()): void {
@@ -76,6 +94,7 @@ export function createAuthCode(params: {
   return code;
 }
 
+<<<<<<< HEAD
 export function createAuthorizationRequest(params: {
   clientId: string;
   codeChallenge: string;
@@ -83,6 +102,13 @@ export function createAuthorizationRequest(params: {
   state?: string;
 }): string {
   pruneAuthorizationRequests();
+=======
+export async function createAuthorizationRequest(
+  params: AuthorizationRequest,
+): Promise<string> {
+  await deleteExpiredStates();
+  await enforceStateCap("request", maxAuthorizationRequests);
+>>>>>>> 3da2ac5f (fix(mcp): cap pending OAuth authorization requests)
   const requestId = randomUUID();
   authorizationRequests.set(requestId, {
     ...params,
