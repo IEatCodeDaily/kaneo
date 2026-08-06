@@ -1,5 +1,5 @@
 import db from "../../database";
-import { columnTable, boardTable } from "../../database/schema";
+import { boardTable, columnTable } from "../../database/schema";
 
 export const DEFAULT_PROJECT_COLUMNS = [
   { name: "To Do", slug: "to-do", position: 0, isFinal: false },

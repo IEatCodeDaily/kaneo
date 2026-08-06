@@ -45,10 +45,7 @@ async function updateTask(
   await assertValidTaskStatus(status, boardId);
 
   const column = await db.query.columnTable.findFirst({
-    where: and(
-      eq(columnTable.boardId, boardId),
-      eq(columnTable.slug, status),
-    ),
+    where: and(eq(columnTable.boardId, boardId), eq(columnTable.slug, status)),
   });
 
   const [updatedTask] = await db

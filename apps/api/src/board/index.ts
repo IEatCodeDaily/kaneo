@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { boardSchema } from "../schemas";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import archiveBoardCtrl from "./controllers/archive-board";
 import createBoardCtrl from "./controllers/create-board";
 import deleteBoardCtrl from "./controllers/delete-board";
@@ -43,9 +43,11 @@ const board = new Hono<{
     organizationAccess.fromQuery(),
     async (c) => {
       const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
       const { includeArchived } = c.req.valid("query");
       const boards = await getBoardsCtrl(
         organizationId,
+        userId,
         includeArchived === "true",
       );
       return c.json(boards);

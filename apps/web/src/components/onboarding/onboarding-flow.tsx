@@ -47,7 +47,8 @@ export function OnboardingFlow() {
   const [createdOrganizationName, setCreatedOrganizationName] = useState("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { mutateAsync: createOrganization, isPending } = useCreateOrganization();
+  const { mutateAsync: createOrganization, isPending } =
+    useCreateOrganization();
   const { user } = useAuth();
 
   const organizationSchema = useMemo(

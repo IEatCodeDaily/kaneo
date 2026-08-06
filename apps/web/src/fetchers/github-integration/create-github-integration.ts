@@ -9,9 +9,7 @@ async function createGithubIntegration(
   boardId: string,
   data: CreateGithubIntegrationRequest,
 ) {
-  const response = await client["github-integration"].board[
-    ":boardId"
-  ].$post({
+  const response = await client["github-integration"].board[":boardId"].$post({
     param: { boardId },
     json: data,
   });

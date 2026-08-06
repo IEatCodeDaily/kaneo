@@ -110,12 +110,9 @@ Name | Description |
 
 ### GitHub user delegation
 
-GitHub user delegation is deliberately separate from GitHub SSO. Create a separate GitHub OAuth App with callback URL `${KANEO_API_URL}/api/github-delegation/callback`; Kaneo requests `repo read:user user:email` so it can write repositories as the connected user.
+GitHub user delegation is a separate authorization flow from GitHub sign-in, but both use the same OAuth App credentials. Delegation requests `repo read:user user:email` only when the user explicitly connects GitHub actions; sign-in requests only identity/email access.
 
-Name | Description |
---- | --- |
-| `GITHUB_DELEGATION_CLIENT_ID` | OAuth client ID for Kaneo's user-delegation flow. |
-| `GITHUB_DELEGATION_CLIENT_SECRET` | OAuth client secret for Kaneo's user-delegation flow. |
+Configure `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` once for both flows. Configure the OAuth App callback root as `${KANEO_API_URL}/api`; Kaneo uses `/api/auth/callback/github` for sign-in and `/api/github-delegation/callback` for delegation, requesting broader repository scopes only during explicit connection.
 
 GitHub OAuth Apps issue refreshable tokens only when the OAuth App has **Expire user authorization tokens** enabled. Kaneo securely stores and reports expiry metadata when GitHub returns it.
 

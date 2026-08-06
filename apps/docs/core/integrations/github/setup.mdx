@@ -140,10 +140,10 @@ From the app settings page, note down these important values:
 - **Webhook Secret** (the one you created earlier)
 - **Private Key** (contents of the downloaded `.pem` file)
 
-The GitHub App also shows an OAuth **Client ID** and **Client Secret** under "Basic information". Kaneo’s **repository integration** does not use those environment variables; they are only relevant if you enable **Sign in with GitHub** using `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` (see [GitHub SSO](/core/social-providers/github)).
+The GitHub App also shows an OAuth **Client ID** and **Client Secret** under "Basic information". Copy both: Kaneo uses them as `GITHUB_APP_CLIENT_ID` / `GITHUB_APP_CLIENT_SECRET` for **GitHub account delegation**, so comments Kaneo posts on a user's behalf appear authored by that person *with Kaneo attribution* on GitHub. These are separate from `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET`, which only power **Sign in with GitHub** (see [GitHub SSO](/core/social-providers/github)).
 
 <Info>
-You need **App ID**, **private key**, and **webhook secret** for the [configuration step](/core/integrations/github/configuration).
+You need **App ID**, **private key**, and **webhook secret** for the [configuration step](/core/integrations/github/configuration). Add the App's **client ID and secret** too if you want delegated comments to show GitHub's "with <App name>" provenance.
 </Info>
 </Step>
 </Steps>

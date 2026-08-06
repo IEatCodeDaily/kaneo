@@ -3,13 +3,13 @@ import { sendNotificationEmail } from "@kaneo/email";
 import { and, eq } from "drizzle-orm";
 import db from "../database";
 import {
-  notificationTable,
   boardTable,
-  taskTable,
-  userNotificationPreferenceTable,
-  userNotificationOrgRuleTable,
-  userTable,
+  notificationTable,
   organizationTable,
+  taskTable,
+  userNotificationOrgRuleTable,
+  userNotificationPreferenceTable,
+  userTable,
 } from "../database/schema";
 import { assertPublicWebhookDestination } from "../plugins/generic-webhook/config";
 import { decryptSecret } from "./secrets";
@@ -451,9 +451,7 @@ export async function deliverNotification(
   if (
     rule.boardMode === "selected" &&
     (!context.boardId ||
-      !rule.selectedBoards.some(
-        (board) => board.boardId === context.boardId,
-      ))
+      !rule.selectedBoards.some((board) => board.boardId === context.boardId))
   ) {
     return;
   }

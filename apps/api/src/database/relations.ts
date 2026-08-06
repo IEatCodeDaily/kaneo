@@ -4,6 +4,7 @@ import {
   activityTable,
   apikeyTable,
   assetTable,
+  boardTable,
   columnTable,
   commentTable,
   externalLinkTable,
@@ -12,7 +13,13 @@ import {
   invitationTable,
   labelTable,
   notificationTable,
-  boardTable,
+  organizationGithubInstallationTable,
+  organizationMemberTable,
+  organizationRoleTable,
+  organizationTable,
+  repoIssueTable,
+  repoPullRequestTable,
+  repoTable,
   sessionTable,
   taskRelationTable,
   taskReminderSentTable,
@@ -20,19 +27,12 @@ import {
   teamMemberTable,
   teamTable,
   timeEntryTable,
-  userNotificationPreferenceTable,
   userNotificationOrgBoardTable,
   userNotificationOrgRuleTable,
+  userNotificationPreferenceTable,
   userTable,
   verificationTable,
   workflowRuleTable,
-  organizationRoleTable,
-  organizationTable,
-  organizationMemberTable,
-  organizationGithubInstallationTable,
-  repoTable,
-  repoIssueTable,
-  repoPullRequestTable,
 } from "./schema";
 
 export const userTableRelations = relations(userTable, ({ many, one }) => ({
@@ -109,22 +109,19 @@ export const organizationMemberTableRelations = relations(
   }),
 );
 
-export const boardTableRelations = relations(
-  boardTable,
-  ({ one, many }) => ({
-    organization: one(organizationTable, {
-      fields: [boardTable.organizationId],
-      references: [organizationTable.id],
-    }),
-    tasks: many(taskTable),
-    assets: many(assetTable),
-    columns: many(columnTable),
-    workflowRules: many(workflowRuleTable),
-    githubIntegration: many(githubIntegrationTable),
-    integrations: many(integrationTable),
-    notificationOrganizationBoards: many(userNotificationOrgBoardTable),
+export const boardTableRelations = relations(boardTable, ({ one, many }) => ({
+  organization: one(organizationTable, {
+    fields: [boardTable.organizationId],
+    references: [organizationTable.id],
   }),
-);
+  tasks: many(taskTable),
+  assets: many(assetTable),
+  columns: many(columnTable),
+  workflowRules: many(workflowRuleTable),
+  githubIntegration: many(githubIntegrationTable),
+  integrations: many(integrationTable),
+  notificationOrganizationBoards: many(userNotificationOrgBoardTable),
+}));
 
 export const columnTableRelations = relations(columnTable, ({ one, many }) => ({
   board: one(boardTable, {

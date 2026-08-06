@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { columnTable, boardTable, taskTable } from "../../database/schema";
+import { boardTable, columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {
   coercePriority,

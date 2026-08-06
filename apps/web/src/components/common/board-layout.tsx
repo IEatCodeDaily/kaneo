@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { CalendarDays, SquareKanban, SquircleDashed } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import MobileBoardNav from "@/components/common/header/mobile-board-nav";
 import BoardCrumbSelect from "@/components/common/header/board-crumb-select";
+import MobileBoardNav from "@/components/common/header/mobile-board-nav";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
 import Layout from "@/components/common/layout";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
@@ -40,8 +40,7 @@ export default function BoardLayout({
   const navigate = useNavigate();
   const location = useLocation();
   const { data: board } = useGetBoard({ id: boardId, organizationId });
-  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] =
-    useState(false);
+  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
 
   useBoardWebSocket(boardId);
 

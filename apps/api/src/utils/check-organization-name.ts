@@ -1,7 +1,9 @@
 const URL_PATTERN = /\b(https?:\/\/|www\.)\S+/i;
 const MAX_NAME_LENGTH = 100;
 
-export type OrganizationNameCheck = { ok: true } | { ok: false; reason: string };
+export type OrganizationNameCheck =
+  | { ok: true }
+  | { ok: false; reason: string };
 
 export function checkOrganizationName(name: string): OrganizationNameCheck {
   const trimmed = name?.trim() ?? "";

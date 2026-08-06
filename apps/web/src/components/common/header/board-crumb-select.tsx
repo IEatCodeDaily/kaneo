@@ -78,10 +78,7 @@ export default function BoardCrumbSelect({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={onAddBoard}
-            className="h-8 gap-2 text-sm"
-          >
+          <DropdownMenuItem onClick={onAddBoard} className="h-8 gap-2 text-sm">
             <Plus className="size-3.5" />
             {t("navigation:boardList.addBoard")}
           </DropdownMenuItem>

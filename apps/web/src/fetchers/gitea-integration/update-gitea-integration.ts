@@ -9,9 +9,7 @@ async function updateGiteaIntegration(
   boardId: string,
   json: UpdateGiteaIntegrationRequest,
 ) {
-  const response = await client["gitea-integration"].board[
-    ":boardId"
-  ].$patch({
+  const response = await client["gitea-integration"].board[":boardId"].$patch({
     param: { boardId },
     json,
   });

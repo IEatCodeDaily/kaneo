@@ -180,7 +180,9 @@ export function OrganizationSwitcher() {
                   }}
                   className="h-7 text-sm data-highlighted:bg-sidebar-accent data-highlighted:text-sidebar-accent-foreground"
                 >
-                  <span>{t("navigation:organizationSwitcher.addOrganization")}</span>
+                  <span>
+                    {t("navigation:organizationSwitcher.addOrganization")}
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

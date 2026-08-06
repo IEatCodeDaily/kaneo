@@ -5,19 +5,19 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { integrationTable, boardTable } from "../database/schema";
+import { boardTable, integrationTable } from "../database/schema";
 import { type GiteaConfig, validateGiteaConfig } from "../plugins/gitea/config";
 import { handleGiteaWebhookRequest } from "../plugins/gitea/webhook-handler";
 import { giteaIntegrationSchema } from "../schemas";
+import {
+  organizationAccess,
+  organizationAccessMiddleware,
+} from "../utils/organization-access-middleware";
 import {
   hasOrganizationPermission,
   requireOrganizationPermission,
 } from "../utils/require-organization-permission";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
-import {
-  organizationAccess,
-  organizationAccessMiddleware,
-} from "../utils/organization-access-middleware";
 import createGiteaIntegration from "./controllers/create-gitea-integration";
 import deleteGiteaIntegration from "./controllers/delete-gitea-integration";
 import getGiteaIntegration from "./controllers/get-gitea-integration";

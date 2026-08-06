@@ -2,10 +2,9 @@ import {
   createFileRoute,
   Link,
   Outlet,
-  redirect,
   useLocation,
 } from "@tanstack/react-router";
-import { Plug, Settings, Shield, Tag } from "lucide-react";
+import { FlaskConical, Plug, Settings, Shield, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,34 +15,13 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import getOrganizations from "@/fetchers/organization/get-organizations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
-import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/organization",
 )({
-  // Settings pages live outside `/dashboard/organization/$organizationId`, so they
-  // have no route param to identify "which organization". They rely on the
-  // session's active organization. A user who deep-links here (or refreshes)
-  // before ever visiting a organization dashboard would otherwise see an empty
-  // sidebar ("WS / Roles.Undefined") and a stuck "Loading…" — pick the first
-  // organization as active so the layout has something to render.
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (session?.data?.session?.activeOrganizationId) return;
-
-    const organizations = await getOrganizations();
-    if (organizations.length === 0) {
-      throw redirect({ to: "/onboarding" });
-    }
-
-    await authClient.organization.setActive({
-      organizationId: organizations[0].id,
-    });
-  },
   component: RouteComponent,
 });
 
@@ -62,6 +40,7 @@ function RouteComponent() {
       url: "/dashboard/settings/organization/roles",
       icon: Shield,
     },
+
     {
       title: t("settings:organizationLabels.title", { defaultValue: "Labels" }),
       url: "/dashboard/settings/organization/labels",
@@ -71,6 +50,11 @@ function RouteComponent() {
       title: "Connections",
       url: "/dashboard/settings/organization/connections",
       icon: Plug,
+    },
+    {
+      title: "Features",
+      url: "/dashboard/settings/organization/features",
+      icon: FlaskConical,
     },
   ];
   const isActivePath = (path: string) => location.pathname === path;

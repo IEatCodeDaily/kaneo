@@ -16,14 +16,17 @@ export async function createGithubRepo({
   owner: string;
   name: string;
 }) {
-  const connection = await db.query.organizationGithubInstallationTable.findFirst({
-    where: and(
-      eq(organizationGithubInstallationTable.organizationId, organizationId),
-      eq(organizationGithubInstallationTable.installationId, installationId),
-    ),
-  });
+  const connection =
+    await db.query.organizationGithubInstallationTable.findFirst({
+      where: and(
+        eq(organizationGithubInstallationTable.organizationId, organizationId),
+        eq(organizationGithubInstallationTable.installationId, installationId),
+      ),
+    });
   if (!connection) {
-    throw new HTTPException(400, { message: "GitHub account is not connected to this organization" });
+    throw new HTTPException(400, {
+      message: "GitHub account is not connected to this organization",
+    });
   }
 
   try {
@@ -45,7 +48,10 @@ export async function createGithubRepo({
   } catch (error) {
     if (error instanceof HTTPException) throw error;
     const status = (error as { status?: number }).status;
-    if (status === 404) throw new HTTPException(404, { message: "Repository is not available to this GitHub account" });
+    if (status === 404)
+      throw new HTTPException(404, {
+        message: "Repository is not available to this GitHub account",
+      });
     throw error;
   }
 }

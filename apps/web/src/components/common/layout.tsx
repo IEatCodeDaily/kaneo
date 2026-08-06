@@ -39,7 +39,7 @@ function LayoutHeader({ children, className }: HeaderProps) {
 function LayoutContent({ children, className }: ContentProps) {
   return (
     <div className={cn("flex-1 min-h-0", className)}>
-      <div className="h-full">{children}</div>
+      <div className="md:h-full">{children}</div>
     </div>
   );
 }
@@ -63,7 +63,7 @@ function Layout({ children, className }: LayoutProps) {
         <AppSidebar />
         <SidebarInset
           className={cn(
-            "m-2 flex flex-1 flex-col overflow-auto rounded-xl border border-border/80 bg-background shadow-sm/5",
+            "flex min-w-0 flex-1 flex-col bg-background md:m-2 md:h-[calc(100svh-1rem)] md:overflow-auto md:rounded-xl md:border md:border-border/80 md:shadow-sm/5",
             className,
           )}
         >

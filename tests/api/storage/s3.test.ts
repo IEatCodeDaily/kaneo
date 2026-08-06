@@ -107,8 +107,8 @@ describe("S3 helpers", () => {
     vi.spyOn(Date, "now").mockReturnValue(1_717_171_717_000);
 
     const key = buildObjectKey({
-      workspaceId: "Workspace 1",
-      projectId: "Project 2",
+      organizationId: "Workspace 1",
+      boardId: "Project 2",
       taskId: "Task 3",
       surface: "comment",
       filename: "Sprint Plan Final!!.PNG",
@@ -117,15 +117,15 @@ describe("S3 helpers", () => {
 
     expect(
       buildObjectKeyPrefix({
-        workspaceId: "Workspace 1",
-        projectId: "Project 2",
+        organizationId: "Workspace 1",
+        boardId: "Project 2",
         taskId: "Task 3",
         surface: "comment",
       }),
-    ).toBe("workspace/workspace-1/project/project-2/task/task-3/comments");
+    ).toBe("organization/workspace-1/board/project-2/task/task-3/comments");
 
     expect(key).toMatch(
-      /^workspace\/workspace-1\/project\/project-2\/task\/task-3\/comments\/sprint-plan-final-1717171717000-[a-z0-9]+\.png$/,
+      /^organization\/workspace-1\/board\/project-2\/task\/task-3\/comments\/sprint-plan-final-1717171717000-[a-z0-9]+\.png$/,
     );
     process.env.S3_ENDPOINT = "https://storage.example.test";
     process.env.S3_BUCKET = "kaneo";
@@ -135,8 +135,8 @@ describe("S3 helpers", () => {
 
     expect(
       assertTaskImageKeyMatchesContext(key, {
-        workspaceId: "Workspace 1",
-        projectId: "Project 2",
+        organizationId: "Workspace 1",
+        boardId: "Project 2",
         taskId: "Task 3",
         surface: "comment",
       }),
@@ -164,16 +164,16 @@ describe("S3 helpers", () => {
     process.env.S3_KEY_PREFIX = "staging";
 
     const ctx = {
-      workspaceId: "ws1",
-      projectId: "p1",
+      organizationId: "ws1",
+      boardId: "p1",
       taskId: "t1",
       surface: "description" as const,
     };
 
     const prefixedKey =
-      "staging/workspace/ws1/project/p1/task/t1/descriptions/img-123-abc.png";
+      "staging/organization/ws1/board/p1/task/t1/descriptions/img-123-abc.png";
     const unprefixedKey =
-      "workspace/ws1/project/p1/task/t1/descriptions/img-123-abc.png";
+      "organization/ws1/board/p1/task/t1/descriptions/img-123-abc.png";
 
     expect(assertTaskImageKeyMatchesContext(prefixedKey, ctx)).toBe(true);
     expect(assertTaskImageKeyMatchesContext(unprefixedKey, ctx)).toBe(false);
@@ -204,8 +204,8 @@ describe("S3 helpers", () => {
     delete process.env.S3_KEY_PREFIX;
 
     const upload = await createTaskImageUploadUrl({
-      workspaceId: "workspace-1",
-      projectId: "project-1",
+      organizationId: "workspace-1",
+      boardId: "project-1",
       taskId: "task-1",
       surface: "description",
       filename: "report.png",
@@ -321,8 +321,8 @@ describe("S3 credential provider chain (IAM role)", () => {
     process.env.AWS_SECRET_ACCESS_KEY = ambientSecretAccessKey;
 
     const upload = await createTaskImageUploadUrl({
-      workspaceId: "workspace-1",
-      projectId: "project-1",
+      organizationId: "workspace-1",
+      boardId: "project-1",
       taskId: "task-1",
       surface: "description",
       filename: "report.png",

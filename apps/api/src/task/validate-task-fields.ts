@@ -21,9 +21,7 @@ export function assertValidPriority(priority: string): void {
   }
 }
 
-export async function getValidTaskStatuses(
-  boardId: string,
-): Promise<string[]> {
+export async function getValidTaskStatuses(boardId: string): Promise<string[]> {
   const columns = await db
     .select({ slug: columnTable.slug })
     .from(columnTable)

@@ -217,8 +217,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
         const ed = getEventDataRecord(notification.eventData);
         const organizationId =
           typeof ed?.organizationId === "string" ? ed.organizationId : null;
-        const boardId =
-          typeof ed?.boardId === "string" ? ed.boardId : null;
+        const boardId = typeof ed?.boardId === "string" ? ed.boardId : null;
         const taskId = notification.resourceId ?? null;
 
         if (

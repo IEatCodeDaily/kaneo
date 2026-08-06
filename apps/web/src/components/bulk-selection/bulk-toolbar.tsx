@@ -47,8 +47,8 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
-import useBulkSelectionStore from "@/store/bulk-selection";
 import useBoardStore from "@/store/board";
+import useBulkSelectionStore from "@/store/bulk-selection";
 import { Button } from "../ui/button";
 import { Toolbar, ToolbarGroup, ToolbarSeparator } from "../ui/toolbar";
 

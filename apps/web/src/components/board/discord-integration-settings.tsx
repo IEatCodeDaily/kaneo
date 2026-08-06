@@ -79,11 +79,7 @@ function isValidDiscordWebhookUrl(value: string): boolean {
   );
 }
 
-export function DiscordIntegrationSettings({
-  boardId,
-}: {
-  boardId: string;
-}) {
+export function DiscordIntegrationSettings({ boardId }: { boardId: string }) {
   const { t } = useTranslation();
   const schema = React.useMemo(
     () =>

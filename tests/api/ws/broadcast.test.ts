@@ -8,7 +8,7 @@ vi.mock("../../../apps/api/src/events", () => ({
 
 import {
   addConnection,
-  broadcastToProject,
+  broadcastToBoard,
   initializeWebSocketAdapter,
   removeConnection,
   shutdownWebSocketAdapter,
@@ -25,7 +25,7 @@ function makeFakeWs() {
   } as never;
 }
 
-describe("broadcastToProject", () => {
+describe("broadcastToBoard", () => {
   beforeEach(async () => {
     // Ensure no REDIS_URL so InMemoryBroadcastAdapter is used
     delete process.env.REDIS_URL;
@@ -38,11 +38,11 @@ describe("broadcastToProject", () => {
 
   it("delivers messages to connected clients after batch timeout", async () => {
     const ws = makeFakeWs();
-    const conn = addConnection("proj-1", ws, "user-1", "init-1");
+    const conn = addConnection("board-1", ws, "user-1", "init-1");
 
-    broadcastToProject("proj-1", {
+    broadcastToBoard("board-1", {
       type: "TASK_CREATED",
-      projectId: "proj-1",
+      boardId: "board-1",
       taskId: "t1",
     });
 
@@ -67,18 +67,18 @@ describe("broadcastToProject", () => {
     expect(sent.type).toBe("TASK_CREATED");
     expect(sent.taskId).toBe("t1");
 
-    removeConnection("proj-1", conn);
+    removeConnection("board-1", conn);
   });
 
   it("excludes connections matching excludeInitiatorId", async () => {
     const ws1 = makeFakeWs();
     const ws2 = makeFakeWs();
-    const conn1 = addConnection("proj-1", ws1, "user-1", "init-excluded");
-    const conn2 = addConnection("proj-1", ws2, "user-2", "init-other");
+    const conn1 = addConnection("board-1", ws1, "user-1", "init-excluded");
+    const conn2 = addConnection("board-1", ws2, "user-2", "init-other");
 
-    broadcastToProject(
-      "proj-1",
-      { type: "TASK_UPDATED", projectId: "proj-1" },
+    broadcastToBoard(
+      "board-1",
+      { type: "TASK_UPDATED", boardId: "board-1" },
       "init-excluded",
     );
 
@@ -95,23 +95,23 @@ describe("broadcastToProject", () => {
       (ws1 as { send: ReturnType<typeof vi.fn> }).send,
     ).not.toHaveBeenCalled();
 
-    removeConnection("proj-1", conn1);
-    removeConnection("proj-1", conn2);
+    removeConnection("board-1", conn1);
+    removeConnection("board-1", conn2);
   });
 
   it("deduplicates messages with the same key in a batch window", async () => {
     const ws = makeFakeWs();
-    const conn = addConnection("proj-1", ws, "user-1", "init-1");
+    const conn = addConnection("board-1", ws, "user-1", "init-1");
 
     // Send two messages with the same type+taskId — should be deduplicated
-    broadcastToProject("proj-1", {
+    broadcastToBoard("board-1", {
       type: "TASK_UPDATED",
-      projectId: "proj-1",
+      boardId: "board-1",
       taskId: "t1",
     });
-    broadcastToProject("proj-1", {
+    broadcastToBoard("board-1", {
       type: "TASK_UPDATED",
-      projectId: "proj-1",
+      boardId: "board-1",
       taskId: "t1",
     });
 
@@ -129,16 +129,16 @@ describe("broadcastToProject", () => {
       (ws as { send: ReturnType<typeof vi.fn> }).send,
     ).toHaveBeenCalledTimes(1);
 
-    removeConnection("proj-1", conn);
+    removeConnection("board-1", conn);
   });
 
   it("does not deliver to connections on a different project", async () => {
     const ws = makeFakeWs();
-    const conn = addConnection("proj-2", ws, "user-1", "init-1");
+    const conn = addConnection("board-2", ws, "user-1", "init-1");
 
-    broadcastToProject("proj-1", {
+    broadcastToBoard("board-1", {
       type: "TASK_CREATED",
-      projectId: "proj-1",
+      boardId: "board-1",
     });
 
     // Wait past the batch timeout
@@ -148,20 +148,20 @@ describe("broadcastToProject", () => {
       (ws as { send: ReturnType<typeof vi.fn> }).send,
     ).not.toHaveBeenCalled();
 
-    removeConnection("proj-2", conn);
+    removeConnection("board-2", conn);
   });
 
   it("warns when called before adapter initialization", async () => {
     await shutdownWebSocketAdapter();
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    broadcastToProject("proj-1", {
+    broadcastToBoard("board-1", {
       type: "TASK_CREATED",
-      projectId: "proj-1",
+      boardId: "board-1",
     });
 
     expect(warnSpy).toHaveBeenCalledWith(
-      "broadcastToProject called before adapter initialization",
+      "broadcastToBoard called before adapter initialization",
     );
     warnSpy.mockRestore();
   });

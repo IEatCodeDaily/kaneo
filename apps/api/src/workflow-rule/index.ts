@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import deleteWorkflowRule from "./controllers/delete-workflow-rule";
 import getWorkflowRules from "./controllers/get-workflow-rules";
 import upsertWorkflowRule from "./controllers/upsert-workflow-rule";

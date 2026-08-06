@@ -1,0 +1,469 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Pencil, Trash2, UserMinus, UserPlus, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import PermissionDenied from "@/components/permission-denied";
+import {
+  type PrincipalOption,
+  PrincipalSelector,
+} from "@/components/principal-selector";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPanel,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { authClient } from "@/lib/auth-client";
+import { getInitials } from "@/lib/get-initials";
+import { toast } from "@/lib/toast";
+
+export const Route = createFileRoute(
+  "/_layout/_authenticated/dashboard/settings/organization/teams",
+)({
+  beforeLoad: async () => {
+    const { data: organization } =
+      await authClient.organization.getFullOrganization();
+    if (!organization?.id) return;
+    throw redirect({
+      to: "/dashboard/organization/$organizationId/members",
+      params: { organizationId: organization.id },
+      search: { tab: "teams" },
+      replace: true,
+    });
+  },
+  component: TeamsSettings,
+});
+
+type Team = NonNullable<
+  Awaited<ReturnType<typeof authClient.organization.listTeams>>["data"]
+>[number];
+
+type TeamMember = NonNullable<
+  Awaited<ReturnType<typeof authClient.organization.listTeamMembers>>["data"]
+>[number];
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function TeamsSettings() {
+  return null;
+}
+
+export function TeamsManagement({
+  createTeamSignal = 0,
+}: {
+  createTeamSignal?: number;
+}) {
+  const queryClient = useQueryClient();
+  const { organization, isAdmin } = useOrganizationPermission();
+  const organizationId = organization?.id ?? "";
+  const [editor, setEditor] = useState<{ team?: Team; name: string } | null>(
+    null,
+  );
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+
+  useEffect(() => {
+    if (createTeamSignal > 0) setEditor({ name: "" });
+  }, [createTeamSignal]);
+
+  const teamsQuery = useQuery({
+    queryKey: ["organization-teams", organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await authClient.organization.listTeams({
+        query: { organizationId },
+      });
+      if (error) throw new Error(error.message || "Failed to load teams");
+      return data;
+    },
+  });
+
+  const membersQuery = useQuery({
+    queryKey: ["organization-members", organizationId, "teams-settings"],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await authClient.organization.listMembers({
+        query: { organizationId },
+      });
+      if (error) throw new Error(error.message || "Failed to load members");
+      return data.members;
+    },
+  });
+
+  const saveTeam = useMutation({
+    mutationFn: async ({ team, name }: { team?: Team; name: string }) => {
+      const result = team
+        ? await authClient.organization.updateTeam({
+            teamId: team.id,
+            data: { name },
+          })
+        : await authClient.organization.createTeam({ name, organizationId });
+      if (result.error)
+        throw new Error(result.error.message || "Failed to save team");
+      return result.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organization-teams", organizationId],
+      });
+      setEditor(null);
+      toast.success("Team saved");
+    },
+    onError: (error) => toast.error(errorMessage(error, "Failed to save team")),
+  });
+
+  const deleteTeam = useMutation({
+    mutationFn: async (teamId: string) => {
+      const { error } = await authClient.organization.removeTeam({
+        teamId,
+        organizationId,
+      });
+      if (error) throw new Error(error.message || "Failed to delete team");
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organization-teams", organizationId],
+      });
+      setTeamToDelete(null);
+      toast.success("Team deleted");
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Failed to delete team")),
+  });
+
+  if (!isAdmin) {
+    return (
+      <PermissionDenied description="You do not have permission to manage teams." />
+    );
+  }
+
+  const teams = teamsQuery.data ?? [];
+  return (
+    <>
+      <div>
+        {teamsQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading teams…</p>
+        ) : teamsQuery.isError ? (
+          <p className="text-sm text-destructive">
+            {errorMessage(teamsQuery.error, "Failed to load teams")}
+          </p>
+        ) : teams.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-md border border-border py-12 text-center">
+            <UsersRound className="size-8 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">No teams yet</p>
+              <p className="text-xs text-muted-foreground">
+                Create a team to organize members.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {teams.map((team) => (
+              <TeamCard
+                key={team.id}
+                team={team}
+                organizationId={organizationId}
+                organizationMembers={membersQuery.data ?? []}
+                onRename={() => setEditor({ team, name: team.name })}
+                onDelete={() => setTeamToDelete(team)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Dialog
+        open={Boolean(editor)}
+        onOpenChange={(open) => !open && setEditor(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-1.5 p-5 pb-2">
+            <DialogTitle>
+              {editor?.team ? "Rename team" : "Create team"}
+            </DialogTitle>
+            <DialogDescription>
+              Team names must be unique within the organization.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel className="space-y-1.5 px-5 py-3">
+            <Label htmlFor="team-name">Name</Label>
+            <Input
+              id="team-name"
+              autoFocus
+              value={editor?.name ?? ""}
+              onChange={(event) =>
+                setEditor(
+                  (value) => value && { ...value, name: event.target.value },
+                )
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && editor?.name.trim()) {
+                  saveTeam.mutate({
+                    team: editor.team,
+                    name: editor.name.trim(),
+                  });
+                }
+              }}
+            />
+          </DialogPanel>
+          <DialogFooter variant="bare" className="px-5 pt-0 pb-5">
+            <Button variant="outline" onClick={() => setEditor(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!editor?.name.trim() || saveTeam.isPending}
+              onClick={() =>
+                editor &&
+                saveTeam.mutate({ team: editor.team, name: editor.name.trim() })
+              }
+            >
+              {saveTeam.isPending ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(teamToDelete)}
+        onOpenChange={(open) => !open && setTeamToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {teamToDelete?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the team. Organization members will not
+              be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose>Cancel</AlertDialogClose>
+            <Button
+              variant="destructive"
+              disabled={deleteTeam.isPending}
+              onClick={() => teamToDelete && deleteTeam.mutate(teamToDelete.id)}
+            >
+              {deleteTeam.isPending ? "Deleting…" : "Delete team"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+type OrganizationMember = NonNullable<
+  Awaited<ReturnType<typeof authClient.organization.listMembers>>["data"]
+>["members"][number];
+
+function TeamCard({
+  team,
+  organizationId,
+  organizationMembers,
+  onRename,
+  onDelete,
+}: {
+  team: Team;
+  organizationId: string;
+  organizationMembers: OrganizationMember[];
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [memberId, setMemberId] = useState("");
+  const queryKey = ["organization-team-members", team.id];
+  const teamMembersQuery = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const { data, error } = await authClient.organization.listTeamMembers({
+        query: { teamId: team.id },
+      });
+      if (error)
+        throw new Error(error.message || "Failed to load team members");
+      return data;
+    },
+  });
+  const membership = teamMembersQuery.data ?? [];
+  const memberByUserId = useMemo(
+    () => new Map(organizationMembers.map((member) => [member.userId, member])),
+    [organizationMembers],
+  );
+  const availableMembers = organizationMembers.filter(
+    (member) => !membership.some((entry) => entry.userId === member.userId),
+  );
+  const changeMembership = useMutation({
+    mutationFn: async ({
+      userId,
+      remove,
+    }: {
+      userId: string;
+      remove?: boolean;
+    }) => {
+      const result = remove
+        ? await authClient.organization.removeTeamMember({
+            teamId: team.id,
+            userId,
+            organizationId,
+          })
+        : await authClient.organization.addTeamMember({
+            teamId: team.id,
+            userId,
+            organizationId,
+          });
+      if (result.error)
+        throw new Error(
+          result.error.message || "Failed to update team members",
+        );
+    },
+    onSuccess: async () => {
+      setMemberId("");
+      await queryClient.invalidateQueries({ queryKey });
+      toast.success("Team members updated");
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Failed to update team members")),
+  });
+
+  return (
+    <section className="rounded-md border border-border bg-sidebar">
+      <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+        <div>
+          <h2 className="text-sm font-medium">{team.name}</h2>
+          <p className="text-xs text-muted-foreground">
+            {membership.length} {membership.length === 1 ? "member" : "members"}
+          </p>
+        </div>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Rename ${team.name}`}
+            onClick={onRename}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Delete ${team.name}`}
+            onClick={onDelete}
+          >
+            <Trash2 className="size-3.5 text-destructive" />
+          </Button>
+        </div>
+      </div>
+      <div className="space-y-3 p-4">
+        <div className="flex gap-2">
+          <PrincipalSelector
+            aria-label={`Add member to ${team.name}`}
+            className="h-8 flex-1 sm:h-7"
+            disabled={changeMembership.isPending}
+            emptyMessage="No organization members available."
+            kinds={["member"]}
+            loading={teamMembersQuery.isLoading}
+            onValueChange={(selection) => setMemberId(selection[0]?.id ?? "")}
+            options={availableMembers.map(
+              (member): PrincipalOption => ({
+                id: member.userId,
+                kind: "member",
+                name: member.user.name,
+                detail: member.user.email,
+              }),
+            )}
+            placeholder="Select an organization member"
+            searchPlaceholder="Search organization members…"
+            value={
+              memberId && memberByUserId.has(memberId)
+                ? [
+                    {
+                      id: memberId,
+                      kind: "member",
+                      name: memberByUserId.get(memberId)?.user.name ?? "Member",
+                      detail: memberByUserId.get(memberId)?.user.email,
+                    },
+                  ]
+                : []
+            }
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={!memberId || changeMembership.isPending}
+            onClick={() => changeMembership.mutate({ userId: memberId })}
+          >
+            <UserPlus className="size-3.5" /> Add
+          </Button>
+        </div>
+        {teamMembersQuery.isLoading ? (
+          <p className="text-xs text-muted-foreground">Loading members…</p>
+        ) : membership.length === 0 ? (
+          <p className="py-3 text-center text-xs text-muted-foreground">
+            No members in this team.
+          </p>
+        ) : (
+          <div className="divide-y divide-border rounded-md border border-border">
+            {membership.map((entry: TeamMember) => {
+              const member = memberByUserId.get(entry.userId);
+              return (
+                <div
+                  key={entry.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <Avatar className="size-7">
+                      <AvatarImage src={member?.user.image ?? ""} />
+                      <AvatarFallback className="text-[10px]">
+                        {getInitials(member?.user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">
+                        {member?.user.name ?? "Organization member"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {member?.user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Remove ${member?.user.name ?? "member"} from ${team.name}`}
+                    disabled={changeMembership.isPending}
+                    onClick={() =>
+                      changeMembership.mutate({
+                        userId: entry.userId,
+                        remove: true,
+                      })
+                    }
+                  >
+                    <UserMinus className="size-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

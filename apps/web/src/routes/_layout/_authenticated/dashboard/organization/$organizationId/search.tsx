@@ -70,7 +70,10 @@ function SearchComponent() {
       <OrganizationLayout
         title={t("organization:search.pageTitle")}
         headerActions={
-          <Link to="/dashboard/organization/$organizationId" params={{ organizationId }}>
+          <Link
+            to="/dashboard/organization/$organizationId"
+            params={{ organizationId }}
+          >
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               {t("organization:search.backToDashboard")}

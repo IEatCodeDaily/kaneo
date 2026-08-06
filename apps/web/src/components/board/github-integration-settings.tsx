@@ -46,11 +46,7 @@ type GithubIntegrationFormValues = {
   repositoryName: string;
 };
 
-export function GitHubIntegrationSettings({
-  boardId,
-}: {
-  boardId: string;
-}) {
+export function GitHubIntegrationSettings({ boardId }: { boardId: string }) {
   const { t } = useTranslation();
   const githubIntegrationSchema = React.useMemo(
     () =>

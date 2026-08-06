@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   Collapsible,
   CollapsiblePanel,
@@ -20,35 +21,60 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 export function NavMain() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { data: invitations = [] } = usePendingInvitations();
 
-  if (!organization) return null;
+  if (!organization && user?.role !== "admin") return null;
 
   const pendingCount = invitations.length;
+  const reposEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { reposEnabled?: boolean })
+        | undefined
+    )?.reposEnabled,
+  );
 
   const navItems = [
-    {
-      title: t("navigation:sidebar.boards"),
-      url: `/dashboard/organization/${organization.id}`,
-      isActive:
-        window.location.pathname === `/dashboard/organization/${organization.id}`,
-      badge: null,
-    },
-    {
-      title: t("navigation:sidebar.members"),
-      url: `/dashboard/organization/${organization.id}/members`,
-      isActive:
-        window.location.pathname ===
-        `/dashboard/organization/${organization.id}/members`,
-      badge: null,
-    },
-    {
-      title: t("navigation:sidebar.invitations"),
-      url: "/dashboard/invitations",
-      isActive: window.location.pathname === "/dashboard/invitations",
-      badge: pendingCount > 0 ? pendingCount : null,
-    },
+    ...(organization
+      ? [
+          {
+            title: t("navigation:sidebar.boards"),
+            url: `/dashboard/organization/${organization.id}`,
+            isActive:
+              window.location.pathname ===
+              `/dashboard/organization/${organization.id}`,
+            badge: null,
+          },
+          {
+            title: t("navigation:sidebar.members"),
+            url: `/dashboard/organization/${organization.id}/members`,
+            isActive:
+              window.location.pathname ===
+              `/dashboard/organization/${organization.id}/members`,
+            badge: null,
+          },
+          ...(reposEnabled
+            ? [
+                {
+                  title: t("navigation:sidebar.repos"),
+                  url: `/dashboard/organization/${organization.id}/repo`,
+                  isActive: window.location.pathname.startsWith(
+                    `/dashboard/organization/${organization.id}/repo`,
+                  ),
+                  badge: "Beta",
+                },
+              ]
+            : []),
+          {
+            title: t("navigation:sidebar.invitations"),
+            url: "/dashboard/invitations",
+            isActive: window.location.pathname === "/dashboard/invitations",
+            badge: pendingCount > 0 ? pendingCount : null,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -77,7 +103,13 @@ export function NavMain() {
                   >
                     <span>{item.title}</span>
                     {item.badge !== null && (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-sidebar-border/60 px-1 text-[11px] font-medium text-sidebar-foreground/80">
+                      <span
+                        className={
+                          item.badge === "Beta"
+                            ? "ml-auto flex h-5 items-center justify-center rounded-full border border-sidebar-border/60 px-1.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/80"
+                            : "ml-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-sidebar-border/60 px-1 text-[11px] font-medium text-sidebar-foreground/80"
+                        }
+                      >
                         {item.badge}
                       </span>
                     )}

@@ -1,11 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// GitHub account delegation moved into the unified Connections page, which
-// shows the account grant and the organization App installations together.
+// GitHub delegation belongs to the Authentication page beside linked IdPs.
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/account/github",
 )({
   beforeLoad: () => {
-    throw redirect({ to: "/dashboard/settings/account/connections" });
+    throw redirect({ to: "/dashboard/settings/account/authentication" });
   },
 });

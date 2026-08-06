@@ -6,6 +6,7 @@ import {
   activityTableRelations,
   apikeyTableRelations,
   assetTableRelations,
+  boardTableRelations,
   columnTableRelations,
   commentTableRelations,
   externalLinkTableRelations,
@@ -14,26 +15,25 @@ import {
   invitationTableRelations,
   labelTableRelations,
   notificationTableRelations,
-  boardTableRelations,
+  organizationGithubInstallationTableRelations,
+  organizationMemberTableRelations,
+  organizationRoleTableRelations,
+  organizationTableRelations,
+  repoIssueTableRelations,
+  repoPullRequestTableRelations,
+  repoTableRelations,
   sessionTableRelations,
   taskRelationTableRelations,
   taskTableRelations,
   teamMemberTableRelations,
   teamTableRelations,
   timeEntryTableRelations,
-  userNotificationPreferenceTableRelations,
   userNotificationOrgBoardTableRelations,
   userNotificationOrgRuleTableRelations,
+  userNotificationPreferenceTableRelations,
   userTableRelations,
   verificationTableRelations,
   workflowRuleTableRelations,
-  organizationRoleTableRelations,
-  repoTableRelations,
-  repoIssueTableRelations,
-  repoPullRequestTableRelations,
-  organizationTableRelations,
-  organizationMemberTableRelations,
-  organizationGithubInstallationTableRelations,
 } from "./relations";
 import { resolveDatabaseConnectionString } from "./resolve-database-url";
 import {
@@ -41,6 +41,7 @@ import {
   activityTable,
   apikeyTable,
   assetTable,
+  boardTable,
   columnTable,
   commentTable,
   deviceCodeTable,
@@ -52,26 +53,27 @@ import {
   invitationTable,
   labelTable,
   notificationTable,
-  boardTable,
+  oidcTeamSyncConfigTable,
+  organizationGithubInstallationTable,
+  organizationMemberTable,
+  organizationRoleTable,
+  organizationTable,
+  repoIssueTable,
+  repoPullRequestTable,
+  repoTable,
+  resourceGrantTable,
   sessionTable,
   taskRelationTable,
   taskTable,
   teamMemberTable,
   teamTable,
   timeEntryTable,
-  userNotificationPreferenceTable,
   userNotificationOrgBoardTable,
   userNotificationOrgRuleTable,
+  userNotificationPreferenceTable,
   userTable,
   verificationTable,
   workflowRuleTable,
-  organizationRoleTable,
-  organizationTable,
-  organizationMemberTable,
-  organizationGithubInstallationTable,
-  repoTable,
-  repoIssueTable,
-  repoPullRequestTable,
 } from "./schema";
 
 config();
@@ -93,6 +95,7 @@ export const schema = {
   labelTable,
   notificationTable,
   boardTable,
+  resourceGrantTable,
   sessionTable,
   taskRelationTable,
   taskTable,
@@ -108,6 +111,7 @@ export const schema = {
   organizationRoleTable,
   organizationTable,
   organizationMemberTable,
+  oidcTeamSyncConfigTable,
   organizationGithubInstallationTable,
   repoTable,
   repoIssueTable,
@@ -160,6 +164,21 @@ export function getDatabasePool(): Pool {
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 30_000,
       max: 10,
+      // Keep TCP alive so idle pool clients aren't silently reaped by the OS,
+      // a NAT table, or Postgres itself during quiet periods.
+      keepAlive: true,
+    });
+
+    // `pg` emits 'error' on the Pool when an IDLE client dies (server restart,
+    // dropped TCP connection, network blip). Node treats an unhandled 'error'
+    // event on an EventEmitter as fatal, so without this listener a single
+    // dropped idle connection takes the whole API process down and every
+    // request 500s until a manual restart.
+    //
+    // The pool already discards the broken client and creates a fresh one on
+    // the next checkout, so logging is the correct response here.
+    pool.on("error", (error) => {
+      console.error("Postgres pool error on idle client:", error.message);
     });
   }
 

@@ -18,7 +18,9 @@ export const useGetActiveOrganizationMember = () => {
       });
 
       if (error) {
-        throw new Error(error.message || "Failed to get active organization user");
+        throw new Error(
+          error.message || "Failed to get active organization user",
+        );
       }
 
       return data.members.find((member) => member.userId === user?.id) ?? null;

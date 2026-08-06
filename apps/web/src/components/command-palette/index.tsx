@@ -3,8 +3,8 @@ import { ArrowDownIcon, ArrowUpIcon, CornerDownLeftIcon } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchCommandMenu from "@/components/search-command-menu";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import {
   Command,
   CommandCollection,
@@ -51,7 +51,8 @@ function CommandPalette() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
-  const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] = useState(false);
+  const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] =
+    useState(false);
   const boardIdFromRoute =
     location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");

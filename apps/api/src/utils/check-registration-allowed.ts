@@ -1,6 +1,10 @@
 import { and, eq, gt } from "drizzle-orm";
 import db from "../database";
-import { invitationTable, userTable, organizationTable } from "../database/schema";
+import {
+  invitationTable,
+  organizationTable,
+  userTable,
+} from "../database/schema";
 
 type RegistrationCheckResult = {
   allowed: boolean;
@@ -52,6 +56,23 @@ export async function checkRegistrationAllowed(
     reason: "Valid invitation found",
     invitation,
   };
+}
+
+export async function hasPendingInvitationForEmail(
+  email: string,
+): Promise<boolean> {
+  const [invitation] = await db
+    .select({ id: invitationTable.id })
+    .from(invitationTable)
+    .where(
+      and(
+        eq(invitationTable.email, email.toLowerCase()),
+        eq(invitationTable.status, "pending"),
+        gt(invitationTable.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+  return Boolean(invitation);
 }
 
 async function findValidInvitation(

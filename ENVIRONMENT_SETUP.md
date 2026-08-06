@@ -44,7 +44,7 @@ For local development, the web app also supports:
 
 Kaneo supports many optional configuration options including:
 - SSO providers (GitHub OAuth via `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET`, Google, Discord, Custom OAuth/OIDC)
-- GitHub user delegation (separate OAuth App: `GITHUB_DELEGATION_CLIENT_ID` / `GITHUB_DELEGATION_CLIENT_SECRET`; callback `${KANEO_API_URL}/api/github-delegation/callback`)
+- GitHub user delegation uses the same `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET` as GitHub sign-in, requesting broader scopes only when a user explicitly connects GitHub actions.
 - GitHub repository integration (GitHub App: `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET`, optional `GITHUB_APP_NAME`) — separate from GitHub SSO
 - SMTP configuration for email
 - Access control settings

@@ -26,8 +26,7 @@ type WorkflowEditorProps = {
 export default function WorkflowEditor({ boardId }: WorkflowEditorProps) {
   const { t } = useTranslation();
   const { data: columns, isLoading: columnsLoading } = useGetColumns(boardId);
-  const { data: rules, isLoading: rulesLoading } =
-    useGetWorkflowRules(boardId);
+  const { data: rules, isLoading: rulesLoading } = useGetWorkflowRules(boardId);
   const { mutateAsync: upsertRule } = useUpsertWorkflowRule();
 
   if (columnsLoading || rulesLoading) {

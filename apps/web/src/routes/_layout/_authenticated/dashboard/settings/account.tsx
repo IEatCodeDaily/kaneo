@@ -4,7 +4,7 @@ import {
   Outlet,
   useLocation,
 } from "@tanstack/react-router";
-import { Bell, Code, Plug, Settings, User } from "lucide-react";
+import { Bell, Code, KeyRound, Settings, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,9 +47,9 @@ function RouteComponent() {
       icon: Settings,
     },
     {
-      title: "Connections",
-      url: "/dashboard/settings/account/connections",
-      icon: Plug,
+      title: "Authentication",
+      url: "/dashboard/settings/account/authentication",
+      icon: KeyRound,
     },
   ];
 

@@ -1,9 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, MessageCircle, Radio, Send, Webhook } from "lucide-react";
+import {
+  ChevronDown,
+  GitFork,
+  Github,
+  MessageCircle,
+  Radio,
+  Send,
+  Webhook,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DiscordIntegrationSettings } from "@/components/board/discord-integration-settings";
 import { GenericWebhookIntegrationSettings } from "@/components/board/generic-webhook-integration-settings";
+import { GiteaIntegrationSettings } from "@/components/board/gitea-integration-settings";
+import { GitHubIntegrationSettings } from "@/components/board/github-integration-settings";
 import { SlackIntegrationSettings } from "@/components/board/slack-integration-settings";
 import { TelegramIntegrationSettings } from "@/components/board/telegram-integration-settings";
 import PageTitle from "@/components/page-title";
@@ -37,6 +47,22 @@ function RouteComponent() {
         </div>
 
         <div className="space-y-6">
+          <IntegrationSection
+            icon={<Github className="size-4" />}
+            subtitle="Sync GitHub issues into this board and keep task changes connected."
+            title="GitHub"
+          >
+            <GitHubIntegrationSettings boardId={boardId} />
+          </IntegrationSection>
+
+          <IntegrationSection
+            icon={<GitFork className="size-4" />}
+            subtitle="Sync issues from a Gitea repository into this board."
+            title="Gitea"
+          >
+            <GiteaIntegrationSettings boardId={boardId} />
+          </IntegrationSection>
+
           <IntegrationSection
             icon={<MessageCircle className="size-4" />}
             subtitle={t("settings:boardIntegrations.discordSectionSubtitle")}

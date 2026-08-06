@@ -40,12 +40,11 @@ import {
 } from "@/components/ui/context-menu";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
-import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
-import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
-import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
@@ -92,7 +91,6 @@ export default function TaskRelations({
 
   const { data: relations = [] } = useGetTaskRelations(taskId);
   const { data: boardData } = useGetTasks(boardId);
-  const { data: board } = useGetBoard({ id: boardId, organizationId });
   // Relations are organization-scoped server-side, so the picker offers tasks
   // from every board in the organization, not just the current one.
   const { data: organizationBoards } = useGetBoards({ organizationId });
@@ -298,7 +296,9 @@ export default function TaskRelations({
 
   const getAssignee = (userId: string | null) => {
     if (!userId || !organizationMembers?.members) return null;
-    return organizationMembers.members.find((member) => member.userId === userId);
+    return organizationMembers.members.find(
+      (member) => member.userId === userId,
+    );
   };
 
   const buildTaskObject = (item: {
@@ -452,7 +452,10 @@ export default function TaskRelations({
                       <ContextMenuContent className="w-40">
                         <ContextMenuItem
                           onClick={() =>
-                            handleNavigateToTask(item.task.id, item.task.boardId)
+                            handleNavigateToTask(
+                              item.task.id,
+                              item.task.boardId,
+                            )
                           }
                         >
                           <span>{t("tasks:relations.openTask")}</span>

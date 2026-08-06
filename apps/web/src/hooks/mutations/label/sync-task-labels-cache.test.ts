@@ -68,18 +68,14 @@ describe("updateTaskLabelsInBoard", () => {
       archivedTasks: [],
     };
 
-    const updatedBoard = updateTaskLabelsInBoard(
-      board,
-      "task-1",
-      (labels) => [
-        ...labels,
-        {
-          id: "label-bug",
-          name: "bug",
-          color: "red",
-        },
-      ],
-    );
+    const updatedBoard = updateTaskLabelsInBoard(board, "task-1", (labels) => [
+      ...labels,
+      {
+        id: "label-bug",
+        name: "bug",
+        color: "red",
+      },
+    ]);
 
     expect(updatedBoard.columns[0]?.tasks[0]?.labels).toEqual([
       {
@@ -161,10 +157,8 @@ describe("updateTaskLabelsInBoard", () => {
       ],
     };
 
-    const updatedBoard = updateTaskLabelsInBoard(
-      board,
-      "task-3",
-      (labels) => labels.filter((label) => label.id !== "label-bug"),
+    const updatedBoard = updateTaskLabelsInBoard(board, "task-3", (labels) =>
+      labels.filter((label) => label.id !== "label-bug"),
     );
 
     expect(updatedBoard.plannedTasks[0]?.labels).toEqual([]);

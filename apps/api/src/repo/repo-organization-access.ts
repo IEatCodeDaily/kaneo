@@ -3,7 +3,9 @@ import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { repoTable } from "../database/schema";
+import { getResourcePrivilege, privilegeAllows } from "../resource-access";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
+import { assertReposEnabled } from "./require-repos-enabled";
 
 /**
  * Mirrors `organizationAccess.fromBoard()` from
@@ -45,6 +47,17 @@ export function repoOrganizationAccess(idKey = "id") {
     const apiKeyId = apiKey?.id;
 
     await validateOrganizationAccess(userId, repo.organizationId, apiKeyId);
+    await assertReposEnabled(repo.organizationId);
+    const privilege = await getResourcePrivilege({
+      organizationId: repo.organizationId,
+      resourceType: "repo",
+      resourceId: repoId,
+      userId,
+    });
+    const required = c.req.method === "GET" ? "view" : "edit";
+    if (!privilegeAllows(privilege, required)) {
+      throw new HTTPException(404, { message: "Repo not found" });
+    }
 
     c.set("organizationId", repo.organizationId);
 

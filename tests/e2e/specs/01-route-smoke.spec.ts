@@ -20,6 +20,7 @@ const staticRoutes = [
   "/dashboard/settings/connections",
   "/dashboard/settings/organization",
   "/dashboard/settings/organization/general",
+  "/dashboard/settings/organization/features",
   "/dashboard/settings/organization/github",
   "/dashboard/settings/organization/labels",
   "/dashboard/settings/organization/roles",
@@ -29,8 +30,13 @@ const staticRoutes = [
 test.describe("route smoke", () => {
   for (const route of staticRoutes) {
     test(`renders ${route}`, async ({ page, pageErrors }) => {
-      const response = await page.goto(route, { waitUntil: "domcontentloaded" });
-      expect(response?.status(), `${route} returned ${response?.status()}`).toBeLessThan(400);
+      const response = await page.goto(route, {
+        waitUntil: "domcontentloaded",
+      });
+      expect(
+        response?.status(),
+        `${route} returned ${response?.status()}`,
+      ).toBeLessThan(400);
       await expect(page.locator("body")).toBeVisible();
       await page.waitForLoadState("networkidle").catch(() => {});
       // A crashed React tree leaves an effectively empty body.

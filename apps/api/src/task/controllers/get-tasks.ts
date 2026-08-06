@@ -12,10 +12,10 @@ import {
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
+  boardTable,
   columnTable,
   externalLinkTable,
   labelTable,
-  boardTable,
   taskTable,
   userTable,
 } from "../../database/schema";

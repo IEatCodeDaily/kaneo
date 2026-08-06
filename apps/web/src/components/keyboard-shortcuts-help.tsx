@@ -66,7 +66,10 @@ function useShortcutCategories(): ShortcutCategory[] {
             description: t("navigation:keyboardShortcuts.items.createBoard"),
           },
           {
-            keys: [shortcuts.organization.prefix, shortcuts.organization.create],
+            keys: [
+              shortcuts.organization.prefix,
+              shortcuts.organization.create,
+            ],
             description: t(
               "navigation:keyboardShortcuts.items.createOrganization",
             ),

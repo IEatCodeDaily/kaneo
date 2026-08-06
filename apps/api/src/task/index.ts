@@ -7,9 +7,10 @@ import db from "../database";
 import {
   assetTable,
   boardTable,
-  taskTable,
   organizationTable,
+  taskTable,
 } from "../database/schema";
+import { getTaskRepoItemLinks } from "../repo/controllers/repo-task-links";
 import { taskSchema } from "../schemas";
 import {
   assertTaskImageKeyMatchesContext,
@@ -18,9 +19,8 @@ import {
   validateTaskAssetUploadInput,
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
-import { getTaskRepoItemLinks } from "../repo/controllers/repo-task-links";
-import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";

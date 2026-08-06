@@ -21,7 +21,8 @@ export default function OrganizationCrumbSelect() {
       }}
     >
       <span className="truncate text-left">
-        {organization?.name || t("navigation:organizationSwitcher.selectOrganization")}
+        {organization?.name ||
+          t("navigation:organizationSwitcher.selectOrganization")}
       </span>
     </Button>
   );

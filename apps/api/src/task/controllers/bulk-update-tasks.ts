@@ -2,12 +2,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
+  boardTable,
   columnTable,
   labelTable,
-  boardTable,
+  organizationMemberTable,
   taskTable,
   userTable,
-  organizationMemberTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import {

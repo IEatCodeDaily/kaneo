@@ -155,7 +155,8 @@ function AcceptInvitation() {
               {invitationData.invitation && (
                 <p className="text-xs text-muted-foreground">
                   {t("auth:invitation.organizationLabel", {
-                    organizationName: invitationData.invitation.organizationName,
+                    organizationName:
+                      invitationData.invitation.organizationName,
                   })}
                 </p>
               )}

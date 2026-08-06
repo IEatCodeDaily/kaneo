@@ -26,8 +26,8 @@ import labelColors from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
-import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { DUE_DATE_FILTER_VALUES } from "@/hooks/use-task-filters";
 import { getInitials } from "@/lib/get-initials";
@@ -68,7 +68,8 @@ function RouteComponent() {
   });
 
   const { data: users } = useGetActiveOrganizationMembers(organizationId);
-  const { data: organizationLabels = [] } = useGetLabelsByOrganization(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
   const queryClient = useQueryClient();
 
   const handleCloseTaskSheet = useCallback(() => {
@@ -355,9 +356,7 @@ function RouteComponent() {
       organizationId={organizationId}
       activeView="backlog"
     >
-      <PageTitle
-        title={t("tasks:backlog.pageTitle", { name: board?.name })}
-      />
+      <PageTitle title={t("tasks:backlog.pageTitle", { name: board?.name })} />
       <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
         <div className="border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
           <div className="flex min-h-12 items-center px-3 py-2 md:px-4">

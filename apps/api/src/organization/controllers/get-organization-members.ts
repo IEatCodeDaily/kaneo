@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import db from "../../database";
-import { userTable, organizationMemberTable } from "../../database/schema";
+import { organizationMemberTable, userTable } from "../../database/schema";
 
 async function getOrganizationMembers(organizationId: string) {
   const members = await db

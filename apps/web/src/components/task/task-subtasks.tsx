@@ -1,7 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
 import { AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Link2, Plus, Search } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -13,6 +20,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import CircularProgress from "@/components/ui/circular-progress";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Command,
   CommandCollection,
@@ -28,12 +41,6 @@ import {
   CommandPanel,
   CommandSeparator,
 } from "@/components/ui/command";
-import CircularProgress from "@/components/ui/circular-progress";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
@@ -41,9 +48,9 @@ import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-stat
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
@@ -182,7 +189,8 @@ export default function TaskSubtasks({
   const getAssignee = (userId: string | null) => {
     if (!userId || !organizationMembers?.members) return null;
     return (
-      organizationMembers.members.find((member) => member.userId === userId) ?? null
+      organizationMembers.members.find((member) => member.userId === userId) ??
+      null
     );
   };
 
@@ -377,7 +385,9 @@ export default function TaskSubtasks({
       setLinkQuery("");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : t("tasks:subtasks.createError"),
+        error instanceof Error
+          ? error.message
+          : t("tasks:subtasks.createError"),
       );
     }
   };

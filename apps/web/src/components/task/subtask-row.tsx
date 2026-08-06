@@ -96,7 +96,10 @@ export default function SubtaskRow({
               </span>
             </button>
 
-            <SubtaskAssigneePopover tasks={tasks} organizationId={organizationId}>
+            <SubtaskAssigneePopover
+              tasks={tasks}
+              organizationId={organizationId}
+            >
               <button
                 type="button"
                 className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"

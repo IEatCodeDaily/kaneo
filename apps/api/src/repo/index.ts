@@ -1,15 +1,24 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import { listAccessibleResourceIds } from "../resource-access";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import {
+  addSyncedTask,
+  unsyncTaskFromIssue,
+} from "./controllers/add-synced-task";
 import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import { getGitHubRepoContents } from "./controllers/get-github-repo-contents";
+import { getGitHubRepoTree } from "./controllers/get-github-repo-tree";
 import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
+import { getRepoPullRequestChecks } from "./controllers/get-repo-pull-request-checks";
+import { getRepoPullRequestCommits } from "./controllers/get-repo-pull-request-commits";
+import { getRepoPullRequestFiles } from "./controllers/get-repo-pull-request-files";
 import {
   addGitHubSubIssue,
   closeGitHubIssue,
@@ -38,8 +47,10 @@ import {
   addRepoItemTaskLink,
   removeRepoItemTaskLink,
 } from "./controllers/repo-task-links";
+import { syncTaskFromIssue } from "./controllers/sync-task-from-issue";
 import updateRepoCtrl from "./controllers/update-repo";
 import { repoOrganizationAccess } from "./repo-organization-access";
+import { requireReposEnabled } from "./require-repos-enabled";
 import { syncRepo } from "./services/sync-gitea-repo";
 
 // NOTE: the permission statement vocabulary in @kaneo/permissions is
@@ -239,10 +250,21 @@ const repo = new Hono<{
     }),
     validator("query", v.object({ organizationId: v.string() })),
     organizationAccess.fromQuery(),
+    requireReposEnabled,
     async (c) => {
       const organizationId = c.get("organizationId");
       const repos = await listReposCtrl(organizationId);
-      return c.json(toRepoResponses(repos));
+      const accessibleIds = new Set(
+        await listAccessibleResourceIds({
+          organizationId,
+          resourceType: "repo",
+          userId: c.get("userId"),
+          resourceIds: repos.map((repo) => repo.id),
+        }),
+      );
+      return c.json(
+        toRepoResponses(repos.filter((repo) => accessibleIds.has(repo.id))),
+      );
     },
   )
   .post(
@@ -298,6 +320,7 @@ const repo = new Hono<{
       ),
     ),
     organizationAccess.fromBody(),
+    requireReposEnabled,
     // No `repo` permission verb exists yet — reuse `board: ["create"]`.
     requireOrganizationPermission({ board: ["create"] }),
     async (c) => {

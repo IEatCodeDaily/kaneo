@@ -134,13 +134,13 @@ describe("deleteLabel", () => {
           {
             label: TASK_LABEL_1,
             taskId: "task-1",
-            projectId: "proj-1",
+            boardId: "board-1",
             workspaceId: "ws-1",
           },
           {
             label: TASK_LABEL_2,
             taskId: "task-2",
-            projectId: "proj-2",
+            boardId: "board-2",
             workspaceId: "ws-1",
           },
         ]),
@@ -152,16 +152,16 @@ describe("deleteLabel", () => {
       expect(mockPublishEvent).toHaveBeenCalledTimes(2);
       expect(mockPublishEvent).toHaveBeenCalledWith("task.label_deleted", {
         label: TASK_LABEL_1,
-        task: { id: "task-1", projectId: "proj-1" },
-        projectId: "proj-1",
+        task: { id: "task-1", boardId: "board-1" },
+        boardId: "board-1",
         taskId: "task-1",
         userId: "user-1",
         type: "label_deleted",
       });
       expect(mockPublishEvent).toHaveBeenCalledWith("task.label_deleted", {
         label: TASK_LABEL_2,
-        task: { id: "task-2", projectId: "proj-2" },
-        projectId: "proj-2",
+        task: { id: "task-2", boardId: "board-2" },
+        boardId: "board-2",
         taskId: "task-2",
         userId: "user-1",
         type: "label_deleted",
@@ -177,13 +177,13 @@ describe("deleteLabel", () => {
           {
             label: TASK_LABEL_1,
             taskId: "task-1",
-            projectId: "proj-1",
+            boardId: "board-1",
             workspaceId: "ws-1",
           },
           {
             label: TASK_LABEL_2,
             taskId: "task-2",
-            projectId: "proj-2",
+            boardId: "board-2",
             workspaceId: "ws-1",
           },
         ]),

@@ -44,7 +44,9 @@ test.describe("github link regressions", () => {
     // Task rows are rendered from board columns; at least one must exist since
     // the fixture organization has tasks.
     await expect(
-      dialog.getByText(/No unlinked tasks found/i).or(dialog.locator("button").nth(1)),
+      dialog
+        .getByText(/No unlinked tasks found/i)
+        .or(dialog.locator("button").nth(1)),
     ).toBeVisible();
 
     expect(pageErrors).toEqual([]);
@@ -67,7 +69,7 @@ test.describe("github link regressions", () => {
     const addButton = sidebar.getByRole("button", { name: /Add sub-issue/i });
     await expect(addButton).toBeVisible();
     await addButton.click();
-    await expect(sidebar.getByLabel("Sub-issue number")).toBeVisible();
+    await expect(sidebar.getByLabel("Search issues")).toBeVisible();
 
     expect(pageErrors).toEqual([]);
   });

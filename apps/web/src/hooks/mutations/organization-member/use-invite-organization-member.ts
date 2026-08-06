@@ -25,7 +25,9 @@ function useInviteOrganizationMember() {
       });
 
       if (error) {
-        throw new Error(error.message || "Failed to invite organization member");
+        throw new Error(
+          error.message || "Failed to invite organization member",
+        );
       }
 
       return data;

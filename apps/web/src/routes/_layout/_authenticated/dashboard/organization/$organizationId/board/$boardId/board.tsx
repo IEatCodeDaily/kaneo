@@ -12,8 +12,8 @@ import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Input } from "@/components/ui/input";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
-import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardSort } from "@/hooks/use-board-sort";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
@@ -91,7 +91,8 @@ function RouteComponent() {
   const { sort, setSort } = useBoardSort(boardId);
 
   const { data: users } = useGetActiveOrganizationMembers(organizationId);
-  const { data: organizationLabels = [] } = useGetLabelsByOrganization(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
 
   const handleCloseTaskSheet = useCallback(() => {
     navigate({

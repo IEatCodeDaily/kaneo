@@ -10,6 +10,7 @@ import {
   magicLinkClient,
   organizationClient,
 } from "better-auth/client/plugins";
+import type { AccessControl } from "better-auth/plugins/access";
 import { createAuthClient } from "better-auth/react";
 import { ac, admin, member, owner, viewer } from "./permissions";
 
@@ -32,7 +33,10 @@ export const authClient = createAuthClient({
     magicLinkClient(),
     emailOTPClient(),
     organizationClient({
-      ac,
+      ac: ac as unknown as AccessControl,
+      teams: {
+        enabled: true,
+      },
       roles: {
         viewer,
         member,

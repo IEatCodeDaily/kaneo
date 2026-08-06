@@ -11,7 +11,9 @@ async function migrateOrganizations() {
     const members = await db
       .select()
       .from(schema.organizationMemberTable)
-      .where(eq(schema.organizationMemberTable.organizationId, organization.id));
+      .where(
+        eq(schema.organizationMemberTable.organizationId, organization.id),
+      );
 
     const owner = members.find((member) => member.role === "owner");
 
@@ -20,7 +22,8 @@ async function migrateOrganizations() {
         name: organization.name,
         description: organization.description || undefined,
         slug:
-          organization.slug || organization.name.toLowerCase().replace(/\s+/g, "-"),
+          organization.slug ||
+          organization.name.toLowerCase().replace(/\s+/g, "-"),
         userId: owner?.userId,
       },
     });

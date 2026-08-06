@@ -3,6 +3,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
+import { ResourceGrantEditor } from "@/components/resource-grant-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,6 +158,15 @@ function RouteComponent() {
             </div>
           </div>
         </div>
+
+        {board?.id && organization?.id ? (
+          <ResourceGrantEditor
+            organizationId={organization.id}
+            resourceType="board"
+            resourceId={board.id}
+            disabled={!canShare}
+          />
+        ) : null}
       </div>
     </>
   );
