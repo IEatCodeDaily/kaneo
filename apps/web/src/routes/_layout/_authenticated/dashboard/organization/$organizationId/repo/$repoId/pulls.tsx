@@ -1,7 +1,7 @@
 import {
+  createFileRoute,
   Link,
   Outlet,
-  createFileRoute,
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import RepoLayout from "@/components/common/repo-layout";
 import PageTitle from "@/components/page-title";
 import RepoLabelList from "@/components/repo/repo-label-list";
+import RepoMasterDetail from "@/components/repo/repo-master-detail";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -56,7 +57,6 @@ function RouteComponent() {
   const { data, isLoading } = useGetRepoPullRequests({ repoId, state });
   const isDetailRoute = /\/pulls\/[^/]+$/.test(location.pathname);
 
-  if (isDetailRoute) return <Outlet />;
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
 
   return (
@@ -65,110 +65,124 @@ function RouteComponent() {
         title={`${repoTitle} · ${t("organization:repos.pullRequests.pageTitle")}`}
       />
       <RepoLayout organizationId={organizationId} repoId={repoId}>
-        <div className="px-3 py-2">
-          <Tabs value={state}>
-            <TabsList className="bg-sidebar gap-2">
-              {STATE_FILTERS.map((filter) => (
-                <TabsTrigger
-                  className="[&[data-state=active]]:rounded-md [&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:bg-card"
-                  key={filter}
-                  onClick={() =>
-                    navigate({
-                      to: ".",
-                      search: { state: filter },
-                      replace: true,
-                    })
-                  }
-                  value={filter}
-                >
-                  {t(`organization:repos.stateFilter.${filter}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {isLoading && <RepoListSkeleton />}
-        {!isLoading && (!data || data.data.length === 0) && (
-          <Empty className="min-h-[50vh]">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <GitPullRequest />
-              </EmptyMedia>
-              <EmptyTitle>
-                {t("organization:repos.pullRequests.emptyTitle")}
-              </EmptyTitle>
-              <EmptyDescription>
-                {t("organization:repos.pullRequests.emptyDescription")}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
-        {!isLoading && data && data.data.length > 0 && (
-          <div className="flex flex-col divide-y">
-            {data.data.map((pullRequest) => (
-              <Link
-                className="flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted/60"
-                key={pullRequest.id}
-                params={{
-                  organizationId,
-                  repoId,
-                  number: String(pullRequest.number),
-                }}
-                to="/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
-              >
-                <GitPullRequest className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {pullRequest.title}
-                    </span>
-                    <RepoStateBadge
-                      state={
-                        pullRequest.isDraft && pullRequest.state === "open"
-                          ? "draft"
-                          : pullRequest.state
+        <RepoMasterDetail
+          hasDetail={isDetailRoute}
+          id="pulls"
+          detail={<Outlet />}
+          list={
+            <div className="min-h-0">
+              <div className="px-3 py-2">
+              <Tabs value={state}>
+                <TabsList className="bg-sidebar gap-2">
+                  {STATE_FILTERS.map((filter) => (
+                    <TabsTrigger
+                      className="[&[data-state=active]]:rounded-md [&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:bg-card"
+                      key={filter}
+                      onClick={() =>
+                        navigate({
+                          to: ".",
+                          search: { state: filter },
+                          replace: true,
+                        })
                       }
-                    />
-                    <RepoLabelList labels={pullRequest.labels} />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>#{pullRequest.number}</span>
-                    {pullRequest.authorLogin && (
-                      <span className="flex items-center gap-1.5">
-                        <Avatar className="size-4">
-                          {pullRequest.authorAvatarUrl && (
-                            <AvatarImage src={pullRequest.authorAvatarUrl} />
-                          )}
-                          <AvatarFallback className="text-[8px]">
-                            {pullRequest.authorLogin.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        {pullRequest.authorLogin}
-                      </span>
-                    )}
-                    {pullRequest.headBranch && pullRequest.baseBranch && (
-                      <span className="font-mono text-[10px]">
-                        {pullRequest.headBranch} → {pullRequest.baseBranch}
-                      </span>
-                    )}
-                    {pullRequest.externalCreatedAt && (
-                      <span>
-                        {formatDateMedium(pullRequest.externalCreatedAt)}
-                      </span>
-                    )}
-                    {pullRequest.commentCount > 0 && (
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        {pullRequest.commentCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+                      value={filter}
+                    >
+                      {t(`organization:repos.stateFilter.${filter}`)}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {isLoading && <RepoListSkeleton />}
+            {!isLoading && (!data || data.data.length === 0) && (
+              <Empty className="min-h-[50vh]">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <GitPullRequest />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {t("organization:repos.pullRequests.emptyTitle")}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {t("organization:repos.pullRequests.emptyDescription")}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+            {!isLoading && data && data.data.length > 0 && (
+              <div className="flex flex-col divide-y">
+                {data.data.map((pullRequest) => (
+                  <Link
+                    activeProps={{ className: "bg-muted" }}
+                    className="flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted/60"
+                    key={pullRequest.id}
+                    params={{
+                      organizationId,
+                      repoId,
+                      number: String(pullRequest.number),
+                    }}
+                    to="/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
+                  >
+                    <GitPullRequest className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {pullRequest.title}
+                        </span>
+                        <RepoStateBadge
+                          state={
+                            pullRequest.isDraft && pullRequest.state === "open"
+                              ? "draft"
+                              : pullRequest.state
+                          }
+                        />
+                        <RepoLabelList labels={pullRequest.labels} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span>#{pullRequest.number}</span>
+                        {pullRequest.authorLogin && (
+                          <span className="flex items-center gap-1.5">
+                            <Avatar className="size-4">
+                              {pullRequest.authorAvatarUrl && (
+                                <AvatarImage
+                                  src={pullRequest.authorAvatarUrl}
+                                />
+                              )}
+                              <AvatarFallback className="text-[8px]">
+                                {pullRequest.authorLogin
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {pullRequest.authorLogin}
+                          </span>
+                        )}
+                        {pullRequest.headBranch && pullRequest.baseBranch && (
+                          <span className="font-mono text-[10px]">
+                            {pullRequest.headBranch} → {pullRequest.baseBranch}
+                          </span>
+                        )}
+                        {pullRequest.externalCreatedAt && (
+                          <span>
+                            {formatDateMedium(pullRequest.externalCreatedAt)}
+                          </span>
+                        )}
+                        {pullRequest.commentCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {pullRequest.commentCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+            </div>
+          }
+        />
       </RepoLayout>
     </>
   );

@@ -5,7 +5,7 @@ import {
   redirect,
   useLocation,
 } from "@tanstack/react-router";
-import { Github, Settings, Shield, Tag } from "lucide-react";
+import { Plug, Settings, Shield, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -68,9 +68,9 @@ function RouteComponent() {
       icon: Tag,
     },
     {
-      title: "GitHub",
-      url: "/dashboard/settings/organization/github",
-      icon: Github,
+      title: "Connections",
+      url: "/dashboard/settings/organization/connections",
+      icon: Plug,
     },
   ];
   const isActivePath = (path: string) => location.pathname === path;

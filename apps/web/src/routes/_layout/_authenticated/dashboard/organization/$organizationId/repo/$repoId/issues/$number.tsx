@@ -1,18 +1,24 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, MessageSquare } from "lucide-react";
-import RepoLayout from "@/components/common/repo-layout";
-import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
+import { ErrorBoundary } from "@/components/error-boundary";
 import PageTitle from "@/components/page-title";
-import RepoDetailManagement from "@/components/repo/repo-detail-management";
+import { RepoDescriptionEditor } from "@/components/repo/repo-description-editor";
+import {
+  RepoIssueActions,
+  RepoIssueSidebar,
+} from "@/components/repo/repo-detail-management";
 import RepoIssueHistory from "@/components/repo/repo-issue-history";
-import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
+import RepoTaskLinks from "@/components/repo/repo-task-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssue from "@/hooks/queries/repo/use-get-repo-issue";
 import { formatDateMedium } from "@/lib/format";
+import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
@@ -37,106 +43,168 @@ function RouteComponent() {
           issue ? `#${issue.number} · ${issue.title}` : `${repoTitle} · Issue`
         }
       />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
-        {isLoading ? (
-          <DetailSkeleton />
-        ) : isError || !issue ? (
-          <NotFound
-            onBack={() =>
+      {isLoading ? (
+        <DetailSkeleton />
+      ) : isError || !issue ? (
+        <NotFound
+          onBack={() =>
+            navigate({
+              to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
+              params: { organizationId, repoId },
+            })
+          }
+        />
+      ) : (
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-8">
+          <Button
+            className="mb-5 gap-1.5 lg:hidden"
+            onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
                 params: { organizationId, repoId },
               })
             }
-          />
-        ) : (
-          <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-            <Button
-              className="mb-5 gap-1.5"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationId/repo/$repoId/issues",
-                  params: { organizationId, repoId },
-                })
-              }
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to issues
-            </Button>
-            <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-              <header className="border-b border-border/80 px-5 py-5 sm:px-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                      {issue.title}
-                    </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <RepoStateBadge state={issue.state} />
-                      <span>#{issue.number}</span>
-                      {issue.externalCreatedAt && (
-                        <span>
-                          opened {formatDateMedium(issue.externalCreatedAt)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <a
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-                    href={issue.url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open externally
-                    <ExternalLink className="size-3.5" />
-                  </a>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Author
-                    login={issue.authorLogin}
-                    avatarUrl={issue.authorAvatarUrl}
-                  />{" "}
-                  <RepoLabelList labels={issue.labels} />
-                </div>
-              </header>
-              <div className="min-h-48 px-5 py-6 sm:px-6">
-                {issue.body ? (
-                  <MarkdownRenderer content={issue.body} />
-                ) : (
-                  <p className="text-sm italic text-muted-foreground">
-                    No description provided.
-                  </p>
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to issues
+          </Button>
+          <article className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
+            <header className="border-b border-border/80 px-5 py-5 sm:px-6">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                {issue.title}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <RepoStateBadge state={issue.state} />
+                <span>#{issue.number}</span>
+                {issue.authorLogin && (
+                  <span>opened by {issue.authorLogin}</span>
                 )}
+                {issue.externalCreatedAt && (
+                  <span>{formatDateMedium(issue.externalCreatedAt)}</span>
+                )}
+                <a
+                  className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  href={issue.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  GitHub <ExternalLink className="size-3" />
+                </a>
               </div>
-              <RepoDetailManagement
-                assignees={issue.assigneeLogins ?? []}
-                body={issue.body}
-                kind="issue"
-                labels={issue.labels}
-                milestoneNumber={issue.github?.milestone?.number ?? null}
-                number={issue.number}
-                repoId={repoId}
-                state={issue.state}
-                title={issue.title}
-              />
-              <RepoIssueHistory github={issue.github} />
-              <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
-                {issue.commentCount > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <MessageSquare className="size-3.5" />
-                    {issue.commentCount} comments
-                  </span>
-                )}
-                {issue.closedAt && (
-                  <span>Closed {formatDateMedium(issue.closedAt)}</span>
-                )}
-              </footer>
-            </article>
-          </main>
-        )}
-      </RepoLayout>
+            </header>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              {/* Main body column */}
+              <div className="min-w-0">
+                <RepoIssueDescription
+                  body={issue.body ?? ""}
+                  number={issue.number}
+                  repoId={repoId}
+                />
+                <RepoIssueHistory github={issue.github} />
+                <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/80 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+                  {issue.commentCount > 0 && (
+                    <span className="flex items-center gap-1.5">
+                      <MessageSquare className="size-3.5" />
+                      {issue.commentCount} comments
+                    </span>
+                  )}
+                  {issue.closedAt && (
+                    <span>Closed {formatDateMedium(issue.closedAt)}</span>
+                  )}
+                </footer>
+                {/* Action bar + comment composer in the main body */}
+                <RepoIssueActions
+                  assignees={issue.assigneeLogins ?? []}
+                  body={issue.body}
+                  kind="issue"
+                  labels={issue.labels}
+                  milestoneNumber={issue.github?.milestone?.number ?? null}
+                  number={issue.number}
+                  repoId={repoId}
+                  state={issue.state}
+                  title={issue.title}
+                />
+                <ErrorBoundary
+                  className="m-4"
+                  fallbackDescription="Linked Kaneo tasks could not be rendered. The rest of this issue still works."
+                  fallbackTitle="Linked tasks unavailable"
+                >
+                  <RepoTaskLinks
+                    itemType="issues"
+                    number={issue.number}
+                    organizationId={organizationId}
+                    repoId={repoId}
+                    taskLinks={issue.taskLinks}
+                  />
+                </ErrorBoundary>
+              </div>
+              {/* Right sidebar: metadata only */}
+              <ErrorBoundary
+                className="m-4"
+                fallbackDescription="Issue metadata could not be rendered."
+                fallbackTitle="Sidebar unavailable"
+              >
+                <RepoIssueSidebar
+                  assignees={issue.assigneeLogins ?? []}
+                  body={issue.body}
+                  github={issue.github}
+                  kind="issue"
+                  labels={issue.labels}
+                  milestoneNumber={issue.github?.milestone?.number ?? null}
+                  number={issue.number}
+                  repoId={repoId}
+                  state={issue.state}
+                  title={issue.title}
+                />
+              </ErrorBoundary>
+            </div>
+          </article>
+        </main>
+      )}
     </>
+  );
+}
+
+function RepoIssueDescription({
+  body,
+  repoId,
+  number,
+}: {
+  body: string;
+  repoId: string;
+  number: number;
+}) {
+  const queryClient = useQueryClient();
+  const update = useMutation({
+    mutationFn: async (markdown: string) => {
+      const response = await fetch(
+        getApiUrl(`/repo/${repoId}/issues/${number}`),
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: markdown }),
+        },
+      );
+      if (!response.ok) throw new Error(await response.text());
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["repo-issue", repoId, number],
+      });
+      toast.success("Description updated on GitHub.");
+    },
+    onError: () => toast.error("Could not update the description."),
+  });
+
+  return (
+    <RepoDescriptionEditor
+      body={body}
+      isSaving={update.isPending}
+      onSave={update.mutateAsync}
+    />
   );
 }
 

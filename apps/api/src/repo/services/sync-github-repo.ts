@@ -6,6 +6,7 @@ import {
   repoTable,
 } from "../../database/schema";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
+import { resolveInstallationId } from "../controllers/manage-github-repo";
 
 /**
  * Mirror a GitHub repository's issues and pull requests into repo_issue /
@@ -41,18 +42,6 @@ function toDate(value: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function getInstallationId(repo: RepoRow): number {
-  const cfg = (repo.config ?? {}) as { installationId?: number | string };
-  const raw = cfg.installationId;
-  const id = typeof raw === "string" ? Number.parseInt(raw, 10) : raw;
-  if (!id || Number.isNaN(id)) {
-    throw new Error(
-      `Repo ${repo.owner}/${repo.name} has no usable installationId in config`,
-    );
-  }
-  return id;
-}
-
 export async function syncGitHubRepo(repoId: string): Promise<{
   issues: number;
   pullRequests: number;
@@ -68,7 +57,10 @@ export async function syncGitHubRepo(repoId: string): Promise<{
     throw new Error(`Repo ${repoId} is not a GitHub repo`);
   }
 
-  const octokit = await getInstallationOctokit(getInstallationId(repo));
+  // Resolve the installation live: a cached ID dies on App uninstall/reinstall.
+  const octokit = await getInstallationOctokit(
+    await resolveInstallationId(repo),
+  );
 
   // GitHub's issues endpoint returns PRs too; separate them by `pull_request`.
   const rawItems = await octokit.paginate("GET /repos/{owner}/{repo}/issues", {
@@ -157,8 +149,10 @@ export async function syncGitHubRepo(repoId: string): Promise<{
       authorAvatarUrl:
         ((item.user as { avatar_url?: string } | null)?.avatar_url as string) ??
         null,
-      headBranch: ((item.head as { ref?: string } | null)?.ref as string) ?? null,
-      baseBranch: ((item.base as { ref?: string } | null)?.ref as string) ?? null,
+      headBranch:
+        ((item.head as { ref?: string } | null)?.ref as string) ?? null,
+      baseBranch:
+        ((item.base as { ref?: string } | null)?.ref as string) ?? null,
       labels: normalizeLabels(item.labels as GitHubLabel[] | undefined),
       commentCount: (item.comments as number) ?? 0,
       url: (item.html_url as string) ?? "",

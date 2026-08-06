@@ -7,7 +7,10 @@ import {
   repoTable,
   userTable,
 } from "../../database/schema";
-import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
+import {
+  getGithubApp,
+  getInstallationOctokit,
+} from "../../plugins/github/utils/github-app";
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
 import { getRepoPullRequest } from "./get-repo-pull-request";
@@ -23,18 +26,116 @@ type UpdateGitHubItemInput = {
   milestone?: number | null;
 };
 
-type CloseReason = "completed" | "not_planned";
-
-function installationIdForRepo(repo: typeof repoTable.$inferSelect): number {
+function configuredInstallationId(
+  repo: typeof repoTable.$inferSelect,
+): number | null {
   const config = (repo.config ?? {}) as { installationId?: number | string };
   const raw = config.installationId;
   const installationId = typeof raw === "string" ? Number(raw) : raw;
-  if (!installationId || !Number.isInteger(installationId)) {
+  return installationId && Number.isInteger(installationId)
+    ? installationId
+    : null;
+}
+
+/**
+ * Resolve the live installation ID that can actually reach this repo.
+ *
+ * A repo's `config.installationId` is a cache, and it goes stale the moment the
+ * user uninstalls/reinstalls the GitHub App (GitHub issues a brand new
+ * installation ID each time). The old ID then 404s on every token request,
+ * which surfaced as blanket 500s across the repo UI.
+ *
+ * Strategy: ask the App which installation owns `repo.owner`, and persist that
+ * so subsequent calls stay cheap. Fall back to the cached ID only if the
+ * lookup fails for an unrelated reason.
+ */
+export async function resolveInstallationId(
+  repo: typeof repoTable.$inferSelect,
+): Promise<number> {
+  const cached = configuredInstallationId(repo);
+  const app = getGithubApp();
+  if (!app) {
+    if (cached) return cached;
     throw new HTTPException(422, {
-      message: "GitHub repository has no usable installation ID",
+      message: "GitHub App is not configured on this instance",
     });
   }
-  return installationId;
+
+  let liveId: number | null = null;
+  try {
+    // Works for both user- and organization-owned accounts.
+    const { data } = await app.octokit.request(
+      "GET /users/{username}/installation",
+      { username: repo.owner },
+    );
+    liveId = data.id;
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status !== 404) throw error;
+  }
+
+  if (!liveId) {
+    throw new HTTPException(422, {
+      message: `The Kaneo GitHub App is not installed on "${repo.owner}". Install it for that account, then reload.`,
+    });
+  }
+
+  if (liveId !== cached) {
+    // Self-heal the cache so we stop hammering a dead installation.
+    await db
+      .update(repoTable)
+      .set({
+        config: { ...(repo.config ?? {}), installationId: liveId },
+        updatedAt: new Date(),
+      })
+      .where(eq(repoTable.id, repo.id));
+  }
+
+  return liveId;
+}
+
+/**
+ * Reconcile an issue's assignees to an exact list.
+ *
+ * The pinned Octokit build has addAssignees/removeAssignees but no
+ * setAssignees, so calling setAssignees threw a TypeError and every
+ * assignee change failed.
+ */
+async function setGitHubAssignees({
+  octokit,
+  owner,
+  repo,
+  issue_number,
+  assignees,
+}: {
+  octokit: Awaited<ReturnType<typeof getInstallationOctokit>>;
+  owner: string;
+  repo: string;
+  issue_number: number;
+  assignees: string[];
+}) {
+  const { data } = await octokit.rest.issues.get({ owner, repo, issue_number });
+  const current = (data.assignees ?? []).map((user) => user.login);
+  const desired = [...new Set(assignees)];
+  const toAdd = desired.filter((login) => !current.includes(login));
+  const toRemove = current.filter((login) => !desired.includes(login));
+
+  if (toRemove.length > 0) {
+    await octokit.rest.issues.removeAssignees({
+      owner,
+      repo,
+      issue_number,
+      assignees: toRemove,
+    });
+  }
+  if (toAdd.length > 0) {
+    await octokit.rest.issues.addAssignees({
+      owner,
+      repo,
+      issue_number,
+      assignees: toAdd,
+    });
+  }
 }
 
 export async function getGitHubRepoClient(repoId: string) {
@@ -50,7 +151,7 @@ export async function getGitHubRepoClient(repoId: string) {
 
   return {
     repo,
-    octokit: await getInstallationOctokit(installationIdForRepo(repo)),
+    octokit: await getInstallationOctokit(await resolveInstallationId(repo)),
   };
 }
 
@@ -59,37 +160,39 @@ export async function updateGitHubItem({
   number,
   kind,
   updates,
+  userId,
 }: {
   repoId: string;
   number: number;
   kind: GitHubItemKind;
   updates: UpdateGitHubItemInput;
+  userId?: string;
 }) {
   if (Object.keys(updates).length === 0) {
     throw new HTTPException(400, { message: "At least one field is required" });
   }
 
-  const { repo, octokit } = await getGitHubRepoClient(repoId);
+  // Attribute the change to the acting member, not the Kaneo App bot.
+  const { repo, octokit } = await getActingOctokit(repoId, userId);
   const issue_number = number;
 
-  if (
+  // Batch every field change concurrently instead of serially: GitHub's issue
+  // update, labels, and assignees are independent endpoints.
+  await Promise.all([
     updates.title !== undefined ||
     updates.body !== undefined ||
     updates.state !== undefined ||
     updates.milestone !== undefined
-  ) {
-    await octokit.rest.issues.update({
-      owner: repo.owner,
-      repo: repo.name,
-      issue_number,
-      title: updates.title,
-      body: updates.body,
-      state: updates.state,
-      milestone: updates.milestone,
-    });
-  }
-
-  await Promise.all([
+      ? octokit.rest.issues.update({
+          owner: repo.owner,
+          repo: repo.name,
+          issue_number,
+          title: updates.title,
+          body: updates.body,
+          state: updates.state,
+          milestone: updates.milestone,
+        })
+      : Promise.resolve(),
     updates.labels === undefined
       ? Promise.resolve()
       : octokit.rest.issues.setLabels({
@@ -98,9 +201,12 @@ export async function updateGitHubItem({
           issue_number,
           labels: updates.labels,
         }),
+    // This Octokit build exposes addAssignees/removeAssignees but no
+    // setAssignees, so reconcile the desired list against the current one.
     updates.assignees === undefined
       ? Promise.resolve()
-      : octokit.rest.issues.setAssignees({
+      : setGitHubAssignees({
+          octokit,
           owner: repo.owner,
           repo: repo.name,
           issue_number,
@@ -108,10 +214,57 @@ export async function updateGitHubItem({
         }),
   ]);
 
-  await syncGitHubRepo(repoId);
+  // A full repo re-sync made every metadata edit wait on all issues and PRs.
+  // Return the fresh single item instead and let the mirror catch up in the
+  // background, so the UI responds immediately.
+  void syncGitHubRepo(repoId).catch((error) => {
+    console.error("[updateGitHubItem] background sync failed", error);
+  });
+
   return kind === "issue"
     ? getRepoIssue(repoId, number)
     : getRepoPullRequest(repoId, number);
+}
+
+/**
+ * Prefer the acting member's delegated GitHub token so writes are attributed to
+ * them instead of the Kaneo App bot. Falls back to the installation token when
+ * the user hasn't connected their GitHub account (or the grant was revoked).
+ */
+async function getActingOctokit(
+  repoId: string,
+  userId?: string,
+): Promise<{
+  repo: typeof repoTable.$inferSelect;
+  octokit: Octokit;
+  actedAsUser: boolean;
+}> {
+  const { repo, octokit: installationOctokit } =
+    await getGitHubRepoClient(repoId);
+  if (!userId) {
+    return { repo, octokit: installationOctokit, actedAsUser: false };
+  }
+
+  const [grant] = await db
+    .select({ accessToken: githubUserGrantTable.accessToken })
+    .from(githubUserGrantTable)
+    .where(
+      and(
+        eq(githubUserGrantTable.userId, userId),
+        eq(githubUserGrantTable.providerId, "github-delegation"),
+      ),
+    )
+    .limit(1);
+
+  if (!grant?.accessToken) {
+    return { repo, octokit: installationOctokit, actedAsUser: false };
+  }
+
+  return {
+    repo,
+    octokit: new Octokit({ auth: grant.accessToken }),
+    actedAsUser: true,
+  };
 }
 
 export async function createGitHubItemComment({
@@ -125,7 +278,8 @@ export async function createGitHubItemComment({
   body: string;
   userId: string;
 }) {
-  const { repo, octokit: installationOctokit } = await getGitHubRepoClient(repoId);
+  const { repo, octokit: installationOctokit } =
+    await getGitHubRepoClient(repoId);
   // This is deliberately a dedicated grant, separate from sign-in OAuth.
   // Sign-in commonly has user:email only; delegated identity has repo scope.
   const [githubAccount] = await db
@@ -161,7 +315,10 @@ export async function createGitHubItemComment({
   let data;
   try {
     ({ data } = await octokit.rest.issues.createComment({
-      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+      body: commentBody,
     }));
   } catch (error) {
     // A linked token may be sign-in-only or revoked; degrade to the App bot.
@@ -169,7 +326,10 @@ export async function createGitHubItemComment({
     author = "github-app";
     commentBody = `${body}\n\n---\n_Posted by ${user?.name ?? "a Kaneo user"} via Kaneo._`;
     ({ data } = await installationOctokit.rest.issues.createComment({
-      owner: repo.owner, repo: repo.name, issue_number: number, body: commentBody,
+      owner: repo.owner,
+      repo: repo.name,
+      issue_number: number,
+      body: commentBody,
     }));
   }
 

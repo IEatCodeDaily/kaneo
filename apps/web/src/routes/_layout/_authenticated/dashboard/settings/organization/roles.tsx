@@ -203,7 +203,9 @@ function RouteComponent() {
     error: customRolesErrorValue,
   } = useOrganizationRoles(organizationId);
   const [draftActive, setDraftActive] = useState(false);
-  const [roleToDelete, setRoleToDelete] = useState<OrganizationRole | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<OrganizationRole | null>(
+    null,
+  );
   const [openCustom, setOpenCustom] = useState<string[]>([]);
 
   // Defaults (viewer/member/admin) first so they anchor the list, then
@@ -252,7 +254,8 @@ function RouteComponent() {
           <p className="text-muted-foreground">
             {t("settings:organizationRoles.subtitle", {
               organizationName:
-                organization?.name ?? t("settings:organizationRoles.thisOrganization"),
+                organization?.name ??
+                t("settings:organizationRoles.thisOrganization"),
             })}
           </p>
         </div>
@@ -389,7 +392,9 @@ function RouteComponent() {
                                 </p>
                                 {isDefault && (
                                   <span className="text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                    {t("settings:organizationRoles.defaultBadge")}
+                                    {t(
+                                      "settings:organizationRoles.defaultBadge",
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -583,7 +588,9 @@ function DraftEditor({
       if (set.size > 0) permission[r] = Array.from(set);
     }
     if (Object.keys(permission).length === 0) {
-      toast.error(t("settings:organizationRoles.validation.permissionRequired"));
+      toast.error(
+        t("settings:organizationRoles.validation.permissionRequired"),
+      );
       return;
     }
     try {
@@ -694,7 +701,9 @@ function CustomRoleEditor({
 
   const handleSave = async () => {
     if (Object.keys(currentPermissions).length === 0) {
-      toast.error(t("settings:organizationRoles.validation.permissionRequired"));
+      toast.error(
+        t("settings:organizationRoles.validation.permissionRequired"),
+      );
       return;
     }
     try {

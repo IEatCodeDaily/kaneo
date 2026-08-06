@@ -1,18 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ChevronDown,
-  MessageCircle,
-  Radio,
-  Send,
-  Webhook,
-} from "lucide-react";
+import { ChevronDown, MessageCircle, Radio, Send, Webhook } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import PageTitle from "@/components/page-title";
 import { DiscordIntegrationSettings } from "@/components/board/discord-integration-settings";
 import { GenericWebhookIntegrationSettings } from "@/components/board/generic-webhook-integration-settings";
 import { SlackIntegrationSettings } from "@/components/board/slack-integration-settings";
 import { TelegramIntegrationSettings } from "@/components/board/telegram-integration-settings";
+import PageTitle from "@/components/page-title";
 import {
   Collapsible,
   CollapsibleContent,

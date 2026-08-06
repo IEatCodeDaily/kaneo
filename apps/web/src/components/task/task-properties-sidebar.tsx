@@ -19,12 +19,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import labelColors from "@/constants/label-colors";
-import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
-import useGetTask from "@/hooks/queries/task/use-get-task";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import useGetTask from "@/hooks/queries/task/use-get-task";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -82,7 +82,8 @@ export default function TaskPropertiesSidebar({
   const { data: task } = useGetTask(taskId ?? "");
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: columns = [] } = useGetColumns(boardId);
-  const { data: organizationMembers } = useGetActiveOrganizationMembers(organizationId);
+  const { data: organizationMembers } =
+    useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
   const canMoveTask =
@@ -218,7 +219,10 @@ export default function TaskPropertiesSidebar({
                 </TaskPriorityPopover>
               )}
               {task && (
-                <TaskAssigneePopover task={task} organizationId={organizationId}>
+                <TaskAssigneePopover
+                  task={task}
+                  organizationId={organizationId}
+                >
                   <Button
                     variant="ghost"
                     size="sm"
@@ -405,7 +409,10 @@ export default function TaskPropertiesSidebar({
                   </TaskPriorityPopover>
                 )}
                 {task && (
-                  <TaskAssigneePopover task={task} organizationId={organizationId}>
+                  <TaskAssigneePopover
+                    task={task}
+                    organizationId={organizationId}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
@@ -595,7 +602,10 @@ export default function TaskPropertiesSidebar({
                   </TaskPriorityPopover>
                 )}
                 {task && (
-                  <TaskAssigneePopover task={task} organizationId={organizationId}>
+                  <TaskAssigneePopover
+                    task={task}
+                    organizationId={organizationId}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"

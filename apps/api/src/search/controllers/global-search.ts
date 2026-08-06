@@ -7,6 +7,9 @@ import {
   userTable,
   organizationTable,
   organizationMemberTable,
+  repoTable,
+  repoIssueTable,
+  repoPullRequestTable,
 } from "../../database/schema";
 
 type SearchParams = {
@@ -19,7 +22,10 @@ type SearchParams = {
     | "boards"
     | "organizations"
     | "comments"
-    | "activities";
+    | "activities"
+    | "repositories"
+    | "issues"
+    | "pullRequests";
   organizationId?: string;
   boardId?: string;
   limit?: number;
@@ -27,7 +33,15 @@ type SearchParams = {
 
 type SearchResult = {
   id: string;
-  type: "task" | "board" | "organization" | "comment" | "activity";
+  type:
+    | "task"
+    | "board"
+    | "organization"
+    | "comment"
+    | "activity"
+    | "repository"
+    | "issue"
+    | "pull_request";
   title: string;
   description?: string;
   content?: string;
@@ -43,6 +57,13 @@ type SearchResult = {
   boardSlug?: string;
   priority?: string;
   status?: string;
+  repoId?: string;
+  repoOwner?: string;
+  repoName?: string;
+  repoProvider?: string;
+  itemNumber?: number;
+  state?: string;
+  url?: string;
 };
 
 function toDisplayCase(value: string) {
@@ -145,6 +166,16 @@ async function globalSearch(params: SearchParams): Promise<{
   const organizationFilter = organizationId
     ? eq(boardTable.organizationId, organizationId)
     : inArray(boardTable.organizationId, accessibleOrganizationIds);
+
+  const repoOrganizationFilter = organizationId
+    ? eq(repoTable.organizationId, organizationId)
+    : inArray(repoTable.organizationId, accessibleOrganizationIds);
+
+  // Matches "#12" or a bare number so issue/PR numbers are directly searchable.
+  const issueNumberMatch = query.trim().match(/^#?(\d+)$/);
+  const searchedNumber = issueNumberMatch?.[1]
+    ? Number.parseInt(issueNumberMatch[1], 10)
+    : undefined;
 
   // Check if query matches short-id pattern (e.g. "DEP-23")
   const shortIdMatch = query.match(/^([A-Za-z][\w-]*)-(\d+)$/);
@@ -460,6 +491,214 @@ async function globalSearch(params: SearchParams): Promise<{
         createdAt: activity.createdAt,
         relevanceScore: activity.relevanceScore,
         taskNumber: activity.taskNumber || undefined,
+      });
+    }
+  }
+
+  if (type === "all" || type === "repositories") {
+    const repoRelevanceScore = sql<number>`
+      CASE
+        WHEN LOWER(${repoTable.name}) LIKE ${searchPattern} THEN 3
+        WHEN LOWER(${repoTable.owner}) LIKE ${searchPattern} THEN 2
+        ELSE 1
+      END
+    `;
+
+    const repos = await db
+      .select({
+        id: repoTable.id,
+        owner: repoTable.owner,
+        name: repoTable.name,
+        provider: repoTable.provider,
+        description: repoTable.description,
+        url: repoTable.url,
+        organizationId: repoTable.organizationId,
+        organizationName: organizationTable.name,
+        createdAt: repoTable.createdAt,
+        relevanceScore: repoRelevanceScore.as("relevanceScore"),
+      })
+      .from(repoTable)
+      .leftJoin(
+        organizationTable,
+        eq(repoTable.organizationId, organizationTable.id),
+      )
+      .where(
+        and(
+          repoOrganizationFilter,
+          or(
+            ilike(repoTable.name, searchPattern),
+            ilike(repoTable.owner, searchPattern),
+            ilike(repoTable.description, searchPattern),
+            ilike(
+              sql<string>`${repoTable.owner} || '/' || ${repoTable.name}`,
+              searchPattern,
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(repoRelevanceScore), desc(repoTable.createdAt))
+      .limit(limit);
+
+    for (const repo of repos) {
+      results.push({
+        id: repo.id,
+        type: "repository",
+        title: `${repo.owner}/${repo.name}`,
+        description: repo.description || undefined,
+        organizationId: repo.organizationId,
+        organizationName: repo.organizationName || undefined,
+        createdAt: repo.createdAt,
+        relevanceScore: repo.relevanceScore,
+        repoId: repo.id,
+        repoOwner: repo.owner,
+        repoName: repo.name,
+        repoProvider: repo.provider,
+        url: repo.url,
+      });
+    }
+  }
+
+  if (type === "all" || type === "issues") {
+    const issueRelevanceScore = sql<number>`
+      CASE
+        WHEN ${searchedNumber === undefined ? sql`FALSE` : sql`${repoIssueTable.number} = ${searchedNumber}`} THEN 4
+        WHEN LOWER(${repoIssueTable.title}) LIKE ${searchPattern} THEN 3
+        WHEN LOWER(${repoIssueTable.body}) LIKE ${searchPattern} THEN 2
+        ELSE 1
+      END
+    `;
+
+    const issues = await db
+      .select({
+        id: repoIssueTable.id,
+        number: repoIssueTable.number,
+        title: repoIssueTable.title,
+        body: repoIssueTable.body,
+        state: repoIssueTable.state,
+        url: repoIssueTable.url,
+        authorLogin: repoIssueTable.authorLogin,
+        createdAt: repoIssueTable.createdAt,
+        repoId: repoTable.id,
+        repoOwner: repoTable.owner,
+        repoName: repoTable.name,
+        repoProvider: repoTable.provider,
+        organizationId: repoTable.organizationId,
+        organizationName: organizationTable.name,
+        relevanceScore: issueRelevanceScore.as("relevanceScore"),
+      })
+      .from(repoIssueTable)
+      .innerJoin(repoTable, eq(repoIssueTable.repoId, repoTable.id))
+      .leftJoin(
+        organizationTable,
+        eq(repoTable.organizationId, organizationTable.id),
+      )
+      .where(
+        and(
+          repoOrganizationFilter,
+          or(
+            ilike(repoIssueTable.title, searchPattern),
+            ilike(repoIssueTable.body, searchPattern),
+            searchedNumber === undefined
+              ? undefined
+              : eq(repoIssueTable.number, searchedNumber),
+          ),
+        ),
+      )
+      .orderBy(desc(issueRelevanceScore), desc(repoIssueTable.createdAt))
+      .limit(limit);
+
+    for (const issue of issues) {
+      results.push({
+        id: issue.id,
+        type: "issue",
+        title: `#${issue.number} ${issue.title}`,
+        description: issue.body || undefined,
+        organizationId: issue.organizationId,
+        organizationName: issue.organizationName || undefined,
+        userName: issue.authorLogin || undefined,
+        createdAt: issue.createdAt,
+        relevanceScore: issue.relevanceScore,
+        repoId: issue.repoId,
+        repoOwner: issue.repoOwner,
+        repoName: issue.repoName,
+        repoProvider: issue.repoProvider,
+        itemNumber: issue.number,
+        state: issue.state,
+        url: issue.url,
+      });
+    }
+  }
+
+  if (type === "all" || type === "pullRequests") {
+    const pullRequestRelevanceScore = sql<number>`
+      CASE
+        WHEN ${searchedNumber === undefined ? sql`FALSE` : sql`${repoPullRequestTable.number} = ${searchedNumber}`} THEN 4
+        WHEN LOWER(${repoPullRequestTable.title}) LIKE ${searchPattern} THEN 3
+        WHEN LOWER(${repoPullRequestTable.body}) LIKE ${searchPattern} THEN 2
+        ELSE 1
+      END
+    `;
+
+    const pullRequests = await db
+      .select({
+        id: repoPullRequestTable.id,
+        number: repoPullRequestTable.number,
+        title: repoPullRequestTable.title,
+        body: repoPullRequestTable.body,
+        state: repoPullRequestTable.state,
+        url: repoPullRequestTable.url,
+        authorLogin: repoPullRequestTable.authorLogin,
+        createdAt: repoPullRequestTable.createdAt,
+        repoId: repoTable.id,
+        repoOwner: repoTable.owner,
+        repoName: repoTable.name,
+        repoProvider: repoTable.provider,
+        organizationId: repoTable.organizationId,
+        organizationName: organizationTable.name,
+        relevanceScore: pullRequestRelevanceScore.as("relevanceScore"),
+      })
+      .from(repoPullRequestTable)
+      .innerJoin(repoTable, eq(repoPullRequestTable.repoId, repoTable.id))
+      .leftJoin(
+        organizationTable,
+        eq(repoTable.organizationId, organizationTable.id),
+      )
+      .where(
+        and(
+          repoOrganizationFilter,
+          or(
+            ilike(repoPullRequestTable.title, searchPattern),
+            ilike(repoPullRequestTable.body, searchPattern),
+            searchedNumber === undefined
+              ? undefined
+              : eq(repoPullRequestTable.number, searchedNumber),
+          ),
+        ),
+      )
+      .orderBy(
+        desc(pullRequestRelevanceScore),
+        desc(repoPullRequestTable.createdAt),
+      )
+      .limit(limit);
+
+    for (const pullRequest of pullRequests) {
+      results.push({
+        id: pullRequest.id,
+        type: "pull_request",
+        title: `#${pullRequest.number} ${pullRequest.title}`,
+        description: pullRequest.body || undefined,
+        organizationId: pullRequest.organizationId,
+        organizationName: pullRequest.organizationName || undefined,
+        userName: pullRequest.authorLogin || undefined,
+        createdAt: pullRequest.createdAt,
+        relevanceScore: pullRequest.relevanceScore,
+        repoId: pullRequest.repoId,
+        repoOwner: pullRequest.repoOwner,
+        repoName: pullRequest.repoName,
+        repoProvider: pullRequest.repoProvider,
+        itemNumber: pullRequest.number,
+        state: pullRequest.state,
+        url: pullRequest.url,
       });
     }
   }

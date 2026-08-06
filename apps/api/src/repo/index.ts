@@ -6,18 +6,25 @@ import { requireOrganizationPermission } from "../utils/require-organization-per
 import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
+import { getGitHubRepoContents } from "./controllers/get-github-repo-contents";
 import getRepoCtrl from "./controllers/get-repo";
 import { getRepoIssue } from "./controllers/get-repo-issue";
 import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
 import {
+  addGitHubSubIssue,
   closeGitHubIssue,
   createGitHubMilestone,
   listGitHubMilestones,
   markGitHubIssueDuplicate,
+  removeGitHubSubIssue,
   unmarkGitHubIssueDuplicate,
   updateGitHubMilestone,
 } from "./controllers/github-issue-management";
 import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
+import {
+  listGitHubRepoPackages,
+  listGitHubRepoReleases,
+} from "./controllers/list-github-repo-resources";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
@@ -151,6 +158,62 @@ const githubRepoMetadataSchema = v.object({
   ),
 });
 
+const githubRepoContentsSchema = v.object({
+  path: v.string(),
+  ref: v.nullable(v.string()),
+  type: v.picklist(["directory", "file", "symlink", "submodule"] as const),
+  entries: v.array(
+    v.object({
+      name: v.string(),
+      path: v.string(),
+      type: v.picklist(["file", "dir", "symlink", "submodule"] as const),
+      size: v.number(),
+      sha: v.string(),
+    }),
+  ),
+  file: v.nullable(
+    v.object({
+      name: v.string(),
+      path: v.string(),
+      size: v.number(),
+      sha: v.string(),
+      content: v.nullable(v.string()),
+      isBinary: v.boolean(),
+    }),
+  ),
+});
+
+const githubReleaseSchema = v.object({
+  id: v.number(),
+  tagName: v.string(),
+  name: v.nullable(v.string()),
+  body: v.nullable(v.string()),
+  publishedAt: v.nullable(v.string()),
+  createdAt: v.string(),
+  isDraft: v.boolean(),
+  isPrerelease: v.boolean(),
+  url: v.string(),
+  assets: v.array(
+    v.object({
+      id: v.number(),
+      name: v.string(),
+      size: v.number(),
+      downloadUrl: v.string(),
+      downloadCount: v.number(),
+    }),
+  ),
+});
+const githubPackageSchema = v.object({
+  id: v.number(),
+  name: v.string(),
+  packageType: v.string(),
+  visibility: v.string(),
+  url: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  versionCount: v.number(),
+});
+
 const repo = new Hono<{
   Variables: {
     userId: string;
@@ -199,19 +262,40 @@ const repo = new Hono<{
     }),
     validator(
       "json",
-      v.object({
-        organizationId: v.string(),
-        provider: v.picklist(["github", "gitea"] as const),
-        owner: v.string(),
-        name: v.string(),
-        url: v.string(),
-        externalId: v.optional(v.string()),
-        description: v.optional(v.string()),
-        defaultBranch: v.optional(v.string()),
-        isPrivate: v.optional(v.boolean()),
-        config: v.optional(v.record(v.string(), v.unknown())),
-        installationId: v.optional(v.number()),
-      }),
+      v.pipe(
+        v.object({
+          organizationId: v.string(),
+          // Forgejo is API-compatible with Gitea and rides the same branch.
+          provider: v.picklist(["github", "gitea"] as const),
+          owner: v.string(),
+          name: v.string(),
+          // GitHub resolves the canonical URL from the installation, so the
+          // client cannot supply it; self-hosted Gitea/Forgejo must.
+          url: v.optional(v.string()),
+          externalId: v.optional(v.string()),
+          description: v.optional(v.string()),
+          defaultBranch: v.optional(v.string()),
+          isPrivate: v.optional(v.boolean()),
+          config: v.optional(v.record(v.string(), v.unknown())),
+          installationId: v.optional(v.number()),
+        }),
+        v.forward(
+          v.check(
+            (input) => input.provider !== "gitea" || Boolean(input.url),
+            "url is required for Gitea and Forgejo repositories",
+          ),
+          ["url"],
+        ),
+        v.forward(
+          v.check(
+            (input) =>
+              input.provider !== "github" ||
+              typeof input.installationId === "number",
+            "installationId is required for GitHub repositories",
+          ),
+          ["installationId"],
+        ),
+      ),
     ),
     organizationAccess.fromBody(),
     // No `repo` permission verb exists yet — reuse `board: ["create"]`.
@@ -223,7 +307,7 @@ const repo = new Hono<{
         body.provider === "github"
           ? await createGithubRepo({
               organizationId,
-              installationId: body.installationId ?? -1,
+              installationId: body.installationId as number,
               owner: body.owner,
               name: body.name,
             })
@@ -232,7 +316,7 @@ const repo = new Hono<{
               provider: body.provider,
               owner: body.owner,
               name: body.name,
-              url: body.url,
+              url: body.url as string,
               externalId: body.externalId,
               description: body.description,
               defaultBranch: body.defaultBranch,
@@ -328,6 +412,39 @@ const repo = new Hono<{
       const organizationId = c.get("organizationId");
       const deletedRepo = await deleteRepoCtrl(id, organizationId);
       return c.json(toRepoResponse(deletedRepo));
+    },
+  )
+  .get(
+    "/:id/contents",
+    describeRoute({
+      operationId: "getGitHubRepoContents",
+      tags: ["Repos"],
+      description:
+        "Browse a GitHub repository directory or read a text file through its installation",
+      responses: {
+        200: {
+          description: "Repository directory entries or file content",
+          content: {
+            "application/json": { schema: resolver(githubRepoContentsSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(
+        v.object({
+          path: v.optional(v.pipe(v.string(), v.maxLength(4096))),
+          ref: v.optional(v.pipe(v.string(), v.maxLength(512))),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { path = "", ref } = c.req.valid("query") || {};
+      return c.json(await getGitHubRepoContents({ repoId: id, path, ref }));
     },
   )
   .get(
@@ -543,6 +660,18 @@ const repo = new Hono<{
     },
   )
   .get(
+    "/:id/releases",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubRepoReleases(c.req.valid("param").id)),
+  )
+  .get(
+    "/:id/packages",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubRepoPackages(c.req.valid("param").id)),
+  )
+  .get(
     "/:id/github-metadata",
     describeRoute({
       operationId: "getGitHubRepoMetadata",
@@ -655,6 +784,78 @@ const repo = new Hono<{
     },
   )
   .post(
+    "/:id/issues/:number/sub-issues",
+    describeRoute({
+      operationId: "addRepoSubIssue",
+      tags: ["Repos"],
+      description: "Attach an existing issue as a sub-issue on GitHub",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({
+        subIssueNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await addGitHubSubIssue({
+          repoId: id,
+          number,
+          subIssueNumber: c.req.valid("json").subIssueNumber,
+        }),
+      );
+    },
+  )
+  .delete(
+    "/:id/issues/:number/sub-issues/:subIssueNumber",
+    describeRoute({
+      operationId: "removeRepoSubIssue",
+      tags: ["Repos"],
+      description: "Detach a sub-issue on GitHub",
+    }),
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        subIssueNumber: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number, subIssueNumber } = c.req.valid("param");
+      return c.json(
+        await removeGitHubSubIssue({ repoId: id, number, subIssueNumber }),
+      );
+    },
+  )
+  .post(
     "/:id/issues/:number/duplicate",
     validator(
       "param",
@@ -733,6 +934,7 @@ const repo = new Hono<{
           number,
           kind: "issue",
           updates: c.req.valid("json"),
+          userId: c.get("userId"),
         }),
       );
     },
@@ -791,6 +993,7 @@ const repo = new Hono<{
           number,
           kind: "pullRequest",
           updates: c.req.valid("json"),
+          userId: c.get("userId"),
         }),
       );
     },

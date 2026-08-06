@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import PageTitle from "@/components/page-title";
 import ColumnEditor from "@/components/board/column-editor";
 import WorkflowEditor from "@/components/board/workflow-editor";
+import PageTitle from "@/components/page-title";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/boards/$boardId/workflow",

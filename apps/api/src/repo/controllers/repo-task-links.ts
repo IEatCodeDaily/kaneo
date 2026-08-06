@@ -71,6 +71,64 @@ export async function getRepoItemTaskLinks(
     );
 }
 
+export async function getTaskRepoItemLinks(
+  taskId: string,
+  organizationId: string,
+) {
+  const rows = await db
+    .select({
+      id: taskRepoItemLinkTable.id,
+      createdAt: taskRepoItemLinkTable.createdAt,
+      issue: {
+        id: repoIssueTable.id,
+        number: repoIssueTable.number,
+        title: repoIssueTable.title,
+        state: repoIssueTable.state,
+        url: repoIssueTable.url,
+        repoId: repoIssueTable.repoId,
+      },
+      pullRequest: {
+        id: repoPullRequestTable.id,
+        number: repoPullRequestTable.number,
+        title: repoPullRequestTable.title,
+        state: repoPullRequestTable.state,
+        url: repoPullRequestTable.url,
+        repoId: repoPullRequestTable.repoId,
+      },
+    })
+    .from(taskRepoItemLinkTable)
+    .innerJoin(taskTable, eq(taskRepoItemLinkTable.taskId, taskTable.id))
+    .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+    .leftJoin(
+      repoIssueTable,
+      eq(taskRepoItemLinkTable.repoIssueId, repoIssueTable.id),
+    )
+    .leftJoin(
+      repoPullRequestTable,
+      eq(taskRepoItemLinkTable.repoPullRequestId, repoPullRequestTable.id),
+    )
+    .where(
+      and(
+        eq(taskRepoItemLinkTable.taskId, taskId),
+        eq(boardTable.organizationId, organizationId),
+      ),
+    );
+
+  return rows.map((row) => {
+    const item = row.issue?.id ? row.issue : row.pullRequest;
+    return {
+      id: row.id,
+      createdAt: row.createdAt,
+      itemType: row.issue?.id ? ("issues" as const) : ("pull-requests" as const),
+      repoId: item?.repoId ?? "",
+      number: item?.number ?? 0,
+      title: item?.title ?? "",
+      state: item?.state ?? "",
+      url: item?.url ?? "",
+    };
+  });
+}
+
 export async function addRepoItemTaskLink({
   repoId,
   number,

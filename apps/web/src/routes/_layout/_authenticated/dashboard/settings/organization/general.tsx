@@ -254,7 +254,13 @@ function RouteComponent() {
             }),
       );
     }
-  }, [organization?.id, currentOwnerMember, selectedMember, transferOwnership, t]);
+  }, [
+    organization?.id,
+    currentOwnerMember,
+    selectedMember,
+    transferOwnership,
+    t,
+  ]);
 
   const handleDeleteOrganization = useCallback(async () => {
     if (!organization?.id) return;
@@ -295,7 +301,10 @@ function RouteComponent() {
   useEffect(() => {
     if (!canEdit) return;
     const subscription = organizationForm.watch(() => {
-      if (organizationForm.formState.isDirty && organizationForm.formState.isValid) {
+      if (
+        organizationForm.formState.isDirty &&
+        organizationForm.formState.isValid
+      ) {
         debouncedSave(organizationForm.getValues());
       }
     });
@@ -484,9 +493,12 @@ function RouteComponent() {
                     disabled={!selectedNewOwnerId || isTransferring}
                     onClick={() => setIsTransferModalOpen(true)}
                   >
-                    {t("settings:organizationGeneral.transferOwnership.button", {
-                      defaultValue: "Transfer",
-                    })}
+                    {t(
+                      "settings:organizationGeneral.transferOwnership.button",
+                      {
+                        defaultValue: "Transfer",
+                      },
+                    )}
                   </Button>
                 </div>
               </div>
@@ -512,7 +524,9 @@ function RouteComponent() {
                     {t("settings:organizationGeneral.deleteOrganization")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {t("settings:organizationGeneral.deleteOrganizationDescription")}
+                    {t(
+                      "settings:organizationGeneral.deleteOrganizationDescription",
+                    )}
                   </p>
                 </div>
                 <Button
@@ -536,9 +550,12 @@ function RouteComponent() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {t("settings:organizationGeneral.transferOwnership.dialogTitle", {
-                  defaultValue: "Transfer ownership?",
-                })}
+                {t(
+                  "settings:organizationGeneral.transferOwnership.dialogTitle",
+                  {
+                    defaultValue: "Transfer ownership?",
+                  },
+                )}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {t(
@@ -571,9 +588,12 @@ function RouteComponent() {
                         "settings:organizationGeneral.transferOwnership.transferring",
                         { defaultValue: "Transferring…" },
                       )
-                    : t("settings:organizationGeneral.transferOwnership.confirm", {
-                        defaultValue: "Transfer ownership",
-                      })}
+                    : t(
+                        "settings:organizationGeneral.transferOwnership.confirm",
+                        {
+                          defaultValue: "Transfer ownership",
+                        },
+                      )}
                 </Button>
               </AlertDialogClose>
             </AlertDialogFooter>

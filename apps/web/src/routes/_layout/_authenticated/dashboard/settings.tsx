@@ -67,7 +67,7 @@ function SettingsLayout() {
               {t("navigation:page.settingsTitle")}
             </h1>
 
-            <Tabs value={activeTab} className="w-[400px] pt-2">
+            <Tabs value={activeTab} className="w-fit pt-2">
               <TabsList className="bg-sidebar gap-2">
                 <TabsTrigger
                   className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
@@ -91,9 +91,7 @@ function SettingsLayout() {
                   disabled={boards?.length === 0}
                   value="board"
                   className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
-                  onClick={() =>
-                    navigate({ to: "/dashboard/settings/boards" })
-                  }
+                  onClick={() => navigate({ to: "/dashboard/settings/boards" })}
                 >
                   {t("navigation:sidebar.boards")}
                 </TabsTrigger>
