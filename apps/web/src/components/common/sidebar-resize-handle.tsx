@@ -89,21 +89,35 @@ export function SidebarResizeHandle() {
   if (isMobile || state === "collapsed") return null;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: separator role below
-    <div
+    <button
       aria-label="Resize sidebar"
-      aria-orientation="vertical"
       className={cn(
-        "absolute inset-y-0 right-0 z-20 hidden w-1.5 cursor-col-resize md:block",
+        "absolute inset-y-0 right-0 z-20 hidden w-1.5 cursor-col-resize appearance-none border-0 bg-transparent p-0 md:block",
         "after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-transparent after:transition-colors",
-        "hover:after:bg-sidebar-border",
+        "hover:after:bg-sidebar-border focus-visible:outline-none focus-visible:after:bg-primary/60",
         dragging && "after:bg-primary/50",
       )}
       data-testid="sidebar-resize-handle"
       onDoubleClick={() => setSidebarWidth(null)}
+      onKeyDown={(event) => {
+        // Keyboard resize: the handle is a real button, so arrow keys work
+        // for anyone who cannot drag.
+        const step = event.shiftKey ? 64 : 16;
+        const current =
+          document
+            .querySelector('[data-slot="sidebar-container"]')
+            ?.getBoundingClientRect().width ?? 240;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          const delta = event.key === "ArrowRight" ? step : -step;
+          setSidebarWidth(
+            clampSidebarWidth(current + delta, window.innerWidth),
+          );
+        }
+      }}
       onPointerDown={onPointerDown}
-      role="separator"
       title="Drag to resize · double-click to reset"
+      type="button"
     />
   );
 }
