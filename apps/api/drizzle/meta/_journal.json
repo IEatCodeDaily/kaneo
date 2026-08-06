@@ -463,6 +463,13 @@
 			"when": 1786013000000,
 			"tag": "0065_team_parent",
 			"breakpoints": true
+		},
+		{
+			"idx": 66,
+			"version": "7",
+			"when": 1786114000000,
+			"tag": "0066_organization_resource_defaults",
+			"breakpoints": true
 		}
 	]
 }

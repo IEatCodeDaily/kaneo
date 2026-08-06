@@ -5,6 +5,7 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import {
+  Eye,
   FileText,
   FlaskConical,
   Plug,
@@ -46,6 +47,11 @@ function RouteComponent() {
       title: t("settings:organizationRoles.title", { defaultValue: "Roles" }),
       url: "/dashboard/settings/organization/roles",
       icon: Shield,
+    },
+    {
+      title: "Visibility",
+      url: "/dashboard/settings/organization/visibility",
+      icon: Eye,
     },
 
     {

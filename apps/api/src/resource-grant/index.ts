@@ -7,7 +7,7 @@ import db, { schema } from "../database";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 
-const resourceTypeSchema = v.picklist(["board", "repo"] as const);
+const resourceTypeSchema = v.picklist(["board", "repo", "table"] as const);
 const privilegeSchema = v.picklist(["view", "edit", "manage"] as const);
 const resourceParamsSchema = v.object({
   organizationId: v.string(),
@@ -29,7 +29,11 @@ type GrantBody = v.InferOutput<typeof grantBodySchema>;
 
 async function validateResource(params: ResourceParams) {
   const table =
-    params.resourceType === "board" ? schema.boardTable : schema.repoTable;
+    params.resourceType === "board"
+      ? schema.boardTable
+      : params.resourceType === "repo"
+        ? schema.repoTable
+        : schema.dataTableTable;
   const [resource] = await db
     .select({ id: table.id })
     .from(table)

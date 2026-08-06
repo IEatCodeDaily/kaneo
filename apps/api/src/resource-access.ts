@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import db from "./database";
 import {
   organizationMemberTable,
+  organizationTable,
   resourceGrantTable,
   userTable,
 } from "./database/schema";
@@ -10,7 +11,23 @@ import { getEffectiveTeamIdsForUser } from "./team/effective-membership";
 
 export const RESOURCE_PRIVILEGES = ["none", "view", "edit", "manage"] as const;
 export type ResourcePrivilege = (typeof RESOURCE_PRIVILEGES)[number];
-export type ResourceType = "board" | "repo";
+export const RESOURCE_TYPES = ["board", "repo", "table"] as const;
+export type ResourceType = (typeof RESOURCE_TYPES)[number];
+
+/** Pure resolver: explicit override for the type, else the org-wide default. */
+export function resolveDefaultPrivilege(input: {
+  resourceType: ResourceType;
+  defaultResourcePrivilege?: string | null;
+  resourceDefaultOverrides?: Partial<Record<string, string>> | null;
+}): ResourcePrivilege {
+  const candidate =
+    input.resourceDefaultOverrides?.[input.resourceType] ??
+    input.defaultResourcePrivilege ??
+    "manage";
+  return (RESOURCE_PRIVILEGES as readonly string[]).includes(candidate)
+    ? (candidate as ResourcePrivilege)
+    : "manage";
+}
 
 export { hasOrganizationWideResourceAccess };
 
@@ -43,7 +60,7 @@ export async function getResourcePrivilege(input: {
   resourceId: string;
   userId: string;
 }): Promise<ResourcePrivilege> {
-  const [user, membership, grants, teams] = await Promise.all([
+  const [user, membership, organization, grants, teams] = await Promise.all([
     db
       .select({ role: userTable.role })
       .from(userTable)
@@ -58,6 +75,14 @@ export async function getResourcePrivilege(input: {
           eq(organizationMemberTable.userId, input.userId),
         ),
       )
+      .limit(1),
+    db
+      .select({
+        defaultResourcePrivilege: organizationTable.defaultResourcePrivilege,
+        resourceDefaultOverrides: organizationTable.resourceDefaultOverrides,
+      })
+      .from(organizationTable)
+      .where(eq(organizationTable.id, input.organizationId))
       .limit(1),
     db
       .select({
@@ -83,8 +108,7 @@ export async function getResourcePrivilege(input: {
     return "manage";
   }
 
-  // Additive rollout: resources without grants retain organization-wide access.
-  if (grants.length === 0) return membership.length > 0 ? "manage" : "none";
+  if (membership.length === 0) return "none";
 
   const teamIds = new Set(teams.map((team) => team.teamId));
   const applicable = grants
@@ -94,7 +118,14 @@ export async function getResourcePrivilege(input: {
         (grant.teamId !== null && teamIds.has(grant.teamId)),
     )
     .map((grant) => grant.privilege as ResourcePrivilege);
-  return highestPrivilege(applicable);
+  // Explicit user/team grant wins; otherwise fall back to the organization's
+  // configured default (per-type override → org-wide default).
+  if (applicable.length > 0) return highestPrivilege(applicable);
+  return resolveDefaultPrivilege({
+    resourceType: input.resourceType,
+    defaultResourcePrivilege: organization[0]?.defaultResourcePrivilege,
+    resourceDefaultOverrides: organization[0]?.resourceDefaultOverrides,
+  });
 }
 
 export function privilegeAllows(

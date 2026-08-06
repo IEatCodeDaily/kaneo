@@ -1,6 +1,13 @@
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { validator } from "hono-openapi";
 import * as v from "valibot";
+import {
+  listAccessibleResourceIds,
+  type ResourcePrivilege,
+  requireResourcePrivilege,
+} from "../resource-access";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
@@ -24,6 +31,31 @@ const writePermission = requireOrganizationPermission({
 });
 const nonEmptyName = v.pipe(v.string(), v.trim(), v.minLength(1));
 
+/**
+ * Org-default visibility: tables are governed by the same resource-privilege
+ * lattice as boards and repos. Reads need view, row/field/cell writes need
+ * edit, and table lifecycle (rename/delete) needs manage. Table creation stays
+ * on the organization role permission — there is no resource to grade yet.
+ */
+function tablePrivilege(required: Exclude<ResourcePrivilege, "none">) {
+  return createMiddleware<{ Variables: { userId: string } }>(
+    async (c, next) => {
+      const allowed = await requireResourcePrivilege({
+        organizationId: c.req.param("organizationId") ?? "",
+        resourceType: "table",
+        resourceId: c.req.param("tableId") ?? "",
+        userId: c.get("userId"),
+        required,
+      });
+      if (!allowed) {
+        // 404, not 403: a hidden table must not leak its existence.
+        throw new HTTPException(404, { message: "Data table not found" });
+      }
+      await next();
+    },
+  );
+}
+
 const dataTable = new Hono<{ Variables: { userId: string } }>()
   .use("/organization/:organizationId", async (c, next) => {
     await assertTablesEnabled(c.req.param("organizationId"));
@@ -37,8 +69,19 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     "/organization/:organizationId",
     validator("param", v.object({ organizationId: v.string() })),
     organizationAccess.fromParam("organizationId"),
-    async (c) =>
-      c.json(await listDataTables(c.req.valid("param").organizationId)),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      const tables = await listDataTables(organizationId);
+      const visibleIds = new Set(
+        await listAccessibleResourceIds({
+          organizationId,
+          resourceType: "table",
+          userId: c.get("userId"),
+          resourceIds: tables.map((table) => table.id),
+        }),
+      );
+      return c.json(tables.filter((table) => visibleIds.has(table.id)));
+    },
   )
   .post(
     "/organization/:organizationId",
@@ -64,6 +107,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     "/organization/:organizationId/:tableId",
     validator("param", idParams),
     organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(await getDataTable(organizationId, tableId));
@@ -80,7 +124,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
@@ -92,7 +136,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     "/organization/:organizationId/:tableId",
     validator("param", idParams),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(await deleteDataTable(organizationId, tableId));
@@ -106,7 +150,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       v.object({ name: nonEmptyName, position: v.optional(v.number()) }),
     ),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
@@ -132,7 +176,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
       return c.json(
@@ -156,7 +200,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
       return c.json(await deleteTextField(organizationId, tableId, fieldId));
@@ -167,7 +211,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     validator("param", idParams),
     validator("json", v.object({ position: v.optional(v.number()) })),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
@@ -186,7 +230,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId } = c.req.valid("param");
       return c.json(await deleteRow(organizationId, tableId, rowId));
@@ -205,7 +249,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     ),
     validator("json", v.object({ value: v.nullable(v.string()) })),
     organizationAccess.fromParam("organizationId"),
-    writePermission,
+    tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId, fieldId } = c.req.valid("param");
       return c.json(

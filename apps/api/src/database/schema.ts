@@ -176,6 +176,19 @@ export const organizationTable = pgTable("organization", {
   description: text("description"),
   reposEnabled: boolean("repos_enabled").default(false).notNull(),
   tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+  /*
+    Org-wide default member privilege for resources without an explicit
+    user/team grant. Per-type overrides are OPTIONAL: a missing key inherits
+    defaultResourcePrivilege. "manage" defaults preserve the historical
+    behaviour where ungranted resources were organization-wide.
+  */
+  defaultResourcePrivilege: text("default_resource_privilege")
+    .default("manage")
+    .notNull(),
+  resourceDefaultOverrides: jsonb("resource_default_overrides")
+    .$type<Partial<Record<string, "none" | "view" | "edit" | "manage">>>()
+    .default({})
+    .notNull(),
   aiEnabled: boolean("ai_enabled").default(false).notNull(),
   aiDefaultTokenLimit: integer("ai_default_token_limit")
     .default(1024)
@@ -349,7 +362,7 @@ export const resourceGrantTable = pgTable(
   (table) => [
     check(
       "resource_grant_resource_type_check",
-      sql`${table.resourceType} in ('board', 'repo')`,
+      sql`${table.resourceType} in ('board', 'repo', 'table')`,
     ),
     check(
       "resource_grant_privilege_check",
