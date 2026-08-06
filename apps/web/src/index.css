@@ -1531,3 +1531,21 @@ input:-webkit-autofill:active {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+
+/*
+ * Resizable sidebar: while a drag is in flight the width transitions on the
+ * sidebar gap/container (wanted for collapse/expand animation) would make the
+ * panel rubber-band behind the pointer. The resize handle sets this attribute
+ * for the duration of the drag only.
+ */
+[data-sidebar-resizing] [data-slot="sidebar-gap"],
+[data-sidebar-resizing] [data-slot="sidebar-container"],
+[data-sidebar-resizing] [data-slot="sidebar-inset"] {
+  transition: none !important;
+}
+[data-sidebar-resizing] {
+  cursor: col-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}

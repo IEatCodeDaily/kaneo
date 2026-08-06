@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
@@ -138,6 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           )}
         </div>
       </SidebarFooter>
+      <SidebarResizeHandle />
     </Sidebar>
   );
 }

@@ -50,6 +50,10 @@ type UserPreferencesStore = {
   sidebarDefaultOpen: boolean;
   setSidebarDefaultOpen: (open: boolean) => void;
 
+  /** Resizable sidebar width in px; null = use the CSS default. */
+  sidebarWidth: number | null;
+  setSidebarWidth: (width: number | null) => void;
+
   hiddenBoardIds: string[];
   setBoardSidebarVisibility: (
     userId: string,
@@ -147,6 +151,15 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       sidebarDefaultOpen: true,
       setSidebarDefaultOpen: (open) => set({ sidebarDefaultOpen: open }),
+
+      /*
+        Resizable sidebar width in px. null = never resized, use the CSS
+        default; consumers must clamp against the current viewport on read
+        (lib/sidebar-width) because a width saved on an ultrawide is not valid
+        on a laptop.
+      */
+      sidebarWidth: null,
+      setSidebarWidth: (width) => set({ sidebarWidth: width }),
 
       hiddenBoardIds: [],
       setBoardSidebarVisibility: (userId, boardId, visible) =>

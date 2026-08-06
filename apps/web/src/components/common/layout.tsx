@@ -2,6 +2,7 @@ import type React from "react";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileUserFab } from "@/components/common/mobile-user-fab";
+import { useSidebarWidth } from "@/components/common/sidebar-resize-handle";
 import { DemoAlert } from "@/components/demo-alert";
 import {
   SidebarInset,
@@ -55,6 +56,13 @@ function LayoutContent({ children, className }: ContentProps) {
 function Layout({ children, className }: LayoutProps) {
   const { sidebarDefaultOpen, setSidebarDefaultOpen } =
     useUserPreferencesStore();
+  /*
+    Resizable sidebar: the persisted width (re-clamped for this viewport)
+    overrides the CSS default. Everything downstream — gap element, fixed
+    container, inset margin — derives from --sidebar-width, so one variable
+    resizes the whole layout consistently.
+  */
+  const sidebarWidth = useSidebarWidth();
 
   // #125: preference effects moved to the router root so they also apply on
   // routes that do not render <Layout> (Settings in particular).
@@ -67,7 +75,7 @@ function Layout({ children, className }: LayoutProps) {
         open={sidebarDefaultOpen}
         style={
           {
-            "--sidebar-width": "calc(var(--spacing) * 60)",
+            "--sidebar-width": sidebarWidth ?? "calc(var(--spacing) * 60)",
             "--header-height": "calc(var(--spacing) * 12)",
           } as React.CSSProperties
         }
