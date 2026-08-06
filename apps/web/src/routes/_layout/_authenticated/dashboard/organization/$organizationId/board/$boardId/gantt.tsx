@@ -24,7 +24,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronRight as ChevronRightIcon,
-  Loader2,
   Search,
 } from "lucide-react";
 import {
@@ -40,6 +39,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import BoardLayout from "@/components/common/board-layout";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { GanttDependencyArrows } from "@/components/gantt/gantt-dependency-arrows";
 import { GanttMilestoneRow } from "@/components/gantt/gantt-milestone-row";
@@ -994,16 +994,12 @@ function RouteComponent() {
               dropPending && "pointer-events-none",
             )}
           >
-            {dropPending ? (
-              <div
-                className="sticky left-2 top-2 z-50 flex w-fit items-center gap-1.5 rounded-full border bg-popover px-2.5 py-1 text-xs text-popover-foreground shadow-md"
-                data-testid="gantt-drop-pending"
-                role="status"
-              >
-                <Loader2 className="size-3.5 animate-spin" />
-                Saving move…
-              </div>
-            ) : null}
+            {/*
+              Saving indicator is a toast (PendingSyncIndicator below): the
+              old sticky pill rendered INSIDE this scroll container, occupied
+              layout space, and jolted the rows on every drag-save.
+            */}
+            <PendingSyncIndicator label="Saving move…" pending={dropPending} />
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               {/* Sticky header: month row + day row */}
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur">
