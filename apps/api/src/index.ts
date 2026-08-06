@@ -30,10 +30,8 @@ import discordIntegration from "./discord-integration";
 import { eventContext } from "./events";
 import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
-import giteaIntegration, { handleGiteaWebhookRoute } from "./gitea-integration";
-import githubIntegration, {
-  handleGithubWebhookRoute,
-} from "./github-integration";
+import { handleGiteaWebhookRoute } from "./gitea-integration";
+import { handleGithubWebhookRoute } from "./github-integration";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
 import label from "./label";
@@ -43,9 +41,9 @@ import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
 import { initializePlugins } from "./plugins";
-import { migrateGitHubIntegration } from "./plugins/github/migration";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
+import repo from "./repo";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
 import search from "./search";
 import slackIntegration from "./slack-integration";
@@ -236,12 +234,9 @@ export function createApp() {
     return c.json(board);
   });
 
-  api.post("/github-integration/webhook", handleGithubWebhookRoute);
+  api.post("/repo/webhook/github", handleGithubWebhookRoute);
 
-  api.post(
-    "/gitea-integration/webhook/:integrationId",
-    handleGiteaWebhookRoute,
-  );
+api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
   const invitationPublicApi = api.get("/invitation/public/:id", async (c) => {
     const { id } = c.req.param();
@@ -547,6 +542,7 @@ export function createApp() {
 
   const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
+  const repoApi = api.route("/repo", repo);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
@@ -558,11 +554,6 @@ export function createApp() {
     notificationPreferences,
   );
   const searchApi = api.route("/search", search);
-  const githubIntegrationApi = api.route(
-    "/github-integration",
-    githubIntegration,
-  );
-  const giteaIntegrationApi = api.route("/gitea-integration", giteaIntegration);
   const genericWebhookIntegrationApi = api.route(
     "/generic-webhook-integration",
     genericWebhookIntegration,
@@ -727,8 +718,6 @@ export function createApp() {
     discordIntegrationApi,
     externalLinkApi,
     genericWebhookIntegrationApi,
-    githubIntegrationApi,
-    giteaIntegrationApi,
     invitationApi,
     invitationPublicApi,
     labelApi,
@@ -736,6 +725,7 @@ export function createApp() {
     notificationPreferencesApi,
     boardApi,
     publicBoardApi,
+    repoApi,
     searchApi,
     slackIntegrationApi,
     taskApi,
@@ -776,7 +766,8 @@ export async function runStartupTasks() {
   await migrateApiKeyReferenceId();
 
   await migrateNotificationPreferencesSchema();
-  await migrateGitHubIntegration();
+  // GitHub/Gitea are first-class Repos now; never recreate legacy board/task
+  // integrations during startup.
   await migrateColumns();
   await seedDefaultOrganizationRoles();
 
@@ -843,8 +834,6 @@ const {
   discordIntegrationApi,
   externalLinkApi,
   genericWebhookIntegrationApi,
-  githubIntegrationApi,
-  giteaIntegrationApi,
   invitationApi,
   invitationPublicApi,
   labelApi,
@@ -852,6 +841,7 @@ const {
   notificationPreferencesApi,
   boardApi,
   publicBoardApi,
+  repoApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -875,6 +865,7 @@ export type AppType =
   | typeof configApi
   | typeof boardApi
   | typeof taskApi
+  | typeof repoApi
   | typeof columnApi
   | typeof activityApi
   | typeof commentApi
@@ -883,8 +874,6 @@ export type AppType =
   | typeof notificationApi
   | typeof notificationPreferencesApi
   | typeof searchApi
-  | typeof githubIntegrationApi
-  | typeof giteaIntegrationApi
   | typeof genericWebhookIntegrationApi
   | typeof discordIntegrationApi
   | typeof slackIntegrationApi

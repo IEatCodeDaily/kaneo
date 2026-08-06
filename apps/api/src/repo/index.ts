@@ -1,0 +1,392 @@
+import { Hono } from "hono";
+import { describeRoute, resolver, validator } from "hono-openapi";
+import * as v from "valibot";
+import { organizationAccess } from "../utils/organization-access-middleware";
+import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import createRepoCtrl from "./controllers/create-repo";
+import deleteRepoCtrl from "./controllers/delete-repo";
+import getRepoCtrl from "./controllers/get-repo";
+import listRepoIssuesCtrl from "./controllers/list-repo-issues";
+import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
+import listReposCtrl from "./controllers/list-repos";
+import updateRepoCtrl from "./controllers/update-repo";
+import { repoOrganizationAccess } from "./repo-organization-access";
+import { toRepoResponse, toRepoResponses } from "./controllers/repo-response";
+import { syncRepo } from "./services/sync-gitea-repo";
+
+// NOTE: the permission statement vocabulary in @kaneo/permissions is
+// `board` | `task` | `label` | `organization` — there is no `repo` verb yet.
+// Until one is added, repo writes reuse the `board` create/update verbs so
+// existing roles (viewer read-only, member create, admin full) keep working.
+// Reads only require organization membership, same as boards.
+
+const repoSchema = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  provider: v.string(),
+  owner: v.string(),
+  name: v.string(),
+  externalId: v.nullable(v.string()),
+  url: v.string(),
+  description: v.nullable(v.string()),
+  defaultBranch: v.nullable(v.string()),
+  isPrivate: v.boolean(),
+  config: v.nullable(v.record(v.string(), v.unknown())),
+  isActive: v.boolean(),
+  lastSyncedAt: v.nullable(v.date()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+const repoWithCountsSchema = v.object({
+  ...repoSchema.entries,
+  openIssueCount: v.number(),
+  openPullRequestCount: v.number(),
+});
+
+const paginationSchema = v.object({
+  total: v.number(),
+  page: v.number(),
+  pageSize: v.number(),
+  totalPages: v.number(),
+});
+
+const repoIssueSchema = v.object({
+  id: v.string(),
+  repoId: v.string(),
+  number: v.number(),
+  externalId: v.nullable(v.string()),
+  title: v.string(),
+  body: v.nullable(v.string()),
+  state: v.string(),
+  authorLogin: v.nullable(v.string()),
+  authorAvatarUrl: v.nullable(v.string()),
+  assigneeLogins: v.nullable(v.array(v.string())),
+  labels: v.nullable(
+    v.array(v.object({ name: v.string(), color: v.optional(v.string()) })),
+  ),
+  commentCount: v.number(),
+  url: v.string(),
+  externalCreatedAt: v.nullable(v.date()),
+  externalUpdatedAt: v.nullable(v.date()),
+  closedAt: v.nullable(v.date()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+const repoPullRequestSchema = v.object({
+  id: v.string(),
+  repoId: v.string(),
+  number: v.number(),
+  externalId: v.nullable(v.string()),
+  title: v.string(),
+  body: v.nullable(v.string()),
+  state: v.string(),
+  isDraft: v.boolean(),
+  authorLogin: v.nullable(v.string()),
+  authorAvatarUrl: v.nullable(v.string()),
+  headBranch: v.nullable(v.string()),
+  baseBranch: v.nullable(v.string()),
+  labels: v.nullable(
+    v.array(v.object({ name: v.string(), color: v.optional(v.string()) })),
+  ),
+  commentCount: v.number(),
+  url: v.string(),
+  externalCreatedAt: v.nullable(v.date()),
+  externalUpdatedAt: v.nullable(v.date()),
+  mergedAt: v.nullable(v.date()),
+  closedAt: v.nullable(v.date()),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
+
+const repo = new Hono<{
+  Variables: {
+    userId: string;
+    organizationId: string;
+  };
+}>()
+  .get(
+    "/",
+    describeRoute({
+      operationId: "listRepos",
+      tags: ["Repos"],
+      description: "Get all repos in a organization",
+      responses: {
+        200: {
+          description: "List of repos with open issue and pull request counts",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(repoWithCountsSchema)),
+            },
+          },
+        },
+      },
+    }),
+    validator("query", v.object({ organizationId: v.string() })),
+    organizationAccess.fromQuery(),
+    async (c) => {
+      const organizationId = c.get("organizationId");
+      const repos = await listReposCtrl(organizationId);
+      return c.json(toRepoResponses(repos));
+    },
+  )
+  .post(
+    "/",
+    describeRoute({
+      operationId: "createRepo",
+      tags: ["Repos"],
+      description: "Connect a new repo to a organization",
+      responses: {
+        200: {
+          description: "Repo created successfully",
+          content: {
+            "application/json": { schema: resolver(repoSchema) },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        organizationId: v.string(),
+        provider: v.picklist(["github", "gitea"] as const),
+        owner: v.string(),
+        name: v.string(),
+        url: v.string(),
+        externalId: v.optional(v.string()),
+        description: v.optional(v.string()),
+        defaultBranch: v.optional(v.string()),
+        isPrivate: v.optional(v.boolean()),
+        config: v.optional(v.record(v.string(), v.unknown())),
+      }),
+    ),
+    organizationAccess.fromBody(),
+    // No `repo` permission verb exists yet — reuse `board: ["create"]`.
+    requireOrganizationPermission({ board: ["create"] }),
+    async (c) => {
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const newRepo = await createRepoCtrl({
+        organizationId,
+        provider: body.provider,
+        owner: body.owner,
+        name: body.name,
+        url: body.url,
+        externalId: body.externalId,
+        description: body.description,
+        defaultBranch: body.defaultBranch,
+        isPrivate: body.isPrivate,
+        config: body.config,
+      });
+      return c.json(toRepoResponse(newRepo));
+    },
+  )
+  .get(
+    "/:id",
+    describeRoute({
+      operationId: "getRepo",
+      tags: ["Repos"],
+      description: "Get a specific repo by ID",
+      responses: {
+        200: {
+          description: "Repo details",
+          content: {
+            "application/json": { schema: resolver(repoSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const repoData = await getRepoCtrl(id, organizationId);
+      return c.json(toRepoResponse(repoData));
+    },
+  )
+  .patch(
+    "/:id",
+    describeRoute({
+      operationId: "updateRepo",
+      tags: ["Repos"],
+      description: "Update an existing repo",
+      responses: {
+        200: {
+          description: "Repo updated successfully",
+          content: {
+            "application/json": { schema: resolver(repoSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        name: v.optional(v.string()),
+        description: v.optional(v.string()),
+        isActive: v.optional(v.boolean()),
+        config: v.optional(v.record(v.string(), v.unknown())),
+      }),
+    ),
+    repoOrganizationAccess(),
+    // No `repo` permission verb exists yet — reuse `board: ["update"]`.
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const updates = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const updatedRepo = await updateRepoCtrl(id, organizationId, updates);
+      return c.json(toRepoResponse(updatedRepo));
+    },
+  )
+  .delete(
+    "/:id",
+    describeRoute({
+      operationId: "deleteRepo",
+      tags: ["Repos"],
+      description:
+        "Delete a repo by ID — cascades to its issues and pull requests",
+      responses: {
+        200: {
+          description: "Repo deleted successfully",
+          content: {
+            "application/json": { schema: resolver(repoSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    // No `repo` permission verb exists yet — reuse `board: ["update"]`.
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const deletedRepo = await deleteRepoCtrl(id, organizationId);
+      return c.json(toRepoResponse(deletedRepo));
+    },
+  )
+  .get(
+    "/:id/issues",
+    describeRoute({
+      operationId: "listRepoIssues",
+      tags: ["Repos"],
+      description: "Get mirrored issues for a repo, newest number first",
+      responses: {
+        200: {
+          description: "Paginated list of repo issues",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({
+                  data: v.array(repoIssueSchema),
+                  pagination: paginationSchema,
+                }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(
+        v.object({
+          state: v.optional(v.picklist(["open", "closed", "all"] as const)),
+          page: v.optional(v.pipe(v.string(), v.transform(Number))),
+          limit: v.optional(v.pipe(v.string(), v.transform(Number))),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const filters = c.req.valid("query") || {};
+      const organizationId = c.get("organizationId");
+      const issues = await listRepoIssuesCtrl(id, organizationId, filters);
+      return c.json(issues);
+    },
+  )
+  .get(
+    "/:id/pull-requests",
+    describeRoute({
+      operationId: "listRepoPullRequests",
+      tags: ["Repos"],
+      description: "Get mirrored pull requests for a repo, newest number first",
+      responses: {
+        200: {
+          description: "Paginated list of repo pull requests",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({
+                  data: v.array(repoPullRequestSchema),
+                  pagination: paginationSchema,
+                }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "query",
+      v.optional(
+        v.object({
+          state: v.optional(
+            v.picklist(["open", "closed", "merged", "all"] as const),
+          ),
+          page: v.optional(v.pipe(v.string(), v.transform(Number))),
+          limit: v.optional(v.pipe(v.string(), v.transform(Number))),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const filters = c.req.valid("query") || {};
+      const organizationId = c.get("organizationId");
+      const pullRequests = await listRepoPullRequestsCtrl(
+        id,
+        organizationId,
+        filters,
+      );
+      return c.json(pullRequests);
+    },
+  )
+  .post(
+    "/:id/sync",
+    describeRoute({
+      operationId: "syncRepo",
+      tags: ["Repos"],
+      description:
+        "Pull the repository's issues and pull requests from its provider. Upserts on (repo, number); never creates tasks.",
+      responses: {
+        200: {
+          description: "Sync completed",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({ issues: v.number(), pullRequests: v.number() }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const result = await syncRepo(id);
+      return c.json(result);
+    },
+  );
+
+export default repo;

@@ -835,7 +835,8 @@
 			"members": "Leden",
 			"invitations": "Uitnodigingen",
 			"more": "Meer",
-			"backToBoard": "Terug naar bord"
+			"backToBoard": "Terug naar bord",
+			"repos": "Repos"
 		},
 		"boardList": {
 			"viewBoard": "Board bekijken",
@@ -916,6 +917,9 @@
 				"openTask": "Geselecteerde taak openen",
 				"quickSelectNumber": "Selecteer optie via nummer"
 			}
+		},
+		"repoList": {
+			"allRepos": "All repos"
 		}
 	},
 	"notifications": {
@@ -1519,6 +1523,50 @@
 			"submit": "Werkruimte maken",
 			"success": "Werkruimte succesvol aangemaakt",
 			"error": "Aanmaken werkruimte mislukt"
+		},
+		"repos": {
+			"pageTitle": "Repos",
+			"emptyTitle": "No repos yet",
+			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
+			"neverSynced": "Never synced",
+			"backToRepos": "Back to repos",
+			"table": {
+				"name": "Repository",
+				"provider": "Provider",
+				"openIssues": "Open issues",
+				"openPullRequests": "Open pull requests",
+				"lastSynced": "Last synced"
+			},
+			"state": {
+				"open": "Open",
+				"closed": "Closed",
+				"merged": "Merged",
+				"draft": "Draft"
+			},
+			"stateFilter": {
+				"open": "Open",
+				"closed": "Closed",
+				"merged": "Merged",
+				"all": "All"
+			},
+			"issues": {
+				"pageTitle": "Issues",
+				"tab": "Issues",
+				"emptyTitle": "No issues",
+				"emptyDescription": "There are no issues matching this filter."
+			},
+			"pullRequests": {
+				"pageTitle": "Pull requests",
+				"tab": "Pull requests",
+				"emptyTitle": "No pull requests",
+				"emptyDescription": "There are no pull requests matching this filter."
+			},
+			"add": {
+				"button": "Connect repo",
+				"title": "Connect repository",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"submit": "Connect and sync"
+			}
 		}
 	},
 	"team": {

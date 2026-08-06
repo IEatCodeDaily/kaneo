@@ -388,34 +388,15 @@ const giteaIntegration = new Hono<{
     },
   );
 
+/** First-class Repo Gitea webhook: identify the repo from its signed payload. */
 export async function handleGiteaWebhookRoute(c: Context) {
-  const integrationId = c.req.param("integrationId");
-  if (!integrationId) {
-    return c.json({ error: "Missing integration id" }, 400);
-  }
-
   const arrayBuffer = await c.req.arrayBuffer();
   const body = Buffer.from(arrayBuffer).toString("utf8");
-
   const signature =
     c.req.header("x-gitea-signature") || c.req.header("X-Gitea-Signature");
+  const result = await handleGiteaWebhookRequest(body, signature);
 
-  const eventName =
-    c.req.header("x-gitea-event") ||
-    c.req.header("X-Gitea-Event") ||
-    c.req.header("x-github-event");
-
-  const result = await handleGiteaWebhookRequest(
-    integrationId,
-    body,
-    signature,
-    eventName,
-  );
-
-  if (!result.success) {
-    return c.json({ error: result.error }, 400);
-  }
-
+  if (!result.success) return c.json({ error: result.error }, 400);
   return c.json({ status: "success" });
 }
 

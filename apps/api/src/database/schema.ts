@@ -1029,3 +1029,147 @@ export const organizationRoleRelations = relations(
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Repositories
+//
+// Repos are a FIRST-CLASS, ORGANIZATION-LEVEL entity — deliberately NOT tied to
+// boards or tasks. A repo's issues and pull requests are mirrored as-is from
+// the provider so they keep the provider's own shape (state, labels, numbers)
+// instead of being forced into Kaneo's board/column/task model.
+//
+// There is intentionally no foreign key from repo_issue / repo_pull_request to
+// task. Tasks and issues are separate domains; coupling them is what made the
+// previous board-scoped integration painful.
+// ---------------------------------------------------------------------------
+
+export const repoTable = pgTable(
+  "repo",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // "github" | "gitea"
+    provider: text("provider").notNull(),
+    owner: text("owner").notNull(),
+    name: text("name").notNull(),
+    // Provider-side identifier (GitHub repo id / Gitea repo id).
+    externalId: text("external_id"),
+    url: text("url").notNull(),
+    description: text("description"),
+    defaultBranch: text("default_branch"),
+    isPrivate: boolean("is_private").default(false).notNull(),
+    // Provider auth/config: GitHub installationId, Gitea baseUrl + token ref…
+    config: jsonb("config").$type<Record<string, unknown>>(),
+    isActive: boolean("is_active").default(true).notNull(),
+    lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("repo_organizationId_idx").on(table.organizationId),
+    // One connection per repo per organization.
+    unique("repo_org_provider_owner_name_unique").on(
+      table.organizationId,
+      table.provider,
+      table.owner,
+      table.name,
+    ),
+  ],
+);
+
+export const repoIssueTable = pgTable(
+  "repo_issue",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    repoId: text("repo_id")
+      .notNull()
+      .references(() => repoTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Provider issue number, as shown to users (#12).
+    number: integer("number").notNull(),
+    externalId: text("external_id"),
+    title: text("title").notNull(),
+    body: text("body"),
+    // Provider state verbatim: "open" | "closed".
+    state: text("state").notNull(),
+    authorLogin: text("author_login"),
+    authorAvatarUrl: text("author_avatar_url"),
+    assigneeLogins: jsonb("assignee_logins").$type<string[]>(),
+    labels: jsonb("labels").$type<Array<{ name: string; color?: string }>>(),
+    commentCount: integer("comment_count").default(0).notNull(),
+    url: text("url").notNull(),
+    externalCreatedAt: timestamp("external_created_at", { mode: "date" }),
+    externalUpdatedAt: timestamp("external_updated_at", { mode: "date" }),
+    closedAt: timestamp("closed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("repo_issue_repoId_idx").on(table.repoId),
+    index("repo_issue_state_idx").on(table.state),
+    unique("repo_issue_repo_number_unique").on(table.repoId, table.number),
+  ],
+);
+
+export const repoPullRequestTable = pgTable(
+  "repo_pull_request",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    repoId: text("repo_id")
+      .notNull()
+      .references(() => repoTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    number: integer("number").notNull(),
+    externalId: text("external_id"),
+    title: text("title").notNull(),
+    body: text("body"),
+    // "open" | "closed" | "merged"
+    state: text("state").notNull(),
+    isDraft: boolean("is_draft").default(false).notNull(),
+    authorLogin: text("author_login"),
+    authorAvatarUrl: text("author_avatar_url"),
+    headBranch: text("head_branch"),
+    baseBranch: text("base_branch"),
+    labels: jsonb("labels").$type<Array<{ name: string; color?: string }>>(),
+    commentCount: integer("comment_count").default(0).notNull(),
+    url: text("url").notNull(),
+    externalCreatedAt: timestamp("external_created_at", { mode: "date" }),
+    externalUpdatedAt: timestamp("external_updated_at", { mode: "date" }),
+    mergedAt: timestamp("merged_at", { mode: "date" }),
+    closedAt: timestamp("closed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("repo_pull_request_repoId_idx").on(table.repoId),
+    index("repo_pull_request_state_idx").on(table.state),
+    unique("repo_pull_request_repo_number_unique").on(
+      table.repoId,
+      table.number,
+    ),
+  ],
+);

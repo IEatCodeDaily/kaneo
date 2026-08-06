@@ -29,6 +29,9 @@ import {
   organizationRoleTable,
   organizationTable,
   organizationMemberTable,
+  repoTable,
+  repoIssueTable,
+  repoPullRequestTable,
 } from "./schema";
 
 export const userTableRelations = relations(userTable, ({ many, one }) => ({
@@ -392,3 +395,29 @@ export const commentTableRelations = relations(commentTable, ({ one }) => ({
     references: [userTable.id],
   }),
 }));
+
+export const repoTableRelations = relations(repoTable, ({ one, many }) => ({
+  organization: one(organizationTable, {
+    fields: [repoTable.organizationId],
+    references: [organizationTable.id],
+  }),
+  issues: many(repoIssueTable),
+  pullRequests: many(repoPullRequestTable),
+}));
+
+export const repoIssueTableRelations = relations(repoIssueTable, ({ one }) => ({
+  repo: one(repoTable, {
+    fields: [repoIssueTable.repoId],
+    references: [repoTable.id],
+  }),
+}));
+
+export const repoPullRequestTableRelations = relations(
+  repoPullRequestTable,
+  ({ one }) => ({
+    repo: one(repoTable, {
+      fields: [repoPullRequestTable.repoId],
+      references: [repoTable.id],
+    }),
+  }),
+);
