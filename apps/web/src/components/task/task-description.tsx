@@ -38,7 +38,7 @@ import {
   Table2,
   Underline as UnderlineIcon,
 } from "lucide-react";
-import { marked } from "marked";
+import { Marked } from "marked";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -138,11 +138,15 @@ function formatMarkdown(markdown: string) {
 
 /**
  * Render markdown to HTML for the `<details>` pre-pass. Same rationale as the
- * copy in comment-editor: `marked` only converts the *body* of a collapsible
- * section, which markdown-it would otherwise refuse to keep inside the fold.
+ * copy in comment-editor: an ISOLATED Marked instance, because @tiptap/markdown
+ * registers custom tokenizers (taskList, …) on the global singleton whose
+ * tokens a plain render cannot handle — `Token with "taskList" type was not
+ * found` crashed the whole view.
  */
+const detailsFragmentRenderer = new Marked({ breaks: false, gfm: true });
+
 function renderMarkdownFragment(markdown: string) {
-  return marked.parse(markdown, { async: false, breaks: false, gfm: true });
+  return detailsFragmentRenderer.parse(markdown, { async: false });
 }
 
 /**

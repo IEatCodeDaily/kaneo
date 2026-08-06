@@ -33,7 +33,7 @@ import {
   Rows3,
   UnderlineIcon,
 } from "lucide-react";
-import { marked } from "marked";
+import { Marked } from "marked";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -169,12 +169,16 @@ const COMMENT_SHIKI_LANGUAGE_ALIASES: Record<string, string> = {
 /**
  * Render markdown to HTML for the `<details>` pre-pass.
  *
- * `marked` is already a dependency and is only used here to convert the *body*
- * of a collapsible section, which markdown-it would otherwise refuse to keep
- * inside the fold. Kept local so `details-block` stays renderer-agnostic.
+ * ISOLATED instance, not the global `marked` singleton: @tiptap/markdown
+ * registers its custom tokenizers (taskList, …) on the global instance, which
+ * produces tokens only ITS renderers understand. Rendering with the global
+ * then threw `Token with "taskList" type was not found` and took down every
+ * view whose body contained both <details> and a task list.
  */
+const detailsFragmentRenderer = new Marked({ breaks: false, gfm: true });
+
 function renderMarkdownFragment(markdown: string) {
-  return marked.parse(markdown, { async: false, breaks: false, gfm: true });
+  return detailsFragmentRenderer.parse(markdown, { async: false });
 }
 
 function normalizeMarkdown(markdown: string) {

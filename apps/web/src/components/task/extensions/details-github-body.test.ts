@@ -1,7 +1,9 @@
 import { Editor } from "@tiptap/core";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
-import { marked } from "marked";
+import { Marked, marked } from "marked";
 import { describe, expect, it } from "vitest";
 import {
   DetailsExtensions,
@@ -155,5 +157,65 @@ describe("GitHub <details> bodies stay inside the fold", () => {
       (s) => s.textContent ?? "",
     );
     expect(summaryTexts.join(" ")).not.toContain("**");
+  });
+});
+
+function toHtmlWith(markdown, renderInner) {
+  const editor = new Editor({
+    extensions: [StarterKit, ...DetailsExtensions, Markdown],
+    content: inlineDetailsBlocks(markdown, renderInner),
+    contentType: "markdown",
+  });
+  const html = editor.getHTML();
+  editor.destroy();
+  return html;
+}
+
+describe("details body containing a task list", () => {
+  /*
+    Crash repro: @tiptap/markdown registers custom tokenizers (taskList, …) on
+    the GLOBAL marked singleton. Rendering the details pre-pass with that same
+    singleton produced tokens plain marked has no renderer for, and the whole
+    issue view died with `Token with "taskList" type was not found`. The
+    pre-pass must therefore use an isolated Marked instance.
+  */
+  const BODY_WITH_TASKS = `Plan.
+
+<details>
+<summary>Steps</summary>
+
+- [ ] first step
+- [x] second step
+
+</details>
+
+Tail.`;
+
+  it("renders without throwing and keeps the fold", () => {
+    // Force the failure mode: an editor registers its tokenizers globally
+    // (side effect of constructing with the Markdown extension), then the
+    // pre-pass renders. With a shared singleton this throws.
+    const warmup = new Editor({
+      extensions: [
+        StarterKit,
+        TaskList,
+        TaskItem,
+        ...DetailsExtensions,
+        Markdown,
+      ],
+      content: "warmup",
+      contentType: "markdown",
+    });
+    warmup.destroy();
+
+    const isolated = new Marked({ gfm: true });
+    const renderIsolated = (md) => isolated.parse(md, { async: false });
+
+    const html = toHtmlWith(BODY_WITH_TASKS, renderIsolated);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    expect(doc.querySelector("details")).not.toBeNull();
+    expect(
+      doc.querySelector("details [data-details-content]")?.textContent,
+    ).toContain("first step");
   });
 });

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Github, Search } from "lucide-react";
+import { Check, Github, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
   type GithubRepository,
   getOrganizationGithubRepositories,
 } from "@/fetchers/organization-github/organization-github";
+import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 
 export function AddRepoDialog({
   open,
@@ -39,6 +40,27 @@ export function AddRepoDialog({
     queryFn: () => getOrganizationGithubRepositories(organizationId),
     enabled: open,
   });
+  /*
+    Repos already connected to this org. The search list marks them and makes
+    them unselectable — connecting a duplicate used to surface as a raw 500
+    from the unique constraint (now a 409, but the user should never get
+    that far).
+  */
+  const { data: connectedRepos = [] } = useGetRepos({
+    organizationId,
+    enabled: open,
+  });
+  const connectedKeys = useMemo(
+    () =>
+      new Set(
+        connectedRepos.map((repo) =>
+          `${repo.owner}/${repo.name}`.toLowerCase(),
+        ),
+      ),
+    [connectedRepos],
+  );
+  const isConnected = (repo: GithubRepository) =>
+    connectedKeys.has(`${repo.owner}/${repo.name}`.toLowerCase());
   const filtered = useMemo(
     () =>
       repositories.filter(
@@ -133,27 +155,45 @@ export function AddRepoDialog({
             </p>
           )}
           <div className="max-h-[360px] divide-y overflow-y-auto rounded-md border">
-            {filtered.map((repo) => (
-              <button
-                key={repo.id}
-                type="button"
-                onClick={() => setSelected(repo)}
-                className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60 ${selected?.id === repo.id ? "bg-primary/5 ring-1 ring-inset ring-primary" : ""}`}
-              >
-                <Github className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{repo.fullName}</span>
-                  {repo.description && (
-                    <span className="mt-1 block truncate text-xs text-muted-foreground">
-                      {repo.description}
+            {filtered.map((repo) => {
+              const connected = isConnected(repo);
+              return (
+                <button
+                  key={repo.id}
+                  type="button"
+                  disabled={connected}
+                  onClick={() => setSelected(repo)}
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                    connected
+                      ? "cursor-default opacity-60"
+                      : "hover:bg-muted/60"
+                  } ${selected?.id === repo.id ? "bg-primary/5 ring-1 ring-inset ring-primary" : ""}`}
+                >
+                  <Github className="mt-0.5 size-4 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{repo.fullName}</span>
+                    {repo.description && (
+                      <span className="mt-1 block truncate text-xs text-muted-foreground">
+                        {repo.description}
+                      </span>
+                    )}
+                  </span>
+                  {connected ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                      data-testid="repo-already-connected"
+                    >
+                      <Check className="size-3" />
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {repo.isPrivate ? "Private" : "Public"}
                     </span>
                   )}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {repo.isPrivate ? "Private" : "Public"}
-                </span>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
