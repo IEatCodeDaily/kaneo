@@ -32,6 +32,7 @@ import externalLink from "./external-link";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
 import { handleGithubWebhookRoute } from "./github-integration";
+import githubDelegation, { handleGitHubDelegationCallback } from "./github-delegation";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
 import label from "./label";
@@ -77,6 +78,7 @@ import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-
 import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
 import organization from "./organization";
+import organizationGithub from "./organization-github";
 import {
   addConnection,
   addUserConnection,
@@ -235,6 +237,9 @@ export function createApp() {
   });
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
+  // GitHub returns here as a browser navigation, before API auth middleware.
+  // The handler revalidates the initiating Better Auth session and OAuth state.
+  api.get("/github-delegation/callback", handleGitHubDelegationCallback);
 
 api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
@@ -539,6 +544,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   });
 
   const oauthApi = api.route("/oauth", oauth);
+  const githubDelegationApi = api.route("/github-delegation", githubDelegation);
 
   const boardApi = api.route("/board", board);
   const taskApi = api.route("/task", task);
@@ -572,6 +578,7 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
+  const organizationGithubApi = api.route("/organization-github", organizationGithub);
 
   app.route(
     "/",
@@ -734,6 +741,8 @@ api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
     timeEntryApi,
     workflowRuleApi,
     organizationApi,
+    organizationGithubApi,
+    githubDelegationApi,
     oauthApi,
   };
 }

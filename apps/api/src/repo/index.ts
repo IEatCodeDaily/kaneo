@@ -3,15 +3,36 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { createGithubRepo } from "./controllers/create-github-repo";
 import createRepoCtrl from "./controllers/create-repo";
 import deleteRepoCtrl from "./controllers/delete-repo";
 import getRepoCtrl from "./controllers/get-repo";
+import { getRepoIssue } from "./controllers/get-repo-issue";
+import { getRepoPullRequest } from "./controllers/get-repo-pull-request";
+import {
+  closeGitHubIssue,
+  createGitHubMilestone,
+  listGitHubMilestones,
+  markGitHubIssueDuplicate,
+  unmarkGitHubIssueDuplicate,
+  updateGitHubMilestone,
+} from "./controllers/github-issue-management";
+import { getGitHubRepoMetadata } from "./controllers/github-repo-metadata";
 import listRepoIssuesCtrl from "./controllers/list-repo-issues";
 import listRepoPullRequestsCtrl from "./controllers/list-repo-pull-requests";
 import listReposCtrl from "./controllers/list-repos";
+import {
+  createGitHubItemComment,
+  mergeGitHubPullRequest,
+  updateGitHubItem,
+} from "./controllers/manage-github-repo";
+import { toRepoResponse, toRepoResponses } from "./controllers/repo-response";
+import {
+  addRepoItemTaskLink,
+  removeRepoItemTaskLink,
+} from "./controllers/repo-task-links";
 import updateRepoCtrl from "./controllers/update-repo";
 import { repoOrganizationAccess } from "./repo-organization-access";
-import { toRepoResponse, toRepoResponses } from "./controllers/repo-response";
 import { syncRepo } from "./services/sync-gitea-repo";
 
 // NOTE: the permission statement vocabulary in @kaneo/permissions is
@@ -74,6 +95,15 @@ const repoIssueSchema = v.object({
   updatedAt: v.date(),
 });
 
+const repoItemUpdateSchema = v.object({
+  title: v.optional(v.string()),
+  body: v.optional(v.nullable(v.string())),
+  state: v.optional(v.picklist(["open", "closed"] as const)),
+  labels: v.optional(v.array(v.string())),
+  assignees: v.optional(v.array(v.string())),
+  milestone: v.optional(v.nullable(v.number())),
+});
+
 const repoPullRequestSchema = v.object({
   id: v.string(),
   repoId: v.string(),
@@ -98,6 +128,27 @@ const repoPullRequestSchema = v.object({
   closedAt: v.nullable(v.date()),
   createdAt: v.date(),
   updatedAt: v.date(),
+});
+
+const githubRepoMetadataSchema = v.object({
+  labels: v.array(
+    v.object({
+      name: v.string(),
+      color: v.string(),
+      description: v.nullable(v.string()),
+    }),
+  ),
+  assignableUsers: v.array(
+    v.object({ login: v.string(), avatarUrl: v.string() }),
+  ),
+  milestones: v.array(
+    v.object({
+      number: v.number(),
+      title: v.string(),
+      state: v.string(),
+      dueOn: v.nullable(v.string()),
+    }),
+  ),
 });
 
 const repo = new Hono<{
@@ -159,6 +210,7 @@ const repo = new Hono<{
         defaultBranch: v.optional(v.string()),
         isPrivate: v.optional(v.boolean()),
         config: v.optional(v.record(v.string(), v.unknown())),
+        installationId: v.optional(v.number()),
       }),
     ),
     organizationAccess.fromBody(),
@@ -167,18 +219,26 @@ const repo = new Hono<{
     async (c) => {
       const body = c.req.valid("json");
       const organizationId = c.get("organizationId");
-      const newRepo = await createRepoCtrl({
-        organizationId,
-        provider: body.provider,
-        owner: body.owner,
-        name: body.name,
-        url: body.url,
-        externalId: body.externalId,
-        description: body.description,
-        defaultBranch: body.defaultBranch,
-        isPrivate: body.isPrivate,
-        config: body.config,
-      });
+      const newRepo =
+        body.provider === "github"
+          ? await createGithubRepo({
+              organizationId,
+              installationId: body.installationId ?? -1,
+              owner: body.owner,
+              name: body.name,
+            })
+          : await createRepoCtrl({
+              organizationId,
+              provider: body.provider,
+              owner: body.owner,
+              name: body.name,
+              url: body.url,
+              externalId: body.externalId,
+              description: body.description,
+              defaultBranch: body.defaultBranch,
+              isPrivate: body.isPrivate,
+              config: body.config,
+            });
       return c.json(toRepoResponse(newRepo));
     },
   )
@@ -229,6 +289,7 @@ const repo = new Hono<{
         description: v.optional(v.string()),
         isActive: v.optional(v.boolean()),
         config: v.optional(v.record(v.string(), v.unknown())),
+        installationId: v.optional(v.number()),
       }),
     ),
     repoOrganizationAccess(),
@@ -267,6 +328,38 @@ const repo = new Hono<{
       const organizationId = c.get("organizationId");
       const deletedRepo = await deleteRepoCtrl(id, organizationId);
       return c.json(toRepoResponse(deletedRepo));
+    },
+  )
+  .get(
+    "/:id/issues/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(v.string(), v.transform(Number)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await getRepoIssue(id, number, c.get("organizationId")));
+    },
+  )
+  .get(
+    "/:id/pull-requests/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(v.string(), v.transform(Number)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await getRepoPullRequest(id, number, c.get("organizationId")),
+      );
     },
   )
   .get(
@@ -360,6 +453,67 @@ const repo = new Hono<{
     },
   )
   .post(
+    "/:id/:itemType/:number/task-links",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        itemType: v.picklist(["issues", "pull-requests"] as const),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ taskId: v.string() })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, itemType, number } = c.req.valid("param");
+      const link = await addRepoItemTaskLink({
+        repoId: id,
+        number,
+        taskId: c.req.valid("json").taskId,
+        itemType: itemType === "issues" ? "issue" : "pullRequest",
+        organizationId: c.get("organizationId"),
+      });
+      return c.json(link);
+    },
+  )
+  .delete(
+    "/:id/:itemType/:number/task-links/:taskId",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        itemType: v.picklist(["issues", "pull-requests"] as const),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+        taskId: v.string(),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, itemType, number, taskId } = c.req.valid("param");
+      return c.json(
+        await removeRepoItemTaskLink({
+          repoId: id,
+          number,
+          taskId,
+          itemType: itemType === "issues" ? "issue" : "pullRequest",
+          organizationId: c.get("organizationId"),
+        }),
+      );
+    },
+  )
+  .post(
     "/:id/sync",
     describeRoute({
       operationId: "syncRepo",
@@ -386,6 +540,325 @@ const repo = new Hono<{
       const { id } = c.req.valid("param");
       const result = await syncRepo(id);
       return c.json(result);
+    },
+  )
+  .get(
+    "/:id/github-metadata",
+    describeRoute({
+      operationId: "getGitHubRepoMetadata",
+      tags: ["Repos"],
+      description:
+        "Live GitHub labels, assignable users and milestones for a repo, for building pickers. Non-GitHub repos return empty arrays.",
+      responses: {
+        200: {
+          description: "GitHub repo metadata",
+          content: {
+            "application/json": {
+              schema: resolver(githubRepoMetadataSchema),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await getGitHubRepoMetadata(c.req.valid("param").id)),
+  )
+  .get(
+    "/:id/milestones",
+    validator("param", v.object({ id: v.string() })),
+    repoOrganizationAccess(),
+    async (c) => c.json(await listGitHubMilestones(c.req.valid("param").id)),
+  )
+  .post(
+    "/:id/milestones",
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        title: v.pipe(v.string(), v.minLength(1)),
+        description: v.optional(v.string()),
+        dueOn: v.optional(v.string()),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) =>
+      c.json(
+        await createGitHubMilestone(
+          c.req.valid("param").id,
+          c.req.valid("json"),
+        ),
+      ),
+  )
+  .patch(
+    "/:id/milestones/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({
+        title: v.optional(v.string()),
+        description: v.optional(v.nullable(v.string())),
+        dueOn: v.optional(v.nullable(v.string())),
+        state: v.optional(v.picklist(["open", "closed"] as const)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await updateGitHubMilestone(id, number, c.req.valid("json")),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/close",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({ reason: v.picklist(["completed", "not_planned"] as const) }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await closeGitHubIssue({
+          repoId: id,
+          number,
+          reason: c.req.valid("json").reason,
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/duplicate",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.object({
+        canonicalNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await markGitHubIssueDuplicate({
+          repoId: id,
+          number,
+          canonicalNumber: c.req.valid("json").canonicalNumber,
+        }),
+      );
+    },
+  )
+  .delete(
+    "/:id/issues/:number/duplicate",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(await unmarkGitHubIssueDuplicate({ repoId: id, number }));
+    },
+  )
+  .patch(
+    "/:id/issues/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", repoItemUpdateSchema),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await updateGitHubItem({
+          repoId: id,
+          number,
+          kind: "issue",
+          updates: c.req.valid("json"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/issues/:number/comments",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await createGitHubItemComment({
+          repoId: id,
+          number,
+          body: c.req.valid("json").body,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .patch(
+    "/:id/pull-requests/:number",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", repoItemUpdateSchema),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await updateGitHubItem({
+          repoId: id,
+          number,
+          kind: "pullRequest",
+          updates: c.req.valid("json"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/comments",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator("json", v.object({ body: v.pipe(v.string(), v.minLength(1)) })),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await createGitHubItemComment({
+          repoId: id,
+          number,
+          body: c.req.valid("json").body,
+          userId: c.get("userId"),
+        }),
+      );
+    },
+  )
+  .post(
+    "/:id/pull-requests/:number/merge",
+    validator(
+      "param",
+      v.object({
+        id: v.string(),
+        number: v.pipe(
+          v.string(),
+          v.transform(Number),
+          v.integer(),
+          v.minValue(1),
+        ),
+      }),
+    ),
+    validator(
+      "json",
+      v.optional(
+        v.object({
+          method: v.optional(
+            v.picklist(["merge", "squash", "rebase"] as const),
+          ),
+        }),
+      ),
+    ),
+    repoOrganizationAccess(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) => {
+      const { id, number } = c.req.valid("param");
+      return c.json(
+        await mergeGitHubPullRequest({
+          repoId: id,
+          number,
+          method: c.req.valid("json")?.method,
+        }),
+      );
     },
   );
 

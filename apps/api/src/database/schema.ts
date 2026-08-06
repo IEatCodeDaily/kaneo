@@ -88,6 +88,43 @@ export const accountTable = pgTable(
   (table) => [index("account_userId_idx").on(table.userId)],
 );
 
+// Separate from Better Auth's `account` table: this grant permits Kaneo to act
+// as a member on GitHub; a `github` account remains exclusively for sign-in.
+export const githubUserGrantTable = pgTable(
+  "github_user_grant",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+    providerId: text("provider_id").notNull(),
+    githubUserId: text("github_user_id").notNull(),
+    githubLogin: text("github_login").notNull(),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
+    scope: text("scope"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()).notNull(),
+  },
+  (table) => [
+    unique("github_user_grant_user_provider_unique").on(table.userId, table.providerId),
+    index("github_user_grant_user_idx").on(table.userId),
+  ],
+);
+
+export const githubDelegationStateTable = pgTable(
+  "github_delegation_state",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    userId: text("user_id").notNull().references(() => userTable.id, { onDelete: "cascade" }),
+    sessionId: text("session_id").notNull().references(() => sessionTable.id, { onDelete: "cascade" }),
+    stateHash: text("state_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [index("github_delegation_state_expires_idx").on(table.expiresAt)],
+);
+
 export const verificationTable = pgTable(
   "verification",
   {
@@ -117,6 +154,32 @@ export const organizationTable = pgTable("organization", {
   description: text("description"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
+
+export const organizationGithubInstallationTable = pgTable(
+  "organization_github_installation",
+  {
+    id: text("id").$defaultFn(() => createId()).primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    installationId: integer("installation_id").notNull(),
+    accountId: integer("account_id").notNull(),
+    accountLogin: text("account_login").notNull(),
+    accountType: text("account_type").notNull(),
+    accountAvatarUrl: text("account_avatar_url"),
+    repositorySelection: text("repository_selection"),
+    permissions: jsonb("permissions").$type<Record<string, string>>(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("organization_github_installation_organizationId_idx").on(table.organizationId),
+    unique("organization_github_installation_unique").on(table.organizationId, table.installationId),
+  ],
+);
 
 export const organizationMemberTable = pgTable(
   "organization_member",
@@ -1170,6 +1233,39 @@ export const repoPullRequestTable = pgTable(
     unique("repo_pull_request_repo_number_unique").on(
       table.repoId,
       table.number,
+    ),
+  ],
+);
+
+// A link is intentionally a join, not ownership: Repo items remain
+// organization-level provider mirrors while tasks remain board-level entities.
+export const taskRepoItemLinkTable = pgTable(
+  "task_repo_item_link",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    repoIssueId: text("repo_issue_id").references(() => repoIssueTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    repoPullRequestId: text("repo_pull_request_id").references(
+      () => repoPullRequestTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("task_repo_item_link_task_idx").on(table.taskId),
+    index("task_repo_item_link_issue_idx").on(table.repoIssueId),
+    index("task_repo_item_link_pull_request_idx").on(table.repoPullRequestId),
+    unique("task_repo_item_link_task_issue_unique").on(table.taskId, table.repoIssueId),
+    unique("task_repo_item_link_task_pull_request_unique").on(
+      table.taskId,
+      table.repoPullRequestId,
     ),
   ],
 );

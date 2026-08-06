@@ -108,6 +108,17 @@ Name | Description |
 | `GITHUB_CLIENT_ID` | Legacy fallback for OAuth client ID when `GITHUB_OAUTH_*` is not set.
 | `GITHUB_CLIENT_SECRET` | Legacy fallback for OAuth client secret when `GITHUB_OAUTH_*` is not set.
 
+### GitHub user delegation
+
+GitHub user delegation is deliberately separate from GitHub SSO. Create a separate GitHub OAuth App with callback URL `${KANEO_API_URL}/api/github-delegation/callback`; Kaneo requests `repo read:user user:email` so it can write repositories as the connected user.
+
+Name | Description |
+--- | --- |
+| `GITHUB_DELEGATION_CLIENT_ID` | OAuth client ID for Kaneo's user-delegation flow. |
+| `GITHUB_DELEGATION_CLIENT_SECRET` | OAuth client secret for Kaneo's user-delegation flow. |
+
+GitHub OAuth Apps issue refreshable tokens only when the OAuth App has **Expire user authorization tokens** enabled. Kaneo securely stores and reports expiry metadata when GitHub returns it.
+
 ### GitHub integration
 
 Repository sync and webhooks use a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps). These variables do not enable GitHub sign-in; configure [GitHub SSO](#github-sso) separately if you want both.

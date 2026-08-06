@@ -21,7 +21,59 @@ export type RepoLabel = {
   color: string | null;
 };
 
+export type RepoGithubMetadata = {
+  labels: Array<{ name: string; color: string; description: string | null }>;
+  assignableUsers: Array<{ login: string; avatarUrl: string }>;
+  milestones: Array<{
+    number: number;
+    title: string;
+    state: string;
+    dueOn: string | null;
+  }>;
+};
+
 export type RepoIssueState = "open" | "closed";
+
+export type RepoIssueGithubActor = {
+  login?: string | null;
+  avatar_url?: string | null;
+};
+
+export type RepoIssueGithub = {
+  comments: Array<{
+    id?: number | string;
+    body?: string | null;
+    created_at?: string | null;
+    user?: RepoIssueGithubActor;
+  }>;
+  timeline: Array<{
+    id?: number | string;
+    node_id?: string;
+    event?: string | null;
+    created_at?: string | null;
+    state_reason?: string | null;
+    actor?: RepoIssueGithubActor;
+    assignee?: RepoIssueGithubActor;
+    label?: { name?: string | null };
+    milestone?: { title?: string | null };
+  }>;
+  linkedPullRequests?: Array<{
+    number: number;
+    title?: string | null;
+    url?: string | null;
+    state?: string | null;
+    mergedAt?: string | null;
+  }>;
+  milestone?: { number: number; title: string } | null;
+  stateReason?: string | null;
+  subIssues: Array<{
+    id?: number | string;
+    number?: number;
+    title?: string | null;
+    html_url?: string | null;
+  }>;
+  subIssuesSupported: boolean;
+};
 
 export type RepoIssue = {
   id: string;
@@ -32,11 +84,13 @@ export type RepoIssue = {
   state: RepoIssueState;
   authorLogin: string | null;
   authorAvatarUrl: string | null;
+  assigneeLogins: string[] | null;
   labels: RepoLabel[];
   commentCount: number;
   url: string;
   externalCreatedAt: string | null;
   closedAt: string | null;
+  github?: RepoIssueGithub;
 };
 
 export type RepoPullRequestState = "open" | "closed" | "merged";

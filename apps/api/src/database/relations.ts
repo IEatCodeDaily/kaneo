@@ -29,6 +29,7 @@ import {
   organizationRoleTable,
   organizationTable,
   organizationMemberTable,
+  organizationGithubInstallationTable,
   repoTable,
   repoIssueTable,
   repoPullRequestTable,
@@ -80,6 +81,17 @@ export const organizationTableRelations = relations(
     assets: many(assetTable),
     invitations: many(invitationTable),
     notificationOrganizationRules: many(userNotificationOrgRuleTable),
+    githubInstallations: many(organizationGithubInstallationTable),
+  }),
+);
+
+export const organizationGithubInstallationTableRelations = relations(
+  organizationGithubInstallationTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [organizationGithubInstallationTable.organizationId],
+      references: [organizationTable.id],
+    }),
   }),
 );
 
