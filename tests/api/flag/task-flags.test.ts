@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 const mockSelect = vi.fn();
+const mockExecute = vi.fn(async () => ({ rows: [] }));
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
@@ -12,6 +13,9 @@ vi.mock("../../../apps/api/src/database", () => ({
     insert: (...args: unknown[]) => mockInsert(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
+    // Sub-teams: getFlagsForUser resolves effective team ids via a recursive
+    // CTE through db.execute before the selects these tests assert on.
+    execute: (...args: unknown[]) => mockExecute(...args),
   },
 }));
 
@@ -184,12 +188,20 @@ describe("task flags", () => {
   describe("getFlagsForUser organization filtering", () => {
     it("scopes active flags and team membership to the selected organization", async () => {
       const captured: unknown[] = [];
+      /*
+        Sub-teams: membership now resolves through a recursive CTE
+        (db.execute) that returns effective team ids across organizations;
+        the controller then re-scopes those ids to the requested organization
+        with a select on the team table before using them in the flag query.
+      */
+      mockExecute.mockResolvedValueOnce({ rows: [{ id: "team-1" }] });
       mockSelect
-        .mockReturnValueOnce(makeSelectChain([{ teamId: "team-1" }], captured))
+        .mockReturnValueOnce(makeSelectChain([{ id: "team-1" }], captured))
         .mockReturnValueOnce(makeSelectChain([ACTIVE_FLAG], captured));
 
       await getFlagsForUser("user-b", "org-1");
 
+      expect(mockExecute).toHaveBeenCalledTimes(1);
       expect(captured).toHaveLength(2);
       expect(describeSql(captured[0])).toContain("team.organization_id");
       expect(describeSql(captured[1])).toContain("board.organization_id");

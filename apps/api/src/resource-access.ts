@@ -3,10 +3,10 @@ import db from "./database";
 import {
   organizationMemberTable,
   resourceGrantTable,
-  teamMemberTable,
   userTable,
 } from "./database/schema";
 import { hasOrganizationWideResourceAccess } from "./resource-access-roles";
+import { getEffectiveTeamIdsForUser } from "./team/effective-membership";
 
 export const RESOURCE_PRIVILEGES = ["none", "view", "edit", "manage"] as const;
 export type ResourcePrivilege = (typeof RESOURCE_PRIVILEGES)[number];
@@ -73,10 +73,10 @@ export async function getResourcePrivilege(input: {
           eq(resourceGrantTable.resourceId, input.resourceId),
         ),
       ),
-    db
-      .select({ teamId: teamMemberTable.teamId })
-      .from(teamMemberTable)
-      .where(eq(teamMemberTable.userId, input.userId)),
+    // Transitive: a sub-team member inherits every ancestor team's grants.
+    getEffectiveTeamIdsForUser(input.userId).then((ids) =>
+      ids.map((teamId) => ({ teamId })),
+    ),
   ]);
 
   if (hasOrganizationWideResourceAccess(user[0]?.role, membership[0]?.role)) {

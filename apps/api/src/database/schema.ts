@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   check,
   foreignKey,
@@ -268,6 +269,18 @@ export const teamTable = pgTable(
       for boards and repos.
     */
     icon: text("icon"),
+    /*
+      Sub-teams: a team may nest under another team in the same organization.
+      Membership resolves TRANSITIVELY at query time — a member of a sub-team
+      counts as a member of every ancestor team, but no team_member rows are
+      materialized for ancestors, so leaving the sub-team cannot leave stale
+      parent rows behind. SET NULL: deleting a parent promotes its children to
+      top-level teams rather than cascading them away.
+    */
+    parentTeamId: text("parent_team_id").references(
+      (): AnyPgColumn => teamTable.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(
       () => /* @__PURE__ */ new Date(),

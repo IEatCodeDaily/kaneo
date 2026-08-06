@@ -5,9 +5,9 @@ import {
   flagTypeTable,
   taskFlagTable,
   taskTable,
-  teamMemberTable,
   teamTable,
 } from "../../database/schema";
+import { getEffectiveTeamIdsForUser } from "../../team/effective-membership";
 
 /**
  * Active flags aimed at the current user, either directly (targetUserId) or
@@ -17,20 +17,25 @@ import {
  * intermediate project table — so org scoping reads `board.organizationId`.
  */
 async function getFlagsForUser(userId: string, organizationId?: string) {
-  const teams = await db
-    .select({ teamId: teamMemberTable.teamId })
-    .from(teamMemberTable)
-    .innerJoin(teamTable, eq(teamMemberTable.teamId, teamTable.id))
-    .where(
-      and(
-        eq(teamMemberTable.userId, userId),
-        organizationId
-          ? eq(teamTable.organizationId, organizationId)
-          : undefined,
-      ),
-    );
-
-  const teamIds = teams.map((team) => team.teamId);
+  /*
+    Transitive: a flag targeting a parent team reaches sub-team members too.
+    Effective ids resolve across organizations, so re-scope to the requested
+    organization the same way the old direct-membership join did.
+  */
+  const effectiveIds = await getEffectiveTeamIdsForUser(userId);
+  let teamIds = effectiveIds;
+  if (organizationId && effectiveIds.length) {
+    const scoped = await db
+      .select({ id: teamTable.id })
+      .from(teamTable)
+      .where(
+        and(
+          inArray(teamTable.id, effectiveIds),
+          eq(teamTable.organizationId, organizationId),
+        ),
+      );
+    teamIds = scoped.map((team) => team.id);
+  }
 
   const targetCondition = teamIds.length
     ? or(

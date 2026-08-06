@@ -75,6 +75,9 @@ vi.mock("../../../apps/api/src/database", async () => {
     select: () => ({
       from: (table: unknown) => builder(rowsFor(table), nameOf(table)),
     }),
+    // Sub-teams: resource-access resolves effective team ids via a recursive
+    // CTE through db.execute. No teams in this fixture.
+    execute: () => Promise.resolve({ rows: [] }),
   };
 
   return { default: db, db, schema };

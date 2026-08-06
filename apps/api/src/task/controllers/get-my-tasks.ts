@@ -9,9 +9,9 @@ import {
   organizationMemberTable,
   taskFlagTable,
   taskTable,
-  teamMemberTable,
   userTable,
 } from "../../database/schema";
+import { getEffectiveTeamIdsForUser } from "../../team/effective-membership";
 
 export type MyTasksRelation = "assigned" | "created" | "team" | "all";
 
@@ -51,12 +51,9 @@ async function getMyTasks({
   limit = 100,
   offset = 0,
 }: GetMyTasksOptions) {
-  const teamRows = await db
-    .select({ teamId: teamMemberTable.teamId })
-    .from(teamMemberTable)
-    .where(eq(teamMemberTable.userId, userId));
-
-  const userTeamIds = teamRows.map((row) => row.teamId);
+  // Transitive: "my team's tasks" includes tasks assigned to ancestor teams
+  // of the user's sub-teams (sub-team members count as parent-team members).
+  const userTeamIds = await getEffectiveTeamIdsForUser(userId);
 
   const assignedToUser = eq(taskTable.userId, userId);
 

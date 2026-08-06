@@ -69,6 +69,7 @@ import { getPrivateObject } from "./storage/s3";
 import task from "./task";
 import taskRelation from "./task-relation";
 import taskTemplate from "./task-template";
+import team from "./team";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
 import {
@@ -624,6 +625,7 @@ export function createApp() {
   const repoApi = api.route("/repo", repo);
   const resourceGrantApi = api.route("/resource-grant", resourceGrant);
   const oidcTeamSyncApi = api.route("/oidc-team-sync", oidcTeamSync);
+  const teamApi = api.route("/team", team);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
   const aiApi = api.route("/ai", ai);

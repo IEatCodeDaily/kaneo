@@ -357,6 +357,17 @@ export const auth = betterAuth({
               input: true,
               required: false,
             },
+            /*
+              Sub-teams: parent link surfaced through listTeams so the UI can
+              render nesting. NOT writable through Better Auth (`input: false`)
+              — parent changes must go through PUT /api/team/:id/parent, which
+              enforces same-organization and cycle rejection.
+            */
+            parentTeamId: {
+              type: "string",
+              input: false,
+              required: false,
+            },
           },
         },
       },

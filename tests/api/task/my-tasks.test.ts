@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 const mockSelect = vi.fn();
+const mockExecute = vi.fn(async () => ({ rows: [] }));
 
 vi.mock("../../../apps/api/src/database", () => ({
   default: {
     select: (...args: unknown[]) => mockSelect(...args),
+    // Sub-teams: team membership resolves via a recursive CTE through
+    // db.execute (effective ids include ancestor teams).
+    execute: (...args: unknown[]) => mockExecute(...args),
   },
 }));
 
@@ -91,13 +95,15 @@ describe("getMyTasks (#58 cross-board My Tasks)", () => {
    * condition rather than the first avoids the classic trap of proving
    * something about an unrelated lookup query.
    */
-  function setup(teamRows: unknown[] = []) {
-    const teamCaptured: unknown[] = [];
+  function setup(teamRows: Array<{ teamId: string }> = []) {
     const taskCaptured: unknown[] = [];
-    const teamChain = makeChain(teamRows, teamCaptured);
     const taskChain = makeChain([], taskCaptured);
-    mockSelect.mockReturnValueOnce(teamChain).mockReturnValue(taskChain);
-    return { teamCaptured, taskCaptured, taskChain };
+    // Effective team ids arrive from the recursive CTE, not a select.
+    mockExecute.mockResolvedValueOnce({
+      rows: teamRows.map((row) => ({ id: row.teamId })),
+    });
+    mockSelect.mockReturnValue(taskChain);
+    return { taskCaptured, taskChain };
   }
 
   it("gates results on organization membership so tasks from left orgs cannot leak", async () => {
