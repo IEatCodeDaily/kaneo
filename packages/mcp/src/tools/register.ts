@@ -57,11 +57,15 @@ export function registerTools(
     "list_organizations",
     {
       description:
-        "List organizations (Better Auth organizations) the signed-in user can access.",
+        "List organizations the authenticated principal (user session or agent key) can access. Agent keys see only the organization they are scoped to.",
       inputSchema: z.object({}),
     },
     async () =>
-      run(() => client.json("/api/auth/organization/list", { method: "GET" })),
+      // NOT /api/auth/organization/list: that Better Auth route is
+      // session-only and rejects agent/API keys with INVALID_API_KEY,
+      // leaving agents unable to discover the org id every other
+      // org-scoped tool requires.
+      run(() => client.json("/api/organization", { method: "GET" })),
   );
 
   server.registerTool(
