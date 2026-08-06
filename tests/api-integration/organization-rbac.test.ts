@@ -142,10 +142,15 @@ describe("API integration: organization RBAC enforcement", () => {
       });
       expect(response.status).toBe(200);
 
-      const gone = await db.query.taskTable.findFirst({
+      const deleted = await db.query.taskTable.findFirst({
         where: eq(schema.taskTable.id, task.id),
       });
-      expect(gone).toBeUndefined();
+      // DELETE is intentionally recoverable: the row remains for the recycle
+      // bin, stamped with who deleted it. A hard-delete assertion here was
+      // testing the pre-trash implementation and contradicted the endpoint's
+      // actual contract.
+      expect(deleted?.deletedAt).toBeInstanceOf(Date);
+      expect(deleted?.deletedBy).toBe(member.user.id);
     });
 
     it("allows an owner to delete a task (owner role grants task:delete)", async () => {

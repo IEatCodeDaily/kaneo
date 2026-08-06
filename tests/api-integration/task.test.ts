@@ -60,10 +60,11 @@ describe("API integration: task creation", () => {
       number: 1,
       position: 1,
     });
-    await db
-      .update(schema.projectTable)
-      .set({ lastTaskNumber: 1 })
-      .where(eq(schema.projectTable.id, project.id));
+    // Do not manually advance board.lastTaskNumber here. claimTaskNumber is
+    // deliberately self-healing: it must observe MAX(task.number) and repair a
+    // stale counter while reserving the next number atomically. This fixture
+    // therefore exercises the production invariant instead of relying on the
+    // removed pre-organization project table.
 
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
