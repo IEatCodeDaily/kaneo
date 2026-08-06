@@ -102,9 +102,14 @@ export function AgentManager() {
             {t("team:agentManager.nameLabel")}
           </Label>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {/*
+              max-w keeps the field a form control instead of a page-wide bar;
+              size sm matches the header actions so Create does not out-weigh
+              "Invite member", the page's actual primary action.
+            */}
             <Input
               id={nameInputId}
-              className="sm:flex-1"
+              className="sm:max-w-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("team:agentManager.namePlaceholder")}
@@ -113,6 +118,8 @@ export function AgentManager() {
               className="sm:w-auto"
               onClick={create}
               disabled={!canCreate}
+              size="sm"
+              variant="outline"
             >
               <Plus className="size-4" />
               {t("team:agentManager.create")}

@@ -106,16 +106,24 @@ function RouteComponent() {
           ) : null
         }
       >
-        {isTeams ? (
-          <TeamsManagement createTeamSignal={createTeamSignal} />
-        ) : (
-          <OrganizationMembersGroups
-            organizationId={organizationId}
-            users={organization?.members ?? []}
-            invitations={organization?.invitations ?? []}
-            canManageAgents={isAdmin}
-          />
-        )}
+        {/*
+          Content container: both tabs used to render flush against the panel
+          edge with no gutter and stretch across ultrawide viewports. One
+          shared max-width + padding keeps People, Agents and Teams on the
+          same grid as every other settings surface.
+        */}
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
+          {isTeams ? (
+            <TeamsManagement createTeamSignal={createTeamSignal} />
+          ) : (
+            <OrganizationMembersGroups
+              organizationId={organizationId}
+              users={organization?.members ?? []}
+              invitations={organization?.invitations ?? []}
+              canManageAgents={isAdmin}
+            />
+          )}
+        </div>
 
         <InviteTeamMemberModal
           open={isInviteOpen}

@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Pencil, Trash2, UserMinus, UserPlus, UsersRound } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Trash2,
+  UserMinus,
+  UserPlus,
+  UsersRound,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import PermissionDenied from "@/components/permission-denied";
 import {
@@ -163,7 +170,27 @@ export function TeamsManagement({
     <>
       <div>
         {teamsQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading teams…</p>
+          /*
+            Skeleton cards, not a bare text line: the old "Loading teams…"
+            string sat flush against the header divider on an otherwise blank
+            page and read as broken.
+          */
+          <div className="space-y-4">
+            {[0, 1].map((n) => (
+              <div
+                className="animate-pulse rounded-md border border-border bg-sidebar"
+                key={n}
+              >
+                <div className="border-b border-border px-4 py-3">
+                  <div className="h-4 w-32 rounded bg-muted" />
+                </div>
+                <div className="space-y-3 p-4">
+                  <div className="h-7 w-full max-w-sm rounded bg-muted" />
+                  <div className="h-10 w-full rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : teamsQuery.isError ? (
           <p className="text-sm text-destructive">
             {errorMessage(teamsQuery.error, "Failed to load teams")}
@@ -177,6 +204,15 @@ export function TeamsManagement({
                 Create a team to organize members.
               </p>
             </div>
+            {/* Direct CTA: the header's "+ New team" is far from this message. */}
+            <Button
+              className="gap-1"
+              onClick={() => setEditor({ name: "" })}
+              size="sm"
+              variant="outline"
+            >
+              <Plus className="size-3.5" /> New team
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">

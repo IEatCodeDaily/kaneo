@@ -1,5 +1,11 @@
 import { DEFAULT_ROLE_NAMES } from "@kaneo/permissions";
-import { EllipsisIcon, MailIcon, ShieldIcon, TrashIcon } from "lucide-react";
+import {
+  EllipsisIcon,
+  MailIcon,
+  ShieldIcon,
+  TrashIcon,
+  UserRoundPlus,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useCancelInvitation from "@/hooks/mutations/organization-member/use-cancel-invitation";
@@ -353,8 +359,14 @@ function MembersTable({ organizationId, invitations, users }: Props) {
 
           {users.length === 0 && pendingInvitations.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="py-16 text-center">
+              {/*
+                py-8 not py-16: the old empty state stretched the table into a
+                tall blank slab that dominated the page (flagged in review of
+                the members page styling).
+              */}
+              <TableCell colSpan={4} className="py-8 text-center">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <UserRoundPlus aria-hidden className="size-7" />
                   <p className="text-sm font-medium text-foreground">
                     {t("team:membersTable.emptyTitle")}
                   </p>
