@@ -178,16 +178,13 @@ export const organizationTable = pgTable("organization", {
   tablesEnabled: boolean("tables_enabled").default(false).notNull(),
   /*
     Org-wide default member privilege for resources without an explicit
-    user/team grant. Per-type overrides are OPTIONAL: a missing key inherits
-    defaultResourcePrivilege. "manage" defaults preserve the historical
-    behaviour where ungranted resources were organization-wide.
+    user/team grant, when the resource itself doesn't set its own baseline
+    (board/repo/data_table `org_privilege`, NULL = follow this default).
+    "manage" preserves the historical behaviour where ungranted resources
+    were organization-wide.
   */
   defaultResourcePrivilege: text("default_resource_privilege")
     .default("manage")
-    .notNull(),
-  resourceDefaultOverrides: jsonb("resource_default_overrides")
-    .$type<Partial<Record<string, "none" | "view" | "edit" | "manage">>>()
-    .default({})
     .notNull(),
   aiEnabled: boolean("ai_enabled").default(false).notNull(),
   aiDefaultTokenLimit: integer("ai_default_token_limit")
@@ -470,6 +467,13 @@ export const boardTable = pgTable(
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     lastTaskNumber: integer("last_task_number").notNull().default(0),
+    /*
+      Per-resource organization baseline: what every ordinary org member gets
+      for THIS board when they hold no explicit user/team grant. NULL = follow
+      the organization's defaultResourcePrivilege ("follow org"). Explicit
+      grants and owner/admin manage always win over this value.
+    */
+    orgPrivilege: text("org_privilege"),
     /**
      * #226: per-board ordering for statuses shown in regular Task surfaces.
      * JSON is intentional: this is a small ordered list of global, append-only
@@ -515,6 +519,8 @@ export const dataTableTable = pgTable(
       .references(() => organizationTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     icon: text("icon"),
+    // Per-resource org baseline; NULL = follow the organization default.
+    orgPrivilege: text("org_privilege"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -1609,6 +1615,8 @@ export const repoTable = pgTable(
     // Provider auth/config: GitHub installationId, Gitea baseUrl + token ref…
     config: jsonb("config").$type<Record<string, unknown>>(),
     isActive: boolean("is_active").default(true).notNull(),
+    // Per-resource org baseline; NULL = follow the organization default.
+    orgPrivilege: text("org_privilege"),
     lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })

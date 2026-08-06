@@ -21,40 +21,39 @@ describe("resource access privilege lattice", () => {
   });
 });
 
+// Rewritten (not deleted) when the model changed from per-resource-TYPE
+// overrides to per-RESOURCE baselines: each resource's own org_privilege wins,
+// NULL follows the organization-wide default.
 describe("organization default visibility resolution", () => {
-  it("uses the per-type override when present", () => {
+  it("uses the resource's own org baseline when set", () => {
     expect(
       resolveDefaultPrivilege({
-        resourceType: "board",
+        resourceOrgPrivilege: "edit",
         defaultResourcePrivilege: "view",
-        resourceDefaultOverrides: { board: "edit" },
       }),
     ).toBe("edit");
   });
 
-  it("inherits the org-wide default when the type has no override", () => {
+  it("follows the org-wide default when the resource has no baseline", () => {
     expect(
       resolveDefaultPrivilege({
-        resourceType: "repo",
+        resourceOrgPrivilege: null,
         defaultResourcePrivilege: "view",
-        resourceDefaultOverrides: { board: "edit" },
       }),
     ).toBe("view");
   });
 
-  it("supports hidden (none) as both override and org-wide default", () => {
+  it("supports hidden (none) per resource and org-wide", () => {
     expect(
       resolveDefaultPrivilege({
-        resourceType: "table",
+        resourceOrgPrivilege: "none",
         defaultResourcePrivilege: "manage",
-        resourceDefaultOverrides: { table: "none" },
       }),
     ).toBe("none");
     expect(
       resolveDefaultPrivilege({
-        resourceType: "board",
+        resourceOrgPrivilege: null,
         defaultResourcePrivilege: "none",
-        resourceDefaultOverrides: {},
       }),
     ).toBe("none");
   });
@@ -62,9 +61,8 @@ describe("organization default visibility resolution", () => {
   it("falls back to legacy manage when the organization row predates the column", () => {
     expect(
       resolveDefaultPrivilege({
-        resourceType: "board",
+        resourceOrgPrivilege: null,
         defaultResourcePrivilege: null,
-        resourceDefaultOverrides: null,
       }),
     ).toBe("manage");
   });
@@ -72,9 +70,8 @@ describe("organization default visibility resolution", () => {
   it("rejects garbage stored values instead of granting them", () => {
     expect(
       resolveDefaultPrivilege({
-        resourceType: "board",
+        resourceOrgPrivilege: "root",
         defaultResourcePrivilege: "superuser",
-        resourceDefaultOverrides: { board: "root" },
       }),
     ).toBe("manage");
   });

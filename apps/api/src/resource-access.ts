@@ -1,8 +1,11 @@
 import { and, eq, inArray } from "drizzle-orm";
 import db from "./database";
 import {
+  boardTable,
+  dataTableTable,
   organizationMemberTable,
   organizationTable,
+  repoTable,
   resourceGrantTable,
   userTable,
 } from "./database/schema";
@@ -14,19 +17,44 @@ export type ResourcePrivilege = (typeof RESOURCE_PRIVILEGES)[number];
 export const RESOURCE_TYPES = ["board", "repo", "table"] as const;
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
-/** Pure resolver: explicit override for the type, else the org-wide default. */
+/**
+ * Pure resolver for the organization baseline of ONE resource: the resource's
+ * own org_privilege wins ("boardC is hidden to the org"); NULL means "follow
+ * org" and inherits the organization-wide default. Garbage stored values fall
+ * back to manage (the pre-feature behaviour) instead of granting nonsense.
+ */
 export function resolveDefaultPrivilege(input: {
-  resourceType: ResourceType;
+  resourceOrgPrivilege?: string | null;
   defaultResourcePrivilege?: string | null;
-  resourceDefaultOverrides?: Partial<Record<string, string>> | null;
 }): ResourcePrivilege {
   const candidate =
-    input.resourceDefaultOverrides?.[input.resourceType] ??
-    input.defaultResourcePrivilege ??
-    "manage";
+    input.resourceOrgPrivilege ?? input.defaultResourcePrivilege ?? "manage";
   return (RESOURCE_PRIVILEGES as readonly string[]).includes(candidate)
     ? (candidate as ResourcePrivilege)
     : "manage";
+}
+
+const RESOURCE_TABLES = {
+  board: boardTable,
+  repo: repoTable,
+  table: dataTableTable,
+} as const;
+
+/** The resource's own org baseline column, NULL when it follows the org. */
+async function getResourceOrgPrivilege(
+  resourceType: ResourceType,
+  organizationId: string,
+  resourceId: string,
+): Promise<string | null> {
+  const table = RESOURCE_TABLES[resourceType];
+  const [row] = await db
+    .select({ orgPrivilege: table.orgPrivilege })
+    .from(table)
+    .where(
+      and(eq(table.id, resourceId), eq(table.organizationId, organizationId)),
+    )
+    .limit(1);
+  return row?.orgPrivilege ?? null;
 }
 
 export { hasOrganizationWideResourceAccess };
@@ -60,49 +88,54 @@ export async function getResourcePrivilege(input: {
   resourceId: string;
   userId: string;
 }): Promise<ResourcePrivilege> {
-  const [user, membership, organization, grants, teams] = await Promise.all([
-    db
-      .select({ role: userTable.role })
-      .from(userTable)
-      .where(eq(userTable.id, input.userId))
-      .limit(1),
-    db
-      .select({ role: organizationMemberTable.role })
-      .from(organizationMemberTable)
-      .where(
-        and(
-          eq(organizationMemberTable.organizationId, input.organizationId),
-          eq(organizationMemberTable.userId, input.userId),
-        ),
-      )
-      .limit(1),
-    db
-      .select({
-        defaultResourcePrivilege: organizationTable.defaultResourcePrivilege,
-        resourceDefaultOverrides: organizationTable.resourceDefaultOverrides,
-      })
-      .from(organizationTable)
-      .where(eq(organizationTable.id, input.organizationId))
-      .limit(1),
-    db
-      .select({
-        privilege: resourceGrantTable.privilege,
-        teamId: resourceGrantTable.teamId,
-        userId: resourceGrantTable.userId,
-      })
-      .from(resourceGrantTable)
-      .where(
-        and(
-          eq(resourceGrantTable.organizationId, input.organizationId),
-          eq(resourceGrantTable.resourceType, input.resourceType),
-          eq(resourceGrantTable.resourceId, input.resourceId),
-        ),
+  const [user, membership, organization, resourceBaseline, grants, teams] =
+    await Promise.all([
+      db
+        .select({ role: userTable.role })
+        .from(userTable)
+        .where(eq(userTable.id, input.userId))
+        .limit(1),
+      db
+        .select({ role: organizationMemberTable.role })
+        .from(organizationMemberTable)
+        .where(
+          and(
+            eq(organizationMemberTable.organizationId, input.organizationId),
+            eq(organizationMemberTable.userId, input.userId),
+          ),
+        )
+        .limit(1),
+      db
+        .select({
+          defaultResourcePrivilege: organizationTable.defaultResourcePrivilege,
+        })
+        .from(organizationTable)
+        .where(eq(organizationTable.id, input.organizationId))
+        .limit(1),
+      getResourceOrgPrivilege(
+        input.resourceType,
+        input.organizationId,
+        input.resourceId,
       ),
-    // Transitive: a sub-team member inherits every ancestor team's grants.
-    getEffectiveTeamIdsForUser(input.userId).then((ids) =>
-      ids.map((teamId) => ({ teamId })),
-    ),
-  ]);
+      db
+        .select({
+          privilege: resourceGrantTable.privilege,
+          teamId: resourceGrantTable.teamId,
+          userId: resourceGrantTable.userId,
+        })
+        .from(resourceGrantTable)
+        .where(
+          and(
+            eq(resourceGrantTable.organizationId, input.organizationId),
+            eq(resourceGrantTable.resourceType, input.resourceType),
+            eq(resourceGrantTable.resourceId, input.resourceId),
+          ),
+        ),
+      // Transitive: a sub-team member inherits every ancestor team's grants.
+      getEffectiveTeamIdsForUser(input.userId).then((ids) =>
+        ids.map((teamId) => ({ teamId })),
+      ),
+    ]);
 
   if (hasOrganizationWideResourceAccess(user[0]?.role, membership[0]?.role)) {
     return "manage";
@@ -118,13 +151,12 @@ export async function getResourcePrivilege(input: {
         (grant.teamId !== null && teamIds.has(grant.teamId)),
     )
     .map((grant) => grant.privilege as ResourcePrivilege);
-  // Explicit user/team grant wins; otherwise fall back to the organization's
-  // configured default (per-type override → org-wide default).
+  // Explicit user/team grant wins; otherwise the resource's own org baseline,
+  // and when that is NULL ("follow org"), the organization-wide default.
   if (applicable.length > 0) return highestPrivilege(applicable);
   return resolveDefaultPrivilege({
-    resourceType: input.resourceType,
+    resourceOrgPrivilege: resourceBaseline,
     defaultResourcePrivilege: organization[0]?.defaultResourcePrivilege,
-    resourceDefaultOverrides: organization[0]?.resourceDefaultOverrides,
   });
 }
 

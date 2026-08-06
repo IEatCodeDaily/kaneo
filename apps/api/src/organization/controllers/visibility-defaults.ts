@@ -7,27 +7,18 @@ import {
   RESOURCE_PRIVILEGES,
   RESOURCE_TYPES,
   type ResourcePrivilege,
-  type ResourceType,
 } from "../../resource-access";
 
 const privilegeSchema = v.picklist(RESOURCE_PRIVILEGES);
 
 /**
- * Per-type overrides are OPTIONAL — an absent key means "inherit the org-wide
- * default". The body therefore takes a partial record rather than requiring
- * every resource type, matching the inheritance model the settings UI shows.
+ * The organization endpoint carries ONLY the org-wide default. Per-resource
+ * baselines live on each resource (board/repo/data_table `org_privilege`,
+ * NULL = follow org) and are managed through the resource-grant routes, next
+ * to the explicit user/team grants they interact with.
  */
 export const visibilityDefaultsBodySchema = v.object({
-  defaultResourcePrivilege: v.optional(privilegeSchema),
-  resourceDefaultOverrides: v.optional(
-    v.partial(
-      v.object(
-        Object.fromEntries(
-          RESOURCE_TYPES.map((type) => [type, privilegeSchema]),
-        ) as Record<ResourceType, typeof privilegeSchema>,
-      ),
-    ),
-  ),
+  defaultResourcePrivilege: privilegeSchema,
 });
 
 export type VisibilityDefaultsBody = v.InferOutput<
@@ -38,7 +29,6 @@ export async function getVisibilityDefaults(organizationId: string) {
   const [organization] = await db
     .select({
       defaultResourcePrivilege: organizationTable.defaultResourcePrivilege,
-      resourceDefaultOverrides: organizationTable.resourceDefaultOverrides,
     })
     .from(organizationTable)
     .where(eq(organizationTable.id, organizationId))
@@ -49,8 +39,6 @@ export async function getVisibilityDefaults(organizationId: string) {
   return {
     defaultResourcePrivilege:
       organization.defaultResourcePrivilege as ResourcePrivilege,
-    resourceDefaultOverrides: (organization.resourceDefaultOverrides ??
-      {}) as Partial<Record<ResourceType, ResourcePrivilege>>,
     resourceTypes: RESOURCE_TYPES,
   };
 }
@@ -59,21 +47,9 @@ export async function updateVisibilityDefaults(
   organizationId: string,
   body: VisibilityDefaultsBody,
 ) {
-  const patch: Record<string, unknown> = {};
-  if (body.defaultResourcePrivilege !== undefined) {
-    patch.defaultResourcePrivilege = body.defaultResourcePrivilege;
-  }
-  if (body.resourceDefaultOverrides !== undefined) {
-    // Replace wholesale: the UI always sends the full override map, and a
-    // merge would make it impossible to clear an override back to inherit.
-    patch.resourceDefaultOverrides = body.resourceDefaultOverrides;
-  }
-  if (Object.keys(patch).length === 0) {
-    return getVisibilityDefaults(organizationId);
-  }
   const [updated] = await db
     .update(organizationTable)
-    .set(patch)
+    .set({ defaultResourcePrivilege: body.defaultResourcePrivilege })
     .where(eq(organizationTable.id, organizationId))
     .returning({ id: organizationTable.id });
   if (!updated) {

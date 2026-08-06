@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
@@ -10,27 +10,51 @@ import {
   createOrganizationMember,
 } from "./helpers/fixtures";
 
-async function setVisibilityDefaults(
-  organizationId: string,
-  values: {
-    defaultResourcePrivilege?: "none" | "view" | "edit" | "manage";
-    resourceDefaultOverrides?: Partial<
-      Record<"board" | "repo" | "table", "none" | "view" | "edit" | "manage">
-    >;
-  },
-) {
+async function setOrgDefault(organizationId: string, privilege: string) {
   await db
     .update(schema.organizationTable)
-    .set(values)
+    .set({ defaultResourcePrivilege: privilege })
     .where(eq(schema.organizationTable.id, organizationId));
 }
 
-describe("organization default resource visibility", () => {
+async function setResourceBaseline(
+  resourceType: "board" | "repo" | "table",
+  resourceId: string,
+  privilege: string | null,
+  organizationId: string,
+) {
+  const table =
+    resourceType === "board"
+      ? schema.boardTable
+      : resourceType === "repo"
+        ? schema.repoTable
+        : schema.dataTableTable;
+  await db
+    .update(table)
+    .set({ orgPrivilege: privilege })
+    .where(
+      and(eq(table.id, resourceId), eq(table.organizationId, organizationId)),
+    );
+}
+
+async function createTableFixture(organizationId: string) {
+  await db
+    .update(schema.organizationTable)
+    .set({ tablesEnabled: true })
+    .where(eq(schema.organizationTable.id, organizationId));
+  const [table] = await db
+    .insert(schema.dataTableTable)
+    .values({ organizationId, name: "Fixture table" })
+    .returning();
+  return table;
+}
+
+describe("per-resource organization visibility", () => {
   beforeEach(async () => {
     await resetTestDatabase();
   });
 
-  it("defaults ungranted resources to manage (legacy behaviour preserved)", async () => {
+  it("defaults to manage (legacy) when neither resource nor org sets a baseline", async () => {
     const member = await createOrganizationMember({ role: "member" });
     const { board } = await createBoardFixture({
       organizationId: member.organization.id,
@@ -45,14 +69,12 @@ describe("organization default resource visibility", () => {
     ).toBe("manage");
   });
 
-  it("applies the org-wide default to ungranted resources", async () => {
+  it("org-wide default applies to resources with no per-resource baseline", async () => {
     const member = await createOrganizationMember({ role: "member" });
     const { board } = await createBoardFixture({
       organizationId: member.organization.id,
     });
-    await setVisibilityDefaults(member.organization.id, {
-      defaultResourcePrivilege: "view",
-    });
+    await setOrgDefault(member.organization.id, "view");
     expect(
       await getResourcePrivilege({
         organizationId: member.organization.id,
@@ -63,15 +85,18 @@ describe("organization default resource visibility", () => {
     ).toBe("view");
   });
 
-  it("prefers the per-type override over the org-wide default", async () => {
+  it("per-resource baseline overrides the org-wide default", async () => {
     const member = await createOrganizationMember({ role: "member" });
     const { board } = await createBoardFixture({
       organizationId: member.organization.id,
     });
-    await setVisibilityDefaults(member.organization.id, {
-      defaultResourcePrivilege: "view",
-      resourceDefaultOverrides: { board: "edit" },
-    });
+    await setOrgDefault(member.organization.id, "view");
+    await setResourceBaseline(
+      "board",
+      board.id,
+      "edit",
+      member.organization.id,
+    );
     expect(
       await getResourcePrivilege({
         organizationId: member.organization.id,
@@ -82,14 +107,65 @@ describe("organization default resource visibility", () => {
     ).toBe("edit");
   });
 
-  it("hidden default (none) removes access, but an explicit grant overrides it", async () => {
+  it("different resources can have different baselines from the same org default", async () => {
+    const member = await createOrganizationMember({ role: "member" });
+    const { board: boardA } = await createBoardFixture({
+      organizationId: member.organization.id,
+      name: "Board A",
+      slug: `a-${Date.now()}`,
+    });
+    const { board: boardB } = await createBoardFixture({
+      organizationId: member.organization.id,
+      name: "Board B",
+      slug: `b-${Date.now()}`,
+    });
+    const { board: boardC } = await createBoardFixture({
+      organizationId: member.organization.id,
+      name: "Board C",
+      slug: `c-${Date.now()}`,
+    });
+    await setOrgDefault(member.organization.id, "view");
+    // boardA follows org (view), boardB edit, boardC hidden
+    await setResourceBaseline(
+      "board",
+      boardB.id,
+      "edit",
+      member.organization.id,
+    );
+    await setResourceBaseline(
+      "board",
+      boardC.id,
+      "none",
+      member.organization.id,
+    );
+
+    const ctx = {
+      organizationId: member.organization.id,
+      resourceType: "board" as const,
+      userId: member.user.id,
+    };
+    expect(await getResourcePrivilege({ ...ctx, resourceId: boardA.id })).toBe(
+      "view",
+    );
+    expect(await getResourcePrivilege({ ...ctx, resourceId: boardB.id })).toBe(
+      "edit",
+    );
+    expect(await getResourcePrivilege({ ...ctx, resourceId: boardC.id })).toBe(
+      "none",
+    );
+  });
+
+  it("hidden resource grants access to members with an explicit grant", async () => {
     const member = await createOrganizationMember({ role: "member" });
     const { board } = await createBoardFixture({
       organizationId: member.organization.id,
     });
-    await setVisibilityDefaults(member.organization.id, {
-      defaultResourcePrivilege: "none",
-    });
+    await setResourceBaseline(
+      "board",
+      board.id,
+      "none",
+      member.organization.id,
+    );
     expect(
       await getResourcePrivilege({
         organizationId: member.organization.id,
@@ -116,15 +192,36 @@ describe("organization default resource visibility", () => {
     ).toBe("edit");
   });
 
-  it("owners and admins keep manage even when the default is hidden", async () => {
+  it("clearing the per-resource baseline back to null inherits the org default", async () => {
+    const member = await createOrganizationMember({ role: "member" });
+    const { board } = await createBoardFixture({
+      organizationId: member.organization.id,
+    });
+    await setOrgDefault(member.organization.id, "view");
+    await setResourceBaseline(
+      "board",
+      board.id,
+      "edit",
+      member.organization.id,
+    );
+    await setResourceBaseline("board", board.id, null, member.organization.id);
+    expect(
+      await getResourcePrivilege({
+        organizationId: member.organization.id,
+        resourceType: "board",
+        resourceId: board.id,
+        userId: member.user.id,
+      }),
+    ).toBe("view");
+  });
+
+  it("owners and admins keep manage regardless of resource or org baseline", async () => {
     const admin = await createOrganizationMember({ role: "admin" });
     const { board } = await createBoardFixture({
       organizationId: admin.organization.id,
     });
-    await setVisibilityDefaults(admin.organization.id, {
-      defaultResourcePrivilege: "none",
-      resourceDefaultOverrides: { board: "none" },
-    });
+    await setOrgDefault(admin.organization.id, "none");
+    await setResourceBaseline("board", board.id, "none", admin.organization.id);
     expect(
       await getResourcePrivilege({
         organizationId: admin.organization.id,
@@ -135,8 +232,8 @@ describe("organization default resource visibility", () => {
     ).toBe("manage");
   });
 
-  describe("visibility defaults API", () => {
-    it("lets a settings manager read and update defaults, replacing overrides wholesale", async () => {
+  describe("visibility defaults API (org-wide default only)", () => {
+    it("owner reads and updates the org-wide default", async () => {
       const owner = await createOrganizationMember({ role: "owner" });
       mockAuthenticatedSession(owner.user);
       const { app } = createApp();
@@ -146,33 +243,16 @@ describe("organization default resource visibility", () => {
       expect(initial.status).toBe(200);
       expect(await initial.json()).toMatchObject({
         defaultResourcePrivilege: "manage",
-        resourceDefaultOverrides: {},
       });
 
       const update = await app.request(base, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          defaultResourcePrivilege: "view",
-          resourceDefaultOverrides: { table: "none", board: "edit" },
-        }),
+        body: JSON.stringify({ defaultResourcePrivilege: "view" }),
       });
       expect(update.status).toBe(200);
       expect(await update.json()).toMatchObject({
         defaultResourcePrivilege: "view",
-        resourceDefaultOverrides: { table: "none", board: "edit" },
-      });
-
-      // Clearing an override = sending the map without that key.
-      const clear = await app.request(base, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resourceDefaultOverrides: { board: "edit" } }),
-      });
-      expect(clear.status).toBe(200);
-      expect(await clear.json()).toMatchObject({
-        defaultResourcePrivilege: "view",
-        resourceDefaultOverrides: { board: "edit" },
       });
     });
 
@@ -207,25 +287,48 @@ describe("organization default resource visibility", () => {
     });
   });
 
-  describe("data table enforcement", () => {
-    async function createTableFixture(organizationId: string) {
-      await db
-        .update(schema.organizationTable)
-        .set({ tablesEnabled: true })
-        .where(eq(schema.organizationTable.id, organizationId));
-      const [table] = await db
-        .insert(schema.dataTableTable)
-        .values({ organizationId, name: "Fixture table" })
-        .returning();
-      return table;
-    }
+  describe("per-resource org baseline API", () => {
+    it("owner reads and sets the per-resource org baseline", async () => {
+      const owner = await createOrganizationMember({ role: "owner" });
+      const { board } = await createBoardFixture({
+        organizationId: owner.organization.id,
+      });
+      mockAuthenticatedSession(owner.user);
+      const { app } = createApp();
+      const base = `/api/resource-grant/${owner.organization.id}/board/${board.id}/org-privilege`;
 
-    it("hides tables from lists and detail when the table default is hidden", async () => {
+      const initial = await app.request(base);
+      expect(initial.status).toBe(200);
+      expect(await initial.json()).toEqual({ orgPrivilege: null });
+
+      const set = await app.request(base, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgPrivilege: "none" }),
+      });
+      expect(set.status).toBe(200);
+      expect(await set.json()).toEqual({ orgPrivilege: "none" });
+
+      const clear = await app.request(base, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgPrivilege: null }),
+      });
+      expect(clear.status).toBe(200);
+      expect(await clear.json()).toEqual({ orgPrivilege: null });
+    });
+  });
+
+  describe("data table enforcement", () => {
+    it("hidden table baseline removes access, grant overrides it", async () => {
       const member = await createOrganizationMember({ role: "member" });
       const table = await createTableFixture(member.organization.id);
-      await setVisibilityDefaults(member.organization.id, {
-        resourceDefaultOverrides: { table: "none" },
-      });
+      await setResourceBaseline(
+        "table",
+        table.id,
+        "none",
+        member.organization.id,
+      );
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
@@ -241,12 +344,15 @@ describe("organization default resource visibility", () => {
       expect(detail.status).toBe(404);
     });
 
-    it("view default allows reading but blocks row edits and lifecycle", async () => {
+    it("view baseline allows reading but blocks edits", async () => {
       const member = await createOrganizationMember({ role: "member" });
       const table = await createTableFixture(member.organization.id);
-      await setVisibilityDefaults(member.organization.id, {
-        resourceDefaultOverrides: { table: "view" },
-      });
+      await setResourceBaseline(
+        "table",
+        table.id,
+        "view",
+        member.organization.id,
+      );
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
       const base = `/api/data-table/organization/${member.organization.id}/${table.id}`;
@@ -264,20 +370,21 @@ describe("organization default resource visibility", () => {
       expect(
         (
           await app.request(base, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: "Renamed" }),
+            method: "DELETE",
           })
         ).status,
       ).toBe(404);
     });
 
-    it("edit default allows row work but not table lifecycle", async () => {
+    it("edit baseline allows row work but not table lifecycle", async () => {
       const member = await createOrganizationMember({ role: "member" });
       const table = await createTableFixture(member.organization.id);
-      await setVisibilityDefaults(member.organization.id, {
-        resourceDefaultOverrides: { table: "edit" },
-      });
+      await setResourceBaseline(
+        "table",
+        table.id,
+        "edit",
+        member.organization.id,
+      );
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
       const base = `/api/data-table/organization/${member.organization.id}/${table.id}`;

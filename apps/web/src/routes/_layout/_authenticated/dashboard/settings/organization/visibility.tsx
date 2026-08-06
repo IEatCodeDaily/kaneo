@@ -20,12 +20,9 @@ export const Route = createFileRoute(
 )({ component: RouteComponent });
 
 type Privilege = "none" | "view" | "edit" | "manage";
-type ResourceType = "board" | "repo" | "table";
 
 type VisibilityDefaults = {
   defaultResourcePrivilege: Privilege;
-  resourceDefaultOverrides: Partial<Record<ResourceType, Privilege>>;
-  resourceTypes: readonly ResourceType[];
 };
 
 const PRIVILEGE_LABELS: Record<Privilege, string> = {
@@ -36,20 +33,11 @@ const PRIVILEGE_LABELS: Record<Privilege, string> = {
 };
 
 const PRIVILEGE_DESCRIPTIONS: Record<Privilege, string> = {
-  none: "Members cannot see the resource at all.",
-  view: "Members can open and read, but not change anything.",
-  edit: "Members can work inside the resource but not administer it.",
-  manage: "Members can administer the resource, including its settings.",
+  none: "Members cannot see resources unless individually granted access.",
+  view: "Members can open and read resources, but not change anything.",
+  edit: "Members can work inside resources but not administer them.",
+  manage: "Members can administer resources, including their settings.",
 };
-
-const RESOURCE_LABELS: Record<ResourceType, string> = {
-  board: "Boards",
-  repo: "Repositories",
-  table: "Tables",
-};
-
-/** Sentinel for "no override — inherit the organization-wide default". */
-const INHERIT = "inherit";
 
 async function request(path: string, init?: RequestInit) {
   const response = await fetch(getApiUrl(path), {
@@ -77,10 +65,11 @@ function RouteComponent() {
   });
 
   const save = useMutation({
-    mutationFn: (body: {
-      defaultResourcePrivilege?: Privilege;
-      resourceDefaultOverrides?: Partial<Record<ResourceType, Privilege>>;
-    }) => request(basePath, { method: "PUT", body: JSON.stringify(body) }),
+    mutationFn: (defaultResourcePrivilege: Privilege) =>
+      request(basePath, {
+        method: "PUT",
+        body: JSON.stringify({ defaultResourcePrivilege }),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey });
       toast.success("Default visibility updated");
@@ -93,20 +82,8 @@ function RouteComponent() {
       ),
   });
 
-  const editable = canManageOrganization() && !save.isPending;
   const data = defaults.data;
-
-  const setOrgDefault = (value: Privilege) =>
-    save.mutate({ defaultResourcePrivilege: value });
-
-  const setOverride = (resourceType: ResourceType, value: string) => {
-    if (!data) return;
-    const next = { ...data.resourceDefaultOverrides };
-    if (value === INHERIT) delete next[resourceType];
-    else next[resourceType] = value as Privilege;
-    // Send the whole map: an absent key IS the inherit state server-side.
-    save.mutate({ resourceDefaultOverrides: next });
-  };
+  const editable = canManageOrganization() && !save.isPending && Boolean(data);
 
   return (
     <>
@@ -115,9 +92,10 @@ function RouteComponent() {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Visibility</h1>
           <p className="text-muted-foreground">
-            Default access organization members get to resources that have no
-            explicit user or team grant. Owners and admins always keep full
-            access, and per-resource grants override these defaults.
+            Default access organization members get to boards, repositories, and
+            tables. Each resource can override this from its own visibility
+            settings, explicit user or team grants add access on top, and owners
+            and admins always keep full access.
           </p>
         </div>
 
@@ -132,7 +110,9 @@ function RouteComponent() {
                 <p className="max-w-xl text-sm text-muted-foreground">
                   {data
                     ? PRIVILEGE_DESCRIPTIONS[data.defaultResourcePrivilege]
-                    : "Applies to every resource type without its own override."}
+                    : defaults.isError
+                      ? "Could not load visibility defaults."
+                      : "Loading visibility defaults…"}
                 </p>
               </div>
             </div>
@@ -142,8 +122,8 @@ function RouteComponent() {
               </Label>
               <Select
                 value={data?.defaultResourcePrivilege ?? "manage"}
-                onValueChange={(value) => setOrgDefault(value as Privilege)}
-                disabled={!editable || !data}
+                onValueChange={(value) => save.mutate(value as Privilege)}
+                disabled={!editable}
               >
                 <SelectTrigger
                   id="org-default-privilege"
@@ -167,77 +147,6 @@ function RouteComponent() {
               </Select>
             </div>
           </div>
-        </section>
-
-        <section className="rounded-xl border border-border bg-background">
-          {(data?.resourceTypes ?? []).map((resourceType, index) => {
-            const override = data?.resourceDefaultOverrides[resourceType];
-            const effective = override ?? data?.defaultResourcePrivilege;
-            return (
-              <div key={resourceType}>
-                {index > 0 && <div className="border-border border-t" />}
-                <div className="flex items-start justify-between gap-6 px-4 py-4">
-                  <div className="space-y-1">
-                    <h2 className="font-medium">
-                      {RESOURCE_LABELS[resourceType]}
-                    </h2>
-                    <p className="max-w-xl text-sm text-muted-foreground">
-                      {override
-                        ? PRIVILEGE_DESCRIPTIONS[override]
-                        : `Inherits the organization-wide default${
-                            effective ? ` (${PRIVILEGE_LABELS[effective]})` : ""
-                          }.`}
-                    </p>
-                  </div>
-                  <div className="w-44">
-                    <Label
-                      className="sr-only"
-                      htmlFor={`override-${resourceType}`}
-                    >
-                      {`Default access for ${RESOURCE_LABELS[resourceType]}`}
-                    </Label>
-                    <Select
-                      value={override ?? INHERIT}
-                      onValueChange={(value) =>
-                        setOverride(resourceType, value)
-                      }
-                      disabled={!editable || !data}
-                    >
-                      <SelectTrigger
-                        id={`override-${resourceType}`}
-                        aria-label={`Default access for ${RESOURCE_LABELS[resourceType]}`}
-                      >
-                        <SelectValue>
-                          {override
-                            ? PRIVILEGE_LABELS[override]
-                            : "Use organization default"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={INHERIT}>
-                          Use organization default
-                        </SelectItem>
-                        {(Object.keys(PRIVILEGE_LABELS) as Privilege[]).map(
-                          (privilege) => (
-                            <SelectItem key={privilege} value={privilege}>
-                              {PRIVILEGE_LABELS[privilege]}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          {!data && (
-            <div className="px-4 py-6 text-sm text-muted-foreground">
-              {defaults.isError
-                ? "Could not load visibility defaults."
-                : "Loading visibility defaults…"}
-            </div>
-          )}
         </section>
       </div>
     </>

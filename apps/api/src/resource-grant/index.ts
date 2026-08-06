@@ -9,6 +9,13 @@ import { requireOrganizationPermission } from "../utils/require-organization-per
 
 const resourceTypeSchema = v.picklist(["board", "repo", "table"] as const);
 const privilegeSchema = v.picklist(["view", "edit", "manage"] as const);
+/**
+ * Per-resource organization baseline: what ordinary members get with no
+ * explicit grant. "none" hides the resource; null = follow the org default.
+ */
+const orgPrivilegeSchema = v.nullable(
+  v.picklist(["none", "view", "edit", "manage"] as const),
+);
 const resourceParamsSchema = v.object({
   organizationId: v.string(),
   resourceType: resourceTypeSchema,
@@ -27,13 +34,16 @@ const grantParamsSchema = v.object({
 type ResourceParams = v.InferOutput<typeof resourceParamsSchema>;
 type GrantBody = v.InferOutput<typeof grantBodySchema>;
 
+function resourceTable(resourceType: ResourceParams["resourceType"]) {
+  return resourceType === "board"
+    ? schema.boardTable
+    : resourceType === "repo"
+      ? schema.repoTable
+      : schema.dataTableTable;
+}
+
 async function validateResource(params: ResourceParams) {
-  const table =
-    params.resourceType === "board"
-      ? schema.boardTable
-      : params.resourceType === "repo"
-        ? schema.repoTable
-        : schema.dataTableTable;
+  const table = resourceTable(params.resourceType);
   const [resource] = await db
     .select({ id: table.id })
     .from(table)
@@ -107,6 +117,50 @@ const resourceGrant = new Hono<{
           ),
         );
       return c.json(grants);
+    },
+  )
+  .get(
+    "/:organizationId/:resourceType/:resourceId/org-privilege",
+    validator("param", resourceParamsSchema),
+    async (c) => {
+      const params = c.req.valid("param");
+      const table = resourceTable(params.resourceType);
+      const [resource] = await db
+        .select({ orgPrivilege: table.orgPrivilege })
+        .from(table)
+        .where(
+          and(
+            eq(table.id, params.resourceId),
+            eq(table.organizationId, params.organizationId),
+          ),
+        )
+        .limit(1);
+      if (!resource)
+        throw new HTTPException(404, { message: "Resource not found" });
+      return c.json({ orgPrivilege: resource.orgPrivilege ?? null });
+    },
+  )
+  .put(
+    "/:organizationId/:resourceType/:resourceId/org-privilege",
+    validator("param", resourceParamsSchema),
+    validator("json", v.object({ orgPrivilege: orgPrivilegeSchema })),
+    async (c) => {
+      const params = c.req.valid("param");
+      const { orgPrivilege } = c.req.valid("json");
+      const table = resourceTable(params.resourceType);
+      const [updated] = await db
+        .update(table)
+        .set({ orgPrivilege })
+        .where(
+          and(
+            eq(table.id, params.resourceId),
+            eq(table.organizationId, params.organizationId),
+          ),
+        )
+        .returning({ orgPrivilege: table.orgPrivilege });
+      if (!updated)
+        throw new HTTPException(404, { message: "Resource not found" });
+      return c.json({ orgPrivilege: updated.orgPrivilege ?? null });
     },
   )
   .put(

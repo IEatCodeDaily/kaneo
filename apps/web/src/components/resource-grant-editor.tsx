@@ -18,8 +18,9 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "@/lib/toast";
 
-type ResourceType = "board" | "repo";
+type ResourceType = "board" | "repo" | "table";
 type Privilege = "view" | "edit" | "manage";
+type OrgPrivilege = "none" | "view" | "edit" | "manage" | null;
 type PrincipalType = "user" | "team";
 type Grant = {
   id: string;
@@ -68,6 +69,30 @@ export function ResourceGrantEditor({
     queryKey,
     enabled: Boolean(organizationId && resourceId),
     queryFn: () => request(basePath),
+  });
+  const orgPrivilege = useQuery<{ orgPrivilege: OrgPrivilege }>({
+    queryKey: [...queryKey, "org-privilege"],
+    enabled: Boolean(organizationId && resourceId),
+    queryFn: () => request(`${basePath}/org-privilege`),
+  });
+  const saveOrgPrivilege = useMutation({
+    mutationFn: (value: OrgPrivilege) =>
+      request(`${basePath}/org-privilege`, {
+        method: "PUT",
+        body: JSON.stringify({ orgPrivilege: value }),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [...queryKey, "org-privilege"],
+      });
+      toast.success("Organization access updated");
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update organization access",
+      ),
   });
   const teams = useQuery({
     queryKey: ["organization-teams", organizationId],
@@ -154,11 +179,60 @@ export function ResourceGrantEditor({
       <div>
         <h2 className="text-md font-medium">Organization access</h2>
         <p className="text-xs text-muted-foreground">
-          With no grants, every organization member has access. Adding a grant
-          restricts access to the selected people and teams.
+          What every organization member can do here by default. Grants below
+          give specific people and teams more access on top.
         </p>
       </div>
       <div className="space-y-3 rounded-md border border-border bg-sidebar p-4">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">Organization members</p>
+            <p className="text-xs text-muted-foreground">
+              {orgPrivilege.data?.orgPrivilege == null
+                ? "Follows the organization default."
+                : orgPrivilege.data.orgPrivilege === "none"
+                  ? "Hidden from members without an explicit grant."
+                  : "Set for this resource."}
+            </p>
+          </div>
+          <Select
+            value={orgPrivilege.data?.orgPrivilege ?? "follow"}
+            disabled={
+              disabled || orgPrivilege.isLoading || saveOrgPrivilege.isPending
+            }
+            onValueChange={(value) =>
+              saveOrgPrivilege.mutate(
+                value === "follow" ? null : (value as OrgPrivilege),
+              )
+            }
+          >
+            <SelectTrigger
+              className="w-40"
+              aria-label="Organization members access"
+              data-testid="org-privilege"
+            >
+              <SelectValue>
+                {orgPrivilege.data?.orgPrivilege == null
+                  ? "Follow org default"
+                  : orgPrivilege.data.orgPrivilege === "none"
+                    ? "Hidden"
+                    : orgPrivilege.data.orgPrivilege === "view"
+                      ? "View"
+                      : orgPrivilege.data.orgPrivilege === "edit"
+                        ? "Edit"
+                        : "Manage"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="follow">Follow org default</SelectItem>
+              <SelectItem value="none">Hidden</SelectItem>
+              <SelectItem value="view">View</SelectItem>
+              <SelectItem value="edit">Edit</SelectItem>
+              <SelectItem value="manage">Manage</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="border-t border-border" />
         {grants.isLoading ? (
           <p className="text-sm text-muted-foreground">Loading access…</p>
         ) : null}
@@ -209,7 +283,7 @@ export function ResourceGrantEditor({
         ))}
         {!grants.isLoading && grants.data?.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Organization-wide access is enabled.
+            No explicit member or team grants.
           </p>
         ) : null}
         <div className="border-t border-border pt-4">
