@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 import { createSlug } from "@/lib/utils/create-slug";
 
@@ -14,6 +15,7 @@ type UpdateOrganizationRequest = {
 };
 
 function useUpdateOrganization() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       organizationId,
@@ -74,6 +76,13 @@ function useUpdateOrganization() {
       }
 
       return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "full", variables.organizationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["active-organization"] });
     },
   });
 }
