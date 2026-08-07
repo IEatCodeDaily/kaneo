@@ -5,6 +5,7 @@ import {
   boardTable,
   columnTable,
   flagTypeTable,
+  labelTable,
   milestoneTable,
   organizationMemberTable,
   taskFlagTable,
@@ -118,7 +119,7 @@ async function getMyTasks({
     );
   }
 
-  return db
+  const tasks = await db
     .select({
       id: taskTable.id,
       title: taskTable.title,
@@ -180,6 +181,37 @@ async function getMyTasks({
     .orderBy(desc(taskTable.updatedAt))
     .limit(Math.min(Math.max(limit, 1), 100))
     .offset(Math.max(offset, 0));
+
+  if (tasks.length === 0) return [];
+  const labels = await db
+    .select({
+      id: labelTable.id,
+      name: labelTable.name,
+      color: labelTable.color,
+      taskId: labelTable.taskId,
+    })
+    .from(labelTable)
+    .where(
+      inArray(
+        labelTable.taskId,
+        tasks.map(({ id }) => id),
+      ),
+    );
+  const labelsByTask = new Map<string, typeof labels>();
+  for (const label of labels) {
+    if (!label.taskId) continue;
+    const existing = labelsByTask.get(label.taskId);
+    if (existing) existing.push(label);
+    else labelsByTask.set(label.taskId, [label]);
+  }
+  return tasks.map((task) => ({
+    ...task,
+    labels: (labelsByTask.get(task.id) ?? []).map(({ id, name, color }) => ({
+      id,
+      name,
+      color,
+    })),
+  }));
 }
 
 export default getMyTasks;

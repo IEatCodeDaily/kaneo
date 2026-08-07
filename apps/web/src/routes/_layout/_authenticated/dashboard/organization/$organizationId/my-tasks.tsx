@@ -1,13 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ChevronDown, Flag, Loader2 } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, Flag, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { resolveLabelColor } from "@/constants/label-colors";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
 import useInfiniteMyTasks from "@/hooks/queries/task/use-infinite-my-tasks";
 import { getColumnIcon } from "@/lib/column";
+import {
+  groupMyTasks,
+  type MyTasksGroup,
+  type MyTasksSort,
+  sortMyTasks,
+} from "@/lib/my-tasks-view";
 import { getPriorityIcon } from "@/lib/priority";
 
 export const Route = createFileRoute(
@@ -34,6 +42,9 @@ export function MyTasksComponent() {
   const [relation, setRelation] = useState<MyTasksRelation>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<MyTasksSort>("updated");
+  const [group, setGroup] = useState<MyTasksGroup>("board");
   const [collapsedBoards, setCollapsedBoards] = useState<Set<string>>(
     new Set(),
   );
@@ -48,20 +59,27 @@ export function MyTasksComponent() {
   } = useInfiniteMyTasks({ organizationId, relation, includeCompleted });
 
   type MyTask = NonNullable<typeof data>["pages"][number][number];
-  const allTasks: MyTask[] = data?.pages.flat() ?? [];
+  const allTasks: MyTask[] = (data?.pages.flat() ?? []).map((task) => ({
+    ...task,
+    labels: task.labels ?? [],
+    dueDate: task.dueDate ?? null,
+    createdAt: task.createdAt ?? task.updatedAt ?? new Date(0).toISOString(),
+    updatedAt: task.updatedAt ?? task.createdAt ?? new Date(0).toISOString(),
+  }));
   // Flagged is a client-side filter over the already-fetched page: cheap, and
   // it keeps the flag state visible in the count without another round trip.
-  const tasks: MyTask[] = flaggedOnly
+  const relationFiltered: MyTask[] = flaggedOnly
     ? allTasks.filter((task) => task.flagged)
     : allTasks;
-
-  const byBoard = new Map<string, MyTask[]>();
-  for (const task of tasks) {
-    const key = task.boardId;
-    const existing = byBoard.get(key);
-    if (existing) existing.push(task);
-    else byBoard.set(key, [task]);
-  }
+  const tasks = sortMyTasks(
+    relationFiltered.filter((task) =>
+      `${task.title} ${task.boardName} ${task.labels.map(({ name }) => name).join(" ")}`
+        .toLocaleLowerCase()
+        .includes(search.toLocaleLowerCase()),
+    ),
+    sort,
+  );
+  const groupedTasks = groupMyTasks(tasks, group);
 
   return (
     <OrganizationLayout title={t("myTasks:title")}>
@@ -120,6 +138,42 @@ export function MyTasksComponent() {
             {t("myTasks:flagged")}
           </Button>
 
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter tickets…"
+            aria-label="Filter tickets"
+            className="h-7 w-44 text-xs"
+          />
+          <select
+            aria-label="Sort tickets"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as MyTasksSort)}
+            className="h-7 rounded-md border bg-background px-2 text-xs"
+          >
+            <option value="updated">Recently updated</option>
+            <option value="created">Created date</option>
+            <option value="dueDate">Due date</option>
+            <option value="priority">Priority</option>
+            <option value="title">Title</option>
+            <option value="number">Ticket number</option>
+          </select>
+          <select
+            aria-label="Group tickets"
+            value={group}
+            onChange={(event) => setGroup(event.target.value as MyTasksGroup)}
+            className="h-7 rounded-md border bg-background px-2 text-xs"
+          >
+            <option value="board">Board</option>
+            <option value="none">None</option>
+            <option value="status">Status</option>
+            <option value="priority">Priority</option>
+            <option value="label">Label</option>
+            <option value="dueDate">Due date</option>
+            <option value="assignee">Assignee</option>
+            <option value="milestone">Milestone</option>
+          </select>
+
           {isFetching ? (
             <Loader2
               aria-hidden
@@ -143,11 +197,11 @@ export function MyTasksComponent() {
             </p>
           ) : (
             <div className="flex flex-col gap-5">
-              {[...byBoard.entries()].map(([boardId, boardTasks]) => {
-                const collapsed = collapsedBoards.has(boardId);
+              {groupedTasks.map(([groupName, boardTasks]) => {
+                const collapsed = collapsedBoards.has(groupName);
                 return (
                   <section
-                    key={boardId}
+                    key={groupName}
                     className="overflow-hidden rounded-md border border-border/80"
                   >
                     <button
@@ -156,15 +210,15 @@ export function MyTasksComponent() {
                       onClick={() =>
                         setCollapsedBoards((current) => {
                           const next = new Set(current);
-                          if (next.has(boardId)) next.delete(boardId);
-                          else next.add(boardId);
+                          if (next.has(groupName)) next.delete(groupName);
+                          else next.add(groupName);
                           return next;
                         })
                       }
                       className="flex w-full items-center gap-2 bg-muted/20 px-3 py-2 text-left hover:bg-muted/40"
                     >
                       <span className="font-medium text-muted-foreground text-xs">
-                        {boardTasks[0]?.boardName ?? boardId}
+                        {groupName}
                       </span>
                       <span className="text-muted-foreground/70 text-xs">
                         {boardTasks.length} tickets
@@ -256,6 +310,26 @@ export function MyTasksComponent() {
                                 >
                                   {task.title}
                                 </span>
+                                {task.labels.map((label) => {
+                                  const colors = resolveLabelColor(label.color);
+                                  return (
+                                    <span
+                                      key={label.id}
+                                      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] ${colors.bg} ${colors.text}`}
+                                    >
+                                      {label.name}
+                                    </span>
+                                  );
+                                })}
+                                {task.dueDate ? (
+                                  <span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
+                                    <CalendarDays className="size-3" />
+                                    {new Intl.DateTimeFormat(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                    }).format(new Date(task.dueDate))}
+                                  </span>
+                                ) : null}
                                 {task.flagged ? (
                                   <span
                                     className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-[10px] uppercase tracking-wide"
