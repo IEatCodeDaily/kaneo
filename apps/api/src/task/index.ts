@@ -315,6 +315,7 @@ const task = new Hono<{
         priority: v.picklist(VALID_PRIORITIES),
         status: v.string(),
         userId: v.optional(v.string()),
+        teamId: v.optional(v.string()),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
@@ -329,12 +330,14 @@ const task = new Hono<{
         priority,
         status,
         userId,
+        teamId,
       } = c.req.valid("json");
 
       const task = await createTask({
         boardId,
         currentUserId: c.get("userId"),
-        userId: userId,
+        userId,
+        teamId,
         title,
         description,
         startDate: startDate ? new Date(startDate) : undefined,

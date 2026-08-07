@@ -1,7 +1,12 @@
 import { and, eq, max } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { columnTable, taskTable, userTable } from "../../database/schema";
+import {
+  boardTable,
+  columnTable,
+  taskTable,
+  userTable,
+} from "../../database/schema";
 import { publishEvent } from "../../events";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
@@ -10,6 +15,7 @@ async function createTask({
   boardId,
   currentUserId,
   userId,
+  teamId,
   title,
   status,
   startDate,
@@ -20,6 +26,7 @@ async function createTask({
   boardId: string;
   currentUserId: string;
   userId?: string;
+  teamId?: string;
   title: string;
   status: string;
   startDate?: Date;
@@ -32,10 +39,27 @@ async function createTask({
 
   await assertValidTaskStatus(resolvedStatus, boardId);
 
+  // Resolve the board's default assignee when the caller didn't pass one.
+  // An explicit userId or teamId always wins; only absent values inherit.
+  let effectiveUserId = userId;
+  let effectiveTeamId = teamId;
+  if (!effectiveUserId && !effectiveTeamId) {
+    const [board] = await db
+      .select({
+        defaultAssigneeId: boardTable.defaultAssigneeId,
+        defaultAssigneeTeamId: boardTable.defaultAssigneeTeamId,
+      })
+      .from(boardTable)
+      .where(eq(boardTable.id, boardId))
+      .limit(1);
+    effectiveUserId = board?.defaultAssigneeId ?? undefined;
+    effectiveTeamId = board?.defaultAssigneeTeamId ?? undefined;
+  }
+
   const [assignee] = await db
     .select({ name: userTable.name })
     .from(userTable)
-    .where(eq(userTable.id, userId ?? ""));
+    .where(eq(userTable.id, effectiveUserId ?? ""));
 
   const column = await db.query.columnTable.findFirst({
     where: and(
@@ -65,7 +89,8 @@ async function createTask({
       .insert(taskTable)
       .values({
         boardId,
-        userId: userId || null,
+        userId: effectiveUserId || null,
+        teamId: effectiveTeamId || null,
         title: title || "",
         status: resolvedStatus,
         columnId: column?.id ?? null,

@@ -477,6 +477,13 @@
 			"when": 1786118000000,
 			"tag": "0067_per_resource_org_privilege",
 			"breakpoints": true
+		},
+		{
+			"idx": 68,
+			"version": "7",
+			"when": 1786122000000,
+			"tag": "0068_board_default_assignee",
+			"breakpoints": true
 		}
 	]
 }

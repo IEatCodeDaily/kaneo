@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { BoardDefaultAssignee } from "@/components/board/board-default-assignee";
 import { TasksImportExport } from "@/components/board/tasks-import-export.tsx";
 import BoardIconPicker from "@/components/common/board-icon-picker";
 import PageTitle from "@/components/page-title";
@@ -531,6 +532,51 @@ function RouteComponent() {
                 </p>
               </div>
               {board && <TasksImportExport board={board} />}
+            </div>
+          </div>
+        </div>
+
+        {/* Default Assignee — separate from the debounced form because it
+            accepts nullable FK values and uses a principal selector, not
+            text inputs. Saves immediately on change via a dedicated mutation. */}
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-md font-medium">Default Assignee</h2>
+            <p className="text-xs text-muted-foreground">
+              New tickets on this board are automatically assigned to this
+              member or team when no assignee is chosen manually.
+            </p>
+          </div>
+          <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">Default assignee</p>
+                <p className="text-xs text-muted-foreground">
+                  {board?.defaultAssigneeId || board?.defaultAssigneeTeamId
+                    ? "Applied to new tickets."
+                    : "No default — new tickets start unassigned."}
+                </p>
+              </div>
+              <BoardDefaultAssignee
+                board={board}
+                canEdit={canEdit}
+                onUpdate={(updates) =>
+                  updateBoard({
+                    id: board!.id,
+                    name: board!.name,
+                    icon: board!.icon ?? "Layout",
+                    slug: board!.slug,
+                    description: board!.description ?? "",
+                    isPublic: !!board!.isPublic,
+                    ...updates,
+                  })
+                }
+                onDone={() =>
+                  queryClient.invalidateQueries({
+                    queryKey: ["boards", organization?.id, board?.id],
+                  })
+                }
+              />
             </div>
           </div>
         </div>

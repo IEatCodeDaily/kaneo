@@ -14,6 +14,8 @@ async function updateBoard(
   subtaskDepthLimit?: number,
   taskStatusOrder?: string[],
   backlogStatusOrder?: string[],
+  defaultAssigneeId?: string | null,
+  defaultAssigneeTeamId?: string | null,
 ) {
   const [existingBoard] = await db
     .select()
@@ -42,6 +44,8 @@ async function updateBoard(
       ...(subtaskDepthLimit === undefined ? {} : { subtaskDepthLimit }),
       ...(taskStatusOrder === undefined ? {} : { taskStatusOrder }),
       ...(backlogStatusOrder === undefined ? {} : { backlogStatusOrder }),
+      ...(defaultAssigneeId === undefined ? {} : { defaultAssigneeId }),
+      ...(defaultAssigneeTeamId === undefined ? {} : { defaultAssigneeTeamId }),
     })
     .where(eq(boardTable.id, id))
     .returning();

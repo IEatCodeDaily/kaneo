@@ -182,6 +182,8 @@ const board = new Hono<{
         backlogStatusOrder: v.optional(
           statusOrderValidator(BACKLOG_STATUS_SLUGS),
         ),
+        defaultAssigneeId: v.optional(v.union([v.string(), v.null()])),
+        defaultAssigneeTeamId: v.optional(v.union([v.string(), v.null()])),
       }),
     ),
     organizationAccess.fromBoard(),
@@ -197,6 +199,8 @@ const board = new Hono<{
         subtaskDepthLimit,
         taskStatusOrder,
         backlogStatusOrder,
+        defaultAssigneeId,
+        defaultAssigneeTeamId,
       } = c.req.valid("json");
       const organizationId = c.get("organizationId");
       const updatedBoard = await updateBoardCtrl(
@@ -210,6 +214,8 @@ const board = new Hono<{
         subtaskDepthLimit,
         taskStatusOrder,
         backlogStatusOrder,
+        defaultAssigneeId,
+        defaultAssigneeTeamId,
       );
       return c.json(updatedBoard);
     },

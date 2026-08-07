@@ -499,6 +499,20 @@ export const boardTable = pgTable(
     // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
     // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
     subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
+    /*
+      Default assignee for new tickets on this board. When a task is created
+      without an explicit userId/teamId, the board default fills in. Either
+      column can be set independently (user-only, team-only, or both).
+      NULL = no default (the pre-feature behaviour).
+    */
+    defaultAssigneeId: text("default_assignee_id").references(
+      () => userTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
+    defaultAssigneeTeamId: text("default_assignee_team_id").references(
+      () => teamTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
   },
   (table) => [
     unique("board_organization_id_id_unique").on(
