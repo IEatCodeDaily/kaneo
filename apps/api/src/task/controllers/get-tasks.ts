@@ -427,6 +427,12 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
       description: board.description,
       isPublic: board.isPublic,
       organizationId: board.organizationId,
+      defaultAssigneeId: board.defaultAssigneeId,
+      defaultAssigneeTeamId: board.defaultAssigneeTeamId,
+      orgPrivilege: board.orgPrivilege,
+      taskStatusOrder: board.taskStatusOrder,
+      backlogStatusOrder: board.backlogStatusOrder,
+      subtaskDepthLimit: board.subtaskDepthLimit,
       columns,
 
       archivedTasks,
