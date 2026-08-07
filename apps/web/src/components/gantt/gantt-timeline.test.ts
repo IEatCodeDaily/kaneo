@@ -22,7 +22,7 @@ function tl(startISO: string, count: number, dayWidthRem = 2): GanttTimeline {
 }
 
 /** The tint expression the gradient uses for weekend bands. */
-const TINT = "color-mix(in srgb, var(--foreground) 5%, transparent)";
+const TINT = "color-mix(in srgb, var(--foreground) 7%, transparent)";
 
 /** Pull the shaded band offsets (in rem) out of the generated gradient. */
 function bands(css: string) {
@@ -46,14 +46,13 @@ describe("weekendTintGradient", () => {
     const css = weekendTintGradient(tl("2026-07-13", 14, 2));
     expect(css).not.toBeNull();
     const { start, end } = bands(css as string);
-    // Period origin is 7 days before that Saturday; the first painted band
-    // therefore begins exactly at the Saturday and spans 2 days.
+    // The repeating pattern begins exactly at Saturday and spans two days.
     expect(start).toBe(5 * 2);
     expect(end).toBe(7 * 2);
   });
 
   it("still paints when the range opens on a Saturday", () => {
-    // Sat 2026-07-18 at index 0 — the naive origin would be 0 and clip the band.
+    // Sat 2026-07-18 at index 0.
     const css = weekendTintGradient(tl("2026-07-18", 10, 2));
     expect(css).not.toBeNull();
     const { start, end } = bands(css as string);
@@ -64,13 +63,17 @@ describe("weekendTintGradient", () => {
   it("repeats on a 7-day period", () => {
     const css = weekendTintGradient(tl("2026-07-13", 14, 2)) as string;
     expect(css).toContain("repeating-linear-gradient");
-    // One period = 7 days wide: band end (14rem) - period origin (-2rem) = 16rem? No:
-    // origin is (5-7)*2 = -4rem, and the band ends at 14rem => 18rem total is
-    // two periods; the repeat unit itself is the 7*2=14rem stride.
-    const origin = Number(
-      (css.match(/transparent (-?[\d.]+)rem/) as RegExpMatchArray)[1],
-    );
-    expect(origin).toBe(-4);
+    expect(css).toContain("transparent 14rem");
+    expect(css).toContain("transparent 24rem");
+  });
+
+  it("marks August 8 and 9 as the weekend without drifting", () => {
+    const css = weekendTintGradient(tl("2026-08-01", 16, 2)) as string;
+    expect(css).toContain(`${TINT} 0rem`);
+    expect(css).toContain(`${TINT} 4rem`);
+    expect(css).toContain("transparent 14rem");
+    // The 14rem repeat period puts the next band on Aug 8–9.
+    expect(css).toContain("transparent 14rem");
   });
 });
 

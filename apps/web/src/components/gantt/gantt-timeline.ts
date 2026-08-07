@@ -199,11 +199,9 @@ export function weekendTintGradient(timeline: GanttTimeline): string | null {
   if (firstSaturday === -1) return null;
 
   const w = timeline.dayWidthRem;
-  // Start the 7-day period one full week before the first Saturday so the band
-  // still renders when that Saturday sits at index 0.
-  const originRem = (firstSaturday - 7) * w;
-  const tint = "color-mix(in srgb, var(--foreground) 5%, transparent)";
-  return `repeating-linear-gradient(to right, transparent ${originRem}rem, transparent ${originRem + 7 * w}rem, ${tint} ${originRem + 7 * w}rem, ${tint} ${originRem + 9 * w}rem)`;
+  const originRem = firstSaturday * w;
+  const tint = "color-mix(in srgb, var(--foreground) 7%, transparent)";
+  return `repeating-linear-gradient(to right, ${tint} ${originRem}rem, ${tint} ${originRem + 2 * w}rem, transparent ${originRem + 2 * w}rem, transparent ${originRem + 7 * w}rem)`;
 }
 
 /**
