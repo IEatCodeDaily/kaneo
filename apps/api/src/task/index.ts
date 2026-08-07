@@ -246,6 +246,7 @@ const task = new Hono<{
           "updateStatus",
           "updatePriority",
           "updateAssignee",
+          "updateTeam",
           "delete",
           "addLabel",
           "removeLabel",

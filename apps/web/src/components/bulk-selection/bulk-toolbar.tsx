@@ -1,9 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Archive,
   ArrowDownToLine,
   CalendarIcon,
   Menu,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -36,12 +38,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import labelColors, { resolveLabelColor } from "@/constants/label-colors";
+import { resolveLabelColor } from "@/constants/label-colors";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
@@ -88,6 +91,7 @@ function BulkToolbar() {
     bulkArchive,
     bulkChangeStatus,
     bulkAssign,
+    bulkAssignTeam,
     bulkPriority,
     bulkAddLabel,
     bulkDueDate,
@@ -99,6 +103,18 @@ function BulkToolbar() {
   const { data: organizationLabels = [] } = useGetLabelsByOrganization(
     organization?.id ?? "",
   );
+  const { data: teams = [] } = useQuery({
+    queryKey: ["organization-teams", organization?.id],
+    enabled: Boolean(organization?.id),
+    queryFn: async () => {
+      const result = await authClient.organization.listTeams({
+        query: { organizationId: organization?.id },
+      });
+      if (result.error)
+        throw new Error(result.error.message || "Failed to load teams");
+      return result.data ?? [];
+    },
+  });
   const { canManageTasks, canAssignTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canAssign = canAssignTasks();
@@ -212,6 +228,23 @@ function BulkToolbar() {
     [bulkAssign, selectedTaskIds, selectedCount, clearSelection, t],
   );
 
+  const handleBulkAssignTeam = useCallback(
+    async (teamId: string) => {
+      try {
+        await bulkAssignTeam({
+          taskIds: Array.from(selectedTaskIds),
+          teamId,
+        });
+        toast.success(t("tasks:bulk.assignSuccess", { count: selectedCount }));
+        clearSelection();
+        setIsActionsOpen(false);
+      } catch (_error) {
+        toast.error(t("tasks:bulk.assignError"));
+      }
+    },
+    [bulkAssignTeam, selectedTaskIds, selectedCount, clearSelection, t],
+  );
+
   const handleBulkPriority = useCallback(
     async (priority: string) => {
       try {
@@ -307,26 +340,36 @@ function BulkToolbar() {
       groups.push({
         value: "assign",
         label: t("tasks:bulk.assignTo"),
-        items: (organizationMembers?.members ?? []).map((member) => ({
-          value: `assign-${member.userId}`,
-          label: member.user?.name || t("common:people.someone"),
-          icon: (
-            <Avatar
-              className={`h-5 w-5 ${getAvatarTone(member.userId, member.user?.email)}`}
-            >
-              <AvatarImage
-                src={member.user?.image ?? ""}
-                alt={member.user?.name || ""}
-              />
-              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
-                {getInitials(member.user?.name)}
-              </AvatarFallback>
-            </Avatar>
-          ),
-          onRun: () => {
-            void handleBulkAssign(member.userId);
-          },
-        })),
+        items: [
+          ...(organizationMembers?.members ?? []).map((member) => ({
+            value: `assign-${member.userId}`,
+            label: member.user?.name || t("common:people.someone"),
+            icon: (
+              <Avatar
+                className={`h-5 w-5 ${getAvatarTone(member.userId, member.user?.email)}`}
+              >
+                <AvatarImage
+                  src={member.user?.image ?? ""}
+                  alt={member.user?.name || ""}
+                />
+                <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
+                  {getInitials(member.user?.name)}
+                </AvatarFallback>
+              </Avatar>
+            ),
+            onRun: () => {
+              void handleBulkAssign(member.userId);
+            },
+          })),
+          ...teams.map((team) => ({
+            value: `assign-team-${team.id}`,
+            label: team.name,
+            icon: <Users className="h-4 w-4 text-muted-foreground" />,
+            onRun: () => {
+              void handleBulkAssignTeam(team.id);
+            },
+          })),
+        ],
       });
     }
     if (canEdit) {
@@ -377,6 +420,8 @@ function BulkToolbar() {
     handleBulkAddLabel,
     priorityOptions,
     t,
+    teams.map,
+    handleBulkAssignTeam,
   ]);
 
   if (selectedCount === 0) return null;

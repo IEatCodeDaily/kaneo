@@ -19,6 +19,7 @@ type BulkOperation =
   | "updateStatus"
   | "updatePriority"
   | "updateAssignee"
+  | "updateTeam"
   | "delete"
   | "addLabel"
   | "removeLabel"
@@ -199,6 +200,16 @@ async function bulkUpdateTasks({
           type: value ? "assignee_changed" : "unassigned",
         });
       }
+      break;
+    }
+
+    case "updateTeam": {
+      const result = await db
+        .update(taskTable)
+        .set({ teamId: value || null })
+        .where(inArray(taskTable.id, foundIds));
+
+      updatedCount = result.rowCount ?? foundIds.length;
       break;
     }
 

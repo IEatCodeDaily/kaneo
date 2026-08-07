@@ -64,6 +64,23 @@ export function useBulkOperations() {
     onSuccess: invalidateCommon,
   });
 
+  const bulkAssignTeam = useMutation({
+    mutationFn: async ({
+      taskIds,
+      teamId,
+    }: {
+      taskIds: string[];
+      teamId: string;
+    }) => {
+      await bulkOperation({
+        taskIds,
+        operation: "updateTeam",
+        value: teamId,
+      });
+    },
+    onSuccess: invalidateCommon,
+  });
+
   const bulkMoveToBacklog = useMutation({
     mutationFn: async (taskIds: string[]) => {
       await bulkOperation({
@@ -151,6 +168,7 @@ export function useBulkOperations() {
     bulkArchive: bulkArchive.mutateAsync,
     bulkChangeStatus: bulkChangeStatus.mutateAsync,
     bulkAssign: bulkAssign.mutateAsync,
+    bulkAssignTeam: bulkAssignTeam.mutateAsync,
     bulkMoveToBacklog: bulkMoveToBacklog.mutateAsync,
     bulkMoveToBoard: bulkMoveToBoard.mutateAsync,
     bulkPriority: bulkPriority.mutateAsync,
