@@ -1,8 +1,11 @@
-import { Filter, PanelsTopLeft, Rows3, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { Filter, Search, X } from "lucide-react";
+import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
+import BoardViewOptions from "@/components/board/board-view-options";
 import SortControl from "@/components/common/sort-control";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,11 +18,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import labelColors from "@/constants/label-colors";
+import { resolveLabelColor } from "@/constants/label-colors";
 import {
   type BoardFilters,
   DUE_DATE_FILTER_VALUES,
 } from "@/hooks/use-task-filters";
+import type { BoardGroupBy } from "@/hooks/use-task-filters-with-labels-support";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
@@ -55,10 +60,31 @@ type BoardToolbarProps = {
   hasActiveFilters: boolean;
   users?: ActiveUsers;
   organizationLabels: OrganizationLabel[];
-  viewMode: "board" | "list";
-  setViewMode: (mode: "board" | "list") => void;
   sort: SortConfig;
   onSortChange: (sort: SortConfig) => void;
+  /**
+   * Board search + view options live in this toolbar (#61 rework): the user
+   * rejected having them stranded up in the page header, away from Filter and
+   * Sort. Timeline keeps every view control on one row; so does this.
+   */
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
+  searchInputRef?: Ref<HTMLInputElement>;
+  groupBy: BoardGroupBy;
+  onGroupByChange: (groupBy: BoardGroupBy) => void;
+  /**
+   * Rendered immediately after the search field. List view uses it for the
+   * "Ctrl + drag to nest" hint, which previously sat in a second toolbar row
+   * below this one.
+   */
+  searchAdornment?: ReactNode;
+  /**
+   * Rendered immediately before `actions` (i.e. left of Create ticket). List
+   * view uses it for Bulk Actions, previously in that same second row.
+   */
+  secondaryActions?: ReactNode;
+  filtersOnly?: boolean;
+  actions?: ReactNode;
 };
 
 function CheckSlot({ checked }: { checked: boolean }) {
@@ -139,10 +165,17 @@ export default function BoardToolbar({
   hasActiveFilters,
   users,
   organizationLabels,
-  viewMode,
-  setViewMode,
   sort,
   onSortChange,
+  searchQuery,
+  onSearchQueryChange,
+  searchInputRef,
+  groupBy,
+  onGroupByChange,
+  searchAdornment,
+  secondaryActions,
+  filtersOnly = false,
+  actions,
 }: BoardToolbarProps) {
   const { t } = useTranslation();
   const selectedStatusIds = filters.status ?? [];
@@ -169,12 +202,14 @@ export default function BoardToolbar({
   const getAssigneeAvatar = (userId: string) => {
     const member = users?.members?.find((m) => m.userId === userId);
     return (
-      <Avatar className="h-4 w-4">
+      <Avatar
+        className={`h-4 w-4 ${getAvatarTone(userId, member?.user?.email)}`}
+      >
         <AvatarImage
           src={member?.user?.image ?? ""}
           alt={member?.user?.name || ""}
         />
-        <AvatarFallback className="border border-border/30 text-[9px] font-medium">
+        <AvatarFallback className="bg-transparent border border-border/30 text-[9px] font-medium">
           {getInitials(member?.user?.name)}
         </AvatarFallback>
       </Avatar>
@@ -252,8 +287,21 @@ export default function BoardToolbar({
   };
 
   return (
-    <div className="border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-      <div className="flex min-h-10 items-center px-2 py-1.5 md:px-3">
+    <div
+      className={
+        filtersOnly
+          ? "min-w-0"
+          : "border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70"
+      }
+      data-testid={filtersOnly ? "board-filter-controls" : "board-toolbar"}
+    >
+      <div
+        className={
+          filtersOnly
+            ? "flex min-w-0 items-center"
+            : "flex min-h-10 items-center px-2 py-1.5 md:px-3"
+        }
+      >
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <DropdownMenu>
@@ -268,7 +316,10 @@ export default function BoardToolbar({
                 <Filter className="h-3 w-3" />
                 {t("common:actions.filter")}
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuContent
+                className="max-h-[min(28rem,calc(100vh-6rem))] w-56 overflow-y-auto"
+                align="start"
+              >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
                     {t("tasks:boardFilters.filterBy")}
@@ -397,12 +448,14 @@ export default function BoardToolbar({
                             )}
                           />
                           <span className="inline-flex items-center gap-2">
-                            <Avatar className="h-5 w-5">
+                            <Avatar
+                              className={`h-5 w-5 ${getAvatarTone(member.userId, member.user?.email)}`}
+                            >
                               <AvatarImage
                                 src={member.user?.image ?? ""}
                                 alt={member.user?.name || ""}
                               />
-                              <AvatarFallback className="border border-border/30 text-[10px] font-medium">
+                              <AvatarFallback className="bg-transparent border border-border/30 text-[10px] font-medium">
                                 {getInitials(member.user?.name)}
                               </AvatarFallback>
                             </Avatar>
@@ -493,9 +546,7 @@ export default function BoardToolbar({
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
                             style={{
-                              backgroundColor:
-                                labelColors.find((c) => c.value === label.color)
-                                  ?.color || "var(--color-neutral-400)",
+                              backgroundColor: resolveLabelColor(label.color),
                             }}
                           />
                           <span className="max-w-20 truncate">
@@ -528,7 +579,48 @@ export default function BoardToolbar({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <SortControl sort={sort} onSortChange={onSortChange} />
+            {!filtersOnly && (
+              <SortControl sort={sort} onSortChange={onSortChange} />
+            )}
+            {!filtersOnly && (
+              <BoardViewOptions
+                groupBy={groupBy}
+                onGroupByChange={onGroupByChange}
+              />
+            )}
+
+            {!filtersOnly && (
+              <div className="relative w-[200px]">
+                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(event) => onSearchQueryChange(event.target.value)}
+                  placeholder={t("tasks:boardSearchPlaceholder")}
+                  aria-label={t("tasks:boardSearchPlaceholder")}
+                  className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:pr-7 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
+                />
+                {searchQuery ? (
+                  <button
+                    aria-label={t("tasks:boardClearSearch")}
+                    className="-translate-y-1/2 absolute top-1/2 right-1.5 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    onClick={() => onSearchQueryChange("")}
+                    type="button"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            )}
+
+            {!filtersOnly && searchAdornment ? (
+              <div
+                className="shrink-0"
+                data-testid="board-toolbar-search-adornment"
+              >
+                {searchAdornment}
+              </div>
+            ) : null}
 
             {selectedStatusIds.length > 0 && (
               <ActiveFilterChip
@@ -643,32 +735,15 @@ export default function BoardToolbar({
             )}
           </div>
 
-          <div className="inline-flex items-center gap-1">
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "board"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("board")}
+          {!filtersOnly && (secondaryActions || actions) ? (
+            <div
+              className="flex shrink-0 items-center gap-2"
+              data-testid="board-toolbar-actions"
             >
-              <PanelsTopLeft className="h-3 w-3" />
-              {t("tasks:view.board")}
-            </button>
-            <button
-              type="button"
-              className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
-                viewMode === "list"
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-              }`}
-              onClick={() => setViewMode("list")}
-            >
-              <Rows3 className="h-3 w-3" />
-              {t("tasks:view.list")}
-            </button>
-          </div>
+              {secondaryActions}
+              {actions}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

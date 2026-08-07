@@ -22,7 +22,8 @@ type ShortcutCategory = {
   shortcuts: ShortcutItem[];
 };
 
-function useShortcutCategories(): ShortcutCategory[] {
+/** Exported so the documented inventory can be asserted directly (#115). */
+export function useShortcutCategories(): ShortcutCategory[] {
   const { t } = useTranslation();
 
   return useMemo(
@@ -60,6 +61,10 @@ function useShortcutCategories(): ShortcutCategory[] {
           {
             keys: [shortcuts.task.prefix, shortcuts.task.create],
             description: t("navigation:keyboardShortcuts.items.createTask"),
+          },
+          {
+            keys: [shortcuts.task.focusTitle],
+            description: "Focus task title (when creating a task)",
           },
           {
             keys: [shortcuts.board.prefix, shortcuts.board.create],
@@ -121,9 +126,73 @@ function useShortcutCategories(): ShortcutCategory[] {
           },
         ],
       },
+      /*
+       * #115: "A help popup to show all the shortcuts in Task title, Task
+       * description, comments. @ / # etc."
+       *
+       * Only shortcuts verified in the code are listed:
+       *   #/@/! -> lib/title-token-autocomplete.ts (SIGILS)
+       *   @     -> task/extensions/mention-suggestion.tsx (description)
+       *   @     -> activity/comment-editor.tsx (comments)
+       *   /     -> task-description.tsx slash menu
+       */
+      {
+        title: t("navigation:keyboardShortcuts.categories.ticketTitle"),
+        shortcuts: [
+          {
+            keys: ["#"],
+            description: t("navigation:keyboardShortcuts.items.titleLabel"),
+          },
+          {
+            keys: ["@"],
+            description: t("navigation:keyboardShortcuts.items.titleMember"),
+          },
+          {
+            keys: ["!"],
+            description: t("navigation:keyboardShortcuts.items.titlePriority"),
+          },
+        ],
+      },
+      {
+        title: t("navigation:keyboardShortcuts.categories.editor"),
+        shortcuts: [
+          /*
+           * #156: `@` and `#` are DIFFERENT pickers and the earlier wording
+           * conflated them.
+           *   @ -> members (users and agents), extensions/mention-suggestion
+           *   # -> tickets,                    extensions/reference-suggestion
+           */
+          {
+            keys: ["@"],
+            description: t("navigation:keyboardShortcuts.items.editorMention"),
+          },
+          {
+            keys: ["#"],
+            description: t("navigation:keyboardShortcuts.items.editorTicket"),
+          },
+          {
+            keys: ["/"],
+            description: t("navigation:keyboardShortcuts.items.editorSlash"),
+          },
+        ],
+      },
     ],
     [t],
   );
+}
+
+const KEYBOARD_SHORTCUTS_HELP_EVENT = "kaneo:open-keyboard-shortcuts-help";
+
+/**
+ * Opens the keyboard shortcuts help dialog.
+ *
+ * Callers must NOT fake this by dispatching a synthetic `keydown` on
+ * `document`: such an event has a non-Element target, which breaks every
+ * document/window-level handler that narrows `event.target` to an Element,
+ * and it re-enters the "?" shortcut handler (infinite recursion).
+ */
+export function openKeyboardShortcutsHelp() {
+  window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_HELP_EVENT));
 }
 
 export function KeyboardShortcutsHelp() {
@@ -134,11 +203,12 @@ export function KeyboardShortcutsHelp() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target;
       const isTyping =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true";
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
 
       if (e.key === "?" && !isTyping) {
         e.preventDefault();
@@ -146,8 +216,17 @@ export function KeyboardShortcutsHelp() {
       }
     };
 
+    const handleOpenRequest = () => setOpen(true);
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener(KEYBOARD_SHORTCUTS_HELP_EVENT, handleOpenRequest);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        KEYBOARD_SHORTCUTS_HELP_EVENT,
+        handleOpenRequest,
+      );
+    };
   }, []);
 
   const filteredCategories = shortcutCategories

@@ -6,8 +6,8 @@ import { createApp } from "../../apps/api/src/index";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
 describe("API integration: task creation", () => {
@@ -16,15 +16,15 @@ describe("API integration: task creation", () => {
   });
 
   it("rejects unauthenticated task creation requests", async () => {
-    const member = await createWorkspaceMember();
-    const { project } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+    const member = await createOrganizationMember();
+    const { board } = await createBoardFixture({
+      organizationId: member.organization.id,
     });
 
     mockAnonymousSession();
     const { app } = createApp();
 
-    const response = await app.request(`/api/task/${project.id}`, {
+    const response = await app.request(`/api/task/${board.id}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -42,15 +42,15 @@ describe("API integration: task creation", () => {
   });
 
   it("creates a task with the matching column, assignee, and next number", async () => {
-    const member = await createWorkspaceMember();
-    const { project, columns } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+    const member = await createOrganizationMember();
+    const { board, columns } = await createBoardFixture({
+      organizationId: member.organization.id,
       name: "Delivery",
       slug: "delivery",
     });
 
     await db.insert(schema.taskTable).values({
-      projectId: project.id,
+      boardId: board.id,
       userId: member.user.id,
       title: "Existing task",
       description: "Already there",
@@ -60,15 +60,16 @@ describe("API integration: task creation", () => {
       number: 1,
       position: 1,
     });
-    await db
-      .update(schema.projectTable)
-      .set({ lastTaskNumber: 1 })
-      .where(eq(schema.projectTable.id, project.id));
+    // Do not manually advance board.lastTaskNumber here. claimTaskNumber is
+    // deliberately self-healing: it must observe MAX(task.number) and repair a
+    // stale counter while reserving the next number atomically. This fixture
+    // therefore exercises the production invariant instead of relying on the
+    // removed pre-organization project table.
 
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
-    const response = await app.request(`/api/task/${project.id}`, {
+    const response = await app.request(`/api/task/${board.id}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -85,7 +86,7 @@ describe("API integration: task creation", () => {
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
       id: string;
-      projectId: string;
+      boardId: string;
       title: string;
       description: string;
       priority: string;
@@ -97,7 +98,7 @@ describe("API integration: task creation", () => {
     };
 
     expect(payload).toMatchObject({
-      projectId: project.id,
+      boardId: board.id,
       title: "Ship integration flow",
       description: "Cover the first create-task path",
       priority: "high",
@@ -114,7 +115,7 @@ describe("API integration: task creation", () => {
 
     expect(persistedTask).toMatchObject({
       id: payload.id,
-      projectId: project.id,
+      boardId: board.id,
       columnId: columns.todo.id,
       userId: member.user.id,
       title: "Ship integration flow",
@@ -125,11 +126,11 @@ describe("API integration: task creation", () => {
     });
   });
 
-  it("rejects task creation for users outside the project workspace", async () => {
-    const member = await createWorkspaceMember();
+  it("rejects task creation for users outside the board organization", async () => {
+    const member = await createOrganizationMember();
     const outsiderId = `user-${randomUUID()}`;
-    const { project } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+    const { board } = await createBoardFixture({
+      organizationId: member.organization.id,
     });
 
     const [outsider] = await db
@@ -145,7 +146,7 @@ describe("API integration: task creation", () => {
     mockAuthenticatedSession(outsider);
     const { app } = createApp();
 
-    const response = await app.request(`/api/task/${project.id}`, {
+    const response = await app.request(`/api/task/${board.id}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -160,12 +161,12 @@ describe("API integration: task creation", () => {
 
     expect(response.status).toBe(403);
     await expect(response.text()).resolves.toBe(
-      "You don't have access to this workspace",
+      "You don't have access to this organization",
     );
 
     const persistedTask = await db.query.taskTable.findFirst({
       where: and(
-        eq(schema.taskTable.projectId, project.id),
+        eq(schema.taskTable.boardId, board.id),
         eq(schema.taskTable.title, "Forbidden task"),
       ),
     });
@@ -174,15 +175,15 @@ describe("API integration: task creation", () => {
   });
 
   it("creates an unassigned task with parsed dates when optional fields are provided", async () => {
-    const member = await createWorkspaceMember();
-    const { project, columns } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+    const member = await createOrganizationMember();
+    const { board, columns } = await createBoardFixture({
+      organizationId: member.organization.id,
     });
 
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
-    const response = await app.request(`/api/task/${project.id}`, {
+    const response = await app.request(`/api/task/${board.id}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -233,16 +234,16 @@ describe("API integration: task creation", () => {
     );
   });
 
-  it("creates tasks without a column when the status has no matching project column", async () => {
-    const member = await createWorkspaceMember();
-    const { project } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+  it("creates tasks without a column when the status has no matching board column", async () => {
+    const member = await createOrganizationMember();
+    const { board } = await createBoardFixture({
+      organizationId: member.organization.id,
     });
 
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
-    const response = await app.request(`/api/task/${project.id}`, {
+    const response = await app.request(`/api/task/${board.id}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",

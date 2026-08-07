@@ -23,8 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import { authClient } from "@/lib/auth-client";
@@ -118,7 +116,10 @@ function AdminPage() {
           getJson<Status>("/admin/status"),
           getJson<Organization[]>("/admin/organizations"),
           authClient.admin.listUsers({ query: { limit: 100 } }),
-          getJson<OidcConfig>("/oidc-team-sync"),
+          // Claim mapping only exists in single-org mode, where this endpoint
+          // answers; in multi-org mode it deliberately 404s, which must not
+          // fail the whole administration page.
+          getJson<OidcConfig>("/oidc-team-sync").catch(() => undefined),
         ]);
       if (userResult.error)
         throw new Error(userResult.error.message || "Could not load users");
@@ -176,11 +177,6 @@ function AdminPage() {
       <Layout>
         <Layout.Header>
           <div className="flex w-full items-center gap-1">
-            <SidebarTrigger className="-ml-1 h-6 w-6" />
-            <Separator
-              orientation="vertical"
-              className="mx-1.5 data-[orientation=vertical]:h-2.5"
-            />
             <Shield className="size-4" />
             <h1 className="text-xs text-card-foreground">
               System administration

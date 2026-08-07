@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { and, eq, inArray } from "drizzle-orm";
 import db, { schema } from "../database";
+import getSettings from "../utils/get-settings";
 
 export type OidcRoleMapping = { role: string; teamId: string };
 
@@ -56,6 +57,10 @@ export function decodeJwtPayload(
 }
 
 export async function syncOidcTeams(userId: string, claims: unknown) {
+  // Claim mapping is a single-org-mode capability. With multiple organizations
+  // a claim has no unambiguous target, so the feature is off rather than
+  // guessing which organization an IdP claim was meant for.
+  if (!getSettings().singleOrgMode) return;
   const memberships = await db
     .select({ organizationId: schema.organizationMemberTable.organizationId })
     .from(schema.organizationMemberTable)

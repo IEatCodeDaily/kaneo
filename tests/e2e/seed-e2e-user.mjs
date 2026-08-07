@@ -103,13 +103,29 @@ await client.query(
   `insert into repo_issue (id, repo_id, number, title, body, state, author_login, labels, comment_count, url, external_created_at, external_updated_at, created_at, updated_at)
    values ($1, $2, 101, 'Fixture issue with a deliberately long title for list truncation coverage', 'Fixture issue body.', 'open', 'kaneo-e2e', $3::jsonb, 2, 'https://github.com/kaneo-e2e/repo-fixtures/issues/101', $4, $4, $4, $4)
    on conflict (repo_id, number) do update set title = excluded.title, labels = excluded.labels, updated_at = excluded.updated_at`,
-  [createId(), repoId, JSON.stringify([{ name: 'fixture', color: '0366d6' }, { name: 'e2e', color: '0e8a16' }]), now],
+  [
+    createId(),
+    repoId,
+    JSON.stringify([
+      { name: "fixture", color: "0366d6" },
+      { name: "e2e", color: "0e8a16" },
+    ]),
+    now,
+  ],
 );
 await client.query(
   `insert into repo_pull_request (id, repo_id, number, title, body, state, is_draft, author_login, labels, comment_count, url, external_created_at, external_updated_at, created_at, updated_at)
    values ($1, $2, 202, 'Fixture pull request with a deliberately long title for list truncation coverage', 'Fixture pull request body.', 'open', false, 'kaneo-e2e', $3::jsonb, 3, 'https://github.com/kaneo-e2e/repo-fixtures/pull/202', $4, $4, $4, $4)
    on conflict (repo_id, number) do update set title = excluded.title, labels = excluded.labels, updated_at = excluded.updated_at`,
-  [createId(), repoId, JSON.stringify([{ name: 'fixture', color: '0366d6' }, { name: 'e2e', color: '0e8a16' }]), now],
+  [
+    createId(),
+    repoId,
+    JSON.stringify([
+      { name: "fixture", color: "0366d6" },
+      { name: "e2e", color: "0e8a16" },
+    ]),
+    now,
+  ],
 );
 const repo = { rows: fixtureRepo.rows };
 const board = await client.query(

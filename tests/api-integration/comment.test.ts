@@ -5,8 +5,8 @@ import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
 describe("API integration: task comments", () => {
@@ -15,14 +15,14 @@ describe("API integration: task comments", () => {
   });
 
   it("shares comments between the activity UI and comment API", async () => {
-    const member = await createWorkspaceMember();
-    const { project, columns } = await createProjectFixture({
-      workspaceId: member.workspace.id,
+    const member = await createOrganizationMember();
+    const { board, columns } = await createBoardFixture({
+      organizationId: member.organization.id,
     });
     const [task] = await db
       .insert(schema.taskTable)
       .values({
-        projectId: project.id,
+        boardId: board.id,
         title: "Shared comments",
         status: "to-do",
         columnId: columns.todo.id,

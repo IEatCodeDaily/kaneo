@@ -112,6 +112,7 @@
 				"labelCreated": "Η ετικέτα δημιουργήθηκε",
 				"labelCreateError": "Αποτυχία δημιουργίας ετικέτας",
 				"createMore": "Δημιουργία περισσότερων",
+				"discardDraft": "Απόρριψη προχείρου",
 				"createButton": "Δημιουργία εργασίας",
 				"untitledTask": "Εργασία χωρίς τίτλο",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Κεχριμπάρι",
 					"terracotta": "Τερακότα",
 					"rose": "Ροζ",
-					"crimson": "Βυσσινί"
+					"crimson": "Βυσσινί",
+					"blossom": "Άνθος",
+					"honey": "Μέλι",
+					"lime": "Λάιμ",
+					"emerald": "Σμαράγδι",
+					"lagoon": "Λιμνοθάλασσα",
+					"sky": "Ουρανός",
+					"ocean": "Ωκεανός",
+					"indigo": "Λουλάκι",
+					"violet": "Βιολετί",
+					"orchid": "Ορχιδέα",
+					"cocoa": "Κακάο"
 				}
 			}
-		}
+		},
+		"unknown": "Άγνωστο"
 	},
 	"auth": {
 		"signIn": {
@@ -453,7 +466,9 @@
 			"labelsDescription": "Εμφάνιση ετικετών και tags εργασιών",
 			"priority": "Προτεραιότητα",
 			"priorityDescription": "Εμφάνιση ενδείξεων προτεραιότητας",
-			"weekStartsOnSaturday": "Σάββατο"
+			"weekStartsOnSaturday": "Σάββατο",
+			"reduceOverlayBlur": "Μείωση θολώματος επικάλυψης",
+			"reduceOverlayBlurDescription": "Αφαίρεση του θολού φόντου πίσω από διαλόγους, φύλλα και την παλέτα εντολών."
 		},
 		"developerPage": {
 			"pageTitle": "Ρυθμίσεις προγραμματιστή",
@@ -559,6 +574,7 @@
 			"iconHint": "Εμφανίζεται στην πλαϊνή μπάρα και στις επιφάνειες του έργου.",
 			"pickIconTitle": "Επιλογή εικονιδίου",
 			"searchIconsPlaceholder": "Αναζήτηση εικονιδίων...",
+			"useEmoji": "Χρήση αυτού του emoji",
 			"boardNameLabel": "Όνομα έργου",
 			"boardNameHint": "Το όνομα του έργου σας",
 			"boardNamePlaceholder": "Εισαγάγετε όνομα έργου",
@@ -568,6 +584,8 @@
 			"descriptionLabel": "Περιγραφή",
 			"descriptionHint": "Μια σύντομη περιγραφή του έργου σας",
 			"descriptionPlaceholder": "Εισαγάγετε περιγραφή έργου",
+			"subtaskDepthLimitLabel": "Όριο ένθεσης υποεργασιών",
+			"subtaskDepthLimitHint": "Μέγιστος αριθμός επιτρεπόμενων ένθετων επιπέδων υποεργασιών (1–4).",
 			"dangerZone": "Ζώνη κινδύνου",
 			"dangerZoneSubtitle": "Μη αναστρέψιμες και καταστροφικές ενέργειες.",
 			"deleteBoard": "Διαγραφή έργου",
@@ -633,7 +651,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Επιλέξτε έργο",
-			"noBoards": "Δεν υπάρχουν έργα"
+			"noBoards": "Δεν υπάρχουν έργα",
+			"searchBoards": "Αναζήτηση πινάκων..."
 		},
 		"columnEditor": {
 			"toastCreated": "Η στήλη δημιουργήθηκε",
@@ -741,8 +760,8 @@
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
-				"commentOnDisabled": "Task link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
+				"commentOnDisabled": "Ticket link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Copied",
 				"unableToCopySecret": "Unable to copy secret"
@@ -758,7 +777,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1112,7 +1131,9 @@
 				"create": "Δημιουργία",
 				"views": "Προβολές",
 				"navigation": "Πλοήγηση",
-				"quickSelect": "Γρήγορη επιλογή (σε αναδυόμενα)"
+				"quickSelect": "Γρήγορη επιλογή (σε αναδυόμενα)",
+				"ticketTitle": "Τίτλος ticket",
+				"editor": "Περιγραφή & σχόλια"
 			},
 			"items": {
 				"openCommandPalette": "Άνοιγμα παλέτας εντολών",
@@ -1129,11 +1150,59 @@
 				"nextTask": "Επόμενη εργασία",
 				"prevTask": "Προηγούμενη εργασία",
 				"openTask": "Άνοιγμα επιλεγμένης εργασίας",
-				"quickSelectNumber": "Επιλογή επιλογής με αριθμό"
+				"quickSelectNumber": "Επιλογή επιλογής με αριθμό",
+				"titleLabel": "Προσθήκη ετικέτας",
+				"titleMember": "Ανάθεση μέλους",
+				"titlePriority": "Ορισμός προτεραιότητας",
+				"editorMention": "Αναφορά μέλους",
+				"editorSlash": "Άνοιγμα μενού μπλοκ",
+				"editorTicket": "Παραπομπή σε ticket"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Πίνακες",
+			"create": "Δημιουργία πίνακα",
+			"noTables": "Δεν υπάρχουν πίνακες ακόμη",
+			"loadError": "Δεν ήταν δυνατή η φόρτωση των πινάκων.",
+			"retry": "Επανάληψη",
+			"loading": "Φόρτωση πινάκων",
+			"tableName": "Όνομα πίνακα",
+			"createTitle": "Δημιουργία νέου πίνακα",
+			"createDescription": "Ξεκινήστε με έναν κενό πίνακα και, στη συνέχεια, προσθέστε πεδία και γραμμές.",
+			"cancel": "Ακύρωση",
+			"createAction": "Δημιουργία πίνακα",
+			"loadTableError": "Δεν ήταν δυνατή η φόρτωση αυτού του πίνακα",
+			"connectionHelp": "Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.",
+			"row_one": "{{count}} γραμμή",
+			"row_other": "{{count}} γραμμές",
+			"field_one": "{{count}} πεδίο",
+			"field_other": "{{count}} πεδία",
+			"empty": "Αυτός ο πίνακας είναι κενός",
+			"readOnlyEmpty": "Έχετε πρόσβαση μόνο για ανάγνωση. Ένας συντάκτης μπορεί να προσθέσει το πρώτο πεδίο.",
+			"addField": "Προσθήκη πεδίου",
+			"newFieldName": "Όνομα νέου πεδίου",
+			"noRows": "Δεν υπάρχουν γραμμές ακόμη. Προσθέστε μία για να αρχίσετε να εισάγετε δεδομένα.",
+			"addRow": "Προσθήκη γραμμής",
+			"deleteField": "Διαγραφή πεδίου",
+			"deleteFieldConfirm": "Να διαγραφεί το πεδίο «{{name}}»;",
+			"renameFieldError": "Δεν ήταν δυνατή η μετονομασία του πεδίου",
+			"deleteFieldError": "Δεν ήταν δυνατή η διαγραφή του πεδίου",
+			"addFieldError": "Δεν ήταν δυνατή η προσθήκη του πεδίου",
+			"deleteRowError": "Δεν ήταν δυνατή η διαγραφή της γραμμής",
+			"saveCellError": "Δεν ήταν δυνατή η αποθήκευση του κελιού",
+			"renameTableError": "Δεν ήταν δυνατή η μετονομασία του πίνακα",
+			"addRowError": "Δεν ήταν δυνατή η προσθήκη της γραμμής",
+			"creating": "Δημιουργία…",
+			"created": "Ο πίνακας δημιουργήθηκε",
+			"createError": "Δεν ήταν δυνατή η δημιουργία του πίνακα",
+			"tableOptions": "Επιλογές πίνακα",
+			"deleteTable": "Διαγραφή πίνακα",
+			"deleteTableConfirm": "Να διαγραφεί αυτός ο πίνακας και όλα τα δεδομένα του; Αυτή η ενέργεια δεν αναιρείται.",
+			"deleted": "Ο πίνακας διαγράφηκε",
+			"deleteTableError": "Δεν ήταν δυνατή η διαγραφή του πίνακα"
 		}
 	},
 	"notifications": {
@@ -1151,7 +1220,7 @@
 		"events": {
 			"task_created": {
 				"title": "Δημιουργήθηκε νέα εργασία",
-				"content": "Η εργασία \"{{taskTitle}}\" δημιουργήθηκε"
+				"content": "Η τικέτα \"{{taskTitle}}\" δημιουργήθηκε"
 			},
 			"organization_created": {
 				"title": "Ο χώρος εργασίας δημιουργήθηκε",
@@ -1159,16 +1228,40 @@
 			},
 			"task_status_changed": {
 				"title": "Η κατάσταση της εργασίας άλλαξε",
-				"content": "Η κατάσταση της εργασίας \"{{taskTitle}}\" άλλαξε από \"{{oldStatus}}\" σε \"{{newStatus}}\""
+				"content": "Η κατάσταση της τικέτας \"{{taskTitle}}\" άλλαξε από \"{{oldStatus}}\" σε \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Σας ανατέθηκε εργασία",
-				"content": "Σας ανατέθηκε η εργασία: {{taskTitle}}"
+				"content": "Σας ανατέθηκε η τικέτα: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Η χρονομέτρηση ξεκίνησε",
-				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την εργασία: {{taskTitle}}",
+				"contentWithTask": "Η χρονομέτρηση ξεκίνησε για την τικέτα: {{taskTitle}}",
 				"contentWithoutTask": "Η χρονομέτρηση ξεκίνησε για μια εργασία"
+			},
+			"task_title_changed": {
+				"title": "Ο τίτλος του αιτήματος άλλαξε",
+				"content": "Το «{{oldTitle}}» μετονομάστηκε σε «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Η περιγραφή του αιτήματος ενημερώθηκε",
+				"content": "Η περιγραφή του «{{taskTitle}}» ενημερώθηκε"
+			},
+			"task_priority_changed": {
+				"title": "Η προτεραιότητα του αιτήματος άλλαξε",
+				"content": "Η προτεραιότητα του «{{taskTitle}}» άλλαξε από {{oldPriority}} σε {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Η ημερομηνία λήξης του αιτήματος άλλαξε",
+				"content": "Η ημερομηνία λήξης του «{{taskTitle}}» ενημερώθηκε"
+			},
+			"task_flag_raised": {
+				"title": "Σήμανση προστέθηκε στο αίτημα",
+				"content": "Η σήμανση {{flagTypeName}} προστέθηκε στο «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Σήμανση επιλύθηκε στο αίτημα",
+				"content": "Η σήμανση {{flagTypeName}} επιλύθηκε στο «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1269,8 +1362,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Το πρόχειρο αποθηκεύτηκε",
+			"deleteDraft": "Διαγραφή προχείρου"
+		},
+		"statusRun": "το μετέφερε από {{from}} σε {{to}}",
+		"statusRunNoOp": "άλλαξε την κατάσταση αρκετές φορές, επιστρέφοντας σε {{status}}",
+		"statusRunSteps": "{{count}} βήματα",
+		"resolutionNote": "Σημείωση επίλυσης"
 	},
 	"tasks": {
 		"status": {
@@ -1307,6 +1406,7 @@
 			"noActivity": "Δεν βρέθηκε δραστηριότητα",
 			"openInFullPage": "Άνοιγμα σε πλήρη σελίδα",
 			"titlePlaceholder": "Κάντε κλικ για να προσθέσετε τίτλο",
+			"titleSaving": "Αποθήκευση τίτλου…",
 			"addDescription": "Προσθήκη περιγραφής...",
 			"editor": {
 				"ariaLabel": "Επεξεργαστής περιγραφής εργασίας",
@@ -1401,7 +1501,8 @@
 					},
 					"onlyYoutubeInline": "Μόνο URLs YouTube μπορούν να ενσωματωθούν. Χρησιμοποιήστε λειτουργία συνδέσμου."
 				}
-			}
+			},
+			"close": "Κλείσιμο λεπτομερειών εισιτηρίου"
 		},
 		"entity": {
 			"task": "Εργασία"
@@ -1422,7 +1523,8 @@
 				"blocks": "μπλοκάρει",
 				"related": "σχετίζεται με"
 			},
-			"otherBoard": "άλλος πίνακας"
+			"otherBoard": "άλλος πίνακας",
+			"blockedBy": "Μπλοκάρεται από"
 		},
 		"subtasks": {
 			"title": "Υποεργασίες",
@@ -1499,8 +1601,20 @@
 					"amber": "Κεχριμπάρι",
 					"terracotta": "Τερακότα",
 					"rose": "Ροζ",
-					"crimson": "Βυσσινί"
-				}
+					"crimson": "Βυσσινί",
+					"blossom": "Άνθος",
+					"honey": "Μέλι",
+					"lime": "Λάιμ",
+					"emerald": "Σμαράγδι",
+					"lagoon": "Λιμνοθάλασσα",
+					"sky": "Ουρανός",
+					"ocean": "Ωκεανός",
+					"indigo": "Λουλάκι",
+					"violet": "Βιολετί",
+					"orchid": "Ορχιδέα",
+					"cocoa": "Κακάο"
+				},
+				"repoSource": "Ετικέτα συγχρονισμένη με το GitHub"
 			}
 		},
 		"backlog": {
@@ -1527,7 +1641,12 @@
 				"dueThisWeek": "Λήγει αυτή την εβδομάδα",
 				"dueNextWeek": "Λήγει την επόμενη εβδομάδα",
 				"noDueDate": "Χωρίς ημερομηνία λήξης"
-			}
+			},
+			"moveAllDialogTitle": "Μετακίνηση όλων των προγραμματισμένων tickets;",
+			"moveAllDialogDescription": "{{count}} προγραμματισμένο ticket θα μετακινηθεί στο «Προς εκτέλεση».",
+			"moveAllDialogDescription_other": "{{count}} προγραμματισμένα tickets θα μετακινηθούν στο «Προς εκτέλεση».",
+			"moveAllDialogConfirm": "Μετακίνηση {{count}} ticket",
+			"moveAllDialogConfirm_other": "Μετακίνηση {{count}} tickets"
 		},
 		"sort": {
 			"label": "Ταξινόμηση",
@@ -1543,6 +1662,22 @@
 				"title": "Τίτλος",
 				"number": "Αριθμός εργασίας"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Φιλτράρισμα κατά",
@@ -1575,10 +1710,26 @@
 			"noTasksFound": "Δεν βρέθηκαν εργασίες",
 			"noTasksMatch": "Δεν υπάρχουν προγραμματισμένες εργασίες που να ταιριάζουν με \"{{query}}\"",
 			"taskHeader": "Εργασία",
+			"unscheduledHint": "Χωρίς ημερομηνίες - σύρετε για προγραμματισμό",
+			"dragToScheduleHint": "Σύρετε κατά μήκος του χρονοδιαγράμματος για να προγραμματίσετε αυτό το αίτημα",
 			"updateDatesError": "Αποτυχία ενημέρωσης ημερομηνιών εργασίας",
 			"resizeStart": "Αλλαγή μεγέθους ημερομηνίας έναρξης",
 			"resizeDue": "Αλλαγή μεγέθους ημερομηνίας λήξης",
-			"taskAriaLabel": "{{title}} — άνοιγμα ή σύρσιμο για μετακίνηση"
+			"taskAriaLabel": "{{title}} — άνοιγμα ή σύρσιμο για μετακίνηση",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Χωρίς ορόσημο"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Διαγραφή εργασίας;",
@@ -1588,7 +1739,8 @@
 			"error": "Αποτυχία διαγραφής εργασίας"
 		},
 		"archive": {
-			"success": "Αρχειοθετήθηκαν {{count}} εργασίες"
+			"success": "Αρχειοθετήθηκαν {{count}} εργασίες",
+			"error": "Αποτυχία αρχειοθέτησης εισιτηρίων"
 		},
 		"listView": {
 			"addTask": "Προσθήκη εργασίας",
@@ -1616,11 +1768,17 @@
 			"updateSuccess": "Η ημερομηνία λήξης της εργασίας ενημερώθηκε με επιτυχία",
 			"updateError": "Αποτυχία ενημέρωσης ημερομηνίας λήξης εργασίας",
 			"clearSuccess": "Η ημερομηνία λήξης της εργασίας αφαιρέθηκε",
-			"clearError": "Αποτυχία αφαίρεσης ημερομηνίας λήξης"
+			"clearError": "Αποτυχία αφαίρεσης ημερομηνίας λήξης",
+			"outcome": {
+				"early": "Πρόωρα",
+				"on-time": "Στην ώρα",
+				"late": "Αργά"
+			}
 		},
 		"labels": {
 			"label": "Ετικέτες",
-			"empty": "Δεν υπάρχουν διαθέσιμες ετικέτες"
+			"empty": "Δεν υπάρχουν διαθέσιμες ετικέτες",
+			"fromRepository": "Από συνδεδεμένο αποθετήριο"
 		},
 		"update": {
 			"success": "Η εργασία ενημερώθηκε με επιτυχία",
@@ -1633,7 +1791,8 @@
 		"actions": {
 			"archive": "Αρχειοθέτηση",
 			"markAsPlanned": "Επισήμανση ως προγραμματισμένη",
-			"delete": "Διαγραφή..."
+			"delete": "Διαγραφή...",
+			"unarchive": "Κατάργηση αρχειοθέτησης"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} επιλεγμένα",
@@ -1666,6 +1825,38 @@
 			"searchActions": "Αναζήτηση ενεργειών...",
 			"noActionsFound": "Δεν βρέθηκαν ενέργειες.",
 			"changeStatus": "Αλλαγή κατάστασης"
+		},
+		"titleTokens": {
+			"labels": "Ετικέτες",
+			"members": "Μέλη",
+			"priority": "Προτεραιότητα",
+			"hint": "# για ετικέτες, @ για μέλη, ! για προτεραιότητα"
+		},
+		"boardSync": {
+			"syncedWith": "Συγχρονισμένο με {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Ημερομηνία λήξης",
+			"noDueDate": "Χωρίς ημερομηνία λήξης",
+			"noLabel": "Χωρίς ετικέτα",
+			"status": "Κατάσταση",
+			"milestone": "Ορόσημο",
+			"noStatus": "Χωρίς κατάσταση"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Ημερομηνία λήξης"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Ένταξη κάτω από {{title}}",
+			"releaseToNest": "Αφήστε το για ένταξη αυτού του εισιτηρίου κάτω από {{title}}.",
+			"cannotNestHere": "Δεν είναι δυνατή η ένταξη εδώ",
+			"cannotNestReason": "Αυτό το εισιτήριο δεν μπορεί να ενταχθεί κάτω από αυτόν τον στόχο. Επιλέξτε άλλο γονικό.",
+			"unknownTarget": "αυτό το εισιτήριο"
+		},
+		"bulkActions": {
+			"label": "Μαζικές ενέργειες"
 		}
 	},
 	"invitations": {
@@ -1789,7 +1980,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1802,7 +1993,8 @@
 		},
 		"members": {
 			"pageTitle": "Μέλη",
-			"inviteMember": "Πρόσκληση μέλους"
+			"inviteMember": "Πρόσκληση μέλους",
+			"agentsCredentialsHint": "Έκδοση και ανάκληση κλειδιών πρόσβασης"
 		},
 		"inviteModal": {
 			"title": "Πρόσκληση μέλους ομάδας",

@@ -1,3 +1,18 @@
+## [3.0.0](https://github.com/IEatCodeDaily/kaneo/compare/v2.12.1...v3.0.0) (2026-08-04)
+
+### Major release
+
+- Add board-scoped milestones across storage, API, cards, board timelines, and board-overview timelines.
+- Make timeline reorder subtree-safe with deliberate nesting intent, pending-save feedback, and scroll preservation.
+- Introduce canonical workflow status taxonomy with board-defined ordering and independent task archival.
+- Add task and board archive workflows, recipient-aware notifications, and editor/task-detail improvements.
+- Correct shared board view tabs and expand regression coverage across API and web surfaces.
+
+### Database migrations
+
+- `0062_task_archived_at`
+- `0063_board_status_order`
+
 ## [2.9.10](https://github.com/usekaneo/kaneo/compare/v2.9.9...v2.9.10) (2026-07-28)
 
 

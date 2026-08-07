@@ -3,7 +3,19 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { CLOSED_STATUS_SLUGS } from "../status-taxonomy";
+import { sealDescriptionHistory } from "../utils/description-history";
 import { assertValidTaskStatus } from "../validate-task-fields";
+
+/**
+ * Statuses that end a task's active editing session.
+ *
+ * #226: sourced from the taxonomy, so the new terminal outcomes (Canceled,
+ * Duplicate) seal history exactly like Done. `archived` is gone — archiving is
+ * `task.archived_at` now and does not change status, so it cannot end the
+ * editing session by itself.
+ */
+const CLOSED_STATUSES = new Set(CLOSED_STATUS_SLUGS);
 
 async function updateTaskStatus({
   id,
@@ -33,9 +45,25 @@ async function updateTaskStatus({
     ),
   });
 
+  // Closing the task ends the compression window, so the newest revision is
+  // sealed and a later edit starts a fresh history entry.
+  const shouldSeal =
+    CLOSED_STATUSES.has(status) && !CLOSED_STATUSES.has(existingTask.status);
+
   const [updatedTask] = await db
     .update(taskTable)
-    .set({ status, columnId: column?.id ?? null })
+    .set({
+      status,
+      columnId: column?.id ?? null,
+      ...(shouldSeal
+        ? {
+            descriptionHistory: sealDescriptionHistory(
+              existingTask.descriptionHistory,
+              currentUserId,
+            ),
+          }
+        : {}),
+    })
     .where(eq(taskTable.id, id))
     .returning();
 

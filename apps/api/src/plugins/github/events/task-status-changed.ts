@@ -1,3 +1,4 @@
+import { isClosedStatus } from "../../../task/status-taxonomy";
 import type { PluginContext, TaskStatusChangedEvent } from "../../types";
 import type { GitHubConfig } from "../config";
 import {
@@ -58,7 +59,12 @@ export async function handleTaskStatusChanged(
       [`status:${event.newStatus}`],
     );
 
-    if (event.newStatus === "done") {
+    const wasClosed = isClosedStatus(event.oldStatus);
+    const isClosed = isClosedStatus(event.newStatus);
+
+    // #226: Done, Canceled and Duplicate are all terminal outcomes. Moving
+    // between terminal outcomes changes labels but must not toggle the issue.
+    if (!wasClosed && isClosed) {
       await octokit.rest.issues.update({
         owner: repositoryOwner,
         repo: repositoryName,
@@ -72,7 +78,7 @@ export async function handleTaskStatusChanged(
           state: "closed",
         },
       });
-    } else if (event.oldStatus === "done" && event.newStatus !== "done") {
+    } else if (wasClosed && !isClosed) {
       await octokit.rest.issues.update({
         owner: repositoryOwner,
         repo: repositoryName,

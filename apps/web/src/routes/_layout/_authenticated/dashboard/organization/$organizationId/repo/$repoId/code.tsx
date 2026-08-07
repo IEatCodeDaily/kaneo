@@ -1,14 +1,14 @@
+import { CodeView } from "@pierre/diffs/react";
+import { FileTree, useFileTree } from "@pierre/trees/react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  ChevronDown,
-  ChevronRight,
+  ArrowLeft,
   File,
   FileCode2,
-  Folder,
   GitBranch,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import RepoLayout from "@/components/common/repo-layout";
 import { ErrorBoundary } from "@/components/error-boundary";
 import PageTitle from "@/components/page-title";
@@ -24,7 +24,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoContents from "@/hooks/queries/repo/use-get-repo-contents";
-import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
+import useGetRepoTree from "@/hooks/queries/repo/use-get-repo-tree";
+import type { RepoContentEntry } from "@/types/repo";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code",
@@ -77,102 +78,46 @@ function isRichFile(path: string) {
   return /\.(md|mdx|html?)$/i.test(path);
 }
 
-/** One directory level. Children mount only when expanded, so collapsing a
- *  folder or picking a file never refetches the rest of the tree. */
-function TreeLevel({
-  repoId,
-  path,
-  gitRef,
-  depth,
-  selectedPath,
+function RepoFileTree({
+  entries,
   onSelect,
+  selectedPath,
 }: {
-  repoId: string;
-  path: string;
-  gitRef?: string;
-  depth: number;
-  selectedPath: string;
+  entries: RepoContentEntry[];
   onSelect: (path: string) => void;
+  selectedPath: string;
 }) {
-  const { data, isLoading } = useGetRepoContents({ repoId, path, ref: gitRef });
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
-  if (isLoading) {
-    return (
-      <div className="space-y-1 py-1" style={{ paddingLeft: depth * 12 + 8 }}>
-        {[1, 2, 3].map((item) => (
-          <Skeleton className="h-5 w-32" key={item} />
-        ))}
-      </div>
-    );
-  }
-
-  const entries = data?.type === "directory" ? data.entries : [];
-
-  return (
-    <ul className="list-none">
-      {entries.map((entry) => {
-        const isDir = entry.type === "dir";
-        const isOpen = Boolean(expanded[entry.path]);
-        const isActive = selectedPath === entry.path;
-        return (
-          <li key={entry.path}>
-            <button
-              className={`group flex w-full items-center gap-1.5 rounded-md py-1 pr-2 text-left text-sm transition-colors ${
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-foreground/80 hover:bg-accent/50"
-              }`}
-              onClick={() =>
-                isDir
-                  ? setExpanded((state) => ({
-                      ...state,
-                      [entry.path]: !state[entry.path],
-                    }))
-                  : onSelect(entry.path)
-              }
-              style={{ paddingLeft: depth * 12 + 8 }}
-              type="button"
-            >
-              {isDir ? (
-                isOpen ? (
-                  <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-                )
-              ) : (
-                <span className="w-3.5 shrink-0" />
-              )}
-              {isDir ? (
-                <Folder className="size-4 shrink-0 text-blue-500" />
-              ) : (
-                <File className="size-4 shrink-0 text-muted-foreground" />
-              )}
-              <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-            </button>
-            {isDir && isOpen && (
-              <TreeLevel
-                depth={depth + 1}
-                gitRef={gitRef}
-                onSelect={onSelect}
-                path={entry.path}
-                repoId={repoId}
-                selectedPath={selectedPath}
-              />
-            )}
-          </li>
-        );
-      })}
-      {entries.length === 0 && (
-        <li
-          className="py-1.5 text-xs text-muted-foreground"
-          style={{ paddingLeft: depth * 12 + 8 }}
-        >
-          Empty directory
-        </li>
-      )}
-    </ul>
+  const paths = useMemo(
+    () =>
+      entries.map((entry) =>
+        entry.type === "dir" ? `${entry.path}/` : entry.path,
+      ),
+    [entries],
   );
+  const { model } = useFileTree({
+    itemHeight: 28,
+    onSelectionChange: (selectedPaths) => {
+      const entry = selectedPaths
+        .map((path) => (path.endsWith("/") ? path.slice(0, -1) : path))
+        .map((path) => entries.find((candidate) => candidate.path === path))
+        .find(
+          (candidate) => Boolean(candidate?.path) && candidate?.type !== "dir",
+        );
+      if (entry) onSelect(entry.path);
+    },
+    paths: [],
+  });
+
+  useEffect(() => {
+    model.resetPaths(paths);
+  }, [model, paths]);
+
+  useEffect(() => {
+    if (!selectedPath) return;
+    model.getItem(selectedPath)?.select();
+  }, [model, selectedPath]);
+
+  return <FileTree className="h-full" model={model} />;
 }
 
 function FileContent({
@@ -184,28 +129,6 @@ function FileContent({
   path: string;
   rich: boolean;
 }) {
-  const [highlighted, setHighlighted] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setHighlighted(null);
-    const isDark = document.documentElement.classList.contains("dark");
-    void getSharedShikiHighlighter().then((highlighter) => {
-      if (cancelled) return;
-      // Shiki inlines its theme background, which clashes with the app surface.
-      const html = highlighter
-        .codeToHtml(content, {
-          lang: languageForPath(path),
-          theme: isDark ? "github-dark" : "github-light",
-        })
-        .replace(/background-color:[^;"]*;?/g, "");
-      setHighlighted(html);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [content, path]);
-
   if (rich) {
     return (
       <div className="prose prose-sm dark:prose-invert max-w-none px-5 py-4">
@@ -214,16 +137,27 @@ function FileContent({
     );
   }
 
-  return highlighted ? (
-    <div
-      className="overflow-x-auto px-4 py-3 text-xs leading-5 [&_code]:!bg-transparent [&_pre]:!bg-transparent [&_pre]:m-0"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is generated from repository text we fetched.
-      dangerouslySetInnerHTML={{ __html: highlighted }}
+  return (
+    <CodeView
+      className="min-h-full"
+      disableWorkerPool
+      items={[
+        {
+          file: {
+            contents: content,
+            lang: languageForPath(path),
+            name: path,
+          },
+          id: path,
+          type: "file",
+        },
+      ]}
+      options={{
+        disableFileHeader: true,
+        overflow: "scroll",
+        themeType: "system",
+      }}
     />
-  ) : (
-    <pre className="overflow-x-auto px-4 py-3 text-xs leading-5">
-      <code>{content}</code>
-    </pre>
   );
 }
 
@@ -231,8 +165,14 @@ function RouteComponent() {
   const { organizationId, repoId } = Route.useParams();
   const { path, ref } = Route.useSearch();
   const { data: repo } = useGetRepo({ id: repoId });
+  const tree = useGetRepoTree({ repoId, ref });
   const [selectedPath, setSelectedPath] = useState(path);
-  const current = useGetRepoContents({ repoId, path: selectedPath, ref });
+  const current = useGetRepoContents({
+    repoId,
+    path: selectedPath,
+    ref,
+    enabled: Boolean(selectedPath),
+  });
   const [view, setView] = useState<"source" | "render">("source");
 
   const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
@@ -242,10 +182,6 @@ function RouteComponent() {
   useEffect(() => {
     setSelectedPath(path);
   }, [path]);
-  useEffect(() => {
-    setView("source");
-  }, [selectedPath]);
-
   return (
     <>
       <PageTitle title={`${repoTitle} · Code`} />
@@ -264,24 +200,39 @@ function RouteComponent() {
           <div className="flex min-h-0 flex-1">
             <aside
               aria-label="File explorer"
-              className="w-64 shrink-0 overflow-y-auto border-r py-2 pr-1 pl-1"
+              className={`${selectedPath ? "hidden md:block" : "block"} w-full shrink-0 overflow-y-auto py-2 pr-1 pl-1 md:w-64 md:border-r`}
             >
               <ErrorBoundary
                 fallbackDescription="The file tree could not be rendered. You can still reload to retry."
                 fallbackTitle="File explorer unavailable"
               >
-                <TreeLevel
-                  depth={0}
-                  gitRef={ref}
-                  onSelect={setSelectedPath}
-                  path=""
-                  repoId={repoId}
-                  selectedPath={selectedPath}
-                />
+                {tree.isLoading ? (
+                  <div className="space-y-1 px-2 py-1">
+                    {[1, 2, 3].map((item) => (
+                      <Skeleton className="h-5 w-32" key={item} />
+                    ))}
+                  </div>
+                ) : tree.error ? (
+                  <p className="px-3 py-2 text-sm text-destructive">
+                    {tree.error.message}
+                  </p>
+                ) : (
+                  <RepoFileTree
+                    entries={tree.data?.entries ?? []}
+                    onSelect={(nextPath) => {
+                      setSelectedPath(nextPath);
+                      setView("source");
+                    }}
+                    selectedPath={selectedPath}
+                  />
+                )}
               </ErrorBoundary>
             </aside>
 
-            <section className="min-w-0 flex-1 overflow-y-auto">
+            <section
+              aria-label="File viewer"
+              className={`${selectedPath ? "block" : "hidden md:block"} min-w-0 flex-1 overflow-y-auto`}
+            >
               <ErrorBoundary
                 className="m-4"
                 fallbackDescription="This file could not be rendered. Pick another file or retry."
@@ -308,6 +259,15 @@ function RouteComponent() {
                 ) : file ? (
                   <>
                     <div className="sticky top-0 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 text-xs text-muted-foreground backdrop-blur">
+                      <Button
+                        className="w-full justify-start md:hidden"
+                        onClick={() => setSelectedPath("")}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        <ArrowLeft className="size-4" />
+                        Back to files
+                      </Button>
                       <span className="flex min-w-0 items-center gap-1.5 truncate">
                         <FileCode2 className="size-3.5" />
                         {file.path}

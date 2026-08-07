@@ -112,6 +112,7 @@
 				"labelCreated": "Etiket oluşturuldu",
 				"labelCreateError": "Etiket oluşturulamadı",
 				"createMore": "Daha fazla oluştur",
+				"discardDraft": "Taslağı sil",
 				"createButton": "Talep Oluştur",
 				"untitledTask": "Başlıksız talep",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Kehribar",
 					"terracotta": "Terakota",
 					"rose": "Gül Kurusu",
-					"crimson": "Koyu Kırmızı"
+					"crimson": "Koyu Kırmızı",
+					"blossom": "Çiçek",
+					"honey": "Bal",
+					"lime": "Misket limonu",
+					"emerald": "Zümrüt",
+					"lagoon": "Lagün",
+					"sky": "Gökyüzü",
+					"ocean": "Okyanus",
+					"indigo": "Çivit",
+					"violet": "Menekşe",
+					"orchid": "Orkide",
+					"cocoa": "Kakao"
 				}
 			}
-		}
+		},
+		"unknown": "Bilinmiyor"
 	},
 	"auth": {
 		"signIn": {
@@ -454,7 +467,9 @@
 			"labelsDescription": "Talep etiketlerini ve etiketleri göster",
 			"priority": "Öncelik",
 			"priorityDescription": "Öncelik göstergelerini görüntüle",
-			"weekStartsOnSaturday": "Cumartesi"
+			"weekStartsOnSaturday": "Cumartesi",
+			"reduceOverlayBlur": "Bulanıklığı azalt",
+			"reduceOverlayBlurDescription": "İletişim kutuları, sayfalar ve komut paleti arkasındaki bulanık arka planı kaldır."
 		},
 		"developerPage": {
 			"pageTitle": "Geliştirici Ayarları",
@@ -560,6 +575,7 @@
 			"iconHint": "Kenar çubuğunda ve proje yüzeylerinde görüntülenir.",
 			"pickIconTitle": "Simge seç",
 			"searchIconsPlaceholder": "Simge ara...",
+			"useEmoji": "Bu emojiyi kullan",
 			"boardNameLabel": "Proje adı",
 			"boardNameHint": "Projenizin adı",
 			"boardNamePlaceholder": "Proje adını girin",
@@ -569,6 +585,8 @@
 			"descriptionLabel": "Açıklama",
 			"descriptionHint": "Projenizin kısa bir açıklaması",
 			"descriptionPlaceholder": "Proje açıklamasını girin",
+			"subtaskDepthLimitLabel": "Alt görev iç içe geçme sınırı",
+			"subtaskDepthLimitHint": "İzin verilen en fazla iç içe alt görev düzeyi (1–4).",
 			"dangerZone": "Tehlikeli bölge",
 			"dangerZoneSubtitle": "Geri alınamaz ve yıkıcı işlemler.",
 			"deleteBoard": "Projeyi sil",
@@ -634,7 +652,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Proje seç",
-			"noBoards": "Proje yok"
+			"noBoards": "Proje yok",
+			"searchBoards": "Panolarda ara..."
 		},
 		"columnEditor": {
 			"toastCreated": "Sütun oluşturuldu",
@@ -1115,7 +1134,9 @@
 				"create": "Oluştur",
 				"views": "Görünümler",
 				"navigation": "Gezinme",
-				"quickSelect": "Hızlı Seçim (açılır pencerelerde)"
+				"quickSelect": "Hızlı Seçim (açılır pencerelerde)",
+				"ticketTitle": "Bilet başlığı",
+				"editor": "Açıklama ve yorumlar"
 			},
 			"items": {
 				"openCommandPalette": "Komut paletini aç",
@@ -1132,11 +1153,59 @@
 				"nextTask": "Sonraki talep",
 				"prevTask": "Önceki talep",
 				"openTask": "Seçili talebi aç",
-				"quickSelectNumber": "Numarayla seçenek seç"
+				"quickSelectNumber": "Numarayla seçenek seç",
+				"titleLabel": "Etiket ekle",
+				"titleMember": "Üye ata",
+				"titlePriority": "Öncelik belirle",
+				"editorMention": "Üye an",
+				"editorSlash": "Blok menüsünü aç",
+				"editorTicket": "Bilete referans ver"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Tablolar",
+			"create": "Tablo oluştur",
+			"noTables": "Henüz tablo yok",
+			"loadError": "Tablolar yüklenemedi.",
+			"retry": "Tekrar dene",
+			"loading": "Tablolar yükleniyor",
+			"tableName": "Tablo adı",
+			"createTitle": "Yeni tablo oluştur",
+			"createDescription": "Boş bir tabloyla başlayın, ardından alanlar ve satırlar ekleyin.",
+			"cancel": "İptal",
+			"createAction": "Tablo oluştur",
+			"loadTableError": "Bu tablo yüklenemedi",
+			"connectionHelp": "Bağlantınızı kontrol edip tekrar deneyin.",
+			"row_one": "{{count}} satır",
+			"row_other": "{{count}} satır",
+			"field_one": "{{count}} alan",
+			"field_other": "{{count}} alan",
+			"empty": "Bu tablo boş",
+			"readOnlyEmpty": "Salt okunur erişiminiz var. Bir düzenleyici ilk alanı ekleyebilir.",
+			"addField": "Alan ekle",
+			"newFieldName": "Yeni alan adı",
+			"noRows": "Henüz satır yok. Veri girmeye başlamak için bir satır ekleyin.",
+			"addRow": "Satır ekle",
+			"deleteField": "Alanı sil",
+			"deleteFieldConfirm": "“{{name}}” alanı silinsin mi?",
+			"renameFieldError": "Alan yeniden adlandırılamadı",
+			"deleteFieldError": "Alan silinemedi",
+			"addFieldError": "Alan eklenemedi",
+			"deleteRowError": "Satır silinemedi",
+			"saveCellError": "Hücre kaydedilemedi",
+			"renameTableError": "Tablo yeniden adlandırılamadı",
+			"addRowError": "Satır eklenemedi",
+			"creating": "Oluşturuluyor…",
+			"created": "Tablo oluşturuldu",
+			"createError": "Tablo oluşturulamadı",
+			"tableOptions": "Tablo seçenekleri",
+			"deleteTable": "Tabloyu sil",
+			"deleteTableConfirm": "Bu tablo ve tüm verileri silinsin mi? Bu işlem geri alınamaz.",
+			"deleted": "Tablo silindi",
+			"deleteTableError": "Tablo silinemedi"
 		}
 	},
 	"notifications": {
@@ -1176,6 +1245,30 @@
 				"title": "Zaman takibi başlatıldı",
 				"contentWithTask": "Şu talepte zaman takibi başlatıldı: {{taskTitle}}",
 				"contentWithoutTask": "Bir talepte zaman takibi başlatıldı"
+			},
+			"task_title_changed": {
+				"title": "Talep başlığı değiştirildi",
+				"content": "“{{oldTitle}}”, “{{newTitle}}” olarak yeniden adlandırıldı"
+			},
+			"task_description_changed": {
+				"title": "Talep açıklaması güncellendi",
+				"content": "“{{taskTitle}}” açıklaması güncellendi"
+			},
+			"task_priority_changed": {
+				"title": "Talep önceliği değiştirildi",
+				"content": "“{{taskTitle}}” önceliği {{oldPriority}} değerinden {{newPriority}} değerine değiştirildi"
+			},
+			"task_due_date_changed": {
+				"title": "Talep son tarihi değiştirildi",
+				"content": "“{{taskTitle}}” son tarihi güncellendi"
+			},
+			"task_flag_raised": {
+				"title": "Talebe işaret eklendi",
+				"content": "“{{taskTitle}}” için {{flagTypeName}} işareti eklendi"
+			},
+			"task_flag_resolved": {
+				"title": "Talepteki işaret çözüldü",
+				"content": "“{{taskTitle}}” için {{flagTypeName}} işareti çözüldü"
 			}
 		}
 	},
@@ -1276,8 +1369,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Taslak kaydedildi",
+			"deleteDraft": "Taslağı sil"
+		},
+		"statusRun": "bunu {{from}} durumundan {{to}} durumuna taşıdı",
+		"statusRunNoOp": "durumu birkaç kez değiştirdi, {{status}} durumuna geri döndü",
+		"statusRunSteps": "{{count}} adım",
+		"resolutionNote": "Çözüm notu"
 	},
 	"tasks": {
 		"status": {
@@ -1314,6 +1413,7 @@
 			"noActivity": "Aktivite bulunamadı",
 			"openInFullPage": "Tam sayfada aç",
 			"titlePlaceholder": "Başlık eklemek için tıklayın",
+			"titleSaving": "Başlık kaydediliyor…",
 			"addDescription": "Açıklama ekle...",
 			"editor": {
 				"ariaLabel": "Talep açıklama düzenleyici",
@@ -1408,7 +1508,8 @@
 					},
 					"onlyYoutubeInline": "Yalnızca YouTube URL'leri gömülebilir. Bağlantı modunu kullanın."
 				}
-			}
+			},
+			"close": "Talep detaylarını kapat"
 		},
 		"entity": {
 			"task": "Talep"
@@ -1430,7 +1531,8 @@
 				"blocked_by": "engellenen",
 				"related": "ilişkilidir"
 			},
-			"otherBoard": "diğer pano"
+			"otherBoard": "diğer pano",
+			"blockedBy": "Engelleyen"
 		},
 		"subtasks": {
 			"title": "Alt talepler",
@@ -1507,8 +1609,20 @@
 					"amber": "Kehribar",
 					"terracotta": "Terakota",
 					"rose": "Gül Kurusu",
-					"crimson": "Koyu Kırmızı"
-				}
+					"crimson": "Koyu Kırmızı",
+					"blossom": "Çiçek",
+					"honey": "Bal",
+					"lime": "Misket limonu",
+					"emerald": "Zümrüt",
+					"lagoon": "Lagün",
+					"sky": "Gökyüzü",
+					"ocean": "Okyanus",
+					"indigo": "Çivit",
+					"violet": "Menekşe",
+					"orchid": "Orkide",
+					"cocoa": "Kakao"
+				},
+				"repoSource": "GitHub ile eşitlenmiş etiket"
 			}
 		},
 		"backlog": {
@@ -1535,7 +1649,12 @@
 				"dueThisWeek": "Bu hafta bitiyor",
 				"dueNextWeek": "Önümüzdeki hafta bitiyor",
 				"noDueDate": "Bitiş tarihi yok"
-			}
+			},
+			"moveAllDialogTitle": "Planlanan tüm biletler taşınsın mı?",
+			"moveAllDialogDescription": "{{count}} planlanan bilet Yapılacaklar’a taşınacak.",
+			"moveAllDialogDescription_other": "{{count}} planlanan bilet Yapılacaklar’a taşınacak.",
+			"moveAllDialogConfirm": "{{count}} bileti taşı",
+			"moveAllDialogConfirm_other": "{{count}} bileti taşı"
 		},
 		"sort": {
 			"label": "Sırala",
@@ -1551,6 +1670,22 @@
 				"title": "Başlık",
 				"number": "Talep numarası"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Filtrele",
@@ -1583,10 +1718,26 @@
 			"noTasksFound": "Talep bulunamadı",
 			"noTasksMatch": "\"{{query}}\" ile eşleşen zamanlanmış talep yok",
 			"taskHeader": "Talep",
+			"unscheduledHint": "Tarih yok - planlamak için sürükleyin",
+			"dragToScheduleHint": "Bu talebi planlamak için zaman çizelgesinde sürükleyin",
 			"updateDatesError": "Talep tarihleri güncellenemedi",
 			"resizeStart": "Başlangıç tarihini yeniden boyutlandır",
 			"resizeDue": "Bitiş tarihini yeniden boyutlandır",
-			"taskAriaLabel": "{{title}} — açmak veya taşımak için sürükleyin"
+			"taskAriaLabel": "{{title}} — açmak veya taşımak için sürükleyin",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Kilometre taşı yok"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Talep Silinsin mi?",
@@ -1596,7 +1747,8 @@
 			"error": "Talep silinemedi"
 		},
 		"archive": {
-			"success": "{{count}} talep arşivlendi"
+			"success": "{{count}} talep arşivlendi",
+			"error": "Talepler arşivlenemedi"
 		},
 		"listView": {
 			"addTask": "Talep ekle",
@@ -1624,11 +1776,17 @@
 			"updateSuccess": "Talep bitiş tarihi başarıyla güncellendi",
 			"updateError": "Talep bitiş tarihi güncellenemedi",
 			"clearSuccess": "Talep bitiş tarihi temizlendi",
-			"clearError": "Bitiş tarihi temizlenemedi"
+			"clearError": "Bitiş tarihi temizlenemedi",
+			"outcome": {
+				"early": "Erken",
+				"on-time": "Zamanında",
+				"late": "Geç"
+			}
 		},
 		"labels": {
 			"label": "Etiketler",
-			"empty": "Kullanılabilir etiket yok"
+			"empty": "Kullanılabilir etiket yok",
+			"fromRepository": "Bağlı depodan"
 		},
 		"update": {
 			"success": "Talep başarıyla güncellendi",
@@ -1641,7 +1799,8 @@
 		"actions": {
 			"archive": "Arşivle",
 			"markAsPlanned": "Planlandı olarak işaretle",
-			"delete": "Sil..."
+			"delete": "Sil...",
+			"unarchive": "Arşivden çıkar"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} seçili",
@@ -1674,6 +1833,38 @@
 			"searchActions": "İşlem ara...",
 			"noActionsFound": "İşlem bulunamadı.",
 			"changeStatus": "Durumu Değiştir"
+		},
+		"titleTokens": {
+			"labels": "Etiketler",
+			"members": "Üyeler",
+			"priority": "Öncelik",
+			"hint": "Etiket için #, üye için @, öncelik için ! yazın"
+		},
+		"boardSync": {
+			"syncedWith": "{{repo}} ile eşitlendi"
+		},
+		"groupBy": {
+			"dueDate": "Son tarih",
+			"noDueDate": "Son tarih yok",
+			"noLabel": "Etiket yok",
+			"status": "Durum",
+			"milestone": "Kilometre taşı",
+			"noStatus": "Durum yok"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Son tarih"
+			}
+		},
+		"nest": {
+			"willNestUnder": "{{title}} altına yerleştir",
+			"releaseToNest": "Bu talebi {{title}} altına yerleştirmek için bırakın.",
+			"cannotNestHere": "Buraya yerleştirilemez",
+			"cannotNestReason": "Bu talep seçilen hedefin altına yerleştirilemez. Başka bir üst talep seçin.",
+			"unknownTarget": "bu talep"
+		},
+		"bulkActions": {
+			"label": "Toplu İşlemler"
 		}
 	},
 	"invitations": {
@@ -1788,7 +1979,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1802,7 +1993,8 @@
 		},
 		"members": {
 			"pageTitle": "Üyeler",
-			"inviteMember": "Üye davet et"
+			"inviteMember": "Üye davet et",
+			"agentsCredentialsHint": "Erişim anahtarlarını ver ve iptal et"
 		},
 		"inviteModal": {
 			"title": "Ekip Üyesi Davet Et",

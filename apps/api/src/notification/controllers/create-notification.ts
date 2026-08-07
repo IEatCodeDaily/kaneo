@@ -21,12 +21,25 @@ async function createNotification({
   resourceId?: string;
   resourceType?: string;
 }) {
+  const taskChangeTypes = new Set([
+    "task_status_changed",
+    "task_title_changed",
+    "task_description_changed",
+    "task_priority_changed",
+    "task_due_date_changed",
+    "task_flag_raised",
+    "task_flag_resolved",
+    "task_unassigned",
+    "task_moved",
+    "task_label_assigned",
+    "task_label_unassigned",
+  ]);
   const preferenceKey =
     type === "task_assignee_changed" || type === "task_created"
       ? "taskAssignmentEnabled"
       : type === "task_comment" || type === "task_mention"
         ? "taskCommentEnabled"
-        : type === "task_status_changed"
+        : taskChangeTypes.has(type ?? "")
           ? "taskStatusChangeEnabled"
           : type === "due_date_reminder" || type === "task_overdue"
             ? "dueDateReminderEnabled"

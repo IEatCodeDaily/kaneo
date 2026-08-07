@@ -14,7 +14,7 @@ function RouteComponent() {
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">Connections</h1>
           <p className="text-muted-foreground">
-            Manage the GitHub App installed for this organization. It grants
+            Manage the GitHub Apps installed for this organization. They grant
             Kaneo access to repositories, issues, and pull requests.
           </p>
         </div>

@@ -3,7 +3,7 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import type { Highlighter } from "shiki";
+import type { Highlighter } from "@/lib/shiki-highlighter";
 
 type ShikiCodeBlockOptions = {
   defaultLanguage: string;

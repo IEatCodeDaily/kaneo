@@ -19,6 +19,11 @@ export const boardSchema = v.object({
   createdAt: v.date(),
   isPublic: v.nullable(v.boolean()),
   archivedAt: v.nullable(v.date()),
+  subtaskDepthLimit: v.number(),
+  /** #226: persisted order for regular task status choices. */
+  taskStatusOrder: v.array(v.string()),
+  /** #226: persisted Backlog order; Triage defaults above Planned. */
+  backlogStatusOrder: v.array(v.string()),
 });
 
 export const taskSchema = v.object({
@@ -27,8 +32,17 @@ export const taskSchema = v.object({
   position: v.nullable(v.number()),
   number: v.nullable(v.number()),
   userId: v.nullable(v.string()),
+  teamId: v.nullable(v.string()),
+  milestoneId: v.nullable(v.string()),
   title: v.string(),
   description: v.nullable(v.string()),
+  descriptionHistory: v.array(
+    v.object({
+      content: v.nullable(v.string()),
+      editedAt: v.string(),
+      userId: v.string(),
+    }),
+  ),
   status: v.string(),
   priority: v.picklist([
     "no-priority",
@@ -39,6 +53,12 @@ export const taskSchema = v.object({
   ] as const),
   startDate: v.optional(v.date()),
   dueDate: v.optional(v.date()),
+  /**
+   * #226: set when the task is archived. Archival is separate from status — an
+   * archived task retains its real workflow status and is hidden everywhere
+   * except the backlog's archived section.
+   */
+  archivedAt: v.nullish(v.date()),
   createdAt: v.date(),
 });
 
@@ -60,6 +80,9 @@ export const activitySchema = v.object({
   createdAt: v.date(),
   userId: v.nullable(v.string()),
   content: v.nullable(v.string()),
+  editHistory: v.array(
+    v.object({ content: v.string(), editedAt: v.string(), userId: v.string() }),
+  ),
   eventData: v.nullable(v.record(v.string(), v.unknown())),
   externalUserName: v.nullable(v.string()),
   externalUserAvatar: v.nullable(v.string()),

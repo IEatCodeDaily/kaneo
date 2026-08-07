@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import db from "../../../database";
-import { taskTable } from "../../../database/schema";
+import { repoIssueTable, repoTable, taskTable } from "../../../database/schema";
+import { syncFollowersForIssue } from "../../../repo/controllers/sync-task-from-issue";
 import { findExternalLink, updateExternalLink } from "../services/link-manager";
 import { findAllIntegrationsByRepo } from "../services/task-service";
 import { formatTaskDescriptionFromIssue } from "../utils/format";
@@ -36,6 +37,26 @@ export async function handleIssueEdited(payload: IssueEditedPayload) {
       `Issue #${issue.number} edited but no title/body changes detected`,
     );
     return;
+  }
+
+  const [mirroredIssue] = await db
+    .select({ id: repoIssueTable.id })
+    .from(repoIssueTable)
+    .innerJoin(repoTable, eq(repoIssueTable.repoId, repoTable.id))
+    .where(
+      and(
+        eq(repoTable.owner, repository.owner.login),
+        eq(repoTable.name, repository.name),
+        eq(repoIssueTable.number, issue.number),
+      ),
+    )
+    .limit(1);
+  if (mirroredIssue) {
+    await syncFollowersForIssue({
+      repoIssueId: mirroredIssue.id,
+      title: issue.title,
+      body: issue.body,
+    });
   }
 
   const integrations = await findAllIntegrationsByRepo(

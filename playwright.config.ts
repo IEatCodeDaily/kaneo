@@ -14,8 +14,15 @@ export default defineConfig({
   // Serial: specs mutate shared GitHub fixtures and Kaneo task links.
   workers: 1,
   reporter: process.env.CI
-    ? [["github"], ["list"], ["html", { outputFolder: "tests/e2e/.report", open: "never" }]]
-    : [["list"], ["html", { outputFolder: "tests/e2e/.report", open: "never" }]],
+    ? [
+        ["github"],
+        ["list"],
+        ["html", { outputFolder: "tests/e2e/.report", open: "never" }],
+      ]
+    : [
+        ["list"],
+        ["html", { outputFolder: "tests/e2e/.report", open: "never" }],
+      ],
   globalSetup: "./tests/e2e/global-setup.ts",
   use: {
     baseURL,

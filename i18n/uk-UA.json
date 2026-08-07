@@ -112,6 +112,7 @@
 				"labelCreated": "Мітку створено",
 				"labelCreateError": "Не вдалося створити мітку",
 				"createMore": "Створити ще",
+				"discardDraft": "Видалити чернетку",
 				"createButton": "Створити завдання",
 				"untitledTask": "Завдання без назви",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Бурштин",
 					"terracotta": "Теракота",
 					"rose": "Троянда",
-					"crimson": "Багряний"
+					"crimson": "Багряний",
+					"blossom": "Квіт",
+					"honey": "Мед",
+					"lime": "Лайм",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Індиго",
+					"violet": "Фіолет",
+					"orchid": "Орхідея",
+					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Невідомо"
 	},
 	"auth": {
 		"signIn": {
@@ -453,7 +466,9 @@
 			"labelsDescription": "Показувати мітки та теґи завдань",
 			"priority": "Пріоритет",
 			"priorityDescription": "Відображати індикатори пріоритету",
-			"weekStartsOnSaturday": "Субота"
+			"weekStartsOnSaturday": "Субота",
+			"reduceOverlayBlur": "Зменшити розмиття",
+			"reduceOverlayBlurDescription": "Прибрати розмитий фон за діалогами, панелями та палітрою команд."
 		},
 		"developerPage": {
 			"pageTitle": "Налаштування розробника",
@@ -559,6 +574,7 @@
 			"iconHint": "Відображається в бічній панелі та на поверхнях проєкту.",
 			"pickIconTitle": "Обрати іконку",
 			"searchIconsPlaceholder": "Пошук іконок...",
+			"useEmoji": "Використати це емодзі",
 			"boardNameLabel": "Назва проєкту",
 			"boardNameHint": "Назва вашого проєкту",
 			"boardNamePlaceholder": "Введіть назву проєкту",
@@ -568,6 +584,8 @@
 			"descriptionLabel": "Опис",
 			"descriptionHint": "Короткий опис вашого проєкту",
 			"descriptionPlaceholder": "Введіть опис проєкту",
+			"subtaskDepthLimitLabel": "Глибина вкладеності підзавдань",
+			"subtaskDepthLimitHint": "Максимальна кількість рівнів вкладених підзавдань (1–4).",
 			"dangerZone": "Небезпечна зона",
 			"dangerZoneSubtitle": "Незворотні та руйнівні дії.",
 			"deleteBoard": "Видалити проєкт",
@@ -631,7 +649,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Обрати проєкт",
-			"noBoards": "Немає проєктів"
+			"noBoards": "Немає проєктів",
+			"searchBoards": "Пошук дощок..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колонку створено",
@@ -1111,7 +1130,9 @@
 				"create": "Створення",
 				"views": "Перегляди",
 				"navigation": "Навігація",
-				"quickSelect": "Швидкий вибір (у спливаючих вікнах)"
+				"quickSelect": "Швидкий вибір (у спливаючих вікнах)",
+				"ticketTitle": "Заголовок тікета",
+				"editor": "Опис і коментарі"
 			},
 			"items": {
 				"openCommandPalette": "Відкрити командну палітру",
@@ -1128,11 +1149,59 @@
 				"nextTask": "Наступне завдання",
 				"prevTask": "Попереднє завдання",
 				"openTask": "Відкрити обране завдання",
-				"quickSelectNumber": "Обрати варіант за номером"
+				"quickSelectNumber": "Обрати варіант за номером",
+				"titleLabel": "Додати мітку",
+				"titleMember": "Призначити учасника",
+				"titlePriority": "Задати пріоритет",
+				"editorMention": "Згадати учасника",
+				"editorSlash": "Відкрити меню блоків",
+				"editorTicket": "Послатися на тікет"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Таблиці",
+			"create": "Створити таблицю",
+			"noTables": "Таблиць ще немає",
+			"loadError": "Не вдалося завантажити таблиці.",
+			"retry": "Повторити",
+			"loading": "Завантаження таблиць",
+			"tableName": "Назва таблиці",
+			"createTitle": "Створити нову таблицю",
+			"createDescription": "Почніть із порожньої таблиці, а потім додайте поля та рядки.",
+			"cancel": "Скасувати",
+			"createAction": "Створити таблицю",
+			"loadTableError": "Не вдалося завантажити цю таблицю",
+			"connectionHelp": "Перевірте з’єднання та повторіть спробу.",
+			"row_one": "{{count}} рядок",
+			"row_other": "{{count}} рядків",
+			"field_one": "{{count}} поле",
+			"field_other": "{{count}} полів",
+			"empty": "Ця таблиця порожня",
+			"readOnlyEmpty": "Ви маєте доступ лише для читання. Редактор може додати перше поле.",
+			"addField": "Додати поле",
+			"newFieldName": "Назва нового поля",
+			"noRows": "Рядків ще немає. Додайте рядок, щоб почати вводити дані.",
+			"addRow": "Додати рядок",
+			"deleteField": "Видалити поле",
+			"deleteFieldConfirm": "Видалити поле «{{name}}»?",
+			"renameFieldError": "Не вдалося перейменувати поле",
+			"deleteFieldError": "Не вдалося видалити поле",
+			"addFieldError": "Не вдалося додати поле",
+			"deleteRowError": "Не вдалося видалити рядок",
+			"saveCellError": "Не вдалося зберегти клітинку",
+			"renameTableError": "Не вдалося перейменувати таблицю",
+			"addRowError": "Не вдалося додати рядок",
+			"creating": "Створення…",
+			"created": "Таблицю створено",
+			"createError": "Не вдалося створити таблицю",
+			"tableOptions": "Параметри таблиці",
+			"deleteTable": "Видалити таблицю",
+			"deleteTableConfirm": "Видалити цю таблицю та всі її дані? Цю дію неможливо скасувати.",
+			"deleted": "Таблицю видалено",
+			"deleteTableError": "Не вдалося видалити таблицю"
 		}
 	},
 	"notifications": {
@@ -1152,7 +1221,7 @@
 		"events": {
 			"task_created": {
 				"title": "Створено нове завдання",
-				"content": "Завдання «{{taskTitle}}» створено"
+				"content": "Тікет «{{taskTitle}}» створено"
 			},
 			"organization_created": {
 				"title": "Робочий простір створено",
@@ -1160,16 +1229,40 @@
 			},
 			"task_status_changed": {
 				"title": "Статус завдання змінено",
-				"content": "Статус завдання «{{taskTitle}}» змінено з «{{oldStatus}}» на «{{newStatus}}»"
+				"content": "Статус тікета «{{taskTitle}}» змінено з «{{oldStatus}}» на «{{newStatus}}»"
 			},
 			"task_assignee_changed": {
 				"title": "Завдання призначено вам",
-				"content": "Вас призначено на завдання: {{taskTitle}}"
+				"content": "Вас призначено на тікет: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Відлік часу розпочато",
-				"contentWithTask": "Відлік часу розпочато для завдання: {{taskTitle}}",
+				"contentWithTask": "Відлік часу розпочато для тікета: {{taskTitle}}",
 				"contentWithoutTask": "Відлік часу розпочато для завдання"
+			},
+			"task_title_changed": {
+				"title": "Назву тікета змінено",
+				"content": "«{{oldTitle}}» перейменовано на «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Опис тікета оновлено",
+				"content": "Опис тікета «{{taskTitle}}» оновлено"
+			},
+			"task_priority_changed": {
+				"title": "Пріоритет тікета змінено",
+				"content": "Пріоритет тікета «{{taskTitle}}» змінено з {{oldPriority}} на {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Термін виконання тікета змінено",
+				"content": "Термін виконання тікета «{{taskTitle}}» оновлено"
+			},
+			"task_flag_raised": {
+				"title": "На тікеті встановлено прапорець",
+				"content": "Прапорець {{flagTypeName}} встановлено на тікеті «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Прапорець на тікеті знято",
+				"content": "Прапорець {{flagTypeName}} знято з тікета «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1268,8 +1361,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Чернетку збережено",
+			"deleteDraft": "Видалити чернетку"
+		},
+		"statusRun": "перемістив це з {{from}} до {{to}}",
+		"statusRunNoOp": "кілька разів змінював статус і повернувся до {{status}}",
+		"statusRunSteps": "кроків: {{count}}",
+		"resolutionNote": "Примітка до вирішення"
 	},
 	"tasks": {
 		"status": {
@@ -1304,6 +1403,7 @@
 			"noActivity": "Активність не знайдено",
 			"openInFullPage": "Відкрити на повну сторінку",
 			"titlePlaceholder": "Натисніть, щоб додати назву",
+			"titleSaving": "Збереження назви…",
 			"addDescription": "Додати опис...",
 			"editor": {
 				"ariaLabel": "Редактор опису завдання",
@@ -1398,7 +1498,8 @@
 					},
 					"onlyYoutubeInline": "Можна вбудовувати лише URL-адреси YouTube. Натомість використовуйте режим посилання."
 				}
-			}
+			},
+			"close": "Закрити деталі тікета"
 		},
 		"entity": {
 			"task": "Завдання"
@@ -1419,7 +1520,8 @@
 				"blocks": "блокує",
 				"related": "пов'язано з"
 			},
-			"otherBoard": "інша дошка"
+			"otherBoard": "інша дошка",
+			"blockedBy": "Заблоковано"
 		},
 		"subtasks": {
 			"title": "Підзавдання",
@@ -1496,8 +1598,20 @@
 					"amber": "Бурштин",
 					"terracotta": "Теракота",
 					"rose": "Троянда",
-					"crimson": "Багряний"
-				}
+					"crimson": "Багряний",
+					"blossom": "Квіт",
+					"honey": "Мед",
+					"lime": "Лайм",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Індиго",
+					"violet": "Фіолет",
+					"orchid": "Орхідея",
+					"cocoa": "Какао"
+				},
+				"repoSource": "Мітка, синхронізована з GitHub"
 			}
 		},
 		"backlog": {
@@ -1524,7 +1638,12 @@
 				"dueThisWeek": "Термін цього тижня",
 				"dueNextWeek": "Термін наступного тижня",
 				"noDueDate": "Без дати завершення"
-			}
+			},
+			"moveAllDialogTitle": "Перемістити всі заплановані тікети?",
+			"moveAllDialogDescription": "{{count}} запланований тікет буде переміщено до «До виконання».",
+			"moveAllDialogDescription_other": "{{count}} запланованих тікетів буде переміщено до «До виконання».",
+			"moveAllDialogConfirm": "Перемістити {{count}} тікет",
+			"moveAllDialogConfirm_other": "Перемістити {{count}} тікетів"
 		},
 		"sort": {
 			"label": "Сортування",
@@ -1540,6 +1659,22 @@
 				"title": "Назва",
 				"number": "Номер завдання"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Фільтрувати за",
@@ -1572,10 +1707,26 @@
 			"noTasksFound": "Завдання не знайдено",
 			"noTasksMatch": "Жодне заплановане завдання не відповідає «{{query}}»",
 			"taskHeader": "Завдання",
+			"unscheduledHint": "Немає дат — перетягніть, щоб запланувати",
+			"dragToScheduleHint": "Перетягніть шкалою часу, щоб запланувати це завдання",
 			"updateDatesError": "Не вдалося оновити дати завдання",
 			"resizeStart": "Змінити дату початку",
 			"resizeDue": "Змінити дату завершення",
-			"taskAriaLabel": "{{title}} — відкрити або перетягнути для переміщення"
+			"taskAriaLabel": "{{title}} — відкрити або перетягнути для переміщення",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Без етапу"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Видалити завдання?",
@@ -1585,7 +1736,8 @@
 			"error": "Не вдалося видалити завдання"
 		},
 		"archive": {
-			"success": "Архівовано {{count}} завдань"
+			"success": "Архівовано {{count}} завдань",
+			"error": "Не вдалося архівувати тікети"
 		},
 		"listView": {
 			"addTask": "Додати завдання",
@@ -1615,11 +1767,17 @@
 			"updateSuccess": "Дату завершення завдання успішно оновлено",
 			"updateError": "Не вдалося оновити дату завершення завдання",
 			"clearSuccess": "Дату завершення завдання очищено",
-			"clearError": "Не вдалося очистити дату завершення"
+			"clearError": "Не вдалося очистити дату завершення",
+			"outcome": {
+				"early": "Раніше",
+				"on-time": "Вчасно",
+				"late": "Із запізненням"
+			}
 		},
 		"labels": {
 			"label": "Мітки",
-			"empty": "Немає доступних міток"
+			"empty": "Немає доступних міток",
+			"fromRepository": "Зі зв’язаного репозиторію"
 		},
 		"update": {
 			"success": "Завдання успішно оновлено",
@@ -1632,7 +1790,8 @@
 		"actions": {
 			"archive": "Архівувати",
 			"markAsPlanned": "Позначити як заплановане",
-			"delete": "Видалити..."
+			"delete": "Видалити...",
+			"unarchive": "Розархівувати"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} обрано",
@@ -1665,6 +1824,38 @@
 			"searchActions": "Пошук дій...",
 			"noActionsFound": "Дій не знайдено.",
 			"changeStatus": "Змінити статус"
+		},
+		"titleTokens": {
+			"labels": "Мітки",
+			"members": "Учасники",
+			"priority": "Пріоритет",
+			"hint": "# — мітки, @ — учасники, ! — пріоритет"
+		},
+		"boardSync": {
+			"syncedWith": "Синхронізовано з {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Термін виконання",
+			"noDueDate": "Без терміну виконання",
+			"noLabel": "Без мітки",
+			"status": "Статус",
+			"milestone": "Етап",
+			"noStatus": "Без статусу"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Кінцевий термін"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Вкласти в {{title}}",
+			"releaseToNest": "Відпустіть, щоб вкласти цей тікет у {{title}}.",
+			"cannotNestHere": "Тут вкласти не можна",
+			"cannotNestReason": "Цей тікет не можна вкласти в цю ціль. Виберіть інший батьківський тікет.",
+			"unknownTarget": "цей тікет"
+		},
+		"bulkActions": {
+			"label": "Масові дії"
 		}
 	},
 	"invitations": {
@@ -1790,7 +1981,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1803,7 +1994,8 @@
 		},
 		"members": {
 			"pageTitle": "Учасники",
-			"inviteMember": "Запросити учасника"
+			"inviteMember": "Запросити учасника",
+			"agentsCredentialsHint": "Видача та відкликання ключів доступу"
 		},
 		"inviteModal": {
 			"title": "Запросити учасника команди",

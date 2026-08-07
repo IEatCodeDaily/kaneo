@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { validator } from "hono-openapi";
 import * as v from "valibot";
 import db, { schema } from "../database";
+import getSettings from "../utils/get-settings";
 import { isInstanceAdmin } from "../utils/is-instance-admin";
 
 const bodySchema = v.object({
@@ -29,6 +30,15 @@ const oidcTeamSync = new Hono<{
 }>();
 
 oidcTeamSync.use("*", async (c, next) => {
+  // Claim mapping only exists in single-org mode. Refusing here means the
+  // multi-org instance cannot read or write mapping config at all, so the
+  // previous all-organizations read is unreachable rather than merely unused.
+  if (!getSettings().singleOrgMode) {
+    throw new HTTPException(404, {
+      message:
+        "OIDC claim mapping is only available in single-organization mode",
+    });
+  }
   if (!(await isInstanceAdmin(c))) {
     throw new HTTPException(403, {
       message: "Instance administrator required",

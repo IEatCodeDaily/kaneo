@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import db from "../../../database";
-import { labelTable, boardTable } from "../../../database/schema";
+import { boardTable, labelTable } from "../../../database/schema";
 import { findAllIntegrationsByRepo } from "../services/task-service";
 
 type LabelCreatedPayload = {
@@ -57,6 +57,7 @@ export async function handleLabelCreated(payload: LabelCreatedPayload) {
         name: label.name,
         color,
         organizationId: board.organizationId,
+        source: "repo",
       })
       .onConflictDoNothing({
         target: [labelTable.organizationId, labelTable.name],

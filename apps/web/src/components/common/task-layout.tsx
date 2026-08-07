@@ -3,15 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import TaskCrumbSelect from "@/components/common/header/task-crumb-select";
 import Layout from "@/components/common/layout";
-import { KbdSequence } from "@/components/ui/kbd";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
+import TaskTopbarMilestone from "@/components/task/task-topbar-milestone";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
@@ -58,27 +50,6 @@ export default function TaskLayout({
         <Layout.Header className="h-11 border-border/80 px-2">
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SidebarTrigger className="-ml-1 h-7 w-7 cursor-pointer text-foreground/85 hover:text-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="flex items-center gap-2 text-[10px]">
-                      Toggle sidebar
-                      <KbdSequence
-                        keys={[
-                          shortcuts.sidebar.prefix,
-                          shortcuts.sidebar.toggle,
-                        ]}
-                      />
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <div className="h-4 w-px shrink-0 bg-border/80" />
-
               <div className="min-w-0 items-center gap-1.5 flex">
                 <button
                   type="button"
@@ -103,6 +74,12 @@ export default function TaskLayout({
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
+              <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
+              {/*
+                #146 / #91: board access avatars moved to the BOARD topbar.
+                They describe who can see the board, so repeating them on every
+                ticket header was duplicated, misplaced information.
+              */}
               {headerActions}
             </div>
           </div>

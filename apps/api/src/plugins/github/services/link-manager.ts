@@ -1,6 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../../database";
-import { externalLinkTable } from "../../../database/schema";
+import {
+  externalLinkTable,
+  repoIssueTable,
+  repoTable,
+  taskRepoItemLinkTable,
+} from "../../../database/schema";
 
 export type CreateExternalLinkParams = {
   taskId: string;
@@ -40,6 +45,39 @@ export async function createExternalLink(
   }
 
   return link;
+}
+
+/** Keep repo-side task visibility in parity with integration bookkeeping. */
+export async function linkTaskToRepoIssue({
+  taskId,
+  owner,
+  repo,
+  issueNumber,
+}: {
+  taskId: string;
+  owner: string;
+  repo: string;
+  issueNumber: number;
+}) {
+  const [issue] = await db
+    .select({ id: repoIssueTable.id })
+    .from(repoIssueTable)
+    .innerJoin(repoTable, eq(repoTable.id, repoIssueTable.repoId))
+    .where(
+      and(
+        eq(repoTable.owner, owner),
+        eq(repoTable.name, repo),
+        eq(repoIssueTable.number, issueNumber),
+      ),
+    )
+    .limit(1);
+  if (!issue) return null;
+  const [link] = await db
+    .insert(taskRepoItemLinkTable)
+    .values({ taskId, repoIssueId: issue.id })
+    .onConflictDoNothing()
+    .returning();
+  return link ?? null;
 }
 
 export async function findExternalLink(

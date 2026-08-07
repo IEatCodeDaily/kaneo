@@ -24,14 +24,14 @@ export async function syncRepoFromWebhook({
     ),
   });
 
-  if (!repo || !repo.isActive) return false;
+  if (!repo?.isActive) return false;
   await syncRepo(repo.id);
   return true;
 }
 
-export function getWebhookRepoSlug(payload: unknown):
-  | { owner: string; name: string }
-  | undefined {
+export function getWebhookRepoSlug(
+  payload: unknown,
+): { owner: string; name: string } | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const repository = (payload as { repository?: unknown }).repository;
   if (!repository || typeof repository !== "object") return undefined;
@@ -47,14 +47,10 @@ export function getWebhookRepoSlug(payload: unknown):
 
 export async function syncGitHubWebhookPayload(payload: unknown) {
   const slug = getWebhookRepoSlug(payload);
-  return slug
-    ? syncRepoFromWebhook({ provider: "github", ...slug })
-    : false;
+  return slug ? syncRepoFromWebhook({ provider: "github", ...slug }) : false;
 }
 
 export async function syncGiteaWebhookPayload(payload: unknown) {
   const slug = getWebhookRepoSlug(payload);
-  return slug
-    ? syncRepoFromWebhook({ provider: "gitea", ...slug })
-    : false;
+  return slug ? syncRepoFromWebhook({ provider: "gitea", ...slug }) : false;
 }

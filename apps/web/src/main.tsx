@@ -58,7 +58,9 @@ function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
 const router = createRouter({
   routeTree,
   defaultPreload: "intent",
-  defaultPreloadStaleTime: 0,
+  // Preloaded route data stays fresh briefly so hovering a tab and then
+  // clicking it doesn't immediately refetch what was just preloaded.
+  defaultPreloadStaleTime: 10_000,
   defaultErrorComponent: RouteErrorComponent,
   context: {
     user: null,

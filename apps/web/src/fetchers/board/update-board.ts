@@ -13,10 +13,32 @@ async function updateBoard({
   slug,
   description,
   isPublic,
+  subtaskDepthLimit,
+  taskStatusOrder,
+  backlogStatusOrder,
+  defaultAssigneeId,
+  defaultAssigneeTeamId,
 }: UpdateBoardRequest) {
+  const json: Record<string, unknown> = {
+    name,
+    icon,
+    slug,
+    description,
+    isPublic,
+  };
+  if (subtaskDepthLimit !== undefined)
+    json.subtaskDepthLimit = subtaskDepthLimit;
+  if (taskStatusOrder !== undefined) json.taskStatusOrder = taskStatusOrder;
+  if (backlogStatusOrder !== undefined)
+    json.backlogStatusOrder = backlogStatusOrder;
+  if (defaultAssigneeId !== undefined)
+    json.defaultAssigneeId = defaultAssigneeId;
+  if (defaultAssigneeTeamId !== undefined)
+    json.defaultAssigneeTeamId = defaultAssigneeTeamId;
+
   const response = await client.board[":id"].$put({
     param: { id },
-    json: { name, icon, slug, description, isPublic },
+    json: json as UpdateBoardRequest extends { json: infer J } ? J : never,
   });
 
   if (!response.ok) {
@@ -25,7 +47,6 @@ async function updateBoard({
   }
 
   const data = await response.json();
-
   return data;
 }
 

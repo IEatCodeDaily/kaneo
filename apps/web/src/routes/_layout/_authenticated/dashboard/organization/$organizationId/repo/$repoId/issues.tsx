@@ -1,6 +1,5 @@
 import {
   createFileRoute,
-  Link,
   Outlet,
   useLocation,
   useNavigate,
@@ -9,9 +8,10 @@ import { CircleDot, MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import RepoLayout from "@/components/common/repo-layout";
 import PageTitle from "@/components/page-title";
-import RepoLabelList from "@/components/repo/repo-label-list";
+import RepoListRow, {
+  repoListRowIconClassName,
+} from "@/components/repo/repo-list-row";
 import RepoMasterDetail from "@/components/repo/repo-master-detail";
-import RepoStateBadge from "@/components/repo/repo-state-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Empty,
@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium } from "@/lib/format";
 import type { RepoIssueStateFilter } from "@/types/repo";
 
@@ -67,96 +68,99 @@ function RouteComponent() {
           list={
             <div className="min-h-0">
               <div className="px-3 py-2">
-              <Tabs value={state}>
-                <TabsList className="bg-sidebar gap-2">
-                  {STATE_FILTERS.map((filter) => (
-                    <TabsTrigger
-                      className="[&[data-state=active]]:rounded-md [&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:bg-card"
-                      key={filter}
-                      onClick={() =>
-                        navigate({
-                          to: ".",
-                          search: { state: filter },
-                          replace: true,
-                        })
-                      }
-                      value={filter}
-                    >
-                      {t(`organization:repos.stateFilter.${filter}`)}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-
-            {isLoading && <RepoListSkeleton />}
-            {!isLoading && (!data || data.data.length === 0) && (
-              <Empty className="min-h-[50vh]">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <CircleDot />
-                  </EmptyMedia>
-                  <EmptyTitle>
-                    {t("organization:repos.issues.emptyTitle")}
-                  </EmptyTitle>
-                  <EmptyDescription>
-                    {t("organization:repos.issues.emptyDescription")}
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            )}
-            {!isLoading && data && data.data.length > 0 && (
-              <div className="flex flex-col divide-y">
-                {data.data.map((issue) => (
-                  <Link
-                    activeProps={{ className: "bg-muted" }}
-                    className="flex items-start gap-3 px-3 py-3 transition-colors hover:bg-muted/60"
-                    key={issue.id}
-                    params={{
-                      organizationId,
-                      repoId,
-                      number: String(issue.number),
-                    }}
-                    to="/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
-                  >
-                    <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <div className="min-w-0 truncate text-sm font-medium">
-                        {issue.title}
-                      </div>
-                      <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-xs text-muted-foreground">
-                        <RepoStateBadge state={issue.state} />
-                        <span>#{issue.number}</span>
-                        {issue.authorLogin && (
-                          <span className="flex items-center gap-1.5">
-                            <Avatar className="size-4">
-                              {issue.authorAvatarUrl && (
-                                <AvatarImage src={issue.authorAvatarUrl} />
-                              )}
-                              <AvatarFallback className="text-[8px]">
-                                {issue.authorLogin.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            {issue.authorLogin}
-                          </span>
-                        )}
-                        {issue.externalCreatedAt && (
-                          <span>
-                            {formatDateMedium(issue.externalCreatedAt)}
-                          </span>
-                        )}
-                        {issue.commentCount > 0 && (
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {issue.commentCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                <Tabs value={state}>
+                  <TabsList className="bg-sidebar gap-2">
+                    {STATE_FILTERS.map((filter) => (
+                      <TabsTrigger
+                        className="[&[data-state=active]]:rounded-md [&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:bg-card"
+                        key={filter}
+                        onClick={() =>
+                          navigate({
+                            to: ".",
+                            search: { state: filter },
+                            replace: true,
+                          })
+                        }
+                        value={filter}
+                      >
+                        {t(`organization:repos.stateFilter.${filter}`)}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
               </div>
-            )}
+
+              {isLoading && <RepoListSkeleton />}
+              {!isLoading && (!data || data.data.length === 0) && (
+                <Empty className="min-h-[50vh]">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <CircleDot />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                      {t("organization:repos.issues.emptyTitle")}
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      {t("organization:repos.issues.emptyDescription")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+              {!isLoading && data && data.data.length > 0 && (
+                <div className="flex flex-col divide-y">
+                  {data.data.map((issue) => (
+                    <RepoListRow
+                      icon={
+                        <CircleDot className={repoListRowIconClassName()} />
+                      }
+                      key={issue.id}
+                      labels={issue.labels ?? []}
+                      meta={
+                        <>
+                          {issue.authorLogin && (
+                            <span className="flex items-center gap-1.5">
+                              <Avatar
+                                className={`size-4 ${getAvatarTone(issue.authorLogin)}`}
+                              >
+                                {issue.authorAvatarUrl && (
+                                  <AvatarImage src={issue.authorAvatarUrl} />
+                                )}
+                                <AvatarFallback className="bg-transparent text-[8px]">
+                                  {issue.authorLogin.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              {issue.authorLogin}
+                            </span>
+                          )}
+                          {issue.externalCreatedAt && (
+                            <span>
+                              {formatDateMedium(issue.externalCreatedAt)}
+                            </span>
+                          )}
+                          {issue.commentCount > 0 && (
+                            <span className="flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              {issue.commentCount}
+                            </span>
+                          )}
+                        </>
+                      }
+                      number={issue.number}
+                      params={{
+                        organizationId,
+                        repoId,
+                        number: String(issue.number),
+                      }}
+                      state={issue.state}
+                      title={issue.title}
+                      to="/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
+                      // Carry the active filter across, or the detail route's
+                      // validateSearch falls back to "open" and the list resets.
+                      search={{ state }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           }
         />

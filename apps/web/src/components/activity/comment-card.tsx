@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Github, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Github, History, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CommentEditor from "@/components/activity/comment-editor";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import useDeleteComment from "@/hooks/mutations/comment/use-delete-comment";
 import useUpdateComment from "@/hooks/mutations/comment/use-update-comment";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
@@ -34,6 +35,7 @@ type CommentCardProps = {
     image?: string | null;
   } | null;
   createdAt: string;
+  editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
   externalSource?: string | null;
   externalUrl?: string | null;
 };
@@ -44,6 +46,7 @@ export default function CommentCard({
   content,
   user,
   createdAt,
+  editHistory = [],
   externalSource,
   externalUrl,
 }: CommentCardProps) {
@@ -62,6 +65,7 @@ export default function CommentCard({
     isFromGitHub && user?.name ? `https://github.com/${user.name}` : null;
   const commentUrl = externalUrl || null;
   const fullTimestamp = formatDateTime(createdAt);
+  const avatarTone = getAvatarTone(user?.id, user?.email);
 
   const handleEdit = useCallback(() => {
     setEditedContent(content);
@@ -114,9 +118,9 @@ export default function CommentCard({
           <HoverCard>
             <HoverCardTrigger>
               <div className="flex cursor-pointer items-center gap-2">
-                <Avatar className="h-6 w-6">
+                <Avatar className={`h-6 w-6 ${avatarTone}`}>
                   <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                  <AvatarFallback className="bg-muted text-xs font-medium">
+                  <AvatarFallback className="bg-transparent text-xs font-medium">
                     {getInitials(user?.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -127,9 +131,9 @@ export default function CommentCard({
             </HoverCardTrigger>
             <HoverCardContent className="w-64 p-3">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className={`h-10 w-10 ${avatarTone}`}>
                   <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-                  <AvatarFallback className="bg-muted text-xs font-medium">
+                  <AvatarFallback className="bg-transparent text-xs font-medium">
                     {getInitials(user?.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -254,6 +258,34 @@ export default function CommentCard({
             onCancelShortcut={isEditing ? handleCancel : undefined}
           />
         </div>
+
+        {editHistory.length > 0 && !isEditing && (
+          <details className="border-border/70 border-t px-3 py-2 text-xs">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-muted-foreground">
+              <History className="size-3" />
+              {t("activity:comment.editHistory", { count: editHistory.length })}
+            </summary>
+            <div className="mt-2 space-y-2">
+              {[...editHistory].reverse().map((revision) => (
+                <div
+                  key={`${revision.editedAt}-${revision.userId}`}
+                  className="rounded-md bg-muted/50 p-2"
+                >
+                  <div className="mb-1 text-muted-foreground">
+                    {formatDateTime(revision.editedAt)}
+                  </div>
+                  <CommentEditor
+                    value={revision.content}
+                    readOnly
+                    taskId={taskId}
+                    uploadSurface="comment"
+                    className="kaneo-comment-viewer"
+                  />
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         {isEditing && (
           <div className="flex items-center justify-end gap-2 border-border/70 border-t bg-card/60 px-3 py-2">

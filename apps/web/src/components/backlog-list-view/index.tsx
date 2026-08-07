@@ -19,22 +19,35 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
 import { Archive, ChevronRight, Clock, Flag, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
+import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
+import {
+  type BacklogSection,
+  backlogSectionOf,
+  isArchived,
+  sectionCrossPayload,
+} from "@/lib/task-archival";
+import { toast } from "@/lib/toast";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
 import useBoardStore from "@/store/board";
 import type { BoardWithTasks } from "@/types/board";
 import type Task from "@/types/task";
 import BacklogBulkToolbar from "../bulk-selection/backlog-bulk-toolbar";
-import CreateTaskModal from "../shared/modals/create-task-modal";
+
 import BacklogTaskRow from "./backlog-task-row";
+
+const CreateTaskModal = lazy(
+  () => import("../shared/modals/create-task-modal"),
+);
 
 type BacklogListViewProps = {
   board?: BoardWithTasks;
@@ -46,7 +59,9 @@ function BacklogListView({
   disableDragDrop = false,
 }: BacklogListViewProps) {
   const { t } = useTranslation();
-  const { mutate: updateTask } = useUpdateTask();
+  const { isPending: isReorderPending, mutate: reorderTasks } =
+    useReorderTasks();
+  const { mutateAsync: setArchived } = useSetTaskArchived();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -54,6 +69,10 @@ function BacklogListView({
     focusPrevious,
     focusedTaskId,
     clearFocus,
+    clearSelection,
+    isSelectMode,
+    selectedTaskIds,
+    selectTasks,
   } = useBacklogBulkSelectionStore();
   const navigate = useNavigate();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -86,7 +105,8 @@ function BacklogListView({
 
   useEffect(() => {
     clearFocus();
-  }, [clearFocus]);
+    return () => clearSelection();
+  }, [clearFocus, clearSelection]);
 
   useRegisterShortcuts({
     shortcuts: {
@@ -152,6 +172,8 @@ function BacklogListView({
     const plannedTasks = board?.plannedTasks || [];
     const archivedTasks = board?.archivedTasks || [];
 
+    // membership is decided by which bucket the API returned the task in, which
+    // is driven by `archivedAt` — never by status.
     if (plannedTasks.some((task) => task.id === taskId)) {
       setOverColumnId("planned");
     } else if (archivedTasks.some((task) => task.id === taskId)) {
@@ -179,6 +201,15 @@ function BacklogListView({
 
     if (!activeTask) return;
 
+    /*
+      #226: which section a ticket is in is decided by `archivedAt`, NOT status.
+      Archived tickets retain their real workflow status, so the old
+      `activeTask.status === "planned"` test mis-classified any archived ticket
+      whose status was not literally "planned" and moved the wrong row.
+    */
+    const sourceIsArchived = isArchived(activeTask);
+    const sourceSectionId = backlogSectionOf(activeTask);
+
     let targetSection = overId;
     if (overId !== "planned" && overId !== "archived") {
       if (plannedTasks.some((task) => task.id === overId)) {
@@ -190,11 +221,12 @@ function BacklogListView({
       }
     }
 
+    const crossesSection = sourceSectionId !== targetSection;
+
     const updatedBoard = produce(board, (draft) => {
-      const sourceSection =
-        activeTask.status === "planned"
-          ? draft.plannedTasks || []
-          : draft.archivedTasks || [];
+      const sourceSection = sourceIsArchived
+        ? draft.archivedTasks || []
+        : draft.plannedTasks || [];
 
       const sourceTaskIndex = sourceSection.findIndex(
         (task) => task.id === activeTaskId,
@@ -203,19 +235,18 @@ function BacklogListView({
 
       if (!task) return;
 
-      if (activeTask.status === "planned") {
-        draft.plannedTasks =
-          draft.plannedTasks?.filter((t) => t.id !== activeTaskId) || [];
-      } else {
+      if (sourceIsArchived) {
         draft.archivedTasks =
           draft.archivedTasks?.filter((t) => t.id !== activeTaskId) || [];
+      } else {
+        draft.plannedTasks =
+          draft.plannedTasks?.filter((t) => t.id !== activeTaskId) || [];
       }
 
-      if (activeTask.status === targetSection) {
-        const targetSectionTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
+      if (!crossesSection) {
+        const targetSectionTasks = sourceIsArchived
+          ? draft.archivedTasks || []
+          : draft.plannedTasks || [];
 
         let destinationIndex = targetSectionTasks.findIndex(
           (t) => t.id === overId,
@@ -225,60 +256,77 @@ function BacklogListView({
           destinationIndex += 1;
         }
 
-        if (activeTask.status === "planned") {
-          draft.plannedTasks?.splice(destinationIndex, 0, task);
-        } else {
+        if (sourceIsArchived) {
           draft.archivedTasks?.splice(destinationIndex, 0, task);
-        }
-
-        const finalTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
-
-        finalTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            position: index,
-          });
-        });
-      } else {
-        task.status = targetSection;
-
-        if (targetSection === "planned") {
-          draft.plannedTasks = [...(draft.plannedTasks || []), task];
         } else {
-          draft.archivedTasks = [...(draft.archivedTasks || []), task];
+          draft.plannedTasks?.splice(destinationIndex, 0, task);
         }
+        return;
+      }
 
-        const updatedTasks =
-          targetSection === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
+      /*
+        Crossing between Planned and Archived toggles `archivedAt` only. Status
+        is deliberately left alone: dragging a Done ticket into Archived must
+        keep it Done, and dragging it back out must not invent a status.
 
-        updatedTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            status: targetSection,
-            position: index,
-          });
-        });
+        Moving OUT of Archived into Planned is the one case that also changes
+        status, because Planned is a real status the ticket must actually adopt.
+      */
+      const crossPayload = sectionCrossPayload({
+        task,
+        targetSection: targetSection as BacklogSection,
+      });
+      task.status = crossPayload.status;
 
-        const sourceTasks =
-          activeTask.status === "planned"
-            ? draft.plannedTasks || []
-            : draft.archivedTasks || [];
-
-        sourceTasks.forEach((t, index) => {
-          updateTask({
-            ...t,
-            position: index,
-          });
-        });
+      if (crossPayload.archived) {
+        task.archivedAt = new Date().toISOString();
+        draft.archivedTasks = [...(draft.archivedTasks || []), task];
+      } else {
+        task.archivedAt = null;
+        draft.plannedTasks = [...(draft.plannedTasks || []), task];
       }
     });
 
     setBoard(updatedBoard);
+
+    if (crossesSection) {
+      setArchived({
+        taskId: activeTaskId,
+        archived: targetSection === "archived",
+        boardId: board.id,
+      }).catch((error) => {
+        setBoard(board);
+        toast.error(
+          error instanceof Error ? error.message : t("tasks:archive.error"),
+        );
+      });
+    }
+
+    /*
+      Reorder persists position within the sections. Archived rows keep their
+      own status, so this sends each task's ACTUAL status rather than the
+      section name — sending "archived" here is what produced the
+      `Invalid status "archived"` 400.
+    */
+    const affected = crossesSection
+      ? [updatedBoard.plannedTasks || [], updatedBoard.archivedTasks || []]
+      : [
+          targetSection === "planned"
+            ? updatedBoard.plannedTasks || []
+            : updatedBoard.archivedTasks || [],
+        ];
+
+    reorderTasks({
+      boardId: board.id,
+      board: updatedBoard,
+      tasks: affected.flatMap((tasks) =>
+        tasks.map((task, position) => ({
+          id: task.id,
+          position,
+          status: task.status,
+        })),
+      ),
+    });
   };
 
   const toggleSection = (sectionId: string) => {
@@ -346,6 +394,28 @@ function BacklogListView({
           </button>
 
           <div className="flex items-center gap-1">
+            {isSelectMode && tasks.length > 0 && (
+              <Checkbox
+                aria-label={`Select all ${title} tickets`}
+                checked={
+                  tasks.every((task) => selectedTaskIds.has(task.id))
+                    ? true
+                    : tasks.some((task) => selectedTaskIds.has(task.id))
+                      ? "indeterminate"
+                      : false
+                }
+                onCheckedChange={(checked) => {
+                  const sectionIds = new Set(tasks.map((task) => task.id));
+                  selectTasks(
+                    checked
+                      ? [...new Set([...selectedTaskIds, ...sectionIds])]
+                      : [...selectedTaskIds].filter(
+                          (id) => !sectionIds.has(id),
+                        ),
+                  );
+                }}
+              />
+            )}
             {showAddButton && (
               <button
                 type="button"
@@ -371,19 +441,12 @@ function BacklogListView({
               items={tasks}
               strategy={verticalListSortingStrategy}
             >
-              <AnimatePresence initial={false} mode="popLayout">
-                {tasks.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    <BacklogTaskRow task={task} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              {/* No per-row motion wrapper — see list-view/index.tsx: one
+                  Framer Motion instance per row dominates mount cost on large
+                  boards. */}
+              {tasks.map((task) => (
+                <BacklogTaskRow key={task.id} task={task} />
+              ))}
             </SortableContext>
 
             {tasks.length === 0 && (
@@ -470,14 +533,19 @@ function BacklogListView({
         )}
       </DragOverlay>
 
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        boardId={board?.id}
-        onClose={() => setIsTaskModalOpen(false)}
-        status={activeColumn ?? "planned"}
-      />
+      {isTaskModalOpen && (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            boardId={board?.id}
+            onClose={() => setIsTaskModalOpen(false)}
+            status={activeColumn ?? "planned"}
+          />
+        </Suspense>
+      )}
 
       <BacklogBulkToolbar />
+      <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );
 }

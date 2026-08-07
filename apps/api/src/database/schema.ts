@@ -1,7 +1,9 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -173,6 +175,27 @@ export const organizationTable = pgTable("organization", {
   metadata: text("metadata"),
   description: text("description"),
   reposEnabled: boolean("repos_enabled").default(false).notNull(),
+  tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+  /*
+    Org-wide default member privilege for resources without an explicit
+    user/team grant, when the resource itself doesn't set its own baseline
+    (board/repo/data_table `org_privilege`, NULL = follow this default).
+    "manage" preserves the historical behaviour where ungranted resources
+    were organization-wide.
+  */
+  defaultResourcePrivilege: text("default_resource_privilege")
+    .default("manage")
+    .notNull(),
+  aiEnabled: boolean("ai_enabled").default(false).notNull(),
+  aiDefaultTokenLimit: integer("ai_default_token_limit")
+    .default(1024)
+    .notNull(),
+  aiDefaultCharacterLimit: integer("ai_default_character_limit")
+    .default(4000)
+    .notNull(),
+  aiProviderBaseUrl: text("ai_provider_base_url"),
+  aiProviderModel: text("ai_provider_model"),
+  aiProviderApiKey: text("ai_provider_api_key"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
 });
 
@@ -229,6 +252,8 @@ export const organizationMemberTable = pgTable(
         onDelete: "cascade",
       }),
     role: text("role").default("member").notNull(),
+    aiTokenLimit: integer("ai_token_limit"),
+    aiCharacterLimit: integer("ai_character_limit"),
     joinedAt: timestamp("joined_at", { mode: "date" }).notNull(),
   },
   (table) => [
@@ -246,6 +271,26 @@ export const teamTable = pgTable(
       .notNull()
       .references(() => organizationTable.id, { onDelete: "cascade" }),
     source: text("source").notNull().default("kaneo"),
+    /*
+      Team avatar glyph. Nullable rather than defaulted so existing teams keep
+      rendering their initials-based avatar until a glyph is chosen, instead of
+      every team suddenly showing the same generic icon. Accepts a lucide name
+      from `board-icons` or an emoji — `lib/resolve-icon` already resolves both
+      for boards and repos.
+    */
+    icon: text("icon"),
+    /*
+      Sub-teams: a team may nest under another team in the same organization.
+      Membership resolves TRANSITIVELY at query time — a member of a sub-team
+      counts as a member of every ancestor team, but no team_member rows are
+      materialized for ancestors, so leaving the sub-team cannot leave stale
+      parent rows behind. SET NULL: deleting a parent promotes its children to
+      top-level teams rather than cascading them away.
+    */
+    parentTeamId: text("parent_team_id").references(
+      (): AnyPgColumn => teamTable.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(
       () => /* @__PURE__ */ new Date(),
@@ -314,7 +359,7 @@ export const resourceGrantTable = pgTable(
   (table) => [
     check(
       "resource_grant_resource_type_check",
-      sql`${table.resourceType} in ('board', 'repo')`,
+      sql`${table.resourceType} in ('board', 'repo', 'table')`,
     ),
     check(
       "resource_grant_privilege_check",
@@ -422,12 +467,153 @@ export const boardTable = pgTable(
     isPublic: boolean("is_public").default(false),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     lastTaskNumber: integer("last_task_number").notNull().default(0),
+    /*
+      Per-resource organization baseline: what every ordinary org member gets
+      for THIS board when they hold no explicit user/team grant. NULL = follow
+      the organization's defaultResourcePrivilege ("follow org"). Explicit
+      grants and owner/admin manage always win over this value.
+    */
+    orgPrivilege: text("org_privilege"),
+    /**
+     * #226: per-board ordering for statuses shown in regular Task surfaces.
+     * JSON is intentional: this is a small ordered list of global, append-only
+     * slugs, not board-owned status definitions. Missing future statuses are
+     * appended canonically by readers, so configured boards never hide them.
+     */
+    taskStatusOrder: jsonb("task_status_order")
+      .$type<string[]>()
+      .default([
+        "to-do",
+        "in-progress",
+        "in-review",
+        "done",
+        "canceled",
+        "duplicate",
+      ])
+      .notNull(),
+    /** #226: Triage defaults above Planned, exactly as specified. */
+    backlogStatusOrder: jsonb("backlog_status_order")
+      .$type<string[]>()
+      .default(["triage", "planned"])
+      .notNull(),
+    // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
+    // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
+    subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
+    /*
+      Default assignee for new tickets on this board. When a task is created
+      without an explicit userId/teamId, the board default fills in. Either
+      column can be set independently (user-only, team-only, or both).
+      NULL = no default (the pre-feature behaviour).
+    */
+    defaultAssigneeId: text("default_assignee_id").references(
+      () => userTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
+    defaultAssigneeTeamId: text("default_assignee_team_id").references(
+      () => teamTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
   },
   (table) => [
     unique("board_organization_id_id_unique").on(
       table.organizationId,
       table.id,
     ),
+  ],
+);
+
+export const dataTableTable = pgTable(
+  "data_table",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    icon: text("icon"),
+    // Per-resource org baseline; NULL = follow the organization default.
+    orgPrivilege: text("org_privilege"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("data_table_organization_idx").on(table.organizationId)],
+);
+
+export const dataTableFieldTable = pgTable(
+  "data_table_field",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => dataTableTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    position: integer("position").notNull().default(0),
+    type: text("type").notNull().default("text"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("data_table_field_table_position_idx").on(
+      table.tableId,
+      table.position,
+    ),
+    check("data_table_field_type_check", sql`${table.type} = 'text'`),
+  ],
+);
+
+export const dataTableRowTable = pgTable(
+  "data_table_row",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => dataTableTable.id, { onDelete: "cascade" }),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("data_table_row_table_position_idx").on(
+      table.tableId,
+      table.position,
+    ),
+  ],
+);
+
+export const dataTableCellTable = pgTable(
+  "data_table_cell",
+  {
+    rowId: text("row_id")
+      .notNull()
+      .references(() => dataTableRowTable.id, { onDelete: "cascade" }),
+    fieldId: text("field_id")
+      .notNull()
+      .references(() => dataTableFieldTable.id, { onDelete: "cascade" }),
+    value: text("value"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("data_table_cell_row_field_unique").on(table.rowId, table.fieldId),
+    index("data_table_cell_field_idx").on(table.fieldId),
   ],
 );
 
@@ -490,6 +676,37 @@ export const workflowRuleTable = pgTable(
   ],
 );
 
+export const milestoneTable = pgTable(
+  "milestone",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    description: text("description"),
+    dueDate: timestamp("due_date", { mode: "date" }),
+    status: text("status").notNull().default("planned"),
+    position: integer("position").notNull().default(0),
+    completedAt: timestamp("completed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("milestone_boardId_idx").on(table.boardId),
+    index("milestone_dueDate_idx").on(table.dueDate),
+    unique("milestone_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
 export const taskTable = pgTable(
   "task",
   {
@@ -505,17 +722,51 @@ export const taskTable = pgTable(
     position: integer("position").default(0),
     number: integer("number").default(1),
     userId: text("assignee_id").references(() => userTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    teamId: text("team_assignee_id").references(() => teamTable.id, {
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
     title: text("title").notNull(),
     description: text("description"),
+    descriptionHistory: jsonb("description_history")
+      .$type<
+        Array<{
+          content: string | null;
+          editedAt: string;
+          userId: string;
+          sealed?: boolean;
+        }>
+      >()
+      .default([])
+      .notNull(),
     status: text("status").notNull().default("to-do"),
     columnId: text("column_id").references(() => columnTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
     priority: text("priority").default("low"),
+    milestoneId: text("milestone_id").references(() => milestoneTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    /**
+     * #226: archival is ORTHOGONAL to status, not a status value.
+     *
+     * Archiving used to overwrite `status` with "archived", which destroyed the
+     * ticket's real workflow state. Per the ticket: "Archive is a separate
+     * status to hide it from all views. Archived item retains its status."
+     * Archived tasks are hidden everywhere except the backlog's archived
+     * dropdown; `status` keeps meaning workflow state only.
+     */
+    archivedAt: timestamp("archived_at", { mode: "date" }),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
+    deletedBy: text("deleted_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
@@ -528,8 +779,93 @@ export const taskTable = pgTable(
     index("task_boardId_idx").on(table.boardId),
     index("task_dueDate_idx").on(table.dueDate),
     index("task_assigneeId_idx").on(table.userId),
+    index("task_teamAssigneeId_idx").on(table.teamId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_board_number_unique").on(table.boardId, table.number),
+  ],
+);
+
+export const flagTypeTable = pgTable(
+  "flag_type",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    color: text("color"),
+    icon: text("icon"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("flag_type_boardId_idx").on(table.boardId),
+    unique("flag_type_board_id_name_unique").on(table.boardId, table.name),
+  ],
+);
+
+export const taskFlagTable = pgTable(
+  "task_flag",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    flagTypeId: text("flag_type_id")
+      .notNull()
+      .references(() => flagTypeTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Who raised the flag.
+    flaggedBy: text("flagged_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    // Flags are aimed at a user OR a team; exactly one target is expected.
+    targetUserId: text("target_user_id").references(() => userTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    targetTeamId: text("target_team_id").references(() => teamTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    note: text("note"),
+    // Unflagging keeps the row and records who resolved it. #107: unflagging
+    // requires a mandatory explanation, stored alongside the resolver.
+    resolveNote: text("resolve_note"),
+    resolvedAt: timestamp("resolved_at", { mode: "date" }),
+    resolvedBy: text("resolved_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("task_flag_taskId_idx").on(table.taskId),
+    index("task_flag_flagTypeId_idx").on(table.flagTypeId),
+    index("task_flag_targetUserId_idx").on(table.targetUserId),
+    index("task_flag_targetTeamId_idx").on(table.targetTeamId),
+    index("task_flag_resolvedAt_idx").on(table.resolvedAt),
   ],
 );
 
@@ -616,6 +952,10 @@ export const activityTable = pgTable(
       onUpdate: "cascade",
     }),
     content: text("content"),
+    editHistory: jsonb("edit_history")
+      .$type<Array<{ content: string; editedAt: string; userId: string }>>()
+      .default([])
+      .notNull(),
     eventData: jsonb("event_data"),
     externalUserName: text("external_user_name"),
     externalUserAvatar: text("external_user_avatar"),
@@ -645,12 +985,16 @@ export const assetTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    boardId: text("board_id")
-      .notNull()
-      .references(() => boardTable.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      }),
+    // Task media belongs to a board; repository media belongs to a repo. At
+    // least one context is required by the asset_owner_context_check migration.
+    boardId: text("board_id").references(() => boardTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+    repoId: text("repo_id").references(() => repoTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     taskId: text("task_id").references(() => taskTable.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
@@ -674,6 +1018,7 @@ export const assetTable = pgTable(
   (table) => [
     index("asset_organizationId_idx").on(table.organizationId),
     index("asset_boardId_idx").on(table.boardId),
+    index("asset_repoId_idx").on(table.repoId),
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_createdBy_idx").on(table.createdBy),
@@ -688,6 +1033,12 @@ export const labelTable = pgTable(
       .primaryKey(),
     name: text("name").notNull(),
     color: text("color").notNull(),
+    /**
+     * Where the label came from. `kaneo` is a label a user created in Kaneo,
+     * `repo` is one that arrived with an issue imported from a linked
+     * repository. Defaults to `kaneo` so pre-existing rows stay valid.
+     */
+    source: text("source").$type<"kaneo" | "repo">().notNull().default("kaneo"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -712,6 +1063,44 @@ export const labelTable = pgTable(
     uniqueIndex("label_organization_name_unique")
       .on(table.organizationId, table.name)
       .where(sql`${table.taskId} is null`),
+  ],
+);
+
+export const taskTemplateTable = pgTable(
+  "task_template",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    data: jsonb("data")
+      .$type<{
+        title: string;
+        description: string | null;
+        priority: string | null;
+        startDate: string | null;
+        dueDate: string | null;
+        status?: string | null;
+        labels?: string[];
+        startDateOffset?: string | null;
+        dueDateOffset?: string | null;
+      }>()
+      .notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("task_template_organization_id_idx").on(table.organizationId),
+    unique("task_template_organization_name_unique").on(
+      table.organizationId,
+      table.name,
+    ),
   ],
 );
 
@@ -942,13 +1331,21 @@ export const externalLinkTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    integrationId: text("integration_id")
-      .notNull()
-      .references(() => integrationTable.id, {
+    // #265: nullable so a plain user-pasted link can exist as a resource.
+    // Integration-owned links (synced GitHub issues, PRs, branches) still set
+    // this; a manually linked URL has no integration to point at.
+    integrationId: text("integration_id").references(
+      () => integrationTable.id,
+      {
         onDelete: "cascade",
         onUpdate: "cascade",
-      }),
+      },
+    ),
     resourceType: text("resource_type").notNull(),
+    // #265: stays NOT NULL. For an integration link this is the upstream id
+    // (issue/PR number); for a manual link the URL *is* its own identifier.
+    // Widening this to nullable broke 14 integration sync call sites that
+    // legitimately treat it as a string, for no gain.
     externalId: text("external_id").notNull(),
     url: text("url").notNull(),
     title: text("title"),
@@ -1232,6 +1629,8 @@ export const repoTable = pgTable(
     // Provider auth/config: GitHub installationId, Gitea baseUrl + token ref…
     config: jsonb("config").$type<Record<string, unknown>>(),
     isActive: boolean("is_active").default(true).notNull(),
+    // Per-resource org baseline; NULL = follow the organization default.
+    orgPrivilege: text("org_privilege"),
     lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
@@ -1317,6 +1716,12 @@ export const repoPullRequestTable = pgTable(
     baseBranch: text("base_branch"),
     labels: jsonb("labels").$type<Array<{ name: string; color?: string }>>(),
     commentCount: integer("comment_count").default(0).notNull(),
+    // GitHub's pull-request LIST endpoint omits diff counts; they exist only on
+    // the single-pull-request resource. Persist them so the list can render a
+    // delta without an extra request per row.
+    additions: integer("additions"),
+    deletions: integer("deletions"),
+    changedFiles: integer("changed_files"),
     url: text("url").notNull(),
     externalCreatedAt: timestamp("external_created_at", { mode: "date" }),
     externalUpdatedAt: timestamp("external_updated_at", { mode: "date" }),
@@ -1360,16 +1765,34 @@ export const taskRepoItemLinkTable = pgTable(
       () => repoPullRequestTable.id,
       { onDelete: "cascade", onUpdate: "cascade" },
     ),
+    // A Synced Task follows a GitHub issue; ordinary task links remain
+    // references only. Pull requests are never syncable.
+    syncEnabled: boolean("sync_enabled").notNull().default(false),
+    // Keep a broken follower visible rather than silently deleting its task.
+    syncBrokenAt: timestamp("sync_broken_at", { mode: "date" }),
+    syncBrokenReason: text("sync_broken_reason"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [
     index("task_repo_item_link_task_idx").on(table.taskId),
     index("task_repo_item_link_issue_idx").on(table.repoIssueId),
     index("task_repo_item_link_pull_request_idx").on(table.repoPullRequestId),
-    unique("task_repo_item_link_task_issue_unique").on(table.taskId, table.repoIssueId),
+    unique("task_repo_item_link_task_issue_unique").on(
+      table.taskId,
+      table.repoIssueId,
+    ),
     unique("task_repo_item_link_task_pull_request_unique").on(
       table.taskId,
       table.repoPullRequestId,
+    ),
+    // A task has one unambiguous content source, while an issue can be followed
+    // by any number of tasks across boards.
+    uniqueIndex("task_single_synced_issue_idx")
+      .on(table.taskId)
+      .where(sql`${table.syncEnabled}`),
+    check(
+      "task_repo_item_link_sync_issue_only",
+      sql`not ${table.syncEnabled} or ${table.repoIssueId} is not null`,
     ),
   ],
 );

@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactRenderer } from "@tiptap/react";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
+import { canOpenReferenceMenu } from "@/lib/editor-reference-query";
 import MentionList, {
   type MentionListRef,
   type MentionMember,
@@ -10,6 +11,46 @@ import MentionList, {
 type MentionSuggestionOptions = {
   getMembers: () => MentionMember[];
 };
+
+/** How many members the dropdown shows at once. */
+export const MENTION_RESULT_LIMIT = 8;
+
+/**
+ * Filters organization members for an `@query`.
+ *
+ * An empty query is the eager-open case: typing `@` alone already lists
+ * members instead of waiting for a first search character, mirroring `#`.
+ */
+export function filterMentionMembers(
+  members: MentionMember[],
+  query: string,
+): MentionMember[] {
+  const q = (query ?? "").trim().toLowerCase();
+  return (members ?? [])
+    .filter((member) => (member?.label ?? "").toLowerCase().includes(q))
+    .slice(0, MENTION_RESULT_LIMIT);
+}
+
+/**
+ * The `@` suggestion configuration, without the tiptap plugin wrapper.
+ *
+ * Exported so the trigger rules (`allow`, `items`) can be asserted directly —
+ * mounting a full tiptap editor in jsdom to prove a guard is not worth it.
+ */
+export function createMentionSuggestionConfig(
+  getMembers: () => MentionMember[],
+): Pick<SuggestionOptions, "char" | "allowSpaces" | "allow" | "items"> {
+  return {
+    char: "@",
+    allowSpaces: false,
+    // #114 reuses the #103 gate: only a focused, editable editor may open the
+    // menu. Hydrating a description that already contains `you@example.com`
+    // or a literal `@name` re-runs the matcher on a programmatic setContent,
+    // which would otherwise pop the mention dropdown open on load.
+    allow: ({ editor }) => canOpenReferenceMenu(editor),
+    items: ({ query }) => filterMentionMembers(getMembers(), query),
+  };
+}
 
 // Adds an @-triggered autocomplete of organization members to an editor. On select
 // it inserts a `kaneoMention` node (which round-trips through Markdown). Built on
@@ -26,15 +67,8 @@ export const MentionSuggestion = Extension.create<MentionSuggestionOptions>({
     const getMembers = this.options.getMembers;
 
     const suggestion: Omit<SuggestionOptions, "editor"> = {
-      char: "@",
+      ...createMentionSuggestionConfig(getMembers),
       pluginKey: new PluginKey("kaneoMentionSuggestion"),
-      allowSpaces: false,
-      items: ({ query }) => {
-        const q = query.toLowerCase();
-        return getMembers()
-          .filter((m) => m.label?.toLowerCase().includes(q))
-          .slice(0, 8);
-      },
       command: ({ editor, range, props }) => {
         const member = props as unknown as MentionMember;
         editor
@@ -94,3 +128,5 @@ export const MentionSuggestion = Extension.create<MentionSuggestionOptions>({
     return [Suggestion({ editor: this.editor, ...suggestion })];
   },
 });
+
+export default MentionSuggestion;

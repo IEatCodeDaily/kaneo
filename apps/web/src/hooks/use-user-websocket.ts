@@ -1,13 +1,11 @@
 import { windowId } from "@kaneo/libs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { getApiUrl } from "@/fetchers/get-api-url";
+import { apiWebSocketUrl } from "@/fetchers/get-ws-url";
 import { authClient } from "@/lib/auth-client";
 
 export function getUserWsUrl() {
-  const base = getApiUrl("ws");
-  const wsBase = base.replace(/^http/, "ws");
-  return `${wsBase}/user?windowId=${encodeURIComponent(windowId)}`;
+  return apiWebSocketUrl(`user?windowId=${encodeURIComponent(windowId)}`);
 }
 
 const MAX_RETRIES = 5;
@@ -82,12 +80,30 @@ export function useUserWebSocket() {
     connect();
 
     return () => {
-      retriesRef.current = MAX_RETRIES; // prevent reconnect after unmount
+      retriesRef.current = MAX_RETRIES; // Prevent reconnect after unmount
       clearPing();
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      wsRef.current?.close();
+      const socket = wsRef.current;
+      wsRef.current = null;
+      if (!socket) return;
+      // Detach handlers first: closing a CONNECTING socket fires onclose, which
+      // would otherwise schedule a reconnect for a teardown we requested.
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      if (socket.readyState === WebSocket.CONNECTING) {
+        // Aborting a handshake mid-flight is what makes the browser log
+        // "connection interrupted while the page was loading" (StrictMode's
+        // double-invoke in dev). Wait for the handshake, then close cleanly.
+        socket.addEventListener("open", () => socket.close(1000), {
+          once: true,
+        });
+        return;
+      }
+      socket.close(1000);
     };
   }, [session?.user?.id, queryClient]);
 }

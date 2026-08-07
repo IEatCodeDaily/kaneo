@@ -21,18 +21,22 @@ import * as v from "valibot";
 import accountAuthentication from "./account-authentication";
 import activity from "./activity";
 import admin from "./admin";
+import agent from "./agent";
+import ai from "./ai";
 import { auth } from "./auth";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
 import column from "./column";
 import comment from "./comment";
 import config from "./config";
+import dataTable from "./data-table";
 import db, { getDatabase, schema } from "./database";
 import { prepareDatabaseStartup } from "./database/prepare-database-startup";
 import { waitForDatabase } from "./database/wait-for-database";
 import discordIntegration from "./discord-integration";
 import { eventContext } from "./events";
 import externalLink from "./external-link";
+import flag from "./flag";
 import genericWebhookIntegration from "./generic-webhook-integration";
 import { handleGiteaWebhookRoute } from "./gitea-integration";
 import githubDelegation, {
@@ -46,12 +50,14 @@ import invitation from "./invitation";
 import label from "./label";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
+import milestone from "./milestone";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
 import oidcTeamSync from "./oidc-team-sync";
 import organization from "./organization";
 import organizationGithub from "./organization-github";
+import { handleOrganizationGithubInstallCallback } from "./organization-github/install-callback";
 import { initializePlugins } from "./plugins";
 import repo from "./repo";
 import { getResourcePrivilege, privilegeAllows } from "./resource-access";
@@ -62,6 +68,8 @@ import slackIntegration from "./slack-integration";
 import { getPrivateObject } from "./storage/s3";
 import task from "./task";
 import taskRelation from "./task-relation";
+import taskTemplate from "./task-template";
+import team from "./team";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
 import {
@@ -102,6 +110,8 @@ type ApiKey = {
   userId: string;
   enabled: boolean;
   permissions: Record<string, string[]> | null;
+  name?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 type AppVariables = {
@@ -170,8 +180,15 @@ export function createApp() {
       return err.getResponse();
     }
 
+    console.error("[unhandled error]", err);
     Sentry.captureException(err);
-    return c.json({ message: "Internal Server Error" }, 500);
+    return c.json(
+      {
+        message: "Internal Server Error",
+        error: err instanceof Error ? err.message : String(err),
+      },
+      500,
+    );
   });
   const nodeWs = createNodeWebSocket({ app });
   const { upgradeWebSocket, injectWebSocket } = nodeWs;
@@ -249,6 +266,10 @@ export function createApp() {
   // GitHub returns here as a browser navigation, before API auth middleware.
   // The handler revalidates the initiating Better Auth session and OAuth state.
   api.get("/github-delegation/callback", handleGitHubDelegationCallback);
+  api.get(
+    "/organization-github/install-callback",
+    handleOrganizationGithubInstallCallback,
+  );
 
   api.post("/repo/webhook/gitea", handleGiteaWebhookRoute);
 
@@ -307,10 +328,11 @@ export function createApp() {
           filename: schema.assetTable.filename,
           organizationId: schema.assetTable.organizationId,
           boardId: schema.assetTable.boardId,
+          repoId: schema.assetTable.repoId,
           isPublic: schema.boardTable.isPublic,
         })
         .from(schema.assetTable)
-        .innerJoin(
+        .leftJoin(
           schema.boardTable,
           eq(schema.assetTable.boardId, schema.boardTable.id),
         )
@@ -321,7 +343,15 @@ export function createApp() {
         throw new HTTPException(404, { message: "Asset not found" });
       }
 
-      const { userId, apiKeyId } = await resolveAssetBearerOrCookie(c);
+      let userId = "";
+      let apiKeyId: string | undefined;
+      try {
+        ({ userId, apiKeyId } = await resolveAssetBearerOrCookie(c));
+      } catch (error) {
+        if (!asset.repoId) throw error;
+        // Repo media must be fetchable by GitHub's image proxy. The asset ID is
+        // unguessable and the owning repo/organization still controls deletion.
+      }
 
       if (userId) {
         await validateOrganizationAccess(
@@ -329,16 +359,22 @@ export function createApp() {
           asset.organizationId,
           apiKeyId,
         );
-        const privilege = await getResourcePrivilege({
-          organizationId: asset.organizationId,
-          resourceType: "board",
-          resourceId: asset.boardId,
-          userId,
-        });
-        if (!privilegeAllows(privilege, "view")) {
+        if (asset.boardId) {
+          const privilege = await getResourcePrivilege({
+            organizationId: asset.organizationId,
+            resourceType: "board",
+            resourceId: asset.boardId,
+            userId,
+          });
+          if (!privilegeAllows(privilege, "view")) {
+            throw new HTTPException(404, { message: "Asset not found" });
+          }
+        } else if (!asset.repoId) {
           throw new HTTPException(404, { message: "Asset not found" });
         }
-      } else if (!asset.isPublic) {
+      } else if (!asset.repoId && !asset.isPublic) {
+        // Repository media is deliberately public-by-unguessable-URL so GitHub
+        // can render it in issue/PR Markdown. Task assets retain board privacy.
         throw new HTTPException(401, { message: "Unauthorized" });
       }
 
@@ -561,7 +597,13 @@ export function createApp() {
 
     const windowId = c.req.header("X-Kaneo-Window-Id");
     const userId = c.get("userId");
-    const initiatorId = windowId ? `${userId}:${windowId}` : userId;
+    const apiKey = c.get("apiKey");
+    const initiatorId =
+      apiKey?.metadata?.type === "agent"
+        ? `agent:${apiKey.id}`
+        : windowId
+          ? `${userId}:${windowId}`
+          : userId;
 
     return eventContext.run({ initiatorId }, next);
   });
@@ -583,11 +625,17 @@ export function createApp() {
   const repoApi = api.route("/repo", repo);
   const resourceGrantApi = api.route("/resource-grant", resourceGrant);
   const oidcTeamSyncApi = api.route("/oidc-team-sync", oidcTeamSync);
+  const teamApi = api.route("/team", team);
   const columnApi = api.route("/column", column);
   const activityApi = api.route("/activity", activity);
+  const aiApi = api.route("/ai", ai);
   const commentApi = api.route("/comment", comment);
+  const dataTableApi = api.route("/data-table", dataTable);
   const timeEntryApi = api.route("/time-entry", timeEntry);
+  const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
+  const milestoneApi = api.route("/milestone", milestone);
+  const taskTemplateApi = api.route("/task-template", taskTemplate);
   const notificationApi = api.route("/notification", notification);
   const notificationPreferencesApi = api.route(
     "/notification-preferences",
@@ -612,6 +660,7 @@ export function createApp() {
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
   const organizationApi = api.route("/organization", organization);
+  const agentApi = api.route("/agent", agent);
   const organizationGithubApi = api.route(
     "/organization-github",
     organizationGithub,
@@ -779,13 +828,17 @@ export function createApp() {
     activityApi,
     columnApi,
     commentApi,
+    dataTableApi,
     configApi,
     discordIntegrationApi,
     externalLinkApi,
     genericWebhookIntegrationApi,
     invitationApi,
     invitationPublicApi,
+    flagApi,
     labelApi,
+    milestoneApi,
+    taskTemplateApi,
     notificationApi,
     notificationPreferencesApi,
     boardApi,
@@ -897,15 +950,20 @@ const {
   app,
   injectWebSocket,
   activityApi,
+  agentApi,
+  aiApi,
   columnApi,
   commentApi,
+  dataTableApi,
   configApi,
   discordIntegrationApi,
   externalLinkApi,
   genericWebhookIntegrationApi,
   invitationApi,
   invitationPublicApi,
+  flagApi,
   labelApi,
+  milestoneApi,
   notificationApi,
   notificationPreferencesApi,
   boardApi,
@@ -932,15 +990,20 @@ if (isMainModule) {
 }
 
 export type AppType =
+  | typeof agentApi
   | typeof configApi
   | typeof boardApi
   | typeof taskApi
   | typeof repoApi
   | typeof columnApi
   | typeof activityApi
+  | typeof aiApi
   | typeof commentApi
+  | typeof dataTableApi
   | typeof timeEntryApi
+  | typeof flagApi
   | typeof labelApi
+  | typeof milestoneApi
   | typeof notificationApi
   | typeof notificationPreferencesApi
   | typeof searchApi

@@ -3,6 +3,12 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 export type TaskRepoLink = {
   id: string;
   itemType: "issues" | "pull-requests";
+  /**
+   * True when the ticket's content is bidirectionally synced to this issue
+   * (#75). False for a plain link, which only records that the ticket mentions
+   * the issue.
+   */
+  syncEnabled: boolean;
   repoId: string;
   number: number;
   title: string;

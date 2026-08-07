@@ -112,6 +112,7 @@
 				"labelCreated": "Етикетата е креирана",
 				"labelCreateError": "Неуспешно креирање на етикета",
 				"createMore": "Креирај уште",
+				"discardDraft": "Отфрли нацрт",
 				"createButton": "Креирај задача",
 				"untitledTask": "Задача без наслов",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Килибар",
 					"terracotta": "Теракота",
 					"rose": "Роза",
-					"crimson": "Гримизна"
+					"crimson": "Гримизна",
+					"blossom": "Цвет",
+					"honey": "Мед",
+					"lime": "Лимета",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Виолетова",
+					"orchid": "Орхидеја",
+					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Непознато"
 	},
 	"auth": {
 		"signIn": {
@@ -453,7 +466,9 @@
 			"labelsDescription": "Прикажи етикети и тагови на задачите",
 			"priority": "Приоритет",
 			"priorityDescription": "Прикажи индикатори за приоритет",
-			"weekStartsOnSaturday": "Сабота"
+			"weekStartsOnSaturday": "Сабота",
+			"reduceOverlayBlur": "Намали заматување",
+			"reduceOverlayBlurDescription": "Отстрани ја заматената позадина зад дијалозите, листовите и палетата со команди."
 		},
 		"developerPage": {
 			"pageTitle": "Програмерски поставки",
@@ -559,6 +574,7 @@
 			"iconHint": "Се прикажува во страничната лента и на површините на проектот.",
 			"pickIconTitle": "Избери икона",
 			"searchIconsPlaceholder": "Пребарај икони...",
+			"useEmoji": "Користи ова емоџи",
 			"boardNameLabel": "Име на проект",
 			"boardNameHint": "Името на твојот проект",
 			"boardNamePlaceholder": "Внеси име на проект",
@@ -568,6 +584,8 @@
 			"descriptionLabel": "Опис",
 			"descriptionHint": "Краток опис на твојот проект",
 			"descriptionPlaceholder": "Внеси опис на проект",
+			"subtaskDepthLimitLabel": "Ограничување на вгнездување подзадачи",
+			"subtaskDepthLimitHint": "Максимален број дозволени вгнездени нивоа на подзадачи (1–4).",
 			"dangerZone": "Опасна зона",
 			"dangerZoneSubtitle": "Неповратни и деструктивни акции.",
 			"deleteBoard": "Избриши проект",
@@ -633,7 +651,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Избери проект",
-			"noBoards": "Нема проекти"
+			"noBoards": "Нема проекти",
+			"searchBoards": "Пребарај табли..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колоната е креирана",
@@ -741,8 +760,8 @@
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
-				"commentOnDisabled": "Task link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
+				"commentOnDisabled": "Ticket link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Copied",
 				"unableToCopySecret": "Unable to copy secret"
@@ -758,7 +777,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1112,7 +1131,9 @@
 				"create": "Креирај",
 				"views": "Прикази",
 				"navigation": "Навигација",
-				"quickSelect": "Брз избор (во менија)"
+				"quickSelect": "Брз избор (во менија)",
+				"ticketTitle": "Наслов на тикет",
+				"editor": "Опис и коментари"
 			},
 			"items": {
 				"openCommandPalette": "Отвори палета на команди",
@@ -1129,11 +1150,59 @@
 				"nextTask": "Следна задача",
 				"prevTask": "Претходна задача",
 				"openTask": "Отвори избрана задача",
-				"quickSelectNumber": "Избери опција по број"
+				"quickSelectNumber": "Избери опција по број",
+				"titleLabel": "Додај ознака",
+				"titleMember": "Додели член",
+				"titlePriority": "Постави приоритет",
+				"editorMention": "Спомни член",
+				"editorSlash": "Отвори мени за блокови",
+				"editorTicket": "Референцирај тикет"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Табели",
+			"create": "Создај табела",
+			"noTables": "Сѐ уште нема табели",
+			"loadError": "Табелите не можеа да се вчитаат.",
+			"retry": "Обиди се повторно",
+			"loading": "Вчитување на табелите",
+			"tableName": "Име на табелата",
+			"createTitle": "Создај нова табела",
+			"createDescription": "Започнете со празна табела, а потоа додајте полиња и редови.",
+			"cancel": "Откажи",
+			"createAction": "Создај табела",
+			"loadTableError": "Оваа табела не можеше да се вчита",
+			"connectionHelp": "Проверете ја врската и обидете се повторно.",
+			"row_one": "{{count}} ред",
+			"row_other": "{{count}} редови",
+			"field_one": "{{count}} поле",
+			"field_other": "{{count}} полиња",
+			"empty": "Оваа табела е празна",
+			"readOnlyEmpty": "Имате пристап само за читање. Уредувач може да го додаде првото поле.",
+			"addField": "Додај поле",
+			"newFieldName": "Име на новото поле",
+			"noRows": "Сѐ уште нема редови. Додајте ред за да започнете со внесување податоци.",
+			"addRow": "Додај ред",
+			"deleteField": "Избриши поле",
+			"deleteFieldConfirm": "Да се избрише полето „{{name}}“?",
+			"renameFieldError": "Полето не можеше да се преименува",
+			"deleteFieldError": "Полето не можеше да се избрише",
+			"addFieldError": "Полето не можеше да се додаде",
+			"deleteRowError": "Редот не можеше да се избрише",
+			"saveCellError": "Ќелијата не можеше да се зачува",
+			"renameTableError": "Табелата не можеше да се преименува",
+			"addRowError": "Редот не можеше да се додаде",
+			"creating": "Се создава…",
+			"created": "Табелата е создадена",
+			"createError": "Табелата не можеше да се создаде",
+			"tableOptions": "Опции за табелата",
+			"deleteTable": "Избриши табела",
+			"deleteTableConfirm": "Да се избрише оваа табела и сите нејзини податоци? Ова дејство не може да се поништи.",
+			"deleted": "Табелата е избришана",
+			"deleteTableError": "Табелата не можеше да се избрише"
 		}
 	},
 	"notifications": {
@@ -1151,7 +1220,7 @@
 		"events": {
 			"task_created": {
 				"title": "Нова задача е креирана",
-				"content": "Задачата \"{{taskTitle}}\" е креирана"
+				"content": "Тикетот \"{{taskTitle}}\" е креиран"
 			},
 			"organization_created": {
 				"title": "Работниот простор е креиран",
@@ -1159,16 +1228,40 @@
 			},
 			"task_status_changed": {
 				"title": "Статусот на задачата е променет",
-				"content": "Статусот на задачата \"{{taskTitle}}\" е променет од \"{{oldStatus}}\" во \"{{newStatus}}\""
+				"content": "Статусот на тикетот \"{{taskTitle}}\" е променет од \"{{oldStatus}}\" во \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Задачата ти е доделена",
-				"content": "Ти е доделена задачата: {{taskTitle}}"
+				"content": "Ти е доделен тикетот: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Следењето на време е започнато",
-				"contentWithTask": "Следењето на време е започнато на задачата: {{taskTitle}}",
+				"contentWithTask": "Следењето на време е започнато на тикетот: {{taskTitle}}",
 				"contentWithoutTask": "Следењето на време е започнато на задача"
+			},
+			"task_title_changed": {
+				"title": "Насловот на тикетот е променет",
+				"content": "„{{oldTitle}}“ е преименуван во „{{newTitle}}“"
+			},
+			"task_description_changed": {
+				"title": "Описот на тикетот е ажуриран",
+				"content": "Описот на „{{taskTitle}}“ е ажуриран"
+			},
+			"task_priority_changed": {
+				"title": "Приоритетот на тикетот е променет",
+				"content": "Приоритетот на „{{taskTitle}}“ е променет од {{oldPriority}} во {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Крајниот рок на тикетот е променет",
+				"content": "Крајниот рок на „{{taskTitle}}“ е ажуриран"
+			},
+			"task_flag_raised": {
+				"title": "Поставено е знаменце на тикетот",
+				"content": "{{flagTypeName}} е поставено на „{{taskTitle}}“"
+			},
+			"task_flag_resolved": {
+				"title": "Знаменцето на тикетот е разрешено",
+				"content": "{{flagTypeName}} е разрешено на „{{taskTitle}}“"
 			}
 		}
 	},
@@ -1269,8 +1362,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Нацртот е зачуван",
+			"deleteDraft": "Избриши нацрт"
+		},
+		"statusRun": "го премести од {{from}} во {{to}}",
+		"statusRunNoOp": "го смени статусот неколку пати, враќајќи се на {{status}}",
+		"statusRunSteps": "{{count}} чекори",
+		"resolutionNote": "Белешка за решавање"
 	},
 	"tasks": {
 		"status": {
@@ -1307,6 +1406,7 @@
 			"noActivity": "Нема пронајдена активност",
 			"openInFullPage": "Отвори на цела страница",
 			"titlePlaceholder": "Кликни за да додадеш наслов",
+			"titleSaving": "Зачувување на насловот…",
 			"addDescription": "Додади опис...",
 			"editor": {
 				"ariaLabel": "Уредувач на опис на задача",
@@ -1401,7 +1501,8 @@
 					},
 					"onlyYoutubeInline": "Само YouTube URL може да се вградат. Користи режим на линк наместо тоа."
 				}
-			}
+			},
+			"close": "Затвори детали за тикетот"
 		},
 		"entity": {
 			"task": "Задача"
@@ -1422,7 +1523,8 @@
 				"blocks": "блокира",
 				"related": "е поврзана со"
 			},
-			"otherBoard": "друга табла"
+			"otherBoard": "друга табла",
+			"blockedBy": "Блокиран од"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1499,8 +1601,20 @@
 					"amber": "Килибар",
 					"terracotta": "Теракота",
 					"rose": "Роза",
-					"crimson": "Гримизна"
-				}
+					"crimson": "Гримизна",
+					"blossom": "Цвет",
+					"honey": "Мед",
+					"lime": "Лимета",
+					"emerald": "Смарагд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Виолетова",
+					"orchid": "Орхидеја",
+					"cocoa": "Какао"
+				},
+				"repoSource": "Ознака синхронизирана со GitHub"
 			}
 		},
 		"backlog": {
@@ -1527,7 +1641,12 @@
 				"dueThisWeek": "Рок оваа недела",
 				"dueNextWeek": "Рок следна недела",
 				"noDueDate": "Без краен рок"
-			}
+			},
+			"moveAllDialogTitle": "Премести ги сите планирани тикети?",
+			"moveAllDialogDescription": "{{count}} планиран тикет ќе биде преместен во „За правење“.",
+			"moveAllDialogDescription_other": "{{count}} планирани тикети ќе бидат преместени во „За правење“.",
+			"moveAllDialogConfirm": "Премести {{count}} тикет",
+			"moveAllDialogConfirm_other": "Премести {{count}} тикети"
 		},
 		"sort": {
 			"label": "Подреди",
@@ -1543,6 +1662,22 @@
 				"title": "Наслов",
 				"number": "Број на задача"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Филтрирај по",
@@ -1575,10 +1710,26 @@
 			"noTasksFound": "Не се пронајдени задачи",
 			"noTasksMatch": "Нема закажани задачи што одговараат на \"{{query}}\"",
 			"taskHeader": "Задача",
+			"unscheduledHint": "Без датуми - влечете за распоред",
+			"dragToScheduleHint": "Влечете по временската линија за да го распоредите овој тикет",
 			"updateDatesError": "Неуспешно ажурирање на датуми на задача",
 			"resizeStart": "Промени почетен датум",
 			"resizeDue": "Промени краен рок",
-			"taskAriaLabel": "{{title}} — отвори или повлечи за преместување"
+			"taskAriaLabel": "{{title}} — отвори или повлечи за преместување",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Без пресвртница"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Избриши задача?",
@@ -1588,7 +1739,8 @@
 			"error": "Неуспешно бришење на задача"
 		},
 		"archive": {
-			"success": "Архивирани {{count}} задачи"
+			"success": "Архивирани {{count}} задачи",
+			"error": "Неуспешно архивирање на тикетите"
 		},
 		"listView": {
 			"addTask": "Додади задача",
@@ -1616,11 +1768,17 @@
 			"updateSuccess": "Краениот рок на задачата е успешно ажуриран",
 			"updateError": "Неуспешно ажурирање на краен рок на задача",
 			"clearSuccess": "Краениот рок на задачата е исчистен",
-			"clearError": "Неуспешно чистење на краен рок"
+			"clearError": "Неуспешно чистење на краен рок",
+			"outcome": {
+				"early": "Порано",
+				"on-time": "На време",
+				"late": "Со задршка"
+			}
 		},
 		"labels": {
 			"label": "Етикети",
-			"empty": "Нема достапни етикети"
+			"empty": "Нема достапни етикети",
+			"fromRepository": "Од поврзано складиште"
 		},
 		"update": {
 			"success": "Задачата е успешно ажурирана",
@@ -1633,7 +1791,8 @@
 		"actions": {
 			"archive": "Архивирај",
 			"markAsPlanned": "Означи како планирана",
-			"delete": "Избриши..."
+			"delete": "Избриши...",
+			"unarchive": "Врати од архива"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} избрани",
@@ -1666,6 +1825,38 @@
 			"searchActions": "Пребарај акции...",
 			"noActionsFound": "Не се пронајдени акции.",
 			"changeStatus": "Промени статус"
+		},
+		"titleTokens": {
+			"labels": "Ознаки",
+			"members": "Членови",
+			"priority": "Приоритет",
+			"hint": "# за ознаки, @ за членови, ! за приоритет"
+		},
+		"boardSync": {
+			"syncedWith": "Синхронизирано со {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Краен рок",
+			"noDueDate": "Без краен рок",
+			"noLabel": "Без етикета",
+			"status": "Статус",
+			"milestone": "Пресвртница",
+			"noStatus": "Без статус"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Краен рок"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Вгнезди под {{title}}",
+			"releaseToNest": "Отпуштете за да го вгнездите овој тикет под {{title}}.",
+			"cannotNestHere": "Не може да се вгнезди тука",
+			"cannotNestReason": "Овој тикет не може да се вгнезди под таа цел. Изберете друг родител.",
+			"unknownTarget": "овој тикет"
+		},
+		"bulkActions": {
+			"label": "Масовни дејства"
 		}
 	},
 	"invitations": {
@@ -1789,7 +1980,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1802,7 +1993,8 @@
 		},
 		"members": {
 			"pageTitle": "Членови",
-			"inviteMember": "Покани член"
+			"inviteMember": "Покани член",
+			"agentsCredentialsHint": "Издавање и одземање клучеви за пристап"
 		},
 		"inviteModal": {
 			"title": "Покани член на тим",

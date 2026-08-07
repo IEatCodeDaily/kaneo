@@ -1,6 +1,8 @@
 export type BoardBroadcastMessage = {
   type: string;
   boardId: string;
+  userId?: string;
+  userIds?: string[];
   taskId?: string;
   sourceTaskId?: string;
   targetTaskId?: string;

@@ -15,6 +15,7 @@ export type PermissionLevel = "owner" | "admin" | "member";
 const CAPABILITIES = {
   manageBoards: { board: ["create", "update", "delete"] },
   createBoards: { board: ["create"] },
+  updateBoards: { board: ["update"] },
   deleteBoards: { board: ["delete"] },
   manageTasks: { task: ["create", "update", "delete"] },
   createTasks: { task: ["create"] },
@@ -89,6 +90,7 @@ export function useOrganizationPermission() {
     return {
       canManageBoards: () => can.manageBoards,
       canCreateBoards: () => can.createBoards,
+      canUpdateBoards: () => can.updateBoards,
       canDeleteBoards: () => can.deleteBoards,
       canManageTasks: () => can.manageTasks,
       canCreateTasks: () => can.createTasks,

@@ -84,7 +84,7 @@
 				"errorToast": "Hubo un error al crear el espacio de trabajo"
 			},
 			"createTask": {
-				"breadcrumbTask": "TASK",
+				"breadcrumbTask": "TICKET",
 				"title": "Nueva tarea",
 				"description": "Crear una nueva tarea con título, descripción y otra información.",
 				"taskTitlePlaceholder": "Título de la tarea",
@@ -111,6 +111,7 @@
 				"labelCreated": "Etiqueta creada",
 				"labelCreateError": "Error al crear la etiqueta",
 				"createMore": "Crear más",
+				"discardDraft": "Descartar borrador",
 				"createButton": "Crear tarea",
 				"untitledTask": "Tarea sin título",
 				"labelColors": {
@@ -122,10 +123,22 @@
 					"amber": "Ámbar",
 					"terracotta": "Terracota",
 					"rose": "Rosa",
-					"crimson": "Carmesí"
+					"crimson": "Carmesí",
+					"blossom": "Flor",
+					"honey": "Miel",
+					"lime": "Lima",
+					"emerald": "Esmeralda",
+					"lagoon": "Laguna",
+					"sky": "Cielo",
+					"ocean": "Océano",
+					"indigo": "Índigo",
+					"violet": "Violeta",
+					"orchid": "Orquídea",
+					"cocoa": "Cacao"
 				}
 			}
-		}
+		},
+		"unknown": "Desconocido"
 	},
 	"auth": {
 		"signIn": {
@@ -363,7 +376,9 @@
 			"labelsDescription": "Mostrar descripción y etiquetas de las tareas",
 			"priority": "Prioridad",
 			"priorityDescription": "Mostrar indicador de prioridad",
-			"weekStartsOnSaturday": "Sábado"
+			"weekStartsOnSaturday": "Sábado",
+			"reduceOverlayBlur": "Reducir el desenfoque",
+			"reduceOverlayBlurDescription": "Quita el fondo desenfocado detrás de los diálogos, paneles y la paleta de comandos."
 		},
 		"developerPage": {
 			"pageTitle": "Ajustes de Desarrollador",
@@ -469,6 +484,7 @@
 			"iconHint": "Se muestra en la barra lateral y en las vistas del proyecto.",
 			"pickIconTitle": "Elegir icono",
 			"searchIconsPlaceholder": "Buscar iconos...",
+			"useEmoji": "Usar este emoji",
 			"boardNameLabel": "Nombre del proyecto",
 			"boardNameHint": "El nombre de tu proyecto",
 			"boardNamePlaceholder": "Introduce el nombre del proyecto",
@@ -478,6 +494,8 @@
 			"descriptionLabel": "Descripción",
 			"descriptionHint": "Una breve descripción de tu proyecto",
 			"descriptionPlaceholder": "Introduce la descripción de tu proyecto",
+			"subtaskDepthLimitLabel": "Límite de anidamiento de subtareas",
+			"subtaskDepthLimitHint": "Número máximo de niveles de subtareas anidadas permitidos (1–4).",
 			"dangerZone": "Zona peligrosa",
 			"dangerZoneSubtitle": "Acciones irreversibles y destructivas.",
 			"deleteBoard": "Eliminar proyecto",
@@ -539,7 +557,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Selecciona proyecto",
-			"noBoards": "No hay proyectos"
+			"noBoards": "No hay proyectos",
+			"searchBoards": "Buscar tableros..."
 		},
 		"columnEditor": {
 			"toastCreated": "Columna creada",
@@ -897,7 +916,9 @@
 				"create": "Crear",
 				"views": "Vistas",
 				"navigation": "Navegación",
-				"quickSelect": "Selección rápida (en ventana emergente)"
+				"quickSelect": "Selección rápida (en ventana emergente)",
+				"ticketTitle": "Título del ticket",
+				"editor": "Descripción y comentarios"
 			},
 			"items": {
 				"openCommandPalette": "Abrir paleta de comandos",
@@ -914,11 +935,59 @@
 				"nextTask": "Siguiente tarea",
 				"prevTask": "Tarea anterior",
 				"openTask": "Abrir tarea seleccionada",
-				"quickSelectNumber": "Seleccionar opción por número"
+				"quickSelectNumber": "Seleccionar opción por número",
+				"titleLabel": "Añadir una etiqueta",
+				"titleMember": "Asignar un miembro",
+				"titlePriority": "Establecer prioridad",
+				"editorMention": "Mencionar a un miembro",
+				"editorSlash": "Abrir el menú de bloques",
+				"editorTicket": "Referenciar un ticket"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Tablas",
+			"create": "Crear tabla",
+			"noTables": "Aún no hay tablas",
+			"loadError": "No se han podido cargar las tablas.",
+			"retry": "Reintentar",
+			"loading": "Cargando tablas",
+			"tableName": "Nombre de la tabla",
+			"createTitle": "Crear una tabla nueva",
+			"createDescription": "Empieza con una tabla en blanco y después añade campos y filas.",
+			"cancel": "Cancelar",
+			"createAction": "Crear tabla",
+			"loadTableError": "No se ha podido cargar esta tabla",
+			"connectionHelp": "Comprueba tu conexión e inténtalo de nuevo.",
+			"row_one": "{{count}} fila",
+			"row_other": "{{count}} filas",
+			"field_one": "{{count}} campo",
+			"field_other": "{{count}} campos",
+			"empty": "Esta tabla está vacía",
+			"readOnlyEmpty": "Tienes acceso de solo lectura. Un editor puede añadir el primer campo.",
+			"addField": "Añadir campo",
+			"newFieldName": "Nombre del campo nuevo",
+			"noRows": "Aún no hay filas. Añade una para empezar a introducir datos.",
+			"addRow": "Añadir fila",
+			"deleteField": "Eliminar campo",
+			"deleteFieldConfirm": "¿Eliminar el campo «{{name}}»?",
+			"renameFieldError": "No se ha podido cambiar el nombre del campo",
+			"deleteFieldError": "No se ha podido eliminar el campo",
+			"addFieldError": "No se ha podido añadir el campo",
+			"deleteRowError": "No se ha podido eliminar la fila",
+			"saveCellError": "No se ha podido guardar la celda",
+			"renameTableError": "No se ha podido cambiar el nombre de la tabla",
+			"addRowError": "No se ha podido añadir la fila",
+			"creating": "Creando…",
+			"created": "Tabla creada",
+			"createError": "No se ha podido crear la tabla",
+			"tableOptions": "Opciones de la tabla",
+			"deleteTable": "Eliminar tabla",
+			"deleteTableConfirm": "¿Eliminar esta tabla y todos sus datos? Esta acción no se puede deshacer.",
+			"deleted": "Tabla eliminada",
+			"deleteTableError": "No se ha podido eliminar la tabla"
 		}
 	},
 	"notifications": {
@@ -936,7 +1005,7 @@
 		"events": {
 			"task_created": {
 				"title": "Se ha creado una nueva tarea",
-				"content": "La tarea \"{{taskTitle}}\" ha sido creada"
+				"content": "El ticket \"{{taskTitle}}\" ha sido creado"
 			},
 			"organization_created": {
 				"title": "Se ha creado un espacio de trabajo",
@@ -944,16 +1013,40 @@
 			},
 			"task_status_changed": {
 				"title": "El estado de una tarea ha cambiado",
-				"content": "El estado de la tarea \"{{taskTitle}}\" ha cambiado de \"{{oldStatus}}\" a \"{{newStatus}}\""
+				"content": "El estado del ticket \"{{taskTitle}}\" ha cambiado de \"{{oldStatus}}\" a \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Se te ha asignado una tarea",
-				"content": "Se te ha asignado la tarea: {{taskTitle}}"
+				"content": "Se te ha asignado el ticket: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Monitoreo de tiempo activado",
-				"contentWithTask": "El monitoreo de la tarea se ha activado para: {{taskTitle}}",
+				"contentWithTask": "El monitoreo del ticket se ha activado para: {{taskTitle}}",
 				"contentWithoutTask": "Se ha activado el monitoreo de una tarea"
+			},
+			"task_title_changed": {
+				"title": "Título del ticket cambiado",
+				"content": "«{{oldTitle}}» se renombró como «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Descripción del ticket actualizada",
+				"content": "Se actualizó la descripción de «{{taskTitle}}»"
+			},
+			"task_priority_changed": {
+				"title": "Prioridad del ticket cambiada",
+				"content": "La prioridad de «{{taskTitle}}» cambió de {{oldPriority}} a {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Fecha de vencimiento del ticket cambiada",
+				"content": "Se actualizó la fecha de vencimiento de «{{taskTitle}}»"
+			},
+			"task_flag_raised": {
+				"title": "Indicador añadido al ticket",
+				"content": "Se añadió {{flagTypeName}} a «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Indicador resuelto en el ticket",
+				"content": "Se resolvió {{flagTypeName}} en «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1054,8 +1147,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Borrador guardado",
+			"deleteDraft": "Eliminar borrador"
+		},
+		"statusRun": "lo movió de {{from}} a {{to}}",
+		"statusRunNoOp": "cambió el estado varias veces, volviendo a {{status}}",
+		"statusRunSteps": "{{count}} pasos",
+		"resolutionNote": "Nota de resolución"
 	},
 	"tasks": {
 		"status": {
@@ -1092,6 +1191,7 @@
 			"noActivity": "No hay actividad",
 			"openInFullPage": "Abrir en página completa",
 			"titlePlaceholder": "Click para añadir título",
+			"titleSaving": "Guardando título…",
 			"addDescription": "Añadir una descripción...",
 			"editor": {
 				"ariaLabel": "Editor de descripción de tareas",
@@ -1186,7 +1286,8 @@
 					},
 					"onlyYoutubeInline": "Sólo los enlaces de YouTube pueden ser incrustados. Añádelo como enlace."
 				}
-			}
+			},
+			"close": "Cerrar detalles del ticket"
 		},
 		"entity": {
 			"task": "Tarea"
@@ -1207,7 +1308,8 @@
 				"blocks": "bloquea",
 				"related": "relacionada con"
 			},
-			"otherBoard": "otro tablero"
+			"otherBoard": "otro tablero",
+			"blockedBy": "Bloqueado por"
 		},
 		"subtasks": {
 			"title": "Sub-tareas",
@@ -1273,8 +1375,20 @@
 					"amber": "Ámbar",
 					"terracotta": "Terracota",
 					"rose": "Rosa",
-					"crimson": "Carmesí"
-				}
+					"crimson": "Carmesí",
+					"blossom": "Flor",
+					"honey": "Miel",
+					"lime": "Lima",
+					"emerald": "Esmeralda",
+					"lagoon": "Laguna",
+					"sky": "Cielo",
+					"ocean": "Océano",
+					"indigo": "Índigo",
+					"violet": "Violeta",
+					"orchid": "Orquídea",
+					"cocoa": "Cacao"
+				},
+				"repoSource": "Etiqueta sincronizada con GitHub"
 			}
 		},
 		"backlog": {
@@ -1301,7 +1415,12 @@
 				"dueThisWeek": "Para esta semana",
 				"dueNextWeek": "Para la semana que viene",
 				"noDueDate": "Sin fecha de vencimiento"
-			}
+			},
+			"moveAllDialogTitle": "¿Mover todos los tickets planificados?",
+			"moveAllDialogDescription": "{{count}} ticket planificado se moverá a Por hacer.",
+			"moveAllDialogDescription_other": "{{count}} tickets planificados se moverán a Por hacer.",
+			"moveAllDialogConfirm": "Mover {{count}} ticket",
+			"moveAllDialogConfirm_other": "Mover {{count}} tickets"
 		},
 		"sort": {
 			"label": "Ordenar",
@@ -1317,6 +1436,22 @@
 				"title": "Título",
 				"number": "Número de tarea"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Filtrar por",
@@ -1349,10 +1484,26 @@
 			"noTasksFound": "No se han encontrado tareas",
 			"noTasksMatch": "Ninguna tarea encaja con \"{{query}}\"",
 			"taskHeader": "Tarea",
+			"unscheduledHint": "Sin fechas: arrastra para programar",
+			"dragToScheduleHint": "Arrastra por la línea de tiempo para programar este ticket",
 			"updateDatesError": "Error al actualizar las fechas de la tarea",
 			"resizeStart": "Cambiar la fecha de comienzo",
 			"resizeDue": "Cambiar la fecha de vencimiento",
-			"taskAriaLabel": "{{title}} — abrir o arrastrar para mover"
+			"taskAriaLabel": "{{title}} — abrir o arrastrar para mover",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Sin hito"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "¿Eliminar tarea?",
@@ -1362,7 +1513,8 @@
 			"error": "Error al eliminar la tarea"
 		},
 		"archive": {
-			"success": "Se han archivado {{count}} tareas"
+			"success": "Se han archivado {{count}} tareas",
+			"error": "No se pudieron archivar los tickets"
 		},
 		"listView": {
 			"addTask": "Añadir tarea",
@@ -1390,11 +1542,17 @@
 			"updateSuccess": "Fecha de vencimiento actualizada correctamente",
 			"updateError": "Error al actualizar fecha de vencimiento",
 			"clearSuccess": "Fecha de vencimiento eliminada correctamente",
-			"clearError": "Error al eliminar fecha de vencimiento"
+			"clearError": "Error al eliminar fecha de vencimiento",
+			"outcome": {
+				"early": "Antes",
+				"on-time": "A tiempo",
+				"late": "Tarde"
+			}
 		},
 		"labels": {
 			"label": "Etiquetas",
-			"empty": "No hay etiquetas disponibles"
+			"empty": "No hay etiquetas disponibles",
+			"fromRepository": "Del repositorio vinculado"
 		},
 		"update": {
 			"success": "Tarea actualizada correctamente",
@@ -1407,7 +1565,8 @@
 		"actions": {
 			"archive": "Archivar",
 			"markAsPlanned": "Marcar como planeada",
-			"delete": "Eliminar..."
+			"delete": "Eliminar...",
+			"unarchive": "Desarchivar"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} seleccionadas",
@@ -1440,6 +1599,38 @@
 			"searchActions": "Buscar acciones...",
 			"noActionsFound": "No se han encontrado acciones.",
 			"changeStatus": "Cambiar estado"
+		},
+		"titleTokens": {
+			"labels": "Etiquetas",
+			"members": "Miembros",
+			"priority": "Prioridad",
+			"hint": "Escribe # para etiquetas, @ para miembros, ! para prioridad"
+		},
+		"boardSync": {
+			"syncedWith": "Sincronizado con {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Fecha de vencimiento",
+			"noDueDate": "Sin fecha de vencimiento",
+			"noLabel": "Sin etiqueta",
+			"status": "Estado",
+			"milestone": "Hito",
+			"noStatus": "Sin estado"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Fecha de vencimiento"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Anidar bajo {{title}}",
+			"releaseToNest": "Suelta para anidar este ticket bajo {{title}}.",
+			"cannotNestHere": "No se puede anidar aquí",
+			"cannotNestReason": "Este ticket no se puede anidar bajo ese destino. Elige otro ticket principal.",
+			"unknownTarget": "este ticket"
+		},
+		"bulkActions": {
+			"label": "Acciones masivas"
 		}
 	},
 	"invitations": {
@@ -1563,7 +1754,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1576,7 +1767,8 @@
 		},
 		"members": {
 			"pageTitle": "Miembros",
-			"inviteMember": "Invitar miembro"
+			"inviteMember": "Invitar miembro",
+			"agentsCredentialsHint": "Emitir y revocar claves de acceso"
 		},
 		"inviteModal": {
 			"title": "Invitar miembro al equipo",

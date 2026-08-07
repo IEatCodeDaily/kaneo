@@ -68,7 +68,9 @@ async function isGitHubRepo(repoId: string) {
 }
 
 /** Lists live GitHub releases. Non-GitHub repositories return an empty list. */
-export async function listGitHubRepoReleases(repoId: string): Promise<GitHubRelease[]> {
+export async function listGitHubRepoReleases(
+  repoId: string,
+): Promise<GitHubRelease[]> {
   if (!(await isGitHubRepo(repoId))) return [];
 
   const { repo, octokit } = await getGitHubRepoClient(repoId);
@@ -103,14 +105,23 @@ export async function listGitHubRepoReleases(repoId: string): Promise<GitHubRele
  * owner-scoped rather than repo-scoped, and GitHub Apps may not have Packages
  * permission. A missing/inaccessible endpoint is deliberately an empty list.
  */
-export async function listGitHubRepoPackages(repoId: string): Promise<GitHubPackage[]> {
+export async function listGitHubRepoPackages(
+  repoId: string,
+): Promise<GitHubPackage[]> {
   if (!(await isGitHubRepo(repoId))) return [];
 
   const { repo, octokit } = await getGitHubRepoClient(repoId);
-  const parameters = { username: repo.owner, package_type: "container" as const, per_page: 100 };
+  const parameters = {
+    username: repo.owner,
+    package_type: "container" as const,
+    per_page: 100,
+  };
 
   try {
-    const packages = await octokit.paginate("GET /users/{username}/packages", parameters);
+    const packages = await octokit.paginate(
+      "GET /users/{username}/packages",
+      parameters,
+    );
     return packages.map(toPackage);
   } catch {
     try {

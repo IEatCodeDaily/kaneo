@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import {
   CircleDot,
   Code2,
@@ -8,15 +8,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import Layout from "@/components/common/layout";
-import { KbdSequence } from "@/components/ui/kbd";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
+import { ViewTabs } from "@/components/common/view-tabs";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 
 type RepoLayoutProps = {
@@ -74,54 +66,39 @@ export default function RepoLayout({
 
   return (
     <Layout>
-      <Layout.Header className="h-11 border-border/80 px-2">
+      <Layout.Header className="sticky top-0 z-10 h-11 border-border/80 px-2">
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger className="-ml-1 h-7 w-7 cursor-pointer text-foreground/85 hover:text-foreground" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="flex items-center gap-2 text-[10px]">
-                    Toggle sidebar
-                    <KbdSequence
-                      keys={[
-                        shortcuts.sidebar.prefix,
-                        shortcuts.sidebar.toggle,
-                      ]}
-                    />
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <div className="h-4 w-px shrink-0 bg-border/80" />
             <div className="hidden min-w-0 items-center gap-1 text-xs md:flex">
-              <span className="truncate text-foreground/75">{repoTitle}</span>
+              {repo ? (
+                <a
+                  aria-label={`Open ${repoTitle} in a new tab`}
+                  className="truncate text-foreground/75 hover:underline"
+                  href={repo.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {repoTitle}
+                </a>
+              ) : (
+                <span className="truncate text-foreground/75">{repoTitle}</span>
+              )}
             </div>
 
-            <nav
+            <ViewTabs
               aria-label="Repository views"
-              className="inline-flex h-8 min-w-0 items-center gap-0.5 overflow-hidden rounded-lg border border-border/80 bg-background p-0.5"
-            >
-              {VIEWS.map((view) => {
+              items={VIEWS.map((view) => {
                 const Icon = view.icon;
-                const isActive = activeView === view.key;
-                return (
-                  <Link
-                    className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-medium transition-colors sm:px-2 ${isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
-                    key={view.key}
-                    params={{ organizationId, repoId }}
-                    to={view.to}
-                  >
-                    <Icon className="size-3.5" />
-                    {/* Constrained widths collapse the tabs to icons only. */}
-                    <span className="hidden 2xl:inline">{view.label}</span>
-                  </Link>
-                );
+                return {
+                  value: view.key,
+                  label: view.label,
+                  icon: <Icon className="size-3.5" />,
+                  to: view.to,
+                  params: { organizationId, repoId },
+                };
               })}
-            </nav>
+              value={activeView}
+            />
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">

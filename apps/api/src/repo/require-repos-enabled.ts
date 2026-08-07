@@ -7,12 +7,9 @@ import { organizationTable } from "../database/schema";
 /** Gates only the dedicated organization-level Repos product.
  * Board GitHub/Gitea integrations and webhook sync never pass through this middleware.
  */
-export async function assertReposEnabled(organizationId: string) {
-  if (!organizationId) {
-    throw new HTTPException(400, {
-      message: "Organization ID could not be determined",
-    });
-  }
+/** Whether the organization-level Repos product is turned on. */
+export async function areReposEnabled(organizationId: string) {
+  if (!organizationId) return false;
 
   const [organization] = await db
     .select({ reposEnabled: organizationTable.reposEnabled })
@@ -20,7 +17,17 @@ export async function assertReposEnabled(organizationId: string) {
     .where(eq(organizationTable.id, organizationId))
     .limit(1);
 
-  if (!organization?.reposEnabled) {
+  return Boolean(organization?.reposEnabled);
+}
+
+export async function assertReposEnabled(organizationId: string) {
+  if (!organizationId) {
+    throw new HTTPException(400, {
+      message: "Organization ID could not be determined",
+    });
+  }
+
+  if (!(await areReposEnabled(organizationId))) {
     throw new HTTPException(404, {
       message: "Repos is not enabled for this organization",
     });

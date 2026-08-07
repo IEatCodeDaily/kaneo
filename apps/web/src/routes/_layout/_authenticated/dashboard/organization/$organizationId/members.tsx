@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import InviteTeamMemberModal from "@/components/team/invite-team-member-modal";
-import MembersTable from "@/components/team/members-table";
+import { OrganizationMembersGroups } from "@/components/team/organization-members-groups";
 import { Button } from "@/components/ui/button";
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -59,7 +59,7 @@ function RouteComponent() {
         title={t("team:members.pageTitle")}
         headerNavigation={
           <div
-            className="ml-2 inline-flex h-8 min-w-0 items-center gap-0.5 overflow-hidden rounded-lg border border-border/80 bg-background p-0.5"
+            className="ml-2 inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5"
             role="tablist"
             aria-label="Organization people"
           >
@@ -106,15 +106,24 @@ function RouteComponent() {
           ) : null
         }
       >
-        {isTeams ? (
-          <TeamsManagement createTeamSignal={createTeamSignal} />
-        ) : (
-          <MembersTable
-            organizationId={organizationId}
-            users={organization?.members ?? []}
-            invitations={organization?.invitations ?? []}
-          />
-        )}
+        {/*
+          Content container: both tabs used to render flush against the panel
+          edge with no gutter and stretch across ultrawide viewports. One
+          shared max-width + padding keeps People, Agents and Teams on the
+          same grid as every other settings surface.
+        */}
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
+          {isTeams ? (
+            <TeamsManagement createTeamSignal={createTeamSignal} />
+          ) : (
+            <OrganizationMembersGroups
+              organizationId={organizationId}
+              users={organization?.members ?? []}
+              invitations={organization?.invitations ?? []}
+              canManageAgents={isAdmin}
+            />
+          )}
+        </div>
 
         <InviteTeamMemberModal
           open={isInviteOpen}

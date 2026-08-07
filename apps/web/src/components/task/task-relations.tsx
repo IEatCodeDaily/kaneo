@@ -46,10 +46,17 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
+import { useSectionOpenState } from "@/lib/use-section-open-state";
 import type Task from "@/types/task";
+import {
+  type RelationIntent,
+  relationDisplayType,
+  relationPayload,
+} from "./relation-direction";
 import SubtaskAssigneePopover from "./subtask-assignee-popover";
 import SubtaskStatusPopover from "./subtask-status-popover";
 
@@ -82,14 +89,13 @@ export default function TaskRelations({
 }: TaskRelationsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRelationType, setSelectedRelationType] = useState<
-    "blocks" | "related"
-  >("related");
+  const [selectedRelationType, setSelectedRelationType] =
+    useState<RelationIntent>("related");
 
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const { data: relations = [], isSuccess: relationsLoaded } =
+    useGetTaskRelations(taskId);
   const { data: boardData } = useGetTasks(boardId);
   // Relations are organization-scoped server-side, so the picker offers tasks
   // from every board in the organization, not just the current one.
@@ -130,10 +136,11 @@ export default function TaskRelations({
 
       // "blocks" is directional: when the current task is the target it is the
       // one being blocked, so group it under a distinct "blocked_by" key.
-      const type =
-        rel.relationType === "blocks" && !isSource
-          ? "blocked_by"
-          : rel.relationType;
+      const type = relationDisplayType({
+        currentTaskId: taskId,
+        sourceTaskId: rel.sourceTaskId,
+        relationType: rel.relationType,
+      });
       if (!groups[type]) {
         groups[type] = [];
       }
@@ -260,13 +267,22 @@ export default function TaskRelations({
     return groups;
   }, [filteredTasks, boardId, t]);
 
-  const handleLinkTask = async (targetTaskId: string) => {
+  const handleLinkTask = async (selectedTaskId: string) => {
     try {
-      await createRelation.mutateAsync({
-        sourceTaskId: taskId,
-        targetTaskId,
-        relationType: selectedRelationType,
-      });
+      /*
+        Persist one canonical directional edge: source BLOCKS target.
+        "Blocked by" is UI intent, not another database relation type, so it
+        reverses the endpoints. Both task relation queries are invalidated by
+        the mutation hook; each drawer then derives its reciprocal label from
+        whether the current ticket is source or target.
+      */
+      await createRelation.mutateAsync(
+        relationPayload({
+          currentTaskId: taskId,
+          selectedTaskId,
+          intent: selectedRelationType,
+        }),
+      );
       setCommandOpen(false);
       setSearchQuery("");
     } catch {
@@ -323,6 +339,12 @@ export default function TaskRelations({
   });
 
   const totalCount = nonSubtaskRelations.length;
+
+  // Empty sections default to collapsed (#73), latched off the first payload.
+  const [isOpen, setIsOpen] = useSectionOpenState(
+    totalCount > 0,
+    relationsLoaded,
+  );
 
   return (
     <>
@@ -425,12 +447,14 @@ export default function TaskRelations({
                               className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
                             >
                               {item.task.userId && assignee ? (
-                                <Avatar className="h-5 w-5">
+                                <Avatar
+                                  className={`h-5 w-5 ${getAvatarTone(item.task.userId, assignee?.user?.email)}`}
+                                >
                                   <AvatarImage
                                     src={assignee?.user?.image ?? ""}
                                     alt={assignee?.user?.name || ""}
                                   />
-                                  <AvatarFallback className="text-[9px] font-medium border border-border/30">
+                                  <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30">
                                     {getInitials(assignee?.user?.name)}
                                   </AvatarFallback>
                                 </Avatar>
@@ -556,6 +580,14 @@ export default function TaskRelations({
                 >
                   <X className="size-3" />
                   {t("tasks:relations.blocks")}
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocked_by" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setSelectedRelationType("blocked_by")}
+                >
+                  <X className="size-3" />
+                  {t("tasks:relations.blockedBy")}
                 </button>
               </div>
               <span className="text-muted-foreground/60">

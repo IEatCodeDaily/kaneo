@@ -3,9 +3,9 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   activityTable,
+  boardTable,
   integrationTable,
   labelTable,
-  boardTable,
   taskTable,
 } from "../../database/schema";
 import type { GitHubConfig } from "../../plugins/github/config";
@@ -130,7 +130,9 @@ export async function importIssues(boardId: string): Promise<ImportResult> {
         issue,
         integration.id,
         boardId,
-        project.workspaceId,
+        // #147: the column is organizationId; `workspaceId` is a stale name
+        // from an older schema and was a type error on this path.
+        project.organizationId,
         config,
         octokit,
       );
@@ -314,7 +316,7 @@ async function importLabelsForTask(
 
     const existingWorkspaceLabel = await db.query.labelTable.findFirst({
       where: and(
-        eq(labelTable.workspaceId, workspaceId),
+        eq(labelTable.organizationId, workspaceId),
         eq(labelTable.name, labelData.name),
       ),
     });
@@ -327,7 +329,10 @@ async function importLabelsForTask(
         name: labelData.name,
         color: colorToUse,
         taskId,
-        workspaceId,
+        organizationId: workspaceId,
+        // #147: labels that arrive with an imported issue are repo-owned.
+        // Labels created inside Kaneo keep the column default ("kaneo").
+        source: "repo",
       })
       .onConflictDoNothing({
         target: [labelTable.taskId, labelTable.name],

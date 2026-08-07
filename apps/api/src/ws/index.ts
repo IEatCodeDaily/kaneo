@@ -162,7 +162,12 @@ export function addConnection(
     boardConnections.set(boardId, new Set());
   }
   const conn: BoardConnection = { ws, userId, initiatorId };
-  boardConnections.get(boardId)?.add(conn);
+  const connections = boardConnections.get(boardId);
+  if (!connections) throw new Error("Board connection set was not initialized");
+  connections.add(conn);
+  const userIds = [...new Set([...connections].map((item) => item.userId))];
+  ws.send(JSON.stringify({ type: "PRESENCE_SNAPSHOT", boardId, userIds }));
+  broadcastToBoard(boardId, { type: "PRESENCE_JOINED", boardId, userId });
   return conn;
 }
 
@@ -170,6 +175,13 @@ export function removeConnection(boardId: string, conn: BoardConnection) {
   const connections = boardConnections.get(boardId);
   if (connections) {
     connections.delete(conn);
+    if (![...connections].some((item) => item.userId === conn.userId)) {
+      broadcastToBoard(boardId, {
+        type: "PRESENCE_LEFT",
+        boardId,
+        userId: conn.userId,
+      });
+    }
     if (connections.size === 0) {
       boardConnections.delete(boardId);
     }
@@ -190,7 +202,7 @@ export function broadcastToBoard(
     boardBroadcastQueues.set(boardId, new Map());
   }
 
-  const messageKey = `${message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}`;
+  const messageKey = `${message.type}:${message.userId ?? ""}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}`;
   boardBroadcastQueues
     .get(boardId)
     ?.set(messageKey, { message, excludeInitiatorId });

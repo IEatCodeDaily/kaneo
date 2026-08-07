@@ -112,6 +112,7 @@
 				"labelCreated": "Метка создана",
 				"labelCreateError": "Не удалось создать метку",
 				"createMore": "Создать ещё",
+				"discardDraft": "Удалить черновик",
 				"createButton": "Создать задачу",
 				"untitledTask": "Задача без названия",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Янтарь",
 					"terracotta": "Терракота",
 					"rose": "Роза",
-					"crimson": "Малиновый"
+					"crimson": "Малиновый",
+					"blossom": "Цветение",
+					"honey": "Мёд",
+					"lime": "Лайм",
+					"emerald": "Изумруд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Фиолетовый",
+					"orchid": "Орхидея",
+					"cocoa": "Какао"
 				}
 			}
-		}
+		},
+		"unknown": "Неизвестно"
 	},
 	"auth": {
 		"signIn": {
@@ -453,7 +466,9 @@
 			"labelsDescription": "Показывать метки и теги задач",
 			"priority": "Приоритет",
 			"priorityDescription": "Показывать индикаторы приоритета",
-			"weekStartsOnSaturday": "Суббота"
+			"weekStartsOnSaturday": "Суббота",
+			"reduceOverlayBlur": "Уменьшить размытие",
+			"reduceOverlayBlurDescription": "Убрать размытый фон за диалогами, панелями и палитрой команд."
 		},
 		"developerPage": {
 			"pageTitle": "Настройки разработчика",
@@ -559,6 +574,7 @@
 			"iconHint": "Отображается в боковой панели и на страницах проекта.",
 			"pickIconTitle": "Выбрать иконку",
 			"searchIconsPlaceholder": "Поиск иконок...",
+			"useEmoji": "Использовать этот эмодзи",
 			"boardNameLabel": "Название проекта",
 			"boardNameHint": "Название вашего проекта",
 			"boardNamePlaceholder": "Введите название проекта",
@@ -568,6 +584,8 @@
 			"descriptionLabel": "Описание",
 			"descriptionHint": "Краткое описание вашего проекта",
 			"descriptionPlaceholder": "Введите описание проекта",
+			"subtaskDepthLimitLabel": "Глубина вложенности подзадач",
+			"subtaskDepthLimitHint": "Максимальное число уровней вложенных подзадач (1–4).",
 			"dangerZone": "Опасная зона",
 			"dangerZoneSubtitle": "Необратимые и деструктивные действия.",
 			"deleteBoard": "Удалить проект",
@@ -631,7 +649,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Выберите проект",
-			"noBoards": "Нет проектов"
+			"noBoards": "Нет проектов",
+			"searchBoards": "Поиск досок..."
 		},
 		"columnEditor": {
 			"toastCreated": "Колонка создана",
@@ -1117,7 +1136,9 @@
 				"create": "Создание",
 				"views": "Представления",
 				"navigation": "Навигация",
-				"quickSelect": "Быстрый выбор (в выпадающих списках)"
+				"quickSelect": "Быстрый выбор (в выпадающих списках)",
+				"ticketTitle": "Заголовок тикета",
+				"editor": "Описание и комментарии"
 			},
 			"items": {
 				"openCommandPalette": "Открыть палитру команд",
@@ -1134,11 +1155,59 @@
 				"nextTask": "Следующая задача",
 				"prevTask": "Предыдущая задача",
 				"openTask": "Открыть выбранную задачу",
-				"quickSelectNumber": "Выбрать вариант по номеру"
+				"quickSelectNumber": "Выбрать вариант по номеру",
+				"titleLabel": "Добавить метку",
+				"titleMember": "Назначить участника",
+				"titlePriority": "Задать приоритет",
+				"editorMention": "Упомянуть участника",
+				"editorSlash": "Открыть меню блоков",
+				"editorTicket": "Сослаться на тикет"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Таблицы",
+			"create": "Создать таблицу",
+			"noTables": "Таблиц пока нет",
+			"loadError": "Не удалось загрузить таблицы.",
+			"retry": "Повторить",
+			"loading": "Загрузка таблиц",
+			"tableName": "Название таблицы",
+			"createTitle": "Создать новую таблицу",
+			"createDescription": "Начните с пустой таблицы, затем добавьте поля и строки.",
+			"cancel": "Отмена",
+			"createAction": "Создать таблицу",
+			"loadTableError": "Не удалось загрузить эту таблицу",
+			"connectionHelp": "Проверьте подключение и повторите попытку.",
+			"row_one": "{{count}} строка",
+			"row_other": "{{count}} строк",
+			"field_one": "{{count}} поле",
+			"field_other": "{{count}} полей",
+			"empty": "Эта таблица пуста",
+			"readOnlyEmpty": "У вас доступ только для чтения. Редактор может добавить первое поле.",
+			"addField": "Добавить поле",
+			"newFieldName": "Название нового поля",
+			"noRows": "Строк пока нет. Добавьте строку, чтобы начать ввод данных.",
+			"addRow": "Добавить строку",
+			"deleteField": "Удалить поле",
+			"deleteFieldConfirm": "Удалить поле «{{name}}»?",
+			"renameFieldError": "Не удалось переименовать поле",
+			"deleteFieldError": "Не удалось удалить поле",
+			"addFieldError": "Не удалось добавить поле",
+			"deleteRowError": "Не удалось удалить строку",
+			"saveCellError": "Не удалось сохранить ячейку",
+			"renameTableError": "Не удалось переименовать таблицу",
+			"addRowError": "Не удалось добавить строку",
+			"creating": "Создание…",
+			"created": "Таблица создана",
+			"createError": "Не удалось создать таблицу",
+			"tableOptions": "Параметры таблицы",
+			"deleteTable": "Удалить таблицу",
+			"deleteTableConfirm": "Удалить эту таблицу и все её данные? Это действие нельзя отменить.",
+			"deleted": "Таблица удалена",
+			"deleteTableError": "Не удалось удалить таблицу"
 		}
 	},
 	"notifications": {
@@ -1158,7 +1227,7 @@
 		"events": {
 			"task_created": {
 				"title": "Создана новая задача",
-				"content": "Задача «{{taskTitle}}» создана"
+				"content": "Тикет «{{taskTitle}}» создан"
 			},
 			"organization_created": {
 				"title": "Рабочая область создана",
@@ -1166,16 +1235,40 @@
 			},
 			"task_status_changed": {
 				"title": "Статус задачи изменён",
-				"content": "Статус задачи «{{taskTitle}}» изменён с «{{oldStatus}}» на «{{newStatus}}»"
+				"content": "Статус тикета «{{taskTitle}}» изменён с «{{oldStatus}}» на «{{newStatus}}»"
 			},
 			"task_assignee_changed": {
 				"title": "Задача назначена вам",
-				"content": "Вам назначена задача: {{taskTitle}}"
+				"content": "Вам назначен тикет: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Трекинг времени начат",
-				"contentWithTask": "Трекинг времени начат для задачи: {{taskTitle}}",
+				"contentWithTask": "Трекинг времени начат для тикета: {{taskTitle}}",
 				"contentWithoutTask": "Трекинг времени начат для задачи"
+			},
+			"task_title_changed": {
+				"title": "Название тикета изменено",
+				"content": "«{{oldTitle}}» переименован в «{{newTitle}}»"
+			},
+			"task_description_changed": {
+				"title": "Описание тикета обновлено",
+				"content": "Описание тикета «{{taskTitle}}» обновлено"
+			},
+			"task_priority_changed": {
+				"title": "Приоритет тикета изменён",
+				"content": "Приоритет тикета «{{taskTitle}}» изменён с {{oldPriority}} на {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Срок выполнения тикета изменён",
+				"content": "Срок выполнения тикета «{{taskTitle}}» обновлён"
+			},
+			"task_flag_raised": {
+				"title": "На тикете установлен флаг",
+				"content": "Флаг {{flagTypeName}} установлен на тикете «{{taskTitle}}»"
+			},
+			"task_flag_resolved": {
+				"title": "Флаг на тикете снят",
+				"content": "Флаг {{flagTypeName}} снят с тикета «{{taskTitle}}»"
 			}
 		}
 	},
@@ -1274,8 +1367,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Черновик сохранён",
+			"deleteDraft": "Удалить черновик"
+		},
+		"statusRun": "переместил из {{from}} в {{to}}",
+		"statusRunNoOp": "несколько раз менял статус и вернулся к {{status}}",
+		"statusRunSteps": "шагов: {{count}}",
+		"resolutionNote": "Примечание к решению"
 	},
 	"tasks": {
 		"status": {
@@ -1310,6 +1409,7 @@
 			"noActivity": "Активность не найдена",
 			"openInFullPage": "Открыть на полной странице",
 			"titlePlaceholder": "Нажмите, чтобы добавить название",
+			"titleSaving": "Сохранение названия…",
 			"addDescription": "Добавить описание...",
 			"editor": {
 				"ariaLabel": "Редактор описания задачи",
@@ -1404,7 +1504,8 @@
 					},
 					"onlyYoutubeInline": "Можно встраивать только URL YouTube. Используйте режим ссылки."
 				}
-			}
+			},
+			"close": "Закрыть детали тикета"
 		},
 		"entity": {
 			"task": "Задача"
@@ -1425,7 +1526,8 @@
 				"blocks": "блокирует",
 				"related": "связана с"
 			},
-			"otherBoard": "другая доска"
+			"otherBoard": "другая доска",
+			"blockedBy": "Заблокирован"
 		},
 		"subtasks": {
 			"title": "Подзадачи",
@@ -1502,8 +1604,20 @@
 					"amber": "Янтарь",
 					"terracotta": "Терракота",
 					"rose": "Роза",
-					"crimson": "Малиновый"
-				}
+					"crimson": "Малиновый",
+					"blossom": "Цветение",
+					"honey": "Мёд",
+					"lime": "Лайм",
+					"emerald": "Изумруд",
+					"lagoon": "Лагуна",
+					"sky": "Небо",
+					"ocean": "Океан",
+					"indigo": "Индиго",
+					"violet": "Фиолетовый",
+					"orchid": "Орхидея",
+					"cocoa": "Какао"
+				},
+				"repoSource": "Метка, синхронизированная с GitHub"
 			}
 		},
 		"backlog": {
@@ -1533,7 +1647,12 @@
 				"dueThisWeek": "Срок на этой неделе",
 				"dueNextWeek": "Срок на следующей неделе",
 				"noDueDate": "Без срока"
-			}
+			},
+			"moveAllDialogTitle": "Переместить все запланированные тикеты?",
+			"moveAllDialogDescription": "{{count}} запланированный тикет будет перемещён в «К выполнению».",
+			"moveAllDialogDescription_other": "{{count}} запланированных тикетов будет перемещено в «К выполнению».",
+			"moveAllDialogConfirm": "Переместить {{count}} тикет",
+			"moveAllDialogConfirm_other": "Переместить {{count}} тикетов"
 		},
 		"sort": {
 			"label": "Сортировка",
@@ -1549,6 +1668,22 @@
 				"title": "Название",
 				"number": "Номер задачи"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Фильтровать по",
@@ -1584,10 +1719,26 @@
 			"noTasksFound": "Задачи не найдены",
 			"noTasksMatch": "Нет запланированных задач, соответствующих «{{query}}»",
 			"taskHeader": "Задача",
+			"unscheduledHint": "Нет дат — перетащите, чтобы запланировать",
+			"dragToScheduleHint": "Перетащите по шкале времени, чтобы запланировать эту задачу",
 			"updateDatesError": "Не удалось обновить даты задачи",
 			"resizeStart": "Изменить дату начала",
 			"resizeDue": "Изменить срок выполнения",
-			"taskAriaLabel": "{{title}} — откройте или перетащите для перемещения"
+			"taskAriaLabel": "{{title}} — откройте или перетащите для перемещения",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Без вехи"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Удалить задачу?",
@@ -1600,7 +1751,8 @@
 			"success_one": "{{count}} задача архивирована",
 			"success_few": "{{count}} задачи архивированы",
 			"success_many": "{{count}} задач архивировано",
-			"success_other": "{{count}} задач архивировано"
+			"success_other": "{{count}} задач архивировано",
+			"error": "Не удалось архивировать тикеты"
 		},
 		"listView": {
 			"addTask": "Добавить задачу",
@@ -1630,11 +1782,17 @@
 			"updateSuccess": "Срок выполнения задачи успешно обновлён",
 			"updateError": "Не удалось обновить срок выполнения задачи",
 			"clearSuccess": "Срок выполнения задачи очищен",
-			"clearError": "Не удалось очистить срок выполнения"
+			"clearError": "Не удалось очистить срок выполнения",
+			"outcome": {
+				"early": "Раньше",
+				"on-time": "В срок",
+				"late": "Позже"
+			}
 		},
 		"labels": {
 			"label": "Метки",
-			"empty": "Нет доступных меток"
+			"empty": "Нет доступных меток",
+			"fromRepository": "Из связанного репозитория"
 		},
 		"update": {
 			"success": "Задача успешно обновлена",
@@ -1647,7 +1805,8 @@
 		"actions": {
 			"archive": "Архивировать",
 			"markAsPlanned": "Отметить как запланированную",
-			"delete": "Удалить..."
+			"delete": "Удалить...",
+			"unarchive": "Разархивировать"
 		},
 		"bulk": {
 			"selectedCount_one": "{{count}} выбрана",
@@ -1707,6 +1866,38 @@
 			"searchActions": "Поиск действий...",
 			"noActionsFound": "Действия не найдены.",
 			"changeStatus": "Изменить статус"
+		},
+		"titleTokens": {
+			"labels": "Метки",
+			"members": "Участники",
+			"priority": "Приоритет",
+			"hint": "# — метки, @ — участники, ! — приоритет"
+		},
+		"boardSync": {
+			"syncedWith": "Синхронизировано с {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Срок выполнения",
+			"noDueDate": "Без срока выполнения",
+			"noLabel": "Без метки",
+			"status": "Статус",
+			"milestone": "Веха",
+			"noStatus": "Без статуса"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Срок"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Вложить в {{title}}",
+			"releaseToNest": "Отпустите, чтобы вложить этот тикет в {{title}}.",
+			"cannotNestHere": "Здесь вложить нельзя",
+			"cannotNestReason": "Этот тикет нельзя вложить в выбранную цель. Выберите другой родительский тикет.",
+			"unknownTarget": "этот тикет"
+		},
+		"bulkActions": {
+			"label": "Массовые действия"
 		}
 	},
 	"invitations": {
@@ -1832,7 +2023,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1845,7 +2036,8 @@
 		},
 		"members": {
 			"pageTitle": "Участники",
-			"inviteMember": "Пригласить участника"
+			"inviteMember": "Пригласить участника",
+			"agentsCredentialsHint": "Выпуск и отзыв ключей доступа"
 		},
 		"inviteModal": {
 			"title": "Пригласить участника команды",

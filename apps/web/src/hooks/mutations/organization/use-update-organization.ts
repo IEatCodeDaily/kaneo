@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 import { createSlug } from "@/lib/utils/create-slug";
 
@@ -10,9 +11,11 @@ type UpdateOrganizationRequest = {
   logo?: string;
   metadata?: Record<string, unknown>;
   reposEnabled?: boolean;
+  tablesEnabled?: boolean;
 };
 
 function useUpdateOrganization() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       organizationId,
@@ -22,6 +25,7 @@ function useUpdateOrganization() {
       logo,
       metadata,
       reposEnabled,
+      tablesEnabled,
     }: UpdateOrganizationRequest) => {
       const updateData: {
         name?: string;
@@ -30,6 +34,7 @@ function useUpdateOrganization() {
         logo?: string;
         metadata?: Record<string, unknown>;
         reposEnabled?: boolean;
+        tablesEnabled?: boolean;
       } = {};
 
       if (name !== undefined) {
@@ -57,6 +62,9 @@ function useUpdateOrganization() {
       if (reposEnabled !== undefined) {
         updateData.reposEnabled = reposEnabled;
       }
+      if (tablesEnabled !== undefined) {
+        updateData.tablesEnabled = tablesEnabled;
+      }
 
       const { data, error } = await authClient.organization.update({
         data: updateData,
@@ -68,6 +76,13 @@ function useUpdateOrganization() {
       }
 
       return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["organization", "full", variables.organizationId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["active-organization"] });
     },
   });
 }

@@ -111,6 +111,7 @@
 				"labelCreated": "Label aangemaakt",
 				"labelCreateError": "Aanmaken van label mislukt",
 				"createMore": "Meer aanmaken",
+				"discardDraft": "Concept verwijderen",
 				"createButton": "Taak aanmaken",
 				"untitledTask": "Naamloze taak",
 				"labelColors": {
@@ -122,10 +123,22 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Roos",
-					"crimson": "Karmozijn"
+					"crimson": "Karmozijn",
+					"blossom": "Bloesem",
+					"honey": "Honing",
+					"lime": "Limoen",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Hemel",
+					"ocean": "Oceaan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidee",
+					"cocoa": "Cacao"
 				}
 			}
-		}
+		},
+		"unknown": "Onbekend"
 	},
 	"auth": {
 		"signIn": {
@@ -363,7 +376,9 @@
 			"labelsDescription": "Toon taaklabels en tags",
 			"priority": "Prioriteit",
 			"priorityDescription": "Toon prioriteitsindicatoren",
-			"weekStartsOnSaturday": "Zaterdag"
+			"weekStartsOnSaturday": "Zaterdag",
+			"reduceOverlayBlur": "Minder overlay-vervaging",
+			"reduceOverlayBlurDescription": "Verwijder de vervaagde achtergrond achter dialogen, sheets en het opdrachtpalet."
 		},
 		"developerPage": {
 			"pageTitle": "Ontwikkelaarsinstellingen",
@@ -469,6 +484,7 @@
 			"iconHint": "Wordt getoond in de zijbalk en boardoverzichten.",
 			"pickIconTitle": "Icoon kiezen",
 			"searchIconsPlaceholder": "Iconen zoeken...",
+			"useEmoji": "Deze emoji gebruiken",
 			"boardNameLabel": "Boardnaam",
 			"boardNameHint": "De naam van je board",
 			"boardNamePlaceholder": "Voer boardnaam in",
@@ -478,6 +494,8 @@
 			"descriptionLabel": "Beschrijving",
 			"descriptionHint": "Een korte beschrijving van je board",
 			"descriptionPlaceholder": "Voer boardbeschrijving in",
+			"subtaskDepthLimitLabel": "Limiet voor geneste subtaken",
+			"subtaskDepthLimitHint": "Maximaal aantal toegestane niveaus van geneste subtaken (1–4).",
 			"dangerZone": "Gevarenzone",
 			"dangerZoneSubtitle": "Onomkeerbare en destructieve acties.",
 			"deleteBoard": "Board verwijderen",
@@ -539,7 +557,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Board selecteren",
-			"noBoards": "Geen boarden"
+			"noBoards": "Geen boarden",
+			"searchBoards": "Borden zoeken..."
 		},
 		"columnEditor": {
 			"toastCreated": "Kolom aangemaakt",
@@ -898,7 +917,9 @@
 				"create": "Aanmaken",
 				"views": "Weergaven",
 				"navigation": "Navigatie",
-				"quickSelect": "Snelkeuze (in popovers)"
+				"quickSelect": "Snelkeuze (in popovers)",
+				"ticketTitle": "Tickettitel",
+				"editor": "Beschrijving en reacties"
 			},
 			"items": {
 				"openCommandPalette": "Opdrachtpalet openen",
@@ -915,11 +936,59 @@
 				"nextTask": "Volgende taak",
 				"prevTask": "Vorige taak",
 				"openTask": "Geselecteerde taak openen",
-				"quickSelectNumber": "Selecteer optie via nummer"
+				"quickSelectNumber": "Selecteer optie via nummer",
+				"titleLabel": "Een label toevoegen",
+				"titleMember": "Een lid toewijzen",
+				"titlePriority": "Prioriteit instellen",
+				"editorMention": "Een lid vermelden",
+				"editorSlash": "Het blokmenu openen",
+				"editorTicket": "Naar een ticket verwijzen"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Tabellen",
+			"create": "Tabel maken",
+			"noTables": "Nog geen tabellen",
+			"loadError": "Kan de tabellen niet laden.",
+			"retry": "Opnieuw proberen",
+			"loading": "Tabellen laden",
+			"tableName": "Tabelnaam",
+			"createTitle": "Een nieuwe tabel maken",
+			"createDescription": "Begin met een lege tabel en voeg vervolgens velden en rijen toe.",
+			"cancel": "Annuleren",
+			"createAction": "Tabel maken",
+			"loadTableError": "Kan deze tabel niet laden",
+			"connectionHelp": "Controleer je verbinding en probeer het opnieuw.",
+			"row_one": "{{count}} rij",
+			"row_other": "{{count}} rijen",
+			"field_one": "{{count}} veld",
+			"field_other": "{{count}} velden",
+			"empty": "Deze tabel is leeg",
+			"readOnlyEmpty": "Je hebt alleen-lezen-toegang. Een redacteur kan het eerste veld toevoegen.",
+			"addField": "Veld toevoegen",
+			"newFieldName": "Naam van nieuw veld",
+			"noRows": "Nog geen rijen. Voeg een rij toe om gegevens in te voeren.",
+			"addRow": "Rij toevoegen",
+			"deleteField": "Veld verwijderen",
+			"deleteFieldConfirm": "Veld ‘{{name}}’ verwijderen?",
+			"renameFieldError": "Kan de naam van het veld niet wijzigen",
+			"deleteFieldError": "Kan het veld niet verwijderen",
+			"addFieldError": "Kan het veld niet toevoegen",
+			"deleteRowError": "Kan de rij niet verwijderen",
+			"saveCellError": "Kan de cel niet opslaan",
+			"renameTableError": "Kan de naam van de tabel niet wijzigen",
+			"addRowError": "Kan de rij niet toevoegen",
+			"creating": "Maken…",
+			"created": "Tabel gemaakt",
+			"createError": "Kan de tabel niet maken",
+			"tableOptions": "Tabelopties",
+			"deleteTable": "Tabel verwijderen",
+			"deleteTableConfirm": "Deze tabel en alle gegevens verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+			"deleted": "Tabel verwijderd",
+			"deleteTableError": "Kan de tabel niet verwijderen"
 		}
 	},
 	"notifications": {
@@ -937,7 +1006,7 @@
 		"events": {
 			"task_created": {
 				"title": "Nieuwe taak aangemaakt",
-				"content": "Taak \"{{taskTitle}}\" is aangemaakt"
+				"content": "Ticket \"{{taskTitle}}\" is aangemaakt"
 			},
 			"organization_created": {
 				"title": "Werkruimte aangemaakt",
@@ -945,16 +1014,40 @@
 			},
 			"task_status_changed": {
 				"title": "Taakstatus gewijzigd",
-				"content": "Status van taak \"{{taskTitle}}\" gewijzigd van \"{{oldStatus}}\" naar \"{{newStatus}}\""
+				"content": "Status van ticket \"{{taskTitle}}\" gewijzigd van \"{{oldStatus}}\" naar \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Taak aan jou toegewezen",
-				"content": "Je bent toegewezen aan taak: {{taskTitle}}"
+				"content": "Je bent toegewezen aan ticket: {{taskTitle}}"
 			},
 			"time_entry_created": {
 				"title": "Tijdregistratie gestart",
-				"contentWithTask": "Tijdregistratie gestart voor taak: {{taskTitle}}",
+				"contentWithTask": "Tijdregistratie gestart voor ticket: {{taskTitle}}",
 				"contentWithoutTask": "Tijdregistratie gestart voor een taak"
+			},
+			"task_title_changed": {
+				"title": "Tickettitel gewijzigd",
+				"content": "‘{{oldTitle}}’ is hernoemd naar ‘{{newTitle}}’"
+			},
+			"task_description_changed": {
+				"title": "Ticketbeschrijving bijgewerkt",
+				"content": "De beschrijving van ‘{{taskTitle}}’ is bijgewerkt"
+			},
+			"task_priority_changed": {
+				"title": "Ticketprioriteit gewijzigd",
+				"content": "De prioriteit van ‘{{taskTitle}}’ is gewijzigd van {{oldPriority}} naar {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Vervaldatum van ticket gewijzigd",
+				"content": "De vervaldatum van ‘{{taskTitle}}’ is bijgewerkt"
+			},
+			"task_flag_raised": {
+				"title": "Markering toegevoegd aan ticket",
+				"content": "{{flagTypeName}} is toegevoegd aan ‘{{taskTitle}}’"
+			},
+			"task_flag_resolved": {
+				"title": "Markering op ticket opgelost",
+				"content": "{{flagTypeName}} is opgelost op ‘{{taskTitle}}’"
 			}
 		}
 	},
@@ -1055,8 +1148,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Concept opgeslagen",
+			"deleteDraft": "Concept verwijderen"
+		},
+		"statusRun": "heeft dit van {{from}} naar {{to}} verplaatst",
+		"statusRunNoOp": "heeft de status meerdere keren gewijzigd, terug naar {{status}}",
+		"statusRunSteps": "{{count}} stappen",
+		"resolutionNote": "Oplossingsnotitie"
 	},
 	"tasks": {
 		"status": {
@@ -1093,6 +1192,7 @@
 			"noActivity": "Geen activiteit gevonden",
 			"openInFullPage": "Openen op volledige pagina",
 			"titlePlaceholder": "Klik om een titel toe te voegen",
+			"titleSaving": "Titel opslaan…",
 			"addDescription": "Beschrijving toevoegen...",
 			"editor": {
 				"ariaLabel": "Taakbeschrijving editor",
@@ -1187,7 +1287,8 @@
 					},
 					"onlyYoutubeInline": "Alleen YouTube URL's kunnen worden ingesloten. Gebruik link-modus."
 				}
-			}
+			},
+			"close": "Ticketdetails sluiten"
 		},
 		"entity": {
 			"task": "Taak"
@@ -1208,7 +1309,8 @@
 				"blocks": "blokkeert",
 				"related": "is gerelateerd aan"
 			},
-			"otherBoard": "ander bord"
+			"otherBoard": "ander bord",
+			"blockedBy": "Geblokkeerd door"
 		},
 		"subtasks": {
 			"title": "Subtaken",
@@ -1274,8 +1376,20 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Roos",
-					"crimson": "Karmozijn"
-				}
+					"crimson": "Karmozijn",
+					"blossom": "Bloesem",
+					"honey": "Honing",
+					"lime": "Limoen",
+					"emerald": "Smaragd",
+					"lagoon": "Lagune",
+					"sky": "Hemel",
+					"ocean": "Oceaan",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orchidee",
+					"cocoa": "Cacao"
+				},
+				"repoSource": "Met GitHub gesynchroniseerd label"
 			}
 		},
 		"backlog": {
@@ -1302,7 +1416,12 @@
 				"dueThisWeek": "Deze week vervallen",
 				"dueNextWeek": "Volgende week vervallen",
 				"noDueDate": "Geen einddatum"
-			}
+			},
+			"moveAllDialogTitle": "Alle geplande tickets verplaatsen?",
+			"moveAllDialogDescription": "{{count}} gepland ticket wordt verplaatst naar Te doen.",
+			"moveAllDialogDescription_other": "{{count}} geplande tickets worden verplaatst naar Te doen.",
+			"moveAllDialogConfirm": "{{count}} ticket verplaatsen",
+			"moveAllDialogConfirm_other": "{{count}} tickets verplaatsen"
 		},
 		"sort": {
 			"label": "Sorteren",
@@ -1318,6 +1437,22 @@
 				"title": "Titel",
 				"number": "Taaknummer"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Filteren op",
@@ -1350,10 +1485,26 @@
 			"noTasksFound": "Geen taken gevonden",
 			"noTasksMatch": "Geen geplande taken die overeenkomen met \"{{query}}\"",
 			"taskHeader": "Taak",
+			"unscheduledHint": "Geen datums - sleep om te plannen",
+			"dragToScheduleHint": "Sleep over de tijdlijn om dit ticket te plannen",
 			"updateDatesError": "Bijwerken taakdatums mislukt",
 			"resizeStart": "Startdatum wijzigen",
 			"resizeDue": "Einddatum wijzigen",
-			"taskAriaLabel": "{{title}} — openen of slepen om te verplaatsen"
+			"taskAriaLabel": "{{title}} — openen of slepen om te verplaatsen",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Geen mijlpaal"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Taak verwijderen?",
@@ -1363,7 +1514,8 @@
 			"error": "Verwijderen taak mislukt"
 		},
 		"archive": {
-			"success": "{{count}} taken gearchiveerd"
+			"success": "{{count}} taken gearchiveerd",
+			"error": "Tickets archiveren mislukt"
 		},
 		"listView": {
 			"addTask": "Taak toevoegen",
@@ -1391,11 +1543,17 @@
 			"updateSuccess": "Einddatum taak succesvol bijgewerkt",
 			"updateError": "Bijwerken einddatum mislukt",
 			"clearSuccess": "Einddatum taak verwijderd",
-			"clearError": "Verwijderen einddatum mislukt"
+			"clearError": "Verwijderen einddatum mislukt",
+			"outcome": {
+				"early": "Vroeg",
+				"on-time": "Op tijd",
+				"late": "Te laat"
+			}
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "Geen labels beschikbaar"
+			"empty": "Geen labels beschikbaar",
+			"fromRepository": "Uit gekoppelde repository"
 		},
 		"update": {
 			"success": "Taak succesvol bijgewerkt",
@@ -1408,7 +1566,8 @@
 		"actions": {
 			"archive": "Archiveren",
 			"markAsPlanned": "Markeren als gepland",
-			"delete": "Verwijderen..."
+			"delete": "Verwijderen...",
+			"unarchive": "Uit archief halen"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} geselecteerd",
@@ -1441,6 +1600,38 @@
 			"searchActions": "Acties zoeken...",
 			"noActionsFound": "Geen acties gevonden.",
 			"changeStatus": "Status wijzigen"
+		},
+		"titleTokens": {
+			"labels": "Labels",
+			"members": "Leden",
+			"priority": "Prioriteit",
+			"hint": "Typ # voor labels, @ voor leden, ! voor prioriteit"
+		},
+		"boardSync": {
+			"syncedWith": "Gesynchroniseerd met {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Vervaldatum",
+			"noDueDate": "Geen vervaldatum",
+			"noLabel": "Geen label",
+			"status": "Status",
+			"milestone": "Mijlpaal",
+			"noStatus": "Geen status"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Vervaldatum"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Nesten onder {{title}}",
+			"releaseToNest": "Laat los om dit ticket onder {{title}} te nesten.",
+			"cannotNestHere": "Hier niet mogelijk",
+			"cannotNestReason": "Dit ticket kan niet onder dat doel worden genest. Kies een ander bovenliggend ticket.",
+			"unknownTarget": "dit ticket"
+		},
+		"bulkActions": {
+			"label": "Bulkacties"
 		}
 	},
 	"invitations": {
@@ -1564,7 +1755,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1577,7 +1768,8 @@
 		},
 		"members": {
 			"pageTitle": "Leden",
-			"inviteMember": "Lid uitnodigen"
+			"inviteMember": "Lid uitnodigen",
+			"agentsCredentialsHint": "Toegangssleutels uitgeven en intrekken"
 		},
 		"inviteModal": {
 			"title": "Teamlid uitnodigen",

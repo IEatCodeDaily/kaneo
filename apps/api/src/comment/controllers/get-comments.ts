@@ -13,14 +13,15 @@ async function getComments(taskId: string) {
       updatedAt: activityTable.updatedAt,
       userName: userTable.name,
       userImage: userTable.image,
+      externalUserName: activityTable.externalUserName,
+      externalUserAvatar: activityTable.externalUserAvatar,
     })
     .from(activityTable)
-    .innerJoin(userTable, eq(activityTable.userId, userTable.id))
+    .leftJoin(userTable, eq(activityTable.userId, userTable.id))
     .where(
       and(
         eq(activityTable.taskId, taskId),
         eq(activityTable.type, "comment"),
-        isNotNull(activityTable.userId),
         isNotNull(activityTable.content),
       ),
     )
@@ -34,8 +35,8 @@ async function getComments(taskId: string) {
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
     user: {
-      name: c.userName,
-      image: c.userImage,
+      name: c.userName ?? c.externalUserName ?? "Unknown",
+      image: c.userImage ?? c.externalUserAvatar,
     },
   }));
 }

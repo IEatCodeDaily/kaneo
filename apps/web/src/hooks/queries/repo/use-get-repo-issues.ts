@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import getRepoIssues from "@/fetchers/repo/get-repo-issues";
+import { repoIssuesQueryOptions } from "@/lib/navigation-prefetch";
 import type { RepoIssueStateFilter } from "@/types/repo";
 
 function useGetRepoIssues({
@@ -14,8 +14,7 @@ function useGetRepoIssues({
   limit?: number;
 }) {
   return useQuery({
-    queryFn: () => getRepoIssues({ repoId, state, page, limit }),
-    queryKey: ["repo-issues", repoId, state, page, limit],
+    ...repoIssuesQueryOptions(repoId, state, page, limit),
     enabled: !!repoId,
   });
 }

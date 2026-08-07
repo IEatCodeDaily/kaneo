@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 
 type AcceptInvitationRequest = {
@@ -6,6 +7,7 @@ type AcceptInvitationRequest = {
 };
 
 function useAcceptInvitation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ invitationId }: AcceptInvitationRequest) => {
       const { data, error } = await authClient.organization.acceptInvitation({
@@ -17,6 +19,13 @@ function useAcceptInvitation() {
       }
 
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organization-invites"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      queryClient.invalidateQueries({ queryKey: ["organization"] });
+      queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },
   });
 }

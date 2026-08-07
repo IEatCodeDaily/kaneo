@@ -26,6 +26,7 @@ import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
 
 type PaletteActionItem = {
@@ -60,7 +61,7 @@ function CommandPalette() {
   useRegisterShortcuts({
     shortcuts: {
       [shortcuts.help.key]: () => {
-        document.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+        openKeyboardShortcutsHelp();
       },
     },
     modifierShortcuts: {
@@ -175,9 +176,7 @@ function CommandPalette() {
             shortcut: "?",
             onRun: () => {
               setTimeout(() => {
-                document.dispatchEvent(
-                  new KeyboardEvent("keydown", { key: "?" }),
-                );
+                openKeyboardShortcutsHelp();
               }, 100);
             },
           },

@@ -9,7 +9,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { BoardDefaultAssignee } from "@/components/board/board-default-assignee";
 import { TasksImportExport } from "@/components/board/tasks-import-export.tsx";
+import BoardIconPicker from "@/components/common/board-icon-picker";
 import PageTitle from "@/components/page-title";
 import {
   AlertDialog,
@@ -30,19 +32,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import icons from "@/constants/board-icons";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
 import useUpdateBoard from "@/hooks/mutations/board/use-update-board";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
-import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board.ts";
 
@@ -57,6 +52,7 @@ type BoardFormValues = {
   slug: string;
   description?: string;
   icon: string;
+  subtaskDepthLimit: number;
 };
 
 type NormalizedBoardValues = {
@@ -64,6 +60,7 @@ type NormalizedBoardValues = {
   slug: string;
   description: string;
   icon: string;
+  subtaskDepthLimit: number;
 };
 
 function normalizeBoardValues(data: BoardFormValues): NormalizedBoardValues {
@@ -72,6 +69,7 @@ function normalizeBoardValues(data: BoardFormValues): NormalizedBoardValues {
     slug: data.slug.trim(),
     description: (data.description ?? "").trim(),
     icon: data.icon || "Layout",
+    subtaskDepthLimit: data.subtaskDepthLimit,
   };
 }
 
@@ -93,6 +91,7 @@ function RouteComponent() {
         icon: z
           .string()
           .min(1, t("settings:boardGeneral.validation.iconRequired")),
+        subtaskDepthLimit: z.number().int().min(1).max(4),
       }),
     [t],
   );
@@ -104,8 +103,6 @@ function RouteComponent() {
   const queuedSaveRef = useRef<BoardFormValues | null>(null);
   const lastSavedRef = useRef<NormalizedBoardValues | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const [iconSearch, setIconSearch] = useState("");
 
   const { data: organization } = useActiveOrganization();
   const { boardId: rawBoardId } = useParams({ strict: false });
@@ -133,6 +130,7 @@ function RouteComponent() {
       slug: board?.slug || "",
       description: board?.description || "",
       icon: board?.icon || "Layout",
+      subtaskDepthLimit: board?.subtaskDepthLimit ?? 4,
     },
   });
 
@@ -144,6 +142,7 @@ function RouteComponent() {
       slug: board.slug || "",
       description: board.description || "",
       icon: board.icon || "Layout",
+      subtaskDepthLimit: board.subtaskDepthLimit ?? 4,
     };
     lastSavedRef.current = normalizeBoardValues(nextValues);
 
@@ -166,8 +165,15 @@ function RouteComponent() {
       const descriptionChanged =
         lastSavedRef.current?.description !== normalizedData.description;
       const iconChanged = lastSavedRef.current?.icon !== normalizedData.icon;
+      const subtaskDepthLimitChanged =
+        lastSavedRef.current?.subtaskDepthLimit !==
+        normalizedData.subtaskDepthLimit;
       const hasChanges =
-        nameChanged || slugChanged || descriptionChanged || iconChanged;
+        nameChanged ||
+        slugChanged ||
+        descriptionChanged ||
+        iconChanged ||
+        subtaskDepthLimitChanged;
 
       if (!hasChanges) return;
 
@@ -188,6 +194,9 @@ function RouteComponent() {
             : (board.description ?? ""),
           icon: iconChanged ? normalizedData.icon : (board.icon ?? "Layout"),
           isPublic: !!board.isPublic,
+          subtaskDepthLimit: subtaskDepthLimitChanged
+            ? normalizedData.subtaskDepthLimit
+            : (board.subtaskDepthLimit ?? 4),
         };
 
         await updateBoard(updatePayload);
@@ -229,6 +238,7 @@ function RouteComponent() {
       board?.slug,
       board?.description,
       board?.icon,
+      board?.subtaskDepthLimit,
       updateBoard,
       queryClient,
       organization?.id,
@@ -284,7 +294,8 @@ function RouteComponent() {
           last.name !== normalized.name ||
           last.slug !== normalized.slug ||
           last.description !== normalized.description ||
-          last.icon !== normalized.icon;
+          last.icon !== normalized.icon ||
+          last.subtaskDepthLimit !== normalized.subtaskDepthLimit;
         if (!hasPendingChanges) return;
 
         const isValid = await boardFormRef.current.trigger();
@@ -351,86 +362,23 @@ function RouteComponent() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Popover
-                  open={iconPopoverOpen}
-                  onOpenChange={(open) => {
-                    setIconPopoverOpen(open);
-                    if (!open) setIconSearch("");
-                  }}
-                  modal={true}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-auto justify-start gap-2 font-normal"
-                      title={t("settings:boardGeneral.pickIconTitle")}
-                      disabled={!canEdit}
-                    >
-                      {(() => {
-                        const selectedKey =
-                          (boardForm.watch("icon") as keyof typeof icons) ||
-                          "Layout";
-                        const SelectedIcon = icons[selectedKey] || icons.Layout;
-                        return <SelectedIcon className="h-4 w-4" />;
-                      })()}
-                      <span className="truncate text-xs">
-                        {boardForm.watch("icon") || "Layout"}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
-                    <div className="space-y-2">
-                      <Input
-                        value={iconSearch}
-                        onChange={(e) => setIconSearch(e.target.value)}
-                        placeholder={t(
-                          "settings:boardGeneral.searchIconsPlaceholder",
-                        )}
-                        className="h-8 text-xs"
-                      />
-                      <div className="max-h-[280px] overflow-y-auto pr-1">
-                        <div className="grid grid-cols-6 gap-1.5">
-                          {Object.entries(icons)
-                            .filter(([iconName]) =>
-                              iconName
-                                .toLowerCase()
-                                .includes(iconSearch.trim().toLowerCase()),
-                            )
-                            .map(([iconName, Icon]) => {
-                              const isSelected =
-                                boardForm.getValues("icon") === iconName;
-                              return (
-                                <Button
-                                  key={iconName}
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    boardForm.setValue("icon", iconName, {
-                                      shouldDirty: true,
-                                      shouldValidate: true,
-                                    });
-                                    setIconPopoverOpen(false);
-                                    setIconSearch("");
-                                  }}
-                                  className={cn(
-                                    "h-10 items-center justify-center rounded-md p-0",
-                                    isSelected &&
-                                      "bg-sidebar-accent text-sidebar-accent-foreground",
-                                  )}
-                                  title={iconName}
-                                >
-                                  <Icon className="h-4 w-4" />
-                                </Button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <BoardIconPicker
+                  align="end"
+                  disabled={!canEdit}
+                  onValueChange={(icon) =>
+                    boardForm.setValue("icon", icon, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  searchPlaceholder={t(
+                    "settings:boardGeneral.searchIconsPlaceholder",
+                  )}
+                  side="top"
+                  showValue
+                  triggerLabel={t("settings:boardGeneral.pickIconTitle")}
+                  value={boardForm.watch("icon")}
+                />
               </div>
             </div>
 
@@ -506,6 +454,44 @@ function RouteComponent() {
 
                 <FormField
                   control={boardForm.control}
+                  name="subtaskDepthLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm font-medium">
+                            {t("settings:boardGeneral.subtaskDepthLimitLabel")}
+                          </FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            {t("settings:boardGeneral.subtaskDepthLimitHint")}
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Input
+                            aria-label={t(
+                              "settings:boardGeneral.subtaskDepthLimitLabel",
+                            )}
+                            className="w-20 text-center"
+                            disabled={!canEdit}
+                            max={4}
+                            min={1}
+                            type="number"
+                            {...field}
+                            onChange={(event) =>
+                              field.onChange(event.target.valueAsNumber)
+                            }
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <FormField
+                  control={boardForm.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -546,6 +532,51 @@ function RouteComponent() {
                 </p>
               </div>
               {board && <TasksImportExport board={board} />}
+            </div>
+          </div>
+        </div>
+
+        {/* Default Assignee — separate from the debounced form because it
+            accepts nullable FK values and uses a principal selector, not
+            text inputs. Saves immediately on change via a dedicated mutation. */}
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-md font-medium">Default Assignee</h2>
+            <p className="text-xs text-muted-foreground">
+              New tickets on this board are automatically assigned to this
+              member or team when no assignee is chosen manually.
+            </p>
+          </div>
+          <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">Default assignee</p>
+                <p className="text-xs text-muted-foreground">
+                  {board?.defaultAssigneeId || board?.defaultAssigneeTeamId
+                    ? "Applied to new tickets."
+                    : "No default — new tickets start unassigned."}
+                </p>
+              </div>
+              <BoardDefaultAssignee
+                board={board}
+                canEdit={canEdit}
+                onUpdate={(updates) =>
+                  updateBoard({
+                    id: board!.id,
+                    name: board!.name,
+                    icon: board!.icon ?? "Layout",
+                    slug: board!.slug,
+                    description: board!.description ?? "",
+                    isPublic: !!board!.isPublic,
+                    ...updates,
+                  })
+                }
+                onDone={() =>
+                  queryClient.invalidateQueries({
+                    queryKey: ["tasks", board?.id],
+                  })
+                }
+              />
             </div>
           </div>
         </div>

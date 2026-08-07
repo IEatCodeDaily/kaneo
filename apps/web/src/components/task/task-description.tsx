@@ -1,5 +1,4 @@
 import type { Editor } from "@tiptap/core";
-import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
@@ -39,10 +38,20 @@ import {
   Table2,
   Underline as UnderlineIcon,
 } from "lucide-react";
+import { Marked } from "marked";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { bundledLanguages, type Highlighter } from "shiki";
+import {
+  DetailsExtensions,
+  inlineDetailsBlocks,
+} from "@/components/task/extensions/details-block";
+import { ResizableImage } from "@/components/task/extensions/resizable-image";
+import {
+  matchSlashTrigger,
+  shouldSlashMenuCaptureEnter,
+} from "@/components/task/slash-trigger";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -55,10 +64,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import debounce from "@/lib/debounce";
+import { toReferenceSearchQuery } from "@/lib/editor-reference-query";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
   extractIssueKeyFromUrl,
@@ -66,17 +78,27 @@ import {
   isYouTubeUrl,
   normalizeUrl,
 } from "@/lib/editor-url-utils";
-import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
+import { searchReferences } from "@/lib/search-references";
+import type { Highlighter } from "@/lib/shiki-highlighter";
+import {
+  getSharedShikiHighlighter,
+  SHIKI_LANGUAGES,
+} from "@/lib/shiki-highlighter";
 import { toast } from "@/lib/toast";
 import { uploadTaskImage } from "@/lib/upload-task-image";
 import { AttachmentCard } from "./extensions/attachment-card";
 import { EmbedBlock } from "./extensions/embed-block";
 import { KaneoIssueLink } from "./extensions/kaneo-issue-link";
+import { KaneoMention } from "./extensions/kaneo-mention";
+import type { MentionMember } from "./extensions/mention-list";
+import { MentionSuggestion } from "./extensions/mention-suggestion";
+import { ReferenceSuggestion } from "./extensions/reference-suggestion";
 import {
   SHIKI_CODEBLOCK_REFRESH_META,
   ShikiCodeBlock,
 } from "./extensions/shiki-code-block";
 import { TaskItemWithCheckbox } from "./extensions/task-item-with-checkbox";
+import { formatTaskMarkdown } from "./task-markdown";
 import "tippy.js/dist/tippy.css";
 
 type TaskDescriptionProps = {
@@ -111,10 +133,32 @@ type SlashMenuState = {
 };
 
 function formatMarkdown(markdown: string) {
-  return markdown
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/\n{2,}$/g, "\n");
+  return formatTaskMarkdown(markdown);
+}
+
+/**
+ * Render markdown to HTML for the `<details>` pre-pass. Same rationale as the
+ * copy in comment-editor: an ISOLATED Marked instance, because @tiptap/markdown
+ * registers custom tokenizers (taskList, …) on the global singleton whose
+ * tokens a plain render cannot handle — `Token with "taskList" type was not
+ * found` crashed the whole view.
+ */
+const detailsFragmentRenderer = new Marked({ breaks: false, gfm: true });
+
+function renderMarkdownFragment(markdown: string) {
+  return detailsFragmentRenderer.parse(markdown, { async: false });
+}
+
+/**
+ * Markdown prepared for LOADING into the editor.
+ *
+ * Kept separate from `formatMarkdown` because that also runs over
+ * `getMarkdown()` output on every keystroke (the save path) and against the
+ * sync refs; collapsing `<details>` there would rewrite the user's own source
+ * and break the changed-content comparison.
+ */
+function formatMarkdownForLoad(markdown: string) {
+  return inlineDetailsBlocks(formatMarkdown(markdown), renderMarkdownFragment);
 }
 
 type EmbedComposerState = {
@@ -268,6 +312,27 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const canEdit = canManageTasks();
 
   const editorShellRef = useRef<HTMLDivElement | null>(null);
+  // Read through a ref so the extension always sees the current organization
+  // without the editor having to be rebuilt when it resolves.
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationIdRef = useRef("");
+  organizationIdRef.current = activeOrganization?.id ?? "";
+  // #114: `@` mentions of organization members. Read through a ref for the
+  // same reason as the organization id — the member list resolves after the
+  // editor is created and must not force it to be rebuilt.
+  const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    activeOrganization?.id ?? "",
+  );
+  const mentionMembersRef = useRef<MentionMember[]>([]);
+  mentionMembersRef.current = useMemo(
+    () =>
+      (organizationMembers?.members ?? []).map((member) => ({
+        id: member.userId,
+        label: member.user?.name ?? member.user?.email ?? "",
+        image: member.user?.image ?? null,
+      })),
+    [organizationMembers],
+  );
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const taskRef = useRef(task);
@@ -308,8 +373,14 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     updateTaskRef.current = updateTaskDescription;
   }, [task, updateTaskDescription]);
 
+  // Checked against the languages the shared highlighter actually loads.
+  //
+  // This used to be `Object.keys(bundledLanguages)` from shiki. Each entry in
+  // that map is a live `import()` for a grammar, so referencing it pulled every
+  // language chunk (~200 files, ~15 MB on disk) into the bundle even though the
+  // picker only offers CODE_LANGUAGE_OPTIONS.
   const shikiSupportedLanguages = useMemo(
-    () => new Set([...Object.keys(bundledLanguages), "text"]),
+    () => new Set<string>([...SHIKI_LANGUAGES, "text"]),
     [],
   );
   const toShikiLanguage = useCallback(
@@ -328,19 +399,23 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       })),
     [shikiSupportedLanguages, t, toShikiLanguage],
   );
+  /**
+   * #266: overlay coordinates are VIEWPORT-relative, because the overlays that
+   * use them (the slash menu, the embed composer) are portaled to
+   * `document.body` and positioned `fixed`.
+   *
+   * They used to be measured relative to `editorShellRef` and positioned
+   * `absolute` inside it. That made them descendants of the create-task modal's
+   * scrolling body (`overflow-y-auto`), which clips every descendant to its
+   * padding box — so the menu was cut off mid-item. `z-index` cannot lift a
+   * descendant out of an ancestor's overflow clip, which is why the menu was
+   * already `z-50` and still clipped.
+   */
   const getOverlayPosition = useCallback(
     (editorView: Editor["view"], pos: number) => {
       const coords = editorView.coordsAtPos(pos);
-      const shellRect = editorShellRef.current?.getBoundingClientRect();
 
-      if (!shellRect) {
-        return { top: coords.bottom + 8, left: coords.left };
-      }
-
-      return {
-        top: coords.bottom - shellRect.top + 8,
-        left: coords.left - shellRect.left,
-      };
+      return { top: coords.bottom + 8, left: coords.left };
     },
     [],
   );
@@ -367,6 +442,10 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
           .setImage({
             src: asset.url,
             alt: asset.alt,
+            // #54: keep the uploaded filename on the node. Markdown carries
+            // only `![image](url)`, so without this the hover tooltip degrades
+            // to the word "image" or an opaque asset id.
+            title: asset.filename || asset.alt,
           })
           .run();
         return;
@@ -544,6 +623,15 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     [],
   );
 
+  useEffect(
+    () => () => {
+      // A route change can destroy this editor before the debounce expires.
+      // Flush the latest markdown so drafts keep their final keystrokes.
+      void debouncedUpdate.flush();
+    },
+    [debouncedUpdate],
+  );
+
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -570,6 +658,12 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
             gfm: true,
           },
         }),
+        /*
+          Same collapsible-sections support the comment editor has. Without
+          these nodes a task description containing <details> (GitHub-imported
+          issues, pasted CodeRabbit plans) rendered the wrapper as plain text.
+        */
+        ...DetailsExtensions,
         ShikiCodeBlock.configure({
           highlighter: () => shikiHighlighterRef.current,
           resolveLanguage: toShikiLanguage,
@@ -579,8 +673,25 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         EmbedBlock,
         AttachmentCard,
         KaneoIssueLink,
+        KaneoMention,
+        MentionSuggestion.configure({
+          getMembers: () => mentionMembersRef.current,
+        }),
+        ReferenceSuggestion.configure({
+          search: (query) =>
+            searchReferences({
+              // `#` with nothing typed still lists tasks; the search API
+              // rejects an empty `q`, so it gets a match-all pattern.
+              query: toReferenceSearchQuery(query),
+              organizationId: organizationIdRef.current,
+            }),
+        }),
         TaskList,
-        Image.configure({
+        // #54: must be the ResizableImage node view, not plain
+        // `@tiptap/extension-image`. The plain extension renders a bare <img>
+        // with no node view, so right-click has no context menu and the
+        // selected image shows no tooltip — the bug reported on this ticket.
+        ResizableImage.configure({
           HTMLAttributes: {
             class: "kaneo-editor-image",
             loading: "lazy",
@@ -775,7 +886,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   // menus, paste handlers, and toolbar buttons all become no-ops because
   // the editor refuses content mutations.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     editor.setEditable(canEdit);
   }, [editor, canEdit]);
 
@@ -929,13 +1040,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         "\n",
         "\0",
       );
-      const match = /(?:^|\s)\/([^\s/]*)$/.exec(textBeforeCursor);
-      if (!match) {
+      const trigger = matchSlashTrigger(textBeforeCursor);
+      if (!trigger) {
         setSlashMenu(null);
         return;
       }
 
-      const query = match[1] || "";
+      const query = trigger.query;
       const from = $from.pos - query.length - 1;
       const to = $from.pos;
       const coords = getOverlayPosition(view, $from.pos);
@@ -959,7 +1070,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   );
 
   useEffect(() => {
-    if (!editor) return;
+    // A destroyed editor is still truthy but its commandManager is null, so a
+    // `!editor` check alone is not enough: navigating between a parent task and
+    // its subtask tears the editor down while this effect is still scheduled,
+    // and touching `.commands` then throws "can't access property commands".
+    if (!editor || editor.isDestroyed) return;
     if (lastEditorRef.current !== editor) {
       hasHydratedRef.current = false;
       lastEditorRef.current = editor;
@@ -976,10 +1091,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
     if (!hasHydratedRef.current) {
       isSyncingExternalContentRef.current = true;
       latestSyncedMarkdownRef.current = incomingMarkdown;
-      editor.commands.setContent(incomingMarkdown, {
-        emitUpdate: false,
-        contentType: "markdown",
-      });
+      editor.commands.setContent(
+        formatMarkdownForLoad(task?.description || ""),
+        {
+          emitUpdate: false,
+          contentType: "markdown",
+        },
+      );
       hasHydratedRef.current = true;
       requestAnimationFrame(() => {
         isSyncingExternalContentRef.current = false;
@@ -992,7 +1110,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
 
     isSyncingExternalContentRef.current = true;
     latestSyncedMarkdownRef.current = incomingMarkdown;
-    editor.commands.setContent(incomingMarkdown, {
+    editor.commands.setContent(formatMarkdownForLoad(task?.description || ""), {
       emitUpdate: false,
       contentType: "markdown",
     });
@@ -1002,7 +1120,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   }, [editor, taskId, task?.description]);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
 
     syncSlashMenu(editor);
     const onSelection = () => syncSlashMenu(editor);
@@ -1121,7 +1239,13 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         return;
       }
 
-      if (!commands.length) return;
+      // #267: never intercept keys unless there is a command to act on.
+      // Otherwise an open-but-empty menu silently swallowed Enter, so a
+      // checklist item could not be split. The Enter/Tab branch below applies
+      // the additional `hasQuery` rule; arrow navigation only needs commands.
+      if (commands.length === 0) {
+        return;
+      }
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
@@ -1151,6 +1275,18 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       }
 
       if (event.key === "Enter" || event.key === "Tab") {
+        // #267: a menu opened by a bare `/` is a browsable list — Enter still
+        // belongs to the document so a checklist item ending in a slash can be
+        // split. Arrow navigation above stays available either way.
+        if (
+          !shouldSlashMenuCaptureEnter({
+            hasMenu: true,
+            commandCount: commands.length,
+            hasQuery: current.query.length > 0,
+          })
+        ) {
+          return;
+        }
         event.preventDefault();
         const command = commands[current.selectedIndex] || commands[0];
         if (!command) return;
@@ -1717,157 +1853,186 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
         </BubbleMenu>
       )}
 
-      {editor && slashMenu && (
-        <div
-          className="kaneo-tiptap-slash-menu"
-          style={{
-            top: slashMenu.top,
-            left: slashMenu.left,
-            position: "absolute",
-          }}
-        >
-          {filteredSlashCommands.length > 0 ? (
-            groupedSlashCommands.map((group) => {
-              if (!group.items.length) return null;
-              return (
-                <div key={group.title} className="kaneo-tiptap-slash-group">
-                  <div className="kaneo-tiptap-slash-group-title">
-                    {group.title}
-                  </div>
-                  {group.items.map((command) => {
-                    const index = filteredSlashCommands.findIndex(
-                      (candidate) => candidate.id === command.id,
-                    );
-                    return (
-                      <button
-                        key={command.id}
-                        type="button"
-                        className={cn(
-                          "kaneo-tiptap-slash-item",
-                          slashMenu.selectedIndex === index && "is-selected",
-                        )}
-                        onMouseEnter={() =>
-                          setSlashMenu((current) =>
-                            current
-                              ? { ...current, selectedIndex: index }
-                              : current,
-                          )
-                        }
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          runSlashCommand(command);
-                        }}
-                      >
-                        <span className="kaneo-tiptap-slash-label">
-                          {command.label}
-                        </span>
-                        {command.shortcut && (
-                          <span className="kaneo-tiptap-slash-shortcut">
-                            {command.shortcut}
+      {editor &&
+        slashMenu &&
+        /*
+          #266: portaled to `document.body`. Rendered inline it was a descendant
+          of the create-task modal's scrolling body (`overflow-y-auto`), which
+          clips descendants to its padding box — the menu was sliced mid-item
+          with modal background still visible below the cut, which is the
+          giveaway that an inner scroll container was clipping it rather than
+          the modal's own edge. A portal is the only way out of that clip;
+          raising `z-index` cannot escape an ancestor's overflow.
+        */
+        createPortal(
+          <div
+            className="kaneo-tiptap-slash-menu"
+            data-testid="tiptap-slash-menu"
+            style={{
+              top: slashMenu.top,
+              left: slashMenu.left,
+              position: "fixed",
+            }}
+          >
+            {filteredSlashCommands.length > 0 ? (
+              groupedSlashCommands.map((group) => {
+                if (!group.items.length) return null;
+                return (
+                  <div key={group.title} className="kaneo-tiptap-slash-group">
+                    <div className="kaneo-tiptap-slash-group-title">
+                      {group.title}
+                    </div>
+                    {group.items.map((command) => {
+                      const index = filteredSlashCommands.findIndex(
+                        (candidate) => candidate.id === command.id,
+                      );
+                      return (
+                        <button
+                          key={command.id}
+                          type="button"
+                          className={cn(
+                            "kaneo-tiptap-slash-item",
+                            slashMenu.selectedIndex === index && "is-selected",
+                          )}
+                          onMouseEnter={() =>
+                            setSlashMenu((current) =>
+                              current
+                                ? { ...current, selectedIndex: index }
+                                : current,
+                            )
+                          }
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            runSlashCommand(command);
+                          }}
+                        >
+                          <span className="kaneo-tiptap-slash-label">
+                            {command.label}
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })
-          ) : (
-            <div className="kaneo-tiptap-slash-empty">
-              {t("tasks:detail.editor.slash.empty")}
-            </div>
-          )}
-        </div>
-      )}
+                          {command.shortcut && (
+                            <span className="kaneo-tiptap-slash-shortcut">
+                              {command.shortcut}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="kaneo-tiptap-slash-empty">
+                {t("tasks:detail.editor.slash.empty")}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
 
-      {editor && embedComposer && (
-        <div
-          className="kaneo-embed-composer"
-          style={{
-            top: embedComposer.top,
-            left: embedComposer.left,
-            position: "absolute",
-          }}
-        >
-          {embedComposer.mode === "choice" ? (
-            <div className="kaneo-embed-choice-menu">
-              <button
-                type="button"
-                className="kaneo-embed-choice-item is-primary"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  submitEmbedComposer("embed");
-                }}
-              >
-                <span>{t("tasks:detail.editor.embed.choice.embedVideo")}</span>
-                <span className="kaneo-embed-choice-hint">Tab</span>
-              </button>
-              <button
-                type="button"
-                className="kaneo-embed-choice-item"
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  setEmbedComposer(null);
-                  setEmbedComposerError("");
-                }}
-              >
-                <span>{t("tasks:detail.editor.embed.choice.keepAsLink")}</span>
-                <span className="kaneo-embed-choice-hint">Esc</span>
-              </button>
-            </div>
-          ) : (
-            <form
-              className="kaneo-embed-composer-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitEmbedComposer("embed");
-              }}
-            >
-              <Input
-                size="sm"
-                value={embedComposer.url}
-                onChange={(event) => {
-                  setEmbedComposer((current) =>
-                    current ? { ...current, url: event.target.value } : current,
-                  );
-                  if (embedComposerError) setEmbedComposerError("");
-                }}
-                placeholder={t("tasks:detail.editor.embed.inputPlaceholder")}
-                autoFocus
-              />
-              <div className="kaneo-embed-composer-actions">
-                <Button
+      {editor &&
+        embedComposer &&
+        /*
+          #266: portaled and `fixed` for the same reason as the slash menu, and
+          because it shares `getOverlayPosition` — which now returns
+          viewport-relative coordinates. Leaving this one `absolute` inside the
+          editor shell would have silently mispositioned it.
+        */
+        createPortal(
+          <div
+            className="kaneo-embed-composer"
+            data-testid="embed-composer"
+            style={{
+              top: embedComposer.top,
+              left: embedComposer.left,
+              position: "fixed",
+            }}
+          >
+            {embedComposer.mode === "choice" ? (
+              <div className="kaneo-embed-choice-menu">
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => submitEmbedComposer("link")}
+                  className="kaneo-embed-choice-item is-primary"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    submitEmbedComposer("embed");
+                  }}
                 >
-                  {t("tasks:detail.editor.embed.asLink")}
-                </Button>
-                <Button type="submit" size="xs">
-                  {t("tasks:detail.editor.embed.submit")}
-                </Button>
-                <Button
+                  <span>
+                    {t("tasks:detail.editor.embed.choice.embedVideo")}
+                  </span>
+                  <span className="kaneo-embed-choice-hint">Tab</span>
+                </button>
+                <button
                   type="button"
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => {
+                  className="kaneo-embed-choice-item"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
                     setEmbedComposer(null);
                     setEmbedComposerError("");
                   }}
                 >
-                  {t("common:actions.cancel")}
-                </Button>
+                  <span>
+                    {t("tasks:detail.editor.embed.choice.keepAsLink")}
+                  </span>
+                  <span className="kaneo-embed-choice-hint">Esc</span>
+                </button>
               </div>
-              {embedComposerError && (
-                <p className="kaneo-embed-composer-error">
-                  {embedComposerError}
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-      )}
+            ) : (
+              <form
+                className="kaneo-embed-composer-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitEmbedComposer("embed");
+                }}
+              >
+                <Input
+                  size="sm"
+                  value={embedComposer.url}
+                  onChange={(event) => {
+                    setEmbedComposer((current) =>
+                      current
+                        ? { ...current, url: event.target.value }
+                        : current,
+                    );
+                    if (embedComposerError) setEmbedComposerError("");
+                  }}
+                  placeholder={t("tasks:detail.editor.embed.inputPlaceholder")}
+                  autoFocus
+                />
+                <div className="kaneo-embed-composer-actions">
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => submitEmbedComposer("link")}
+                  >
+                    {t("tasks:detail.editor.embed.asLink")}
+                  </Button>
+                  <Button type="submit" size="xs">
+                    {t("tasks:detail.editor.embed.submit")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      setEmbedComposer(null);
+                      setEmbedComposerError("");
+                    }}
+                  >
+                    {t("common:actions.cancel")}
+                  </Button>
+                </div>
+                {embedComposerError && (
+                  <p className="kaneo-embed-composer-error">
+                    {embedComposerError}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>,
+          document.body,
+        )}
 
       <EditorContent
         editor={editor}

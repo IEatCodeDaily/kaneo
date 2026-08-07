@@ -1,15 +1,19 @@
 import { produce } from "immer";
 import { Archive, Plus } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+
+import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getColumnIcon } from "@/lib/column";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 import type { BoardWithTasks } from "@/types/board";
 import { ArchiveTasksModal } from "../../shared/modals/archive-tasks-modal";
+
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
 
 type ColumnHeaderProps = {
   column: BoardWithTasks["columns"][number];
@@ -18,7 +22,7 @@ type ColumnHeaderProps = {
 export function ColumnHeader({ column }: ColumnHeaderProps) {
   const { t } = useTranslation();
   const { board, setBoard } = useBoardStore();
-  const { mutate: updateTask } = useUpdateTask();
+  const { bulkArchive } = useBulkOperations();
   const { canManageTasks, canCreateTasks } = useOrganizationPermission();
   const canTask = canManageTasks();
   const canCreate = canCreateTasks();
@@ -29,24 +33,39 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
   const handleConfirmArchive = () => {
     if (!column.isFinal || !board) return;
 
+    const taskIds = column.tasks.map((task) => task.id);
+
+    /*
+      #226: archival writes `task.archived_at` and leaves `status` alone, so a
+      Done ticket stays Done while archived. This used to loop `updateTask` with
+      `status: "archived"`, which now fails validation because "archived" is not
+      a status — the whole action 400'd.
+    */
     const updatedBoard = produce(board, (draft) => {
       const archivedColumn = draft?.columns?.find(
         (col) => col.id === column.id,
       );
       if (!archivedColumn) return;
-
-      for (const task of archivedColumn.tasks) {
-        updateTask({
-          ...task,
-          status: "archived",
-        });
-      }
-
       archivedColumn.tasks = [];
     });
 
+    if (taskIds.length === 0) {
+      setIsArchiveModalOpen(false);
+      return;
+    }
+
     setBoard(updatedBoard);
-    toast.success(t("tasks:archive.success", { count: column.tasks.length }));
+
+    bulkArchive(taskIds)
+      .then(() => {
+        toast.success(t("tasks:archive.success", { count: taskIds.length }));
+      })
+      .catch(() => {
+        // put the column back: the server rejected the archive
+        setBoard(board);
+        toast.error(t("tasks:archive.error"));
+      });
+
     setIsArchiveModalOpen(false);
   };
 
@@ -87,12 +106,16 @@ export function ColumnHeader({ column }: ColumnHeaderProps) {
         )}
       </div>
 
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        boardId={board?.id}
-        status={column.id}
-      />
+      {isTaskModalOpen && (
+        <Suspense fallback={<span className="sr-only">Loading editor</span>}>
+          <CreateTaskModal
+            open
+            onClose={() => setIsTaskModalOpen(false)}
+            boardId={board?.id}
+            status={column.id}
+          />
+        </Suspense>
+      )}
 
       <ArchiveTasksModal
         open={isArchiveModalOpen}

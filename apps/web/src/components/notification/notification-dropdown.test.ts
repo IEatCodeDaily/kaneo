@@ -3,6 +3,7 @@ import type { Notification } from "@/types/notification";
 import {
   getNotificationContent,
   getNotificationTitle,
+  groupNotifications,
 } from "./notification-dropdown";
 
 const t = (
@@ -41,6 +42,62 @@ function notification(
   } as unknown as Notification;
 }
 
+describe("groupNotifications", () => {
+  const groupedNotification = (
+    id: string,
+    resourceType: string,
+    resourceId: string | null,
+    createdAt: string,
+    isRead = false,
+  ) =>
+    ({
+      ...notification("task_comment", { taskTitle: `Ticket ${resourceId}` }),
+      id,
+      resourceType,
+      resourceId,
+      createdAt,
+      isRead,
+    }) as Notification;
+
+  it("groups events for the same ticket and counts unread events", () => {
+    const groups = groupNotifications([
+      groupedNotification("a", "task", "one", "2026-01-01T10:00:00Z"),
+      groupedNotification("b", "task", "one", "2026-01-02T10:00:00Z", true),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      key: "task:one",
+      taskTitle: "Ticket one",
+      taskNumber: null,
+      unreadCount: 1,
+      latestCreatedAt: "2026-01-02T10:00:00Z",
+    });
+    expect(groups[0].notifications.map(({ id }) => id)).toEqual(["b", "a"]);
+  });
+
+  it("keeps different tickets and non-task notifications separate", () => {
+    const groups = groupNotifications([
+      groupedNotification("a", "task", "one", "2026-01-01T10:00:00Z"),
+      groupedNotification("b", "task", "two", "2026-01-03T10:00:00Z"),
+      groupedNotification("c", "organization", "org", "2026-01-02T10:00:00Z"),
+    ]);
+    expect(groups.map(({ key }) => key)).toEqual([
+      "task:two",
+      "notification:c",
+      "task:one",
+    ]);
+  });
+
+  it("orders groups latest-first regardless of input order", () => {
+    const groups = groupNotifications([
+      groupedNotification("new", "task", "new", "2026-01-04T10:00:00Z"),
+      groupedNotification("old", "task", "old", "2026-01-01T10:00:00Z"),
+      groupedNotification("middle", "task", "old", "2026-01-03T10:00:00Z"),
+    ]);
+    expect(groups.map(({ key }) => key)).toEqual(["task:new", "task:old"]);
+  });
+});
+
 describe("notification display content", () => {
   it("renders configured due-date lead times", () => {
     const item = notification("due_date_reminder", {
@@ -66,6 +123,33 @@ describe("notification display content", () => {
     expect(getNotificationTitle(item, t)).toBe("Mina commented on your task");
     expect(getNotificationContent(item, t)).toBe(
       "New comment on Launch website: Ready for review",
+    );
+  });
+
+  it("resolves participant change notification translation keys", () => {
+    const item = notification("task_flag_raised", {
+      taskTitle: "Launch website",
+      flagTypeName: "Blocked",
+    });
+
+    expect(getNotificationTitle(item, t)).toBe(
+      "notifications:events.task_flag_raised.title",
+    );
+    expect(getNotificationContent(item, t)).toBe(
+      "notifications:events.task_flag_raised.content",
+    );
+  });
+
+  it("resolves generic label change notifications without raw ids", () => {
+    const item = notification("task_label_assigned", {
+      taskTitle: "Launch website",
+    });
+
+    expect(getNotificationTitle(item, t)).toBe(
+      "notifications:events.task_label_assigned.title",
+    );
+    expect(getNotificationContent(item, t)).toBe(
+      "notifications:events.task_label_assigned.content",
     );
   });
 });

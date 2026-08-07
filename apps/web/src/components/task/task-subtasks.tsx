@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -41,11 +42,10 @@ import {
   CommandPanel,
   CommandSeparator,
 } from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -53,6 +53,7 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
+import { useSectionOpenState } from "@/lib/use-section-open-state";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
 import SubtaskRow from "./subtask-row";
@@ -70,9 +71,9 @@ export default function TaskSubtasks({
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  // KFL-126: subtask creation uses the shared Create Task modal, seeded with
+  // this ticket as the parent, instead of a bespoke inline title input.
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkQuery, setLinkQuery] = useState("");
@@ -80,13 +81,14 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const { data: relations = [], isSuccess: relationsLoaded } =
+    useGetTaskRelations(taskId);
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id ?? "",
   );
-  const createTask = useCreateTask();
   const createRelation = useCreateTaskRelation();
+  const { mutateAsync: deleteTaskRelation } = useDeleteTaskRelation(taskId);
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { data: columns = [] } = useGetColumns(boardId);
@@ -121,6 +123,13 @@ export default function TaskSubtasks({
   ).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
+
+  // Empty sections default to collapsed so a fresh task is not padded out by
+  // two empty accordions (#73). Latched off the first loaded payload.
+  const [isOpen, setIsOpen] = useSectionOpenState(
+    totalCount > 0,
+    relationsLoaded,
+  );
 
   useEffect(() => {
     if (!linkOpen) {
@@ -288,31 +297,6 @@ export default function TaskSubtasks({
     toggleSelection,
   ]);
 
-  const handleAddSubtask = async () => {
-    if (!newTitle.trim()) return;
-
-    try {
-      const newTask = await createTask.mutateAsync({
-        title: newTitle.trim(),
-        description: "",
-        boardId,
-        status: "to-do",
-        priority: "no-priority",
-      });
-
-      await createRelation.mutateAsync({
-        sourceTaskId: taskId,
-        targetTaskId: newTask.id,
-        relationType: "subtask",
-      });
-
-      setNewTitle("");
-      setIsAdding(false);
-    } catch {
-      toast.error(t("tasks:subtasks.createError"));
-    }
-  };
-
   // Tasks eligible to become a subtask: every task in the organization except
   // this task, its existing subtasks, and tasks already related to it.
   const linkCandidates = useMemo(() => {
@@ -415,6 +399,25 @@ export default function TaskSubtasks({
     }
   };
 
+  /**
+   * Removes the parent/subtask link only. The subtask itself is untouched and
+   * stays on its board — this is deliberately not a delete.
+   */
+  const handleUnlink = async (relationId: string) => {
+    try {
+      await deleteTaskRelation(relationId);
+      queryClient.invalidateQueries({ queryKey: ["task-relations", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
+      toast.success(t("tasks:subtasks.unlinkSuccess"));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("tasks:subtasks.unlinkError"),
+      );
+    }
+  };
+
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -460,7 +463,9 @@ export default function TaskSubtasks({
                 variant="ghost"
                 size="xs"
                 className="text-muted-foreground"
-                onClick={() => setIsAdding(true)}
+                data-testid="subtask-create-trigger"
+                title={t("tasks:subtasks.addAction")}
+                onClick={() => setIsCreateModalOpen(true)}
               >
                 <Plus className="size-3.5" />
               </Button>
@@ -509,57 +514,33 @@ export default function TaskSubtasks({
                       })
                     }
                     onDeleteClick={() => setDeleteTaskId(subtask.task.id)}
+                    onUnlink={() => handleUnlink(subtask.relation.id)}
                   />
                 );
               })}
             </AnimatePresence>
           </div>
 
-          {isAdding && (
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                size="sm"
-                placeholder={t("tasks:subtasks.inputPlaceholder")}
-                value={newTitle}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewTitle(e.target.value)
-                }
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                  if (e.key === "Enter") handleAddSubtask();
-                  if (e.key === "Escape") {
-                    setIsAdding(false);
-                    setNewTitle("");
-                  }
-                }}
-                autoFocus
-              />
-              <Button
-                size="xs"
-                onClick={handleAddSubtask}
-                disabled={!newTitle.trim() || createTask.isPending}
-              >
-                {t("tasks:subtasks.addAction")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewTitle("");
-                }}
-              >
-                {t("common:actions.cancel")}
-              </Button>
-            </div>
-          )}
-
-          {!isAdding && totalCount === 0 && (
+          {totalCount === 0 && (
             <p className="text-xs text-muted-foreground px-2 py-1">
               {t("tasks:subtasks.empty")}
             </p>
           )}
         </CollapsibleContent>
       </Collapsible>
+
+      {/*
+        KFL-126: the same Create Task modal used from the board/list views,
+        with this ticket seeded as the parent. The modal itself creates the
+        `subtask` relation on submit, so the child really lands under this
+        ticket.
+      */}
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        boardId={boardId}
+        initialParentTaskId={taskId}
+      />
 
       <AlertDialog
         open={!!deleteTaskId}

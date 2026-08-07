@@ -1,10 +1,30 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CircleDot, GitPullRequest, Github, Plus } from "lucide-react";
+import {
+  CircleDot,
+  Eye,
+  EyeOff,
+  Github,
+  GitPullRequest,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
-import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import PageTitle from "@/components/page-title";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
+import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -22,8 +42,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getApiUrl } from "@/fetchers/get-api-url";
+import useDeleteRepo from "@/hooks/mutations/repo/use-delete-repo";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { formatDateMedium } from "@/lib/format";
+import { toast } from "@/lib/toast";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationId/repo/",
@@ -37,6 +61,55 @@ function RouteComponent() {
   const { organizationId } = Route.useParams();
   const navigate = useNavigate();
   const { data: repos, isLoading } = useGetRepos({ organizationId });
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const resyncRepo = useMutation({
+    mutationFn: async (repoId: string) => {
+      const response = await fetch(
+        getApiUrl(`/repo/${repoId}/sync?background=true`),
+        { method: "POST", credentials: "include" },
+      );
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["repos", organizationId],
+      });
+      toast.success("Resync started");
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Could not resync repo",
+      ),
+  });
+
+  const deleteRepo = useDeleteRepo();
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteRepo.mutateAsync(deleteTarget.id);
+      toast.success(`Removed ${deleteTarget.name}`);
+      setDeleteTarget(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not remove repo",
+      );
+    }
+  };
+  const { hiddenRepoIds, setRepoSidebarVisibility } = useUserPreferencesStore();
+  const headerActions = (
+    <Button variant="outline" size="xs" onClick={() => setAddOpen(true)}>
+      <Plus className="size-3" />
+      {t("organization:repos.add.button")}
+    </Button>
+  );
 
   const handleRepoClick = (repoId: string) => {
     navigate({
@@ -49,7 +122,10 @@ function RouteComponent() {
     return (
       <>
         <PageTitle title={t("organization:repos.pageTitle")} />
-        <OrganizationLayout title={t("organization:repos.pageTitle")}>
+        <OrganizationLayout
+          title={t("organization:repos.pageTitle")}
+          headerActions={headerActions}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -104,13 +180,10 @@ function RouteComponent() {
     return (
       <>
         <PageTitle title={t("organization:repos.pageTitle")} />
-        <OrganizationLayout title={t("organization:repos.pageTitle")}>
-          <div className="mb-4 flex justify-end">
-            <Button onClick={() => setAddOpen(true)}>
-              <Plus className="mr-2 size-4" />
-              {t("organization:repos.add.button")}
-            </Button>
-          </div>
+        <OrganizationLayout
+          title={t("organization:repos.pageTitle")}
+          headerActions={headerActions}
+        >
           <Empty className="min-h-[60vh]">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -135,13 +208,10 @@ function RouteComponent() {
   return (
     <>
       <PageTitle title={t("organization:repos.pageTitle")} />
-      <OrganizationLayout title={t("organization:repos.pageTitle")}>
-        <div className="mb-4 flex justify-end">
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            {t("organization:repos.add.button")}
-          </Button>
-        </div>
+      <OrganizationLayout
+        title={t("organization:repos.pageTitle")}
+        headerActions={headerActions}
+      >
         <Table>
           <TableHeader className="p-4">
             <TableRow>
@@ -202,11 +272,64 @@ function RouteComponent() {
                   </span>
                 </TableCell>
                 <TableCell className="py-3">
-                  <span className="text-sm text-muted-foreground">
-                    {repo.lastSyncedAt
-                      ? formatDateMedium(repo.lastSyncedAt)
-                      : t("organization:repos.neverSynced")}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {repo.lastSyncedAt
+                        ? formatDateMedium(repo.lastSyncedAt)
+                        : t("organization:repos.neverSynced")}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        aria-label={`Resync ${repo.owner}/${repo.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          resyncRepo.mutate(repo.id);
+                        }}
+                        size="icon"
+                        variant="ghost"
+                        disabled={resyncRepo.isPending}
+                      >
+                        <RefreshCw
+                          className={`size-4 ${resyncRepo.isPending ? "animate-spin" : ""}`}
+                        />
+                      </Button>
+                      <Button
+                        aria-label={`${hiddenRepoIds.includes(`${user?.id}:${repo.id}`) ? "Show" : "Hide"} ${repo.owner}/${repo.name} in sidebar`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!user?.id) return;
+                          setRepoSidebarVisibility(
+                            user.id,
+                            repo.id,
+                            hiddenRepoIds.includes(`${user?.id}:${repo.id}`),
+                          );
+                        }}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        {hiddenRepoIds.includes(`${user?.id}:${repo.id}`) ? (
+                          <Eye className="size-4" />
+                        ) : (
+                          <EyeOff className="size-4" />
+                        )}
+                      </Button>
+                      <Button
+                        aria-label={`Remove ${repo.owner}/${repo.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleteTarget({
+                            id: repo.id,
+                            name: `${repo.owner}/${repo.name}`,
+                          });
+                        }}
+                        size="icon"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -217,6 +340,41 @@ function RouteComponent() {
           open={addOpen}
           organizationId={organizationId}
         />
+        <AlertDialog
+          open={Boolean(deleteTarget)}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove repository</AlertDialogTitle>
+              <AlertDialogDescription>
+                Remove {deleteTarget?.name} from this organization? This deletes
+                the mirror and all synced issues and pull requests. The
+                repository itself on the provider is not affected and can be
+                reconnected later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose asChild>
+                <Button variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </AlertDialogClose>
+              <AlertDialogClose asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={deleteRepo.isPending}
+                  onClick={handleDelete}
+                >
+                  {deleteRepo.isPending ? "Removing…" : "Remove"}
+                </Button>
+              </AlertDialogClose>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </OrganizationLayout>
     </>
   );

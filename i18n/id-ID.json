@@ -112,6 +112,7 @@
 				"labelCreated": "Label dibuat",
 				"labelCreateError": "Gagal membuat label",
 				"createMore": "Buat lagi",
+				"discardDraft": "Buang draf",
 				"createButton": "Buat Tugas",
 				"untitledTask": "Tugas tanpa judul",
 				"labelColors": {
@@ -123,10 +124,22 @@
 					"amber": "Kuning Ambar",
 					"terracotta": "Merah Bata",
 					"rose": "Merah Mawar",
-					"crimson": "Merah Tua"
+					"crimson": "Merah Tua",
+					"blossom": "Bunga",
+					"honey": "Madu",
+					"lime": "Limau",
+					"emerald": "Zamrud",
+					"lagoon": "Laguna",
+					"sky": "Langit",
+					"ocean": "Samudra",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orkid",
+					"cocoa": "Kakao"
 				}
 			}
-		}
+		},
+		"unknown": "Tidak diketahui"
 	},
 	"auth": {
 		"signIn": {
@@ -455,7 +468,9 @@
 			"labelsDescription": "Tampilkan label dan tag tugas",
 			"priority": "Prioritas",
 			"priorityDescription": "Tampilkan indikator prioritas",
-			"weekStartsOnSaturday": "Sabtu"
+			"weekStartsOnSaturday": "Sabtu",
+			"reduceOverlayBlur": "Kurangi efek blur",
+			"reduceOverlayBlurDescription": "Hapus latar buram di belakang dialog, sheet, dan command palette."
 		},
 		"developerPage": {
 			"pageTitle": "Pengaturan Pengembang",
@@ -561,6 +576,7 @@
 			"iconHint": "Ditampilkan di panel samping dan halaman proyek.",
 			"pickIconTitle": "Pilih ikon",
 			"searchIconsPlaceholder": "Cari ikon...",
+			"useEmoji": "Gunakan emoji ini",
 			"boardNameLabel": "Nama proyek",
 			"boardNameHint": "Nama proyek Anda",
 			"boardNamePlaceholder": "Masukkan nama proyek",
@@ -570,6 +586,8 @@
 			"descriptionLabel": "Deskripsi",
 			"descriptionHint": "Deskripsi singkat proyek Anda",
 			"descriptionPlaceholder": "Masukkan deskripsi proyek",
+			"subtaskDepthLimitLabel": "Batas kedalaman subtugas",
+			"subtaskDepthLimitHint": "Jumlah maksimum tingkat subtugas bertingkat yang diizinkan (1–4).",
 			"dangerZone": "Zona berbahaya",
 			"dangerZoneSubtitle": "Tindakan destruktif dan tidak dapat dibatalkan.",
 			"deleteBoard": "Hapus proyek",
@@ -635,7 +653,8 @@
 		},
 		"boardSwitcher": {
 			"selectBoard": "Pilih proyek",
-			"noBoards": "Tidak ada proyek"
+			"noBoards": "Tidak ada proyek",
+			"searchBoards": "Cari papan..."
 		},
 		"columnEditor": {
 			"toastCreated": "Kolom dibuat",
@@ -1253,7 +1272,9 @@
 				"create": "Buat",
 				"views": "Tampilan",
 				"navigation": "Navigasi",
-				"quickSelect": "Pilih Cepat (di popover)"
+				"quickSelect": "Pilih Cepat (di popover)",
+				"ticketTitle": "Judul tiket",
+				"editor": "Deskripsi & komentar"
 			},
 			"items": {
 				"openCommandPalette": "Buka palet perintah",
@@ -1270,11 +1291,59 @@
 				"nextTask": "Tugas berikutnya",
 				"prevTask": "Tugas sebelumnya",
 				"openTask": "Buka tugas terpilih",
-				"quickSelectNumber": "Pilih opsi berdasarkan nomor"
+				"quickSelectNumber": "Pilih opsi berdasarkan nomor",
+				"titleLabel": "Tambahkan label",
+				"titleMember": "Tetapkan anggota",
+				"titlePriority": "Atur prioritas",
+				"editorMention": "Sebut anggota",
+				"editorSlash": "Buka menu blok",
+				"editorTicket": "Rujuk tiket"
 			}
 		},
 		"repoList": {
 			"allRepos": "All repos"
+		},
+		"tables": {
+			"title": "Tabel",
+			"create": "Buat tabel",
+			"noTables": "Belum ada tabel",
+			"loadError": "Tabel tidak dapat dimuat.",
+			"retry": "Coba lagi",
+			"loading": "Memuat tabel",
+			"tableName": "Nama tabel",
+			"createTitle": "Buat tabel baru",
+			"createDescription": "Mulai dengan tabel kosong, lalu tambahkan bidang dan baris.",
+			"cancel": "Batal",
+			"createAction": "Buat tabel",
+			"loadTableError": "Tabel ini tidak dapat dimuat",
+			"connectionHelp": "Periksa koneksi Anda, lalu coba lagi.",
+			"row_one": "{{count}} baris",
+			"row_other": "{{count}} baris",
+			"field_one": "{{count}} bidang",
+			"field_other": "{{count}} bidang",
+			"empty": "Tabel ini kosong",
+			"readOnlyEmpty": "Anda memiliki akses hanya baca. Editor dapat menambahkan bidang pertama.",
+			"addField": "Tambahkan bidang",
+			"newFieldName": "Nama bidang baru",
+			"noRows": "Belum ada baris. Tambahkan satu baris untuk mulai memasukkan data.",
+			"addRow": "Tambahkan baris",
+			"deleteField": "Hapus bidang",
+			"deleteFieldConfirm": "Hapus bidang “{{name}}”?",
+			"renameFieldError": "Bidang tidak dapat diganti namanya",
+			"deleteFieldError": "Bidang tidak dapat dihapus",
+			"addFieldError": "Bidang tidak dapat ditambahkan",
+			"deleteRowError": "Baris tidak dapat dihapus",
+			"saveCellError": "Sel tidak dapat disimpan",
+			"renameTableError": "Tabel tidak dapat diganti namanya",
+			"addRowError": "Baris tidak dapat ditambahkan",
+			"creating": "Membuat…",
+			"created": "Tabel dibuat",
+			"createError": "Tabel tidak dapat dibuat",
+			"tableOptions": "Opsi tabel",
+			"deleteTable": "Hapus tabel",
+			"deleteTableConfirm": "Hapus tabel ini beserta semua datanya? Tindakan ini tidak dapat dibatalkan.",
+			"deleted": "Tabel dihapus",
+			"deleteTableError": "Tabel tidak dapat dihapus"
 		}
 	},
 	"notifications": {
@@ -1292,7 +1361,7 @@
 		"events": {
 			"task_created": {
 				"title": "Tugas Baru Dibuat",
-				"content": "Tugas \"{{taskTitle}}\" dibuat"
+				"content": "Tiket \"{{taskTitle}}\" dibuat"
 			},
 			"organization_created": {
 				"title": "Ruang kerja dibuat",
@@ -1300,11 +1369,11 @@
 			},
 			"task_status_changed": {
 				"title": "Status tugas berubah",
-				"content": "Status tugas \"{{taskTitle}}\" berubah dari \"{{oldStatus}}\" menjadi \"{{newStatus}}\""
+				"content": "Status tiket \"{{taskTitle}}\" berubah dari \"{{oldStatus}}\" menjadi \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
 				"title": "Tugas ditugaskan kepada Anda",
-				"content": "Anda ditugaskan ke tugas: {{taskTitle}}"
+				"content": "Anda ditugaskan ke tiket: {{taskTitle}}"
 			},
 			"task_mention": {
 				"title": "{{mentionerName}} menyebut Anda",
@@ -1312,8 +1381,32 @@
 			},
 			"time_entry_created": {
 				"title": "Pelacakan waktu dimulai",
-				"contentWithTask": "Pelacakan waktu dimulai pada tugas: {{taskTitle}}",
+				"contentWithTask": "Pelacakan waktu dimulai pada tiket: {{taskTitle}}",
 				"contentWithoutTask": "Pelacakan waktu dimulai pada sebuah tugas"
+			},
+			"task_title_changed": {
+				"title": "Judul tiket diubah",
+				"content": "“{{oldTitle}}” diubah namanya menjadi “{{newTitle}}”"
+			},
+			"task_description_changed": {
+				"title": "Deskripsi tiket diperbarui",
+				"content": "Deskripsi “{{taskTitle}}” telah diperbarui"
+			},
+			"task_priority_changed": {
+				"title": "Prioritas tiket diubah",
+				"content": "Prioritas “{{taskTitle}}” diubah dari {{oldPriority}} menjadi {{newPriority}}"
+			},
+			"task_due_date_changed": {
+				"title": "Tanggal jatuh tempo tiket diubah",
+				"content": "Tanggal jatuh tempo “{{taskTitle}}” telah diperbarui"
+			},
+			"task_flag_raised": {
+				"title": "Tanda ditambahkan pada tiket",
+				"content": "{{flagTypeName}} ditambahkan pada “{{taskTitle}}”"
+			},
+			"task_flag_resolved": {
+				"title": "Tanda pada tiket diselesaikan",
+				"content": "{{flagTypeName}} diselesaikan pada “{{taskTitle}}”"
 			}
 		}
 	},
@@ -1414,8 +1507,14 @@
 					"typescript": "TypeScript",
 					"yaml": "YAML"
 				}
-			}
-		}
+			},
+			"draftSaved": "Draf tersimpan",
+			"deleteDraft": "Hapus draf"
+		},
+		"statusRun": "memindahkan ini dari {{from}} ke {{to}}",
+		"statusRunNoOp": "mengubah status beberapa kali, kembali ke {{status}}",
+		"statusRunSteps": "{{count}} langkah",
+		"resolutionNote": "Catatan penyelesaian"
 	},
 	"tasks": {
 		"status": {
@@ -1452,6 +1551,7 @@
 			"noActivity": "Tidak ada aktivitas ditemukan",
 			"openInFullPage": "Buka di halaman penuh",
 			"titlePlaceholder": "Klik untuk menambahkan judul",
+			"titleSaving": "Menyimpan judul…",
 			"addDescription": "Tambahkan deskripsi...",
 			"editor": {
 				"ariaLabel": "Editor deskripsi tugas",
@@ -1546,7 +1646,8 @@
 					},
 					"onlyYoutubeInline": "Hanya URL YouTube yang dapat disematkan. Gunakan mode tautan."
 				}
-			}
+			},
+			"close": "Tutup detail tiket"
 		},
 		"entity": {
 			"task": "Tugas"
@@ -1568,7 +1669,8 @@
 				"blocked_by": "diblokir oleh",
 				"related": "terkait dengan"
 			},
-			"otherBoard": "papan lain"
+			"otherBoard": "papan lain",
+			"blockedBy": "Diblokir oleh"
 		},
 		"subtasks": {
 			"title": "Subtugas",
@@ -1645,8 +1747,20 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson"
-				}
+					"crimson": "Crimson",
+					"blossom": "Bunga",
+					"honey": "Madu",
+					"lime": "Limau",
+					"emerald": "Zamrud",
+					"lagoon": "Laguna",
+					"sky": "Langit",
+					"ocean": "Samudra",
+					"indigo": "Indigo",
+					"violet": "Violet",
+					"orchid": "Orkid",
+					"cocoa": "Kakao"
+				},
+				"repoSource": "Label tersinkron GitHub"
 			}
 		},
 		"backlog": {
@@ -1673,7 +1787,12 @@
 				"dueThisWeek": "Tenggat minggu ini",
 				"dueNextWeek": "Tenggat minggu depan",
 				"noDueDate": "Tanpa tenggat"
-			}
+			},
+			"moveAllDialogTitle": "Pindahkan semua tiket terencana?",
+			"moveAllDialogDescription": "{{count}} tiket terencana akan dipindahkan ke To Do.",
+			"moveAllDialogDescription_other": "{{count}} tiket terencana akan dipindahkan ke To Do.",
+			"moveAllDialogConfirm": "Pindahkan {{count}} tiket",
+			"moveAllDialogConfirm_other": "Pindahkan {{count}} tiket"
 		},
 		"sort": {
 			"label": "Urutkan",
@@ -1689,6 +1808,22 @@
 				"title": "Judul",
 				"number": "Nomor tugas"
 			}
+		},
+		"group": {
+			"label": "Group",
+			"by": "Group by",
+			"none": "No grouping",
+			"status": "Status",
+			"priority": "Priority",
+			"assignee": "Assignee"
+		},
+		"display": {
+			"label": "Display",
+			"show": "Show",
+			"assignee": "Assignee",
+			"priority": "Priority",
+			"labels": "Labels",
+			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Filter Berdasarkan",
@@ -1721,10 +1856,26 @@
 			"noTasksFound": "Tugas tidak ditemukan",
 			"noTasksMatch": "Tidak ada tugas terjadwal yang cocok dengan \"{{query}}\"",
 			"taskHeader": "Tugas",
+			"unscheduledHint": "Tanpa tanggal - geser untuk menjadwalkan",
+			"dragToScheduleHint": "Geser di sepanjang timeline untuk menjadwalkan tiket ini",
 			"updateDatesError": "Gagal memperbarui tanggal tugas",
 			"resizeStart": "Ubah ukuran tanggal mulai",
 			"resizeDue": "Ubah ukuran tenggat",
-			"taskAriaLabel": "{{title}} — buka atau seret untuk memindahkan"
+			"taskAriaLabel": "{{title}} — buka atau seret untuk memindahkan",
+			"zoom": {
+				"day": "Day",
+				"week": "Week",
+				"month": "Month"
+			},
+			"noMilestone": "Tanpa milestone"
+		},
+		"calendar": {
+			"pageTitle": "{{name}} — Calendar",
+			"title": "Calendar",
+			"today": "Today",
+			"previousMonth": "Previous month",
+			"nextMonth": "Next month",
+			"more": "+{{count}} more"
 		},
 		"delete": {
 			"title": "Hapus Tugas?",
@@ -1734,7 +1885,8 @@
 			"error": "Gagal menghapus tugas"
 		},
 		"archive": {
-			"success": "{{count}} tugas diarsipkan"
+			"success": "{{count}} tugas diarsipkan",
+			"error": "Gagal mengarsipkan tiket"
 		},
 		"listView": {
 			"addTask": "Tambah tugas",
@@ -1762,11 +1914,17 @@
 			"updateSuccess": "Tenggat tugas berhasil diperbarui",
 			"updateError": "Gagal memperbarui tenggat tugas",
 			"clearSuccess": "Tenggat tugas dihapus",
-			"clearError": "Gagal menghapus tenggat"
+			"clearError": "Gagal menghapus tenggat",
+			"outcome": {
+				"early": "Lebih awal",
+				"on-time": "Tepat waktu",
+				"late": "Terlambat"
+			}
 		},
 		"labels": {
 			"label": "Label",
-			"empty": "Tidak ada label tersedia"
+			"empty": "Tidak ada label tersedia",
+			"fromRepository": "Dari repositori tertaut"
 		},
 		"update": {
 			"success": "Tugas berhasil diperbarui",
@@ -1779,7 +1937,8 @@
 		"actions": {
 			"archive": "Arsipkan",
 			"markAsPlanned": "Tandai sebagai direncanakan",
-			"delete": "Hapus..."
+			"delete": "Hapus...",
+			"unarchive": "Keluarkan dari arsip"
 		},
 		"bulk": {
 			"selectedCount": "{{count}} dipilih",
@@ -1812,6 +1971,38 @@
 			"searchActions": "Cari aksi...",
 			"noActionsFound": "Tidak ada aksi ditemukan.",
 			"changeStatus": "Ubah Status"
+		},
+		"titleTokens": {
+			"labels": "Label",
+			"members": "Anggota",
+			"priority": "Prioritas",
+			"hint": "Ketik # untuk label, @ untuk anggota, ! untuk prioritas"
+		},
+		"boardSync": {
+			"syncedWith": "Tersinkron dengan {{repo}}"
+		},
+		"groupBy": {
+			"dueDate": "Tanggal jatuh tempo",
+			"noDueDate": "Tanpa tanggal jatuh tempo",
+			"noLabel": "Tanpa label",
+			"status": "Status",
+			"milestone": "Milestone",
+			"noStatus": "Tanpa status"
+		},
+		"milestone": {
+			"manage": {
+				"dueDate": "Tanggal jatuh tempo"
+			}
+		},
+		"nest": {
+			"willNestUnder": "Jadikan sub-tiket dari {{title}}",
+			"releaseToNest": "Lepaskan untuk menjadikan tiket ini sub-tiket dari {{title}}.",
+			"cannotNestHere": "Tidak bisa disarangkan di sini",
+			"cannotNestReason": "Tiket ini tidak bisa dijadikan sub-tiket dari target tersebut. Pilih induk lain.",
+			"unknownTarget": "tiket ini"
+		},
+		"bulkActions": {
+			"label": "Aksi Massal"
 		}
 	},
 	"invitations": {
@@ -1936,7 +2127,7 @@
 			"add": {
 				"button": "Connect repo",
 				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tasks.",
+				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
 				"submit": "Connect and sync"
 			}
 		}
@@ -1950,7 +2141,8 @@
 		},
 		"members": {
 			"pageTitle": "Anggota",
-			"inviteMember": "Undang anggota"
+			"inviteMember": "Undang anggota",
+			"agentsCredentialsHint": "Terbitkan dan cabut kunci akses"
 		},
 		"inviteModal": {
 			"title": "Undang Anggota Tim",

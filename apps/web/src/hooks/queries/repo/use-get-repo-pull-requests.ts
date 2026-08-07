@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
+import { repoPullRequestsQueryOptions } from "@/lib/navigation-prefetch";
 import type { RepoPullRequestStateFilter } from "@/types/repo";
 
 function useGetRepoPullRequests({
@@ -14,8 +14,7 @@ function useGetRepoPullRequests({
   limit?: number;
 }) {
   return useQuery({
-    queryFn: () => getRepoPullRequests({ repoId, state, page, limit }),
-    queryKey: ["repo-pull-requests", repoId, state, page, limit],
+    ...repoPullRequestsQueryOptions(repoId, state, page, limit),
     enabled: !!repoId,
   });
 }

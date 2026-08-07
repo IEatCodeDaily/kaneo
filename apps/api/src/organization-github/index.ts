@@ -12,10 +12,27 @@ import {
   listAdministeredInstallations,
   toInstallationResponse,
 } from "./controllers/list-administered-installations";
+import {
+  buildOrganizationGithubInstallUrl,
+  saveOrganizationInstallation,
+} from "./install-callback";
 
 const organizationGithub = new Hono<{
   Variables: { organizationId: string; userId: string };
 }>()
+  .get(
+    "/install-url",
+    validator("query", v.object({ organizationId: v.string() })),
+    organizationAccess.fromQuery(),
+    requireOrganizationPermission({ organization: ["manage_connections"] }),
+    (c) =>
+      c.json({
+        url: buildOrganizationGithubInstallUrl(
+          c.get("organizationId"),
+          c.get("userId"),
+        ),
+      }),
+  )
   .get(
     "/",
     validator("query", v.object({ organizationId: v.string() })),
@@ -78,67 +95,9 @@ const organizationGithub = new Hono<{
         });
       }
 
-      // An installation belongs to exactly one Kaneo organization.
-      const [existing] = await db
-        .select({
-          organizationId: organizationGithubInstallationTable.organizationId,
-        })
-        .from(organizationGithubInstallationTable)
-        .where(
-          eq(
-            organizationGithubInstallationTable.installationId,
-            installationId,
-          ),
-        )
-        .limit(1);
-      if (existing && existing.organizationId !== organizationId) {
-        throw new HTTPException(409, {
-          message:
-            "This GitHub installation is already linked to another organization",
-        });
-      }
-      const { data: installation } =
-        await app.octokit.rest.apps.getInstallation({
-          installation_id: installationId,
-        });
-      if (!installation.account)
-        throw new HTTPException(400, {
-          message: "GitHub installation has no account",
-        });
-      const account = installation.account as {
-        id: number;
-        login: string;
-        type?: string;
-        avatar_url?: string;
-      };
-      const [saved] = await db
-        .insert(organizationGithubInstallationTable)
-        .values({
-          organizationId,
-          installationId,
-          accountId: account.id,
-          accountLogin: account.login,
-          accountType: account.type ?? "Unknown",
-          accountAvatarUrl: account.avatar_url ?? null,
-          repositorySelection: installation.repository_selection,
-          permissions: installation.permissions,
-        })
-        .onConflictDoUpdate({
-          target: [
-            organizationGithubInstallationTable.organizationId,
-            organizationGithubInstallationTable.installationId,
-          ],
-          set: {
-            accountLogin: account.login,
-            accountType: account.type ?? "Unknown",
-            accountAvatarUrl: account.avatar_url ?? null,
-            repositorySelection: installation.repository_selection,
-            permissions: installation.permissions,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
-      return c.json(saved);
+      return c.json(
+        await saveOrganizationInstallation(organizationId, installationId),
+      );
     },
   )
   .get(

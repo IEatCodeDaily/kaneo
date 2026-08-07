@@ -8,7 +8,6 @@ export default function useImportGiteaIssues() {
     mutationFn: (boardId: string) => importGiteaIssues(boardId),
     onSuccess: (_, boardId) => {
       queryClient.invalidateQueries({ queryKey: ["tasks", boardId] });
-      queryClient.invalidateQueries({ queryKey: ["board", boardId] });
     },
   });
 }

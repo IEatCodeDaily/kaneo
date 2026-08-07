@@ -55,6 +55,14 @@ type TaskImageUploadContext = {
   contentType: string;
 };
 
+export type RepoMediaUploadContext = {
+  organizationId: string;
+  repoId: string;
+  surface: UploadSurface;
+  filename: string;
+  contentType: string;
+};
+
 type TaskImageUploadUrl = {
   key: string;
   uploadUrl: string;
@@ -242,6 +250,20 @@ export function buildObjectKeyPrefix(
   ].join("/");
 }
 
+export function buildRepoObjectKeyPrefix(
+  context: Omit<RepoMediaUploadContext, "filename" | "contentType">,
+) {
+  const surfaceFolder =
+    context.surface === "comment" ? "comments" : "descriptions";
+  return [
+    "organization",
+    sanitizePathSegment(context.organizationId),
+    "repo",
+    sanitizePathSegment(context.repoId),
+    surfaceFolder,
+  ].join("/");
+}
+
 export function buildObjectKey(context: TaskImageUploadContext) {
   const extension = getFileExtension(context.filename);
   const objectKeyPrefix = buildObjectKeyPrefix(context);
@@ -256,6 +278,20 @@ export function buildObjectKey(context: TaskImageUploadContext) {
     ? `${baseName}-${timestamp}-${randomId}.${extension}`
     : `${baseName}-${timestamp}-${randomId}`;
 
+  return `${objectKeyPrefix}/${fileName}`;
+}
+
+export function buildRepoObjectKey(context: RepoMediaUploadContext) {
+  const extension = getFileExtension(context.filename);
+  const objectKeyPrefix = buildRepoObjectKeyPrefix(context);
+  const timestamp = Date.now();
+  const randomId = createId();
+  const baseName = sanitizePathSegment(
+    context.filename.replace(/\.[^/.]+$/, "") || "image",
+  ).slice(0, 64);
+  const fileName = extension
+    ? `${baseName}-${timestamp}-${randomId}.${extension}`
+    : `${baseName}-${timestamp}-${randomId}`;
   return `${objectKeyPrefix}/${fileName}`;
 }
 
@@ -311,6 +347,37 @@ export async function createTaskImageUploadUrl(
       "Content-Type": context.contentType,
     },
   };
+}
+
+export async function createRepoMediaUploadUrl(
+  context: RepoMediaUploadContext,
+): Promise<TaskImageUploadUrl> {
+  const config = getStorageConfig();
+  const client = getClient(config);
+  const key = applyKeyPrefix(config.keyPrefix, buildRepoObjectKey(context));
+  const command = new PutObjectCommand({
+    Bucket: config.bucket,
+    Key: key,
+    ContentType: context.contentType,
+  });
+  const uploadUrl = await getSignedUrl(client, command, {
+    expiresIn: config.presignTtlSeconds,
+  });
+  return {
+    key,
+    uploadUrl,
+    headers: { "Content-Type": context.contentType },
+  };
+}
+
+export function assertRepoMediaKeyMatchesContext(
+  key: string,
+  context: Omit<RepoMediaUploadContext, "filename" | "contentType">,
+) {
+  const config = getStorageConfig();
+  const objectPrefix = buildRepoObjectKeyPrefix(context);
+  const fullPrefix = `${applyKeyPrefix(config.keyPrefix, objectPrefix)}/`;
+  return key.startsWith(fullPrefix);
 }
 
 export function assertStorageConfigured() {

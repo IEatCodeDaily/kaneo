@@ -287,4 +287,41 @@ subscribeToEvent<{
   });
 });
 
+type TaskFlagActivityEvent = {
+  taskId: string;
+  userId: string;
+  type: "flag_raised" | "flag_resolved";
+  flagId: string;
+  flagTypeId: string;
+  flagTypeName?: string;
+  flagTypeColor?: string | null;
+  flagTypeIcon?: string | null;
+  targetUserId: string | null;
+  targetTeamId: string | null;
+  note?: string | null;
+  /** Mandatory reason supplied when resolving a flag (#167). */
+  resolveNote?: string | null;
+  resolvedBy?: string;
+};
+
+for (const eventName of ["task.flag_raised", "task.flag_resolved"] as const) {
+  subscribeToEvent<TaskFlagActivityEvent>(eventName, async (data) => {
+    await createActivity(data.taskId, data.type, data.userId, null, {
+      flagId: data.flagId,
+      flagTypeId: data.flagTypeId,
+      flagTypeName: data.flagTypeName,
+      flagTypeColor: data.flagTypeColor,
+      flagTypeIcon: data.flagTypeIcon,
+      targetUserId: data.targetUserId,
+      targetTeamId: data.targetTeamId,
+      note: data.note,
+      // Raising and resolving use intentionally distinct note fields. Keeping
+      // only `note` here silently discarded the mandatory unflag reason before
+      // the activity row was written.
+      resolveNote: data.resolveNote,
+      resolvedBy: data.resolvedBy,
+    });
+  });
+}
+
 export default activity;

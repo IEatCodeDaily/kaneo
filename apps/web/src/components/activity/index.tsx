@@ -1,7 +1,11 @@
-import { Calendar, CircleAlert, History, UserRound } from "lucide-react";
+import { Calendar, CircleAlert, Flag, History, UserRound } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getFlagColor, getFlagIcon } from "@/components/flag/flag-icon";
+import useGetTaskFlags from "@/hooks/queries/flag/use-get-task-flags";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetOrganizationMembers from "@/hooks/queries/organization-members/use-get-organization-members";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium, formatRelativeTime } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusLabel } from "@/lib/i18n/domain";
@@ -13,12 +17,19 @@ import {
 } from "../ui/preview-card";
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
+import {
+  type ActivityGroup,
+  isCollapsedRun,
+  isNoOpRun,
+} from "./compact-activities";
+import UnflagControl from "./unflag-control";
 import { isCommentActivity } from "./utils";
 
-type ActivityItem = {
+export type ActivityItem = {
   type: string;
   content: string | null;
   eventData?: unknown;
+  editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
   id: string;
   createdAt: string;
   userId: string | null;
@@ -60,9 +71,35 @@ function getActivityTypeIcon(type: string) {
     case "assignee_changed":
     case "unassigned":
       return <UserRound className={iconClass} />;
+    case "flag_raised":
+    case "flag_resolved":
+      // Colour/icon for the specific flag type is rendered in the chip; the
+      // gutter keeps a neutral marker so the row still scans as an activity.
+      return <Flag className={iconClass} />;
     default:
       return <History className={iconClass} />;
   }
+}
+
+/**
+ * #107: a flag entry has to say who it was raised FOR, not just its type.
+ * targetTeamId has no member lookup, so fall back to the stored team name.
+ */
+function resolveTargetName(
+  eventData: Record<string, unknown> | null | undefined,
+  organizationMembers: OrganizationMember[] | undefined,
+) {
+  if (typeof eventData?.targetUserId === "string") {
+    const member = organizationMembers?.find(
+      (organizationMember) =>
+        organizationMember.user?.id === eventData.targetUserId,
+    );
+    return member?.user?.name || member?.user?.email || null;
+  }
+  if (typeof eventData?.targetTeamName === "string") {
+    return eventData.targetTeamName;
+  }
+  return null;
 }
 
 function formatActivityDateText(value: string) {
@@ -119,12 +156,14 @@ function UserHoverName({
       </HoverCardTrigger>
       <HoverCardContent className="w-52 p-3">
         <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
+          <Avatar
+            className={`h-8 w-8 ${getAvatarTone(user.user.id, user.user.email)}`}
+          >
             <AvatarImage
               src={user.user.image ?? ""}
               alt={user.user.name || ""}
             />
-            <AvatarFallback className="bg-muted text-xs font-medium">
+            <AvatarFallback className="bg-transparent text-xs font-medium">
               {getInitials(user.user.name)}
             </AvatarFallback>
           </Avatar>
@@ -150,9 +189,11 @@ function ActorAvatar({
   fallbackName: string;
 }) {
   return (
-    <Avatar className="size-6">
+    <Avatar
+      className={`size-6 ${getAvatarTone(user?.user?.id, user?.user?.email)}`}
+    >
       <AvatarImage src={user?.user?.image ?? ""} alt={fallbackName} />
-      <AvatarFallback className="bg-muted text-[11px] font-medium">
+      <AvatarFallback className="bg-transparent text-[11px] font-medium">
         {getInitials(fallbackName)}
       </AvatarFallback>
     </Avatar>
@@ -405,6 +446,55 @@ function renderActivityContent({
     }
   }
 
+  if (activity.type === "flag_raised" || activity.type === "flag_resolved") {
+    // #107: the feed should read "flagged Blocked for Ada", with the flag
+    // type's own colour and icon, not a colourless "Flags: Blocked".
+    const FlagTypeIcon = getFlagIcon(
+      typeof eventData?.flagTypeIcon === "string"
+        ? eventData.flagTypeIcon
+        : null,
+    );
+    const flagColor = getFlagColor(
+      typeof eventData?.flagTypeColor === "string"
+        ? eventData.flagTypeColor
+        : null,
+    );
+    const flagTypeName = String(eventData?.flagTypeName ?? "");
+    const targetName = resolveTargetName(eventData, organizationMembers);
+
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+        <span>
+          {activity.type === "flag_raised"
+            ? t("activity:flagRaised")
+            : t("activity:flagResolved")}
+        </span>
+        {/* Entries written before flag_resolved carried the type name have no
+            name/colour to show. Rendering the chip anyway produced an empty
+            red box, so fall back to the plain verb for those legacy rows. */}
+        {flagTypeName && (
+          <span
+            data-testid="activity-flag-chip"
+            className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium text-xs"
+            style={{
+              color: flagColor,
+              borderColor: flagColor,
+              backgroundColor: `${flagColor}1f`,
+            }}
+          >
+            <FlagTypeIcon className="size-3" />
+            {flagTypeName}
+          </span>
+        )}
+        {targetName && (
+          <span data-testid="activity-flag-target">
+            {t("activity:flagTarget", { target: targetName })}
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <span className="text-sm text-muted-foreground">
       {content || toDisplayCase(activity.type)}
@@ -416,16 +506,35 @@ function Activity({
   activity,
   step,
   showConnector = false,
+  group,
 }: {
   activity: ActivityItem;
   step: number;
   showConnector?: boolean;
+  /**
+   * #116: when several consecutive status changes were folded together, this
+   * carries the whole run so the row can show the net delta and expand to the
+   * individual steps.
+   */
+  group?: ActivityGroup<ActivityItem>;
 }) {
   const { t } = useTranslation();
+  const [runExpanded, setRunExpanded] = useState(false);
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetOrganizationMembers({
     organizationId: organization?.id,
   });
+  const eventData = getEventDataRecord(activity.eventData);
+
+  // A flag_raised row keeps its unflag control only while that flag is still
+  // active; once resolved the row is history and the feed already carries a
+  // matching flag_resolved entry.
+  const { data: taskFlags = [] } = useGetTaskFlags(activity.taskId);
+  const isFlagResolved =
+    typeof eventData?.flagId === "string" &&
+    !(taskFlags as { id: string; resolvedAt: string | null }[]).some(
+      (flag) => flag.id === eventData.flagId && !flag.resolvedAt,
+    );
 
   const user = activity.userId
     ? organizationMembers?.find(
@@ -460,6 +569,7 @@ function Activity({
             content={activity.content || ""}
             user={commentUser}
             createdAt={activity.createdAt}
+            editHistory={activity.editHistory}
             externalSource={activity.externalSource}
             externalUrl={activity.externalUrl}
           />
@@ -476,24 +586,133 @@ function Activity({
       step={step}
     >
       {showConnector && (
-        <span className="-translate-x-1/2 absolute top-9 bottom-0 left-3 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--foreground)_26%,transparent)]" />
+        <span
+          className="-translate-x-1/2 absolute top-10 bottom-0 left-3 w-px bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--foreground)_26%,transparent)]"
+          data-testid="activity-connector"
+        />
       )}
       <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/80">
         {activityIcon}
       </span>
       <ActorAvatar user={user || null} fallbackName={actorName} />
-      <TimelineContent className="text-sm leading-6 text-foreground">
-        <UserHoverName user={user || null} fallbackName={actorName} />{" "}
-        {renderActivityContent({
-          activity,
-          organizationMembers: organizationMembers as
-            | OrganizationMember[]
-            | undefined,
-          t,
-        })}{" "}
-        <span className="whitespace-nowrap text-muted-foreground/70 text-xs">
-          {formatRelativeTime(activity.createdAt)}
-        </span>
+      <TimelineContent className="min-w-0 flex-1 text-sm text-foreground">
+        {/*
+          #167 rejection round 3: the timestamp used to follow the note inside
+          one wrapping inline flow, so a wider/narrower note physically moved
+          the datetime. The event and its time are now one line; the note is a
+          separate second row and cannot affect timestamp placement.
+        */}
+        <div className="inline-flex max-w-full items-baseline gap-1.5 leading-6">
+          <span className="whitespace-nowrap">
+            <UserHoverName user={user || null} fallbackName={actorName} />{" "}
+            {/*
+              #116: a folded run reports the NET delta ("moved this from To Do to
+              Done") instead of five near-identical lines. A run that returned to
+              where it started says so rather than claiming a move.
+            */}
+            {group && isCollapsedRun(group) ? (
+              <>
+                {isNoOpRun(group)
+                  ? t("activity:statusRunNoOp", {
+                      status: toDisplayCase(group.toStatus ?? ""),
+                      count: group.entries.length,
+                    })
+                  : t("activity:statusRun", {
+                      from: toDisplayCase(group.fromStatus ?? ""),
+                      to: toDisplayCase(group.toStatus ?? ""),
+                    })}{" "}
+                <button
+                  type="button"
+                  data-testid="activity-run-toggle"
+                  aria-expanded={runExpanded}
+                  onClick={() => setRunExpanded((open) => !open)}
+                  className="text-muted-foreground/70 text-xs underline-offset-2 hover:underline"
+                >
+                  {t("activity:statusRunSteps", {
+                    count: group.entries.length,
+                  })}
+                </button>
+              </>
+            ) : (
+              renderActivityContent({
+                activity,
+                organizationMembers: organizationMembers as
+                  | OrganizationMember[]
+                  | undefined,
+                t,
+              })
+            )}
+          </span>
+          <span
+            className="shrink-0 whitespace-nowrap text-muted-foreground/70 text-xs"
+            data-testid="activity-time"
+          >
+            {formatRelativeTime(activity.createdAt)}
+          </span>
+        </div>
+        {activity.type === "flag_raised" &&
+          typeof eventData?.note === "string" &&
+          eventData.note.trim() && (
+            <div className="mt-1">
+              <span
+                className="inline-flex max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
+                data-testid="activity-flag-note"
+              >
+                <span className="me-1.5 font-medium text-muted-foreground">
+                  {t("flags:dialog.note")}:
+                </span>
+                <span className="text-foreground/90">
+                  {eventData.note.trim()}
+                </span>
+              </span>
+            </div>
+          )}
+        {activity.type === "flag_resolved" &&
+          typeof activity.eventData?.resolveNote === "string" &&
+          activity.eventData.resolveNote.trim() && (
+            <div className="mt-1">
+              <span
+                className="inline-flex max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
+                data-testid="activity-flag-resolve-note"
+              >
+                <span className="me-1.5 font-medium text-muted-foreground">
+                  {t("flags:dialog.note")}:
+                </span>
+                <span className="text-foreground/90">
+                  {activity.eventData.resolveNote.trim()}
+                </span>
+              </span>
+            </div>
+          )}
+        {/* #107: the unflag action sits on its OWN row beneath the flag it
+            resolves, with a mandatory Notes field — not inline in the
+            sentence. Only rendered while the flag is still active. */}
+        {activity.type === "flag_raised" &&
+          typeof eventData?.flagId === "string" &&
+          !isFlagResolved && (
+            <UnflagControl flagId={eventData.flagId} taskId={activity.taskId} />
+          )}
+        {/* #116: the folded steps, in order, when the run is expanded. */}
+        {group && isCollapsedRun(group) && runExpanded && (
+          <ol
+            data-testid="activity-run-steps"
+            className="mt-1 space-y-0.5 border-border/60 border-l pl-3 text-muted-foreground/80 text-xs"
+          >
+            {group.entries.map((entry) => {
+              const data = getEventDataRecord(entry.eventData);
+              return (
+                <li key={entry.id}>
+                  {toDisplayCase(String(data?.oldStatus ?? ""))}
+                  {" \u2192 "}
+                  {toDisplayCase(String(data?.newStatus ?? ""))}
+                  <span className="ml-2 whitespace-nowrap text-muted-foreground/60">
+                    {formatRelativeTime(entry.createdAt)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </TimelineContent>
     </TimelineItem>
   );

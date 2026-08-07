@@ -2,12 +2,14 @@ import { useState } from "react";
 import CommentEditor from "@/components/activity/comment-editor";
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import { Button } from "@/components/ui/button";
+import { uploadRepoMedia } from "@/lib/upload-repo-media";
 
 type RepoDescriptionEditorProps = {
   body: string;
   onSave: (markdown: string) => Promise<void>;
   isSaving?: boolean;
   placeholder?: string;
+  repoId: string;
 };
 
 function normalizeMarkdown(markdown: string) {
@@ -30,6 +32,7 @@ export function RepoDescriptionEditor({
   onSave,
   isSaving = false,
   placeholder = "Add a description…",
+  repoId,
 }: RepoDescriptionEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
@@ -84,6 +87,9 @@ export function RepoDescriptionEditor({
         onSubmitShortcut={() => void save()}
         placeholder={placeholder}
         uploadSurface="description"
+        uploadFile={(file, surface) =>
+          uploadRepoMedia({ repoId, file, surface })
+        }
         value={draft}
       />
       <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { syncGitHubRepo } from "../services/sync-github-repo";
 import { getRepoIssue } from "./get-repo-issue";
-import { getGitHubRepoClient } from "./manage-github-repo";
+import { getActingOctokit, getGitHubRepoClient } from "./manage-github-repo";
 
 type CloseReason = "completed" | "not_planned";
 
@@ -21,6 +21,27 @@ export async function closeGitHubIssue({
     issue_number: number,
     state: "closed",
     state_reason: reason,
+  });
+  await syncGitHubRepo(repoId);
+  return getRepoIssue(repoId, number);
+}
+
+/** Reopen a mirrored issue using the member's delegated GitHub identity. */
+export async function reopenGitHubIssue({
+  repoId,
+  number,
+  userId,
+}: {
+  repoId: string;
+  number: number;
+  userId: string;
+}) {
+  const { repo, octokit } = await getActingOctokit(repoId, userId);
+  await octokit.rest.issues.update({
+    owner: repo.owner,
+    repo: repo.name,
+    issue_number: number,
+    state: "open",
   });
   await syncGitHubRepo(repoId);
   return getRepoIssue(repoId, number);

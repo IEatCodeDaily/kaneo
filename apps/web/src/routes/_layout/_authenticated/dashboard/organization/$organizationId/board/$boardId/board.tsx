@@ -1,22 +1,32 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
+import { BoardSkeleton } from "@/components/common/board-skeleton";
 import KanbanBoard from "@/components/kanban-board";
+import { BoardGroupByProvider } from "@/components/kanban-board/board-view-context";
 import ListView from "@/components/list-view";
+import ListBulkActionsToggle from "@/components/list-view/list-bulk-actions-toggle";
+import {
+  readListGroupBy,
+  writeListGroupBy,
+} from "@/components/list-view/list-grouping";
+import ListNestHint from "@/components/list-view/list-nest-hint";
 import PageTitle from "@/components/page-title";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import CreateTaskAction from "@/components/task/create-task-action";
+
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-import { Input } from "@/components/ui/input";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardSort } from "@/hooks/use-board-sort";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
+import {
+  type BoardGroupBy,
+  useTaskFiltersWithLabelsSupport,
+} from "@/hooks/use-task-filters-with-labels-support";
 import { sortTasks } from "@/lib/sort-tasks";
 import useBoardStore from "@/store/board";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -34,58 +44,38 @@ export const Route = createFileRoute(
   }),
 });
 
-const skeletonColumns = [
-  { key: "col-todo", cards: 3 },
-  { key: "col-progress", cards: 4 },
-  { key: "col-review", cards: 2 },
-  { key: "col-done", cards: 1 },
-];
-
-function BoardSkeleton() {
-  return (
-    <div className="flex h-full w-full gap-4 p-4 overflow-hidden">
-      {skeletonColumns.map((col) => (
-        <div key={col.key} className="flex w-72 shrink-0 flex-col gap-3">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-3 w-3 rounded-full bg-muted animate-pulse" />
-            <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-5 rounded bg-muted animate-pulse" />
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {Array.from({ length: col.cards }, (_, i) => `${col.key}-${i}`).map(
-              (cardKey) => (
-                <div
-                  key={cardKey}
-                  className="rounded-lg border border-border bg-card p-3 space-y-2.5"
-                >
-                  <div className="h-3.5 w-4/5 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-3/5 rounded bg-muted animate-pulse" />
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
-                    <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RouteComponent() {
   const { t } = useTranslation();
   const { boardId, organizationId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data } = useGetTasks(boardId);
+  // isPlaceholderData is true while the incoming board's tasks are still in
+  // flight and react-query is serving the previous board's data (keepPreviousData).
+  // Showing the skeleton then means a board switch never displays the OLD
+  // board's cards under the NEW board's name.
+  const { data, isPlaceholderData } = useGetTasks(boardId);
   const { board, setBoard } = useBoardStore();
   const { viewMode, setViewMode } = useUserPreferencesStore();
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  /*
+    ONE grouping choice drives both Board and List. They used to keep separate
+    state with different vocabularies, so switching view silently changed the
+    grouping. Persisted per board, which the list-only state already did.
+  */
+  const [groupBy, setGroupByState] = useState<BoardGroupBy>(() =>
+    readListGroupBy(boardId),
+  );
+  useEffect(() => {
+    setGroupByState(readListGroupBy(boardId));
+  }, [boardId]);
+  const setGroupBy = useCallback(
+    (value: BoardGroupBy) => {
+      setGroupByState(value);
+      writeListGroupBy(boardId, value);
+    },
+    [boardId],
+  );
+
   const [boardSearchQuery, setBoardSearchQuery] = useState("");
-  const [isBoardSearchMounted, setIsBoardSearchMounted] = useState(false);
-  const [isBoardSearchVisible, setIsBoardSearchVisible] = useState(false);
   const [boardSearchInput, setBoardSearchInput] =
     useState<HTMLInputElement | null>(null);
   const { sort, setSort } = useBoardSort(boardId);
@@ -127,15 +117,11 @@ function RouteComponent() {
     }
   }, [data, setBoard]);
 
-  const openBoardSearch = useCallback(() => {
-    setIsBoardSearchMounted(true);
-    window.requestAnimationFrame(() => setIsBoardSearchVisible(true));
-  }, []);
-
-  const closeBoardSearch = useCallback(() => {
-    setIsBoardSearchVisible(false);
-    window.setTimeout(() => setIsBoardSearchMounted(false), 180);
-  }, []);
+  // The search box is always present in the toolbar now, so cmd/ctrl-F just
+  // focuses it instead of mounting a transient popover in the page header.
+  const focusBoardSearch = useCallback(() => {
+    boardSearchInput?.focus();
+  }, [boardSearchInput]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -145,17 +131,12 @@ function RouteComponent() {
       if (!isFindShortcut) return;
 
       event.preventDefault();
-      openBoardSearch();
+      focusBoardSearch();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openBoardSearch]);
-
-  useEffect(() => {
-    if (!isBoardSearchMounted) return;
-    window.requestAnimationFrame(() => boardSearchInput?.focus());
-  }, [isBoardSearchMounted, boardSearchInput]);
+  }, [focusBoardSearch]);
 
   const {
     filters,
@@ -177,47 +158,24 @@ function RouteComponent() {
     };
   }, [filteredBoard, sort]);
 
-  const boardHeaderSearch = isBoardSearchMounted ? (
-    <div
-      className={`relative w-[240px] origin-top transition-[translate,scale,opacity] duration-180 ease-out ${
-        isBoardSearchVisible
-          ? "translate-y-0 scale-y-100 opacity-100"
-          : "pointer-events-none -translate-y-1 scale-y-95 opacity-0"
-      }`}
-    >
-      <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-      <Input
-        ref={setBoardSearchInput}
-        value={boardSearchQuery}
-        onChange={(event) => setBoardSearchQuery(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && !boardSearchQuery.trim()) {
-            closeBoardSearch();
-          }
-        }}
-        onBlur={() => {
-          if (!boardSearchQuery.trim()) {
-            closeBoardSearch();
-          }
-        }}
-        placeholder={t("tasks:boardSearchPlaceholder")}
-        className="h-7.5 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs [&_[data-slot=input]]:placeholder:leading-7"
-      />
-    </div>
-  ) : null;
-
   return (
     <BoardLayout
       boardId={boardId}
       organizationId={organizationId}
       activeView="board"
-      headerActions={boardHeaderSearch}
     >
       <PageTitle
         title={`${board?.name} — ${viewMode === "board" ? t("tasks:view.board") : t("tasks:view.list")}`}
         hideAppName
       />
-      <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
+      {/* Keyed by board so the content fades in on every board switch. Without
+          the key React reuses this subtree across boards, and `starting:`
+          styles only apply on first mount — so switching boards swapped the
+          cards in with no transition at all. */}
+      <div
+        key={boardId}
+        className="relative flex flex-col h-full min-h-0 overflow-hidden transition-opacity duration-200 ease-out starting:opacity-0"
+      >
         <BoardToolbar
           board={board}
           filters={filters}
@@ -227,35 +185,44 @@ function RouteComponent() {
           hasActiveFilters={hasActiveFilters}
           users={users}
           organizationLabels={organizationLabels}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
           sort={sort}
           onSortChange={setSort}
+          searchQuery={boardSearchQuery}
+          onSearchQueryChange={setBoardSearchQuery}
+          searchInputRef={setBoardSearchInput}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
+          // List-only affordances, hosted in the shared toolbar so List does
+          // not need a second bar of its own.
+          searchAdornment={viewMode === "list" ? <ListNestHint /> : undefined}
+          secondaryActions={
+            viewMode === "list" ? <ListBulkActionsToggle /> : undefined
+          }
+          actions={<CreateTaskAction boardId={boardId} />}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">
-          {sortedBoard ? (
-            viewMode === "board" ? (
-              <KanbanBoard
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
+          <div className="relative flex h-full min-w-0 flex-1 overflow-hidden">
+            {sortedBoard && !isPlaceholderData ? (
+              <BoardGroupByProvider groupBy={groupBy}>
+                {viewMode === "board" ? (
+                  <KanbanBoard
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                  />
+                ) : (
+                  <ListView
+                    board={sortedBoard}
+                    disableDragDrop={sort.field !== "position"}
+                    listGroupBy={groupBy}
+                  />
+                )}
+              </BoardGroupByProvider>
             ) : (
-              <ListView
-                board={sortedBoard}
-                disableDragDrop={sort.field !== "position"}
-              />
-            )
-          ) : (
-            <BoardSkeleton />
-          )}
+              <BoardSkeleton />
+            )}
+          </div>
         </div>
-
-        <CreateTaskModal
-          open={isTaskModalOpen}
-          boardId={boardId}
-          onClose={() => setIsTaskModalOpen(false)}
-        />
 
         <TaskDetailsSheet
           taskId={taskId}

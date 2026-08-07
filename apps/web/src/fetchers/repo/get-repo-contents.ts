@@ -19,7 +19,9 @@ export default async function getRepoContents({
   );
 
   if (!response.ok) {
-    throw new Error((await response.text()) || "Failed to load repository contents");
+    throw new Error(
+      (await response.text()) || "Failed to load repository contents",
+    );
   }
 
   return (await response.json()) as RepoContents;

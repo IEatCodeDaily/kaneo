@@ -5,6 +5,14 @@ config();
 
 function getSettings() {
   return {
+    /**
+     * Single-org mode restricts the instance to exactly one organization and is
+     * the only mode where OIDC/SSO claim mapping is available. Claim mapping is
+     * deliberately unavailable in multi-org mode: with several organizations
+     * there is no unambiguous target for a claim, so the feature is off rather
+     * than guessing.
+     */
+    singleOrgMode: process.env.SINGLE_ORG_MODE === "true",
     disableRegistration: process.env.DISABLE_REGISTRATION === "true",
     disablePasswordRegistration:
       process.env.DISABLE_PASSWORD_REGISTRATION === "true",

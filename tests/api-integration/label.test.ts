@@ -5,8 +5,8 @@ import { createApp } from "../../apps/api/src/index";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
 describe("API integration: labels", () => {
@@ -26,7 +26,7 @@ describe("API integration: labels", () => {
       body: JSON.stringify({
         name: "Bug",
         color: "#ff0000",
-        workspaceId: "workspace-missing",
+        organizationId: "organization-missing",
       }),
     });
 
@@ -34,8 +34,8 @@ describe("API integration: labels", () => {
     await expect(response.text()).resolves.toBe("Unauthorized");
   });
 
-  it("creates a label in a workspace for a member", async () => {
-    const member = await createWorkspaceMember();
+  it("creates a label in an organization for a member", async () => {
+    const member = await createOrganizationMember();
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
@@ -47,7 +47,7 @@ describe("API integration: labels", () => {
       body: JSON.stringify({
         name: "Bug",
         color: "#ef4444",
-        workspaceId: member.workspace.id,
+        organizationId: member.organization.id,
       }),
     });
 
@@ -56,7 +56,7 @@ describe("API integration: labels", () => {
       (await response.json()) as typeof schema.labelTable.$inferSelect;
 
     expect(payload).toMatchObject({
-      workspaceId: member.workspace.id,
+      organizationId: member.organization.id,
       name: "Bug",
       color: "#ef4444",
     });
@@ -67,14 +67,14 @@ describe("API integration: labels", () => {
 
     expect(persisted).toMatchObject({
       id: payload.id,
-      workspaceId: member.workspace.id,
+      organizationId: member.organization.id,
       name: "Bug",
       color: "#ef4444",
     });
   });
 
-  it("rejects label creation for users outside the workspace", async () => {
-    const member = await createWorkspaceMember();
+  it("rejects label creation for users outside the organization", async () => {
+    const member = await createOrganizationMember();
     const outsiderId = "user-label-outsider";
 
     const [outsider] = await db
@@ -98,13 +98,13 @@ describe("API integration: labels", () => {
       body: JSON.stringify({
         name: "Blocked",
         color: "#6b7280",
-        workspaceId: member.workspace.id,
+        organizationId: member.organization.id,
       }),
     });
 
     expect(response.status).toBe(403);
     await expect(response.text()).resolves.toBe(
-      "You don't have access to this workspace",
+      "You don't have access to this organization",
     );
 
     const persisted = await db.query.labelTable.findFirst({
@@ -115,17 +115,17 @@ describe("API integration: labels", () => {
   });
 
   describe("deletion cascade", () => {
-    it("deletes task-level copies when a workspace label is deleted", async () => {
-      const member = await createWorkspaceMember();
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("deletes task-level copies when an organization label is deleted", async () => {
+      const member = await createOrganizationMember();
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       // Create two tasks to assign labels to
       const [taskA] = await db
         .insert(schema.taskTable)
         .values({
-          projectId: project.id,
+          boardId: board.id,
           userId: member.user.id,
           title: "Task A",
           status: "to-do",
@@ -139,7 +139,7 @@ describe("API integration: labels", () => {
       const [taskB] = await db
         .insert(schema.taskTable)
         .values({
-          projectId: project.id,
+          boardId: board.id,
           userId: member.user.id,
           title: "Task B",
           status: "to-do",
@@ -150,13 +150,13 @@ describe("API integration: labels", () => {
         })
         .returning();
 
-      // Create a workspace-level label
-      const [workspaceLabel] = await db
+      // Create an organization-level label
+      const [organizationLabel] = await db
         .insert(schema.labelTable)
         .values({
           name: "Bug",
           color: "#ef4444",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: null,
         })
         .returning();
@@ -167,7 +167,7 @@ describe("API integration: labels", () => {
         .values({
           name: "Bug",
           color: "#ef4444",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: taskA.id,
         })
         .returning();
@@ -177,44 +177,44 @@ describe("API integration: labels", () => {
         .values({
           name: "Bug",
           color: "#ef4444",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: taskB.id,
         })
         .returning();
 
       // Verify all three labels exist
       const before = await db.query.labelTable.findMany({
-        where: eq(schema.labelTable.workspaceId, member.workspace.id),
+        where: eq(schema.labelTable.organizationId, member.organization.id),
       });
       expect(before).toHaveLength(3);
 
-      // Delete the workspace-level label via the API
+      // Delete the organization-level label via the API
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      const response = await app.request(`/api/label/${workspaceLabel.id}`, {
+      const response = await app.request(`/api/label/${organizationLabel.id}`, {
         method: "DELETE",
       });
 
       expect(response.status).toBe(200);
 
-      // Verify the workspace label and task-level copies are all gone
+      // Verify the organization label and task-level copies are all gone
       const remaining = await db.query.labelTable.findMany({
-        where: eq(schema.labelTable.workspaceId, member.workspace.id),
+        where: eq(schema.labelTable.organizationId, member.organization.id),
       });
       expect(remaining).toHaveLength(0);
     });
 
-    it("does not affect unrelated labels when deleting a workspace label", async () => {
-      const member = await createWorkspaceMember();
-      const { project, columns } = await createProjectFixture({
-        workspaceId: member.workspace.id,
+    it("does not affect unrelated labels when deleting an organization label", async () => {
+      const member = await createOrganizationMember();
+      const { board, columns } = await createBoardFixture({
+        organizationId: member.organization.id,
       });
 
       const [task] = await db
         .insert(schema.taskTable)
         .values({
-          projectId: project.id,
+          boardId: board.id,
           userId: member.user.id,
           title: "Task",
           status: "to-do",
@@ -225,13 +225,13 @@ describe("API integration: labels", () => {
         })
         .returning();
 
-      // Create two different workspace labels
+      // Create two different organization labels
       const [labelBug] = await db
         .insert(schema.labelTable)
         .values({
           name: "Bug",
           color: "#ef4444",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: null,
         })
         .returning();
@@ -241,7 +241,7 @@ describe("API integration: labels", () => {
         .values({
           name: "Feature",
           color: "#3b82f6",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: null,
         })
         .returning();
@@ -250,7 +250,7 @@ describe("API integration: labels", () => {
       await db.insert(schema.labelTable).values({
         name: "Bug",
         color: "#ef4444",
-        workspaceId: member.workspace.id,
+        organizationId: member.organization.id,
         taskId: task.id,
       });
 
@@ -259,7 +259,7 @@ describe("API integration: labels", () => {
         .values({
           name: "Feature",
           color: "#3b82f6",
-          workspaceId: member.workspace.id,
+          organizationId: member.organization.id,
           taskId: task.id,
         })
         .returning();
@@ -267,17 +267,17 @@ describe("API integration: labels", () => {
       mockAuthenticatedSession(member.user);
       const { app } = createApp();
 
-      // Delete only the "Bug" workspace label
+      // Delete only the "Bug" organization label
       const response = await app.request(`/api/label/${labelBug.id}`, {
         method: "DELETE",
       });
       expect(response.status).toBe(200);
 
-      // "Feature" workspace label and its task-level copy should still exist
-      const featureWorkspace = await db.query.labelTable.findFirst({
+      // "Feature" organization label and its task-level copy should still exist
+      const featureOrganization = await db.query.labelTable.findFirst({
         where: eq(schema.labelTable.id, labelFeature.id),
       });
-      expect(featureWorkspace).toBeDefined();
+      expect(featureOrganization).toBeDefined();
 
       const featureTaskCopy = await db.query.labelTable.findFirst({
         where: eq(schema.labelTable.id, featureCopy.id),

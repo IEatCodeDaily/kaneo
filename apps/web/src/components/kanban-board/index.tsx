@@ -1,38 +1,53 @@
 import {
+  type CollisionDetection,
   closestCorners,
   DndContext,
+  type DragCancelEvent,
   type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   type DropAnimation,
   defaultDropAnimationSideEffects,
   KeyboardSensor,
   MouseSensor,
+  pointerWithin,
   TouchSensor,
   type UniqueIdentifier,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { produce } from "immer";
 import { useEffect, useState } from "react";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { BoardSkeleton } from "@/components/common/board-skeleton";
+import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
+import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { reorderBoardTask, taskOrderUpdates } from "@/lib/reorder-board-task";
 import useBoardStore from "@/store/board";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import type { BoardWithTasks } from "@/types/board";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
+
 import Column from "./column";
-import TaskCard from "./task-card";
 
 type KanbanBoardProps = {
   board: BoardWithTasks;
   disableDragDrop?: boolean;
 };
 
+const pointerThenCorners: CollisionDetection = (args) => {
+  const collisions = pointerWithin(args);
+  if (collisions.length > 0) {
+    const cards = collisions.filter(
+      ({ data }) => data?.droppableContainer.data.current?.type !== "column",
+    );
+    return cards.length > 0 ? cards : collisions;
+  }
+  return closestCorners(args);
+};
+
 function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
-  const queryClient = useQueryClient();
   const { setBoard } = useBoardStore();
   const {
     setAvailableTasks,
@@ -42,7 +57,9 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const { mutate: updateTask } = useUpdateTask();
+  const [previewBoard, setPreviewBoard] = useState<BoardWithTasks | null>(null);
+  const { isPending: isReorderPending, mutate: reorderTasks } =
+    useReorderTasks();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -118,122 +135,71 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     setActiveId(event.active.id);
   };
 
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (!over) return;
+
+    const activeTaskId = active.id.toString();
+    const overId = over.id.toString();
+    const currentBoard = previewBoard ?? board;
+    const source = currentBoard.columns.find((column) =>
+      column.tasks.some((task) => task.id === activeTaskId),
+    );
+    const destination = currentBoard.columns.find(
+      (column) =>
+        column.id === overId || column.tasks.some((task) => task.id === overId),
+    );
+    if (!source || !destination || source.id === destination.id) return;
+
+    const result = reorderBoardTask(currentBoard, activeTaskId, overId);
+    if (result) setPreviewBoard(result.board);
+  };
+
+  const handleDragCancel = (_event: DragCancelEvent) => {
+    setPreviewBoard(null);
+    setActiveId(null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    const currentBoard = previewBoard ?? board;
     setActiveId(null);
+    setPreviewBoard(null);
 
-    if (!over || !board?.columns) return;
+    if (!over || !currentBoard?.columns) return;
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedBoard = produce(board, (draft) => {
-      const sourceColumn = draft?.columns?.find((col) =>
-        col.tasks.some((task) => task.id === activeId),
-      );
-      const destinationColumn = draft?.columns?.find(
-        (col) =>
-          col.id === overId || col.tasks.some((task) => task.id === overId),
-      );
+    if (previewBoard) {
+      setBoard(previewBoard);
+      reorderTasks({
+        boardId: previewBoard.id,
+        board: previewBoard,
+        tasks: taskOrderUpdates(previewBoard),
+      });
+      return;
+    }
 
-      if (!sourceColumn || !destinationColumn) return;
-
-      const sourceTaskIndex = sourceColumn.tasks.findIndex(
-        (task) => task.id === activeId,
-      );
-      const task = sourceColumn.tasks[sourceTaskIndex];
-
-      sourceColumn.tasks = sourceColumn.tasks.filter((t) => t.id !== activeId);
-
-      if (sourceColumn.id === destinationColumn.id) {
-        let destinationIndex = destinationColumn.tasks.findIndex(
-          (t) => t.id === overId,
-        );
-        if (sourceTaskIndex <= destinationIndex) {
-          destinationIndex += 1;
-        }
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, position: index });
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["boards", board.organizationId],
-        });
-      } else {
-        task.status = destinationColumn.id;
-        const destinationIndex =
-          overId === destinationColumn.id
-            ? destinationColumn.tasks.length
-            : destinationColumn.tasks.findIndex((t) => t.id === overId) + 1;
-
-        destinationColumn.tasks.splice(destinationIndex, 0, task);
-
-        destinationColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, status: destinationColumn.id, position: index });
-        });
-
-        sourceColumn.tasks.forEach((t, index) => {
-          updateTask({ ...t, position: index });
-        });
-      }
+    const result = reorderBoardTask(currentBoard, activeId, overId);
+    if (!result) return;
+    setBoard(result.board);
+    reorderTasks({
+      boardId: result.board.id,
+      board: result.board,
+      tasks: taskOrderUpdates(result.board),
     });
-
-    setBoard(updatedBoard);
-    setActiveId(null);
   };
 
-  if (!board || !board?.columns) {
-    return (
-      <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/25 to-background">
-        <header className="mb-6 mt-6 space-y-6 shrink-0 px-6">
-          <div className="flex items-center justify-between">
-            <div className="w-48 h-8 bg-muted/50 rounded-md animate-pulse" />
-          </div>
-        </header>
-
-        <div className="relative min-h-0 flex-1">
-          <div className="flex h-full flex-1 gap-4 overflow-x-auto px-4 pb-4 md:px-5">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={`kanban-column-skeleton-${
-                  // biome-ignore lint/suspicious/noArrayIndexKey: It's a skeleton
-                  i
-                }`}
-                className="h-full min-w-80 w-full flex-1 rounded-xl border border-border/70 bg-card"
-              >
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="w-24 h-5 bg-muted/50 rounded animate-pulse" />
-                  <div className="w-8 h-5 bg-muted/50 rounded animate-pulse" />
-                </div>
-
-                <div className="px-2 pb-4 flex flex-col gap-3 flex-1">
-                  {[...Array(3)].map((_, j) => (
-                    <div
-                      key={`kanban-task-skeleton-${
-                        // biome-ignore lint/suspicious/noArrayIndexKey: It's a skeleton
-                        j
-                      }`}
-                      className="p-4 bg-card rounded-lg border border-border/50 animate-pulse"
-                    >
-                      <div className="space-y-3">
-                        <div className="w-2/3 h-4 bg-muted/70 rounded" />
-                        <div className="w-1/2 h-3 bg-muted/70 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  // #111: one board-shaped skeleton, shared with the route and BoardLayout.
+  // This used to be a second, flat placeholder (four bare boxes with two grey
+  // bars each) — the exact "nothing has loaded" look the ticket rejected.
+  if (!board?.columns) {
+    return <BoardSkeleton />;
   }
 
+  const renderedBoard = previewBoard ?? board;
   const activeTask = activeId
-    ? board.columns
+    ? renderedBoard.columns
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
@@ -241,14 +207,16 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={pointerThenCorners}
+      onDragCancel={handleDragCancel}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
         <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {board.columns?.map((column) => (
+            {renderedBoard.columns?.map((column) => (
               <div
                 key={column.id}
                 className="h-full max-w-96 min-w-80 shrink-0 flex-1"
@@ -261,15 +229,19 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       </div>
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (
-          <div className="transform rotate-1 scale-[1.03] shadow-lg">
-            <div className="ring-2 ring-ring/35 rounded-lg">
-              <TaskCard task={activeTask} />
-            </div>
+          <div className="w-80 rotate-1 scale-[1.03] rounded-lg border border-ring/40 bg-card p-3 shadow-lg ring-2 ring-ring/35">
+            <p className="text-[10px] font-mono text-muted-foreground">
+              {activeTask.number}
+            </p>
+            <p className="mt-2 line-clamp-3 text-sm font-medium text-card-foreground">
+              {activeTask.title}
+            </p>
           </div>
         ) : null}
       </DragOverlay>
 
       <BulkToolbar />
+      <PendingSyncIndicator pending={isReorderPending} />
     </DndContext>
   );
 }

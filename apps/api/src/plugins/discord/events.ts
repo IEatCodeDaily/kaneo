@@ -1,11 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
-  columnTable,
   boardTable,
+  columnTable,
+  organizationTable,
   taskTable,
   userTable,
-  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -81,7 +81,10 @@ async function getDiscordEventData(
     })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .innerJoin(
+      organizationTable,
+      eq(boardTable.organizationId, organizationTable.id),
+    )
     .leftJoin(
       columnTable,
       and(
@@ -278,6 +281,9 @@ export async function handleTaskCommentCreated(
 ): Promise<void> {
   await runDiscordHandler(context, event, "taskCommentCreated", () => ({
     title: "New task comment",
-    body: truncate(event.comment.replace(/\s+/g, " "), 200),
+    body: `${event.authorName ? `${event.authorName}: ` : ""}${truncate(
+      event.comment.replace(/\s+/g, " "),
+      200,
+    )}`,
   }));
 }

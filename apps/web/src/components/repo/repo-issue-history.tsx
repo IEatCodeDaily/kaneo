@@ -1,6 +1,6 @@
-import { GitBranch, GitPullRequest, ListTree } from "lucide-react";
 import { MarkdownRenderer } from "@/components/public-board/markdown-renderer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import type { RepoIssueGithub, RepoIssueGithubActor } from "@/types/repo";
 
 type RepoIssueHistoryProps = { github?: RepoIssueGithub };
@@ -8,22 +8,94 @@ type RepoIssueHistoryProps = { github?: RepoIssueGithub };
 // GitHub renders one chronological conversation. Comments and events are the
 // same stream, so interleave them by timestamp instead of splitting sections.
 type Entry =
-  | { kind: "comment"; at: number; comment: RepoIssueGithub["comments"][number] }
-  | { kind: "event"; at: number; event: RepoIssueGithub["timeline"][number] };
+  | {
+      kind: "comment";
+      at: number;
+      comment: RepoIssueGithub["comments"][number];
+    }
+  | { kind: "event"; at: number; event: RepoIssueGithub["timeline"][number] }
+  | {
+      kind: "label-change";
+      at: number;
+      actor?: RepoIssueGithubActor;
+      createdAt?: string | null;
+      added: RepoIssueGithub["timeline"];
+      removed: RepoIssueGithub["timeline"];
+    };
 
-const HIDDEN_EVENTS = new Set(["commented", "committed", "subscribed", "mentioned"]);
+const HIDDEN_EVENTS = new Set([
+  "commented",
+  "committed",
+  "subscribed",
+  "mentioned",
+]);
 
 function time(value?: string | null) {
   return value ? new Date(value).getTime() : 0;
+}
+
+function isLabelChange(
+  entry: Entry,
+): entry is Extract<Entry, { kind: "event" }> {
+  return (
+    entry.kind === "event" &&
+    ["labeled", "unlabeled"].includes(entry.event.event ?? "")
+  );
+}
+
+function sameActor(
+  first?: RepoIssueGithubActor,
+  second?: RepoIssueGithubActor,
+) {
+  return first?.login === second?.login;
+}
+
+function groupLabelChanges(entries: Entry[]) {
+  return entries.reduce<Entry[]>((grouped, entry) => {
+    if (!isLabelChange(entry)) {
+      grouped.push(entry);
+      return grouped;
+    }
+
+    const previous = grouped.at(-1);
+    const canJoin =
+      previous?.kind === "label-change" &&
+      previous.at === entry.at &&
+      sameActor(previous.actor, entry.event.actor);
+    const labelChange = canJoin
+      ? previous
+      : {
+          kind: "label-change" as const,
+          at: entry.at,
+          actor: entry.event.actor,
+          createdAt: entry.event.created_at,
+          added: [],
+          removed: [],
+        };
+
+    if (!canJoin) grouped.push(labelChange);
+    labelChange[entry.event.event === "labeled" ? "added" : "removed"].push(
+      entry.event,
+    );
+    return grouped;
+  }, []);
+}
+
+function normalizeColor(color?: string | null) {
+  if (!color) return null;
+  const normalized = color.startsWith("#") ? color : `#${color}`;
+  return /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(normalized) ? normalized : null;
 }
 
 function Actor({ actor }: { actor?: RepoIssueGithubActor }) {
   const login = actor?.login ?? "GitHub";
   return (
     <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-      <Avatar className="size-5">
+      <Avatar className={`size-5 ${getAvatarTone(actor?.login)}`}>
         <AvatarImage alt={login} src={actor?.avatar_url ?? undefined} />
-        <AvatarFallback className="text-[8px]">{login.slice(0, 2).toUpperCase()}</AvatarFallback>
+        <AvatarFallback className="bg-transparent text-[8px]">
+          {login.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
       </Avatar>
       {login}
     </span>
@@ -40,90 +112,99 @@ function describe(event: RepoIssueGithub["timeline"][number]) {
         : "closed this as completed";
   }
   if (name === "reopened") return "reopened this";
-  if (name === "labeled") return `added the ${event.label?.name ?? ""} label`;
-  if (name === "unlabeled") return `removed the ${event.label?.name ?? ""} label`;
-  if (name === "assigned") return `assigned ${event.assignee?.login ?? "someone"}`;
-  if (name === "unassigned") return `unassigned ${event.assignee?.login ?? "someone"}`;
-  if (name === "milestoned") return `added this to the ${event.milestone?.title ?? ""} milestone`;
+  if (name === "assigned")
+    return `assigned ${event.assignee?.login ?? "someone"}`;
+  if (name === "unassigned")
+    return `unassigned ${event.assignee?.login ?? "someone"}`;
+  if (name === "milestoned")
+    return `added this to the ${event.milestone?.title ?? ""} milestone`;
   if (name === "demilestoned") return "removed this from the milestone";
   if (name === "renamed") return "changed the title";
   if (name === "cross-referenced") return "referenced this";
   return name.replaceAll("_", " ");
 }
 
+function LabelPill({
+  label,
+}: {
+  label: RepoIssueGithub["timeline"][number]["label"];
+}) {
+  const color = normalizeColor(label?.color);
+  return (
+    <span
+      className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium text-foreground"
+      style={
+        color
+          ? { backgroundColor: `${color}1a`, borderColor: `${color}80` }
+          : undefined
+      }
+    >
+      {label?.name ?? "label"}
+    </span>
+  );
+}
+
+function LabelChange({
+  entry,
+}: {
+  entry: Extract<Entry, { kind: "label-change" }>;
+}) {
+  return (
+    <li className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+      <Actor actor={entry.actor} />
+      {entry.added.length > 0 && (
+        <>
+          <span>added {entry.added.length === 1 ? "label" : "labels"}</span>
+          {entry.added.map((event, index) => (
+            <LabelPill
+              key={`added-${event.id ?? event.node_id ?? index}`}
+              label={event.label}
+            />
+          ))}
+        </>
+      )}
+      {entry.added.length > 0 && entry.removed.length > 0 && <span>and</span>}
+      {entry.removed.length > 0 && (
+        <>
+          <span>removed {entry.removed.length === 1 ? "label" : "labels"}</span>
+          {entry.removed.map((event, index) => (
+            <LabelPill
+              key={`removed-${event.id ?? event.node_id ?? index}`}
+              label={event.label}
+            />
+          ))}
+        </>
+      )}
+      {entry.createdAt && (
+        <time className="text-xs">
+          {new Date(entry.createdAt).toLocaleString()}
+        </time>
+      )}
+    </li>
+  );
+}
+
 export default function RepoIssueHistory({ github }: RepoIssueHistoryProps) {
   if (!github) return null;
-  const linkedPullRequests = github.linkedPullRequests ?? [];
-  const subIssues = github.subIssues ?? [];
-
-  const entries: Entry[] = [
-    ...(github.comments ?? []).map((comment) => ({
-      kind: "comment" as const,
-      at: time(comment.created_at),
-      comment,
-    })),
-    ...(github.timeline ?? [])
-      .filter((event) => !HIDDEN_EVENTS.has(event.event ?? ""))
-      .map((event) => ({ kind: "event" as const, at: time(event.created_at), event })),
-  ].sort((a, b) => a.at - b.at);
+  const entries = groupLabelChanges(
+    [
+      ...(github.comments ?? []).map((comment) => ({
+        kind: "comment" as const,
+        at: time(comment.created_at),
+        comment,
+      })),
+      ...(github.timeline ?? [])
+        .filter((event) => !HIDDEN_EVENTS.has(event.event ?? ""))
+        .map((event) => ({
+          kind: "event" as const,
+          at: time(event.created_at),
+          event,
+        })),
+    ].sort((a, b) => a.at - b.at),
+  );
 
   return (
-    <div className="space-y-7 border-t border-border/80 px-5 py-6 sm:px-6">
-      {(github.subIssuesSupported || linkedPullRequests.length > 0) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {github.subIssuesSupported && (
-            <section>
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <ListTree className="size-4" /> Sub-issues
-              </div>
-              {subIssues.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No sub-issues.</p>
-              ) : (
-                <div className="divide-y rounded-lg border">
-                  {subIssues.map((issue) => (
-                    <a
-                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50"
-                      href={issue.html_url ?? undefined}
-                      key={String(issue.id ?? issue.number)}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <span className="text-muted-foreground">#{issue.number}</span>
-                      <span className="min-w-0 truncate">{issue.title}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-          <section>
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <GitBranch className="size-4" /> Development
-            </div>
-            {linkedPullRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No linked pull requests.</p>
-            ) : (
-              <div className="divide-y rounded-lg border">
-                {linkedPullRequests.map((pr) => (
-                  <a
-                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50"
-                    href={pr.url ?? undefined}
-                    key={pr.number}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <GitPullRequest className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">#{pr.number}</span>
-                    <span className="min-w-0 truncate">{pr.title}</span>
-                    {pr.mergedAt && <span className="ml-auto text-xs text-purple-500">merged</span>}
-                  </a>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
+    <div className="border-b border-border/80 px-6 py-5">
       <section>
         <div className="mb-3 text-sm font-semibold">Conversation</div>
         {entries.length === 0 ? (
@@ -138,18 +219,27 @@ export default function RepoIssueHistory({ github }: RepoIssueHistoryProps) {
                       <Actor actor={entry.comment.user} />
                       <span>commented</span>
                       {entry.comment.created_at && (
-                        <time>{new Date(entry.comment.created_at).toLocaleString()}</time>
+                        <time>
+                          {new Date(entry.comment.created_at).toLocaleString()}
+                        </time>
                       )}
                     </header>
                     <div className="px-4 py-4">
                       {entry.comment.body ? (
                         <MarkdownRenderer content={entry.comment.body} />
                       ) : (
-                        <span className="text-sm italic text-muted-foreground">No content</span>
+                        <span className="text-sm italic text-muted-foreground">
+                          No content
+                        </span>
                       )}
                     </div>
                   </article>
                 </li>
+              ) : entry.kind === "label-change" ? (
+                <LabelChange
+                  entry={entry}
+                  key={`l-${entry.added[0]?.id ?? entry.removed[0]?.id ?? index}`}
+                />
               ) : (
                 <li
                   className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"

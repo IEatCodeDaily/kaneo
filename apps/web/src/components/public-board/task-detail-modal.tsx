@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogClose, DialogPopup } from "@/components/ui/dialog";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
 import { formatDateMedium, formatDateShort } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
@@ -146,12 +147,14 @@ export function PublicTaskDetailModal({
 
                 {task.assigneeName && (
                   <div className="flex items-center gap-2 px-2.5 py-1 text-xs bg-muted text-muted-foreground rounded-md">
-                    <Avatar className="h-4 w-4">
+                    <Avatar
+                      className={`h-4 w-4 ${getAvatarTone(task.userId, task.assigneeId)}`}
+                    >
                       <AvatarImage
                         src={task.assigneeImage ?? ""}
                         alt={task.assigneeName ?? ""}
                       />
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="bg-transparent text-[10px]">
                         {getInitials(task.assigneeName)}
                       </AvatarFallback>
                     </Avatar>

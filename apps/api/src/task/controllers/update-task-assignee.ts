@@ -1,56 +1,92 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskTable, userTable } from "../../database/schema";
+import {
+  organizationMemberTable,
+  taskTable,
+  teamTable,
+  userTable,
+} from "../../database/schema";
 import { publishEvent } from "../../events";
 
 async function updateTaskAssignee({
   id,
   userId,
+  teamId,
   currentUserId,
+  organizationId,
 }: {
   id: string;
-  userId: string;
+  userId: string | null;
+  teamId: string | null;
   currentUserId: string;
+  organizationId: string;
 }) {
-  const existingTask = await db.query.taskTable.findFirst({
-    where: eq(taskTable.id, id),
-  });
-
-  if (!existingTask) {
-    throw new HTTPException(404, {
-      message: "Task not found",
+  if (userId && teamId) {
+    throw new HTTPException(400, {
+      message: "A task can only be assigned to one user or team",
     });
   }
 
-  const nextAssigneeId = userId || null;
-  if (existingTask.userId === nextAssigneeId) {
+  const existingTask = await db.query.taskTable.findFirst({
+    where: eq(taskTable.id, id),
+  });
+  if (!existingTask)
+    throw new HTTPException(404, { message: "Task not found" });
+
+  let newAssigneeName: string | undefined;
+  if (userId) {
+    const [member] = await db
+      .select({ name: userTable.name })
+      .from(organizationMemberTable)
+      .innerJoin(userTable, eq(organizationMemberTable.userId, userTable.id))
+      .where(
+        and(
+          eq(organizationMemberTable.organizationId, organizationId),
+          eq(organizationMemberTable.userId, userId),
+        ),
+      )
+      .limit(1);
+    if (!member) {
+      throw new HTTPException(400, {
+        message: "User does not belong to the organization",
+      });
+    }
+    newAssigneeName = member.name;
+  }
+  if (teamId) {
+    const [team] = await db
+      .select({ name: teamTable.name })
+      .from(teamTable)
+      .where(
+        and(
+          eq(teamTable.organizationId, organizationId),
+          eq(teamTable.id, teamId),
+        ),
+      )
+      .limit(1);
+    if (!team) {
+      throw new HTTPException(400, {
+        message: "Team does not belong to the organization",
+      });
+    }
+    newAssigneeName = team.name;
+  }
+
+  if (existingTask.userId === userId && existingTask.teamId === teamId) {
     return existingTask;
   }
 
   const [updatedTask] = await db
     .update(taskTable)
-    .set({ userId: nextAssigneeId || null })
+    .set({ userId, teamId })
     .where(eq(taskTable.id, id))
     .returning();
-
   if (!updatedTask) {
-    throw new HTTPException(500, {
-      message: "Failed to update task assignee",
-    });
+    throw new HTTPException(500, { message: "Failed to update task assignee" });
   }
 
-  const newAssigneeName = userId
-    ? (
-        await db
-          .select({ name: userTable.name })
-          .from(userTable)
-          .where(eq(userTable.id, userId))
-          .limit(1)
-      )[0]?.name
-    : undefined;
-
-  if (!userId) {
+  if (!userId && !teamId) {
     await publishEvent("task.unassigned", {
       taskId: updatedTask.id,
       boardId: updatedTask.boardId,
@@ -58,7 +94,6 @@ async function updateTaskAssignee({
       title: updatedTask.title,
       type: "unassigned",
     });
-
     return updatedTask;
   }
 
@@ -66,13 +101,12 @@ async function updateTaskAssignee({
     taskId: updatedTask.id,
     boardId: updatedTask.boardId,
     userId: currentUserId,
-    oldAssignee: existingTask.userId,
+    oldAssignee: existingTask.userId ?? existingTask.teamId,
     newAssignee: newAssigneeName,
-    newAssigneeId: userId,
+    newAssigneeId: userId ?? teamId,
     title: updatedTask.title,
     type: "assignee_changed",
   });
-
   return updatedTask;
 }
 

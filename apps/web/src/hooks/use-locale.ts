@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { authClient } from "@/lib/auth-client";
-import { getBrowserLocale, resolveLocale } from "@/lib/i18n";
+import { ensureLocale, getBrowserLocale, resolveLocale } from "@/lib/i18n";
 
 export function useLocale() {
   const { i18n } = useTranslation();
@@ -23,7 +23,9 @@ export function useLocale() {
     const resolved = resolveLocale(nextLocale, null);
     document.documentElement.lang = resolved;
     await queryClient.invalidateQueries({ queryKey: ["session"] });
-    await i18n.changeLanguage(resolved);
+    // Not i18n.changeLanguage: locale bundles are lazy, so switching without
+    // fetching first would leave the UI on the fallback language.
+    await ensureLocale(resolved);
   };
 
   return {
