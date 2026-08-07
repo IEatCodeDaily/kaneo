@@ -23,6 +23,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { statusBarClasses } from "@/components/gantt/gantt-timeline";
@@ -30,7 +31,10 @@ import PageTitle from "@/components/page-title";
 import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
 import {
   type DisplayConfig,
@@ -65,6 +69,9 @@ function RouteComponent() {
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);
+  const { data: orgMembers } = useGetActiveOrganizationMembers(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [calView, setCalView] = useState<"week" | "month" | "year">("month");
   const [cursor, setCursor] = useState(() => new Date());
@@ -79,6 +86,15 @@ function RouteComponent() {
     labels: false,
     dates: true,
   });
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    filters,
+    updateFilter,
+    updateLabelFilter,
+    clearFilters,
+    hasActiveFilters,
+  } = useTaskFiltersWithLabelsSupport(board, boardId, searchQuery);
 
   const openTask = (id: string) =>
     navigate({ to: ".", search: { taskId: id }, replace: true });
@@ -87,7 +103,36 @@ function RouteComponent() {
     const tasks = [
       ...(board?.columns.flatMap((column) => column.tasks) ?? []),
       ...(board?.plannedTasks ?? []),
-    ];
+    ].filter((task) => {
+      if (filters.status?.length && !filters.status.includes(task.status))
+        return false;
+      if (
+        filters.priority?.length &&
+        !filters.priority.includes(task.priority ?? "")
+      )
+        return false;
+      if (
+        filters.assignee?.length &&
+        !filters.assignee.includes(task.userId ?? task.assigneeId ?? "")
+      )
+        return false;
+      if (filters.dueDate?.length) {
+        if (filters.dueDate.includes("no_due_date") && !task.dueDate)
+          return true;
+        if (!task.dueDate) return false;
+      }
+      if (
+        filters.labels?.length &&
+        !task.labels?.some((label) => filters.labels!.includes(label.id))
+      )
+        return false;
+      if (
+        searchQuery.trim() &&
+        !task.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
+      return true;
+    });
     return sortTasks(tasks, sort)
       .map((task) => {
         const parsedStart =
@@ -102,7 +147,7 @@ function RouteComponent() {
         };
       })
       .filter((task): task is NonNullable<typeof task> => task !== null);
-  }, [board, sort]);
+  }, [board, sort, filters, searchQuery]);
 
   // Grid days depend on the selected view mode.
   const gridDays = useMemo(() => {
@@ -151,8 +196,25 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border/80 px-3 py-2 sm:px-4">
+          <BoardToolbar
+            board={board}
+            filters={filters}
+            updateFilter={updateFilter}
+            updateLabelFilter={updateLabelFilter}
+            clearFilters={clearFilters}
+            hasActiveFilters={hasActiveFilters}
+            users={orgMembers}
+            organizationLabels={organizationLabels}
+            sort={sort}
+            onSortChange={setSort}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            groupBy={group}
+            onGroupByChange={setGroup}
+            filtersOnly
+          />
+          <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3">
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -209,7 +271,7 @@ function RouteComponent() {
               ))}
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <TaskViewControls
               sort={sort}
               onSortChange={setSort}

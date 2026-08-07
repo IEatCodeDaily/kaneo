@@ -38,6 +38,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import BoardToolbar from "@/components/board/board-toolbar";
 import BoardLayout from "@/components/common/board-layout";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import TaskViewControls from "@/components/common/task-view-controls";
@@ -79,10 +80,13 @@ import { Input } from "@/components/ui/input";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
@@ -458,6 +462,9 @@ function RouteComponent() {
   const { data: board, isPlaceholderData } = useGetTasks(boardId);
   const { data: boardMilestones } = useGetMilestonesByBoard(boardId);
   const { data: relationData } = useGetBoardTaskRelations(boardId);
+  const { data: orgMembers } = useGetActiveOrganizationMembers(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
   // #152: timeline sections are collapsible.
@@ -535,9 +542,59 @@ function RouteComponent() {
     ],
     [board],
   );
+
+  const {
+    filters,
+    updateFilter,
+    updateLabelFilter,
+    clearFilters,
+    hasActiveFilters,
+  } = useTaskFiltersWithLabelsSupport(board, boardId, searchQuery);
+
+  const filteredAllTasks = useMemo(
+    () =>
+      filters.status ||
+      filters.priority ||
+      filters.assignee ||
+      filters.dueDate ||
+      filters.labels
+        ? allTasks.filter((task) => {
+            if (filters.status?.length && !filters.status.includes(task.status))
+              return false;
+            if (
+              filters.priority?.length &&
+              !filters.priority.includes(task.priority ?? "")
+            )
+              return false;
+            if (
+              filters.assignee?.length &&
+              !filters.assignee.includes(
+                (task as { userId?: string; assigneeId?: string }).userId ??
+                  (task as { assigneeId?: string }).assigneeId ??
+                  "",
+              )
+            )
+              return false;
+            if (filters.dueDate?.length) {
+              if (filters.dueDate.includes("no_due_date") && !task.dueDate)
+                return true;
+              if (!task.dueDate) return false;
+            }
+            if (
+              filters.labels?.length &&
+              !(task as { labels?: Array<{ id: string }> }).labels?.some(
+                (label) => filters.labels!.includes(label.id),
+              )
+            )
+              return false;
+            return true;
+          })
+        : allTasks,
+    [allTasks, filters],
+  );
   const ganttMilestones = useMemo(
-    () => buildGanttMilestones(boardMilestones, allTasks),
-    [boardMilestones, allTasks],
+    () => buildGanttMilestones(boardMilestones, filteredAllTasks),
+    [boardMilestones, filteredAllTasks],
   );
 
   const foreignRows = useMemo(() => {
@@ -559,8 +616,8 @@ function RouteComponent() {
   // them invisible in this view (KFL-117). Split instead of filter: bars for
   // the scheduled ones, an "Unscheduled" group for the rest.
   const { scheduled: parsedTasks, unscheduled: unscheduledTasks } = useMemo(
-    () => partitionTasksBySchedule([...allTasks, ...foreignRows]),
-    [allTasks, foreignRows],
+    () => partitionTasksBySchedule([...filteredAllTasks, ...foreignRows]),
+    [filteredAllTasks, foreignRows],
   );
   // Sort the flat task list before building the tree so parents/children
   // respect the selected sort within their subtree.
@@ -597,11 +654,11 @@ function RouteComponent() {
   const matchingTaskIds = useMemo(
     () =>
       new Set(
-        allTasks
+        filteredAllTasks
           .filter((task) => matchesTaskQuery(task, searchQuery, board?.slug))
           .map((task) => task.id),
       ),
-    [allTasks, searchQuery, board?.slug],
+    [filteredAllTasks, searchQuery, board?.slug],
   );
   const visibleMilestones = useMemo(
     () =>
@@ -897,13 +954,22 @@ function RouteComponent() {
       <div className="flex h-full min-h-0 flex-col bg-background">
         <div className="border-b border-border/80 px-3 py-2 sm:px-4">
           <div className="flex flex-wrap items-center gap-3">
-            <TaskViewControls
+            <BoardToolbar
+              board={board}
+              filters={filters}
+              updateFilter={updateFilter}
+              updateLabelFilter={updateLabelFilter}
+              clearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters}
+              users={orgMembers}
+              organizationLabels={organizationLabels}
               sort={sort}
               onSortChange={setSort}
-              group={group}
-              onGroupChange={setGroup}
-              display={display}
-              onDisplayChange={setDisplay}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              groupBy={group}
+              onGroupByChange={setGroup}
+              filtersOnly
             />
             <div className="relative w-full max-w-[14rem]">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
@@ -914,7 +980,15 @@ function RouteComponent() {
                 className="h-7 min-h-0 [&_[data-slot=input]]:pl-7 [&_[data-slot=input]]:text-xs"
               />
             </div>
-            <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+            <div className="ml-auto flex max-w-full flex-wrap items-center gap-2">
+              <TaskViewControls
+                sort={sort}
+                onSortChange={setSort}
+                group={group}
+                onGroupChange={setGroup}
+                display={display}
+                onDisplayChange={setDisplay}
+              />
               <div className="inline-flex h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
                 {ZOOM_LEVELS.map((level) => (
                   <Button
@@ -950,7 +1024,7 @@ function RouteComponent() {
                   : t("tasks:gantt.showTasks")}
               </Button>
             </div>
-            <div className="ml-auto shrink-0">
+            <div className="shrink-0">
               <CreateTaskAction boardId={boardId} />
             </div>
           </div>
