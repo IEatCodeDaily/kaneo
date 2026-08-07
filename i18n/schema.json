@@ -68,9 +68,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"toggleSidebar"
-					]
+					"required": ["toggleSidebar"]
 				},
 				"sidebar": {
 					"type": "object",
@@ -83,10 +81,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"title",
-						"mobileDescription"
-					]
+					"required": ["title", "mobileDescription"]
 				},
 				"empty": {
 					"type": "object",
@@ -96,9 +91,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"loading"
-					]
+					"required": ["loading"]
 				},
 				"pagination": {
 					"type": "object",
@@ -143,10 +136,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"label",
-						"more"
-					]
+					"required": ["label", "more"]
 				},
 				"language": {
 					"type": "object",
@@ -175,6 +165,12 @@
 						},
 						"korean": {
 							"type": "string"
+						},
+						"chinese": {
+							"type": "string"
+						},
+						"italian": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -185,7 +181,9 @@
 						"french",
 						"spanish",
 						"dutch",
-						"korean"
+						"korean",
+						"chinese",
+						"italian"
 					]
 				},
 				"people": {
@@ -199,10 +197,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"someone",
-						"unknown"
-					]
+					"required": ["someone", "unknown"]
 				},
 				"error": {
 					"type": "object",
@@ -240,15 +235,13 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"never"
-					]
+					"required": ["never"]
 				},
 				"modals": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"createBoard": {
+						"createProject": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
@@ -258,7 +251,7 @@
 								"breadcrumbNew": {
 									"type": "string"
 								},
-								"organizationFallback": {
+								"workspaceFallback": {
 									"type": "string"
 								},
 								"description": {
@@ -270,7 +263,7 @@
 								"searchIcons": {
 									"type": "string"
 								},
-								"boardName": {
+								"projectName": {
 									"type": "string"
 								},
 								"keyLabel": {
@@ -292,11 +285,11 @@
 							"required": [
 								"title",
 								"breadcrumbNew",
-								"organizationFallback",
+								"workspaceFallback",
 								"description",
 								"pickIcon",
 								"searchIcons",
-								"boardName",
+								"projectName",
 								"keyLabel",
 								"keyHint",
 								"createButton",
@@ -304,7 +297,7 @@
 								"errorToast"
 							]
 						},
-						"createOrganization": {
+						"createWorkspace": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
@@ -351,6 +344,9 @@
 								"breadcrumbTask": {
 									"type": "string"
 								},
+								"selectProject": {
+									"type": "string"
+								},
 								"title": {
 									"type": "string"
 								},
@@ -363,7 +359,7 @@
 								"descriptionPlaceholder": {
 									"type": "string"
 								},
-								"chooseBoardForImages": {
+								"chooseProjectForImages": {
 									"type": "string"
 								},
 								"prepareTaskError": {
@@ -429,9 +425,6 @@
 								"createMore": {
 									"type": "string"
 								},
-								"discardDraft": {
-									"type": "string"
-								},
 								"createButton": {
 									"type": "string"
 								},
@@ -468,39 +461,6 @@
 										},
 										"crimson": {
 											"type": "string"
-										},
-										"blossom": {
-											"type": "string"
-										},
-										"honey": {
-											"type": "string"
-										},
-										"lime": {
-											"type": "string"
-										},
-										"emerald": {
-											"type": "string"
-										},
-										"lagoon": {
-											"type": "string"
-										},
-										"sky": {
-											"type": "string"
-										},
-										"ocean": {
-											"type": "string"
-										},
-										"indigo": {
-											"type": "string"
-										},
-										"violet": {
-											"type": "string"
-										},
-										"orchid": {
-											"type": "string"
-										},
-										"cocoa": {
-											"type": "string"
 										}
 									},
 									"required": [
@@ -512,28 +472,18 @@
 										"amber",
 										"terracotta",
 										"rose",
-										"crimson",
-										"blossom",
-										"honey",
-										"lime",
-										"emerald",
-										"lagoon",
-										"sky",
-										"ocean",
-										"indigo",
-										"violet",
-										"orchid",
-										"cocoa"
+										"crimson"
 									]
 								}
 							},
 							"required": [
 								"breadcrumbTask",
+								"selectProject",
 								"title",
 								"description",
 								"taskTitlePlaceholder",
 								"descriptionPlaceholder",
-								"chooseBoardForImages",
+								"chooseProjectForImages",
 								"prepareTaskError",
 								"successCreated",
 								"successUpdated",
@@ -555,21 +505,13 @@
 								"labelCreated",
 								"labelCreateError",
 								"createMore",
-								"discardDraft",
 								"createButton",
 								"untitledTask",
 								"labelColors"
 							]
 						}
 					},
-					"required": [
-						"createBoard",
-						"createOrganization",
-						"createTask"
-					]
-				},
-				"unknown": {
-					"type": "string"
+					"required": ["createProject", "createWorkspace", "createTask"]
 				}
 			},
 			"required": [
@@ -584,8 +526,7 @@
 				"people",
 				"error",
 				"formats",
-				"modals",
-				"unknown"
+				"modals"
 			]
 		},
 		"auth": {
@@ -678,6 +619,9 @@
 								"oauth_code_verification_failed",
 								"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_"
 							]
+						},
+						"instanceStatusError": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -702,7 +646,8 @@
 						"googleError",
 						"githubError",
 						"discordError",
-						"errors"
+						"errors",
+						"instanceStatusError"
 					]
 				},
 				"providers": {
@@ -716,10 +661,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"google",
-						"discord"
-					]
+					"required": ["google", "discord"]
 				},
 				"forms": {
 					"type": "object",
@@ -827,6 +769,15 @@
 						},
 						"toggleLink": {
 							"type": "string"
+						},
+						"instanceStatusError": {
+							"type": "string"
+						},
+						"instanceAdminTitle": {
+							"type": "string"
+						},
+						"instanceAdminSubtitle": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -842,7 +793,10 @@
 						"signingIn",
 						"continueAsGuest",
 						"toggleMessage",
-						"toggleLink"
+						"toggleLink",
+						"instanceStatusError",
+						"instanceAdminTitle",
+						"instanceAdminSubtitle"
 					]
 				},
 				"verifyOtp": {
@@ -884,9 +838,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"codeLength"
-							]
+							"required": ["codeLength"]
 						},
 						"toast": {
 							"type": "object",
@@ -972,12 +924,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"failedSignIn",
-						"signedInSuccess",
-						"signingIn",
-						"signIn"
-					]
+					"required": ["failedSignIn", "signedInSuccess", "signingIn", "signIn"]
 				},
 				"signUpForm": {
 					"type": "object",
@@ -1046,10 +993,10 @@
 						"goToSignIn": {
 							"type": "string"
 						},
-						"organizationLabel": {
+						"workspaceLabel": {
 							"type": "string"
 						},
-						"joinOrganization": {
+						"joinWorkspace": {
 							"type": "string"
 						},
 						"inviteBodySignedIn": {
@@ -1058,7 +1005,10 @@
 						"inviteBodySignedOut": {
 							"type": "string"
 						},
-						"signInToAccept": {
+						"createAccountOrSignIn": {
+							"type": "string"
+						},
+						"createAccount": {
 							"type": "string"
 						},
 						"accepting": {
@@ -1093,10 +1043,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"acceptFailed",
-								"acceptSuccess"
-							]
+							"required": ["acceptFailed", "acceptSuccess"]
 						}
 					},
 					"required": [
@@ -1109,11 +1056,12 @@
 						"invitationExpired",
 						"errorLoadDescription",
 						"goToSignIn",
-						"organizationLabel",
-						"joinOrganization",
+						"workspaceLabel",
+						"joinWorkspace",
 						"inviteBodySignedIn",
 						"inviteBodySignedOut",
-						"signInToAccept",
+						"createAccountOrSignIn",
+						"createAccount",
 						"accepting",
 						"acceptInvitation",
 						"goToDashboard",
@@ -1131,19 +1079,19 @@
 						"pageTitle": {
 							"type": "string"
 						},
-						"organizationPageTitle": {
+						"workspacePageTitle": {
 							"type": "string"
 						},
-						"createOrganizationTitle": {
+						"createWorkspaceTitle": {
 							"type": "string"
 						},
-						"createOrganizationSubtitle": {
+						"createWorkspaceSubtitle": {
 							"type": "string"
 						},
-						"organizationName": {
+						"workspaceName": {
 							"type": "string"
 						},
-						"organizationNamePlaceholder": {
+						"workspaceNamePlaceholder": {
 							"type": "string"
 						},
 						"descriptionOptional": {
@@ -1155,57 +1103,52 @@
 						"creating": {
 							"type": "string"
 						},
-						"createOrganization": {
+						"createWorkspace": {
 							"type": "string"
 						},
-						"organizationCreatedTitle": {
+						"workspaceCreatedTitle": {
 							"type": "string"
 						},
-						"redirectingToOrganization": {
+						"redirectingToWorkspace": {
 							"type": "string"
 						},
 						"toast": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"organizationCreated": {
+								"workspaceCreated": {
 									"type": "string"
 								},
 								"createFailed": {
 									"type": "string"
 								}
 							},
-							"required": [
-								"organizationCreated",
-								"createFailed"
-							]
+							"required": ["workspaceCreated", "createFailed"]
 						},
 						"validation": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"organizationNameRequired": {
+								"workspaceNameRequired": {
 									"type": "string"
 								}
 							},
-							"required": [
-								"organizationNameRequired"
-							]
+							"required": ["workspaceNameRequired"]
 						}
 					},
 					"required": [
 						"pageTitle",
-						"organizationPageTitle",
-						"createOrganizationTitle",
-						"createOrganizationSubtitle",
-						"organizationName",
-						"organizationNamePlaceholder",
+						"workspacePageTitle",
+						"createWorkspaceTitle",
+						"createWorkspaceSubtitle",
+						"workspaceName",
+						"workspaceNamePlaceholder",
 						"descriptionOptional",
 						"descriptionPlaceholder",
 						"creating",
-						"createOrganization",
-						"organizationCreatedTitle",
-						"redirectingToOrganization",
+						"createWorkspace",
+						"workspaceCreatedTitle",
+						"redirectingToWorkspace",
 						"toast",
 						"validation"
 					]
@@ -1252,10 +1195,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"updateSuccess",
-								"updateFailed"
-							]
+							"required": ["updateSuccess", "updateFailed"]
 						},
 						"validation": {
 							"type": "object",
@@ -1268,10 +1208,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"nameRequired",
-								"nameShort"
-							]
+							"required": ["nameRequired", "nameShort"]
 						}
 					},
 					"required": [
@@ -1380,11 +1317,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"nameRequired",
-								"nameShort",
-								"invalidEmail"
-							]
+							"required": ["nameRequired", "nameShort", "invalidEmail"]
 						}
 					},
 					"required": [
@@ -1527,16 +1460,16 @@
 						"connectWebhook": {
 							"type": "string"
 						},
-						"organizationRulesTitle": {
+						"workspaceRulesTitle": {
 							"type": "string"
 						},
-						"organizationRulesDescription": {
+						"workspaceRulesDescription": {
 							"type": "string"
 						},
-						"organizationCardHint": {
+						"workspaceCardHint": {
 							"type": "string"
 						},
-						"organizationEnabledLabel": {
+						"workspaceEnabledLabel": {
 							"type": "string"
 						},
 						"eventPreferencesTitle": {
@@ -1578,16 +1511,16 @@
 						"saveEventPreferences": {
 							"type": "string"
 						},
-						"organizationCardLabelEmail": {
+						"workspaceCardLabelEmail": {
 							"type": "string"
 						},
-						"organizationCardLabelNtfy": {
+						"workspaceCardLabelNtfy": {
 							"type": "string"
 						},
-						"organizationCardLabelGotify": {
+						"workspaceCardLabelGotify": {
 							"type": "string"
 						},
-						"organizationCardLabelWebhook": {
+						"workspaceCardLabelWebhook": {
 							"type": "string"
 						},
 						"emailChannelHintEnabled": {
@@ -1614,25 +1547,25 @@
 						"webhookChannelHintDisabled": {
 							"type": "string"
 						},
-						"boardScope": {
+						"projectScope": {
 							"type": "string"
 						},
-						"boardScopeDescription": {
+						"projectScopeDescription": {
 							"type": "string"
 						},
-						"allBoards": {
+						"allProjects": {
 							"type": "string"
 						},
-						"allBoardsDescription": {
+						"allProjectsDescription": {
 							"type": "string"
 						},
-						"selectedBoards": {
+						"selectedProjects": {
 							"type": "string"
 						},
-						"selectedBoardsDescription": {
+						"selectedProjectsDescription": {
 							"type": "string"
 						},
-						"noBoardsInOrganization": {
+						"noProjectsInWorkspace": {
 							"type": "string"
 						},
 						"createRule": {
@@ -1749,10 +1682,10 @@
 						"webhookSecretHintConfigured",
 						"webhookSecretHintOptional",
 						"connectWebhook",
-						"organizationRulesTitle",
-						"organizationRulesDescription",
-						"organizationCardHint",
-						"organizationEnabledLabel",
+						"workspaceRulesTitle",
+						"workspaceRulesDescription",
+						"workspaceCardHint",
+						"workspaceEnabledLabel",
 						"eventPreferencesTitle",
 						"eventPreferencesDescription",
 						"eventTaskAssignments",
@@ -1766,10 +1699,10 @@
 						"reminderLeadTimeUnitDays",
 						"reminderLeadTimeInvalid",
 						"saveEventPreferences",
-						"organizationCardLabelEmail",
-						"organizationCardLabelNtfy",
-						"organizationCardLabelGotify",
-						"organizationCardLabelWebhook",
+						"workspaceCardLabelEmail",
+						"workspaceCardLabelNtfy",
+						"workspaceCardLabelGotify",
+						"workspaceCardLabelWebhook",
 						"emailChannelHintEnabled",
 						"emailChannelHintDisabled",
 						"ntfyChannelHintEnabled",
@@ -1778,13 +1711,13 @@
 						"gotifyChannelHintDisabled",
 						"webhookChannelHintEnabled",
 						"webhookChannelHintDisabled",
-						"boardScope",
-						"boardScopeDescription",
-						"allBoards",
-						"allBoardsDescription",
-						"selectedBoards",
-						"selectedBoardsDescription",
-						"noBoardsInOrganization",
+						"projectScope",
+						"projectScopeDescription",
+						"allProjects",
+						"allProjectsDescription",
+						"selectedProjects",
+						"selectedProjectsDescription",
+						"noProjectsInWorkspace",
 						"createRule",
 						"removeRule",
 						"toastEmailSaved",
@@ -1869,6 +1802,9 @@
 						"weekStartsOnMonday": {
 							"type": "string"
 						},
+						"weekStartsOnSaturday": {
+							"type": "string"
+						},
 						"defaultView": {
 							"type": "string"
 						},
@@ -1928,15 +1864,6 @@
 						},
 						"priorityDescription": {
 							"type": "string"
-						},
-						"weekStartsOnSaturday": {
-							"type": "string"
-						},
-						"reduceOverlayBlur": {
-							"type": "string"
-						},
-						"reduceOverlayBlurDescription": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -1958,6 +1885,7 @@
 						"selectFirstDayOfWeek",
 						"weekStartsOnSunday",
 						"weekStartsOnMonday",
+						"weekStartsOnSaturday",
 						"defaultView",
 						"defaultViewDescription",
 						"selectViewMode",
@@ -1977,10 +1905,7 @@
 						"labels",
 						"labelsDescription",
 						"priority",
-						"priorityDescription",
-						"weekStartsOnSaturday",
-						"reduceOverlayBlur",
-						"reduceOverlayBlurDescription"
+						"priorityDescription"
 					]
 				},
 				"developerPage": {
@@ -2245,13 +2170,9 @@
 							]
 						}
 					},
-					"required": [
-						"createdModal",
-						"table",
-						"createDialog"
-					]
+					"required": ["createdModal", "table", "createDialog"]
 				},
-				"organizationGeneral": {
+				"workspaceGeneral": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -2264,10 +2185,10 @@
 						"subtitle": {
 							"type": "string"
 						},
-						"organizationInfoTitle": {
+						"workspaceInfoTitle": {
 							"type": "string"
 						},
-						"organizationInfoSubtitle": {
+						"workspaceInfoSubtitle": {
 							"type": "string"
 						},
 						"nameLabel": {
@@ -2294,10 +2215,10 @@
 						"dangerZoneSubtitle": {
 							"type": "string"
 						},
-						"deleteOrganization": {
+						"deleteWorkspace": {
 							"type": "string"
 						},
-						"deleteOrganizationDescription": {
+						"deleteWorkspaceDescription": {
 							"type": "string"
 						},
 						"deleteModalTitle": {
@@ -2332,9 +2253,66 @@
 									"type": "string"
 								}
 							},
+							"required": ["nameRequired", "nameShort"]
+						},
+						"transferOwnership": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"toastSuccess": {
+									"type": "string"
+								},
+								"toastError": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"subtitle": {
+									"type": "string"
+								},
+								"pickerLabel": {
+									"type": "string"
+								},
+								"noEligibleMembers": {
+									"type": "string"
+								},
+								"pickerHint": {
+									"type": "string"
+								},
+								"pickerPlaceholder": {
+									"type": "string"
+								},
+								"button": {
+									"type": "string"
+								},
+								"dialogTitle": {
+									"type": "string"
+								},
+								"dialogDescription": {
+									"type": "string"
+								},
+								"transferring": {
+									"type": "string"
+								},
+								"confirm": {
+									"type": "string"
+								}
+							},
 							"required": [
-								"nameRequired",
-								"nameShort"
+								"toastSuccess",
+								"toastError",
+								"title",
+								"subtitle",
+								"pickerLabel",
+								"noEligibleMembers",
+								"pickerHint",
+								"pickerPlaceholder",
+								"button",
+								"dialogTitle",
+								"dialogDescription",
+								"transferring",
+								"confirm"
 							]
 						}
 					},
@@ -2342,8 +2320,8 @@
 						"pageTitle",
 						"title",
 						"subtitle",
-						"organizationInfoTitle",
-						"organizationInfoSubtitle",
+						"workspaceInfoTitle",
+						"workspaceInfoSubtitle",
 						"nameLabel",
 						"nameHint",
 						"namePlaceholder",
@@ -2352,8 +2330,8 @@
 						"descriptionPlaceholder",
 						"dangerZone",
 						"dangerZoneSubtitle",
-						"deleteOrganization",
-						"deleteOrganizationDescription",
+						"deleteWorkspace",
+						"deleteWorkspaceDescription",
 						"deleteModalTitle",
 						"deleteModalDescription",
 						"deleteModalConfirm",
@@ -2361,10 +2339,11 @@
 						"toastUpdateError",
 						"toastDeleted",
 						"toastDeleteError",
-						"validation"
+						"validation",
+						"transferOwnership"
 					]
 				},
-				"organizationRoles": {
+				"workspaceRoles": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -2377,7 +2356,7 @@
 						"subtitle": {
 							"type": "string"
 						},
-						"thisOrganization": {
+						"thisWorkspace": {
 							"type": "string"
 						},
 						"noAccess": {
@@ -2457,17 +2436,13 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"viewer",
-								"member",
-								"admin"
-							]
+							"required": ["viewer", "member", "admin"]
 						},
 						"resources": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"board": {
+								"project": {
 									"type": "string"
 								},
 								"task": {
@@ -2476,22 +2451,17 @@
 								"label": {
 									"type": "string"
 								},
-								"organization": {
+								"workspace": {
 									"type": "string"
 								}
 							},
-							"required": [
-								"board",
-								"task",
-								"label",
-								"organization"
-							]
+							"required": ["project", "task", "label", "workspace"]
 						},
 						"permissions": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"board": {
+								"project": {
 									"type": "object",
 									"additionalProperties": false,
 									"properties": {
@@ -2506,10 +2476,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"read": {
 											"type": "object",
@@ -2522,10 +2489,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"update": {
 											"type": "object",
@@ -2538,10 +2502,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"delete": {
 											"type": "object",
@@ -2554,10 +2515,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"share": {
 											"type": "object",
@@ -2570,19 +2528,10 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										}
 									},
-									"required": [
-										"create",
-										"read",
-										"update",
-										"delete",
-										"share"
-									]
+									"required": ["create", "read", "update", "delete", "share"]
 								},
 								"task": {
 									"type": "object",
@@ -2599,10 +2548,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"read": {
 											"type": "object",
@@ -2615,10 +2561,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"update": {
 											"type": "object",
@@ -2631,10 +2574,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"delete": {
 											"type": "object",
@@ -2647,10 +2587,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"assign": {
 											"type": "object",
@@ -2663,19 +2600,10 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										}
 									},
-									"required": [
-										"create",
-										"read",
-										"update",
-										"delete",
-										"assign"
-									]
+									"required": ["create", "read", "update", "delete", "assign"]
 								},
 								"label": {
 									"type": "object",
@@ -2692,10 +2620,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"read": {
 											"type": "object",
@@ -2708,10 +2633,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"update": {
 											"type": "object",
@@ -2724,10 +2646,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"delete": {
 											"type": "object",
@@ -2740,20 +2659,12 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										}
 									},
-									"required": [
-										"create",
-										"read",
-										"update",
-										"delete"
-									]
+									"required": ["create", "read", "update", "delete"]
 								},
-								"organization": {
+								"workspace": {
 									"type": "object",
 									"additionalProperties": false,
 									"properties": {
@@ -2768,10 +2679,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"update": {
 											"type": "object",
@@ -2784,10 +2692,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"delete": {
 											"type": "object",
@@ -2800,10 +2705,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										},
 										"manage_settings": {
 											"type": "object",
@@ -2816,26 +2718,13 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"label",
-												"description"
-											]
+											"required": ["label", "description"]
 										}
 									},
-									"required": [
-										"read",
-										"update",
-										"delete",
-										"manage_settings"
-									]
+									"required": ["read", "update", "delete", "manage_settings"]
 								}
 							},
-							"required": [
-								"board",
-								"task",
-								"label",
-								"organization"
-							]
+							"required": ["project", "task", "label", "workspace"]
 						},
 						"validation": {
 							"type": "object",
@@ -2851,11 +2740,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"nameRequired",
-								"nameExists",
-								"permissionRequired"
-							]
+							"required": ["nameRequired", "nameExists", "permissionRequired"]
 						},
 						"toast": {
 							"type": "object",
@@ -2900,17 +2785,14 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"description"
-							]
+							"required": ["title", "description"]
 						}
 					},
 					"required": [
 						"pageTitle",
 						"title",
 						"subtitle",
-						"thisOrganization",
+						"thisWorkspace",
 						"noAccess",
 						"sectionTitle",
 						"sectionSubtitle",
@@ -2940,7 +2822,7 @@
 						"deleteDialog"
 					]
 				},
-				"organizationLabels": {
+				"workspaceLabels": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -3040,7 +2922,7 @@
 						"nameRequired"
 					]
 				},
-				"boardGeneral": {
+				"projectGeneral": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -3053,10 +2935,10 @@
 						"subtitle": {
 							"type": "string"
 						},
-						"boardInfoTitle": {
+						"projectInfoTitle": {
 							"type": "string"
 						},
-						"boardInfoSubtitle": {
+						"projectInfoSubtitle": {
 							"type": "string"
 						},
 						"iconLabel": {
@@ -3071,16 +2953,13 @@
 						"searchIconsPlaceholder": {
 							"type": "string"
 						},
-						"useEmoji": {
+						"projectNameLabel": {
 							"type": "string"
 						},
-						"boardNameLabel": {
+						"projectNameHint": {
 							"type": "string"
 						},
-						"boardNameHint": {
-							"type": "string"
-						},
-						"boardNamePlaceholder": {
+						"projectNamePlaceholder": {
 							"type": "string"
 						},
 						"keyLabel": {
@@ -3101,22 +2980,16 @@
 						"descriptionPlaceholder": {
 							"type": "string"
 						},
-						"subtaskDepthLimitLabel": {
-							"type": "string"
-						},
-						"subtaskDepthLimitHint": {
-							"type": "string"
-						},
 						"dangerZone": {
 							"type": "string"
 						},
 						"dangerZoneSubtitle": {
 							"type": "string"
 						},
-						"deleteBoard": {
+						"deleteProject": {
 							"type": "string"
 						},
-						"deleteBoardDescription": {
+						"deleteProjectDescription": {
 							"type": "string"
 						},
 						"deleteModalTitle": {
@@ -3147,13 +3020,7 @@
 								"nameRequired": {
 									"type": "string"
 								},
-								"nameShort": {
-									"type": "string"
-								},
 								"keyRequired": {
-									"type": "string"
-								},
-								"keyShort": {
 									"type": "string"
 								},
 								"keyMax": {
@@ -3165,9 +3032,7 @@
 							},
 							"required": [
 								"nameRequired",
-								"nameShort",
 								"keyRequired",
-								"keyShort",
 								"keyMax",
 								"iconRequired"
 							]
@@ -3183,28 +3048,25 @@
 						"pageTitle",
 						"title",
 						"subtitle",
-						"boardInfoTitle",
-						"boardInfoSubtitle",
+						"projectInfoTitle",
+						"projectInfoSubtitle",
 						"iconLabel",
 						"iconHint",
 						"pickIconTitle",
 						"searchIconsPlaceholder",
-						"useEmoji",
-						"boardNameLabel",
-						"boardNameHint",
-						"boardNamePlaceholder",
+						"projectNameLabel",
+						"projectNameHint",
+						"projectNamePlaceholder",
 						"keyLabel",
 						"keyHint",
 						"keyPlaceholder",
 						"descriptionLabel",
 						"descriptionHint",
 						"descriptionPlaceholder",
-						"subtaskDepthLimitLabel",
-						"subtaskDepthLimitHint",
 						"dangerZone",
 						"dangerZoneSubtitle",
-						"deleteBoard",
-						"deleteBoardDescription",
+						"deleteProject",
+						"deleteProjectDescription",
 						"deleteModalTitle",
 						"deleteModalDescription",
 						"deleteModalConfirm",
@@ -3217,7 +3079,7 @@
 						"importExportTasksDescription"
 					]
 				},
-				"boardIntegrations": {
+				"projectIntegrations": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -3285,7 +3147,7 @@
 						"telegramSectionSubtitle"
 					]
 				},
-				"boardVisibility": {
+				"projectVisibility": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -3345,7 +3207,7 @@
 						"toastUpdateError"
 					]
 				},
-				"boardWorkflow": {
+				"projectWorkflow": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
@@ -3381,25 +3243,18 @@
 						"automationDescription"
 					]
 				},
-				"boardSwitcher": {
+				"projectSwitcher": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"selectBoard": {
+						"selectProject": {
 							"type": "string"
 						},
-						"noBoards": {
-							"type": "string"
-						},
-						"searchBoards": {
+						"noProjects": {
 							"type": "string"
 						}
 					},
-					"required": [
-						"selectBoard",
-						"noBoards",
-						"searchBoards"
-					]
+					"required": ["selectProject", "noProjects"]
 				},
 				"columnEditor": {
 					"type": "object",
@@ -4045,9 +3900,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"webhookInvalid"
-							]
+							"required": ["webhookInvalid"]
 						},
 						"toast": {
 							"type": "object",
@@ -4200,9 +4053,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"webhookInvalid"
-							]
+							"required": ["webhookInvalid"]
 						},
 						"toast": {
 							"type": "object",
@@ -4355,9 +4206,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"webhookInvalid"
-							]
+							"required": ["webhookInvalid"]
 						},
 						"toast": {
 							"type": "object",
@@ -4983,14 +4832,14 @@
 				"preferencesPage",
 				"developerPage",
 				"apiKey",
-				"organizationGeneral",
-				"organizationRoles",
-				"organizationLabels",
-				"boardGeneral",
-				"boardIntegrations",
-				"boardVisibility",
-				"boardWorkflow",
-				"boardSwitcher",
+				"workspaceGeneral",
+				"workspaceRoles",
+				"workspaceLabels",
+				"projectGeneral",
+				"projectIntegrations",
+				"projectVisibility",
+				"projectWorkflow",
+				"projectSwitcher",
 				"columnEditor",
 				"githubIntegration",
 				"giteaIntegration",
@@ -5018,7 +4867,7 @@
 						"commands": {
 							"type": "string"
 						},
-						"boards": {
+						"projects": {
 							"type": "string"
 						},
 						"search": {
@@ -5030,10 +4879,10 @@
 						"createTask": {
 							"type": "string"
 						},
-						"createBoard": {
+						"createProject": {
 							"type": "string"
 						},
-						"createOrganization": {
+						"createWorkspace": {
 							"type": "string"
 						},
 						"lightTheme": {
@@ -5068,22 +4917,18 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"navigate",
-								"open",
-								"close"
-							]
+							"required": ["navigate", "open", "close"]
 						}
 					},
 					"required": [
 						"suggestions",
 						"commands",
-						"boards",
+						"projects",
 						"search",
 						"members",
 						"createTask",
-						"createBoard",
-						"createOrganization",
+						"createProject",
+						"createWorkspace",
 						"lightTheme",
 						"darkTheme",
 						"systemTheme",
@@ -5103,13 +4948,7 @@
 						"overview": {
 							"type": "string"
 						},
-						"boards": {
-							"type": "string"
-						},
-						"myTasks": {
-							"type": "string"
-						},
-						"inbox": {
+						"projects": {
 							"type": "string"
 						},
 						"members": {
@@ -5123,220 +4962,34 @@
 						},
 						"backToBoard": {
 							"type": "string"
-						},
-						"repos": {
-							"type": "string"
-						},
-						"trash": {
-							"type": "string"
-						},
-						"moreBoards": {
-							"type": "string"
-						},
-						"moreRepos": {
-							"type": "string"
 						}
 					},
 					"required": [
 						"overview",
-						"boards",
-						"myTasks",
-						"inbox",
+						"projects",
 						"members",
 						"invitations",
 						"more",
-						"backToBoard",
-						"repos",
-						"trash",
-						"moreBoards",
-						"moreRepos"
+						"backToBoard"
 					]
 				},
-				"tables": {
+				"projectList": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"title": {
+						"viewProject": {
 							"type": "string"
 						},
-						"create": {
+						"shareProject": {
 							"type": "string"
 						},
-						"noTables": {
-							"type": "string"
-						},
-						"loadError": {
-							"type": "string"
-						},
-						"retry": {
-							"type": "string"
-						},
-						"loading": {
-							"type": "string"
-						},
-						"tableName": {
-							"type": "string"
-						},
-						"createTitle": {
-							"type": "string"
-						},
-						"createDescription": {
-							"type": "string"
-						},
-						"cancel": {
-							"type": "string"
-						},
-						"creating": {
-							"type": "string"
-						},
-						"createAction": {
-							"type": "string"
-						},
-						"created": {
-							"type": "string"
-						},
-						"createError": {
-							"type": "string"
-						},
-						"loadTableError": {
-							"type": "string"
-						},
-						"connectionHelp": {
-							"type": "string"
-						},
-						"row_one": {
-							"type": "string"
-						},
-						"row_other": {
-							"type": "string"
-						},
-						"field_one": {
-							"type": "string"
-						},
-						"field_other": {
-							"type": "string"
-						},
-						"empty": {
-							"type": "string"
-						},
-						"readOnlyEmpty": {
-							"type": "string"
-						},
-						"addField": {
-							"type": "string"
-						},
-						"newFieldName": {
-							"type": "string"
-						},
-						"noRows": {
-							"type": "string"
-						},
-						"addRow": {
-							"type": "string"
-						},
-						"deleteField": {
-							"type": "string"
-						},
-						"deleteFieldConfirm": {
-							"type": "string"
-						},
-						"renameFieldError": {
-							"type": "string"
-						},
-						"deleteFieldError": {
-							"type": "string"
-						},
-						"addFieldError": {
-							"type": "string"
-						},
-						"deleteRowError": {
-							"type": "string"
-						},
-						"saveCellError": {
-							"type": "string"
-						},
-						"renameTableError": {
-							"type": "string"
-						},
-						"addRowError": {
-							"type": "string"
-						},
-						"tableOptions": {
-							"type": "string"
-						},
-						"deleteTable": {
-							"type": "string"
-						},
-						"deleteTableConfirm": {
-							"type": "string"
-						},
-						"deleted": {
-							"type": "string"
-						},
-						"deleteTableError": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"create",
-						"noTables",
-						"loadError",
-						"retry",
-						"loading",
-						"tableName",
-						"createTitle",
-						"createDescription",
-						"cancel",
-						"creating",
-						"createAction",
-						"created",
-						"createError",
-						"loadTableError",
-						"connectionHelp",
-						"row_one",
-						"row_other",
-						"field_one",
-						"field_other",
-						"empty",
-						"readOnlyEmpty",
-						"addField",
-						"newFieldName",
-						"noRows",
-						"addRow",
-						"deleteField",
-						"deleteFieldConfirm",
-						"renameFieldError",
-						"deleteFieldError",
-						"addFieldError",
-						"deleteRowError",
-						"saveCellError",
-						"renameTableError",
-						"addRowError",
-						"tableOptions",
-						"deleteTable",
-						"deleteTableConfirm",
-						"deleted",
-						"deleteTableError"
-					]
-				},
-				"boardList": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"viewBoard": {
-							"type": "string"
-						},
-						"shareBoard": {
-							"type": "string"
-						},
-						"boardSettings": {
+						"projectSettings": {
 							"type": "string"
 						},
 						"linkCopied": {
 							"type": "string"
 						},
-						"addBoard": {
+						"addProject": {
 							"type": "string"
 						},
 						"deleteConfirmTitle": {
@@ -5348,20 +5001,20 @@
 						"deletedToast": {
 							"type": "string"
 						},
-						"deleteBoard": {
+						"deleteProject": {
 							"type": "string"
 						}
 					},
 					"required": [
-						"viewBoard",
-						"shareBoard",
-						"boardSettings",
+						"viewProject",
+						"shareProject",
+						"projectSettings",
 						"linkCopied",
-						"addBoard",
+						"addProject",
 						"deleteConfirmTitle",
 						"deleteConfirmDescription",
 						"deletedToast",
-						"deleteBoard"
+						"deleteProject"
 					]
 				},
 				"search": {
@@ -5381,10 +5034,10 @@
 								"task": {
 									"type": "string"
 								},
-								"board": {
+								"project": {
 									"type": "string"
 								},
-								"organization": {
+								"workspace": {
 									"type": "string"
 								},
 								"comment": {
@@ -5399,19 +5052,15 @@
 							},
 							"required": [
 								"task",
-								"board",
-								"organization",
+								"project",
+								"workspace",
 								"comment",
 								"activity",
 								"fallback"
 							]
 						}
 					},
-					"required": [
-						"inputPlaceholder",
-						"minCharsHint",
-						"groups"
-					]
+					"required": ["inputPlaceholder", "minCharsHint", "groups"]
 				},
 				"settingsLayout": {
 					"type": "object",
@@ -5424,10 +5073,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"toggleSidebar",
-						"back"
-					]
+					"required": ["toggleSidebar", "back"]
 				},
 				"userMenu": {
 					"type": "object",
@@ -5448,18 +5094,6 @@
 						"signingOut": {
 							"type": "string"
 						},
-						"theme": {
-							"type": "string"
-						},
-						"themeLight": {
-							"type": "string"
-						},
-						"themeDark": {
-							"type": "string"
-						},
-						"themeAuto": {
-							"type": "string"
-						},
 						"logOut": {
 							"type": "string"
 						}
@@ -5470,88 +5104,66 @@
 						"unnamedUser",
 						"settings",
 						"signingOut",
-						"theme",
-						"themeLight",
-						"themeDark",
-						"themeAuto",
 						"logOut"
 					]
 				},
-				"teamView": {
+				"workspaceSwitcher": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"all": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"all"
-					]
-				},
-				"organizationSwitcher": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"organizations": {
+						"workspaces": {
 							"type": "string"
 						},
 						"switching": {
 							"type": "string"
 						},
-						"addOrganization": {
+						"addWorkspace": {
 							"type": "string"
 						},
-						"selectOrganization": {
+						"selectWorkspace": {
 							"type": "string"
 						}
 					},
 					"required": [
-						"organizations",
+						"workspaces",
 						"switching",
-						"addOrganization",
-						"selectOrganization"
+						"addWorkspace",
+						"selectWorkspace"
 					]
 				},
 				"page": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"boardsTitle": {
+						"projectsTitle": {
 							"type": "string"
 						},
 						"settingsTitle": {
 							"type": "string"
 						},
-						"backToOrganization": {
+						"backToWorkspace": {
 							"type": "string"
 						},
-						"settingsOrganizationTab": {
+						"settingsWorkspaceTab": {
 							"type": "string"
 						}
 					},
 					"required": [
-						"boardsTitle",
+						"projectsTitle",
 						"settingsTitle",
-						"backToOrganization",
-						"settingsOrganizationTab"
+						"backToWorkspace",
+						"settingsWorkspaceTab"
 					]
 				},
-				"boardSettings": {
+				"projectSettings": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"boardLabel": {
+						"projectLabel": {
 							"type": "string"
 						}
 					},
-					"required": [
-						"boardLabel"
-					]
+					"required": ["projectLabel"]
 				},
 				"keyboardShortcuts": {
 					"type": "object",
@@ -5587,12 +5199,6 @@
 								},
 								"quickSelect": {
 									"type": "string"
-								},
-								"ticketTitle": {
-									"type": "string"
-								},
-								"editor": {
-									"type": "string"
 								}
 							},
 							"required": [
@@ -5600,9 +5206,7 @@
 								"create",
 								"views",
 								"navigation",
-								"quickSelect",
-								"ticketTitle",
-								"editor"
+								"quickSelect"
 							]
 						},
 						"items": {
@@ -5627,10 +5231,10 @@
 								"createTask": {
 									"type": "string"
 								},
-								"createBoard": {
+								"createProject": {
 									"type": "string"
 								},
-								"createOrganization": {
+								"createWorkspace": {
 									"type": "string"
 								},
 								"boardView": {
@@ -5653,24 +5257,6 @@
 								},
 								"quickSelectNumber": {
 									"type": "string"
-								},
-								"titleLabel": {
-									"type": "string"
-								},
-								"titleMember": {
-									"type": "string"
-								},
-								"titlePriority": {
-									"type": "string"
-								},
-								"editorMention": {
-									"type": "string"
-								},
-								"editorSlash": {
-									"type": "string"
-								},
-								"editorTicket": {
-									"type": "string"
 								}
 							},
 							"required": [
@@ -5680,21 +5266,15 @@
 								"showShortcuts",
 								"closeModal",
 								"createTask",
-								"createBoard",
-								"createOrganization",
+								"createProject",
+								"createWorkspace",
 								"boardView",
 								"listView",
 								"backlogView",
 								"nextTask",
 								"prevTask",
 								"openTask",
-								"quickSelectNumber",
-								"titleLabel",
-								"titleMember",
-								"titlePriority",
-								"editorMention",
-								"editorSlash",
-								"editorTicket"
+								"quickSelectNumber"
 							]
 						}
 					},
@@ -5706,35 +5286,20 @@
 						"categories",
 						"items"
 					]
-				},
-				"repoList": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"allRepos": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"allRepos"
-					]
 				}
 			},
 			"required": [
 				"commandPalette",
 				"notifications",
 				"sidebar",
-				"tables",
-				"boardList",
+				"projectList",
 				"search",
 				"settingsLayout",
 				"userMenu",
-				"teamView",
-				"organizationSwitcher",
+				"workspaceSwitcher",
 				"page",
-				"boardSettings",
-				"keyboardShortcuts",
-				"repoList"
+				"projectSettings",
+				"keyboardShortcuts"
 			]
 		},
 		"notifications": {
@@ -5773,9 +5338,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"open"
-					]
+					"required": ["open"]
 				},
 				"reminderLeadTime": {
 					"type": "object",
@@ -5824,12 +5387,9 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
-						"organization_created": {
+						"workspace_created": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
@@ -5840,10 +5400,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"task_status_changed": {
 							"type": "object",
@@ -5856,10 +5413,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"task_assignee_changed": {
 							"type": "object",
@@ -5872,10 +5426,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"task_mention": {
 							"type": "object",
@@ -5888,10 +5439,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"task_comment": {
 							"type": "object",
@@ -5904,10 +5452,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"due_date_reminder": {
 							"type": "object",
@@ -5920,10 +5465,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"task_overdue": {
 							"type": "object",
@@ -5936,10 +5478,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "content"]
 						},
 						"time_entry_created": {
 							"type": "object",
@@ -5955,193 +5494,19 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"title",
-								"contentWithTask",
-								"contentWithoutTask"
-							]
-						},
-						"task_title_changed": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_description_changed": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_priority_changed": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_due_date_changed": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_flag_raised": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_flag_resolved": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_unassigned": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_moved": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_label_assigned": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
-						},
-						"task_label_unassigned": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"content": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"content"
-							]
+							"required": ["title", "contentWithTask", "contentWithoutTask"]
 						}
 					},
 					"required": [
 						"task_created",
-						"organization_created",
+						"workspace_created",
 						"task_status_changed",
 						"task_assignee_changed",
 						"task_mention",
 						"task_comment",
 						"due_date_reminder",
 						"task_overdue",
-						"time_entry_created",
-						"task_title_changed",
-						"task_description_changed",
-						"task_priority_changed",
-						"task_due_date_changed",
-						"task_flag_raised",
-						"task_flag_resolved",
-						"task_unassigned",
-						"task_moved",
-						"task_label_assigned",
-						"task_label_unassigned"
+						"time_entry_created"
 					]
 				}
 			},
@@ -6222,12 +5587,6 @@
 							"type": "string"
 						},
 						"failedToUpdate": {
-							"type": "string"
-						},
-						"editHistory_one": {
-							"type": "string"
-						},
-						"editHistory_other": {
 							"type": "string"
 						},
 						"edit": {
@@ -6478,6 +5837,42 @@
 										"typescript",
 										"yaml"
 									]
+								},
+								"table": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"addColumnBefore": {
+											"type": "string"
+										},
+										"addColumnAfter": {
+											"type": "string"
+										},
+										"deleteColumn": {
+											"type": "string"
+										},
+										"addRowBefore": {
+											"type": "string"
+										},
+										"addRowAfter": {
+											"type": "string"
+										},
+										"deleteRow": {
+											"type": "string"
+										},
+										"deleteTable": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"addColumnBefore",
+										"addColumnAfter",
+										"deleteColumn",
+										"addRowBefore",
+										"addRowAfter",
+										"deleteRow",
+										"deleteTable"
+									]
 								}
 							},
 							"required": [
@@ -6528,14 +5923,9 @@
 								"copied",
 								"dropImageToUpload",
 								"previewImageAlt",
-								"codeLang"
+								"codeLang",
+								"table"
 							]
-						},
-						"draftSaved": {
-							"type": "string"
-						},
-						"deleteDraft": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -6546,8 +5936,6 @@
 						"mustBeLoggedInToEdit",
 						"updated",
 						"failedToUpdate",
-						"editHistory_one",
-						"editHistory_other",
 						"edit",
 						"editPlaceholder",
 						"save",
@@ -6556,31 +5944,8 @@
 						"leavePlaceholder",
 						"attachFile",
 						"submitShortcut",
-						"editor",
-						"draftSaved",
-						"deleteDraft"
+						"editor"
 					]
-				},
-				"flagRaised": {
-					"type": "string"
-				},
-				"flagResolved": {
-					"type": "string"
-				},
-				"flagTarget": {
-					"type": "string"
-				},
-				"statusRun": {
-					"type": "string"
-				},
-				"statusRunNoOp": {
-					"type": "string"
-				},
-				"statusRunSteps": {
-					"type": "string"
-				},
-				"resolutionNote": {
-					"type": "string"
 				}
 			},
 			"required": [
@@ -6596,14 +5961,7 @@
 				"moved",
 				"created",
 				"githubUser",
-				"comment",
-				"flagRaised",
-				"flagResolved",
-				"flagTarget",
-				"statusRun",
-				"statusRunNoOp",
-				"statusRunSteps",
-				"resolutionNote"
+				"comment"
 			]
 		},
 		"tasks": {
@@ -6681,9 +6039,6 @@
 				"boardSearchPlaceholder": {
 					"type": "string"
 				},
-				"boardClearSearch": {
-					"type": "string"
-				},
 				"view": {
 					"type": "object",
 					"additionalProperties": false,
@@ -6695,10 +6050,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"board",
-						"list"
-					]
+					"required": ["board", "list"]
 				},
 				"common": {
 					"type": "object",
@@ -6741,9 +6093,6 @@
 							"type": "string"
 						},
 						"titlePlaceholder": {
-							"type": "string"
-						},
-						"titleSaving": {
 							"type": "string"
 						},
 						"addDescription": {
@@ -6794,10 +6143,7 @@
 											"type": "string"
 										}
 									},
-									"required": [
-										"markIncomplete",
-										"markComplete"
-									]
+									"required": ["markIncomplete", "markComplete"]
 								},
 								"upload": {
 									"type": "object",
@@ -6841,11 +6187,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"text",
-												"lists",
-												"insert"
-											]
+											"required": ["text", "lists", "insert"]
 										},
 										"empty": {
 											"type": "string"
@@ -6895,11 +6237,7 @@
 											]
 										}
 									},
-									"required": [
-										"groups",
-										"empty",
-										"commands"
-									]
+									"required": ["groups", "empty", "commands"]
 								},
 								"languages": {
 									"type": "object",
@@ -7068,10 +6406,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"embedVideo",
-												"keepAsLink"
-											]
+											"required": ["embedVideo", "keepAsLink"]
 										},
 										"inputPlaceholder": {
 											"type": "string"
@@ -7096,10 +6431,7 @@
 													"type": "string"
 												}
 											},
-											"required": [
-												"invalidUrl",
-												"onlyYoutube"
-											]
+											"required": ["invalidUrl", "onlyYoutube"]
 										},
 										"onlyYoutubeInline": {
 											"type": "string"
@@ -7133,9 +6465,6 @@
 								"languages",
 								"embed"
 							]
-						},
-						"close": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -7144,10 +6473,8 @@
 						"noActivity",
 						"openInFullPage",
 						"titlePlaceholder",
-						"titleSaving",
 						"addDescription",
-						"editor",
-						"close"
+						"editor"
 					]
 				},
 				"entity": {
@@ -7158,9 +6485,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"task"
-					]
+					"required": ["task"]
 				},
 				"relations": {
 					"type": "object",
@@ -7169,7 +6494,7 @@
 						"title": {
 							"type": "string"
 						},
-						"tasksInBoard": {
+						"tasksInProject": {
 							"type": "string"
 						},
 						"linkError": {
@@ -7213,22 +6538,12 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"blocks",
-								"blocked_by",
-								"related"
-							]
-						},
-						"otherBoard": {
-							"type": "string"
-						},
-						"blockedBy": {
-							"type": "string"
+							"required": ["blocks", "blocked_by", "related"]
 						}
 					},
 					"required": [
 						"title",
-						"tasksInBoard",
+						"tasksInProject",
 						"linkError",
 						"empty",
 						"searchPlaceholder",
@@ -7238,9 +6553,7 @@
 						"related",
 						"blocks",
 						"selectTask",
-						"types",
-						"otherBoard",
-						"blockedBy"
+						"types"
 					]
 				},
 				"subtasks": {
@@ -7268,12 +6581,6 @@
 						"deleteError": {
 							"type": "string"
 						},
-						"unlinkSuccess": {
-							"type": "string"
-						},
-						"unlinkError": {
-							"type": "string"
-						},
 						"deleteDialogTitle": {
 							"type": "string"
 						},
@@ -7283,13 +6590,7 @@
 						"deleteAction": {
 							"type": "string"
 						},
-						"linkExisting": {
-							"type": "string"
-						},
-						"linkExistingHint": {
-							"type": "string"
-						},
-						"searchPlaceholder": {
+						"completeAria": {
 							"type": "string"
 						}
 					},
@@ -7301,14 +6602,10 @@
 						"createError",
 						"deleteSuccess",
 						"deleteError",
-						"unlinkSuccess",
-						"unlinkError",
 						"deleteDialogTitle",
 						"deleteDialogDescription",
 						"deleteAction",
-						"linkExisting",
-						"linkExistingHint",
-						"searchPlaceholder"
+						"completeAria"
 					]
 				},
 				"properties": {
@@ -7354,10 +6651,10 @@
 						"title": {
 							"type": "string"
 						},
-						"boardLabel": {
+						"projectLabel": {
 							"type": "string"
 						},
-						"boardPlaceholder": {
+						"projectPlaceholder": {
 							"type": "string"
 						},
 						"statusLabel": {
@@ -7381,8 +6678,8 @@
 					},
 					"required": [
 						"title",
-						"boardLabel",
-						"boardPlaceholder",
+						"projectLabel",
+						"projectPlaceholder",
 						"statusLabel",
 						"statusHintKeep",
 						"statusHintAdjust",
@@ -7404,16 +6701,9 @@
 								},
 								"updateError": {
 									"type": "string"
-								},
-								"team": {
-									"type": "string"
 								}
 							},
-							"required": [
-								"unassigned",
-								"updateError",
-								"team"
-							]
+							"required": ["unassigned", "updateError"]
 						},
 						"status": {
 							"type": "object",
@@ -7423,9 +6713,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"updateError"
-							]
+							"required": ["updateError"]
 						},
 						"priority": {
 							"type": "object",
@@ -7435,9 +6723,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"updateError"
-							]
+							"required": ["updateError"]
 						},
 						"dueDate": {
 							"type": "object",
@@ -7453,11 +6739,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"updateSuccess",
-								"updateError",
-								"clear"
-							]
+							"required": ["updateSuccess", "updateError", "clear"]
 						},
 						"startDate": {
 							"type": "object",
@@ -7473,11 +6755,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"updateSuccess",
-								"updateError",
-								"clear"
-							]
+							"required": ["updateSuccess", "updateError", "clear"]
 						},
 						"labels": {
 							"type": "object",
@@ -7540,39 +6818,6 @@
 										},
 										"crimson": {
 											"type": "string"
-										},
-										"blossom": {
-											"type": "string"
-										},
-										"honey": {
-											"type": "string"
-										},
-										"lime": {
-											"type": "string"
-										},
-										"emerald": {
-											"type": "string"
-										},
-										"lagoon": {
-											"type": "string"
-										},
-										"sky": {
-											"type": "string"
-										},
-										"ocean": {
-											"type": "string"
-										},
-										"indigo": {
-											"type": "string"
-										},
-										"violet": {
-											"type": "string"
-										},
-										"orchid": {
-											"type": "string"
-										},
-										"cocoa": {
-											"type": "string"
 										}
 									},
 									"required": [
@@ -7584,22 +6829,8 @@
 										"amber",
 										"terracotta",
 										"rose",
-										"crimson",
-										"blossom",
-										"honey",
-										"lime",
-										"emerald",
-										"lagoon",
-										"sky",
-										"ocean",
-										"indigo",
-										"violet",
-										"orchid",
-										"cocoa"
+										"crimson"
 									]
-								},
-								"repoSource": {
-									"type": "string"
 								}
 							},
 							"required": [
@@ -7612,8 +6843,7 @@
 								"updateError",
 								"createSuccess",
 								"createError",
-								"colors",
-								"repoSource"
+								"colors"
 							]
 						}
 					},
@@ -7671,10 +6901,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"planned",
-								"archived"
-							]
+							"required": ["planned", "archived"]
 						},
 						"noTasksInSection": {
 							"type": "string"
@@ -7714,21 +6941,6 @@
 								"dueNextWeek",
 								"noDueDate"
 							]
-						},
-						"moveAllDialogTitle": {
-							"type": "string"
-						},
-						"moveAllDialogDescription": {
-							"type": "string"
-						},
-						"moveAllDialogDescription_other": {
-							"type": "string"
-						},
-						"moveAllDialogConfirm": {
-							"type": "string"
-						},
-						"moveAllDialogConfirm_other": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -7744,12 +6956,7 @@
 						"addFilter",
 						"sections",
 						"noTasksInSection",
-						"filters",
-						"moveAllDialogTitle",
-						"moveAllDialogDescription",
-						"moveAllDialogDescription_other",
-						"moveAllDialogConfirm",
-						"moveAllDialogConfirm_other"
+						"filters"
 					]
 				},
 				"sort": {
@@ -7811,74 +7018,6 @@
 						"ascending",
 						"descending",
 						"fields"
-					]
-				},
-				"group": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"by": {
-							"type": "string"
-						},
-						"none": {
-							"type": "string"
-						},
-						"status": {
-							"type": "string"
-						},
-						"priority": {
-							"type": "string"
-						},
-						"assignee": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"by",
-						"none",
-						"status",
-						"priority",
-						"assignee"
-					]
-				},
-				"display": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"taskNumbers": {
-							"type": "string"
-						},
-						"show": {
-							"type": "string"
-						},
-						"assignee": {
-							"type": "string"
-						},
-						"priority": {
-							"type": "string"
-						},
-						"labels": {
-							"type": "string"
-						},
-						"dates": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"taskNumbers",
-						"show",
-						"assignee",
-						"priority",
-						"labels",
-						"dates"
 					]
 				},
 				"boardFilters": {
@@ -7945,10 +7084,7 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"isAnyOf",
-								"includeAnyOf"
-							]
+							"required": ["isAnyOf", "includeAnyOf"]
 						}
 					},
 					"required": [
@@ -7997,18 +7133,6 @@
 						"taskHeader": {
 							"type": "string"
 						},
-						"unscheduledGroup": {
-							"type": "string"
-						},
-						"noMilestoneGroup": {
-							"type": "string"
-						},
-						"unscheduledHint": {
-							"type": "string"
-						},
-						"dragToScheduleHint": {
-							"type": "string"
-						},
 						"updateDatesError": {
 							"type": "string"
 						},
@@ -8019,29 +7143,6 @@
 							"type": "string"
 						},
 						"taskAriaLabel": {
-							"type": "string"
-						},
-						"zoom": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"day": {
-									"type": "string"
-								},
-								"week": {
-									"type": "string"
-								},
-								"month": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"day",
-								"week",
-								"month"
-							]
-						},
-						"noMilestone": {
 							"type": "string"
 						}
 					},
@@ -8056,48 +7157,10 @@
 						"noTasksFound",
 						"noTasksMatch",
 						"taskHeader",
-						"unscheduledGroup",
-						"noMilestoneGroup",
-						"unscheduledHint",
-						"dragToScheduleHint",
 						"updateDatesError",
 						"resizeStart",
 						"resizeDue",
-						"taskAriaLabel",
-						"zoom",
-						"noMilestone"
-					]
-				},
-				"calendar": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"pageTitle": {
-							"type": "string"
-						},
-						"title": {
-							"type": "string"
-						},
-						"today": {
-							"type": "string"
-						},
-						"previousMonth": {
-							"type": "string"
-						},
-						"nextMonth": {
-							"type": "string"
-						},
-						"more": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"pageTitle",
-						"title",
-						"today",
-						"previousMonth",
-						"nextMonth",
-						"more"
+						"taskAriaLabel"
 					]
 				},
 				"delete": {
@@ -8120,13 +7183,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"title",
-						"description",
-						"action",
-						"success",
-						"error"
-					]
+					"required": ["title", "description", "action", "success", "error"]
 				},
 				"archive": {
 					"type": "object",
@@ -8134,15 +7191,9 @@
 					"properties": {
 						"success": {
 							"type": "string"
-						},
-						"error": {
-							"type": "string"
 						}
 					},
-					"required": [
-						"success",
-						"error"
-					]
+					"required": ["success"]
 				},
 				"listView": {
 					"type": "object",
@@ -8158,11 +7209,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"addTask",
-						"archiveAllTooltip",
-						"noTasks"
-					]
+					"required": ["addTask", "archiveAllTooltip", "noTasks"]
 				},
 				"kanban": {
 					"type": "object",
@@ -8172,9 +7219,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"addTask"
-					]
+					"required": ["addTask"]
 				},
 				"pr": {
 					"type": "object",
@@ -8219,10 +7264,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"label",
-						"unassigned"
-					]
+					"required": ["label", "unassigned"]
 				},
 				"dueDate": {
 					"type": "object",
@@ -8245,26 +7287,6 @@
 						},
 						"clearError": {
 							"type": "string"
-						},
-						"outcome": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"early": {
-									"type": "string"
-								},
-								"on-time": {
-									"type": "string"
-								},
-								"late": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"early",
-								"on-time",
-								"late"
-							]
 						}
 					},
 					"required": [
@@ -8273,8 +7295,7 @@
 						"updateSuccess",
 						"updateError",
 						"clearSuccess",
-						"clearError",
-						"outcome"
+						"clearError"
 					]
 				},
 				"labels": {
@@ -8286,16 +7307,9 @@
 						},
 						"empty": {
 							"type": "string"
-						},
-						"fromRepository": {
-							"type": "string"
 						}
 					},
-					"required": [
-						"label",
-						"empty",
-						"fromRepository"
-					]
+					"required": ["label", "empty"]
 				},
 				"update": {
 					"type": "object",
@@ -8308,10 +7322,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"success",
-						"error"
-					]
+					"required": ["success", "error"]
 				},
 				"contextMenu": {
 					"type": "object",
@@ -8324,46 +7335,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"copyLink",
-						"copyLinkSuccess"
-					]
-				},
-				"attachment": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"fallbackName": {
-							"type": "string"
-						},
-						"copyImageAddress": {
-							"type": "string"
-						},
-						"copyFileAddress": {
-							"type": "string"
-						},
-						"openInNewTab": {
-							"type": "string"
-						},
-						"download": {
-							"type": "string"
-						},
-						"copyMarkdown": {
-							"type": "string"
-						},
-						"remove": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"fallbackName",
-						"copyImageAddress",
-						"copyFileAddress",
-						"openInNewTab",
-						"download",
-						"copyMarkdown",
-						"remove"
-					]
+					"required": ["copyLink", "copyLinkSuccess"]
 				},
 				"actions": {
 					"type": "object",
@@ -8375,31 +7347,11 @@
 						"markAsPlanned": {
 							"type": "string"
 						},
-						"moveToBacklog": {
-							"type": "string"
-						},
-						"unlink": {
-							"type": "string"
-						},
-						"unlinkSubtask": {
-							"type": "string"
-						},
 						"delete": {
-							"type": "string"
-						},
-						"unarchive": {
 							"type": "string"
 						}
 					},
-					"required": [
-						"archive",
-						"markAsPlanned",
-						"moveToBacklog",
-						"unlink",
-						"unlinkSubtask",
-						"delete",
-						"unarchive"
-					]
+					"required": ["archive", "markAsPlanned", "delete"]
 				},
 				"bulk": {
 					"type": "object",
@@ -8529,463 +7481,54 @@
 						"changeStatus"
 					]
 				},
-				"column": {
+				"editor": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"empty": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"empty"
-					]
-				},
-				"viewOptions": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label"
-					]
-				},
-				"groupBy": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"none": {
-							"type": "string"
-						},
-						"assignee": {
-							"type": "string"
-						},
-						"priority": {
-							"type": "string"
-						},
-						"byLabel": {
-							"type": "string"
-						},
-						"dueDate": {
-							"type": "string"
-						},
-						"noDueDate": {
-							"type": "string"
-						},
-						"noLabel": {
-							"type": "string"
-						},
-						"status": {
-							"type": "string"
-						},
-						"milestone": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"none",
-						"assignee",
-						"priority",
-						"byLabel",
-						"dueDate",
-						"noDueDate",
-						"noLabel",
-						"status",
-						"milestone"
-					]
-				},
-				"preview": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"assignee": {
-							"type": "string"
-						},
-						"priority": {
-							"type": "string"
-						},
-						"dueDate": {
-							"type": "string"
-						},
-						"noDueDate": {
-							"type": "string"
-						},
-						"labels": {
-							"type": "string"
-						},
-						"none": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"assignee",
-						"priority",
-						"dueDate",
-						"noDueDate",
-						"labels",
-						"none"
-					]
-				},
-				"milestone": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"none": {
-							"type": "string"
-						},
-						"clear": {
-							"type": "string"
-						},
-						"empty": {
-							"type": "string"
-						},
-						"loading": {
-							"type": "string"
-						},
-						"searchPlaceholder": {
-							"type": "string"
-						},
-						"assigned": {
-							"type": "string"
-						},
-						"cleared": {
-							"type": "string"
-						},
-						"assignFailed": {
-							"type": "string"
-						},
-						"badgeTooltip": {
-							"type": "string"
-						},
-						"view": {
+						"table": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
-								"title": {
+								"addColumnBefore": {
 									"type": "string"
 								},
-								"description": {
+								"addColumnAfter": {
 									"type": "string"
 								},
-								"pageTitle": {
+								"deleteColumn": {
 									"type": "string"
 								},
-								"caption": {
+								"addRowBefore": {
 									"type": "string"
 								},
-								"milestone": {
+								"addRowAfter": {
 									"type": "string"
 								},
-								"dueDate": {
+								"deleteRow": {
 									"type": "string"
 								},
-								"progress": {
-									"type": "string"
-								},
-								"progressLabel": {
-									"type": "string"
-								},
-								"status": {
-									"type": "string"
-								},
-								"tasks": {
-									"type": "string"
-								},
-								"noDueDate": {
-									"type": "string"
-								},
-								"noTasks": {
-									"type": "string"
-								},
-								"empty": {
+								"deleteTable": {
 									"type": "string"
 								}
 							},
 							"required": [
-								"title",
-								"description",
-								"pageTitle",
-								"caption",
-								"milestone",
-								"dueDate",
-								"progress",
-								"progressLabel",
-								"status",
-								"tasks",
-								"noDueDate",
-								"noTasks",
-								"empty"
-							]
-						},
-						"manage": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"namePlaceholder": {
-									"type": "string"
-								},
-								"created": {
-									"type": "string"
-								},
-								"updated": {
-									"type": "string"
-								},
-								"deleted": {
-									"type": "string"
-								},
-								"saveFailed": {
-									"type": "string"
-								},
-								"deleteFailed": {
-									"type": "string"
-								},
-								"noDates": {
-									"type": "string"
-								},
-								"dueDate": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"namePlaceholder",
-								"created",
-								"updated",
-								"deleted",
-								"saveFailed",
-								"deleteFailed",
-								"noDates",
-								"dueDate"
-							]
-						},
-						"status": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"planned": {
-									"type": "string"
-								},
-								"active": {
-									"type": "string"
-								},
-								"completed": {
-									"type": "string"
-								},
-								"archived": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"planned",
-								"active",
-								"completed",
-								"archived"
+								"addColumnBefore",
+								"addColumnAfter",
+								"deleteColumn",
+								"addRowBefore",
+								"addRowAfter",
+								"deleteRow",
+								"deleteTable"
 							]
 						}
 					},
-					"required": [
-						"title",
-						"none",
-						"clear",
-						"empty",
-						"loading",
-						"searchPlaceholder",
-						"assigned",
-						"cleared",
-						"assignFailed",
-						"badgeTooltip",
-						"view",
-						"manage",
-						"status"
-					]
-				},
-				"parentTask": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"none": {
-							"type": "string"
-						},
-						"clear": {
-							"type": "string"
-						},
-						"empty": {
-							"type": "string"
-						},
-						"searchPlaceholder": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"none",
-						"clear",
-						"empty",
-						"searchPlaceholder"
-					]
-				},
-				"access": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"team": {
-							"type": "string"
-						},
-						"member": {
-							"type": "string"
-						},
-						"viewing": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"team",
-						"member",
-						"viewing"
-					]
-				},
-				"templates": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"name": {
-							"type": "string"
-						},
-						"save": {
-							"type": "string"
-						},
-						"delete": {
-							"type": "string"
-						},
-						"empty": {
-							"type": "string"
-						},
-						"applyTitle": {
-							"type": "string"
-						},
-						"applyWarning": {
-							"type": "string"
-						},
-						"apply": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"name",
-						"save",
-						"delete",
-						"empty",
-						"applyTitle",
-						"applyWarning",
-						"apply"
-					]
-				},
-				"titleTokens": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"labels": {
-							"type": "string"
-						},
-						"members": {
-							"type": "string"
-						},
-						"priority": {
-							"type": "string"
-						},
-						"hint": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"labels",
-						"members",
-						"priority",
-						"hint"
-					]
-				},
-				"boardSync": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"syncedWith": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"syncedWith"
-					]
-				},
-				"nest": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"hint": {
-							"type": "string"
-						},
-						"tooltip": {
-							"type": "string"
-						},
-						"error": {
-							"type": "string"
-						},
-						"willNestUnder": {
-							"type": "string"
-						},
-						"releaseToNest": {
-							"type": "string"
-						},
-						"cannotNestHere": {
-							"type": "string"
-						},
-						"cannotNestReason": {
-							"type": "string"
-						},
-						"unknownTarget": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"hint",
-						"tooltip",
-						"error",
-						"willNestUnder",
-						"releaseToNest",
-						"cannotNestHere",
-						"cannotNestReason",
-						"unknownTarget"
-					]
+					"required": ["table"]
 				}
 			},
 			"required": [
 				"status",
 				"priority",
 				"boardSearchPlaceholder",
-				"boardClearSearch",
 				"view",
 				"common",
 				"detail",
@@ -8997,11 +7540,8 @@
 				"popover",
 				"backlog",
 				"sort",
-				"group",
-				"display",
 				"boardFilters",
 				"gantt",
-				"calendar",
 				"delete",
 				"archive",
 				"listView",
@@ -9012,20 +7552,9 @@
 				"labels",
 				"update",
 				"contextMenu",
-				"attachment",
 				"actions",
 				"bulk",
-				"column",
-				"viewOptions",
-				"groupBy",
-				"preview",
-				"milestone",
-				"parentTask",
-				"access",
-				"templates",
-				"titleTokens",
-				"boardSync",
-				"nest"
+				"editor"
 			]
 		},
 		"invitations": {
@@ -9097,7 +7626,7 @@
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"organization": {
+						"workspace": {
 							"type": "string"
 						},
 						"invitedBy": {
@@ -9107,11 +7636,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"organization",
-						"invitedBy",
-						"expires"
-					]
+					"required": ["workspace", "invitedBy", "expires"]
 				},
 				"toast": {
 					"type": "object",
@@ -9151,127 +7676,18 @@
 				"toast"
 			]
 		},
-		"organization": {
+		"workspace": {
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
-				"boards": {
+				"projects": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"properties": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"open": {
-									"type": "string"
-								},
-								"close": {
-									"type": "string"
-								},
-								"name": {
-									"type": "string"
-								},
-								"description": {
-									"type": "string"
-								},
-								"members": {
-									"type": "string"
-								},
-								"noMembers": {
-									"type": "string"
-								},
-								"save": {
-									"type": "string"
-								},
-								"saved": {
-									"type": "string"
-								},
-								"saveFailed": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"title",
-								"open",
-								"close",
-								"name",
-								"description",
-								"members",
-								"noMembers",
-								"save",
-								"saved",
-								"saveFailed"
-							]
-						},
-						"view": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"table": {
-									"type": "string"
-								},
-								"timeline": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"table",
-								"timeline"
-							]
-						},
-						"timeline": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"boardColumn": {
-									"type": "string"
-								},
-								"barLabel": {
-									"type": "string"
-								},
-								"emptyTitle": {
-									"type": "string"
-								},
-								"emptyDescription": {
-									"type": "string"
-								},
-								"zoom": {
-									"type": "object",
-									"additionalProperties": false,
-									"properties": {
-										"week": {
-											"type": "string"
-										},
-										"month": {
-											"type": "string"
-										},
-										"year": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"week",
-										"month",
-										"year"
-									]
-								}
-							},
-							"required": [
-								"boardColumn",
-								"barLabel",
-								"emptyTitle",
-								"emptyDescription",
-								"zoom"
-							]
-						},
 						"pageTitle": {
 							"type": "string"
 						},
-						"createBoard": {
+						"createProject": {
 							"type": "string"
 						},
 						"title": {
@@ -9298,7 +7714,7 @@
 						"emptyDescriptionReadOnly": {
 							"type": "string"
 						},
-						"boardStatus": {
+						"projectStatus": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
@@ -9312,22 +7728,15 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"notStarted",
-								"complete",
-								"inProgress"
-							]
+							"required": ["notStarted", "complete", "inProgress"]
 						},
 						"noDueDate": {
 							"type": "string"
 						}
 					},
 					"required": [
-						"properties",
-						"view",
-						"timeline",
 						"pageTitle",
-						"createBoard",
+						"createProject",
 						"title",
 						"progress",
 						"targetDate",
@@ -9336,7 +7745,7 @@
 						"emptyTitle",
 						"emptyDescription",
 						"emptyDescriptionReadOnly",
-						"boardStatus",
+						"projectStatus",
 						"noDueDate"
 					]
 				},
@@ -9471,200 +7880,9 @@
 						"success",
 						"error"
 					]
-				},
-				"repos": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"pageTitle": {
-							"type": "string"
-						},
-						"emptyTitle": {
-							"type": "string"
-						},
-						"emptyDescription": {
-							"type": "string"
-						},
-						"neverSynced": {
-							"type": "string"
-						},
-						"backToRepos": {
-							"type": "string"
-						},
-						"table": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"name": {
-									"type": "string"
-								},
-								"provider": {
-									"type": "string"
-								},
-								"openIssues": {
-									"type": "string"
-								},
-								"openPullRequests": {
-									"type": "string"
-								},
-								"lastSynced": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"name",
-								"provider",
-								"openIssues",
-								"openPullRequests",
-								"lastSynced"
-							]
-						},
-						"state": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"open": {
-									"type": "string"
-								},
-								"closed": {
-									"type": "string"
-								},
-								"merged": {
-									"type": "string"
-								},
-								"draft": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"open",
-								"closed",
-								"merged",
-								"draft"
-							]
-						},
-						"stateFilter": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"open": {
-									"type": "string"
-								},
-								"closed": {
-									"type": "string"
-								},
-								"merged": {
-									"type": "string"
-								},
-								"all": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"open",
-								"closed",
-								"merged",
-								"all"
-							]
-						},
-						"issues": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"pageTitle": {
-									"type": "string"
-								},
-								"tab": {
-									"type": "string"
-								},
-								"emptyTitle": {
-									"type": "string"
-								},
-								"emptyDescription": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"pageTitle",
-								"tab",
-								"emptyTitle",
-								"emptyDescription"
-							]
-						},
-						"pullRequests": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"refreshing": {
-									"type": "string"
-								},
-								"pageTitle": {
-									"type": "string"
-								},
-								"tab": {
-									"type": "string"
-								},
-								"emptyTitle": {
-									"type": "string"
-								},
-								"emptyDescription": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"refreshing",
-								"pageTitle",
-								"tab",
-								"emptyTitle",
-								"emptyDescription"
-							]
-						},
-						"add": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"button": {
-									"type": "string"
-								},
-								"title": {
-									"type": "string"
-								},
-								"description": {
-									"type": "string"
-								},
-								"submit": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"button",
-								"title",
-								"description",
-								"submit"
-							]
-						}
-					},
-					"required": [
-						"pageTitle",
-						"emptyTitle",
-						"emptyDescription",
-						"neverSynced",
-						"backToRepos",
-						"table",
-						"state",
-						"stateFilter",
-						"issues",
-						"pullRequests",
-						"add"
-					]
 				}
 			},
-			"required": [
-				"boards",
-				"search",
-				"create",
-				"repos"
-			]
+			"required": ["projects", "search", "create"]
 		},
 		"team": {
 			"type": "object",
@@ -9687,12 +7905,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"owner",
-						"admin",
-						"member",
-						"viewer"
-					]
+					"required": ["owner", "admin", "member", "viewer"]
 				},
 				"members": {
 					"type": "object",
@@ -9706,93 +7919,9 @@
 						},
 						"you": {
 							"type": "string"
-						},
-						"people": {
-							"type": "string"
-						},
-						"agents": {
-							"type": "string"
-						},
-						"agentsManagedByAdmins": {
-							"type": "string"
-						},
-						"agentsCredentialsHint": {
-							"type": "string"
 						}
 					},
-					"required": [
-						"pageTitle",
-						"inviteMember",
-						"you",
-						"people",
-						"agents",
-						"agentsManagedByAdmins",
-						"agentsCredentialsHint"
-					]
-				},
-				"agentManager": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"alphaBadge": {
-							"type": "string"
-						},
-						"description": {
-							"type": "string"
-						},
-						"nameLabel": {
-							"type": "string"
-						},
-						"namePlaceholder": {
-							"type": "string"
-						},
-						"create": {
-							"type": "string"
-						},
-						"expiryHint": {
-							"type": "string"
-						},
-						"secretWarning": {
-							"type": "string"
-						},
-						"copy": {
-							"type": "string"
-						},
-						"agentBadge": {
-							"type": "string"
-						},
-						"agentMeta": {
-							"type": "string"
-						},
-						"revoke": {
-							"type": "string"
-						},
-						"createError": {
-							"type": "string"
-						},
-						"deleteError": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"alphaBadge",
-						"description",
-						"nameLabel",
-						"namePlaceholder",
-						"create",
-						"expiryHint",
-						"secretWarning",
-						"copy",
-						"agentBadge",
-						"agentMeta",
-						"revoke",
-						"createError",
-						"deleteError"
-					]
+					"required": ["pageTitle", "inviteMember", "you"]
 				},
 				"invitations": {
 					"type": "object",
@@ -9803,11 +7932,27 @@
 						},
 						"expires": {
 							"type": "string"
+						},
+						"linkLabel": {
+							"type": "string"
+						},
+						"copyLink": {
+							"type": "string"
+						},
+						"linkCopied": {
+							"type": "string"
+						},
+						"copyFailed": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"pendingBadge",
-						"expires"
+						"expires",
+						"linkLabel",
+						"copyLink",
+						"linkCopied",
+						"copyFailed"
 					]
 				},
 				"inviteModal": {
@@ -9832,31 +7977,13 @@
 						"error": {
 							"type": "string"
 						},
-						"emailsLabel": {
+						"createdTitle": {
 							"type": "string"
 						},
-						"emailsPlaceholder": {
+						"shareLinkDescription": {
 							"type": "string"
 						},
-						"emailsHint": {
-							"type": "string"
-						},
-						"invalidEmails": {
-							"type": "string"
-						},
-						"emailRequired": {
-							"type": "string"
-						},
-						"successCount": {
-							"type": "string"
-						},
-						"successCount_plural": {
-							"type": "string"
-						},
-						"failedCount": {
-							"type": "string"
-						},
-						"failedCount_plural": {
+						"done": {
 							"type": "string"
 						}
 					},
@@ -9867,15 +7994,9 @@
 						"sendInvitation",
 						"success",
 						"error",
-						"emailsLabel",
-						"emailsPlaceholder",
-						"emailsHint",
-						"invalidEmails",
-						"emailRequired",
-						"successCount",
-						"successCount_plural",
-						"failedCount",
-						"failedCount_plural"
+						"createdTitle",
+						"shareLinkDescription",
+						"done"
 					]
 				},
 				"membersTable": {
@@ -9905,17 +8026,15 @@
 									"type": "string"
 								}
 							},
-							"required": [
-								"name",
-								"role",
-								"joined",
-								"actions"
-							]
+							"required": ["name", "role", "joined", "actions"]
 						},
 						"memberRolePending": {
 							"type": "string"
 						},
 						"ariaCancelInvitation": {
+							"type": "string"
+						},
+						"ariaInvitationActions": {
 							"type": "string"
 						},
 						"ariaRemoveMember": {
@@ -9964,6 +8083,7 @@
 						"columns",
 						"memberRolePending",
 						"ariaCancelInvitation",
+						"ariaInvitationActions",
 						"ariaRemoveMember",
 						"removeDialogTitle",
 						"removeDialogDescription",
@@ -9983,13 +8103,12 @@
 			"required": [
 				"roles",
 				"members",
-				"agentManager",
 				"invitations",
 				"inviteModal",
 				"membersTable"
 			]
 		},
-		"publicBoard": {
+		"publicProject": {
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
@@ -10013,10 +8132,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"title",
-						"description"
-					]
+					"required": ["title", "description"]
 				},
 				"taskCard": {
 					"type": "object",
@@ -10026,9 +8142,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"viewDetailsAria"
-					]
+					"required": ["viewDetailsAria"]
 				},
 				"taskDetail": {
 					"type": "object",
@@ -10089,10 +8203,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"switchToLight",
-						"switchToDark"
-					]
+					"required": ["switchToLight", "switchToDark"]
 				},
 				"copyUrl": {
 					"type": "object",
@@ -10111,12 +8222,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"successToast",
-						"errorToast",
-						"copied",
-						"share"
-					]
+					"required": ["successToast", "errorToast", "copied", "share"]
 				},
 				"branding": {
 					"type": "object",
@@ -10126,9 +8232,7 @@
 							"type": "string"
 						}
 					},
-					"required": [
-						"poweredBy"
-					]
+					"required": ["poweredBy"]
 				}
 			},
 			"required": [
@@ -10142,332 +8246,6 @@
 				"copyUrl",
 				"branding"
 			]
-		},
-		"myTasks": {
-			"type": "object",
-			"additionalProperties": false,
-			"properties": {
-				"title": {
-					"type": "string"
-				},
-				"loading": {
-					"type": "string"
-				},
-				"empty": {
-					"type": "string"
-				},
-				"count": {
-					"type": "string"
-				},
-				"includeCompleted": {
-					"type": "string"
-				},
-				"relation": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"all": {
-							"type": "string"
-						},
-						"assigned": {
-							"type": "string"
-						},
-						"created": {
-							"type": "string"
-						},
-						"team": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"all",
-						"assigned",
-						"created",
-						"team"
-					]
-				},
-				"flaggedCount": {
-					"type": "string"
-				},
-				"flaggedCount_other": {
-					"type": "string"
-				},
-				"flagged": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"title",
-				"loading",
-				"empty",
-				"count",
-				"includeCompleted",
-				"relation",
-				"flaggedCount",
-				"flaggedCount_other",
-				"flagged"
-			]
-		},
-		"flags": {
-			"type": "object",
-			"additionalProperties": false,
-			"properties": {
-				"title": {
-					"type": "string"
-				},
-				"actions": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"flag": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"flag"
-					]
-				},
-				"badge": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"targeted": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"targeted"
-					]
-				},
-				"dialog": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"type": {
-							"type": "string"
-						},
-						"selectType": {
-							"type": "string"
-						},
-						"targetUser": {
-							"type": "string"
-						},
-						"noUser": {
-							"type": "string"
-						},
-						"targetTeam": {
-							"type": "string"
-						},
-						"noTeam": {
-							"type": "string"
-						},
-						"note": {
-							"type": "string"
-						},
-						"submit": {
-							"type": "string"
-						},
-						"unflag": {
-							"type": "string"
-						},
-						"activeTitle": {
-							"type": "string"
-						},
-						"noneActive": {
-							"type": "string"
-						},
-						"historyTitle": {
-							"type": "string"
-						},
-						"raisedBy": {
-							"type": "string"
-						},
-						"resolvedBy": {
-							"type": "string"
-						},
-						"errors": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"noType": {
-									"type": "string"
-								},
-								"bothTargets": {
-									"type": "string"
-								},
-								"noTarget": {
-									"type": "string"
-								}
-							},
-							"required": [
-								"noType",
-								"bothTargets",
-								"noTarget"
-							]
-						},
-						"resolveNote": {
-							"type": "string"
-						},
-						"unflagFailed": {
-							"type": "string"
-						},
-						"unflagInActivity": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"type",
-						"selectType",
-						"targetUser",
-						"noUser",
-						"targetTeam",
-						"noTeam",
-						"note",
-						"submit",
-						"unflag",
-						"activeTitle",
-						"noneActive",
-						"historyTitle",
-						"raisedBy",
-						"resolvedBy",
-						"errors",
-						"resolveNote",
-						"unflagFailed",
-						"unflagInActivity"
-					]
-				}
-			},
-			"required": [
-				"title",
-				"actions",
-				"badge",
-				"dialog"
-			]
-		},
-		"inbox": {
-			"type": "object",
-			"additionalProperties": false,
-			"properties": {
-				"title": {
-					"type": "string"
-				},
-				"loading": {
-					"type": "string"
-				},
-				"empty": {
-					"type": "string"
-				},
-				"count": {
-					"type": "string"
-				},
-				"markAsRead": {
-					"type": "string"
-				},
-				"unreadCount_one": {
-					"type": "string"
-				},
-				"unreadCount_other": {
-					"type": "string"
-				},
-				"flaggedCount_one": {
-					"type": "string"
-				},
-				"flaggedCount_other": {
-					"type": "string"
-				},
-				"unflagAction": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"title",
-				"loading",
-				"empty",
-				"count",
-				"markAsRead",
-				"unreadCount_one",
-				"unreadCount_other",
-				"flaggedCount_one",
-				"flaggedCount_other",
-				"unflagAction"
-			]
-		},
-		"trash": {
-			"type": "object",
-			"additionalProperties": false,
-			"properties": {
-				"title": {
-					"type": "string"
-				},
-				"loading": {
-					"type": "string"
-				},
-				"empty": {
-					"type": "string"
-				},
-				"count": {
-					"type": "string"
-				},
-				"restore": {
-					"type": "string"
-				},
-				"deletePermanently": {
-					"type": "string"
-				},
-				"deletedMeta": {
-					"type": "string"
-				},
-				"unknownBoard": {
-					"type": "string"
-				},
-				"unknownUser": {
-					"type": "string"
-				},
-				"unknownWhen": {
-					"type": "string"
-				},
-				"confirmDelete": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"description": {
-							"type": "string"
-						},
-						"cancel": {
-							"type": "string"
-						},
-						"confirm": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"description",
-						"cancel",
-						"confirm"
-					]
-				}
-			},
-			"required": [
-				"title",
-				"loading",
-				"empty",
-				"count",
-				"restore",
-				"deletePermanently",
-				"deletedMeta",
-				"unknownBoard",
-				"unknownUser",
-				"unknownWhen",
-				"confirmDelete"
-			]
 		}
 	},
 	"required": [
@@ -10479,12 +8257,8 @@
 		"activity",
 		"tasks",
 		"invitations",
-		"organization",
+		"workspace",
 		"team",
-		"publicBoard",
-		"myTasks",
-		"flags",
-		"inbox",
-		"trash"
+		"publicProject"
 	]
 }

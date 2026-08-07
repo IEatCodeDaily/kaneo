@@ -43,7 +43,9 @@
 			"french": "French",
 			"spanish": "Spanish",
 			"dutch": "Dutch",
-			"korean": "Korean"
+			"korean": "Korean",
+			"chinese": "Chinese",
+			"italian": "Italian"
 		},
 		"people": {
 			"someone": "Someone",
@@ -60,41 +62,42 @@
 			"never": "Never"
 		},
 		"modals": {
-			"createBoard": {
-				"title": "Create a new board",
-				"breadcrumbNew": "Create a new board",
-				"organizationFallback": "ORGANIZATION",
-				"description": "Create a new board in your organization by providing a name, key, and selecting an icon.",
+			"createProject": {
+				"title": "Create a new project",
+				"breadcrumbNew": "Create a new project",
+				"workspaceFallback": "WORKSPACE",
+				"description": "Create a new project in your workspace by providing a name, key, and selecting an icon.",
 				"pickIcon": "Pick icon",
 				"searchIcons": "Search icons...",
-				"boardName": "Board name",
+				"projectName": "Project name",
 				"keyLabel": "Key:",
 				"keyHint": "Used for ticket IDs (e.g., {{example}}-123)",
-				"createButton": "Create Board",
-				"successToast": "Board created successfully",
-				"errorToast": "Failed to create board"
+				"createButton": "Create Project",
+				"successToast": "Project created successfully",
+				"errorToast": "Failed to create project"
 			},
-			"createOrganization": {
+			"createWorkspace": {
 				"breadcrumbKaneo": "KANEO",
-				"title": "Create a new organization",
-				"description": "Create a new organization by providing a name for your organization.",
-				"namePlaceholder": "Organization name",
+				"title": "Create a new workspace",
+				"description": "Create a new workspace by providing a name for your workspace.",
+				"namePlaceholder": "Workspace name",
 				"descriptionPlaceholder": "Add description...",
-				"createButton": "Create Organization",
-				"successToast": "Organization created successfully",
-				"errorToast": "Failed to create organization"
+				"createButton": "Create Workspace",
+				"successToast": "Workspace created successfully",
+				"errorToast": "Failed to create workspace"
 			},
 			"createTask": {
-				"breadcrumbTask": "TICKET",
-				"title": "New Ticket",
-				"description": "Create a new ticket by providing a title, description, and other details.",
-				"taskTitlePlaceholder": "Ticket title",
-				"descriptionPlaceholder": "Add a description for your ticket...",
-				"chooseBoardForImages": "Choose a board before uploading images.",
-				"prepareTaskError": "Failed to prepare ticket",
-				"successCreated": "Ticket created successfully",
-				"successUpdated": "Ticket updated successfully",
-				"createError": "Failed to create ticket",
+				"breadcrumbTask": "TASK",
+				"selectProject": "Select project",
+				"title": "New Task",
+				"description": "Create a new task by providing a title, description, and other details.",
+				"taskTitlePlaceholder": "Task title",
+				"descriptionPlaceholder": "Add a description for your task...",
+				"chooseProjectForImages": "Choose a project before uploading images.",
+				"prepareTaskError": "Failed to prepare task",
+				"successCreated": "Task created successfully",
+				"successUpdated": "Task updated successfully",
+				"createError": "Failed to create task",
 				"priority": "Priority",
 				"statusFallback": "In Progress",
 				"startDate": "Start date",
@@ -112,9 +115,8 @@
 				"labelCreated": "Label created",
 				"labelCreateError": "Failed to create label",
 				"createMore": "Create more",
-				"discardDraft": "Discard draft",
-				"createButton": "Create Ticket",
-				"untitledTask": "Untitled ticket",
+				"createButton": "Create Task",
+				"untitledTask": "Untitled task",
 				"labelColors": {
 					"stone": "Stone",
 					"slate": "Slate",
@@ -124,30 +126,18 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson",
-					"blossom": "Blossom",
-					"honey": "Honey",
-					"lime": "Lime",
-					"emerald": "Emerald",
-					"lagoon": "Lagoon",
-					"sky": "Sky",
-					"ocean": "Ocean",
-					"indigo": "Indigo",
-					"violet": "Violet",
-					"orchid": "Orchid",
-					"cocoa": "Cocoa"
+					"crimson": "Crimson"
 				}
 			}
-		},
-		"unknown": "Unknown"
+		}
 	},
 	"auth": {
 		"signIn": {
 			"pageTitle": "Sign In",
 			"title": "Welcome back",
-			"subtitle": "Enter your credentials to access your organization",
+			"subtitle": "Enter your credentials to access your workspace",
 			"invitationSubtitle": "Sign in to accept your invitation",
-			"invitationAlert": "After signing in, you'll be able to accept your organization invitation.",
+			"invitationAlert": "After signing in, you'll be able to accept your workspace invitation.",
 			"signingIn": "Signing in...",
 			"continueWithGoogle": "Continue with Google",
 			"continueWithGithub": "Continue with GitHub",
@@ -168,7 +158,8 @@
 				"account_not_linked": "This identity could not be linked to the existing account. Sign in by email to verify the account, then try SSO again. If email sign-in is unavailable, contact your administrator.",
 				"oauth_code_verification_failed": "OAuth verification failed. Please try again.",
 				"registration_is_currently_disabled_you_need_a_valid_invitation_to_create_an_account_": "Registration is currently disabled. You need a valid invitation to create an account."
-			}
+			},
+			"instanceStatusError": "Couldn't reach the server. Please retry in a moment."
 		},
 		"providers": {
 			"google": "Google",
@@ -196,14 +187,17 @@
 			"subtitleInvitation": "Create an account to accept your invitation",
 			"subtitleRegistrationDisabled": "Registration requires an invitation",
 			"subtitlePasswordDisabled": "Use social or OIDC sign-in to create an account",
-			"subtitleDefault": "Get started with your organization",
-			"invitationAlert": "After creating your account, you'll be able to accept your organization invitation.",
+			"subtitleDefault": "Get started with your workspace",
+			"invitationAlert": "After creating your account, you'll be able to accept your workspace invitation.",
 			"registrationDisabledAlert": "Registration is currently disabled. If you were invited, enter the email address that received the invitation to create your account.",
 			"passwordDisabledAlert": "Password-based account creation is disabled. Use a configured social or OIDC sign-in method from the sign-in page.",
 			"signingIn": "Signing in...",
 			"continueAsGuest": "Continue as guest",
 			"toggleMessage": "Already have an account?",
-			"toggleLink": "Sign in"
+			"toggleLink": "Sign in",
+			"instanceStatusError": "Couldn't reach the server. Please retry in a moment.",
+			"instanceAdminTitle": "Set up your Kaneo instance",
+			"instanceAdminSubtitle": "This account becomes the instance administrator with full access."
 		},
 		"verifyOtp": {
 			"pageTitle": "Verify Code",
@@ -257,11 +251,12 @@
 			"invitationExpired": "Invitation Expired",
 			"errorLoadDescription": "Failed to load invitation details. The invitation may be invalid or expired.",
 			"goToSignIn": "Go to Sign In",
-			"organizationLabel": "Organization: {{organizationName}}",
-			"joinOrganization": "Join {{organizationName}}",
-			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> has invited you to join their organization.",
-			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> has invited you to join their organization on Kaneo.",
-			"signInToAccept": "Sign in to accept this invitation.",
+			"workspaceLabel": "Workspace: {{workspaceName}}",
+			"joinWorkspace": "Join {{workspaceName}}",
+			"inviteBodySignedIn": "<inviter>{{inviterName}}</inviter> has invited you to join their workspace.",
+			"inviteBodySignedOut": "<inviter>{{inviterName}}</inviter> has invited you to join their workspace on Kaneo.",
+			"createAccountOrSignIn": "Create an account to accept this invitation, or sign in if you already have one.",
+			"createAccount": "Create Account",
 			"accepting": "Accepting...",
 			"acceptInvitation": "Accept Invitation",
 			"goToDashboard": "Go to Dashboard",
@@ -276,23 +271,23 @@
 		},
 		"onboarding": {
 			"pageTitle": "Welcome to Kaneo",
-			"organizationPageTitle": "Create Organization",
-			"createOrganizationTitle": "Create organization",
-			"createOrganizationSubtitle": "Set up your organization to start managing boards",
-			"organizationName": "Organization name",
-			"organizationNamePlaceholder": "e.g. Acme Inc, My Team",
+			"workspacePageTitle": "Create Workspace",
+			"createWorkspaceTitle": "Create workspace",
+			"createWorkspaceSubtitle": "Set up your workspace to start managing projects",
+			"workspaceName": "Workspace name",
+			"workspaceNamePlaceholder": "e.g. Acme Inc, My Team",
 			"descriptionOptional": "Description (optional)",
 			"descriptionPlaceholder": "What does your team work on?",
 			"creating": "Creating...",
-			"createOrganization": "Create organization",
-			"organizationCreatedTitle": "Organization created",
-			"redirectingToOrganization": "Taking you to <name>{{name}}</name>...",
+			"createWorkspace": "Create workspace",
+			"workspaceCreatedTitle": "Workspace created",
+			"redirectingToWorkspace": "Taking you to <name>{{name}}</name>...",
 			"toast": {
-				"organizationCreated": "Organization created successfully",
-				"createFailed": "Failed to create organization"
+				"workspaceCreated": "Workspace created successfully",
+				"createFailed": "Failed to create workspace"
 			},
 			"validation": {
-				"organizationNameRequired": "Organization name is required"
+				"workspaceNameRequired": "Workspace name is required"
 			}
 		},
 		"profileSetup": {
@@ -382,16 +377,16 @@
 			"webhookSecretHintConfigured": "A signing secret is already configured ({{masked}}). Enter a new one to replace it.",
 			"webhookSecretHintOptional": "Optional. Kaneo signs the request body when a secret is set.",
 			"connectWebhook": "Connect webhook",
-			"organizationRulesTitle": "Organization delivery rules",
-			"organizationRulesDescription": "Reuse your global channels, then decide which organizations and boards are allowed to send account notifications.",
-			"organizationCardHint": "Choose which channels this organization can use for account notifications.",
-			"organizationEnabledLabel": "Enable notifications for {{organizationName}}",
+			"workspaceRulesTitle": "Workspace delivery rules",
+			"workspaceRulesDescription": "Reuse your global channels, then decide which workspaces and projects are allowed to send account notifications.",
+			"workspaceCardHint": "Choose which channels this workspace can use for account notifications.",
+			"workspaceEnabledLabel": "Enable notifications for {{workspaceName}}",
 			"eventPreferencesTitle": "Notify me about",
-			"eventPreferencesDescription": "Choose which ticket events create in-app notifications and can be delivered to your connected channels.",
-			"eventTaskAssignments": "Ticket assignments",
+			"eventPreferencesDescription": "Choose which task events create in-app notifications and can be delivered to your connected channels.",
+			"eventTaskAssignments": "Task assignments",
 			"eventComments": "Comments and mentions",
-			"eventCommentsHint": "Includes new comments on tickets assigned to you and direct @mentions.",
-			"eventStatusChanges": "Ticket status changes",
+			"eventCommentsHint": "Includes new comments on tasks assigned to you and direct @mentions.",
+			"eventStatusChanges": "Task status changes",
 			"eventDueDateReminders": "Due-date reminders",
 			"reminderLeadTimeLabel": "Remind me before the due date",
 			"reminderLeadTimeHint": "Between 1 hour and 30 days before. Overdue notifications are sent separately.",
@@ -399,25 +394,25 @@
 			"reminderLeadTimeUnitDays": "Days",
 			"reminderLeadTimeInvalid": "Enter a whole number between 1 and {{max}}.",
 			"saveEventPreferences": "Save notification types",
-			"organizationCardLabelEmail": "Email",
-			"organizationCardLabelNtfy": "ntfy",
-			"organizationCardLabelGotify": "Gotify",
-			"organizationCardLabelWebhook": "Custom webhook",
-			"emailChannelHintEnabled": "Send matching organization notifications by email.",
+			"workspaceCardLabelEmail": "Email",
+			"workspaceCardLabelNtfy": "ntfy",
+			"workspaceCardLabelGotify": "Gotify",
+			"workspaceCardLabelWebhook": "Custom webhook",
+			"emailChannelHintEnabled": "Send matching workspace notifications by email.",
 			"emailChannelHintDisabled": "Configure and enable email globally first.",
-			"ntfyChannelHintEnabled": "Send matching organization notifications to ntfy.",
+			"ntfyChannelHintEnabled": "Send matching workspace notifications to ntfy.",
 			"ntfyChannelHintDisabled": "Configure and enable ntfy globally first.",
-			"gotifyChannelHintEnabled": "Send matching organization notifications to Gotify.",
+			"gotifyChannelHintEnabled": "Send matching workspace notifications to Gotify.",
 			"gotifyChannelHintDisabled": "Configure and enable Gotify globally first.",
-			"webhookChannelHintEnabled": "Send matching organization notifications to your webhook.",
+			"webhookChannelHintEnabled": "Send matching workspace notifications to your webhook.",
 			"webhookChannelHintDisabled": "Configure and enable the webhook globally first.",
-			"boardScope": "Board scope",
-			"boardScopeDescription": "All boards are included by default. Narrow it down if this organization should only send notifications from selected boards.",
-			"allBoards": "All boards",
-			"allBoardsDescription": "Deliver notifications from every board in this organization.",
-			"selectedBoards": "Selected boards",
-			"selectedBoardsDescription": "Only deliver notifications from chosen boards.",
-			"noBoardsInOrganization": "No boards available for this organization yet.",
+			"projectScope": "Project scope",
+			"projectScopeDescription": "All projects are included by default. Narrow it down if this workspace should only send notifications from selected projects.",
+			"allProjects": "All projects",
+			"allProjectsDescription": "Deliver notifications from every project in this workspace.",
+			"selectedProjects": "Selected projects",
+			"selectedProjectsDescription": "Only deliver notifications from chosen projects.",
+			"noProjectsInWorkspace": "No projects available for this workspace yet.",
 			"createRule": "Create rule",
 			"removeRule": "Remove rule",
 			"toastEmailSaved": "Email notification settings saved",
@@ -434,14 +429,14 @@
 			"toastWebhookSaveFailed": "Failed to save webhook settings",
 			"toastWebhookDisconnected": "Webhook disconnected",
 			"toastWebhookDisconnectFailed": "Failed to disconnect webhook",
-			"toastRuleSaved": "Saved notification rule for {{organizationName}}",
-			"toastRuleSaveFailed": "Failed to save organization notification rule",
-			"toastRuleRemoved": "Removed notification rule for {{organizationName}}",
-			"toastRuleRemoveFailed": "Failed to remove organization notification rule",
+			"toastRuleSaved": "Saved notification rule for {{workspaceName}}",
+			"toastRuleSaveFailed": "Failed to save workspace notification rule",
+			"toastRuleRemoved": "Removed notification rule for {{workspaceName}}",
+			"toastRuleRemoveFailed": "Failed to remove workspace notification rule",
 			"toastPreferencesSaved": "Notification preferences saved",
 			"toastPreferencesSaveFailed": "Failed to save notification preferences",
-			"toastRuleSavedGeneric": "Organization notification rule saved",
-			"toastRuleRemovedGeneric": "Organization notification rule removed"
+			"toastRuleSavedGeneric": "Workspace notification rule saved",
+			"toastRuleRemovedGeneric": "Workspace notification rule removed"
 		},
 		"preferencesPage": {
 			"title": "Preferences",
@@ -462,29 +457,27 @@
 			"selectFirstDayOfWeek": "Select first day",
 			"weekStartsOnSunday": "Sunday",
 			"weekStartsOnMonday": "Monday",
+			"weekStartsOnSaturday": "Saturday",
 			"defaultView": "Default View",
-			"defaultViewDescription": "Choose your preferred ticket view mode",
+			"defaultViewDescription": "Choose your preferred task view mode",
 			"selectViewMode": "Select a view mode",
 			"board": "Board",
 			"list": "List",
-			"gantt": "Timeline",
+			"gantt": "Gantt",
 			"sidebarDefault": "Sidebar Default",
 			"sidebarDefaultDescription": "Keep sidebar expanded on startup",
 			"displayOptions": "Display options",
-			"displayOptionsDescription": "Choose which information to show in ticket views",
-			"taskNumbers": "Ticket Numbers",
-			"taskNumbersDescription": "Show ticket IDs and numbers",
+			"displayOptionsDescription": "Choose which information to show in task views",
+			"taskNumbers": "Task Numbers",
+			"taskNumbersDescription": "Show task IDs and numbers",
 			"assignees": "Assignees",
-			"assigneesDescription": "Show who is assigned to tickets",
+			"assigneesDescription": "Show who is assigned to tasks",
 			"dueDates": "Due Dates",
-			"dueDatesDescription": "Display ticket deadlines",
+			"dueDatesDescription": "Display task deadlines",
 			"labels": "Labels",
-			"labelsDescription": "Show ticket labels and tags",
+			"labelsDescription": "Show task labels and tags",
 			"priority": "Priority",
-			"priorityDescription": "Display priority indicators",
-			"weekStartsOnSaturday": "Saturday",
-			"reduceOverlayBlur": "Reduce overlay blur",
-			"reduceOverlayBlurDescription": "Remove the blurred backdrop behind dialogs, sheets and the command palette."
+			"priorityDescription": "Display priority indicators"
 		},
 		"developerPage": {
 			"pageTitle": "Developer Settings",
@@ -552,47 +545,62 @@
 				}
 			}
 		},
-		"organizationGeneral": {
+		"workspaceGeneral": {
 			"pageTitle": "General Settings",
 			"title": "General Settings",
-			"subtitle": "Manage your organization name and description.",
-			"organizationInfoTitle": "Organization Information",
-			"organizationInfoSubtitle": "Configure your organization details and preferences.",
-			"nameLabel": "Organization name",
-			"nameHint": "The name of your organization",
-			"namePlaceholder": "Enter organization name",
+			"subtitle": "Manage your workspace name and description.",
+			"workspaceInfoTitle": "Workspace Information",
+			"workspaceInfoSubtitle": "Configure your workspace details and preferences.",
+			"nameLabel": "Workspace name",
+			"nameHint": "The name of your workspace",
+			"namePlaceholder": "Enter workspace name",
 			"descriptionLabel": "Description",
-			"descriptionHint": "A brief description of your organization",
-			"descriptionPlaceholder": "Enter organization description",
+			"descriptionHint": "A brief description of your workspace",
+			"descriptionPlaceholder": "Enter workspace description",
 			"dangerZone": "Danger zone",
 			"dangerZoneSubtitle": "Irreversible and destructive actions.",
-			"deleteOrganization": "Delete organization",
-			"deleteOrganizationDescription": "Schedule organization to be permanently deleted",
-			"deleteModalTitle": "Delete Organization?",
-			"deleteModalDescription": "This will permanently delete the organization \"{{name}}\" and all its data. This action cannot be undone.",
-			"deleteModalConfirm": "Delete Organization",
-			"toastUpdated": "Organization updated successfully",
-			"toastUpdateError": "Failed to update organization",
-			"toastDeleted": "Organization deleted successfully",
-			"toastDeleteError": "Failed to delete organization",
+			"deleteWorkspace": "Delete workspace",
+			"deleteWorkspaceDescription": "Schedule workspace to be permanently deleted",
+			"deleteModalTitle": "Delete Workspace?",
+			"deleteModalDescription": "This will permanently delete the workspace \"{{name}}\" and all its data. This action cannot be undone.",
+			"deleteModalConfirm": "Delete Workspace",
+			"toastUpdated": "Workspace updated successfully",
+			"toastUpdateError": "Failed to update workspace",
+			"toastDeleted": "Workspace deleted successfully",
+			"toastDeleteError": "Failed to delete workspace",
 			"validation": {
-				"nameRequired": "Organization name is required",
-				"nameShort": "Organization name must be at least 2 characters"
+				"nameRequired": "Workspace name is required",
+				"nameShort": "Workspace name must be at least 2 characters"
+			},
+			"transferOwnership": {
+				"toastSuccess": "Ownership transferred",
+				"toastError": "Failed to transfer ownership",
+				"title": "Transfer ownership",
+				"subtitle": "Hand this workspace over to another member. You'll be demoted to admin and lose owner-only abilities.",
+				"pickerLabel": "New owner",
+				"noEligibleMembers": "Invite at least one other member before you can transfer ownership.",
+				"pickerHint": "They become the sole owner of this workspace.",
+				"pickerPlaceholder": "Select a member",
+				"button": "Transfer",
+				"dialogTitle": "Transfer ownership?",
+				"dialogDescription": "{{name}} will become the sole owner of {{workspace}}. You'll keep admin access but lose owner-only abilities like deleting the workspace or transferring it again.",
+				"transferring": "Transferring…",
+				"confirm": "Transfer ownership"
 			}
 		},
-		"organizationRoles": {
+		"workspaceRoles": {
 			"pageTitle": "Roles",
 			"title": "Roles",
-			"subtitle": "Define which actions members can perform in {{organizationName}}.",
-			"thisOrganization": "this organization",
-			"noAccess": "You need admin or owner permissions to manage organization roles.",
-			"sectionTitle": "Organization roles",
+			"subtitle": "Define which actions members can perform in {{workspaceName}}.",
+			"thisWorkspace": "this workspace",
+			"noAccess": "You need admin or owner permissions to manage workspace roles.",
+			"sectionTitle": "Workspace roles",
 			"sectionSubtitle": "Edit the default roles or add a tailored one. Members keep their assigned role name across edits.",
 			"newRole": "New role",
 			"loading": "Loading…",
 			"loadError": "Failed to load roles.",
 			"emptyTitle": "No roles yet",
-			"emptyDescription": "Default roles will appear here once they're seeded for this organization.",
+			"emptyDescription": "Default roles will appear here once they're seeded for this workspace.",
 			"defaultBadge": "Default",
 			"permissionCount_one": "{{count}} permission",
 			"permissionCount_other": "{{count}} permissions",
@@ -602,64 +610,64 @@
 			"discard": "Discard",
 			"createRole": "Create role",
 			"deleteRole": "Delete role",
-			"defaultRoleHelp": "Default role — name is reserved and the row can't be deleted.",
+			"defaultRoleHelp": "Default role: name is reserved and the row can't be deleted.",
 			"unsavedChanges": "You have unsaved changes",
 			"allChangesSaved": "All changes saved",
 			"saveChanges": "Save changes",
 			"defaultRoleDescriptions": {
-				"viewer": "Can view and comment on tickets.",
-				"member": "Can create and manage tickets and boards.",
-				"admin": "Has full access to the organization."
+				"viewer": "Can view and comment on tasks.",
+				"member": "Can create and manage tasks and projects.",
+				"admin": "Has full access to the workspace."
 			},
 			"resources": {
-				"board": "Boards",
-				"task": "Tickets",
+				"project": "Projects",
+				"task": "Tasks",
 				"label": "Labels",
-				"organization": "Organization"
+				"workspace": "Workspace"
 			},
 			"permissions": {
-				"board": {
+				"project": {
 					"create": {
 						"label": "Create",
-						"description": "Can create new boards"
+						"description": "Can create new projects"
 					},
 					"read": {
 						"label": "Read",
-						"description": "Can view boards"
+						"description": "Can view projects"
 					},
 					"update": {
 						"label": "Update",
-						"description": "Can edit board settings"
+						"description": "Can edit project settings"
 					},
 					"delete": {
 						"label": "Delete",
-						"description": "Can delete boards"
+						"description": "Can delete projects"
 					},
 					"share": {
 						"label": "Share",
-						"description": "Can share boards"
+						"description": "Can share projects"
 					}
 				},
 				"task": {
 					"create": {
 						"label": "Create",
-						"description": "Can create tickets"
+						"description": "Can create tasks"
 					},
 					"read": {
 						"label": "Read",
-						"description": "Can view tickets"
+						"description": "Can view tasks"
 					},
 					"update": {
 						"label": "Update",
-						"description": "Can edit tickets"
+						"description": "Can edit tasks"
 					},
 					"delete": {
 						"label": "Delete",
-						"description": "Can delete tickets"
+						"description": "Can delete tasks"
 					},
 					"assign": {
 						"label": "Assign",
-						"description": "Can assign tickets to members"
+						"description": "Can assign tasks to members"
 					}
 				},
 				"label": {
@@ -680,22 +688,22 @@
 						"description": "Can delete labels"
 					}
 				},
-				"organization": {
+				"workspace": {
 					"read": {
 						"label": "Read",
-						"description": "Can view organization settings"
+						"description": "Can view workspace settings"
 					},
 					"update": {
 						"label": "Update",
-						"description": "Can update organization settings"
+						"description": "Can update workspace settings"
 					},
 					"delete": {
 						"label": "Delete",
-						"description": "Can delete organization"
+						"description": "Can delete workspace"
 					},
 					"manage_settings": {
 						"label": "Manage Settings",
-						"description": "Can manage organization settings"
+						"description": "Can manage workspace settings"
 					}
 				}
 			},
@@ -717,11 +725,11 @@
 				"description": "This will permanently delete the role \"{{role}}\". Members assigned to this role will lose its permissions."
 			}
 		},
-		"organizationLabels": {
+		"workspaceLabels": {
 			"pageTitle": "Label Settings",
 			"title": "Labels",
-			"subtitle": "Create, edit, and delete organization-level labels.",
-			"cardDescription": "Manage labels that can be assigned to tickets.",
+			"subtitle": "Create, edit, and delete workspace-level labels.",
+			"cardDescription": "Manage labels that can be assigned to tasks.",
 			"createLabel": "Create Label",
 			"editLabel": "Edit Label",
 			"deleteLabel": "Delete",
@@ -729,10 +737,10 @@
 			"nameLabel": "Label name",
 			"namePlaceholder": "Enter label name",
 			"colorLabel": "Color",
-			"createDescription": "Create a new label that can be used across tickets in this organization.",
+			"createDescription": "Create a new label that can be used across tasks in this workspace.",
 			"editDescription": "Update the name or color of this label.",
 			"deleteConfirmTitle": "Delete this label?",
-			"deleteConfirmDescription": "This will permanently remove this label from all tickets. This action cannot be undone.",
+			"deleteConfirmDescription": "This will permanently remove this label from all tasks. This action cannot be undone.",
 			"empty": "No labels yet. Create your first label to get started.",
 			"createSuccess": "Label created",
 			"updateSuccess": "Label updated",
@@ -742,95 +750,89 @@
 			"deleteError": "Failed to delete label",
 			"nameRequired": "Label name is required"
 		},
-		"boardGeneral": {
-			"pageTitle": "Board Settings",
+		"projectGeneral": {
+			"pageTitle": "Project Settings",
 			"title": "General Settings",
-			"subtitle": "Manage your board name, key, icon and description.",
-			"boardInfoTitle": "Board Information",
-			"boardInfoSubtitle": "Configure your board details and preferences.",
+			"subtitle": "Manage your project name, key, icon and description.",
+			"projectInfoTitle": "Project Information",
+			"projectInfoSubtitle": "Configure your project details and preferences.",
 			"iconLabel": "Icon",
-			"iconHint": "Displayed in the sidebar and board surfaces.",
+			"iconHint": "Displayed in the sidebar and project surfaces.",
 			"pickIconTitle": "Pick icon",
 			"searchIconsPlaceholder": "Search icons...",
-			"useEmoji": "Use this emoji",
-			"boardNameLabel": "Board name",
-			"boardNameHint": "The name of your board",
-			"boardNamePlaceholder": "Enter board name",
+			"projectNameLabel": "Project name",
+			"projectNameHint": "The name of your project",
+			"projectNamePlaceholder": "Enter project name",
 			"keyLabel": "Key",
 			"keyHint": "Used for ticket IDs (e.g., {{slug}}-123)",
 			"keyPlaceholder": "PRO",
 			"descriptionLabel": "Description",
-			"descriptionHint": "A brief description of your board",
-			"descriptionPlaceholder": "Enter board description",
-			"subtaskDepthLimitLabel": "Subtask nesting limit",
-			"subtaskDepthLimitHint": "Maximum number of nested subtask levels allowed (1–4).",
+			"descriptionHint": "A brief description of your project",
+			"descriptionPlaceholder": "Enter project description",
 			"dangerZone": "Danger zone",
 			"dangerZoneSubtitle": "Irreversible and destructive actions.",
-			"deleteBoard": "Delete board",
-			"deleteBoardDescription": "Schedule board to be permanently deleted",
-			"deleteModalTitle": "Delete Board?",
-			"deleteModalDescription": "This will permanently delete the board \"{{name}}\" and all its data. This action cannot be undone.",
-			"deleteModalConfirm": "Delete Board",
-			"toastUpdated": "Board updated successfully",
-			"toastUpdateError": "Failed to update board",
-			"toastDeleted": "Board deleted successfully",
-			"toastDeleteError": "Failed to delete board",
+			"deleteProject": "Delete project",
+			"deleteProjectDescription": "Schedule project to be permanently deleted",
+			"deleteModalTitle": "Delete Project?",
+			"deleteModalDescription": "This will permanently delete the project \"{{name}}\" and all its data. This action cannot be undone.",
+			"deleteModalConfirm": "Delete Project",
+			"toastUpdated": "Project updated successfully",
+			"toastUpdateError": "Failed to update project",
+			"toastDeleted": "Project deleted successfully",
+			"toastDeleteError": "Failed to delete project",
 			"validation": {
-				"nameRequired": "Board name is required",
-				"nameShort": "Board name must be at least 2 characters",
+				"nameRequired": "Project name is required",
 				"keyRequired": "Key is required",
-				"keyShort": "Key must be at least 2 characters",
 				"keyMax": "Key must be at most 8 characters",
 				"iconRequired": "Icon is required"
 			},
 			"importExportTasks": "Import/Export",
-			"importExportTasksDescription": "Import and export tickets."
+			"importExportTasksDescription": "Import and export tasks."
 		},
-		"boardIntegrations": {
-			"pageTitle": "Board Integrations",
-			"title": "Board Integrations",
-			"subtitle": "Connect your board with external tools and services to streamline your workflow.",
+		"projectIntegrations": {
+			"pageTitle": "Project Integrations",
+			"title": "Project Integrations",
+			"subtitle": "Connect your project with external tools and services to streamline your workflow.",
 			"githubSectionTitle": "GitHub Integration",
-			"githubSectionSubtitle": "Synchronize tickets with GitHub issues and enable two-way sync.",
+			"githubSectionSubtitle": "Synchronize tasks with GitHub issues and enable two-way sync.",
 			"giteaSectionTitle": "Gitea Integration",
-			"giteaSectionSubtitle": "Synchronize tickets with a self-hosted Gitea instance (issues, PRs, webhooks).",
+			"giteaSectionSubtitle": "Synchronize tasks with a self-hosted Gitea instance (issues, PRs, webhooks).",
 			"discordSectionTitle": "Discord Integration",
-			"discordSectionSubtitle": "Send board ticket updates into a Discord channel with a webhook.",
+			"discordSectionSubtitle": "Send project task updates into a Discord channel with a webhook.",
 			"genericWebhookSectionTitle": "Generic Webhooks",
-			"genericWebhookSectionSubtitle": "Send board ticket events to any HTTP endpoint as JSON.",
+			"genericWebhookSectionSubtitle": "Send project task events to any HTTP endpoint as JSON.",
 			"slackSectionTitle": "Slack Integration",
-			"slackSectionSubtitle": "Send board ticket updates into a Slack channel with an incoming webhook.",
+			"slackSectionSubtitle": "Send project task updates into a Slack channel with an incoming webhook.",
 			"telegramSectionTitle": "Telegram Integration",
-			"telegramSectionSubtitle": "Send board ticket updates into a Telegram chat or topic with a bot."
+			"telegramSectionSubtitle": "Send project task updates into a Telegram chat or topic with a bot."
 		},
-		"boardVisibility": {
-			"pageTitle": "Board Visibility",
+		"projectVisibility": {
+			"pageTitle": "Project Visibility",
 			"title": "Visibility",
-			"subtitle": "Control who can view and access your board.",
+			"subtitle": "Control who can view and access your project.",
 			"sectionTitle": "Visibility",
 			"sectionSubtitle": "Toggle public access and share the public URL.",
 			"publicAccess": "Public access",
-			"publicAccessHint": "Allow anyone with the URL to view this board",
+			"publicAccessHint": "Allow anyone with the URL to view this project",
 			"publicUrl": "Public URL",
-			"publicUrlHint": "Share this link if the board is public",
+			"publicUrlHint": "Share this link if the project is public",
 			"copy": "Copy",
 			"copiedToast": "Copied",
 			"toastUpdated": "Visibility updated",
 			"toastUpdateError": "Failed to update visibility"
 		},
-		"boardWorkflow": {
+		"projectWorkflow": {
 			"pageTitle": "Workflow Settings",
 			"title": "Workflow",
-			"subtitle": "Configure board columns and automation rules for this board.",
+			"subtitle": "Configure board columns and automation rules for this project.",
 			"columnsTitle": "Columns",
 			"columnsDescription": "Manage the columns that appear on your board. Drag to reorder. Turn on \"Done column\" for stages that represent completed work.",
 			"automationTitle": "Automation Rules",
-			"automationDescription": "Map integration events to columns. When an event occurs, the linked ticket moves to the specified column."
+			"automationDescription": "Map integration events to columns. When an event occurs, the linked task moves to the specified column."
 		},
-		"boardSwitcher": {
-			"selectBoard": "Select board",
-			"noBoards": "No boards",
-			"searchBoards": "Search boards..."
+		"projectSwitcher": {
+			"selectProject": "Select project",
+			"noProjects": "No projects"
 		},
 		"columnEditor": {
 			"toastCreated": "Column created",
@@ -875,8 +877,8 @@
 				"removeError": "Failed to remove GitHub integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
-				"commentOnDisabled": "Ticket link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
+				"commentOnDisabled": "Task link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update GitHub integration"
 			},
 			"connectionStatus": "Connection Status",
@@ -887,7 +889,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Connected GitHub repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new GitHub issue with a link to the ticket.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new GitHub issue with a link to the task.",
 			"appStatusTitle": "GitHub App Status",
 			"appStatusHint": "Installation and permissions status",
 			"statusProperlyConfigured": "Properly configured",
@@ -898,7 +900,7 @@
 			"ownerPlaceholder": "e.g., octocat",
 			"repoNameLabel": "Repository Name",
 			"repoNameHint": "The repository name",
-			"repoNamePlaceholder": "e.g., my-board",
+			"repoNamePlaceholder": "e.g., my-project",
 			"actionsTitle": "Actions",
 			"actionsHint": "Manage your repository connection",
 			"browse": "Browse",
@@ -910,7 +912,7 @@
 			"updatePermissions": "Update Permissions",
 			"installGithubApp": "Install GitHub App",
 			"importSectionTitle": "Import GitHub Issues",
-			"importSectionHint": "Import existing issues from your GitHub repository as tickets",
+			"importSectionHint": "Import existing issues from your GitHub repository as tasks",
 			"importing": "Importing...",
 			"importIssues": "Import Issues",
 			"importDisabledHint": "Complete the repository configuration above to enable importing"
@@ -931,15 +933,15 @@
 				"verifyError": "Failed to verify Gitea access",
 				"tokenRequired": "Personal access token is required",
 				"tokenRequiredVerify": "Enter a token to verify",
-				"verifyFirst": "Verify access failed — check URL, token, and repository",
+				"verifyFirst": "Verify access failed. Check URL, token, and repository",
 				"updated": "Gitea integration saved",
 				"updateError": "Failed to save Gitea integration",
 				"removed": "Gitea integration removed",
 				"removeError": "Failed to remove Gitea integration",
 				"issuesImported": "Issues imported successfully",
 				"importError": "Failed to import issues",
-				"commentOnEnabled": "Kaneo will comment with a ticket link on new issues",
-				"commentOnDisabled": "Ticket link comments on new issues are turned off",
+				"commentOnEnabled": "Kaneo will comment with a task link on new issues",
+				"commentOnDisabled": "Task link comments on new issues are turned off",
 				"settingsUpdateError": "Failed to update Gitea integration",
 				"secretCopied": "Copied",
 				"unableToCopySecret": "Unable to copy secret"
@@ -955,7 +957,7 @@
 			"repository": "Repository",
 			"repositoryHint": "Linked Gitea repository",
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
-			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the ticket.",
+			"commentTaskLinkHint": "When enabled, Kaneo posts a comment on each new issue with a link to the task.",
 			"webhookTitle": "Webhook",
 			"webhookHint": "In your Gitea repository, add a webhook with this URL and secret. Enable push, pull request, issues, issue comments, and create (for labels).",
 			"webhookSecretLabel": "Secret (must match the webhook secret in Gitea)",
@@ -1003,7 +1005,7 @@
 				"removeError": "Failed to remove Slack integration"
 			},
 			"connectionTitle": "Slack webhook connection",
-			"connectionHint": "Paste a Slack incoming webhook URL and choose which ticket events should be posted.",
+			"connectionHint": "Paste a Slack incoming webhook URL and choose which task events should be posted.",
 			"connected": "Connected",
 			"paused": "Paused",
 			"webhookLabel": "Incoming webhook URL",
@@ -1013,9 +1015,9 @@
 			"channelPlaceholder": "#team-updates",
 			"channelHint": "Optional label for your reference. Slack controls the actual destination channel from the webhook setup.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which board changes should post to Slack.",
+			"eventsHint": "Choose which project changes should post to Slack.",
 			"events": {
-				"taskCreated": "New tickets",
+				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
 				"taskPriorityChanged": "Priority changes",
 				"taskTitleChanged": "Title changes",
@@ -1041,7 +1043,7 @@
 				"removeError": "Failed to remove Discord integration"
 			},
 			"connectionTitle": "Discord webhook connection",
-			"connectionHint": "Paste a Discord webhook URL and choose which ticket events should be posted.",
+			"connectionHint": "Paste a Discord webhook URL and choose which task events should be posted.",
 			"connected": "Connected",
 			"paused": "Paused",
 			"webhookLabel": "Webhook URL",
@@ -1051,9 +1053,9 @@
 			"channelPlaceholder": "#team-updates",
 			"channelHint": "Optional label for your reference. Discord controls the actual destination channel from the webhook setup.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which board changes should post to Discord.",
+			"eventsHint": "Choose which project changes should post to Discord.",
 			"events": {
-				"taskCreated": "New tickets",
+				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
 				"taskPriorityChanged": "Priority changes",
 				"taskTitleChanged": "Title changes",
@@ -1079,7 +1081,7 @@
 				"removeError": "Failed to remove generic webhook integration"
 			},
 			"connectionTitle": "Outgoing webhook connection",
-			"connectionHint": "Send ticket events to your own endpoint as JSON. A signed X-Kaneo-Signature header is included when a secret is configured.",
+			"connectionHint": "Send task events to your own endpoint as JSON. A signed X-Kaneo-Signature header is included when a secret is configured.",
 			"connected": "Connected",
 			"paused": "Paused",
 			"webhookLabel": "Endpoint URL",
@@ -1090,19 +1092,19 @@
 			"secretHint": "Optional. If provided, Kaneo signs the request body and sends the hex digest in the X-Kaneo-Signature header.",
 			"secretHintConfigured": "A signing secret is already configured ({{secret}}). Enter a new one to replace it.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which board changes should trigger outgoing webhooks.",
+			"eventsHint": "Choose which project changes should trigger outgoing webhooks.",
 			"events": {
-				"taskCreated": "New tickets",
+				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
 				"taskPriorityChanged": "Priority changes",
 				"taskTitleChanged": "Title changes",
 				"taskDescriptionChanged": "Description changes",
 				"taskCommentCreated": "New comments",
-				"taskDeleted": "Ticket deleted",
-				"taskMoved": "Ticket moved",
+				"taskDeleted": "Task deleted",
+				"taskMoved": "Task moved",
 				"taskDueDateChanged": "Due date changed",
 				"taskAssigneeChanged": "Assignee changed",
-				"taskUnassigned": "Ticket unassigned",
+				"taskUnassigned": "Task unassigned",
 				"dueDateReminder": "Due-date reminders"
 			},
 			"reminderLeadTimeLabel": "Send the webhook this many hours before",
@@ -1126,7 +1128,7 @@
 				"removeError": "Failed to remove Telegram integration"
 			},
 			"connectionTitle": "Telegram bot connection",
-			"connectionHint": "Use a Telegram bot token and chat ID to send board ticket updates into a chat or topic.",
+			"connectionHint": "Use a Telegram bot token and chat ID to send project task updates into a chat or topic.",
 			"connected": "Connected",
 			"paused": "Paused",
 			"botTokenLabel": "Bot token",
@@ -1143,9 +1145,9 @@
 			"chatLabelPlaceholder": "Engineering Updates",
 			"chatLabelHint": "Optional label for your reference inside Kaneo.",
 			"eventsTitle": "Event notifications",
-			"eventsHint": "Choose which board changes should post to Telegram.",
+			"eventsHint": "Choose which project changes should post to Telegram.",
 			"events": {
-				"taskCreated": "New tickets",
+				"taskCreated": "New tasks",
 				"taskStatusChanged": "Status changes",
 				"taskPriorityChanged": "Priority changes",
 				"taskTitleChanged": "Title changes",
@@ -1176,20 +1178,20 @@
 			"relativeDaysAgo": "{{count}}d ago"
 		},
 		"tasksImportExport": {
-			"exportTasks": "Export Tickets",
-			"importTasks": "Import Tickets",
-			"dialogTitle": "Import Tickets",
-			"dialogDescription": "Upload a JSON file containing tickets to import into this board.",
+			"exportTasks": "Export Tasks",
+			"importTasks": "Import Tasks",
+			"dialogTitle": "Import Tasks",
+			"dialogDescription": "Upload a JSON file containing tasks to import into this project.",
 			"expectedFormat": "Expected format:",
 			"dropHint": "Drag and drop your JSON file here",
 			"selectFile": "Select File",
-			"exporting": "Exporting tickets...",
-			"exportSuccess": "Tickets exported successfully",
-			"exportError": "Failed to export tickets",
-			"importing": "Importing tickets...",
-			"importSuccess": "Imported {{count}} tickets successfully",
-			"importPartialError": "Failed to import {{count}} tickets",
-			"importError": "Failed to import tickets",
+			"exporting": "Exporting tasks...",
+			"exportSuccess": "Tasks exported successfully",
+			"exportError": "Failed to export tasks",
+			"importing": "Importing tasks...",
+			"importSuccess": "Imported {{count}} tasks successfully",
+			"importPartialError": "Failed to import {{count}} tasks",
+			"importError": "Failed to import tasks",
 			"invalidFormat": "Invalid import file format",
 			"noFileDropped": "No file was dropped",
 			"notJsonFile": "Please upload a JSON file"
@@ -1198,9 +1200,9 @@
 			"loading": "Loading...",
 			"createColumnsFirst": "Create columns first to configure automation rules.",
 			"githubHeading": "GitHub",
-			"githubHint": "When a GitHub event occurs, move the linked ticket to a column.",
+			"githubHint": "When a GitHub event occurs, move the linked task to a column.",
 			"giteaHeading": "Gitea",
-			"giteaHint": "When a Gitea webhook event occurs, move the linked ticket to a column.",
+			"giteaHint": "When a Gitea webhook event occurs, move the linked task to a column.",
 			"selectColumnPlaceholder": "Select column...",
 			"toastUpdated": "Workflow rule updated",
 			"toastError": "Failed to update rule",
@@ -1225,12 +1227,12 @@
 		"commandPalette": {
 			"suggestions": "Suggestions",
 			"commands": "Commands",
-			"boards": "Boards",
+			"projects": "Projects",
 			"search": "Search",
 			"members": "Members",
-			"createTask": "Create ticket",
-			"createBoard": "Create board",
-			"createOrganization": "Create organization",
+			"createTask": "Create task",
+			"createProject": "Create project",
+			"createWorkspace": "Create workspace",
 			"lightTheme": "Light theme",
 			"darkTheme": "Dark theme",
 			"systemTheme": "System theme",
@@ -1246,78 +1248,30 @@
 		"notifications": "Notifications",
 		"sidebar": {
 			"overview": "Overview",
-			"boards": "Boards",
-			"myTasks": "My Tickets",
-			"inbox": "Inbox",
+			"projects": "Projects",
 			"members": "Members",
 			"invitations": "Invitations",
 			"more": "More",
-			"backToBoard": "Back to board",
-			"repos": "Repos",
-			"trash": "Trash",
-			"moreBoards": "More Boards",
-			"moreRepos": "More Repos"
+			"backToBoard": "Back to board"
 		},
-		"tables": {
-			"title": "Tables",
-			"create": "Create table",
-			"noTables": "No tables yet",
-			"loadError": "Could not load tables.",
-			"retry": "Retry",
-			"loading": "Loading tables",
-			"tableName": "Table name",
-			"createTitle": "Create a table",
-			"createDescription": "Start with a flexible table and add the fields you need.",
-			"cancel": "Cancel",
-			"creating": "Creating…",
-			"createAction": "Create table",
-			"created": "Table created",
-			"createError": "Could not create table",
-			"loadTableError": "Could not load this table",
-			"connectionHelp": "Check your connection and try again.",
-			"row_one": "{{count}} row",
-			"row_other": "{{count}} rows",
-			"field_one": "{{count}} field",
-			"field_other": "{{count}} fields",
-			"empty": "This table is empty",
-			"readOnlyEmpty": "You have read-only access. An editor can add the first field.",
-			"addField": "Add field",
-			"newFieldName": "New field name",
-			"noRows": "No rows yet. Add one to start entering data.",
-			"addRow": "Add row",
-			"deleteField": "Delete field",
-			"deleteFieldConfirm": "Delete field “{{name}}”?",
-			"renameFieldError": "Could not rename field",
-			"deleteFieldError": "Could not delete field",
-			"addFieldError": "Could not add field",
-			"deleteRowError": "Could not delete row",
-			"saveCellError": "Could not save cell",
-			"renameTableError": "Could not rename table",
-			"addRowError": "Could not add row",
-			"tableOptions": "Table options",
-			"deleteTable": "Delete table",
-			"deleteTableConfirm": "Delete this table and all of its data? This action cannot be undone.",
-			"deleted": "Table deleted",
-			"deleteTableError": "Could not delete table"
-		},
-		"boardList": {
-			"viewBoard": "View Board",
-			"shareBoard": "Share Board",
-			"boardSettings": "Board settings",
-			"linkCopied": "Board link copied to clipboard",
-			"addBoard": "Add board",
-			"deleteConfirmTitle": "Delete Board?",
-			"deleteConfirmDescription": "This will permanently remove the board and all its data. You can't undo this action.",
-			"deletedToast": "Board deleted",
-			"deleteBoard": "Delete Board"
+		"projectList": {
+			"viewProject": "View Project",
+			"shareProject": "Share Project",
+			"projectSettings": "Project settings",
+			"linkCopied": "Project link copied to clipboard",
+			"addProject": "Add project",
+			"deleteConfirmTitle": "Delete Project?",
+			"deleteConfirmDescription": "This will permanently remove the project and all its data. You can't undo this action.",
+			"deletedToast": "Project deleted",
+			"deleteProject": "Delete Project"
 		},
 		"search": {
-			"inputPlaceholder": "Search tickets, boards, comments...",
+			"inputPlaceholder": "Search tasks, projects, comments...",
 			"minCharsHint": "Type at least 3 characters to search",
 			"groups": {
-				"task": "Tickets",
-				"board": "Boards",
-				"organization": "Organizations",
+				"task": "Tasks",
+				"project": "Projects",
+				"workspace": "Workspaces",
 				"comment": "Comments",
 				"activity": "Activities",
 				"fallback": "Results"
@@ -1333,30 +1287,22 @@
 			"unnamedUser": "User",
 			"settings": "Settings",
 			"signingOut": "Signing out...",
-			"theme": "Theme",
-			"themeLight": "Light",
-			"themeDark": "Dark",
-			"themeAuto": "Auto",
 			"logOut": "Log out"
 		},
-		"teamView": {
-			"label": "Team view",
-			"all": "All"
-		},
-		"organizationSwitcher": {
-			"organizations": "Organizations",
+		"workspaceSwitcher": {
+			"workspaces": "Workspaces",
 			"switching": "Switching...",
-			"addOrganization": "Add organization",
-			"selectOrganization": "Select organization"
+			"addWorkspace": "Add workspace",
+			"selectWorkspace": "Select workspace"
 		},
 		"page": {
-			"boardsTitle": "Boards",
+			"projectsTitle": "Projects",
 			"settingsTitle": "Settings",
-			"backToOrganization": "Back to Organization",
-			"settingsOrganizationTab": "Organization"
+			"backToWorkspace": "Back to Workspace",
+			"settingsWorkspaceTab": "Workspace"
 		},
-		"boardSettings": {
-			"boardLabel": "Board"
+		"projectSettings": {
+			"projectLabel": "Project"
 		},
 		"keyboardShortcuts": {
 			"title": "Keyboard Shortcuts",
@@ -1368,9 +1314,7 @@
 				"create": "Create",
 				"views": "Views",
 				"navigation": "Navigation",
-				"quickSelect": "Quick Select (in popovers)",
-				"ticketTitle": "Ticket title",
-				"editor": "Description & comments"
+				"quickSelect": "Quick Select (in popovers)"
 			},
 			"items": {
 				"openCommandPalette": "Open command palette",
@@ -1378,26 +1322,17 @@
 				"toggleSidebar": "Toggle sidebar",
 				"showShortcuts": "Show keyboard shortcuts",
 				"closeModal": "Close modal/popover",
-				"createTask": "Create ticket",
-				"createBoard": "Create board",
-				"createOrganization": "Create organization",
+				"createTask": "Create task",
+				"createProject": "Create project",
+				"createWorkspace": "Create workspace",
 				"boardView": "Switch to board view",
 				"listView": "Switch to list view",
 				"backlogView": "Switch to backlog view",
-				"nextTask": "Next ticket",
-				"prevTask": "Previous ticket",
-				"openTask": "Open selected ticket",
-				"quickSelectNumber": "Select option by number",
-				"titleLabel": "Add a label",
-				"titleMember": "Assign a member",
-				"titlePriority": "Set priority",
-				"editorMention": "Mention a member",
-				"editorSlash": "Open the block menu",
-				"editorTicket": "Reference a ticket"
+				"nextTask": "Next task",
+				"prevTask": "Previous task",
+				"openTask": "Open selected task",
+				"quickSelectNumber": "Select option by number"
 			}
-		},
-		"repoList": {
-			"allRepos": "All repos"
 		}
 	},
 	"notifications": {
@@ -1422,96 +1357,56 @@
 		},
 		"events": {
 			"task_created": {
-				"title": "New ticket created",
-				"content": "Ticket \"{{taskTitle}}\" was created"
+				"title": "New task created",
+				"content": "Task \"{{taskTitle}}\" was created"
 			},
-			"organization_created": {
-				"title": "Organization created",
-				"content": "Your organization \"{{organizationName}}\" has been created successfully"
+			"workspace_created": {
+				"title": "Workspace created",
+				"content": "Your workspace \"{{workspaceName}}\" has been created successfully"
 			},
 			"task_status_changed": {
-				"title": "Ticket status changed",
-				"content": "Ticket \"{{taskTitle}}\" status changed from \"{{oldStatus}}\" to \"{{newStatus}}\""
+				"title": "Task status changed",
+				"content": "Task \"{{taskTitle}}\" status changed from \"{{oldStatus}}\" to \"{{newStatus}}\""
 			},
 			"task_assignee_changed": {
-				"title": "Ticket assigned to you",
-				"content": "You have been assigned to ticket: {{taskTitle}}"
+				"title": "Task assigned to you",
+				"content": "You have been assigned to task: {{taskTitle}}"
 			},
 			"task_mention": {
 				"title": "{{mentionerName}} mentioned you",
 				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}"
 			},
 			"task_comment": {
-				"title": "{{commenterName}} commented on your ticket",
+				"title": "{{commenterName}} commented on your task",
 				"content": "New comment on {{taskTitle}}: {{commentPreview}}"
 			},
 			"due_date_reminder": {
-				"title": "Ticket due soon",
+				"title": "Task due soon",
 				"content": "{{taskTitle}} is due in {{leadTime}}"
 			},
 			"task_overdue": {
-				"title": "Ticket overdue",
+				"title": "Task overdue",
 				"content": "{{taskTitle}} is past its due date"
 			},
 			"time_entry_created": {
 				"title": "Time tracking started",
-				"contentWithTask": "Time tracking started on ticket: {{taskTitle}}",
-				"contentWithoutTask": "Time tracking started on a ticket"
-			},
-			"task_title_changed": {
-				"title": "Ticket title changed",
-				"content": "“{{oldTitle}}” was renamed to “{{newTitle}}”"
-			},
-			"task_description_changed": {
-				"title": "Ticket description updated",
-				"content": "The description of “{{taskTitle}}” was updated"
-			},
-			"task_priority_changed": {
-				"title": "Ticket priority changed",
-				"content": "“{{taskTitle}}” priority changed from {{oldPriority}} to {{newPriority}}"
-			},
-			"task_due_date_changed": {
-				"title": "Ticket due date changed",
-				"content": "The due date of “{{taskTitle}}” was updated"
-			},
-			"task_flag_raised": {
-				"title": "Flag raised on ticket",
-				"content": "{{flagTypeName}} was raised on “{{taskTitle}}”"
-			},
-			"task_flag_resolved": {
-				"title": "Flag resolved on ticket",
-				"content": "{{flagTypeName}} was resolved on “{{taskTitle}}”"
-			},
-			"task_unassigned": {
-				"title": "Ticket unassigned",
-				"content": "“{{taskTitle}}” is no longer assigned"
-			},
-			"task_moved": {
-				"title": "Ticket moved",
-				"content": "“{{taskTitle}}” moved from {{fromBoardName}} to {{toBoardName}}"
-			},
-			"task_label_assigned": {
-				"title": "Label added to ticket",
-				"content": "A label was added to “{{taskTitle}}”"
-			},
-			"task_label_unassigned": {
-				"title": "Label removed from ticket",
-				"content": "A label was removed from “{{taskTitle}}”"
+				"contentWithTask": "Time tracking started on task: {{taskTitle}}",
+				"contentWithoutTask": "Time tracking started on a task"
 			}
 		}
 	},
 	"activity": {
-		"assignedToSelf": "assigned the ticket to themselves",
-		"unassigned": "unassigned the ticket",
-		"assignedTo": "assigned the ticket to {{name}}",
+		"assignedToSelf": "assigned the task to themselves",
+		"unassigned": "unassigned the task",
+		"assignedTo": "assigned the task to {{name}}",
 		"changedStatus": "changed status from {{from}} to {{to}}",
 		"changedPriority": "changed priority from {{from}} to {{to}}",
 		"clearedDueDate": "cleared the due date",
 		"setDueDate": "set due date to {{date}}",
 		"changedDueDate": "changed due date from {{from}} to {{to}}",
 		"changedTitle": "changed title from \"{{from}}\" to \"{{to}}\"",
-		"moved": "moved ticket from \"{{from}}\" to \"{{to}}\"",
-		"created": "created this ticket",
+		"moved": "moved task from \"{{from}}\" to \"{{to}}\"",
+		"created": "created this task",
 		"githubUser": "GitHub User",
 		"comment": {
 			"github": "GitHub",
@@ -1521,8 +1416,6 @@
 			"mustBeLoggedInToEdit": "You must be logged in to edit comments",
 			"updated": "Comment updated",
 			"failedToUpdate": "Failed to update comment",
-			"editHistory_one": "1 previous version",
-			"editHistory_other": "{{count}} previous versions",
 			"edit": "Edit comment",
 			"editPlaceholder": "Edit comment...",
 			"save": "Save",
@@ -1532,7 +1425,7 @@
 			"attachFile": "Attach file",
 			"submitShortcut": "Submit comment",
 			"editor": {
-				"uploadsOnlyOnSavedTasks": "File uploads are only available on saved tickets.",
+				"uploadsOnlyOnSavedTasks": "File uploads are only available on saved tasks.",
 				"uploadingFile": "Uploading file...",
 				"imageUploaded": "Image uploaded",
 				"fileAttached": "File attached",
@@ -1598,18 +1491,18 @@
 					"swift": "Swift",
 					"typescript": "TypeScript",
 					"yaml": "YAML"
+				},
+				"table": {
+					"addColumnBefore": "Insert column left",
+					"addColumnAfter": "Insert column right",
+					"deleteColumn": "Delete column",
+					"addRowBefore": "Insert row above",
+					"addRowAfter": "Insert row below",
+					"deleteRow": "Delete row",
+					"deleteTable": "Delete table"
 				}
-			},
-			"draftSaved": "Draft saved",
-			"deleteDraft": "Delete draft"
-		},
-		"flagRaised": "flagged",
-		"flagResolved": "unflagged",
-		"flagTarget": "for {{target}}",
-		"statusRun": "moved this from {{from}} to {{to}}",
-		"statusRunNoOp": "changed the status a few times, ending back at {{status}}",
-		"statusRunSteps": "{{count}} steps",
-		"resolutionNote": "Resolution note"
+			}
+		}
 	},
 	"tasks": {
 		"status": {
@@ -1630,27 +1523,25 @@
 			"urgent": "Urgent"
 		},
 		"boardSearchPlaceholder": "Search tickets...",
-		"boardClearSearch": "Clear search",
 		"view": {
 			"board": "Board",
 			"list": "List"
 		},
 		"common": {
-			"selectTask": "Select ticket",
-			"loadingTask": "Loading ticket...",
-			"taskNotFound": "Ticket not found",
-			"taskNotFoundDescription": "The ticket you are looking for does not exist or has been deleted."
+			"selectTask": "Select task",
+			"loadingTask": "Loading task...",
+			"taskNotFound": "Task not found",
+			"taskNotFoundDescription": "The task you are looking for does not exist or has been deleted."
 		},
 		"detail": {
-			"subtaskOf": "Sub-ticket of",
+			"subtaskOf": "Subtask of",
 			"activity": "Activity",
 			"noActivity": "No activity found",
 			"openInFullPage": "Open in full page",
 			"titlePlaceholder": "Click to add a title",
-			"titleSaving": "Saving title…",
 			"addDescription": "Add a description...",
 			"editor": {
-				"ariaLabel": "Ticket description editor",
+				"ariaLabel": "Task description editor",
 				"placeholder": "Write a description...",
 				"previewImage": "Preview image",
 				"enterUrl": "Enter URL",
@@ -1661,8 +1552,8 @@
 				"attachFile": "Attach file",
 				"dropToUpload": "Drop image to upload",
 				"checkbox": {
-					"markIncomplete": "Mark ticket as incomplete",
-					"markComplete": "Mark ticket as complete"
+					"markIncomplete": "Mark task as incomplete",
+					"markComplete": "Mark task as complete"
 				},
 				"upload": {
 					"loading": "Uploading file...",
@@ -1742,89 +1633,81 @@
 					},
 					"onlyYoutubeInline": "Only YouTube URLs can be embedded. Use link mode instead."
 				}
-			},
-			"close": "Close ticket details"
+			}
 		},
 		"entity": {
-			"task": "Ticket"
+			"task": "Task"
 		},
 		"relations": {
 			"title": "Relations",
-			"tasksInBoard": "Tickets in board",
-			"linkError": "Failed to link ticket",
-			"empty": "No related tickets",
-			"searchPlaceholder": "Search tickets to link...",
-			"noTasksFound": "No tickets found",
-			"openTask": "Open ticket",
+			"tasksInProject": "Tasks in project",
+			"linkError": "Failed to link task",
+			"empty": "No related tasks",
+			"searchPlaceholder": "Search tasks to link...",
+			"noTasksFound": "No tasks found",
+			"openTask": "Open task",
 			"removeRelation": "Remove relation",
 			"related": "Related",
 			"blocks": "Blocks",
-			"selectTask": "Select a ticket to link",
+			"selectTask": "Select a task to link",
 			"types": {
 				"blocks": "blocks",
 				"blocked_by": "blocked by",
 				"related": "relates to"
-			},
-			"otherBoard": "other board",
-			"blockedBy": "Blocked by"
+			}
 		},
 		"subtasks": {
-			"title": "Sub-tickets",
-			"inputPlaceholder": "Sub-ticket title...",
+			"title": "Sub-tasks",
+			"inputPlaceholder": "Subtask title...",
 			"addAction": "Add",
-			"empty": "No sub-tickets yet",
-			"createError": "Failed to create sub-ticket",
-			"deleteSuccess": "Ticket deleted successfully",
-			"deleteError": "Failed to delete ticket",
-			"unlinkSuccess": "Sub-ticket unlinked",
-			"unlinkError": "Failed to unlink sub-ticket",
-			"deleteDialogTitle": "Delete Ticket?",
-			"deleteDialogDescription": "This will permanently remove the ticket and all its data. You can't undo this action.",
-			"deleteAction": "Delete Ticket",
-			"linkExisting": "Link existing ticket",
-			"linkExistingHint": "Select a ticket to add as sub-ticket",
-			"searchPlaceholder": "Search tickets across boards…"
+			"empty": "No subtasks yet",
+			"createError": "Failed to create subtask",
+			"deleteSuccess": "Task deleted successfully",
+			"deleteError": "Failed to delete task",
+			"deleteDialogTitle": "Delete Task?",
+			"deleteDialogDescription": "This will permanently remove the task and all its data. You can't undo this action.",
+			"deleteAction": "Delete Task",
+			"completeAria": "Mark subtask complete"
 		},
 		"properties": {
 			"title": "Properties",
 			"labels": "Labels",
-			"copyTaskLink": "Copy ticket link",
-			"copyTaskBranch": "Copy ticket branch",
+			"copyTaskLink": "Copy task link",
+			"copyTaskBranch": "Copy task branch",
 			"start": "Start",
 			"startDate": "Start date",
 			"noDate": "No date"
 		},
 		"move": {
-			"title": "Move ticket",
-			"boardLabel": "Destination board",
-			"boardPlaceholder": "Select a board",
+			"title": "Move task",
+			"projectLabel": "Destination project",
+			"projectPlaceholder": "Select a project",
 			"statusLabel": "Destination status",
-			"statusHintKeep": "This board's workflow already supports the current status.",
-			"statusHintAdjust": "Choose the status to use in the destination board.",
-			"action": "Move ticket",
-			"success": "Ticket moved successfully",
-			"error": "Failed to move ticket"
+			"statusHintKeep": "This project's workflow already supports the current status.",
+			"statusHintAdjust": "Choose the status to use in the destination project.",
+			"action": "Move task",
+			"success": "Task moved successfully",
+			"error": "Failed to move task"
 		},
 		"popover": {
 			"assignee": {
 				"unassigned": "Unassigned",
-				"updateError": "Failed to update ticket assignee",
-				"team": "Team"
+				"updateError": "Failed to update task assignee"
 			},
 			"status": {
-				"updateError": "Failed to update ticket status"
+				"updateError": "Failed to update task status"
 			},
 			"priority": {
-				"updateError": "Failed to update ticket priority"
+				"updateError": "Failed to update task priority"
 			},
 			"dueDate": {
-				"updateSuccess": "Ticket due date updated successfully",
-				"updateError": "Failed to update ticket due date",
+				"updateSuccess": "Task due date updated successfully",
+				"updateError": "Failed to update task due date",
 				"clear": "Clear date"
 			},
 			"startDate": {
-				"updateSuccess": "Ticket start date updated successfully",
-				"updateError": "Failed to update ticket start date",
+				"updateSuccess": "Task start date updated successfully",
+				"updateError": "Failed to update task start date",
 				"clear": "Clear start date"
 			},
 			"labels": {
@@ -1846,38 +1729,26 @@
 					"amber": "Amber",
 					"terracotta": "Terracotta",
 					"rose": "Rose",
-					"crimson": "Crimson",
-					"blossom": "Blossom",
-					"honey": "Honey",
-					"lime": "Lime",
-					"emerald": "Emerald",
-					"lagoon": "Lagoon",
-					"sky": "Sky",
-					"ocean": "Ocean",
-					"indigo": "Indigo",
-					"violet": "Violet",
-					"orchid": "Orchid",
-					"cocoa": "Cocoa"
-				},
-				"repoSource": "GitHub-synced label"
+					"crimson": "Crimson"
+				}
 			}
 		},
 		"backlog": {
 			"pageTitle": "{{name}}'s backlog",
-			"noTasksToMove": "No planned tickets to move",
-			"moveAllConfirm": "Move all {{count}} planned tickets to To Do?",
-			"moveAllSuccess": "Moved {{count}} tickets to To Do",
+			"noTasksToMove": "No planned tasks to move",
+			"moveAllConfirm": "Move all {{count}} planned tasks to To Do?",
+			"moveAllSuccess": "Moved {{count}} tasks to To Do",
 			"plan": "Plan",
 			"moveAllTooltip": "Move All Planned to To Do",
 			"moveAll": "Move All",
-			"addTask": "Add ticket",
+			"addTask": "Add task",
 			"filter": "Filter",
 			"addFilter": "Add filter...",
 			"sections": {
 				"planned": "Planned",
 				"archived": "Archived"
 			},
-			"noTasksInSection": "No {{section}} tickets",
+			"noTasksInSection": "No {{section}} tasks",
 			"filters": {
 				"priority": "Priority: {{name}}",
 				"assignee": "Assignee: {{name}}",
@@ -1886,12 +1757,7 @@
 				"dueThisWeek": "Due this week",
 				"dueNextWeek": "Due next week",
 				"noDueDate": "No due date"
-			},
-			"moveAllDialogTitle": "Move all planned tickets?",
-			"moveAllDialogDescription": "{{count}} planned ticket will move to To Do.",
-			"moveAllDialogDescription_other": "{{count}} planned tickets will move to To Do.",
-			"moveAllDialogConfirm": "Move {{count}} ticket",
-			"moveAllDialogConfirm_other": "Move {{count}} tickets"
+			}
 		},
 		"sort": {
 			"label": "Sort",
@@ -1905,25 +1771,8 @@
 				"priority": "Priority",
 				"dueDate": "Due date",
 				"title": "Title",
-				"number": "Ticket number"
+				"number": "Task number"
 			}
-		},
-		"group": {
-			"label": "Group",
-			"by": "Group by",
-			"none": "No grouping",
-			"status": "Status",
-			"priority": "Priority",
-			"assignee": "Assignee"
-		},
-		"display": {
-			"label": "Display",
-			"taskNumbers": "Ticket numbers",
-			"show": "Show",
-			"assignee": "Assignee",
-			"priority": "Priority",
-			"labels": "Labels",
-			"dates": "Dates"
 		},
 		"boardFilters": {
 			"filterBy": "Filter By",
@@ -1946,57 +1795,38 @@
 			}
 		},
 		"gantt": {
-			"pageTitle": "{{name}} — Timeline",
-			"title": "Timeline",
+			"pageTitle": "{{name}} – Gantt",
+			"title": "Gantt Timeline",
 			"searchPlaceholder": "Search scheduled tickets...",
-			"hideTasks": "Hide tickets",
-			"showTasks": "Show tickets",
-			"noTasks": "No scheduled tickets",
-			"noTasksSubtitle": "Add a start date, due date, or both to tickets to place them on the board timeline.",
-			"noTasksFound": "No tickets found",
-			"noTasksMatch": "No scheduled tickets match \"{{query}}\"",
-			"taskHeader": "Ticket",
-			"unscheduledGroup": "Unscheduled",
-			"noMilestoneGroup": "No milestone",
-			"unscheduledHint": "No dates - drag to schedule",
-			"dragToScheduleHint": "Drag across the timeline to schedule this ticket",
-			"updateDatesError": "Failed to update ticket dates",
+			"hideTasks": "Hide tasks",
+			"showTasks": "Show tasks",
+			"noTasks": "No scheduled tasks",
+			"noTasksSubtitle": "Add a start date, due date, or both to tasks to place them on the project timeline.",
+			"noTasksFound": "No tasks found",
+			"noTasksMatch": "No scheduled tasks match \"{{query}}\"",
+			"taskHeader": "Task",
+			"updateDatesError": "Failed to update task dates",
 			"resizeStart": "Resize start date",
 			"resizeDue": "Resize due date",
-			"taskAriaLabel": "{{title}} — open or drag to move",
-			"zoom": {
-				"day": "Day",
-				"week": "Week",
-				"month": "Month"
-			},
-			"noMilestone": "No milestone"
-		},
-		"calendar": {
-			"pageTitle": "{{name}} — Calendar",
-			"title": "Calendar",
-			"today": "Today",
-			"previousMonth": "Previous month",
-			"nextMonth": "Next month",
-			"more": "+{{count}} more"
+			"taskAriaLabel": "{{title}}: open or drag to move"
 		},
 		"delete": {
-			"title": "Delete Ticket?",
-			"description": "This will permanently remove the ticket and all its data. You can't undo this action.",
-			"action": "Delete Ticket",
-			"success": "Ticket deleted successfully",
-			"error": "Failed to delete ticket"
+			"title": "Delete Task?",
+			"description": "This will permanently remove the task and all its data. You can't undo this action.",
+			"action": "Delete Task",
+			"success": "Task deleted successfully",
+			"error": "Failed to delete task"
 		},
 		"archive": {
-			"success": "Archived {{count}} tickets",
-			"error": "Failed to archive tickets"
+			"success": "Archived {{count}} tasks"
 		},
 		"listView": {
-			"addTask": "Add ticket",
-			"archiveAllTooltip": "Archive all completed tickets",
-			"noTasks": "No tickets"
+			"addTask": "Add task",
+			"archiveAllTooltip": "Archive all completed tasks",
+			"noTasks": "No tasks"
 		},
 		"kanban": {
-			"addTask": "Add ticket"
+			"addTask": "Add task"
 		},
 		"pr": {
 			"merged": "Merged",
@@ -2013,71 +1843,52 @@
 		"dueDate": {
 			"label": "Due date",
 			"clear": "Clear date",
-			"updateSuccess": "Ticket due date updated successfully",
-			"updateError": "Failed to update ticket due date",
-			"clearSuccess": "Ticket due date cleared",
-			"clearError": "Failed to clear due date",
-			"outcome": {
-				"early": "Early",
-				"on-time": "On time",
-				"late": "Late"
-			}
+			"updateSuccess": "Task due date updated successfully",
+			"updateError": "Failed to update task due date",
+			"clearSuccess": "Task due date cleared",
+			"clearError": "Failed to clear due date"
 		},
 		"labels": {
 			"label": "Labels",
-			"empty": "No labels available",
-			"fromRepository": "From linked repository"
+			"empty": "No labels available"
 		},
 		"update": {
-			"success": "Ticket updated successfully",
-			"error": "Failed to update ticket"
+			"success": "Task updated successfully",
+			"error": "Failed to update task"
 		},
 		"contextMenu": {
 			"copyLink": "Copy link",
-			"copyLinkSuccess": "Ticket link copied!"
-		},
-		"attachment": {
-			"fallbackName": "Attachment",
-			"copyImageAddress": "Copy image address",
-			"copyFileAddress": "Copy file address",
-			"openInNewTab": "Open in new tab",
-			"download": "Download",
-			"copyMarkdown": "Copy markdown",
-			"remove": "Remove attachment"
+			"copyLinkSuccess": "Task link copied!"
 		},
 		"actions": {
 			"archive": "Archive",
 			"markAsPlanned": "Mark as planned",
-			"moveToBacklog": "Move to Backlog",
-			"unlink": "Unlink",
-			"unlinkSubtask": "Unlink sub-ticket",
-			"delete": "Delete...",
-			"unarchive": "Unarchive"
+			"delete": "Delete..."
 		},
 		"bulk": {
 			"selectedCount": "{{count}} selected",
 			"moveToBacklog": "Move to Backlog",
-			"moveToBacklogSuccess": "{{count}} tickets moved to backlog",
-			"moveToBacklogError": "Failed to move tickets to backlog",
+			"moveToBacklogSuccess": "{{count}} tasks moved to backlog",
+			"moveToBacklogError": "Failed to move tasks to backlog",
 			"moveToBoard": "Move to Board",
-			"moveToBoardSuccess": "{{count}} tickets moved to board",
-			"moveToBoardError": "Failed to move tickets to board",
-			"delete": "Delete tickets",
-			"deleteConfirm": "Delete {{count}} tickets? This action cannot be undone.",
-			"deleteSuccess": "{{count}} tickets deleted",
-			"deleteError": "Failed to delete tickets",
-			"archive": "Archive tickets",
-			"archiveSuccess": "{{count}} tickets archived",
-			"archiveError": "Failed to archive tickets",
-			"updateSuccess": "{{count}} tickets updated",
-			"updateError": "Failed to update tickets",
+			"moveToBoardSuccess": "{{count}} tasks moved to board",
+			"moveToBoardError": "Failed to move tasks to board",
+			"delete": "Delete tasks",
+			"deleteConfirm": "Delete {{count}} tasks? This action cannot be undone.",
+			"deleteSuccess": "{{count}} tasks deleted",
+			"deleteError": "Failed to delete tasks",
+			"archive": "Archive tasks",
+			"archiveSuccess": "{{count}} tasks archived",
+			"archiveError": "Failed to archive tasks",
+			"updateSuccess": "{{count}} tasks updated",
+			"updateError": "Failed to update tasks",
 			"assignTo": "Assign to",
-			"assignSuccess": "{{count}} tickets assigned",
-			"assignError": "Failed to assign tickets",
+			"assignSuccess": "{{count}} tasks assigned",
+			"assignError": "Failed to assign tasks",
 			"setPriority": "Set Priority",
 			"updatePriorityError": "Failed to update priority",
 			"addLabel": "Add Label",
-			"addLabelSuccess": "Label added to {{count}} tickets",
+			"addLabelSuccess": "Label added to {{count}} tasks",
 			"addLabelError": "Failed to add label",
 			"setDueDate": "Set Due Date",
 			"updateDueDateError": "Failed to update due date",
@@ -2086,143 +1897,38 @@
 			"noActionsFound": "No actions found.",
 			"changeStatus": "Change Status"
 		},
-		"column": {
-			"empty": "No tickets"
-		},
-		"viewOptions": {
-			"label": "View options"
-		},
-		"groupBy": {
-			"label": "Group by",
-			"none": "None",
-			"assignee": "Assignee",
-			"priority": "Priority",
-			"byLabel": "Label",
-			"dueDate": "Due date",
-			"noDueDate": "No due date",
-			"noLabel": "No label",
-			"status": "Status",
-			"milestone": "Milestone",
-			"noStatus": "No status"
-		},
-		"preview": {
-			"assignee": "Assignee",
-			"priority": "Priority",
-			"dueDate": "Due date",
-			"noDueDate": "No due date",
-			"labels": "Labels",
-			"none": "None"
-		},
-		"milestone": {
-			"title": "Milestone",
-			"none": "No milestone",
-			"clear": "No milestone",
-			"empty": "No milestones on this board",
-			"loading": "Loading milestones…",
-			"searchPlaceholder": "Search milestones...",
-			"assigned": "Milestone updated",
-			"cleared": "Milestone removed",
-			"assignFailed": "Failed to update milestone",
-			"badgeTooltip": "Milestone: {{name}} ({{status}})",
-			"view": {
-				"title": "Milestones",
-				"description": "Track milestone dates and progress inferred from related tasks.",
-				"pageTitle": "{{name}} — Milestones",
-				"caption": "Board milestones and their related tasks",
-				"milestone": "Milestone",
-				"dueDate": "Due date",
-				"progress": "Progress",
-				"progressLabel": "{{percent}} percent complete, {{completed}} of {{total}} tasks",
-				"status": "Status",
-				"tasks": "Related tasks",
-				"noDueDate": "No due date",
-				"noTasks": "No related tasks",
-				"empty": "No milestones on this board yet."
-			},
-			"manage": {
-				"title": "Milestones",
-				"namePlaceholder": "Milestone name",
-				"created": "Milestone created",
-				"updated": "Milestone updated",
-				"deleted": "Milestone deleted",
-				"saveFailed": "Failed to save milestone",
-				"deleteFailed": "Failed to delete milestone",
-				"noDates": "No dates yet",
-				"dueDate": "Due date"
-			},
-			"status": {
-				"planned": "Planned",
-				"active": "Active",
-				"completed": "Completed",
-				"archived": "Archived"
+		"editor": {
+			"table": {
+				"addColumnBefore": "Insert column left",
+				"addColumnAfter": "Insert column right",
+				"deleteColumn": "Delete column",
+				"addRowBefore": "Insert row above",
+				"addRowAfter": "Insert row below",
+				"deleteRow": "Delete row",
+				"deleteTable": "Delete table"
 			}
-		},
-		"parentTask": {
-			"title": "Parent ticket",
-			"none": "No parent ticket",
-			"clear": "No parent ticket",
-			"empty": "No tickets on this board",
-			"searchPlaceholder": "Search tickets..."
-		},
-		"access": {
-			"title": "Board access",
-			"team": "Team",
-			"member": "Member",
-			"viewing": "Viewing"
-		},
-		"templates": {
-			"label": "Templates",
-			"name": "Template name",
-			"save": "Save current values",
-			"delete": "Delete template",
-			"empty": "No templates yet",
-			"applyTitle": "Apply task template?",
-			"applyWarning": "This replaces the current title, description, priority and dates.",
-			"apply": "Replace current values"
-		},
-		"titleTokens": {
-			"labels": "Labels",
-			"members": "Members",
-			"priority": "Priority",
-			"hint": "Type # for labels, @ for members, ! for priority"
-		},
-		"boardSync": {
-			"syncedWith": "Synced with {{repo}}"
-		},
-		"nest": {
-			"hint": "Ctrl + drag to nest",
-			"tooltip": "Hold Ctrl (or Cmd) while dropping a ticket onto another to make it a sub-ticket.",
-			"error": "Failed to nest ticket",
-			"willNestUnder": "Nest under {{title}}",
-			"releaseToNest": "Release to nest this ticket under {{title}}.",
-			"cannotNestHere": "Can't nest here",
-			"cannotNestReason": "This ticket can't be nested under that target. Pick a different parent.",
-			"unknownTarget": "this ticket"
-		},
-		"bulkActions": {
-			"label": "Bulk Actions"
 		}
 	},
 	"invitations": {
 		"email": {
-			"subject": "{{inviterName}} invited you to join {{organizationName}} on Kaneo",
-			"preview": "You're invited to {{organizationName}} on Kaneo",
-			"title": "Join {{organizationName}}",
+			"subject": "{{inviterName}} invited you to join {{workspaceName}} on Kaneo",
+			"preview": "You're invited to {{workspaceName}} on Kaneo",
+			"title": "Join {{workspaceName}}",
 			"subtitle": "{{inviterName}} ({{inviterEmail}}) invited you to collaborate in Kaneo.",
 			"cta": "Accept invitation",
 			"sameEmail": "You can accept with the same email that received this message.",
 			"ignore": "If this wasn't expected, you can safely ignore this email.",
-			"footer": "Kaneo organization invitation"
+			"footer": "Kaneo workspace invitation"
 		},
 		"pageTitle": "Invitations",
 		"pendingInvitations": "Pending Invitations",
-		"acceptSubtitle": "Accept invitations to join organizations",
+		"acceptSubtitle": "Accept invitations to join workspaces",
 		"noPendingTitle": "No pending invitations",
-		"noPendingDescription": "You don't have any pending organization invitations at the moment.",
+		"noPendingDescription": "You don't have any pending workspace invitations at the moment.",
 		"continueToSetup": "Continue to Setup",
 		"skipForNow": "Skip for now",
 		"table": {
-			"organization": "Organization",
+			"workspace": "Workspace",
 			"invitedBy": "Invited By",
 			"expires": "Expires"
 		},
@@ -2233,46 +1939,19 @@
 			"rejectSuccess": "Invitation rejected"
 		}
 	},
-	"organization": {
-		"boards": {
-			"properties": {
-				"title": "Board properties",
-				"open": "Board properties",
-				"close": "Close properties panel",
-				"name": "Name",
-				"description": "Description",
-				"members": "Members",
-				"noMembers": "No members yet",
-				"save": "Save changes",
-				"saved": "Board updated",
-				"saveFailed": "Failed to update board"
-			},
-			"view": {
-				"table": "Table",
-				"timeline": "Timeline"
-			},
-			"timeline": {
-				"boardColumn": "Board",
-				"barLabel": "{{percent}}% · {{count}} tickets",
-				"emptyTitle": "No scheduled boards",
-				"emptyDescription": "Boards appear here once their tickets have start or due dates.",
-				"zoom": {
-					"week": "Week",
-					"month": "Month",
-					"year": "Year"
-				}
-			},
-			"pageTitle": "Boards",
-			"createBoard": "Create board",
+	"workspace": {
+		"projects": {
+			"pageTitle": "Projects",
+			"createProject": "Create project",
 			"title": "Title",
 			"progress": "Progress",
 			"targetDate": "Target date",
 			"dueDate": "Due date",
 			"status": "Status",
-			"emptyTitle": "No boards yet",
-			"emptyDescription": "Get started by creating your first board.",
-			"emptyDescriptionReadOnly": "There are no boards in this organization yet. Ask an admin to create one.",
-			"boardStatus": {
+			"emptyTitle": "No projects yet",
+			"emptyDescription": "Get started by creating your first project.",
+			"emptyDescriptionReadOnly": "There are no projects in this workspace yet. Ask an admin to create one.",
+			"projectStatus": {
 				"notStarted": "Not started",
 				"complete": "Complete",
 				"inProgress": "In progress"
@@ -2282,15 +1961,15 @@
 		"search": {
 			"pageTitle": "Search",
 			"backToDashboard": "Back to Dashboard",
-			"placeholder": "Search tickets by title or short ID (e.g. DEP-23)...",
-			"hint": "Search across all boards in this organization. Use short IDs like DEP-23 to find specific tickets.",
+			"placeholder": "Search tasks by title or short ID (e.g. DEP-23)...",
+			"hint": "Search across all projects in this workspace. Use short IDs like DEP-23 to find specific tasks.",
 			"searching": "Searching...",
 			"resultsFound_one": "{{count}} result found",
 			"resultsFound_other": "{{count}} results found",
 			"noResultsTitle": "No results found",
 			"noResultsDescription": "Try adjusting your search terms or search for something else",
 			"startTitle": "Start Searching",
-			"startDescription": "Enter a search term to find tickets across all boards",
+			"startDescription": "Enter a search term to find tasks across all projects",
 			"quickSearchesLabel": "Quick searches:",
 			"suggestionHighPriority": "High priority",
 			"suggestionBug": "Bug",
@@ -2299,63 +1978,18 @@
 			"suggestionCompleted": "Completed"
 		},
 		"create": {
-			"pageTitle": "Create Organization",
-			"heading": "Create a new organization",
-			"subtitle": "Organizations are shared environments where teams can work on boards, cycles and issues.",
-			"nameLabel": "Organization Name",
-			"namePlaceholder": "Enter organization name",
+			"pageTitle": "Create Workspace",
+			"heading": "Create a new workspace",
+			"subtitle": "Workspaces are shared environments where teams can work on projects, cycles and issues.",
+			"nameLabel": "Workspace Name",
+			"namePlaceholder": "Enter workspace name",
 			"descriptionLabel": "Description (optional)",
-			"descriptionPlaceholder": "Add a description for your organization",
+			"descriptionPlaceholder": "Add a description for your workspace",
 			"required": "Required",
 			"creating": "Creating...",
-			"submit": "Create organization",
-			"success": "Organization created successfully",
-			"error": "Failed to create organization"
-		},
-		"repos": {
-			"pageTitle": "Repos",
-			"emptyTitle": "No repos yet",
-			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
-			"neverSynced": "Never synced",
-			"backToRepos": "Back to repos",
-			"table": {
-				"name": "Repository",
-				"provider": "Provider",
-				"openIssues": "Open issues",
-				"openPullRequests": "Open pull requests",
-				"lastSynced": "Last synced"
-			},
-			"state": {
-				"open": "Open",
-				"closed": "Closed",
-				"merged": "Merged",
-				"draft": "Draft"
-			},
-			"stateFilter": {
-				"open": "Open",
-				"closed": "Closed",
-				"merged": "Merged",
-				"all": "All"
-			},
-			"issues": {
-				"pageTitle": "Issues",
-				"tab": "Issues",
-				"emptyTitle": "No issues",
-				"emptyDescription": "There are no issues matching this filter."
-			},
-			"pullRequests": {
-				"refreshing": "Refreshing…",
-				"pageTitle": "Pull requests",
-				"tab": "Pull requests",
-				"emptyTitle": "No pull requests",
-				"emptyDescription": "There are no pull requests matching this filter."
-			},
-			"add": {
-				"button": "Connect repo",
-				"title": "Connect repository",
-				"description": "Add an organization-level repository. Its issues and pull requests remain separate from Boards and tickets.",
-				"submit": "Connect and sync"
-			}
+			"submit": "Create workspace",
+			"success": "Workspace created successfully",
+			"error": "Failed to create workspace"
 		}
 	},
 	"team": {
@@ -2368,31 +2002,15 @@
 		"members": {
 			"pageTitle": "Members",
 			"inviteMember": "Invite member",
-			"you": "You",
-			"people": "People",
-			"agents": "Agents",
-			"agentsManagedByAdmins": "Organization agents are managed by owners and administrators.",
-			"agentsCredentialsHint": "Issue and revoke access keys"
-		},
-		"agentManager": {
-			"title": "Organization AI agents",
-			"alphaBadge": "Alpha",
-			"description": "Non-interactive identities. New agents receive board read and ticket read/create/update access only.",
-			"nameLabel": "Agent name",
-			"namePlaceholder": "e.g. Release bot",
-			"create": "Create agent",
-			"expiryHint": "Keys expire automatically after {{days}} days. Revoke one at any time.",
-			"secretWarning": "Copy this secret now. It will not be shown again.",
-			"copy": "Copy",
-			"agentBadge": "Agent",
-			"agentMeta": "Expires {{date}} · ticket read/create/update · board read",
-			"revoke": "Revoke agent",
-			"createError": "Could not create agent",
-			"deleteError": "Could not delete agent"
+			"you": "You"
 		},
 		"invitations": {
 			"pendingBadge": "pending",
-			"expires": "Expires {{date}}"
+			"expires": "Expires {{date}}",
+			"linkLabel": "Invitation link",
+			"copyLink": "Copy link",
+			"linkCopied": "Invitation link copied",
+			"copyFailed": "Couldn't copy automatically. Select the link and press Ctrl+C."
 		},
 		"inviteModal": {
 			"title": "Invite Team Member",
@@ -2401,15 +2019,9 @@
 			"sendInvitation": "Send Invitation",
 			"success": "Invitation sent successfully",
 			"error": "Failed to invite team member",
-			"emailsLabel": "Emails",
-			"emailsPlaceholder": "alice@company.com\nbob@company.com",
-			"emailsHint": "Add several at once — separate with commas, semicolons or new lines.",
-			"invalidEmails": "Not valid email addresses: {{emails}}",
-			"emailRequired": "Enter at least one email address.",
-			"successCount": "{{count}} invitation sent",
-			"successCount_plural": "{{count}} invitations sent",
-			"failedCount": "{{count}} invitation could not be sent",
-			"failedCount_plural": "{{count}} invitations could not be sent"
+			"createdTitle": "Invitation created",
+			"shareLinkDescription": "Share this link with {{email}} so they can join the workspace.",
+			"done": "Done"
 		},
 		"membersTable": {
 			"emptyTitle": "No team members yet",
@@ -2422,9 +2034,10 @@
 			},
 			"memberRolePending": "{{role}} (Pending)",
 			"ariaCancelInvitation": "Cancel invitation",
+			"ariaInvitationActions": "Invitation actions",
 			"ariaRemoveMember": "Remove member",
 			"removeDialogTitle": "Remove Team Member?",
-			"removeDialogDescription": "Are you sure you want to remove {{name}} from the organization? This action cannot be undone.",
+			"removeDialogDescription": "Are you sure you want to remove {{name}} from the workspace? This action cannot be undone.",
 			"cancelDialogTitle": "Cancel Invitation?",
 			"cancelDialogDescription": "Are you sure you want to cancel the invitation for {{email}}? This action cannot be undone.",
 			"removeMember": "Remove Member",
@@ -2437,16 +2050,16 @@
 			"roleUpdateError": "Failed to update role"
 		}
 	},
-	"publicBoard": {
+	"publicProject": {
 		"pageTitle": "Public View",
 		"badge": "Public",
 		"readOnly": "Read-only",
 		"error": {
-			"title": "Board Not Found",
-			"description": "This board doesn't exist or is not publicly accessible."
+			"title": "Project Not Found",
+			"description": "This project doesn't exist or is not publicly accessible."
 		},
 		"taskCard": {
-			"viewDetailsAria": "View details for ticket {{title}}"
+			"viewDetailsAria": "View details for task {{title}}"
 		},
 		"taskDetail": {
 			"labels": "Labels",
@@ -2472,86 +2085,6 @@
 		},
 		"branding": {
 			"poweredBy": "Powered by"
-		}
-	},
-	"myTasks": {
-		"title": "My Tickets",
-		"loading": "Loading your tickets…",
-		"empty": "Nothing assigned to you right now.",
-		"count": "{{count}} tickets",
-		"includeCompleted": "Include completed",
-		"relation": {
-			"all": "All",
-			"assigned": "Assigned",
-			"created": "Created",
-			"team": "Team"
-		},
-		"flaggedCount": "{{count}} flagged ticket",
-		"flaggedCount_other": "{{count}} flagged tickets",
-		"flagged": "Flagged"
-	},
-	"flags": {
-		"title": "Flags",
-		"actions": {
-			"flag": "Flag"
-		},
-		"badge": {
-			"targeted": "Flagged to {{target}}"
-		},
-		"dialog": {
-			"title": "Flag this ticket",
-			"type": "Flag type",
-			"selectType": "Select a flag type",
-			"targetUser": "Flag to user",
-			"noUser": "No user",
-			"targetTeam": "Flag to team",
-			"noTeam": "No team",
-			"note": "Note",
-			"submit": "Raise flag",
-			"unflag": "Unflag",
-			"activeTitle": "Active flags",
-			"noneActive": "No active flags on this ticket.",
-			"historyTitle": "Flag history",
-			"raisedBy": "Raised by {{who}} for {{target}}",
-			"resolvedBy": "Unflagged by {{who}}",
-			"errors": {
-				"noType": "Pick a flag type.",
-				"bothTargets": "Pick either a user or a team, not both.",
-				"noTarget": "Pick a user or a team to flag this to."
-			},
-			"resolveNote": "Notes",
-			"unflagFailed": "Could not unflag",
-			"unflagInActivity": "Unflag in activity"
-		}
-	},
-	"inbox": {
-		"title": "Inbox",
-		"loading": "Loading your inbox…",
-		"empty": "No updates yet.",
-		"count": "{{count}} updates",
-		"markAsRead": "Mark as read",
-		"unreadCount_one": "{{count}} unread",
-		"unreadCount_other": "{{count}} unread",
-		"flaggedCount_one": "{{count}} flagged",
-		"flaggedCount_other": "{{count}} flagged",
-		"unflagAction": "Unflag"
-	},
-	"trash": {
-		"title": "Recycle Bin",
-		"loading": "Loading deleted tickets…",
-		"empty": "The recycle bin is empty.",
-		"count": "{{count}} deleted tickets",
-		"restore": "Restore",
-		"deletePermanently": "Delete permanently",
-		"deletedMeta": "Deleted {{when}} by {{who}}",
-		"unknownBoard": "Unknown board",
-		"unknownUser": "an unknown user",
-		"unknownWhen": "at an unknown time",
-		"confirmDelete": {
-			"title": "Delete this ticket permanently?",
-			"description": "\"{{title}}\" and its attachments will be removed for good. You can't undo this action.",
-			"cancel": "Cancel",
-			"confirm": "Delete permanently"
 		}
 	}
 }
