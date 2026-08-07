@@ -1,9 +1,9 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db from "../database";
-import { boardTable, taskTable } from "../database/schema";
+import { boardTable, notificationTable, taskTable } from "../database/schema";
 import { subscribeToEvent } from "../events";
 import { notificationSchema } from "../schemas";
 import clearNotifications from "./controllers/clear-notifications";
@@ -226,6 +226,38 @@ const notification = new Hono<{
       const userId = c.get("userId");
       const result = await clearNotifications(userId);
       return c.json(result);
+    },
+  )
+  .delete(
+    "/:id",
+    describeRoute({
+      operationId: "deleteNotification",
+      tags: ["Notifications"],
+      description: "Delete a single notification for the current user",
+      responses: {
+        200: {
+          description: "Notification deleted",
+          content: {
+            "application/json": {
+              schema: v.object({ success: v.boolean() }),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    async (c) => {
+      const userId = c.get("userId");
+      const { id } = c.req.valid("param");
+      await db
+        .delete(notificationTable)
+        .where(
+          and(
+            eq(notificationTable.id, id),
+            eq(notificationTable.userId, userId),
+          ),
+        );
+      return c.json({ success: true });
     },
   );
 

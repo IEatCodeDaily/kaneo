@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, X } from "lucide-react";
 import { forwardRef, useCallback, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
 import useClearNotifications from "@/hooks/mutations/notification/use-clear-notifications";
+import useDeleteNotification from "@/hooks/mutations/notification/use-delete-notification";
 import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
@@ -298,6 +299,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
 
     const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
     const { mutate: clearAll } = useClearNotifications();
+    const { mutate: deleteNotifications } = useDeleteNotification();
     const { mutate: markAsRead } = useMarkNotificationAsRead();
 
     const handleNotificationClick = useCallback(
@@ -416,13 +418,31 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                   notificationGroups.flatMap((group) => {
                     const isTaskGroup = group.key.startsWith("task:");
                     const isExpanded = expandedGroups.has(group.key);
+                    const clearButton = (
+                      notificationIds: string[],
+                      label: string,
+                    ) => (
+                      <button
+                        type="button"
+                        aria-label={label}
+                        title={label}
+                        className="ml-1 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          deleteNotifications(notificationIds);
+                        }}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    );
                     const rows = group.notifications.map((notification) => {
                       const content = getNotificationContent(notification, t);
                       return (
                         <DropdownMenuItem
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
-                          className="cursor-pointer items-start rounded-md px-2.5 py-2"
+                          className="group cursor-pointer items-start rounded-md px-2.5 py-2"
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
@@ -441,6 +461,12 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                               </span>
                               {!notification.isRead && (
                                 <span className="size-1.5 shrink-0 rounded-full bg-info" />
+                              )}
+                              {clearButton(
+                                [notification.id],
+                                t("common:actions.clear", {
+                                  defaultValue: "Clear notification",
+                                }),
                               )}
                             </div>
                             {content && (
@@ -461,45 +487,58 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                     });
                     if (!isTaskGroup) return rows;
                     const header = (
-                      <button
+                      <div
                         key={`${group.key}:header`}
-                        type="button"
-                        aria-expanded={isExpanded}
-                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-accent"
-                        onClick={() =>
-                          setExpandedGroups((current) => {
-                            const next = new Set(current);
-                            if (next.has(group.key)) next.delete(group.key);
-                            else next.add(group.key);
-                            return next;
-                          })
-                        }
+                        className="group flex w-full items-center rounded-md hover:bg-accent"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate font-medium text-sm">
-                              {group.taskNumber
-                                ? `#${group.taskNumber} · `
-                                : ""}
-                              {group.taskTitle ??
-                                getNotificationTitle(group.notifications[0], t)}
-                            </span>
-                            <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
-                              {formatRelativeTime(group.latestCreatedAt)}
-                            </span>
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left"
+                          onClick={() =>
+                            setExpandedGroups((current) => {
+                              const next = new Set(current);
+                              if (next.has(group.key)) next.delete(group.key);
+                              else next.add(group.key);
+                              return next;
+                            })
+                          }
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium text-sm">
+                                {group.taskNumber
+                                  ? `#${group.taskNumber} · `
+                                  : ""}
+                                {group.taskTitle ??
+                                  getNotificationTitle(
+                                    group.notifications[0],
+                                    t,
+                                  )}
+                              </span>
+                              <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
+                                {formatRelativeTime(group.latestCreatedAt)}
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                              {group.notifications.length} events ·{" "}
+                              {group.unreadCount} unread
+                            </p>
                           </div>
-                          <p className="text-muted-foreground text-xs">
-                            {group.notifications.length} events ·{" "}
-                            {group.unreadCount} unread
-                          </p>
-                        </div>
-                        <ChevronDown
-                          className={cn(
-                            "size-4 transition-transform",
-                            isExpanded && "rotate-180",
-                          )}
-                        />
-                      </button>
+                          <ChevronDown
+                            className={cn(
+                              "size-4 transition-transform",
+                              isExpanded && "rotate-180",
+                            )}
+                          />
+                        </button>
+                        {clearButton(
+                          group.notifications.map(({ id }) => id),
+                          t("notifications:clearGroup", {
+                            defaultValue: "Clear notification group",
+                          }),
+                        )}
+                      </div>
                     );
                     return isExpanded ? [header, ...rows] : [header];
                   })
