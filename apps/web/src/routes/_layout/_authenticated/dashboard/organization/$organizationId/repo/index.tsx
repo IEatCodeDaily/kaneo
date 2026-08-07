@@ -8,6 +8,7 @@ import {
   GitPullRequest,
   Plus,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,15 @@ import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -33,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import useDeleteRepo from "@/hooks/mutations/repo/use-delete-repo";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { formatDateMedium } from "@/lib/format";
 import { toast } from "@/lib/toast";
@@ -73,6 +84,25 @@ function RouteComponent() {
         error instanceof Error ? error.message : "Could not resync repo",
       ),
   });
+
+  const deleteRepo = useDeleteRepo();
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteRepo.mutateAsync(deleteTarget.id);
+      toast.success(`Removed ${deleteTarget.name}`);
+      setDeleteTarget(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not remove repo",
+      );
+    }
+  };
   const { hiddenRepoIds, setRepoSidebarVisibility } = useUserPreferencesStore();
   const headerActions = (
     <Button variant="outline" size="xs" onClick={() => setAddOpen(true)}>
@@ -283,6 +313,21 @@ function RouteComponent() {
                           <EyeOff className="size-4" />
                         )}
                       </Button>
+                      <Button
+                        aria-label={`Remove ${repo.owner}/${repo.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleteTarget({
+                            id: repo.id,
+                            name: `${repo.owner}/${repo.name}`,
+                          });
+                        }}
+                        size="icon"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
                   </div>
                 </TableCell>
@@ -295,6 +340,41 @@ function RouteComponent() {
           open={addOpen}
           organizationId={organizationId}
         />
+        <AlertDialog
+          open={Boolean(deleteTarget)}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove repository</AlertDialogTitle>
+              <AlertDialogDescription>
+                Remove {deleteTarget?.name} from this organization? This deletes
+                the mirror and all synced issues and pull requests. The
+                repository itself on the provider is not affected and can be
+                reconnected later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose asChild>
+                <Button variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </AlertDialogClose>
+              <AlertDialogClose asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={deleteRepo.isPending}
+                  onClick={handleDelete}
+                >
+                  {deleteRepo.isPending ? "Removing…" : "Remove"}
+                </Button>
+              </AlertDialogClose>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </OrganizationLayout>
     </>
   );
