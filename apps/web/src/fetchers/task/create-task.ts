@@ -15,21 +15,25 @@ async function createTask(
   startDate: Date | undefined,
   dueDate: Date | undefined,
   priority: string,
+  teamId?: string,
 ) {
   if (!boardId) {
     throw new Error("No board selected for task creation");
   }
 
+  const json: Record<string, unknown> = {
+    title,
+    description,
+    userId,
+    status,
+    startDate: startDate?.toISOString() || undefined,
+    dueDate: dueDate?.toISOString() || undefined,
+    priority,
+  };
+  if (teamId) json.teamId = teamId;
+
   const response = await client.task[":boardId"].$post({
-    json: {
-      title,
-      description,
-      userId,
-      status,
-      startDate: startDate?.toISOString() || undefined,
-      dueDate: dueDate?.toISOString() || undefined,
-      priority,
-    },
+    json: json as CreateTaskRequest extends { json: infer J } ? J : never,
     param: { boardId },
   });
 
@@ -39,7 +43,6 @@ async function createTask(
   }
 
   const data = await response.json();
-
   return data;
 }
 

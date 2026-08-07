@@ -1,4 +1,5 @@
 import { useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { produce } from "immer";
 import {
   CalendarIcon,
@@ -7,6 +8,7 @@ import {
   Search,
   Tag,
   UserIcon,
+  Users,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -47,6 +49,7 @@ import {
 } from "@/components/ui/popover";
 import { resolveLabelColor } from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
+import { authClient } from "@/lib/auth-client";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
@@ -307,6 +310,18 @@ function CreateTaskModal({
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     organization?.id || "",
   );
+  const { data: organizationTeams } = useQuery({
+    queryKey: ["organization-teams", organization?.id, "create-task"],
+    enabled: Boolean(organization?.id),
+    queryFn: async () => {
+      const result = await authClient.organization.listTeams({
+        query: { organizationId: organization!.id },
+      });
+      if (result.error)
+        throw new Error(result.error.message || "Failed to load teams");
+      return result.data ?? [];
+    },
+  });
   const { mutateAsync: createLabel } = useCreateLabel();
   const { data: organizationLabels = [] } = useGetLabelsByOrganization(
     organization?.id || "",
@@ -321,6 +336,7 @@ function CreateTaskModal({
   const descriptionRef = useRef("");
   const [priority, setPriority] = useState<Priority>("no-priority");
   const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeTeamId, setAssigneeTeamId] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [createMore, setCreateMore] = useState(false);
@@ -560,6 +576,7 @@ function CreateTaskModal({
       title: title.trim() || t("common:modals.createTask.untitledTask"),
       description: formatTaskMarkdown(description),
       userId: assigneeId,
+      teamId: assigneeTeamId,
       priority,
       boardId: resolvedBoardId,
       startDate: startDate ? startDate.toISOString() : undefined,
@@ -611,6 +628,7 @@ function CreateTaskModal({
               title: title.trim(),
               description: formatTaskMarkdown(description),
               userId: assigneeId || null,
+              teamId: assigneeTeamId || null,
               status: taskStatus,
               priority,
               startDate: startDate ? startDate.toISOString() : null,
@@ -623,6 +641,7 @@ function CreateTaskModal({
               title: title.trim(),
               description: formatTaskMarkdown(description),
               userId: assigneeId,
+              teamId: assigneeTeamId,
               priority,
               boardId: resolvedBoardId,
               startDate: startDate ? startDate.toISOString() : undefined,
@@ -769,6 +788,7 @@ function CreateTaskModal({
   const selectedUser = organizationMembers?.members?.find(
     (u) => u.userId === assigneeId,
   );
+  const selectedTeam = organizationTeams?.find((t) => t.id === assigneeTeamId);
 
   // #72: the option set the inline title picker shows for the active sigil.
   const titleTokenOptions = useMemo<TitleTokenOption[]>(() => {
@@ -1384,7 +1404,7 @@ function CreateTaskModal({
                       type="button"
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                        selectedUser
+                        selectedUser || selectedTeam
                           ? "bg-accent/30 text-foreground"
                           : "text-muted-foreground",
                       )}
@@ -1410,6 +1430,13 @@ function CreateTaskModal({
                           </Avatar>
                           <span>{selectedUser.user?.name}</span>
                         </>
+                      ) : selectedTeam ? (
+                        <>
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-muted">
+                            <Users className="h-2.5 w-2.5" />
+                          </div>
+                          <span>{selectedTeam.name}</span>
+                        </>
                       ) : (
                         <>
                           <UserIcon className="w-3.5 h-3.5" />
@@ -1423,7 +1450,10 @@ function CreateTaskModal({
                       <button
                         type="button"
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                        onClick={() => setAssigneeId("")}
+                        onClick={() => {
+                          setAssigneeId("");
+                          setAssigneeTeamId("");
+                        }}
                       >
                         <div
                           className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
@@ -1445,7 +1475,10 @@ function CreateTaskModal({
                           key={member.userId}
                           type="button"
                           className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                          onClick={() => setAssigneeId(member.userId || "")}
+                          onClick={() => {
+                            setAssigneeId(member.userId || "");
+                            setAssigneeTeamId("");
+                          }}
                         >
                           <Avatar
                             className={cn(
@@ -1463,6 +1496,25 @@ function CreateTaskModal({
                           </Avatar>
                           <span className="text-sm">{member?.user?.name}</span>
                           {assigneeId === member.userId && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
+                        </button>
+                      ))}
+                      {organizationTeams?.map((team) => (
+                        <button
+                          key={team.id}
+                          type="button"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                          onClick={() => {
+                            setAssigneeTeamId(team.id);
+                            setAssigneeId("");
+                          }}
+                        >
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-muted">
+                            <Users className="h-3 w-3" />
+                          </div>
+                          <span className="text-sm">{team.name}</span>
+                          {assigneeTeamId === team.id && (
                             <Check className="ml-auto h-4 w-4" />
                           )}
                         </button>
