@@ -573,7 +573,7 @@ function RouteComponent() {
                 }
                 onDone={() =>
                   queryClient.invalidateQueries({
-                    queryKey: ["boards", organization?.id, board?.id],
+                    queryKey: ["tasks", board?.id],
                   })
                 }
               />

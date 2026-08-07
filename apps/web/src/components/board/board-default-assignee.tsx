@@ -1,12 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
-import { useState } from "react";
-import {
-  type PrincipalOption,
-  PrincipalSelector,
-} from "@/components/principal-selector";
+import { Users } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import PrincipalPickerList, {
+  type PrincipalPickerOption,
+} from "@/components/principal-picker-list";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
+import { getAvatarTone } from "@/lib/avatar-tone";
+import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 
 type Board = {
@@ -32,25 +41,13 @@ export function BoardDefaultAssignee({
   onUpdate,
   onDone,
 }: Props) {
+  const [open, setOpen] = useState(false);
   const organizationId = board?.organizationId ?? "";
-  const [busy, setBusy] = useState(false);
-
-  const members = useQuery({
-    queryKey: ["organization-members", organizationId, "default-assignee"],
-    enabled: Boolean(organizationId),
-    queryFn: async () => {
-      const result = await authClient.organization.listMembers({
-        query: { organizationId },
-      });
-      if (result.error)
-        throw new Error(result.error.message || "Failed to load members");
-      return result.data.members;
-    },
-  });
-
+  const { data: organizationMembers } =
+    useGetActiveOrganizationMembers(organizationId);
   const teams = useQuery({
     queryKey: ["organization-teams", organizationId, "default-assignee"],
-    enabled: Boolean(organizationId),
+    enabled: open && Boolean(organizationId),
     queryFn: async () => {
       const result = await authClient.organization.listTeams({
         query: { organizationId },
@@ -61,86 +58,115 @@ export function BoardDefaultAssignee({
     },
   });
 
-  const options: PrincipalOption[] = [
-    ...(members.data ?? []).map(
-      (m: { userId: string; user: { name: string; email: string } }) => ({
-        id: m.userId,
-        kind: "member" as const,
-        name: m.user.name,
-        detail: m.user.email,
-      }),
-    ),
-    ...(teams.data ?? []).map((t: { id: string; name: string }) => ({
-      id: t.id,
-      kind: "team" as const,
-      name: t.name,
-      detail: "Team",
-    })),
-  ];
+  const options = useMemo<PrincipalPickerOption[]>(() => {
+    const users =
+      organizationMembers?.members?.map((member) => ({
+        type: "user" as const,
+        value: member.userId,
+        label: member.user?.name ?? member.userId,
+        image: member.user?.image ?? undefined,
+      })) ?? [];
+    const teamOptions = (teams.data ?? []).map((team) => ({
+      type: "team" as const,
+      value: team.id,
+      label: team.name,
+    }));
+    return [...users, ...teamOptions];
+  }, [organizationMembers, teams.data]);
 
-  const selectedId = board?.defaultAssigneeId ?? board?.defaultAssigneeTeamId;
-  const selected = options.find((o) => o.id === selectedId) ?? null;
+  const selectedMember = organizationMembers?.members?.find(
+    (m) => m.userId === board?.defaultAssigneeId,
+  );
+  const selectedTeam = teams.data?.find(
+    (t) => t.id === board?.defaultAssigneeTeamId,
+  );
 
-  const handleChange = async (selection: PrincipalOption[]) => {
-    if (!board) return;
-    const pick = selection[0];
-    setBusy(true);
-    try {
-      if (!pick) {
+  const assign = useCallback(
+    async (option?: PrincipalPickerOption) => {
+      try {
         await onUpdate({
-          defaultAssigneeId: null,
-          defaultAssigneeTeamId: null,
+          defaultAssigneeId: option?.type === "user" ? option.value : null,
+          defaultAssigneeTeamId: option?.type === "team" ? option.value : null,
         });
-      } else if (pick.kind === "member") {
-        await onUpdate({
-          defaultAssigneeId: pick.id,
-          defaultAssigneeTeamId: null,
-        });
-      } else {
-        await onUpdate({
-          defaultAssigneeId: null,
-          defaultAssigneeTeamId: pick.id,
-        });
+        await onDone();
+        setOpen(false);
+        toast.success(
+          option ? "Default assignee set" : "Default assignee cleared",
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not update default assignee",
+        );
       }
-      await onDone();
-      toast.success(pick ? "Default assignee set" : "Default assignee cleared");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not update assignee",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+    [onUpdate, onDone],
+  );
 
   if (!board) return null;
 
+  const isTeam = Boolean(board.defaultAssigneeTeamId);
+  const isUser = Boolean(board.defaultAssigneeId);
+  const label =
+    selectedMember?.user?.name ?? selectedTeam?.name ?? "No default";
+  const tone = getAvatarTone(
+    board.defaultAssigneeId ?? "",
+    selectedMember?.user?.email,
+  );
+
   return (
-    <div className="flex items-center gap-2">
-      <PrincipalSelector
-        aria-label="Default assignee"
-        className="min-w-48 max-w-xs"
-        disabled={!canEdit || busy}
-        emptyMessage="No members or teams."
-        kinds={["member", "team"]}
-        loading={members.isLoading || teams.isLoading}
-        onValueChange={handleChange}
-        options={options}
-        placeholder="No default"
-        searchPlaceholder="Search members or teams…"
-        value={selected ? [selected] : []}
-      />
-      {canEdit && selectedId ? (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          disabled={busy}
-          onClick={() => handleChange([])}
+          size="sm"
+          disabled={!canEdit}
+          className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
         >
-          <X className="size-4" />
-          <span className="sr-only">Clear default assignee</span>
+          {isTeam ? (
+            <div className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted">
+              <Users className="h-2.5 w-2.5" />
+            </div>
+          ) : isUser ? (
+            <Avatar className={`h-[16px] w-[16px] ${tone}`}>
+              <AvatarImage
+                src={selectedMember?.user?.image ?? ""}
+                alt={selectedMember?.user?.name ?? ""}
+              />
+              <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
+                {getInitials(selectedMember?.user?.name)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="w-[16px] h-[16px] rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
+              <span className="text-[8px] font-medium text-muted-foreground">
+                ?
+              </span>
+            </div>
+          )}
+          <span className="text-xs font-semibold truncate max-w-[120px]">
+            {label}
+          </span>
         </Button>
-      ) : null}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-1" align="end">
+        <PrincipalPickerList
+          clearLabel="No default"
+          onSelect={(option) => assign(option)}
+          options={options}
+          selected={
+            isUser
+              ? { type: "user", value: board.defaultAssigneeId! }
+              : isTeam
+                ? { type: "team", value: board.defaultAssigneeTeamId! }
+                : null
+          }
+          searchAriaLabel="Search default assignee"
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
+
+export default BoardDefaultAssignee;
