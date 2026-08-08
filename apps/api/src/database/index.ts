@@ -72,13 +72,8 @@ import {
   teamMemberTable,
   teamTable,
   timeEntryTable,
-<<<<<<< HEAD
   userNotificationOrgBoardTable,
   userNotificationOrgRuleTable,
-=======
-  trialGrantTable,
-  userAvatarTable,
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
   userNotificationPreferenceTable,
   userTable,
   verificationTable,

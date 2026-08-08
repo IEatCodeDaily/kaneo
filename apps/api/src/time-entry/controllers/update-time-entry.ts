@@ -24,19 +24,7 @@ async function updateTimeEntry(params: UpdateTimeEntryParams) {
     });
   }
 
-<<<<<<< HEAD
   // Calculate duration if both startTime and endTime are provided
-=======
-  const effectiveEndTime = endTime ?? existingTimeEntry.endTime;
-
-  if (effectiveEndTime && startTime.getTime() > effectiveEndTime.getTime()) {
-    throw new HTTPException(400, {
-      message:
-        "Start time cannot be after end time. Please adjust the time range.",
-    });
-  }
-
->>>>>>> 99e41ad8 (fix(time-entry): reject a start time later than the end time)
   let duration: number | null = null;
   if (endTime) {
     duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // duration in seconds

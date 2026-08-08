@@ -1,3 +1,4 @@
+import { eq, max } from "drizzle-orm";
 import db from "../../database";
 import { boardTable, columnTable } from "../../database/schema";
 
@@ -22,6 +23,7 @@ async function createBoard(
         name,
         icon,
         slug,
+        position: maxPosition === null ? 0 : maxPosition + 1,
       })
       .returning();
 

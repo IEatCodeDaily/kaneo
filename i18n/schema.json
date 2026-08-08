@@ -11400,6 +11400,12 @@
 						},
 						"noDueDate": {
 							"type": "string"
+						},
+						"reorderHandle": {
+							"type": "string"
+						},
+						"reorderError": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -11414,7 +11420,9 @@
 						"emptyDescription",
 						"emptyDescriptionReadOnly",
 						"projectStatus",
-						"noDueDate"
+						"noDueDate",
+						"reorderHandle",
+						"reorderError"
 					]
 				},
 				"search": {

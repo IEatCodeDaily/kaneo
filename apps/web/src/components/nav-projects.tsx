@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Folder,
   Forward,
+  GripVertical,
   MoreHorizontal,
   Settings,
   Trash2,

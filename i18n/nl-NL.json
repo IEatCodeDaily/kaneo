@@ -1321,97 +1321,6 @@
 		}
 	},
 	"settings": {
-<<<<<<< HEAD
-=======
-		"account": "Account",
-		"developer": "Ontwikkelaar",
-		"information": "Informatie",
-		"preferences": "Voorkeuren",
-		"apiKeys": "API-sleutels",
-		"informationPage": {
-			"pageTitle": "Persoonlijke Informatie",
-			"title": "Persoonlijke Informatie",
-			"subtitle": "Beheer je persoonlijke gegevens en accountinformatie.",
-			"sectionTitle": "Accountinformatie",
-			"sectionSubtitle": "Beheer je profiel- en accountgegevens.",
-			"profilePicture": "Profielfoto",
-			"fullName": "Volledige naam",
-			"fullNamePlaceholder": "Voer je naam in",
-			"email": "E-mail",
-			"emailPlaceholder": "Voer je e-mailadres in",
-			"updateSuccess": "Profiel succesvol bijgewerkt",
-			"updateError": "Bijwerken profiel mislukt",
-			"validation": {
-				"nameRequired": "Naam is verplicht",
-				"nameShort": "Naam moet minimaal 2 tekens bevatten",
-				"invalidEmail": "Ongeldig e-mailadres"
-			},
-			"avatar": {
-				"hint": "PNG, JPEG, or WebP. Cropped to a square and resized to 256x256.",
-				"remove": "Remove",
-				"removeError": "Failed to remove profile picture",
-				"removeSuccess": "Profile picture removed",
-				"updateError": "Failed to update profile picture",
-				"updateSuccess": "Profile picture updated",
-				"change": "Change avatar",
-				"edit": "Change your profile picture"
-			},
-			"deleteAccount": {
-				"confirm": "Delete account",
-				"confirmLabel": "Confirm your email address",
-				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
-				"error": "Failed to delete account",
-				"modalDescription": "This cannot be undone. Type {{email}} to confirm.",
-				"modalTitle": "Delete your account?",
-				"sectionSubtitle": "Permanent actions that affect your whole account.",
-				"sectionTitle": "Danger zone",
-				"success": "Your account has been deleted",
-				"title": "Delete account",
-				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
-			}
-		},
-		"preferencesPage": {
-			"title": "Voorkeuren",
-			"subtitle": "Pas je Kaneo-ervaring aan.",
-			"appearanceTitle": "Uiterlijk",
-			"appearanceSubtitle": "Visuele instellingen en lay-outvoorkeuren.",
-			"theme": "Thema",
-			"themeDescription": "Kies je gewenste kleurenschema",
-			"selectTheme": "Selecteer een thema",
-			"themeLight": "Licht",
-			"themeDark": "Donker",
-			"themeSystem": "Systeem",
-			"language": "Taal",
-			"languageDescription": "Kies je gewenste taal voor de interface",
-			"selectLanguage": "Selecteer een taal",
-			"firstDayOfWeek": "Eerste dag van de week",
-			"firstDayOfWeekDescription": "Kies op welke dag kalenders en weekoverzichten beginnen",
-			"selectFirstDayOfWeek": "Selecteer de eerste dag",
-			"weekStartsOnSunday": "Zondag",
-			"weekStartsOnMonday": "Maandag",
-			"weekStartsOnSaturday": "Zaterdag",
-			"defaultView": "Standaardweergave",
-			"defaultViewDescription": "Kies de weergavemodus voor taken",
-			"selectViewMode": "Selecteer een weergavemodus",
-			"board": "Bord",
-			"list": "Lijst",
-			"gantt": "Gantt",
-			"sidebarDefault": "Zijbalk standaard",
-			"sidebarDefaultDescription": "Houd de zijbalk uitgeklapt bij het opstarten",
-			"displayOptions": "Weergaveopties",
-			"displayOptionsDescription": "Kies welke informatie getoond wordt in taakoverzichten",
-			"taskNumbers": "Taaknummers",
-			"taskNumbersDescription": "Toon taak-ID's en nummers",
-			"assignees": "Toegewezen personen",
-			"assigneesDescription": "Toon wie er aan taken is toegewezen",
-			"dueDates": "Einddatums",
-			"dueDatesDescription": "Toon deadlines van taken",
-			"labels": "Labels",
-			"labelsDescription": "Toon taaklabels en tags",
-			"priority": "Prioriteit",
-			"priorityDescription": "Toon prioriteitsindicatoren"
-		},
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
 		"developerPage": {
 			"title": "Ontwikkelaarsinstellingen",
 			"unnamedKey": "Naamloze sleutel",
@@ -2518,6 +2427,8 @@
 				"inProgress": "In behandeling"
 			},
 			"noDueDate": "Geen einddatum",
+			"reorderHandle": "Project opnieuw ordenen",
+			"reorderError": "Projecten opnieuw ordenen mislukt",
 			"emptyDescriptionReadOnly": "Er zijn nog geen projecten in deze werkruimte. Vraag een beheerder om er een aan te maken."
 		},
 		"search": {

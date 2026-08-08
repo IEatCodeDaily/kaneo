@@ -345,7 +345,6 @@ function RouteComponent() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-<<<<<<< HEAD
               <Avatar
                 className={`h-10 w-10 ${getAvatarTone(user?.id, user?.email)}`}
               >
@@ -354,8 +353,6 @@ function RouteComponent() {
                   {getInitials(user?.name)}
                 </AvatarFallback>
               </Avatar>
-=======
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
             </div>
 
             <Separator />

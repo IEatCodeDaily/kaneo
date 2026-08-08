@@ -72,17 +72,10 @@ import taskTemplate from "./task-template";
 import team from "./team";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
-<<<<<<< HEAD
 import {
   authenticateApiRequest,
   resolveAssetBearerOrCookie,
 } from "./utils/authenticate-api-request";
-=======
-import user from "./user";
-import getAvatar from "./user/controllers/get-avatar";
-import { authenticateApiRequest } from "./utils/authenticate-api-request";
-import { authorizeAssetAccess } from "./utils/authorize-asset-access";
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
 import { getInvitationDetails } from "./utils/check-registration-allowed";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
@@ -722,17 +715,12 @@ export function createApp() {
   const externalLinkApi = api.route("/external-link", externalLink);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
-<<<<<<< HEAD
   const organizationApi = api.route("/organization", organization);
   const agentApi = api.route("/agent", agent);
   const organizationGithubApi = api.route(
     "/organization-github",
     organizationGithub,
   );
-=======
-  const workspaceApi = api.route("/workspace", workspace);
-  const userApi = api.route("/user", user);
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
 
   app.route(
     "/",
@@ -1086,14 +1074,8 @@ export type AppType =
   | typeof externalLinkApi
   | typeof workflowRuleApi
   | typeof invitationApi
-<<<<<<< HEAD
   | typeof organizationApi
   | typeof publicBoardApi
-=======
-  | typeof workspaceApi
-  | typeof userApi
-  | typeof publicProjectApi
->>>>>>> 384eb005 (feat(account): change avatar and delete account)
   | typeof invitationPublicApi
   | typeof oauthApi;
 
