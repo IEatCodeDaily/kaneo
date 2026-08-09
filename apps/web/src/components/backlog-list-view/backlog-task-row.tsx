@@ -8,6 +8,7 @@ import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import TaskAssigneeAvatar from "@/components/task/task-assignee-avatar";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import TaskResourceIndicators from "@/components/task/task-resource-indicators";
+import { TodoProgressBadge } from "@/components/task/todo-progress-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -199,6 +200,7 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
             )}
 
             <TaskResourceIndicators task={task} compact />
+            <TodoProgressBadge description={task.description} />
 
             {showAssignees && (
               <div className="flex-shrink-0">

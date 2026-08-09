@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import TaskAssigneeAvatar from "@/components/task/task-assignee-avatar";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
+import { TodoProgressBadge } from "@/components/task/todo-progress-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -358,6 +359,11 @@ export const TaskRowContent = memo(function TaskRowContent({
                 className="shrink-0"
               />
             )}
+
+            <TodoProgressBadge
+              description={task.description}
+              className="shrink-0"
+            />
 
             {showAssignees && (
               <div className="flex-shrink-0">

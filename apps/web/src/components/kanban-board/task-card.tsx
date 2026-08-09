@@ -13,6 +13,7 @@ import SubtaskOfBadge from "@/components/task/subtask-of-badge";
 import TaskAssigneeAvatar from "@/components/task/task-assignee-avatar";
 import TaskDueDateBadge from "@/components/task/task-due-date-badge";
 import TaskResourceIndicators from "@/components/task/task-resource-indicators";
+import { TodoProgressBadge } from "@/components/task/todo-progress-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -268,6 +269,7 @@ export const TaskCardContent = memo(function TaskCardContent({
 
               <div className="flex items-center gap-1.5">
                 <TaskResourceIndicators task={task} />
+                <TodoProgressBadge description={task.description} />
                 {showPriority && (
                   <span className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground">
                     {getPriorityIcon(task.priority ?? "")}
