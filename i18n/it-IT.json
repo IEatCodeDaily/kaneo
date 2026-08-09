@@ -11,7 +11,8 @@
 			"remove": "Rimuovi",
 			"reset": "Reimposta",
 			"filter": "Filtra",
-			"clearAllFilters": "Cancella tutti i filtri"
+			"clearAllFilters": "Cancella tutti i filtri",
+			"clear": "Clear"
 		},
 		"a11y": {
 			"toggleSidebar": "Attiva/disattiva barra laterale"
@@ -128,6 +129,11 @@
 					"rose": "Rosa",
 					"crimson": "Cremisi"
 				}
+			}
+		},
+		"team": {
+			"members": {
+				"people": "People"
 			}
 		}
 	},
@@ -1221,6 +1227,26 @@
 			"merged": "Unito",
 			"draft": "Bozza",
 			"open": "Aperto"
+		},
+		"organizationGeneral": {
+			"transferOwnership": {
+				"button": "Transfer ownership",
+				"confirm": "Transfer",
+				"dialogDescription": "Choose a member to become the organization owner.",
+				"dialogTitle": "Transfer organization ownership",
+				"noEligibleMembers": "No eligible members",
+				"pickerHint": "The selected member will become the organization owner.",
+				"pickerLabel": "New owner",
+				"pickerPlaceholder": "Select a member",
+				"subtitle": "Transfer this organization to another member.",
+				"title": "Transfer ownership",
+				"toastError": "Failed to transfer ownership",
+				"toastSuccess": "Ownership transferred",
+				"transferring": "Transferring…"
+			}
+		},
+		"organizationRoles": {
+			"permissionCount": "{{count}} permissions"
 		}
 	},
 	"navigation": {
@@ -1339,6 +1365,10 @@
 				"openTask": "Apri attività selezionata",
 				"quickSelectNumber": "Seleziona opzione per numero"
 			}
+		},
+		"tables": {
+			"field": "Field",
+			"row": "Row"
 		}
 	},
 	"notifications": {
@@ -1359,7 +1389,10 @@
 			"hours_one": "{{count}} ora",
 			"hours_other": "{{count}} ore",
 			"days_one": "{{count}} giorno",
-			"days_other": "{{count}} giorni"
+			"days_other": "{{count}} giorni",
+			"days": "days",
+			"hours": "hours",
+			"minutes": "minutes"
 		},
 		"events": {
 			"task_created": {
@@ -1399,7 +1432,8 @@
 				"contentWithTask": "Tracciamento tempo iniziato sull'attività: {{taskTitle}}",
 				"contentWithoutTask": "Tracciamento tempo iniziato su un'attività"
 			}
-		}
+		},
+		"clearGroup": "Clear group"
 	},
 	"activity": {
 		"assignedToSelf": "ha assegnato l'attività a sé stesso",
@@ -1507,7 +1541,8 @@
 					"deleteRow": "Elimina riga",
 					"deleteTable": "Elimina tabella"
 				}
-			}
+			},
+			"editHistory": "Edit history"
 		}
 	},
 	"tasks": {
@@ -1814,7 +1849,8 @@
 			"updateDatesError": "Aggiornamento date attività fallito",
 			"resizeStart": "Ridimensiona data inizio",
 			"resizeDue": "Ridimensiona data scadenza",
-			"taskAriaLabel": "{{title}}: apri o trascina per spostare"
+			"taskAriaLabel": "{{title}}: apri o trascina per spostare",
+			"today": "Today"
 		},
 		"delete": {
 			"title": "Eliminare l'Attività?",
@@ -1840,7 +1876,8 @@
 			"open": "Aperto",
 			"label": "Pull Request",
 			"count_one": "{{count}} PR",
-			"count_other": "{{count}} PR"
+			"count_other": "{{count}} PR",
+			"count": "{{count}} pull requests"
 		},
 		"assignee": {
 			"label": "Assegnatario",
@@ -2091,6 +2128,20 @@
 		},
 		"branding": {
 			"poweredBy": "Offerto da"
+		}
+	},
+	"inbox": {
+		"flaggedCount": "{{count}} flagged",
+		"unreadCount": "{{count}} unread"
+	},
+	"organization": {
+		"boards": {
+			"timeline": {
+				"milestoneDue": "Milestone due"
+			}
+		},
+		"search": {
+			"resultsFound": "{{count}} results found"
 		}
 	}
 }

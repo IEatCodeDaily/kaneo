@@ -11,7 +11,8 @@
 			"remove": "移除",
 			"reset": "重置",
 			"filter": "筛选",
-			"clearAllFilters": "清除全部筛选"
+			"clearAllFilters": "清除全部筛选",
+			"clear": "Clear"
 		},
 		"a11y": {
 			"toggleSidebar": "切换侧边栏"
@@ -128,6 +129,11 @@
 					"rose": "玫红",
 					"crimson": "深红"
 				}
+			}
+		},
+		"team": {
+			"members": {
+				"people": "People"
 			}
 		}
 	},
@@ -1221,6 +1227,26 @@
 			"merged": "已合并",
 			"draft": "草稿",
 			"open": "打开"
+		},
+		"organizationGeneral": {
+			"transferOwnership": {
+				"button": "Transfer ownership",
+				"confirm": "Transfer",
+				"dialogDescription": "Choose a member to become the organization owner.",
+				"dialogTitle": "Transfer organization ownership",
+				"noEligibleMembers": "No eligible members",
+				"pickerHint": "The selected member will become the organization owner.",
+				"pickerLabel": "New owner",
+				"pickerPlaceholder": "Select a member",
+				"subtitle": "Transfer this organization to another member.",
+				"title": "Transfer ownership",
+				"toastError": "Failed to transfer ownership",
+				"toastSuccess": "Ownership transferred",
+				"transferring": "Transferring…"
+			}
+		},
+		"organizationRoles": {
+			"permissionCount": "{{count}} permissions"
 		}
 	},
 	"navigation": {
@@ -1339,6 +1365,10 @@
 				"openTask": "打开所选任务",
 				"quickSelectNumber": "按数字选择选项"
 			}
+		},
+		"tables": {
+			"field": "Field",
+			"row": "Row"
 		}
 	},
 	"notifications": {
@@ -1359,7 +1389,10 @@
 			"hours_one": "{{count}} 小时",
 			"hours_other": "{{count}} 小时",
 			"days_one": "{{count}} 天",
-			"days_other": "{{count}} 天"
+			"days_other": "{{count}} 天",
+			"days": "days",
+			"hours": "hours",
+			"minutes": "minutes"
 		},
 		"events": {
 			"task_created": {
@@ -1399,7 +1432,8 @@
 				"contentWithTask": "已开始为任务 {{taskTitle}} 计时",
 				"contentWithoutTask": "已开始为某个任务计时"
 			}
-		}
+		},
+		"clearGroup": "Clear group"
 	},
 	"activity": {
 		"assignedToSelf": "将任务指派给了自己",
@@ -1507,7 +1541,8 @@
 					"deleteRow": "删除行",
 					"deleteTable": "删除表格"
 				}
-			}
+			},
+			"editHistory": "Edit history"
 		}
 	},
 	"tasks": {
@@ -1814,7 +1849,8 @@
 			"updateDatesError": "更新任务日期失败",
 			"resizeStart": "调整开始日期",
 			"resizeDue": "调整截止日期",
-			"taskAriaLabel": "{{title}}：打开或拖动以移动"
+			"taskAriaLabel": "{{title}}：打开或拖动以移动",
+			"today": "Today"
 		},
 		"delete": {
 			"title": "删除任务？",
@@ -1840,7 +1876,8 @@
 			"open": "打开",
 			"label": "Pull Request",
 			"count_one": "{{count}} 个 PR",
-			"count_other": "{{count}} 个 PR"
+			"count_other": "{{count}} 个 PR",
+			"count": "{{count}} pull requests"
 		},
 		"assignee": {
 			"label": "负责人",
@@ -2091,6 +2128,20 @@
 		},
 		"branding": {
 			"poweredBy": "由以下技术提供支持"
+		}
+	},
+	"inbox": {
+		"flaggedCount": "{{count}} flagged",
+		"unreadCount": "{{count}} unread"
+	},
+	"organization": {
+		"boards": {
+			"timeline": {
+				"milestoneDue": "Milestone due"
+			}
+		},
+		"search": {
+			"resultsFound": "{{count}} results found"
 		}
 	}
 }

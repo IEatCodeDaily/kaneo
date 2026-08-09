@@ -11,7 +11,8 @@
 			"remove": "Gỡ bỏ",
 			"reset": "Đặt lại",
 			"filter": "Lọc",
-			"clearAllFilters": "Xóa tất cả bộ lọc"
+			"clearAllFilters": "Xóa tất cả bộ lọc",
+			"clear": "Clear"
 		},
 		"a11y": {
 			"toggleSidebar": "Bật/tắt thanh bên"
@@ -128,6 +129,11 @@
 					"rose": "Hồng",
 					"crimson": "Đỏ thẫm"
 				}
+			}
+		},
+		"team": {
+			"members": {
+				"people": "People"
 			}
 		}
 	},
@@ -1221,6 +1227,26 @@
 			"merged": "Đã gộp",
 			"draft": "Bản nháp",
 			"open": "Đang mở"
+		},
+		"organizationGeneral": {
+			"transferOwnership": {
+				"button": "Transfer ownership",
+				"confirm": "Transfer",
+				"dialogDescription": "Choose a member to become the organization owner.",
+				"dialogTitle": "Transfer organization ownership",
+				"noEligibleMembers": "No eligible members",
+				"pickerHint": "The selected member will become the organization owner.",
+				"pickerLabel": "New owner",
+				"pickerPlaceholder": "Select a member",
+				"subtitle": "Transfer this organization to another member.",
+				"title": "Transfer ownership",
+				"toastError": "Failed to transfer ownership",
+				"toastSuccess": "Ownership transferred",
+				"transferring": "Transferring…"
+			}
+		},
+		"organizationRoles": {
+			"permissionCount": "{{count}} permissions"
 		}
 	},
 	"navigation": {
@@ -1339,6 +1365,10 @@
 				"openTask": "Mở công việc đã chọn",
 				"quickSelectNumber": "Chọn tùy chọn theo số"
 			}
+		},
+		"tables": {
+			"field": "Field",
+			"row": "Row"
 		}
 	},
 	"notifications": {
@@ -1359,7 +1389,10 @@
 			"hours_one": "{{count}} giờ",
 			"hours_other": "{{count}} giờ",
 			"days_one": "{{count}} ngày",
-			"days_other": "{{count}} ngày"
+			"days_other": "{{count}} ngày",
+			"days": "days",
+			"hours": "hours",
+			"minutes": "minutes"
 		},
 		"events": {
 			"task_created": {
@@ -1399,7 +1432,8 @@
 				"contentWithTask": "Đã bắt đầu theo dõi thời gian trên công việc: {{taskTitle}}",
 				"contentWithoutTask": "Đã bắt đầu theo dõi thời gian trên một công việc"
 			}
-		}
+		},
+		"clearGroup": "Clear group"
 	},
 	"activity": {
 		"assignedToSelf": "đã tự giao công việc này cho mình",
@@ -1507,7 +1541,8 @@
 					"deleteRow": "Xóa hàng",
 					"deleteTable": "Xóa bảng"
 				}
-			}
+			},
+			"editHistory": "Edit history"
 		}
 	},
 	"tasks": {
@@ -1814,7 +1849,8 @@
 			"updateDatesError": "Không thể cập nhật ngày của công việc",
 			"resizeStart": "Thay đổi kích thước ngày bắt đầu",
 			"resizeDue": "Thay đổi kích thước ngày đến hạn",
-			"taskAriaLabel": "{{title}}: mở hoặc kéo để di chuyển"
+			"taskAriaLabel": "{{title}}: mở hoặc kéo để di chuyển",
+			"today": "Today"
 		},
 		"delete": {
 			"title": "Xóa công việc?",
@@ -1840,7 +1876,8 @@
 			"open": "Đang mở",
 			"label": "Pull Request",
 			"count_one": "{{count}} PR",
-			"count_other": "{{count}} PR"
+			"count_other": "{{count}} PR",
+			"count": "{{count}} pull requests"
 		},
 		"assignee": {
 			"label": "Người được giao",
@@ -2091,6 +2128,20 @@
 		},
 		"branding": {
 			"poweredBy": "Được vận hành bởi"
+		}
+	},
+	"inbox": {
+		"flaggedCount": "{{count}} flagged",
+		"unreadCount": "{{count}} unread"
+	},
+	"organization": {
+		"boards": {
+			"timeline": {
+				"milestoneDue": "Milestone due"
+			}
+		},
+		"search": {
+			"resultsFound": "{{count}} results found"
 		}
 	}
 }

@@ -11,7 +11,8 @@
 			"remove": "निकालें",
 			"reset": "रीसेट करें",
 			"filter": "फ़िल्टर",
-			"clearAllFilters": "सभी फ़िल्टर साफ़ करें"
+			"clearAllFilters": "सभी फ़िल्टर साफ़ करें",
+			"clear": "Clear"
 		},
 		"a11y": {
 			"toggleSidebar": "साइडबार टॉगल करें"
@@ -128,6 +129,11 @@
 					"rose": "गुलाब",
 					"crimson": "किरमिज़ी"
 				}
+			}
+		},
+		"team": {
+			"members": {
+				"people": "People"
 			}
 		}
 	},
@@ -1221,6 +1227,26 @@
 			"merged": "मर्ज किया",
 			"draft": "ड्राफ़्ट",
 			"open": "खुला"
+		},
+		"organizationGeneral": {
+			"transferOwnership": {
+				"button": "Transfer ownership",
+				"confirm": "Transfer",
+				"dialogDescription": "Choose a member to become the organization owner.",
+				"dialogTitle": "Transfer organization ownership",
+				"noEligibleMembers": "No eligible members",
+				"pickerHint": "The selected member will become the organization owner.",
+				"pickerLabel": "New owner",
+				"pickerPlaceholder": "Select a member",
+				"subtitle": "Transfer this organization to another member.",
+				"title": "Transfer ownership",
+				"toastError": "Failed to transfer ownership",
+				"toastSuccess": "Ownership transferred",
+				"transferring": "Transferring…"
+			}
+		},
+		"organizationRoles": {
+			"permissionCount": "{{count}} permissions"
 		}
 	},
 	"navigation": {
@@ -1339,6 +1365,10 @@
 				"openTask": "चयनित कार्य खोलें",
 				"quickSelectNumber": "संख्या द्वारा विकल्प चुनें"
 			}
+		},
+		"tables": {
+			"field": "Field",
+			"row": "Row"
 		}
 	},
 	"notifications": {
@@ -1359,7 +1389,10 @@
 			"hours_one": "{{count}} घंटा",
 			"hours_other": "{{count}} घंटे",
 			"days_one": "{{count}} दिन",
-			"days_other": "{{count}} दिन"
+			"days_other": "{{count}} दिन",
+			"days": "days",
+			"hours": "hours",
+			"minutes": "minutes"
 		},
 		"events": {
 			"task_created": {
@@ -1399,7 +1432,8 @@
 				"contentWithTask": "कार्य पर समय ट्रैकिंग शुरू: {{taskTitle}}",
 				"contentWithoutTask": "एक कार्य पर समय ट्रैकिंग शुरू"
 			}
-		}
+		},
+		"clearGroup": "Clear group"
 	},
 	"activity": {
 		"assignedToSelf": "कार्य खुद को सौंपा",
@@ -1507,7 +1541,8 @@
 					"deleteRow": "पंक्ति हटाएँ",
 					"deleteTable": "तालिका हटाएँ"
 				}
-			}
+			},
+			"editHistory": "Edit history"
 		}
 	},
 	"tasks": {
@@ -1814,7 +1849,8 @@
 			"updateDatesError": "कार्य की तारीखें अपडेट करने में विफल",
 			"resizeStart": "शुरू तारीख बदलें",
 			"resizeDue": "नियत तारीख बदलें",
-			"taskAriaLabel": "{{title}}: खोलें या ले जाने के लिए खींचें"
+			"taskAriaLabel": "{{title}}: खोलें या ले जाने के लिए खींचें",
+			"today": "Today"
 		},
 		"delete": {
 			"title": "कार्य हटाएँ?",
@@ -1840,7 +1876,8 @@
 			"open": "खुला",
 			"label": "पुल अनुरोध",
 			"count_one": "{{count}} PR",
-			"count_other": "{{count}} PR"
+			"count_other": "{{count}} PR",
+			"count": "{{count}} pull requests"
 		},
 		"assignee": {
 			"label": "सौंपा गया",
@@ -2091,6 +2128,20 @@
 		},
 		"branding": {
 			"poweredBy": "द्वारा संचालित"
+		}
+	},
+	"inbox": {
+		"flaggedCount": "{{count}} flagged",
+		"unreadCount": "{{count}} unread"
+	},
+	"organization": {
+		"boards": {
+			"timeline": {
+				"milestoneDue": "Milestone due"
+			}
+		},
+		"search": {
+			"resultsFound": "{{count}} results found"
 		}
 	}
 }
