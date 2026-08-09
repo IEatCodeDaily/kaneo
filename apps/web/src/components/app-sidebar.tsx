@@ -1,4 +1,4 @@
-import type * as React from "react";
+import { useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
@@ -51,6 +51,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // come back to a board or repo.
   useRememberCurrentView();
 
+  // KFL-195: boards/repos tab switcher
+  const [activeTab, setActiveTab] = useState<"boards" | "repos">("boards");
+
   // User-scoped WebSocket for real-time events. This used to be mounted by the
   // organization switcher, which no longer renders in the sidebar.
   useUserWebSocket();
@@ -94,14 +97,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
           data-testid="sidebar-main-boards-divider"
         />
-        <NavBoards />
-        <NavTables />
-        <div
-          aria-hidden="true"
-          className="mx-2 hidden h-px shrink-0 bg-border group-data-[collapsible=icon]:block"
-          data-testid="sidebar-boards-repos-divider"
-        />
-        <NavRepos />
+        {/* KFL-195: Boards/Repos view tabs */}
+        <div className="group-data-[collapsible=icon]:hidden">
+          <div className="mx-2 mb-1 inline-flex h-7 items-center gap-0.5 rounded-lg border border-border/80 bg-background p-0.5">
+            <button
+              type="button"
+              aria-pressed={activeTab === "boards"}
+              onClick={() => setActiveTab("boards")}
+              className={`h-5 rounded-md px-2 text-xs font-medium capitalize transition-colors ${
+                activeTab === "boards"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Boards
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeTab === "repos"}
+              onClick={() => setActiveTab("repos")}
+              className={`h-5 rounded-md px-2 text-xs font-medium capitalize transition-colors ${
+                activeTab === "repos"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Repos
+            </button>
+          </div>
+        </div>
+        {activeTab === "boards" ? (
+          <>
+            <NavBoards />
+            <NavTables />
+          </>
+        ) : (
+          <NavRepos />
+        )}
+        {/* In collapsed mode show both with divider */}
+        <div className="hidden group-data-[collapsible=icon]:contents">
+          <NavBoards />
+          <NavTables />
+          <div
+            aria-hidden="true"
+            className="mx-2 hidden h-px shrink-0 bg-border"
+          />
+          <NavRepos />
+        </div>
       </SidebarContent>
       <SidebarFooter data-testid="sidebar-footer">
         <div className="flex items-center gap-2">
