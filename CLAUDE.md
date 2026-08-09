@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Read `AGENTS.md` first — it is the canonical operating contract (TDD loop, gates, ship process) for all AI agents on this repo. CLAUDE.md documents commands and architecture; AGENTS.md defines the discipline.**
+
 ## Project Overview
 
 Kaneo is a self-hosted project management platform built with simplicity and performance as core principles. The codebase is organized as a **pnpm monorepo** with TurboRepo.
