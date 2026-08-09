@@ -222,6 +222,7 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
         )}
       </ContextMenu>
 
+<<<<<<< HEAD
       {isDeleteTaskModalOpen && (
         <AlertDialog
           open={isDeleteTaskModalOpen}
@@ -285,6 +286,37 @@ export default function BacklogTaskRow({ task }: BacklogTaskRowProps) {
       )}
     >
       <BacklogTaskRowContent isDragging={isDragging} task={task} />
+=======
+      <AlertDialog
+        open={isDeleteTaskModalOpen}
+        onOpenChange={setIsDeleteTaskModalOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("tasks:delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("tasks:delete.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose render={<Button variant="outline" size="sm" />}>
+              {t("common:actions.cancel")}
+            </AlertDialogClose>
+            <AlertDialogClose
+              render={
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteTask}
+                />
+              }
+            >
+              {t("tasks:delete.action")}
+            </AlertDialogClose>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+>>>>>>> 16481e3b (fix(web): avoid nested buttons in alert dialog footers)
     </div>
   );
 }
