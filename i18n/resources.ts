@@ -1,33 +1,23 @@
 import enUS from "./en-US.json";
-import esES from "./es-ES.json";
-import frFR from "./fr-FR.json";
-import hiIN from "./hi-IN.json";
-import idID from "./id-ID.json";
-import itIT from "./it-IT.json";
-import koKR from "./ko-KR.json";
-import mkMK from "./mk-MK.json";
-import nlNL from "./nl-NL.json";
-import ptBR from "./pt-BR.json";
-import ruRU from "./ru-RU.json";
-import trTR from "./tr-TR.json";
-import ukUA from "./uk-UA.json";
-import viVN from "./vi-VN.json";
-import zhCN from "./zh-CN.json";
 
 export const supportedLocales = [
-  "mk-MK",
-  "nl-NL",
   "de-DE",
   "el-GR",
   "en-US",
   "es-ES",
   "fr-FR",
+  "hi-IN",
   "id-ID",
+  "it-IT",
   "ko-KR",
+  "mk-MK",
+  "nl-NL",
   "pt-BR",
   "ru-RU",
   "tr-TR",
   "uk-UA",
+  "vi-VN",
+  "zh-CN",
 ] as const;
 
 export type AppLocale = (typeof supportedLocales)[number];
@@ -51,9 +41,8 @@ export type LocaleBundle = Record<string, unknown>;
  * Every other locale is a dynamic import, so a visitor downloads one language
  * instead of twelve.
  *
- * These used to be twelve static imports collected into a `resources` object,
- * which put all ~1 MB of locale JSON in the entry chunk (the app is ~1.9 MB
- * before this change) even though a user reads exactly one of them.
+ * These used to be static imports collected into a `resources` object,
+ * which put all ~1 MB of locale JSON in the entry chunk.
  */
 const localeLoaders: Partial<
   Record<AppLocale, () => Promise<{ default: unknown }>>
@@ -62,13 +51,18 @@ const localeLoaders: Partial<
   "el-GR": () => import("./el-GR.json"),
   "es-ES": () => import("./es-ES.json"),
   "fr-FR": () => import("./fr-FR.json"),
+  "hi-IN": () => import("./hi-IN.json"),
   "id-ID": () => import("./id-ID.json"),
+  "it-IT": () => import("./it-IT.json"),
   "ko-KR": () => import("./ko-KR.json"),
   "mk-MK": () => import("./mk-MK.json"),
   "nl-NL": () => import("./nl-NL.json"),
+  "pt-BR": () => import("./pt-BR.json"),
   "ru-RU": () => import("./ru-RU.json"),
   "tr-TR": () => import("./tr-TR.json"),
   "uk-UA": () => import("./uk-UA.json"),
+  "vi-VN": () => import("./vi-VN.json"),
+  "zh-CN": () => import("./zh-CN.json"),
 };
 
 /** Resolves to the locale's bundle, or null for the eagerly-bundled default. */
@@ -81,22 +75,3 @@ export async function loadLocaleBundle(
   const mod = await load();
   return mod.default as LocaleBundle;
 }
-export const resources = {
-  "mk-MK": mkMK,
-  "nl-NL": nlNL,
-  "en-US": enUS,
-  "de-DE": deDE,
-  "el-GR": elGR,
-  "fr-FR": frFR,
-  "hi-IN": hiIN,
-  "id-ID": idID,
-  "it-IT": itIT,
-  "es-ES": esES,
-  "ko-KR": koKR,
-  "pt-BR": ptBR,
-  "ru-RU": ruRU,
-  "tr-TR": trTR,
-  "uk-UA": ukUA,
-  "vi-VN": viVN,
-  "zh-CN": zhCN,
-} as const;
