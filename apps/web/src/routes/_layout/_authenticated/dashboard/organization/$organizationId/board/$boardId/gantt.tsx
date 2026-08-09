@@ -72,7 +72,6 @@ import {
 } from "@/components/gantt/gantt-timeline";
 import { GanttUnscheduledTrack } from "@/components/gantt/gantt-unscheduled-track";
 import PageTitle from "@/components/page-title";
-import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -583,7 +582,7 @@ function RouteComponent() {
             if (
               filters.labels?.length &&
               !(task as { labels?: Array<{ id: string }> }).labels?.some(
-                (label) => filters.labels!.includes(label.id),
+                (label) => filters.labels?.includes(label.id),
               )
             )
               return false;
@@ -1023,9 +1022,6 @@ function RouteComponent() {
                   ? t("tasks:gantt.hideTasks")
                   : t("tasks:gantt.showTasks")}
               </Button>
-            </div>
-            <div className="shrink-0">
-              <CreateTaskAction boardId={boardId} />
             </div>
           </div>
         </div>

@@ -28,7 +28,6 @@ import BoardLayout from "@/components/common/board-layout";
 import TaskViewControls from "@/components/common/task-view-controls";
 import { statusBarClasses } from "@/components/gantt/gantt-timeline";
 import PageTitle from "@/components/page-title";
-import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
@@ -123,7 +122,7 @@ function RouteComponent() {
       }
       if (
         filters.labels?.length &&
-        !task.labels?.some((label) => filters.labels!.includes(label.id))
+        !task.labels?.some((label) => filters.labels?.includes(label.id))
       )
         return false;
       if (
@@ -280,7 +279,6 @@ function RouteComponent() {
               display={display}
               onDisplayChange={setDisplay}
             />
-            <CreateTaskAction boardId={boardId} />
           </div>
         </div>
 
