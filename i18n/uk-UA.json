@@ -1254,7 +1254,13 @@
 			"members": "Учасники",
 			"invitations": "Запрошення",
 			"more": "Більше",
-			"backToBoard": "Назад до дошки"
+			"backToBoard": "Назад до дошки",
+			"inbox": "Inbox",
+			"myTasks": "My tasks",
+			"boards": "Boards",
+			"repos": "Repos",
+			"moreBoards": "More boards",
+			"moreRepos": "More repos"
 		},
 		"projectList": {
 			"viewProject": "Переглянути проєкт",

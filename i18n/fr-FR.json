@@ -1252,7 +1252,13 @@
 			"members": "Membres",
 			"invitations": "Invitations",
 			"more": "Plus",
-			"backToBoard": "Retour au tableau"
+			"backToBoard": "Retour au tableau",
+			"inbox": "Inbox",
+			"myTasks": "My tasks",
+			"boards": "Boards",
+			"repos": "Repos",
+			"moreBoards": "More boards",
+			"moreRepos": "More repos"
 		},
 		"projectList": {
 			"viewProject": "Voir le projet",

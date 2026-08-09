@@ -4962,6 +4962,24 @@
 						},
 						"backToBoard": {
 							"type": "string"
+						},
+						"inbox": {
+							"type": "string"
+						},
+						"myTasks": {
+							"type": "string"
+						},
+						"boards": {
+							"type": "string"
+						},
+						"repos": {
+							"type": "string"
+						},
+						"moreBoards": {
+							"type": "string"
+						},
+						"moreRepos": {
+							"type": "string"
 						}
 					},
 					"required": [

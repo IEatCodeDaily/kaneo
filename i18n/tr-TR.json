@@ -1252,7 +1252,13 @@
 			"members": "Üyeler",
 			"invitations": "Davetler",
 			"more": "Daha fazla",
-			"backToBoard": "Panoya dön"
+			"backToBoard": "Panoya dön",
+			"inbox": "Inbox",
+			"myTasks": "My tasks",
+			"boards": "Boards",
+			"repos": "Repos",
+			"moreBoards": "More boards",
+			"moreRepos": "More repos"
 		},
 		"projectList": {
 			"viewProject": "Projeyi Görüntüle",

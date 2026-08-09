@@ -1252,7 +1252,13 @@
 			"members": "Leden",
 			"invitations": "Uitnodigingen",
 			"more": "Meer",
-			"backToBoard": "Terug naar bord"
+			"backToBoard": "Terug naar bord",
+			"inbox": "Inbox",
+			"myTasks": "My tasks",
+			"boards": "Boards",
+			"repos": "Repos",
+			"moreBoards": "More boards",
+			"moreRepos": "More repos"
 		},
 		"projectList": {
 			"viewProject": "Project bekijken",

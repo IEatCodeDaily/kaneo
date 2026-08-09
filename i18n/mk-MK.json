@@ -1252,7 +1252,13 @@
 			"members": "Членови",
 			"invitations": "Покани",
 			"more": "Повеќе",
-			"backToBoard": "Назад на табла"
+			"backToBoard": "Назад на табла",
+			"inbox": "Inbox",
+			"myTasks": "My tasks",
+			"boards": "Boards",
+			"repos": "Repos",
+			"moreBoards": "More boards",
+			"moreRepos": "More repos"
 		},
 		"projectList": {
 			"viewProject": "Погледни проект",
