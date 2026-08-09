@@ -1195,7 +1195,27 @@ function RouteComponent() {
                     style={{
                       left: `calc(${timelineLeft} + ${todayLeftRem + timeline.dayWidthRem / 2}rem)`,
                     }}
-                  />
+                  >
+                    {/* KFL-212: small handle badge at the top so "today" is
+                        findable and clickable as a scroll target. */}
+                    <button
+                      type="button"
+                      aria-label={t("tasks:gantt.today")}
+                      className="pointer-events-auto absolute -top-px -left-1 flex h-4 w-2 items-center justify-center rounded-b-sm bg-primary"
+                      onClick={() => {
+                        const scroller = scrollRef.current;
+                        if (!scroller) return;
+                        const todayOffsetPx =
+                          (todayLeftRem + timeline.dayWidthRem / 2) * 16;
+                        scroller.scrollLeft = Math.max(
+                          0,
+                          todayOffsetPx - scroller.clientWidth / 3,
+                        );
+                      }}
+                    >
+                      <div className="h-2 w-px bg-primary-foreground/70" />
+                    </button>
+                  </div>
                 ) : null}
 
                 {/* Dependency arrows (blocks/related only) */}
