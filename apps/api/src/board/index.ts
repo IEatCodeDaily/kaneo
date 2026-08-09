@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import { renameBoardKey } from "../identity/rename-identity";
 import { boardSchema } from "../schemas";
 import {
   BACKLOG_STATUS_SLUGS,
@@ -116,6 +117,21 @@ const board = new Hono<{
       const newBoard = await createBoardCtrl(organizationId, name, icon, slug);
       return c.json(newBoard);
     },
+  )
+  .put(
+    "/:id/key",
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ key: v.string() })),
+    organizationAccess.fromBoard(),
+    requireOrganizationPermission({ board: ["update"] }),
+    async (c) =>
+      c.json(
+        await renameBoardKey(
+          c.req.valid("param").id,
+          c.get("organizationId"),
+          c.req.valid("json").key,
+        ),
+      ),
   )
   .get(
     "/:id",

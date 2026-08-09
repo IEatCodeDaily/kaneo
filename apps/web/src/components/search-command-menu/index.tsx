@@ -105,13 +105,12 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
 
     switch (item.type) {
       case "task":
-        if (item.boardId && item.id && organization?.id) {
+        if (item.boardSlug && item.taskNumber && organization?.slug) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/$organizationSlug/tickets/$ticketKey",
             params: {
-              organizationId: organization.id,
-              boardId: item.boardId,
-              taskId: item.id,
+              organizationSlug: organization.slug,
+              ticketKey: `${item.boardSlug.toUpperCase()}-${item.taskNumber}`,
             },
           });
         }
@@ -139,13 +138,12 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         break;
       case "comment":
       case "activity":
-        if (item.boardId && item.id && organization?.id) {
+        if (item.boardSlug && item.taskNumber && organization?.slug) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/$organizationSlug/tickets/$ticketKey",
             params: {
-              organizationId: organization.id,
-              boardId: item.boardId,
-              taskId: item.id,
+              organizationSlug: organization.slug,
+              ticketKey: `${item.boardSlug.toUpperCase()}-${item.taskNumber}`,
             },
           });
         }

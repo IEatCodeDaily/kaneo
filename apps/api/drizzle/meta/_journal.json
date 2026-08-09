@@ -484,6 +484,13 @@
 			"when": 1786122000000,
 			"tag": "0068_board_default_assignee",
 			"breakpoints": true
+		},
+		{
+			"idx": 69,
+			"version": "7",
+			"when": 1786260000000,
+			"tag": "0069_ticket_identity_aliases",
+			"breakpoints": true
 		}
 	]
 }

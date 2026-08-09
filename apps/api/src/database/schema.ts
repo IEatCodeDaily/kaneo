@@ -165,39 +165,45 @@ export const verificationTable = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const organizationTable = pgTable("organization", {
-  id: text("id")
-    .$defaultFn(() => createId())
-    .primaryKey(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  logo: text("logo"),
-  metadata: text("metadata"),
-  description: text("description"),
-  reposEnabled: boolean("repos_enabled").default(false).notNull(),
-  tablesEnabled: boolean("tables_enabled").default(false).notNull(),
-  /*
+export const organizationTable = pgTable(
+  "organization",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    logo: text("logo"),
+    metadata: text("metadata"),
+    description: text("description"),
+    reposEnabled: boolean("repos_enabled").default(false).notNull(),
+    tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+    /*
     Org-wide default member privilege for resources without an explicit
     user/team grant, when the resource itself doesn't set its own baseline
     (board/repo/data_table `org_privilege`, NULL = follow this default).
     "manage" preserves the historical behaviour where ungranted resources
     were organization-wide.
   */
-  defaultResourcePrivilege: text("default_resource_privilege")
-    .default("manage")
-    .notNull(),
-  aiEnabled: boolean("ai_enabled").default(false).notNull(),
-  aiDefaultTokenLimit: integer("ai_default_token_limit")
-    .default(1024)
-    .notNull(),
-  aiDefaultCharacterLimit: integer("ai_default_character_limit")
-    .default(4000)
-    .notNull(),
-  aiProviderBaseUrl: text("ai_provider_base_url"),
-  aiProviderModel: text("ai_provider_model"),
-  aiProviderApiKey: text("ai_provider_api_key"),
-  createdAt: timestamp("created_at", { mode: "date" }).notNull(),
-});
+    defaultResourcePrivilege: text("default_resource_privilege")
+      .default("manage")
+      .notNull(),
+    aiEnabled: boolean("ai_enabled").default(false).notNull(),
+    aiDefaultTokenLimit: integer("ai_default_token_limit")
+      .default(1024)
+      .notNull(),
+    aiDefaultCharacterLimit: integer("ai_default_character_limit")
+      .default(4000)
+      .notNull(),
+    aiProviderBaseUrl: text("ai_provider_base_url"),
+    aiProviderModel: text("ai_provider_model"),
+    aiProviderApiKey: text("ai_provider_api_key"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("organization_slug_lower_unique").on(sql`lower(${table.slug})`),
+  ],
+);
 
 export const organizationGithubInstallationTable = pgTable(
   "organization_github_installation",
@@ -519,6 +525,65 @@ export const boardTable = pgTable(
       table.organizationId,
       table.id,
     ),
+    uniqueIndex("board_organization_key_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
+  ],
+);
+
+export const organizationSlugAliasTable = pgTable(
+  "organization_slug_alias",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    slug: text("slug").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("organization_slug_alias_lower_unique").on(
+      sql`lower(${table.slug})`,
+    ),
+    index("organization_slug_alias_organization_id_idx").on(
+      table.organizationId,
+    ),
+  ],
+);
+
+export const boardKeyAliasTable = pgTable(
+  "board_key_alias",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    boardId: text("board_id")
+      .notNull()
+      .references(() => boardTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    key: text("key").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("board_key_alias_organization_key_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.key})`,
+    ),
+    index("board_key_alias_board_id_idx").on(table.boardId),
   ],
 );
 

@@ -39,6 +39,7 @@ import { Route as LayoutAuthenticatedDashboardSettingsBoardsRouteImport } from '
 import { Route as LayoutAuthenticatedDashboardSettingsConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization'
 import { Route as LayoutAuthenticatedDashboardSettingsReposRouteImport } from './routes/_layout/_authenticated/dashboard/settings/repos'
+import { Route as LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport } from './routes/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/inbox'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/members'
@@ -250,6 +251,14 @@ const LayoutAuthenticatedDashboardSettingsReposRoute =
     path: '/repos',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsRoute,
   } as any)
+const LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute =
+  LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport.update(
+    {
+      id: '/$organizationSlug/tickets/$ticketKey',
+      path: '/$organizationSlug/tickets/$ticketKey',
+      getParentRoute: () => LayoutAuthenticatedDashboardRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute =
   LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport.update(
     {
@@ -632,6 +641,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
+  '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
   '/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
@@ -705,6 +715,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
+  '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
   '/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
   '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
@@ -784,6 +795,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/connections': typeof LayoutAuthenticatedDashboardSettingsConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/_layout/_authenticated/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
+  '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
   '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
@@ -862,6 +874,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/connections'
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
+    | '/dashboard/$organizationSlug/tickets/$ticketKey'
     | '/dashboard/organization/$organizationId/inbox'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/my-tasks'
@@ -935,6 +948,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/connections'
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
+    | '/dashboard/$organizationSlug/tickets/$ticketKey'
     | '/dashboard/organization/$organizationId/inbox'
     | '/dashboard/organization/$organizationId/members'
     | '/dashboard/organization/$organizationId/my-tasks'
@@ -1013,6 +1027,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/connections'
     | '/_layout/_authenticated/dashboard/settings/organization'
     | '/_layout/_authenticated/dashboard/settings/repos'
+    | '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/inbox'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/members'
     | '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
@@ -1283,6 +1298,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/settings/repos'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsReposRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsRoute
+    }
+    '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey': {
+      id: '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
+      path: '/$organizationSlug/tickets/$ticketKey'
+      fullPath: '/dashboard/$organizationSlug/tickets/$ticketKey'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardRoute
     }
     '/_layout/_authenticated/dashboard/organization/$organizationId/': {
       id: '/_layout/_authenticated/dashboard/organization/$organizationId/'
@@ -1865,6 +1887,7 @@ interface LayoutAuthenticatedDashboardRouteChildren {
   LayoutAuthenticatedDashboardIndexRoute: typeof LayoutAuthenticatedDashboardIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren
   LayoutAuthenticatedDashboardOrganizationCreateRoute: typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
+  LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute: typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
 }
 
 const LayoutAuthenticatedDashboardRouteChildren: LayoutAuthenticatedDashboardRouteChildren =
@@ -1881,6 +1904,8 @@ const LayoutAuthenticatedDashboardRouteChildren: LayoutAuthenticatedDashboardRou
       LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren,
     LayoutAuthenticatedDashboardOrganizationCreateRoute:
       LayoutAuthenticatedDashboardOrganizationCreateRoute,
+    LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute:
+      LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute,
   }
 
 const LayoutAuthenticatedDashboardRouteWithChildren =

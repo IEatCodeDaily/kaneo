@@ -1,8 +1,13 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import { renameOrganizationSlug } from "../identity/rename-identity";
+import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
+import { getResourcePrivilege, privilegeAllows } from "../resource-access";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import { validateOrganizationAccess } from "../utils/validate-organization-access";
 import getOrganizationMembersCtrl from "./controllers/get-organization-members";
 import listOrganizationsCtrl from "./controllers/list-organizations";
 import {
@@ -18,6 +23,63 @@ const organization = new Hono<{
     apiKey: { id: string; metadata?: string | null } | null;
   };
 }>()
+  .get(
+    "/:organizationSlug/ticket/:ticketKey",
+    describeRoute({
+      operationId: "resolveTicketIdentity",
+      tags: ["Tickets"],
+      description:
+        "Resolve a canonical or historical ticket key, with legacy opaque-ID fallback",
+      responses: {
+        200: { description: "Canonical ticket identity" },
+        404: { description: "Ticket not found" },
+      },
+    }),
+    validator(
+      "param",
+      v.object({ organizationSlug: v.string(), ticketKey: v.string() }),
+    ),
+    async (c) => {
+      const { organizationSlug, ticketKey } = c.req.valid("param");
+      const identity = await resolveTicketIdentity(organizationSlug, ticketKey);
+      if (!identity) {
+        throw new HTTPException(404, { message: "Ticket not found" });
+      }
+
+      try {
+        await validateOrganizationAccess(
+          c.get("userId"),
+          identity.organization.id,
+          c.get("apiKey")?.id,
+        );
+        const privilege = await getResourcePrivilege({
+          organizationId: identity.organization.id,
+          resourceType: "board",
+          resourceId: identity.board.id,
+          userId: c.get("userId"),
+        });
+        if (!privilegeAllows(privilege, "view")) throw new Error("denied");
+      } catch {
+        throw new HTTPException(404, { message: "Ticket not found" });
+      }
+
+      return c.json(identity);
+    },
+  )
+  .put(
+    "/:organizationId/slug",
+    validator("param", v.object({ organizationId: v.string() })),
+    validator("json", v.object({ slug: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
+    async (c) =>
+      c.json(
+        await renameOrganizationSlug(
+          c.get("organizationId"),
+          c.req.valid("json").slug,
+        ),
+      ),
+  )
   .get(
     "/",
     describeRoute({
