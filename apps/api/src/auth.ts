@@ -380,6 +380,14 @@ export const auth = betterAuth({
       // that rather than on email verification.
       requireEmailVerificationOnInvitation: false,
       organizationHooks: {
+        beforeUpdateOrganization: async ({ organization, user }) => {
+          if (organization.slug !== undefined && user.role !== "admin") {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "Instance administrator required to change organization slug",
+            });
+          }
+        },
         beforeCreateOrganization: async ({ organization }) => {
           const check = checkOrganizationName(organization.name ?? "");
           if (!check.ok) {

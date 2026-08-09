@@ -1590,7 +1590,14 @@
 				"toastError": "Failed to transfer ownership",
 				"toastSuccess": "Ownership transferred",
 				"transferring": "Transferring…"
-			}
+			},
+			"slugLabel": "Organization slug",
+			"slugAdminHint": "Used in ticket URLs. Changing it preserves the previous slug as an alias.",
+			"slugReadOnlyHint": "Used in ticket URLs. Only a system administrator can change it.",
+			"slugUpdated": "Organization slug updated",
+			"slugUpdateError": "Failed to update organization slug",
+			"slugSave": "Save",
+			"slugSaving": "Saving…"
 		},
 		"giteaIntegration": {
 			"verify": "Перевірити",

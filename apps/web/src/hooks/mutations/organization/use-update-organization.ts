@@ -1,7 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
-import { createSlug } from "@/lib/utils/create-slug";
 
 type UpdateOrganizationRequest = {
   organizationId: string;
@@ -39,9 +37,6 @@ function useUpdateOrganization() {
 
       if (name !== undefined) {
         updateData.name = name;
-        if (slug === undefined) {
-          updateData.slug = createSlug(name);
-        }
       }
 
       if (slug !== undefined) {

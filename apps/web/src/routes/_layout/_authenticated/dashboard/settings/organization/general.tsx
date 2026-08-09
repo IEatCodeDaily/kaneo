@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import useDeleteOrganization from "@/hooks/mutations/organization/use-delete-organization";
 import useTransferOrganizationOwnership from "@/hooks/mutations/organization/use-transfer-organization-ownership";
 import useUpdateOrganization from "@/hooks/mutations/organization/use-update-organization";
+import useUpdateOrganizationSlug from "@/hooks/mutations/organization/use-update-organization-slug";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -113,6 +114,7 @@ function RouteComponent() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [selectedNewOwnerId, setSelectedNewOwnerId] = useState<string>("");
+  const [organizationSlug, setOrganizationSlug] = useState("");
 
   const { user: currentUser } = useAuth();
   const { data: organization } = useActiveOrganization();
@@ -120,6 +122,8 @@ function RouteComponent() {
     organizationId: organization?.id,
   });
   const { mutateAsync: updateOrganization } = useUpdateOrganization();
+  const { mutateAsync: updateOrganizationSlug, isPending: isUpdatingSlug } =
+    useUpdateOrganizationSlug();
   const { mutateAsync: deleteOrganization, isPending: isDeleting } =
     useDeleteOrganization();
   const { mutateAsync: transferOwnership, isPending: isTransferring } =
@@ -129,6 +133,7 @@ function RouteComponent() {
   const canEdit = canManageOrganization();
   const canDelete = canDeleteOrganization();
   const organizationDescription = getOrganizationDescription(organization);
+  const isInstanceAdmin = currentUser?.role === "admin";
 
   // Ownership transfer is owner-only. Eligible recipients are any current
   // member who isn't the owner themselves.
@@ -153,6 +158,8 @@ function RouteComponent() {
   useEffect(() => {
     if (!organization) return;
 
+    setOrganizationSlug(organization.slug ?? "");
+
     const nextValues = {
       name: organization.name || "",
       description: organizationDescription,
@@ -163,6 +170,36 @@ function RouteComponent() {
       organizationForm.reset(nextValues);
     }
   }, [organization, organizationDescription, organizationForm]);
+
+  const handleUpdateSlug = useCallback(async () => {
+    if (!organization?.id || !isInstanceAdmin) return;
+    try {
+      const updated = await updateOrganizationSlug({
+        organizationId: organization.id,
+        slug: organizationSlug.trim(),
+      });
+      setOrganizationSlug(updated.slug);
+      toast.success(
+        t("settings:organizationGeneral.slugUpdated", {
+          defaultValue: "Organization slug updated",
+        }),
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("settings:organizationGeneral.slugUpdateError", {
+              defaultValue: "Failed to update organization slug",
+            }),
+      );
+    }
+  }, [
+    isInstanceAdmin,
+    organization?.id,
+    organizationSlug,
+    t,
+    updateOrganizationSlug,
+  ]);
 
   const saveOrganization = useCallback(
     async (data: OrganizationFormValues) => {
@@ -375,6 +412,57 @@ function RouteComponent() {
                     </FormItem>
                   )}
                 />
+
+                <Separator />
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm font-medium">
+                      {t("settings:organizationGeneral.slugLabel", {
+                        defaultValue: "Organization slug",
+                      })}
+                    </FormLabel>
+                    <p className="text-xs text-muted-foreground">
+                      {isInstanceAdmin
+                        ? t("settings:organizationGeneral.slugAdminHint", {
+                            defaultValue:
+                              "Used in ticket URLs. Changing it preserves the previous slug as an alias.",
+                          })
+                        : t("settings:organizationGeneral.slugReadOnlyHint", {
+                            defaultValue:
+                              "Used in ticket URLs. Only a system administrator can change it.",
+                          })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      aria-label={t("settings:organizationGeneral.slugLabel", {
+                        defaultValue: "Organization slug",
+                      })}
+                      className="w-64 font-mono"
+                      value={organizationSlug}
+                      readOnly={!isInstanceAdmin}
+                      onChange={(event) =>
+                        setOrganizationSlug(event.target.value)
+                      }
+                    />
+                    {isInstanceAdmin ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          isUpdatingSlug ||
+                          organizationSlug.trim() === organization?.slug
+                        }
+                        onClick={handleUpdateSlug}
+                      >
+                        {isUpdatingSlug
+                          ? t("settings:organizationGeneral.slugSaving")
+                          : t("settings:organizationGeneral.slugSave")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
 
                 <Separator />
 

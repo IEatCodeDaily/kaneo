@@ -5,6 +5,7 @@ import * as v from "valibot";
 import { renameOrganizationSlug } from "../identity/rename-identity";
 import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
 import { getResourcePrivilege, privilegeAllows } from "../resource-access";
+import { isInstanceAdmin } from "../utils/is-instance-admin";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
@@ -71,14 +72,19 @@ const organization = new Hono<{
     validator("param", v.object({ organizationId: v.string() })),
     validator("json", v.object({ slug: v.string() })),
     organizationAccess.fromParam("organizationId"),
-    requireOrganizationPermission({ organization: ["manage_settings"] }),
-    async (c) =>
-      c.json(
+    async (c) => {
+      if (!(await isInstanceAdmin(c))) {
+        throw new HTTPException(403, {
+          message: "Instance administrator required",
+        });
+      }
+      return c.json(
         await renameOrganizationSlug(
           c.get("organizationId"),
           c.req.valid("json").slug,
         ),
-      ),
+      );
+    },
   )
   .get(
     "/",

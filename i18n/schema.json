@@ -6634,6 +6634,27 @@
 									"type": "string"
 								}
 							}
+						},
+						"slugLabel": {
+							"type": "string"
+						},
+						"slugAdminHint": {
+							"type": "string"
+						},
+						"slugReadOnlyHint": {
+							"type": "string"
+						},
+						"slugUpdated": {
+							"type": "string"
+						},
+						"slugUpdateError": {
+							"type": "string"
+						},
+						"slugSave": {
+							"type": "string"
+						},
+						"slugSaving": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -6659,7 +6680,14 @@
 						"toastUpdateError",
 						"toastDeleted",
 						"toastDeleteError",
-						"validation"
+						"validation",
+						"slugLabel",
+						"slugAdminHint",
+						"slugReadOnlyHint",
+						"slugUpdated",
+						"slugUpdateError",
+						"slugSave",
+						"slugSaving"
 					]
 				},
 				"organizationLabels": {
