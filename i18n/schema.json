@@ -6655,6 +6655,21 @@
 						},
 						"slugSaving": {
 							"type": "string"
+						},
+						"activeAliasesTitle": {
+							"type": "string"
+						},
+						"activeAliasesHint": {
+							"type": "string"
+						},
+						"organizationSlugAliases": {
+							"type": "string"
+						},
+						"ticketPrefixAliases": {
+							"type": "string"
+						},
+						"currentAlias": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -6687,7 +6702,12 @@
 						"slugUpdated",
 						"slugUpdateError",
 						"slugSave",
-						"slugSaving"
+						"slugSaving",
+						"activeAliasesTitle",
+						"activeAliasesHint",
+						"organizationSlugAliases",
+						"ticketPrefixAliases",
+						"currentAlias"
 					]
 				},
 				"organizationLabels": {

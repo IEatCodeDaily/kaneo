@@ -1587,7 +1587,12 @@
 			"slugUpdated": "Organization slug updated",
 			"slugUpdateError": "Failed to update organization slug",
 			"slugSave": "Save",
-			"slugSaving": "Saving…"
+			"slugSaving": "Saving…",
+			"activeAliasesTitle": "Active aliases",
+			"activeAliasesHint": "Historical aliases continue resolving and cannot be reassigned.",
+			"organizationSlugAliases": "Organization slug",
+			"ticketPrefixAliases": "Ticket prefixes",
+			"currentAlias": "current"
 		},
 		"giteaIntegration": {
 			"verify": "Doğrula",

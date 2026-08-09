@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import { listIdentityAliases } from "../identity/list-identity-aliases";
 import { renameOrganizationSlug } from "../identity/rename-identity";
 import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
 import { getResourcePrivilege, privilegeAllows } from "../resource-access";
@@ -65,6 +66,18 @@ const organization = new Hono<{
       }
 
       return c.json(identity);
+    },
+  )
+  .get(
+    "/:organizationId/identity-aliases",
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const inventory = await listIdentityAliases(c.get("organizationId"));
+      if (!inventory) {
+        throw new HTTPException(404, { message: "Organization not found" });
+      }
+      return c.json(inventory);
     },
   )
   .put(

@@ -40,6 +40,7 @@ import useUpdateOrganization from "@/hooks/mutations/organization/use-update-org
 import useUpdateOrganizationSlug from "@/hooks/mutations/organization/use-update-organization-slug";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
+import useIdentityAliases from "@/hooks/queries/organization/use-identity-aliases";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 
@@ -121,6 +122,7 @@ function RouteComponent() {
   const { data: fullOrganization } = useGetFullOrganization({
     organizationId: organization?.id,
   });
+  const { data: identityAliases } = useIdentityAliases(organization?.id);
   const { mutateAsync: updateOrganization } = useUpdateOrganization();
   const { mutateAsync: updateOrganizationSlug, isPending: isUpdatingSlug } =
     useUpdateOrganizationSlug();
@@ -461,6 +463,74 @@ function RouteComponent() {
                           : t("settings:organizationGeneral.slugSave")}
                       </Button>
                     ) : null}
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-md border border-border bg-background/40 p-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {t("settings:organizationGeneral.activeAliasesTitle")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("settings:organizationGeneral.activeAliasesHint")}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">
+                      {t(
+                        "settings:organizationGeneral.organizationSlugAliases",
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <code className="rounded bg-muted px-2 py-1 text-xs">
+                        {identityAliases?.organization.currentSlug ??
+                          organization?.slug}
+                        {" · "}
+                        {t("settings:organizationGeneral.currentAlias")}
+                      </code>
+                      {identityAliases?.organization.aliases.map((alias) => (
+                        <code
+                          key={alias}
+                          className="rounded border border-border px-2 py-1 text-xs"
+                        >
+                          {alias}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">
+                      {t("settings:organizationGeneral.ticketPrefixAliases")}
+                    </p>
+                    <div className="space-y-2">
+                      {identityAliases?.boards.map((board) => (
+                        <div
+                          key={board.boardId}
+                          className="flex items-start justify-between gap-4"
+                        >
+                          <span className="text-xs text-muted-foreground">
+                            {board.boardName}
+                          </span>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <code className="rounded bg-muted px-2 py-1 text-xs">
+                              {board.currentKey}
+                              {" · "}
+                              {t("settings:organizationGeneral.currentAlias")}
+                            </code>
+                            {board.aliases.map((alias) => (
+                              <code
+                                key={alias}
+                                className="rounded border border-border px-2 py-1 text-xs"
+                              >
+                                {alias}
+                              </code>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
