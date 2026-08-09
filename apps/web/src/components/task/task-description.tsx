@@ -130,6 +130,7 @@ type SlashMenuState = {
   top: number;
   left: number;
   selectedIndex: number;
+  hasExplicitSelection: boolean;
 };
 
 function formatMarkdown(markdown: string) {
@@ -1063,6 +1064,9 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
           top: coords.top - 2,
           left: coords.left,
           selectedIndex: isSameQuery ? current.selectedIndex : 0,
+          hasExplicitSelection: isSameQuery
+            ? current.hasExplicitSelection
+            : false,
         };
       });
     },
@@ -1254,6 +1258,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
             ? {
                 ...value,
                 selectedIndex: (value.selectedIndex + 1) % commands.length,
+                hasExplicitSelection: true,
               }
             : value,
         );
@@ -1268,6 +1273,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
                 ...value,
                 selectedIndex:
                   (value.selectedIndex - 1 + commands.length) % commands.length,
+                hasExplicitSelection: true,
               }
             : value,
         );
@@ -1283,6 +1289,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
             hasMenu: true,
             commandCount: commands.length,
             hasQuery: current.query.length > 0,
+            hasExplicitSelection: current.hasExplicitSelection,
           })
         ) {
           return;
@@ -1897,7 +1904,11 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
                           onMouseEnter={() =>
                             setSlashMenu((current) =>
                               current
-                                ? { ...current, selectedIndex: index }
+                                ? {
+                                    ...current,
+                                    selectedIndex: index,
+                                    hasExplicitSelection: true,
+                                  }
                                 : current,
                             )
                           }

@@ -67,11 +67,14 @@ export function shouldSlashMenuCaptureEnter({
   hasMenu,
   commandCount,
   hasQuery = true,
+  hasExplicitSelection = false,
 }: {
   hasMenu: boolean;
   commandCount: number;
   /** False when the menu was opened by a bare `/` with nothing typed after. */
   hasQuery?: boolean;
+  /** True after arrow-key or pointer navigation selected a menu item. */
+  hasExplicitSelection?: boolean;
 }): boolean {
-  return hasMenu && commandCount > 0 && hasQuery;
+  return hasMenu && commandCount > 0 && (hasQuery || hasExplicitSelection);
 }

@@ -114,6 +114,17 @@ describe("shouldSlashMenuCaptureEnter", () => {
       }),
     ).toBe(false);
   });
+
+  it("captures Enter after the user explicitly selects a command from a bare-slash menu", () => {
+    expect(
+      shouldSlashMenuCaptureEnter({
+        hasMenu: true,
+        commandCount: 12,
+        hasQuery: false,
+        hasExplicitSelection: true,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("#267 end-to-end rule: bare slash opens the menu but never eats Enter", () => {

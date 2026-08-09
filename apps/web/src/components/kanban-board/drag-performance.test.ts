@@ -20,4 +20,9 @@ describe("kanban drag hot path (#124)", () => {
   it("does not tween stale transforms on the active sortable card", () => {
     expect(card).toContain('transition: isDragging ? "none" : transition');
   });
+
+  it("does not clone and rerender the board during pointer movement", () => {
+    expect(board).not.toContain("onDragOver=");
+    expect(board).not.toContain("previewBoard");
+  });
 });
