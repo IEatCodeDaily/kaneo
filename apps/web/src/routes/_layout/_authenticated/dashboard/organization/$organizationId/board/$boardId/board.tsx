@@ -14,6 +14,7 @@ import {
 } from "@/components/list-view/list-grouping";
 import ListNestHint from "@/components/list-view/list-nest-hint";
 import PageTitle from "@/components/page-title";
+import CreateTaskAction from "@/components/task/create-task-action";
 
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { shortcuts } from "@/constants/shortcuts";
@@ -197,8 +198,7 @@ function RouteComponent() {
           secondaryActions={
             viewMode === "list" ? <ListBulkActionsToggle /> : undefined
           }
-          // Create ticket now lives in the shared board header (KFL-260).
-          actions={null}
+          actions={<CreateTaskAction boardId={boardId} />}
         />
 
         <div className="flex h-full flex-1 overflow-hidden bg-background">

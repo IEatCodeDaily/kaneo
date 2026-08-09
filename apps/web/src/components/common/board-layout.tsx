@@ -23,7 +23,6 @@ import OrganizationCrumbSelect from "@/components/common/header/organization-cru
 import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
-import CreateTaskAction from "@/components/task/create-task-action";
 
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -259,7 +258,6 @@ export default function BoardLayout({
               >
                 <PanelRight className="size-3.5" />
               </button>
-              <CreateTaskAction boardId={boardId} />
               {headerActions}
             </div>
           )}
