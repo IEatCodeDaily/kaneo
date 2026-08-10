@@ -238,7 +238,7 @@ export default function BoardsTimeline({
     : null;
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delay={0} closeDelay={0}>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-end gap-1.5">
           <button
@@ -650,6 +650,21 @@ export default function BoardsTimeline({
                                     <ChevronRight className="size-3" />
                                   )}
                                 </button>
+                                {section.kind === "milestone" && (
+                                  <Diamond
+                                    className={cn(
+                                      "mr-1 size-3 shrink-0 fill-current stroke-[1.5]",
+                                      MILESTONE_STATUS_CLASSES[
+                                        (milestonesByBoardId?.[board.id] ?? [])
+                                          .find(
+                                            (m) =>
+                                              m.id === section.milestone.id,
+                                          )
+                                          ?.status?.toLowerCase() ?? "planned"
+                                      ] ?? MILESTONE_STATUS_CLASSES.planned,
+                                    )}
+                                  />
+                                )}
                                 <span className="truncate text-foreground">
                                   {sectionLabel}
                                 </span>
