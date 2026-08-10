@@ -26,7 +26,10 @@ export function createBranchRegex(pattern: string, boardSlug: string): RegExp {
   const regexPattern = escapedPattern
     .replace("\\{slug\\}", boardSlug.toLowerCase())
     .replace("\\{number\\}", "(\\d+)")
-    .replace("\\{title\\}", "([a-z0-9-]+)");
+    // The title segment can be empty: slugify keeps only ASCII alphanumerics,
+    // so a title written in any other script leaves nothing behind and
+    // generateBranchName emits the separator with no name after it.
+    .replace("\\{title\\}", "([a-z0-9-]*)");
 
   // Allow optional suffix after the pattern (e.g., lif-3-part-1)
   return new RegExp(`^${regexPattern}(?:-.*)?$`, "i");
