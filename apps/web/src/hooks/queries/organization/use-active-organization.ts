@@ -12,23 +12,40 @@ function useActiveOrganization() {
     isPending: isOrganizationsPending,
     refetch: refetchOrganizations,
   } = authClient.useListOrganizations();
-  const { organizationId } = useParams({
+  const { organizationSlug, organizationId: legacyOrganizationId } = useParams({
     strict: false,
     select: (params) => ({
+      organizationSlug:
+        "organizationSlug" in params &&
+        typeof params.organizationSlug === "string"
+          ? params.organizationSlug
+          : undefined,
       organizationId:
-        "organizationId" in params && typeof params.organizationId === "string"
+        "organizationId" in params &&
+        typeof params.organizationId === "string"
           ? params.organizationId
           : undefined,
     }),
   });
 
-  const organizationFromRoute = organizationId
-    ? organizations?.find((organization) => organization.id === organizationId)
-    : undefined;
+  // Resolve org from URL: prefer slug, fall back to legacy UUID for compat
+  const organizationFromRoute = organizationSlug
+    ? organizations?.find(
+        (organization) =>
+          organization.slug.toLowerCase() ===
+          organizationSlug.toLowerCase(),
+      )
+    : legacyOrganizationId
+      ? organizations?.find(
+          (organization) => organization.id === legacyOrganizationId,
+        )
+      : undefined;
   const organization =
     organizationFromRoute ?? activeOrganization ?? organizations?.[0];
   const isLoading =
-    (!!organizationId && isOrganizationsPending && !organizationFromRoute) ||
+    ((!!organizationSlug || !!legacyOrganizationId) &&
+      isOrganizationsPending &&
+      !organizationFromRoute) ||
     (!organization && !error);
 
   return {

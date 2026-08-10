@@ -19,7 +19,7 @@ async function createSlackIntegration(
   json: CreateSlackIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/board/${boardId}`),
+    getApiUrl(`/slack-integration/board/${boardSlug}`),
     {
       method: "POST",
       credentials: "include",

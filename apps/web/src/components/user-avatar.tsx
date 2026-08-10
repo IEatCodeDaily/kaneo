@@ -164,7 +164,7 @@ export function UserAvatar() {
               <DropdownMenuItem
                 onClick={() =>
                   navigate({
-                    to: `/dashboard/organization/${organization.id}/trash`,
+                    to: `/dashboard/organization/${organization.slug}/trash`,
                   })
                 }
                 className="h-7 gap-2 px-2 text-sm font-normal"

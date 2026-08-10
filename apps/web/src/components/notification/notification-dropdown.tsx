@@ -321,7 +321,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
           taskId
         ) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
             params: { organizationId, boardId, taskId },
           });
         }

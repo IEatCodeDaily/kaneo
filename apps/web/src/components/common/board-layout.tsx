@@ -127,7 +127,7 @@ export default function BoardLayout({
     if (view === resolvedView) return;
     setPendingView(view);
     navigate({
-      to: `/dashboard/organization/$organizationId/board/$boardId/${view}`,
+      to: `/dashboard/organization/$organizationId/board/$boardSlug/${view}`,
       params: { organizationId, boardId },
     });
   };
@@ -141,7 +141,7 @@ export default function BoardLayout({
     if (nextBoardId === boardId) return;
     setPendingBoardId(nextBoardId);
     navigate({
-      to: `/dashboard/organization/$organizationId/board/$boardId/${resolvedView}`,
+      to: `/dashboard/organization/$organizationId/board/$boardSlug/${resolvedView}`,
       params: {
         organizationId,
         boardId: nextBoardId,

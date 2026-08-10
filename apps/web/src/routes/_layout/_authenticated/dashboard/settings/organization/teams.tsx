@@ -64,7 +64,7 @@ export const Route = createFileRoute(
       await authClient.organization.getFullOrganization();
     if (!organization?.id) return;
     throw redirect({
-      to: "/dashboard/organization/$organizationId/members",
+      to: "/dashboard/organization/$organizationSlug/members",
       params: { organizationId: organization.id },
       search: { tab: "teams" },
       replace: true,

@@ -19,7 +19,7 @@ async function createDiscordIntegration(
   json: CreateDiscordIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/board/${boardId}`),
+    getApiUrl(`/discord-integration/board/${boardSlug}`),
     {
       method: "POST",
       credentials: "include",

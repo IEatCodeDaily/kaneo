@@ -17,7 +17,7 @@ function AgentSettings() {
   const { data: organization } = useActiveOrganization();
   if (!organization?.id) return null;
   throw redirect({
-    to: "/dashboard/organization/$organizationId/members",
+    to: "/dashboard/organization/$organizationSlug/members",
     params: { organizationId: organization.id },
     search: { tab: "members" },
   });

@@ -37,9 +37,9 @@ export function NavMain() {
   if (!organization && user?.role !== "admin") return null;
   if (!organization) return null;
 
-  const membersUrl = `/dashboard/organization/${organization.id}/members`;
-  const myTasksUrl = `/dashboard/organization/${organization.id}/my-tasks`;
-  const inboxUrl = `/dashboard/organization/${organization.id}/inbox`;
+  const membersUrl = `/dashboard/organization/${organization.slug}/members`;
+  const myTasksUrl = `/dashboard/organization/${organization.slug}/my-tasks`;
+  const inboxUrl = `/dashboard/organization/${organization.slug}/inbox`;
 
   return (
     <SidebarGroup className="gap-1 p-2 pb-0">

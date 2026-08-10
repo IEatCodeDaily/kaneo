@@ -301,7 +301,7 @@ export default function TaskRelations({
     // Linked tasks can live on another board, so navigate using the task's own
     // boardId. Falling back to the current board would produce a broken URL.
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+      to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
       params: {
         organizationId,
         boardId: linkedBoardId || boardId,

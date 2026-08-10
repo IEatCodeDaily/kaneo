@@ -78,7 +78,7 @@ export function NavBoards() {
   const { data: organization } = useActiveOrganization();
   const teamId = useTeamViewStore((state) => state.teamId);
   const { data: boards } = useGetBoards({
-    organizationId: organization?.id || "",
+    organizationSlug: organization?.slug || "",
     teamId,
   });
   const queryClient = useQueryClient();
@@ -97,7 +97,7 @@ export function NavBoards() {
     setBoardSidebarOrder,
   } = useUserPreferencesStore();
   const navigate = useNavigate();
-  const { organizationId: currentOrganizationId, boardId: currentBoardId } =
+  const { organizationSlug: currentOrganizationSlug, boardSlug: currentBoardSlug } =
     useParams({
       strict: false,
     });
@@ -123,10 +123,10 @@ export function NavBoards() {
   const setPendingBoardId = useNavigationStore((s) => s.setPendingBoardId);
 
   useEffect(() => {
-    if (pendingBoardId && currentBoardId === pendingBoardId) {
+    if (pendingBoardId && currentBoardSlug === pendingBoardId) {
       setPendingBoardId(null);
     }
-  }, [currentBoardId, pendingBoardId, setPendingBoardId]);
+  }, [currentBoardSlug, pendingBoardId, setPendingBoardId]);
 
   // Don't strand the highlight if the navigation never lands.
   useEffect(() => {
@@ -135,11 +135,12 @@ export function NavBoards() {
     return () => clearTimeout(timer);
   }, [pendingBoardId, setPendingBoardId]);
 
-  const selectedBoardId = pendingBoardId ?? currentBoardId;
+  const selectedBoardId = pendingBoardId ?? currentBoardSlug;
 
   const isCurrentBoard = (boardId: string) => {
     return (
-      selectedBoardId === boardId && currentOrganizationId === organization?.id
+      selectedBoardId === boardId &&
+      currentOrganizationSlug === organization?.slug
     );
   };
 
@@ -147,10 +148,10 @@ export function NavBoards() {
     if (board.id === selectedBoardId) return;
     setPendingBoardId(board.id);
     navigate({
-      to: `/dashboard/organization/$organizationId/board/$boardId/${currentBoardView}`,
+      to: `/dashboard/organization/$organizationSlug/board/$boardSlug/${currentBoardView}`,
       params: {
-        organizationId: organization?.id || "",
-        boardId: board.id,
+        organizationSlug: organization?.slug || "",
+        boardSlug: board.slug,
       },
     });
   };
@@ -163,7 +164,7 @@ export function NavBoards() {
     const boardIds = boards
       .filter(
         (board) =>
-          board.id !== currentBoardId &&
+          board.id !== currentBoardSlug &&
           !hiddenBoardIds.includes(`${user?.id}:${board.id}`) &&
           !queryClient.getQueryData(["tasks", board.id]),
       )
@@ -189,7 +190,7 @@ export function NavBoards() {
     };
   }, [
     boards,
-    currentBoardId,
+    currentBoardSlug,
     hiddenBoardIds,
     organization?.id,
     queryClient,
@@ -198,7 +199,7 @@ export function NavBoards() {
 
   const handleShareBoard = (board: BoardWithTasks) => {
     navigator.clipboard.writeText(
-      `${window.location.origin}/dashboard/organization/${organization?.id}/board/${board.id}`,
+      `${window.location.origin}/dashboard/organization/${organization?.slug}/board/${board.slug}`,
     );
     toast.success(t("navigation:boardList.linkCopied"));
   };
@@ -262,10 +263,10 @@ export function NavBoards() {
                   data-testid={`sidebar-board-collapsed-${board.id}`}
                   onClick={() =>
                     navigate({
-                      to: "/dashboard/organization/$organizationId/board/$boardId",
+                      to: "/dashboard/organization/$organizationId/board/$boardSlug",
                       params: {
                         organizationId: organization.id,
-                        boardId: board.id,
+                        boardSlug: board.slug,
                       },
                     })
                   }
@@ -554,7 +555,7 @@ export function NavBoards() {
           await archiveBoard({ id: board.id });
           toast.success("Board archived");
           setBoardToArchive(null);
-          if (currentBoardId === board.id)
+          if (currentBoardSlug === board.id)
             navigate({
               to: "/dashboard/organization/$organizationId",
               params: { organizationId: organization.id },
@@ -593,7 +594,7 @@ export function NavBoards() {
                 navigate({
                   to: "/dashboard/organization/$organizationId",
                   params: {
-                    organizationId: organization?.id || "",
+                    organizationSlug: organization?.slug || "",
                   },
                 });
               }}

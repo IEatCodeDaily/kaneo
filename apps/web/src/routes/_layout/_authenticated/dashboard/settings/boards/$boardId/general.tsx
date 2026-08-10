@@ -316,7 +316,7 @@ function RouteComponent() {
       await queryClient.invalidateQueries({ queryKey: ["boards"] });
 
       navigate({
-        to: "/dashboard/organization/$organizationId",
+        to: "/dashboard/organization/$organizationSlug",
         params: { organizationId: organization?.id || "" },
       });
     } catch (error) {

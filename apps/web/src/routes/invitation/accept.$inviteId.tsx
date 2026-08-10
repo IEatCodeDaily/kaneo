@@ -70,7 +70,7 @@ function AcceptInvitation() {
       }
 
       navigate({
-        to: "/dashboard/organization/$organizationId",
+        to: "/dashboard/organization/$organizationSlug",
         params: { organizationId: data?.invitation.organizationId || "" },
       });
     } catch (error) {

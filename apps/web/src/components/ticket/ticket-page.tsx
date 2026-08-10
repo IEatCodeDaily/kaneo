@@ -95,7 +95,7 @@ export default function TicketPage({
             variant="outline"
             onClick={() =>
               navigate({
-                to: "/dashboard/organization/$organizationId/board/$boardId/board",
+                to: "/dashboard/organization/$organizationId/board/$boardSlug/board",
                 params: { organizationId, boardId },
               })
             }

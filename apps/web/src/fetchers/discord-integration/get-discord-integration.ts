@@ -21,7 +21,7 @@ export type DiscordIntegration = {
 
 async function getDiscordIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/board/${boardId}`),
+    getApiUrl(`/discord-integration/board/${boardSlug}`),
     {
       credentials: "include",
     },

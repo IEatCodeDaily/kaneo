@@ -42,7 +42,7 @@ export default function SubtaskOfBadge({
         onClick={(event) => event.stopPropagation()}
         params={{ organizationId, boardId, taskId: parent.id }}
         title={parent.title}
-        to="/dashboard/organization/$organizationId/board/$boardId/task/$taskId"
+        to="/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId"
       >
         {label}
       </Link>

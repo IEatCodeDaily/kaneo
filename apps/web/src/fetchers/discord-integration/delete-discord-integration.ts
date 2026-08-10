@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 async function deleteDiscordIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/board/${boardId}`),
+    getApiUrl(`/discord-integration/board/${boardSlug}`),
     {
       method: "DELETE",
       credentials: "include",

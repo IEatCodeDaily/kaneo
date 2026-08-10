@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 async function deleteTelegramIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/board/${boardId}`),
+    getApiUrl(`/telegram-integration/board/${boardSlug}`),
     {
       method: "DELETE",
       credentials: "include",

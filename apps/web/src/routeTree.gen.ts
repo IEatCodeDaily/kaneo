@@ -32,7 +32,7 @@ import { Route as LayoutAuthenticatedDashboardIndexRouteImport } from './routes/
 import { Route as LayoutAuthenticatedDashboardAdminRouteImport } from './routes/_layout/_authenticated/dashboard/admin'
 import { Route as LayoutAuthenticatedDashboardInvitationsRouteImport } from './routes/_layout/_authenticated/dashboard/invitations'
 import { Route as LayoutAuthenticatedDashboardSettingsRouteImport } from './routes/_layout/_authenticated/dashboard/settings'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug'
 import { Route as LayoutAuthenticatedDashboardOrganizationCreateRouteImport } from './routes/_layout/_authenticated/dashboard/organization/create'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards'
@@ -40,12 +40,12 @@ import { Route as LayoutAuthenticatedDashboardSettingsConnectionsRouteImport } f
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization'
 import { Route as LayoutAuthenticatedDashboardSettingsReposRouteImport } from './routes/_layout/_authenticated/dashboard/settings/repos'
 import { Route as LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport } from './routes/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/index'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/inbox'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/members'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/search'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/trash'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/members'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/search'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/trash'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountAuthenticationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/authentication'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountDeveloperRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/developer'
@@ -64,28 +64,28 @@ import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRolesRouteImpo
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTeamsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/teams'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/templates'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/visibility'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/index'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdWorkflowRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/workflow'
 import { Route as LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRouteImport } from './routes/_layout/_authenticated/dashboard/settings/repos/$repoId/visibility'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/index'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/calendar'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/milestones'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/index'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/packages'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/releases'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
-import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/code'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -209,10 +209,10 @@ const LayoutAuthenticatedDashboardSettingsRoute =
     path: '/settings',
     getParentRoute: () => LayoutAuthenticatedDashboardRoute,
   } as any)
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteImport.update({
-    id: '/organization/$organizationId',
-    path: '/organization/$organizationId',
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteImport.update({
+    id: '/organization/$organizationSlug',
+    path: '/organization/$organizationSlug',
     getParentRoute: () => LayoutAuthenticatedDashboardRoute,
   } as any)
 const LayoutAuthenticatedDashboardOrganizationCreateRoute =
@@ -259,58 +259,58 @@ const LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute =
       getParentRoute: () => LayoutAuthenticatedDashboardRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRouteImport.update(
     {
       id: '/',
       path: '/',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRouteImport.update(
     {
       id: '/inbox',
       path: '/inbox',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRouteImport.update(
     {
       id: '/members',
       path: '/members',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRouteImport.update(
     {
       id: '/my-tasks',
       path: '/my-tasks',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRouteImport.update(
     {
       id: '/search',
       path: '/search',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRouteImport.update(
     {
       id: '/trash',
       path: '/trash',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
 const LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute =
@@ -424,22 +424,22 @@ const LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRoute =
     path: '/visibility',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsOrganizationRoute,
   } as any)
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRouteImport.update(
     {
       id: '/repo/',
       path: '/repo/',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRouteImport.update(
     {
       id: '/table/$tableId',
       path: '/table/$tableId',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
 const LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute =
@@ -476,139 +476,139 @@ const LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRoute =
     path: '/$repoId/visibility',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsReposRoute,
   } as any)
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRouteImport.update(
     {
-      id: '/board/$boardId/',
-      path: '/board/$boardId/',
+      id: '/board/$boardSlug/',
+      path: '/board/$boardSlug/',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRouteImport.update(
     {
-      id: '/board/$boardId/backlog',
-      path: '/board/$boardId/backlog',
+      id: '/board/$boardSlug/backlog',
+      path: '/board/$boardSlug/backlog',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRouteImport.update(
     {
-      id: '/board/$boardId/board',
-      path: '/board/$boardId/board',
+      id: '/board/$boardSlug/board',
+      path: '/board/$boardSlug/board',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRouteImport.update(
     {
-      id: '/board/$boardId/calendar',
-      path: '/board/$boardId/calendar',
+      id: '/board/$boardSlug/calendar',
+      path: '/board/$boardSlug/calendar',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRouteImport.update(
     {
-      id: '/board/$boardId/gantt',
-      path: '/board/$boardId/gantt',
+      id: '/board/$boardSlug/gantt',
+      path: '/board/$boardSlug/gantt',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRouteImport.update(
     {
-      id: '/board/$boardId/milestones',
-      path: '/board/$boardId/milestones',
+      id: '/board/$boardSlug/milestones',
+      path: '/board/$boardSlug/milestones',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRouteImport.update(
     {
       id: '/repo/$repoId/',
       path: '/repo/$repoId/',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRouteImport.update(
     {
       id: '/repo/$repoId/code',
       path: '/repo/$repoId/code',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteImport.update(
     {
       id: '/repo/$repoId/issues',
       path: '/repo/$repoId/issues',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRouteImport.update(
     {
       id: '/repo/$repoId/packages',
       path: '/repo/$repoId/packages',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteImport.update(
     {
       id: '/repo/$repoId/pulls',
       path: '/repo/$repoId/pulls',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRouteImport.update(
     {
       id: '/repo/$repoId/releases',
       path: '/repo/$repoId/releases',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRouteImport.update(
     {
-      id: '/board/$boardId/task/$taskId_',
-      path: '/board/$boardId/task/$taskId',
+      id: '/board/$boardSlug/task/$taskId_',
+      path: '/board/$boardSlug/task/$taskId',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRouteImport.update(
-    {
-      id: '/$number',
-      path: '/$number',
-      getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute,
-    } as any,
-  )
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRouteImport.update(
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRouteImport.update(
     {
       id: '/$number',
       path: '/$number',
       getParentRoute: () =>
-        LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute,
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute,
+    } as any,
+  )
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRouteImport.update(
+    {
+      id: '/$number',
+      path: '/$number',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute,
     } as any,
   )
 
@@ -634,7 +634,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/invitations': typeof LayoutAuthenticatedDashboardInvitationsRoute
   '/dashboard/settings': typeof LayoutAuthenticatedDashboardSettingsRouteWithChildren
   '/dashboard/': typeof LayoutAuthenticatedDashboardIndexRoute
-  '/dashboard/organization/$organizationId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren
+  '/dashboard/organization/$organizationSlug': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren
   '/dashboard/organization/create': typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   '/dashboard/settings/account': typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   '/dashboard/settings/boards': typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
@@ -642,11 +642,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
-  '/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
-  '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
-  '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
-  '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
-  '/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
+  '/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
+  '/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
+  '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
+  '/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
+  '/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -665,29 +665,29 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/dashboard/settings/organization/visibility': typeof LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRoute
-  '/dashboard/organization/$organizationId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
-  '/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
+  '/dashboard/organization/$organizationSlug/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute
+  '/dashboard/organization/$organizationSlug/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute
   '/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
   '/dashboard/settings/boards/$boardId/workflow': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdWorkflowRoute
   '/dashboard/settings/repos/$repoId/visibility': typeof LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRoute
-  '/dashboard/organization/$organizationId/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
-  '/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
-  '/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
-  '/dashboard/organization/$organizationId/board/$boardId/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute
-  '/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
-  '/dashboard/organization/$organizationId/board/$boardId/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
-  '/dashboard/organization/$organizationId/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
-  '/dashboard/organization/$organizationId/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute
-  '/dashboard/organization/$organizationId/board/$boardId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute
-  '/dashboard/organization/$organizationId/board/$boardId/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute
+  '/dashboard/organization/$organizationSlug/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren
+  '/dashboard/organization/$organizationSlug/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren
+  '/dashboard/organization/$organizationSlug/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -716,11 +716,11 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
-  '/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
-  '/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
-  '/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
-  '/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
-  '/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
+  '/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
+  '/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
+  '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
+  '/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
+  '/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -739,29 +739,29 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/dashboard/settings/organization/visibility': typeof LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRoute
-  '/dashboard/organization/$organizationId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
-  '/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
+  '/dashboard/organization/$organizationSlug': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute
+  '/dashboard/organization/$organizationSlug/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute
   '/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
   '/dashboard/settings/boards/$boardId/workflow': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdWorkflowRoute
   '/dashboard/settings/repos/$repoId/visibility': typeof LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRoute
-  '/dashboard/organization/$organizationId/repo': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
-  '/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
-  '/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
-  '/dashboard/organization/$organizationId/board/$boardId/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute
-  '/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
-  '/dashboard/organization/$organizationId/board/$boardId/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
-  '/dashboard/organization/$organizationId/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
-  '/dashboard/organization/$organizationId/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute
-  '/dashboard/organization/$organizationId/board/$boardId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
-  '/dashboard/organization/$organizationId/repo/$repoId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute
-  '/dashboard/organization/$organizationId/board/$boardId/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute
-  '/dashboard/organization/$organizationId/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute
+  '/dashboard/organization/$organizationSlug/repo': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren
+  '/dashboard/organization/$organizationSlug/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren
+  '/dashboard/organization/$organizationSlug/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute
+  '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
+  '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -788,7 +788,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/invitations': typeof LayoutAuthenticatedDashboardInvitationsRoute
   '/_layout/_authenticated/dashboard/settings': typeof LayoutAuthenticatedDashboardSettingsRouteWithChildren
   '/_layout/_authenticated/dashboard/': typeof LayoutAuthenticatedDashboardIndexRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren
   '/_layout/_authenticated/dashboard/organization/create': typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   '/_layout/_authenticated/dashboard/settings/account': typeof LayoutAuthenticatedDashboardSettingsAccountRouteWithChildren
   '/_layout/_authenticated/dashboard/settings/boards': typeof LayoutAuthenticatedDashboardSettingsBoardsRouteWithChildren
@@ -796,11 +796,11 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/_layout/_authenticated/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
   '/_layout/_authenticated/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/_layout/_authenticated/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -819,29 +819,29 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/_layout/_authenticated/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
   '/_layout/_authenticated/dashboard/settings/organization/visibility': typeof LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/general': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdVisibilityRoute
   '/_layout/_authenticated/dashboard/settings/boards/$boardId/workflow': typeof LayoutAuthenticatedDashboardSettingsBoardsBoardIdWorkflowRoute
   '/_layout/_authenticated/dashboard/settings/repos/$repoId/visibility': typeof LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute
-  '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/gantt': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/milestones': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/code': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -867,7 +867,7 @@ export interface FileRouteTypes {
     | '/dashboard/invitations'
     | '/dashboard/settings'
     | '/dashboard/'
-    | '/dashboard/organization/$organizationId'
+    | '/dashboard/organization/$organizationSlug'
     | '/dashboard/organization/create'
     | '/dashboard/settings/account'
     | '/dashboard/settings/boards'
@@ -875,11 +875,11 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
     | '/dashboard/$organizationSlug/tickets/$ticketKey'
-    | '/dashboard/organization/$organizationId/inbox'
-    | '/dashboard/organization/$organizationId/members'
-    | '/dashboard/organization/$organizationId/my-tasks'
-    | '/dashboard/organization/$organizationId/search'
-    | '/dashboard/organization/$organizationId/trash'
+    | '/dashboard/organization/$organizationSlug/inbox'
+    | '/dashboard/organization/$organizationSlug/members'
+    | '/dashboard/organization/$organizationSlug/my-tasks'
+    | '/dashboard/organization/$organizationSlug/search'
+    | '/dashboard/organization/$organizationSlug/trash'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -898,29 +898,29 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
     | '/dashboard/settings/organization/visibility'
-    | '/dashboard/organization/$organizationId/'
-    | '/dashboard/organization/$organizationId/table/$tableId'
+    | '/dashboard/organization/$organizationSlug/'
+    | '/dashboard/organization/$organizationSlug/table/$tableId'
     | '/dashboard/settings/boards/$boardId/general'
     | '/dashboard/settings/boards/$boardId/integrations'
     | '/dashboard/settings/boards/$boardId/visibility'
     | '/dashboard/settings/boards/$boardId/workflow'
     | '/dashboard/settings/repos/$repoId/visibility'
-    | '/dashboard/organization/$organizationId/repo/'
-    | '/dashboard/organization/$organizationId/board/$boardId/backlog'
-    | '/dashboard/organization/$organizationId/board/$boardId/board'
-    | '/dashboard/organization/$organizationId/board/$boardId/calendar'
-    | '/dashboard/organization/$organizationId/board/$boardId/gantt'
-    | '/dashboard/organization/$organizationId/board/$boardId/milestones'
-    | '/dashboard/organization/$organizationId/repo/$repoId/code'
-    | '/dashboard/organization/$organizationId/repo/$repoId/issues'
-    | '/dashboard/organization/$organizationId/repo/$repoId/packages'
-    | '/dashboard/organization/$organizationId/repo/$repoId/pulls'
-    | '/dashboard/organization/$organizationId/repo/$repoId/releases'
-    | '/dashboard/organization/$organizationId/board/$boardId/'
-    | '/dashboard/organization/$organizationId/repo/$repoId/'
-    | '/dashboard/organization/$organizationId/board/$boardId/task/$taskId'
-    | '/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
-    | '/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
+    | '/dashboard/organization/$organizationSlug/repo/'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/code'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/issues'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/packages'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/releases'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -949,11 +949,11 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
     | '/dashboard/$organizationSlug/tickets/$ticketKey'
-    | '/dashboard/organization/$organizationId/inbox'
-    | '/dashboard/organization/$organizationId/members'
-    | '/dashboard/organization/$organizationId/my-tasks'
-    | '/dashboard/organization/$organizationId/search'
-    | '/dashboard/organization/$organizationId/trash'
+    | '/dashboard/organization/$organizationSlug/inbox'
+    | '/dashboard/organization/$organizationSlug/members'
+    | '/dashboard/organization/$organizationSlug/my-tasks'
+    | '/dashboard/organization/$organizationSlug/search'
+    | '/dashboard/organization/$organizationSlug/trash'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -972,29 +972,29 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
     | '/dashboard/settings/organization/visibility'
-    | '/dashboard/organization/$organizationId'
-    | '/dashboard/organization/$organizationId/table/$tableId'
+    | '/dashboard/organization/$organizationSlug'
+    | '/dashboard/organization/$organizationSlug/table/$tableId'
     | '/dashboard/settings/boards/$boardId/general'
     | '/dashboard/settings/boards/$boardId/integrations'
     | '/dashboard/settings/boards/$boardId/visibility'
     | '/dashboard/settings/boards/$boardId/workflow'
     | '/dashboard/settings/repos/$repoId/visibility'
-    | '/dashboard/organization/$organizationId/repo'
-    | '/dashboard/organization/$organizationId/board/$boardId/backlog'
-    | '/dashboard/organization/$organizationId/board/$boardId/board'
-    | '/dashboard/organization/$organizationId/board/$boardId/calendar'
-    | '/dashboard/organization/$organizationId/board/$boardId/gantt'
-    | '/dashboard/organization/$organizationId/board/$boardId/milestones'
-    | '/dashboard/organization/$organizationId/repo/$repoId/code'
-    | '/dashboard/organization/$organizationId/repo/$repoId/issues'
-    | '/dashboard/organization/$organizationId/repo/$repoId/packages'
-    | '/dashboard/organization/$organizationId/repo/$repoId/pulls'
-    | '/dashboard/organization/$organizationId/repo/$repoId/releases'
-    | '/dashboard/organization/$organizationId/board/$boardId'
-    | '/dashboard/organization/$organizationId/repo/$repoId'
-    | '/dashboard/organization/$organizationId/board/$boardId/task/$taskId'
-    | '/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
-    | '/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
+    | '/dashboard/organization/$organizationSlug/repo'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/code'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/issues'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/packages'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/releases'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId'
+    | '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
+    | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
   id:
     | '__root__'
     | '/'
@@ -1020,7 +1020,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/invitations'
     | '/_layout/_authenticated/dashboard/settings'
     | '/_layout/_authenticated/dashboard/'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug'
     | '/_layout/_authenticated/dashboard/organization/create'
     | '/_layout/_authenticated/dashboard/settings/account'
     | '/_layout/_authenticated/dashboard/settings/boards'
@@ -1028,11 +1028,11 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization'
     | '/_layout/_authenticated/dashboard/settings/repos'
     | '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/inbox'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/members'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/search'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/trash'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/members'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/search'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash'
     | '/_layout/_authenticated/dashboard/settings/account/authentication'
     | '/_layout/_authenticated/dashboard/settings/account/connections'
     | '/_layout/_authenticated/dashboard/settings/account/developer'
@@ -1051,29 +1051,29 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization/teams'
     | '/_layout/_authenticated/dashboard/settings/organization/templates'
     | '/_layout/_authenticated/dashboard/settings/organization/visibility'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/visibility'
     | '/_layout/_authenticated/dashboard/settings/boards/$boardId/workflow'
     | '/_layout/_authenticated/dashboard/settings/repos/$repoId/visibility'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/calendar'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/milestones'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/packages'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/releases'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
-    | '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/code'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1250,11 +1250,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId'
-      path: '/organization/$organizationId'
-      fullPath: '/dashboard/organization/$organizationId'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteImport
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug'
+      path: '/organization/$organizationSlug'
+      fullPath: '/dashboard/organization/$organizationSlug'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardRoute
     }
     '/_layout/_authenticated/dashboard/organization/create': {
@@ -1306,47 +1306,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/'
       path: '/'
-      fullPath: '/dashboard/organization/$organizationId/'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/inbox': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/inbox'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox'
       path: '/inbox'
-      fullPath: '/dashboard/organization/$organizationId/inbox'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/inbox'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/members': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/members'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/members': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/members'
       path: '/members'
-      fullPath: '/dashboard/organization/$organizationId/members'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/members'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/my-tasks'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
       path: '/my-tasks'
-      fullPath: '/dashboard/organization/$organizationId/my-tasks'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/my-tasks'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/search': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/search'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/search': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/search'
       path: '/search'
-      fullPath: '/dashboard/organization/$organizationId/search'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/search'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/trash': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/trash'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash'
       path: '/trash'
-      fullPath: '/dashboard/organization/$organizationId/trash'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/trash'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
     '/_layout/_authenticated/dashboard/settings/account/authentication': {
       id: '/_layout/_authenticated/dashboard/settings/account/authentication'
@@ -1474,19 +1474,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationVisibilityRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/'
       path: '/repo'
-      fullPath: '/dashboard/organization/$organizationId/repo/'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/table/$tableId'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId'
       path: '/table/$tableId'
-      fullPath: '/dashboard/organization/$organizationId/table/$tableId'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/table/$tableId'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
     '/_layout/_authenticated/dashboard/settings/boards/$boardId/general': {
       id: '/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
@@ -1523,110 +1523,110 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsReposRepoIdVisibilityRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsReposRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/'
-      path: '/board/$boardId'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/'
+      path: '/board/$boardSlug'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/backlog'
-      path: '/board/$boardId/backlog'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/backlog'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+      path: '/board/$boardSlug/backlog'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/board'
-      path: '/board/$boardId/board'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/board'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+      path: '/board/$boardSlug/board'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/board'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/calendar': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/calendar'
-      path: '/board/$boardId/calendar'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/calendar'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+      path: '/board/$boardSlug/calendar'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/gantt'
-      path: '/board/$boardId/gantt'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/gantt'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/gantt': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+      path: '/board/$boardSlug/gantt'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/gantt'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/milestones': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/milestones'
-      path: '/board/$boardId/milestones'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/milestones'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/milestones': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+      path: '/board/$boardSlug/milestones'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/milestones'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/'
       path: '/repo/$repoId'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/code'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/code': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/code'
       path: '/repo/$repoId/code'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/code'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/code'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues'
       path: '/repo/$repoId/issues'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/issues'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/issues'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/packages': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/packages'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages'
       path: '/repo/$repoId/packages'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/packages'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/packages'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
       path: '/repo/$repoId/pulls'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/pulls'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/releases': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/releases'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases'
       path: '/repo/$repoId/releases'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/releases'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/releases'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/board/$boardId/task/$taskId_'
-      path: '/board/$boardId/task/$taskId'
-      fullPath: '/dashboard/organization/$organizationId/board/$boardId/task/$taskId'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_'
+      path: '/board/$boardSlug/task/$taskId'
+      fullPath: '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
       path: '/$number'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/issues/$number'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute
     }
-    '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number': {
-      id: '/_layout/_authenticated/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
       path: '/$number'
-      fullPath: '/dashboard/organization/$organizationId/repo/$repoId/pulls/$number'
-      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRouteImport
-      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute
+      fullPath: '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute
     }
   }
 }
@@ -1775,109 +1775,109 @@ const LayoutAuthenticatedDashboardSettingsRouteWithChildren =
     LayoutAuthenticatedDashboardSettingsRouteChildren,
   )
 
-interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteChildren {
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute
+interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteChildren {
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
 }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteChildren =
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteChildren =
   {
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesNumberRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute,
   }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute._addFileChildren(
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteChildren,
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute._addFileChildren(
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteChildren,
   )
 
-interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteChildren {
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute
+interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteChildren {
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
 }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteChildren =
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteChildren =
   {
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsNumberRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute,
   }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute._addFileChildren(
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteChildren,
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute._addFileChildren(
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteChildren,
   )
 
-interface LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren {
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute
+interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren {
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
 }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren =
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren =
   {
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdInboxRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdMembersRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdMyTasksRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdSearchRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdTrashRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdIndexRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdTableTableIdRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoIndexRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBacklogRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdBoardRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdCalendarRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdGanttRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdMilestonesRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdCodeRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIssuesRouteWithChildren,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPackagesRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdPullsRouteWithChildren,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdReleasesRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdIndexRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRepoRepoIdIndexRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdBoardBoardIdTaskTaskIdRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugGanttRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugMilestonesRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdCodeRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesRouteWithChildren,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPackagesRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteWithChildren,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute,
   }
 
-const LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren =
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute._addFileChildren(
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteChildren,
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute._addFileChildren(
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren,
   )
 
 interface LayoutAuthenticatedDashboardRouteChildren {
@@ -1885,7 +1885,7 @@ interface LayoutAuthenticatedDashboardRouteChildren {
   LayoutAuthenticatedDashboardInvitationsRoute: typeof LayoutAuthenticatedDashboardInvitationsRoute
   LayoutAuthenticatedDashboardSettingsRoute: typeof LayoutAuthenticatedDashboardSettingsRouteWithChildren
   LayoutAuthenticatedDashboardIndexRoute: typeof LayoutAuthenticatedDashboardIndexRoute
-  LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren
   LayoutAuthenticatedDashboardOrganizationCreateRoute: typeof LayoutAuthenticatedDashboardOrganizationCreateRoute
   LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute: typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
 }
@@ -1900,8 +1900,8 @@ const LayoutAuthenticatedDashboardRouteChildren: LayoutAuthenticatedDashboardRou
       LayoutAuthenticatedDashboardSettingsRouteWithChildren,
     LayoutAuthenticatedDashboardIndexRoute:
       LayoutAuthenticatedDashboardIndexRoute,
-    LayoutAuthenticatedDashboardOrganizationOrganizationIdRoute:
-      LayoutAuthenticatedDashboardOrganizationOrganizationIdRouteWithChildren,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren,
     LayoutAuthenticatedDashboardOrganizationCreateRoute:
       LayoutAuthenticatedDashboardOrganizationCreateRoute,
     LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute:

@@ -143,7 +143,7 @@ export default function TaskDetailsSheet({
   const handleOpenFullPage = useCallback(() => {
     if (!currentTaskId) return;
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+      to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
       params: {
         organizationId,
         boardId,

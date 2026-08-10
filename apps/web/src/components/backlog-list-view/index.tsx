@@ -127,7 +127,7 @@ function BacklogListView({
       Enter: () => {
         if (focusedTaskId && board) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
             params: {
               organizationId: board.organizationId,
               boardId: board.id,

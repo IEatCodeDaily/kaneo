@@ -44,13 +44,13 @@ function RouteComponent() {
       await queryClient.invalidateQueries({ queryKey: ["organizations"] });
 
       await authClient.organization.setActive({
-        organizationId: createdOrganization.id,
+        organizationSlug: createdOrganization.slug,
       });
 
       navigate({
-        to: "/dashboard/organization/$organizationId",
+        to: "/dashboard/organization/$organizationSlug",
         params: {
-          organizationId: createdOrganization.id,
+          organizationSlug: createdOrganization.slug,
         },
         replace: true,
       });

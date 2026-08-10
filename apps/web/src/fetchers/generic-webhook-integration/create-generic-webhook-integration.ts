@@ -26,7 +26,7 @@ async function createGenericWebhookIntegration(
   json: CreateGenericWebhookIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/generic-webhook-integration/board/${boardId}`),
+    getApiUrl(`/generic-webhook-integration/board/${boardSlug}`),
     {
       method: "POST",
       credentials: "include",

@@ -259,7 +259,7 @@ export default function TaskSubtasks({
           if (focusedIndex >= 0 && focusedIndex < totalCount) {
             e.preventDefault();
             navigate({
-              to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+              to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
               params: {
                 organizationId,
                 // Subtasks may live on another board; use the subtask's own board.
@@ -505,7 +505,7 @@ export default function TaskSubtasks({
                     onToggleComplete={() => handleToggleComplete(taskObj)}
                     onNavigate={() =>
                       navigate({
-                        to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+                        to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
                         params: {
                           organizationId,
                           boardId: subtask.task.boardId || boardId,

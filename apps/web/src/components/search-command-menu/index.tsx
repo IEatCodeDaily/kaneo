@@ -118,7 +118,7 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "board":
         if (item.id && organization?.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/board",
+            to: "/dashboard/organization/$organizationId/board/$boardSlug/board",
             params: {
               organizationId: organization.id,
               boardId: item.id,
