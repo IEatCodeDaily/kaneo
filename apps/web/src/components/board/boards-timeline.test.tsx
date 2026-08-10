@@ -159,6 +159,11 @@ describe("BoardsTimeline", () => {
       screen.queryByTestId("boards-timeline-task-a-ms1-task-1"),
     ).toBeNull();
 
+    // Section header has an aggregate bar spanning earliest start to latest due
+    expect(
+      screen.getByTestId("boards-timeline-section-bar-a-ms1"),
+    ).toBeTruthy();
+
     // Expand the milestone section
     fireEvent.click(screen.getByTestId("boards-timeline-section-toggle-a-ms1"));
     expect(

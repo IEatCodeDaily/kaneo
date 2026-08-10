@@ -657,19 +657,87 @@ export default function BoardsTimeline({
                                   ({section.tasks.length})
                                 </span>
                               </div>
-                              <div
-                                className="relative grid flex-1 items-center py-1.5"
-                                style={{
-                                  backgroundImage: [
-                                    weekendTint,
-                                    gridLineGradient(timeline),
-                                  ]
-                                    .filter(Boolean)
-                                    .join(", "),
-                                  gridTemplateColumns:
-                                    timeline.gridTemplateColumns,
-                                }}
-                              />
+                              {(() => {
+                                const validStarts: Date[] = [];
+                                const validEnds: Date[] = [];
+                                for (const task of section.tasks) {
+                                  const s =
+                                    toDate(task.startDate) ??
+                                    toDate(task.dueDate);
+                                  const e = toDate(task.dueDate) ?? s;
+                                  if (s && e) {
+                                    validStarts.push(s);
+                                    validEnds.push(e);
+                                  }
+                                }
+                                if (validStarts.length === 0) {
+                                  return (
+                                    <div
+                                      className="relative grid flex-1 items-center py-1.5"
+                                      style={{
+                                        backgroundImage: [
+                                          weekendTint,
+                                          gridLineGradient(timeline),
+                                        ]
+                                          .filter(Boolean)
+                                          .join(", "),
+                                        gridTemplateColumns:
+                                          timeline.gridTemplateColumns,
+                                      }}
+                                    />
+                                  );
+                                }
+                                const sectionStart = validStarts.reduce(
+                                  (a, b) => (a < b ? a : b),
+                                );
+                                const sectionEnd = validEnds.reduce((a, b) =>
+                                  a > b ? a : b,
+                                );
+                                const sectionStartIndex =
+                                  differenceInCalendarDays(
+                                    sectionStart,
+                                    timeline.rangeStart,
+                                  );
+                                const sectionSpan =
+                                  differenceInCalendarDays(
+                                    sectionEnd,
+                                    sectionStart,
+                                  ) + 1;
+                                return (
+                                  <div
+                                    className="relative grid flex-1 items-center py-1.5"
+                                    style={{
+                                      backgroundImage: [
+                                        weekendTint,
+                                        gridLineGradient(timeline),
+                                      ]
+                                        .filter(Boolean)
+                                        .join(", "),
+                                      gridTemplateColumns:
+                                        timeline.gridTemplateColumns,
+                                    }}
+                                  >
+                                    <div
+                                      className="flex h-5 items-center overflow-hidden rounded bg-primary/15 ring-1 ring-inset ring-primary/30"
+                                      data-testid={`boards-timeline-section-bar-${sectionId}`}
+                                      style={{
+                                        gridColumn: `${Math.max(1, sectionStartIndex + 1)} / span ${Math.max(1, sectionSpan)}`,
+                                        gridRow: 1,
+                                      }}
+                                      title={`${sectionLabel} · ${format(sectionStart, "MMM d")}${sectionEnd > sectionStart ? ` → ${format(sectionEnd, "MMM d, yyyy")}` : ""}`}
+                                    >
+                                      {sectionSpan > 3 && (
+                                        <span className="truncate px-1.5 text-[10px] font-medium text-primary/80">
+                                          {format(sectionStart, "MMM d")}
+                                          {sectionEnd > sectionStart
+                                            ? ` – ${format(sectionEnd, "MMM d")}`
+                                            : ""}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                             {sectionExpanded &&
                               section.tasks.map((task) => {
