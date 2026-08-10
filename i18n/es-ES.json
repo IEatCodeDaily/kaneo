@@ -2052,6 +2052,7 @@
 				"webhookInvalid": "Introduce una URL válida de un webhook de Discord"
 			},
 			"toast": {
+<<<<<<< HEAD
 				"saved": "Integración con Discord guardada correctamente",
 				"enabled": "Notificaciones de Discord activadas",
 				"removed": "Integración con Discord eliminada correctamente",
@@ -2059,6 +2060,28 @@
 				"disabled": "Notificaciones de Discord pausadas",
 				"removeError": "Error al eliminar la integración con Discord",
 				"updateError": "Error al actualizar la integración de Discord"
+=======
+				"verifyOk": "El token de Gitea puede acceder a este repositorio",
+				"verifyWarning": "Comprueba los permisos del token o el acceso al repositorio",
+				"repoNotFound": "Repositorio no encontrado o no accesible",
+				"verifyError": "Error al verificar el acceso a Gitea",
+				"tokenRequired": "El token de acceso personal es obligatorio",
+				"tokenRequiredVerify": "Introduce un token para verificar",
+				"verifyFirst": "La verificación de acceso ha fallado. Comprueba la URL, el token y el repositorio",
+				"updated": "Integración con Gitea guardada",
+				"updateError": "Error al guardar la integración con Gitea",
+				"removed": "Integración con Gitea eliminada",
+				"removeError": "Error al eliminar la integración con Gitea",
+				"issuesImported": "Issues importadas correctamente",
+				"importError": "Error al importar issues",
+				"commentOnEnabled": "Kaneo comentará con un enlace a la tarea en las nuevas issues",
+				"commentOnDisabled": "Los comentarios con enlace a la tarea en nuevas issues están desactivados",
+				"settingsUpdateError": "Error al actualizar la integración con Gitea",
+				"secretCopied": "Copiado",
+				"unableToCopySecret": "No se pudo copiar el secreto",
+				"notGiteaInstance": "La URL no apunta a una instancia de Gitea",
+				"redirected": "La URL de Gitea se ha redirigido (normalmente a HTTPS). Usa la URL final directamente."
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 			},
 			"connect": "Conectar con Discord",
 			"connected": "Conectado",

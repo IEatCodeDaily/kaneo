@@ -951,7 +951,13 @@
 				"commentOnDisabled": "नई issues पर कार्य लिंक टिप्पणियाँ बंद हैं",
 				"settingsUpdateError": "Gitea एकीकरण अपडेट करने में विफल",
 				"secretCopied": "कॉपी किया",
+<<<<<<< HEAD
 				"unableToCopySecret": "सीक्रेट कॉपी करने में असमर्थ"
+=======
+				"unableToCopySecret": "सीक्रेट कॉपी करने में असमर्थ",
+				"notGiteaInstance": "यह URL किसी Gitea इंस्टेंस की ओर इंगित नहीं करता",
+				"redirected": "Gitea URL पुनः निर्देशित किया गया (आमतौर पर HTTPS पर). अंतिम URL सीधे उपयोग करें।"
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 			},
 			"webhookShow": "दिखाएँ",
 			"webhookHide": "छिपाएँ",
@@ -1553,6 +1559,12 @@
 					"addRowAfter": "नीचे पंक्ति जोड़ें",
 					"deleteRow": "पंक्ति हटाएँ",
 					"deleteTable": "तालिका हटाएँ"
+<<<<<<< HEAD
+=======
+				},
+				"mermaid": {
+					"renderFailed": "Mermaid डायग्राम प्रस्तुत नहीं किया जा सका"
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 				}
 			},
 			"editHistory": "Edit history"
@@ -1686,6 +1698,12 @@
 						"onlyYoutube": "केवल YouTube लिंक एम्बेड किए जा सकते हैं।"
 					},
 					"onlyYoutubeInline": "केवल YouTube URL एम्बेड किए जा सकते हैं। इसके बजाय लिंक मोड का उपयोग करें।"
+<<<<<<< HEAD
+=======
+				},
+				"mermaid": {
+					"renderFailed": "Mermaid डायग्राम प्रस्तुत नहीं किया जा सका"
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 				}
 			},
 			"close": "टिकट विवरण बंद करें"

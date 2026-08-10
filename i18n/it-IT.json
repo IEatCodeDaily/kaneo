@@ -951,7 +951,13 @@
 				"commentOnDisabled": "Commenti con link alle attività sulle nuove issue sono disattivati",
 				"settingsUpdateError": "Aggiornamento integrazione Gitea fallito",
 				"secretCopied": "Copiato",
+<<<<<<< HEAD
 				"unableToCopySecret": "Impossibile copiare il segreto"
+=======
+				"unableToCopySecret": "Impossibile copiare il segreto",
+				"notGiteaInstance": "L'URL non punta a un'istanza Gitea",
+				"redirected": "L'URL di Gitea è stata reindirizzata (di solito verso HTTPS). Usa direttamente l'URL finale."
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 			},
 			"webhookShow": "Mostra",
 			"webhookHide": "Nascondi",
@@ -1553,6 +1559,12 @@
 					"addRowAfter": "Inserisci riga sotto",
 					"deleteRow": "Elimina riga",
 					"deleteTable": "Elimina tabella"
+<<<<<<< HEAD
+=======
+				},
+				"mermaid": {
+					"renderFailed": "Impossibile eseguire il rendering del diagramma Mermaid"
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 				}
 			},
 			"editHistory": "Edit history"
@@ -1686,6 +1698,12 @@
 						"onlyYoutube": "Solo i link YouTube possono essere incorporati."
 					},
 					"onlyYoutubeInline": "Solo gli URL YouTube possono essere incorporati. Usa invece la modalità link."
+<<<<<<< HEAD
+=======
+				},
+				"mermaid": {
+					"renderFailed": "Impossibile eseguire il rendering del diagramma Mermaid"
+>>>>>>> 364f5e37 (fix(gitea): classify /user 404 as not-a-gitea-instance)
 				}
 			},
 			"close": "Chiudi i dettagli del ticket"
