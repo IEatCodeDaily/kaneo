@@ -898,7 +898,11 @@ export function registerMcpTools(
     "get_repo_pull_request_files",
     {
       description:
+<<<<<<< HEAD
         "Get the changed files and patches for a pull request — the diff an agent needs to review code rather than only read metadata.",
+=======
+        "Update a time entry. startTime is required; omitting endTime keeps the stored one. startTime cannot be later than the end time.",
+>>>>>>> 99e41ad8 (fix(time-entry): reject a start time later than the end time)
       inputSchema: z.object({
         repoId: nonEmptyString,
         number: z.number().int().positive(),
