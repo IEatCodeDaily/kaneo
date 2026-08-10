@@ -702,7 +702,15 @@ export default function BoardsTimeline({
                                         "truncate py-1 pr-3 pl-12 text-xs text-muted-foreground",
                                       )}
                                     >
-                                      {task.title}
+                                      <span className="truncate">
+                                        {task.title}
+                                      </span>
+                                      <span className="ml-2 shrink-0 tabular-nums text-[10px] text-muted-foreground/70">
+                                        {format(taskStart, "MMM d")}
+                                        {taskEnd > taskStart
+                                          ? ` – ${format(taskEnd, "MMM d")}`
+                                          : ""}
+                                      </span>
                                     </div>
                                     <div
                                       className="relative grid flex-1 items-center py-1"
@@ -718,14 +726,23 @@ export default function BoardsTimeline({
                                       }}
                                     >
                                       <div
-                                        className="h-4 rounded bg-primary/20 ring-1 ring-inset ring-primary/35"
+                                        className="flex h-4 items-center overflow-hidden rounded bg-primary/25 px-1 ring-1 ring-inset ring-primary/40"
                                         data-testid={`boards-timeline-task-${board.id}-${task.id}`}
                                         style={{
                                           gridColumn: `${Math.max(1, taskStartIndex + 1)} / span ${Math.max(1, taskSpan)}`,
                                           gridRow: 1,
                                         }}
-                                        title={task.title}
-                                      />
+                                        title={`${task.title} · ${format(taskStart, "MMM d")}${taskEnd > taskStart ? ` → ${format(taskEnd, "MMM d, yyyy")}` : ""}`}
+                                      >
+                                        {taskSpan > 2 && (
+                                          <span className="truncate text-[10px] font-medium text-primary">
+                                            {format(taskStart, "MMM d")}
+                                            {taskEnd > taskStart
+                                              ? ` – ${format(taskEnd, "MMM d")}`
+                                              : ""}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 );
