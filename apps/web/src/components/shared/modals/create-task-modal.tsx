@@ -1,5 +1,5 @@
-import { useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { produce } from "immer";
 import {
   CalendarIcon,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import PrincipalPickerList from "@/components/principal-picker-list";
 import TitleTokenSuggestions, {
   TitleTokenHint,
   type TitleTokenOption,
@@ -49,7 +50,6 @@ import {
 } from "@/components/ui/popover";
 import { resolveLabelColor } from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
-import { authClient } from "@/lib/auth-client";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
@@ -62,6 +62,7 @@ import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 
@@ -1402,34 +1403,38 @@ function CreateTaskModal({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                        selectedUser || selectedTeam
-                          ? "bg-accent/30 text-foreground"
-                          : "text-muted-foreground",
-                      )}
+                      data-testid="create-task-assignee-trigger"
+                      className="inline-flex items-center gap-1.5 h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {selectedUser ? (
-                        <>
-                          <Avatar
-                            className={cn(
-                              "h-4 w-4",
-                              getAvatarTone(
-                                selectedUser.userId,
-                                selectedUser.user?.email,
-                              ),
-                            )}
-                          >
-                            <AvatarImage
-                              src={selectedUser?.user?.image ?? ""}
-                              alt={selectedUser?.user?.name || ""}
-                            />
-                            <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
-                              {getInitials(selectedUser?.user?.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{selectedUser.user?.name}</span>
-                        </>
+                      {assigneeId ? (
+                        (() => {
+                          const selectedUser =
+                            organizationMembers?.members?.find(
+                              (member) => member.userId === assigneeId,
+                            );
+                          return (
+                            <>
+                              <Avatar
+                                className={cn(
+                                  "h-4 w-4",
+                                  getAvatarTone(
+                                    selectedUser?.userId,
+                                    selectedUser?.user?.email,
+                                  ),
+                                )}
+                              >
+                                <AvatarImage
+                                  src={selectedUser?.user?.image ?? ""}
+                                  alt={selectedUser?.user?.name || ""}
+                                />
+                                <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
+                                  {getInitials(selectedUser?.user?.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{selectedUser?.user?.name}</span>
+                            </>
+                          );
+                        })()
                       ) : selectedTeam ? (
                         <>
                           <div className="flex h-4 w-4 items-center justify-center rounded-full border border-border bg-muted">
@@ -1445,81 +1450,45 @@ function CreateTaskModal({
                       )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="start">
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                        onClick={() => {
+                  <PopoverContent className="w-64 p-1" align="start">
+                    <PrincipalPickerList
+                      clearLabel={t(
+                        "common:modals.createTask.assignUnassigned",
+                      )}
+                      onSelect={(option) => {
+                        if (!option) {
                           setAssigneeId("");
                           setAssigneeTeamId("");
-                        }}
-                      >
-                        <div
-                          className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                          title={t(
-                            "common:modals.createTask.assignUnassignedTitle",
-                          )}
-                        >
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            ?
-                          </span>
-                        </div>
-                        <span className="text-sm">
-                          {t("common:modals.createTask.assignUnassigned")}
-                        </span>
-                        {!assigneeId && <Check className="ml-auto h-4 w-4" />}
-                      </button>
-                      {organizationMembers?.members?.map((member) => (
-                        <button
-                          key={member.userId}
-                          type="button"
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                          onClick={() => {
-                            setAssigneeId(member.userId || "");
-                            setAssigneeTeamId("");
-                          }}
-                        >
-                          <Avatar
-                            className={cn(
-                              "h-6 w-6",
-                              getAvatarTone(member.userId, member.user?.email),
-                            )}
-                          >
-                            <AvatarImage
-                              src={member?.user?.image ?? ""}
-                              alt={member?.user?.name || ""}
-                            />
-                            <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
-                              {getInitials(member?.user?.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{member?.user?.name}</span>
-                          {assigneeId === member.userId && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
-                        </button>
-                      ))}
-                      {organizationTeams?.map((team) => (
-                        <button
-                          key={team.id}
-                          type="button"
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                          onClick={() => {
-                            setAssigneeTeamId(team.id);
-                            setAssigneeId("");
-                          }}
-                        >
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-muted">
-                            <Users className="h-3 w-3" />
-                          </div>
-                          <span className="text-sm">{team.name}</span>
-                          {assigneeTeamId === team.id && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                        } else if (option.type === "user") {
+                          setAssigneeId(option.value);
+                          setAssigneeTeamId("");
+                        } else {
+                          setAssigneeTeamId(option.value);
+                          setAssigneeId("");
+                        }
+                      }}
+                      options={[
+                        ...(organizationMembers?.members?.map((member) => ({
+                          type: "user" as const,
+                          value: member.userId,
+                          label: member.user?.name ?? member.userId,
+                          image: member.user?.image ?? undefined,
+                        })) ?? []),
+                        ...(organizationTeams?.map((team) => ({
+                          type: "team" as const,
+                          value: team.id,
+                          label: team.name,
+                        })) ?? []),
+                      ]}
+                      selected={
+                        assigneeId
+                          ? { type: "user", value: assigneeId }
+                          : assigneeTeamId
+                            ? { type: "team", value: assigneeTeamId }
+                            : null
+                      }
+                      searchAriaLabel={t("common:modals.createTask.assign")}
+                    />
                   </PopoverContent>
                 </Popover>
 
