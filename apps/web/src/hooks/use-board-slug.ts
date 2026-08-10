@@ -15,15 +15,17 @@ export function useBoardSlug() {
     teamId: null,
   });
 
+  // The param could be a slug OR a legacy UUID — match against both.
   const board =
     boards?.find(
-      (b) => b.slug?.toLowerCase() === boardSlug?.toLowerCase(),
+      (b) =>
+        b.slug?.toLowerCase() === boardSlug?.toLowerCase() ||
+        b.id === boardSlug,
     ) ?? null;
 
-  // If no board found by slug, check if the param IS a UUID (legacy compat).
-  // Don't return the raw slug as boardId — wait for resolution.
-  const isLegacyUuid = boardSlug && /^[a-z0-9]{20,}$/i.test(boardSlug) && !board;
-  const boardId = board?.id ?? (isLegacyUuid ? boardSlug : "") ?? "";
+  // Don't return the raw slug as boardId — wait for boards query to resolve.
+  // Only pass through if it's a UUID (legacy compat) and we don't have boards yet.
+  const boardId = board?.id ?? "";
 
   return {
     boardId,

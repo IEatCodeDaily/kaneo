@@ -78,7 +78,7 @@ export function NavBoards() {
   const { data: organization } = useActiveOrganization();
   const teamId = useTeamViewStore((state) => state.teamId);
   const { data: boards } = useGetBoards({
-    organizationSlug: organization?.slug || "",
+    organizationId: organization?.id || "",
     teamId,
   });
   const queryClient = useQueryClient();

@@ -28,12 +28,13 @@ function useActiveOrganization() {
     }),
   });
 
-  // Resolve org from URL: prefer slug, fall back to legacy UUID for compat
+  // Resolve org from URL: the param could be a slug OR a legacy UUID
   const organizationFromRoute = organizationSlug
     ? organizations?.find(
         (organization) =>
           organization.slug.toLowerCase() ===
-          organizationSlug.toLowerCase(),
+            organizationSlug.toLowerCase() ||
+          organization.id === organizationSlug,
       )
     : legacyOrganizationId
       ? organizations?.find(
