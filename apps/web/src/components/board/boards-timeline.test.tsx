@@ -79,8 +79,17 @@ describe("BoardsTimeline", () => {
         .getByTestId("boards-timeline-toggle-a")
         .getAttribute("aria-expanded"),
     ).toBe("true");
+    // Section headers are visible, but tasks are hidden until section expanded
     expect(screen.getByText("Release milestone")).toBeTruthy();
     expect(screen.getByText("Scheduled without milestone")).toBeTruthy();
+
+    // Expand all now also expands sections, so task bars appear
+    fireEvent.click(screen.getByTestId("boards-timeline-expand-all"));
+    expect(
+      screen
+        .getByTestId("boards-timeline-toggle-a")
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
     expect(
       screen.getByTestId("boards-timeline-task-a-milestone-task"),
     ).toBeTruthy();
@@ -94,13 +103,93 @@ describe("BoardsTimeline", () => {
         .getByTestId("boards-timeline-toggle-a")
         .getAttribute("aria-expanded"),
     ).toBe("false");
+  });
 
-    fireEvent.click(screen.getByTestId("boards-timeline-expand-all"));
+  it("renders collapsible milestone sections within an expanded board", () => {
+    const boardWithTasks: TimelineBoard = {
+      ...board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+      tasks: [
+        {
+          id: "ms1-task-1",
+          title: "Design spec",
+          milestoneId: "ms1",
+          startDate: "2026-06-02T00:00:00.000Z",
+          dueDate: "2026-06-04T00:00:00.000Z",
+        },
+        {
+          id: "ms1-task-2",
+          title: "Implementation",
+          milestoneId: "ms1",
+          startDate: "2026-06-05T00:00:00.000Z",
+          dueDate: "2026-06-08T00:00:00.000Z",
+        },
+        {
+          id: "unassigned-task",
+          title: "Ad-hoc work",
+          dueDate: "2026-06-06T00:00:00.000Z",
+        },
+      ],
+    };
+
+    render(
+      <BoardsTimeline
+        boards={[boardWithTasks]}
+        milestonesByBoardId={{
+          a: [{ id: "ms1", name: "MVP milestone", status: "active" }],
+        }}
+        onBoardClick={vi.fn()}
+        zoom="week"
+      />,
+    );
+
+    // Expand the board
+    fireEvent.click(screen.getByTestId("boards-timeline-toggle-a"));
+
+    // Section headers are visible but task rows are hidden by default
+    expect(screen.getByText("MVP milestone")).toBeTruthy();
+    expect(screen.getByText("Scheduled without milestone")).toBeTruthy();
+
+    // Section toggle exists and is collapsed
     expect(
       screen
-        .getByTestId("boards-timeline-toggle-a")
+        .getByTestId("boards-timeline-section-toggle-a-ms1")
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(
+      screen.queryByTestId("boards-timeline-task-a-ms1-task-1"),
+    ).toBeNull();
+
+    // Expand the milestone section
+    fireEvent.click(screen.getByTestId("boards-timeline-section-toggle-a-ms1"));
+    expect(
+      screen
+        .getByTestId("boards-timeline-section-toggle-a-ms1")
         .getAttribute("aria-expanded"),
     ).toBe("true");
+    expect(
+      screen.getByTestId("boards-timeline-task-a-ms1-task-1"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("boards-timeline-task-a-ms1-task-2"),
+    ).toBeTruthy();
+
+    // Unassigned section is also collapsible
+    expect(
+      screen
+        .getByTestId("boards-timeline-section-toggle-a-unscheduled")
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    fireEvent.click(
+      screen.getByTestId("boards-timeline-section-toggle-a-unscheduled"),
+    );
+    expect(
+      screen
+        .getByTestId("boards-timeline-section-toggle-a-unscheduled")
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+    expect(
+      screen.getByTestId("boards-timeline-task-a-unassigned-task"),
+    ).toBeTruthy();
   });
 
   it("renders a bar per scheduled board", () => {

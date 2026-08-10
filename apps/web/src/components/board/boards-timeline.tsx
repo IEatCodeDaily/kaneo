@@ -171,6 +171,7 @@ export default function BoardsTimeline({
   const [zoom, setZoom] = useState<GanttZoom>(initialZoom);
   const [statusFilters, setStatusFilters] = useState<BoardStatus[]>([]);
   const [expandedBoardIds, setExpandedBoardIds] = useState<string[]>([]);
+  const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([]);
 
   const scheduled = useMemo<ScheduledBoard[]>(() => {
     return boards
@@ -243,11 +244,25 @@ export default function BoardsTimeline({
           <button
             className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
             data-testid="boards-timeline-expand-all"
-            onClick={() =>
-              setExpandedBoardIds(
-                filteredScheduled.map(({ board }) => board.id),
-              )
-            }
+            onClick={() => {
+              const boardIds = filteredScheduled.map(({ board }) => board.id);
+              setExpandedBoardIds(boardIds);
+              const sectionIds: string[] = [];
+              for (const { board } of filteredScheduled) {
+                const sections = buildOverviewTimelineSections(
+                  board.tasks ?? [],
+                  milestonesByBoardId?.[board.id] ?? [],
+                );
+                for (const section of sections) {
+                  sectionIds.push(
+                    section.kind === "milestone"
+                      ? `${board.id}-${section.milestone.id}`
+                      : `${board.id}-unscheduled`,
+                  );
+                }
+              }
+              setExpandedSectionIds(sectionIds);
+            }}
             type="button"
           >
             {t("organization:boards.timeline.expandAll", {
@@ -257,7 +272,10 @@ export default function BoardsTimeline({
           <button
             className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
             data-testid="boards-timeline-collapse-all"
-            onClick={() => setExpandedBoardIds([])}
+            onClick={() => {
+              setExpandedBoardIds([]);
+              setExpandedSectionIds([]);
+            }}
             type="button"
           >
             {t("organization:boards.timeline.collapseAll", {
@@ -585,48 +603,59 @@ export default function BoardsTimeline({
                       </div>
                     </div>
                     {expanded &&
-                      sections.flatMap((section) =>
-                        section.tasks.map((task, index) => {
-                          const taskStart =
-                            toDate(task.startDate) ?? toDate(task.dueDate);
-                          const taskEnd = toDate(task.dueDate) ?? taskStart;
-                          if (!taskStart || !taskEnd || taskEnd < taskStart)
-                            return null;
-                          const taskStartIndex = differenceInCalendarDays(
-                            taskStart,
-                            timeline.rangeStart,
-                          );
-                          const taskSpan =
-                            differenceInCalendarDays(taskEnd, taskStart) + 1;
-                          const sectionLabel =
-                            index === 0
-                              ? section.kind === "milestone"
-                                ? section.milestone.name
-                                : t(
-                                    "organization:boards.timeline.scheduledNoMilestone",
-                                    {
-                                      defaultValue:
-                                        "Scheduled without milestone",
-                                    },
-                                  )
-                              : null;
-                          return (
-                            <div
-                              className="flex border-b border-border/40"
-                              key={task.id}
-                            >
+                      sections.map((section) => {
+                        const sectionId =
+                          section.kind === "milestone"
+                            ? `${board.id}-${section.milestone.id}`
+                            : `${board.id}-unscheduled`;
+                        const sectionExpanded =
+                          expandedSectionIds.includes(sectionId);
+                        const sectionLabel =
+                          section.kind === "milestone"
+                            ? section.milestone.name
+                            : t(
+                                "organization:boards.timeline.scheduledNoMilestone",
+                                {
+                                  defaultValue: "Scheduled without milestone",
+                                },
+                              );
+                        return (
+                          <Fragment key={sectionId}>
+                            <div className="flex border-b border-border/40 bg-muted/20">
                               <div
                                 className={cn(
                                   STICKY_NAME_COLUMN,
-                                  "truncate py-1.5 pr-3 pl-10 text-xs text-muted-foreground",
+                                  "flex items-center truncate py-1.5 pl-7 pr-3 text-xs font-medium",
                                 )}
                               >
-                                {sectionLabel ? (
-                                  <span className="mr-2 font-medium text-foreground">
-                                    {sectionLabel}
-                                  </span>
-                                ) : null}
-                                {task.title}
+                                <button
+                                  aria-expanded={sectionExpanded}
+                                  aria-label={`${sectionExpanded ? "Collapse" : "Expand"} ${sectionLabel}`}
+                                  className="mr-1 inline-flex size-4 shrink-0 items-center justify-center"
+                                  data-testid={`boards-timeline-section-toggle-${sectionId}`}
+                                  onClick={() =>
+                                    setExpandedSectionIds((current) =>
+                                      current.includes(sectionId)
+                                        ? current.filter(
+                                            (id) => id !== sectionId,
+                                          )
+                                        : [...current, sectionId],
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  {sectionExpanded ? (
+                                    <ChevronDown className="size-3" />
+                                  ) : (
+                                    <ChevronRight className="size-3" />
+                                  )}
+                                </button>
+                                <span className="truncate text-foreground">
+                                  {sectionLabel}
+                                </span>
+                                <span className="ml-1.5 text-muted-foreground">
+                                  ({section.tasks.length})
+                                </span>
                               </div>
                               <div
                                 className="relative grid flex-1 items-center py-1.5"
@@ -640,21 +669,70 @@ export default function BoardsTimeline({
                                   gridTemplateColumns:
                                     timeline.gridTemplateColumns,
                                 }}
-                              >
-                                <div
-                                  className="h-4 rounded bg-primary/20 ring-1 ring-inset ring-primary/35"
-                                  data-testid={`boards-timeline-task-${board.id}-${task.id}`}
-                                  style={{
-                                    gridColumn: `${Math.max(1, taskStartIndex + 1)} / span ${Math.max(1, taskSpan)}`,
-                                    gridRow: 1,
-                                  }}
-                                  title={task.title}
-                                />
-                              </div>
+                              />
                             </div>
-                          );
-                        }),
-                      )}
+                            {sectionExpanded &&
+                              section.tasks.map((task) => {
+                                const taskStart =
+                                  toDate(task.startDate) ??
+                                  toDate(task.dueDate);
+                                const taskEnd =
+                                  toDate(task.dueDate) ?? taskStart;
+                                if (
+                                  !taskStart ||
+                                  !taskEnd ||
+                                  taskEnd < taskStart
+                                )
+                                  return null;
+                                const taskStartIndex = differenceInCalendarDays(
+                                  taskStart,
+                                  timeline.rangeStart,
+                                );
+                                const taskSpan =
+                                  differenceInCalendarDays(taskEnd, taskStart) +
+                                  1;
+                                return (
+                                  <div
+                                    className="flex border-b border-border/30"
+                                    key={task.id}
+                                  >
+                                    <div
+                                      className={cn(
+                                        STICKY_NAME_COLUMN,
+                                        "truncate py-1 pr-3 pl-12 text-xs text-muted-foreground",
+                                      )}
+                                    >
+                                      {task.title}
+                                    </div>
+                                    <div
+                                      className="relative grid flex-1 items-center py-1"
+                                      style={{
+                                        backgroundImage: [
+                                          weekendTint,
+                                          gridLineGradient(timeline),
+                                        ]
+                                          .filter(Boolean)
+                                          .join(", "),
+                                        gridTemplateColumns:
+                                          timeline.gridTemplateColumns,
+                                      }}
+                                    >
+                                      <div
+                                        className="h-4 rounded bg-primary/20 ring-1 ring-inset ring-primary/35"
+                                        data-testid={`boards-timeline-task-${board.id}-${task.id}`}
+                                        style={{
+                                          gridColumn: `${Math.max(1, taskStartIndex + 1)} / span ${Math.max(1, taskSpan)}`,
+                                          gridRow: 1,
+                                        }}
+                                        title={task.title}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </Fragment>
+                        );
+                      })}
                   </Fragment>
                 );
               })}
