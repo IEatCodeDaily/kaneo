@@ -1192,6 +1192,25 @@ input:-webkit-autofill:active {
   }
 
   /*
+    Paragraph spacing in READ-ONLY (viewer) mode.
+    The margin: 0 above is correct for the edit surface where TipTap
+    manages spacing, but in the viewer consecutive <p> tags collapse
+    with no visual gap — so blank lines the user typed vanish.
+    Restore standard prose spacing only for the viewer.
+  */
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p {
+    margin: 0.5em 0;
+  }
+
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p:first-child {
+    margin-top: 0;
+  }
+
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  /*
     #179: these three rules set spacing but never a font-size, so h1/h2/h3 all
     inherited the base body size and rendered identically — typing "# Header 1"
     through "### Header 3" produced three lines of the same size.
