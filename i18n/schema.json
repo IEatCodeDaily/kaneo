@@ -11870,6 +11870,15 @@
 								},
 								"milestoneDue": {
 									"type": "string"
+								},
+								"expandAll": {
+									"type": "string"
+								},
+								"collapseAll": {
+									"type": "string"
+								},
+								"scheduledNoMilestone": {
+									"type": "string"
 								}
 							},
 							"required": [

@@ -1,6 +1,12 @@
 import { differenceInCalendarDays, format, isToday, parseISO } from "date-fns";
-import { CalendarRange, Diamond, Filter } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  CalendarRange,
+  ChevronDown,
+  ChevronRight,
+  Diamond,
+  Filter,
+} from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   buildTimeline,
@@ -27,6 +33,10 @@ import {
 import icons from "@/constants/board-icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import {
+  buildOverviewTimelineSections,
+  type OverviewTimelineTask,
+} from "./boards-timeline-sections";
 
 /** Only the board fields the timeline needs, so callers can pass their own shape. */
 export type TimelineBoard = {
@@ -39,6 +49,8 @@ export type TimelineBoard = {
     startsAt?: string | Date | null;
     endsAt?: string | Date | null;
   } | null;
+  /** Present only when the overview caller already has board tasks available. */
+  tasks?: OverviewTimelineTask[];
 };
 
 type ScheduledBoard = {
@@ -158,6 +170,7 @@ export default function BoardsTimeline({
   const isMobile = useIsMobile();
   const [zoom, setZoom] = useState<GanttZoom>(initialZoom);
   const [statusFilters, setStatusFilters] = useState<BoardStatus[]>([]);
+  const [expandedBoardIds, setExpandedBoardIds] = useState<string[]>([]);
 
   const scheduled = useMemo<ScheduledBoard[]>(() => {
     return boards
@@ -227,6 +240,30 @@ export default function BoardsTimeline({
     <TooltipProvider>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-end gap-1.5">
+          <button
+            className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
+            data-testid="boards-timeline-expand-all"
+            onClick={() =>
+              setExpandedBoardIds(
+                filteredScheduled.map(({ board }) => board.id),
+              )
+            }
+            type="button"
+          >
+            {t("organization:boards.timeline.expandAll", {
+              defaultValue: "Expand all",
+            })}
+          </button>
+          <button
+            className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
+            data-testid="boards-timeline-collapse-all"
+            onClick={() => setExpandedBoardIds([])}
+            type="button"
+          >
+            {t("organization:boards.timeline.collapseAll", {
+              defaultValue: "Collapse all",
+            })}
+          </button>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -359,6 +396,7 @@ export default function BoardsTimeline({
               )}
 
               {filteredScheduled.map(({ board, start, end }) => {
+                const expanded = expandedBoardIds.includes(board.id);
                 const startIndex = differenceInCalendarDays(
                   start,
                   timeline.rangeStart,
@@ -384,74 +422,101 @@ export default function BoardsTimeline({
                     return [{ milestone, dueDate, dayIndex }];
                   },
                 );
+                const sections = buildOverviewTimelineSections(
+                  board.tasks ?? [],
+                  milestonesByBoardId?.[board.id] ?? [],
+                );
 
                 return (
-                  <div
-                    className="flex border-b border-border/60 last:border-b-0 hover:bg-accent/30"
-                    key={board.id}
-                  >
-                    <button
-                      className={cn(
-                        STICKY_NAME_COLUMN,
-                        "truncate px-3 py-2 text-left text-sm outline-none hover:underline",
-                      )}
-                      data-testid={`boards-timeline-name-${board.id}`}
-                      onClick={() => onBoardClick(board.id)}
-                      title={board.name}
-                      type="button"
-                    >
-                      {/* Boards store a lucide icon name, matching the table view. */}
-                      <BoardIcon icon={board.icon} />
-                      {board.name}
-                    </button>
-                    <div
-                      className="relative grid flex-1 items-center py-2"
-                      style={{
-                        backgroundImage: [
-                          weekendTint,
-                          gridLineGradient(timeline),
-                        ]
-                          .filter(Boolean)
-                          .join(", "),
-                        gridTemplateColumns: timeline.gridTemplateColumns,
-                      }}
-                    >
-                      <button
+                  <Fragment key={board.id}>
+                    <div className="flex border-b border-border/60 hover:bg-accent/30">
+                      <div
                         className={cn(
-                          "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded px-2.5",
-                          "bg-primary/25 ring-1 ring-inset ring-primary/40 hover:bg-primary/35",
+                          STICKY_NAME_COLUMN,
+                          "flex items-center truncate px-3 py-2 text-left text-sm outline-none hover:underline",
                         )}
-                        data-testid={`boards-timeline-bar-${board.id}`}
-                        onClick={() => onBoardClick(board.id)}
-                        style={{
-                          gridColumn: `${Math.max(1, startIndex + 1)} / span ${Math.max(1, daySpan)}`,
-                          // Pinned to row 1 so milestone markers overlap the bar
-                          // instead of grid pushing either onto a new row.
-                          gridRow: 1,
-                        }}
-                        title={`${board.name} · ${format(start, "MMM d")} → ${format(end, "MMM d, yyyy")}`}
-                        type="button"
+                        data-testid={`boards-timeline-name-${board.id}`}
+                        title={board.name}
                       >
-                        {/* Completion fill: progress is inferred from the board's
+                        <button
+                          aria-expanded={expanded}
+                          aria-label={`${expanded ? "Collapse" : "Expand"} ${board.name}`}
+                          className="mr-1 inline-flex size-4 shrink-0 items-center justify-center"
+                          data-testid={`boards-timeline-toggle-${board.id}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setExpandedBoardIds((current) =>
+                              current.includes(board.id)
+                                ? current.filter((id) => id !== board.id)
+                                : [...current, board.id],
+                            );
+                          }}
+                          type="button"
+                        >
+                          {expanded ? (
+                            <ChevronDown className="size-3.5" />
+                          ) : (
+                            <ChevronRight className="size-3.5" />
+                          )}
+                        </button>
+                        <button
+                          className="flex min-w-0 items-center truncate text-left hover:underline"
+                          onClick={() => onBoardClick(board.id)}
+                          type="button"
+                        >
+                          <BoardIcon icon={board.icon} />
+                          {board.name}
+                        </button>
+                      </div>
+                      <div
+                        className="relative grid flex-1 items-center py-2"
+                        style={{
+                          backgroundImage: [
+                            weekendTint,
+                            gridLineGradient(timeline),
+                          ]
+                            .filter(Boolean)
+                            .join(", "),
+                          gridTemplateColumns: timeline.gridTemplateColumns,
+                        }}
+                      >
+                        <button
+                          className={cn(
+                            "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded px-2.5",
+                            "bg-primary/25 ring-1 ring-inset ring-primary/40 hover:bg-primary/35",
+                          )}
+                          data-testid={`boards-timeline-bar-${board.id}`}
+                          onClick={() => onBoardClick(board.id)}
+                          style={{
+                            gridColumn: `${Math.max(1, startIndex + 1)} / span ${Math.max(1, daySpan)}`,
+                            // Pinned to row 1 so milestone markers overlap the bar
+                            // instead of grid pushing either onto a new row.
+                            gridRow: 1,
+                          }}
+                          title={`${board.name} · ${format(start, "MMM d")} → ${format(end, "MMM d, yyyy")}`}
+                          type="button"
+                        >
+                          {/* Completion fill: progress is inferred from the board's
                         tasks, so it belongs on the bar itself. */}
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-y-0 left-0 bg-primary/35"
-                          style={{ width: `${percent}%` }}
-                        />
-                        {/* Sits above the completion fill, so it needs full
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-y-0 left-0 bg-primary/35"
+                            style={{ width: `${percent}%` }}
+                          />
+                          {/* Sits above the completion fill, so it needs full
                         foreground contrast rather than muted. */}
-                        <span className="relative truncate text-[11px] font-semibold text-foreground">
-                          {total > 0
-                            ? t("organization:boards.timeline.barLabel", {
-                                defaultValue: "{{percent}}% · {{count}} tasks",
-                                count: total,
-                                percent,
-                              })
-                            : board.name}
-                        </span>
-                      </button>
-                      {/* Milestone markers: one diamond per milestone, sitting on
+                          <span className="relative truncate text-[11px] font-semibold text-foreground">
+                            {total > 0
+                              ? t("organization:boards.timeline.barLabel", {
+                                  defaultValue:
+                                    "{{percent}}% · {{count}} tasks",
+                                  count: total,
+                                  percent,
+                                })
+                              : board.name}
+                          </span>
+                        </button>
+                        {/* Milestone markers: one diamond per milestone, sitting on
                       its due-date column IN THE SAME ROW as the board bar.
 
                       `gridRow: 1` is load-bearing. The bar and a marker often
@@ -464,58 +529,133 @@ export default function BoardsTimeline({
 
                       The wrapper is pointer-events-none so the bar underneath
                       stays clickable everywhere except the icon itself. */}
-                      {marks.map(({ milestone, dueDate, dayIndex }) => (
-                        <div
-                          className="pointer-events-none relative z-[6] flex justify-center self-center"
-                          key={milestone.id}
-                          style={{ gridColumn: `${dayIndex + 1}`, gridRow: 1 }}
-                        >
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                <button
-                                  aria-label={`${milestone.name} · ${format(dueDate, "MMM d, yyyy")} · ${milestone.status}`}
-                                  className="pointer-events-auto inline-flex cursor-pointer items-center justify-center outline-none"
-                                  data-testid={`boards-timeline-milestone-${board.id}-${milestone.id}`}
-                                  onClick={() => onBoardClick(board.id)}
-                                  title={`${milestone.name} · ${format(dueDate, "MMM d, yyyy")} · ${milestone.status}`}
-                                  type="button"
-                                />
-                              }
-                            >
-                              <Diamond
-                                className={cn(
-                                  "size-3.5 fill-current stroke-[1.5] drop-shadow-sm",
-                                  MILESTONE_STATUS_CLASSES[
-                                    milestone.status.toLowerCase()
-                                  ] ?? MILESTONE_STATUS_CLASSES.planned,
-                                )}
-                              />
-                            </TooltipTrigger>
-                            <TooltipPopup>
-                              <div className="flex flex-col gap-0.5 py-0.5">
-                                <span className="font-medium">
-                                  {milestone.name}
-                                </span>
-                                <span className="text-muted-foreground">
-                                  {t(
-                                    "organization:boards.timeline.milestoneDue",
-                                    {
-                                      defaultValue: "Due {{date}}",
-                                      date: format(dueDate, "MMM d, yyyy"),
-                                    },
+                        {marks.map(({ milestone, dueDate, dayIndex }) => (
+                          <div
+                            className="pointer-events-none relative z-[6] flex justify-center self-center"
+                            key={milestone.id}
+                            style={{
+                              gridColumn: `${dayIndex + 1}`,
+                              gridRow: 1,
+                            }}
+                          >
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <button
+                                    aria-label={`${milestone.name} · ${format(dueDate, "MMM d, yyyy")} · ${milestone.status}`}
+                                    className="pointer-events-auto inline-flex cursor-pointer items-center justify-center outline-none"
+                                    data-testid={`boards-timeline-milestone-${board.id}-${milestone.id}`}
+                                    onClick={() => onBoardClick(board.id)}
+                                    title={`${milestone.name} · ${format(dueDate, "MMM d, yyyy")} · ${milestone.status}`}
+                                    type="button"
+                                  />
+                                }
+                              >
+                                <Diamond
+                                  className={cn(
+                                    "size-3.5 fill-current stroke-[1.5] drop-shadow-sm",
+                                    MILESTONE_STATUS_CLASSES[
+                                      milestone.status.toLowerCase()
+                                    ] ?? MILESTONE_STATUS_CLASSES.planned,
                                   )}
-                                </span>
-                                <span className="text-muted-foreground capitalize">
-                                  {milestone.status}
-                                </span>
-                              </div>
-                            </TooltipPopup>
-                          </Tooltip>
-                        </div>
-                      ))}
+                                />
+                              </TooltipTrigger>
+                              <TooltipPopup>
+                                <div className="flex flex-col gap-0.5 py-0.5">
+                                  <span className="font-medium">
+                                    {milestone.name}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {t(
+                                      "organization:boards.timeline.milestoneDue",
+                                      {
+                                        defaultValue: "Due {{date}}",
+                                        date: format(dueDate, "MMM d, yyyy"),
+                                      },
+                                    )}
+                                  </span>
+                                  <span className="text-muted-foreground capitalize">
+                                    {milestone.status}
+                                  </span>
+                                </div>
+                              </TooltipPopup>
+                            </Tooltip>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                    {expanded &&
+                      sections.flatMap((section) =>
+                        section.tasks.map((task, index) => {
+                          const taskStart =
+                            toDate(task.startDate) ?? toDate(task.dueDate);
+                          const taskEnd = toDate(task.dueDate) ?? taskStart;
+                          if (!taskStart || !taskEnd || taskEnd < taskStart)
+                            return null;
+                          const taskStartIndex = differenceInCalendarDays(
+                            taskStart,
+                            timeline.rangeStart,
+                          );
+                          const taskSpan =
+                            differenceInCalendarDays(taskEnd, taskStart) + 1;
+                          const sectionLabel =
+                            index === 0
+                              ? section.kind === "milestone"
+                                ? section.milestone.name
+                                : t(
+                                    "organization:boards.timeline.scheduledNoMilestone",
+                                    {
+                                      defaultValue:
+                                        "Scheduled without milestone",
+                                    },
+                                  )
+                              : null;
+                          return (
+                            <div
+                              className="flex border-b border-border/40"
+                              key={task.id}
+                            >
+                              <div
+                                className={cn(
+                                  STICKY_NAME_COLUMN,
+                                  "truncate py-1.5 pr-3 pl-10 text-xs text-muted-foreground",
+                                )}
+                              >
+                                {sectionLabel ? (
+                                  <span className="mr-2 font-medium text-foreground">
+                                    {sectionLabel}
+                                  </span>
+                                ) : null}
+                                {task.title}
+                              </div>
+                              <div
+                                className="relative grid flex-1 items-center py-1.5"
+                                style={{
+                                  backgroundImage: [
+                                    weekendTint,
+                                    gridLineGradient(timeline),
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", "),
+                                  gridTemplateColumns:
+                                    timeline.gridTemplateColumns,
+                                }}
+                              >
+                                <div
+                                  className="h-4 rounded bg-primary/20 ring-1 ring-inset ring-primary/35"
+                                  data-testid={`boards-timeline-task-${board.id}-${task.id}`}
+                                  style={{
+                                    gridColumn: `${Math.max(1, taskStartIndex + 1)} / span ${Math.max(1, taskSpan)}`,
+                                    gridRow: 1,
+                                  }}
+                                  title={task.title}
+                                />
+                              </div>
+                            </div>
+                          );
+                        }),
+                      )}
+                  </Fragment>
                 );
               })}
             </div>

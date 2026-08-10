@@ -255,7 +255,16 @@ function RouteComponent() {
       >
         {view === "timeline" ? (
           <BoardsTimeline
-            boards={boards ?? []}
+            boards={(boards ?? []).map((board) => ({
+              ...board,
+              tasks: (board.tasks ?? []).map((task) => ({
+                id: task.id,
+                title: task.title,
+                milestoneId: task.milestoneId,
+                startDate: task.startDate,
+                dueDate: task.dueDate,
+              })),
+            }))}
             milestonesByBoardId={milestonesByBoardId}
             onBoardClick={handleBoardClick}
             zoom="week"

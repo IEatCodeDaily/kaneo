@@ -2537,7 +2537,10 @@
 			},
 			"noDueDate": "마감일 없음",
 			"timeline": {
-				"milestoneDue": "Milestone due"
+				"milestoneDue": "Milestone due",
+				"expandAll": "Expand all",
+				"collapseAll": "Collapse all",
+				"scheduledNoMilestone": "Scheduled without milestone"
 			}
 		},
 		"search": {

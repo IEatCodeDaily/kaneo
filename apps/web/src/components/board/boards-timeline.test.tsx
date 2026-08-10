@@ -34,6 +34,75 @@ const board = (
  * silently vanish or render a zero-width bar.
  */
 describe("BoardsTimeline", () => {
+  it("renders a board-first hierarchy collapsed by default and reveals its scheduled sections", () => {
+    const boardWithTasks: TimelineBoard = {
+      ...board("a", "2026-06-01T00:00:00.000Z", "2026-06-10T00:00:00.000Z"),
+      tasks: [
+        {
+          id: "milestone-task",
+          title: "Milestone ticket",
+          milestoneId: "m1",
+          startDate: "2026-06-02T00:00:00.000Z",
+          dueDate: "2026-06-04T00:00:00.000Z",
+        },
+        {
+          id: "unassigned-task",
+          title: "Unassigned ticket",
+          dueDate: "2026-06-06T00:00:00.000Z",
+        },
+      ],
+    };
+
+    render(
+      <BoardsTimeline
+        boards={[boardWithTasks]}
+        milestonesByBoardId={{
+          a: [{ id: "m1", name: "Release milestone", status: "active" }],
+        }}
+        onBoardClick={vi.fn()}
+        zoom="week"
+      />,
+    );
+
+    expect(
+      screen
+        .getByTestId("boards-timeline-toggle-a")
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(screen.queryByText("Release milestone")).toBeNull();
+    expect(screen.queryByText("Milestone ticket")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("boards-timeline-toggle-a"));
+
+    expect(
+      screen
+        .getByTestId("boards-timeline-toggle-a")
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+    expect(screen.getByText("Release milestone")).toBeTruthy();
+    expect(screen.getByText("Scheduled without milestone")).toBeTruthy();
+    expect(
+      screen.getByTestId("boards-timeline-task-a-milestone-task"),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId("boards-timeline-task-a-unassigned-task"),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId("boards-timeline-collapse-all"));
+    expect(
+      screen
+        .getByTestId("boards-timeline-toggle-a")
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+
+    fireEvent.click(screen.getByTestId("boards-timeline-expand-all"));
+    expect(
+      screen
+        .getByTestId("boards-timeline-toggle-a")
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+  });
+
   it("renders a bar per scheduled board", () => {
     render(
       <BoardsTimeline

@@ -2923,7 +2923,10 @@
 					"month": "Month",
 					"year": "Year"
 				},
-				"milestoneDue": "Milestone due"
+				"milestoneDue": "Milestone due",
+				"expandAll": "Expand all",
+				"collapseAll": "Collapse all",
+				"scheduledNoMilestone": "Scheduled without milestone"
 			},
 			"pageTitle": "Boards",
 			"createBoard": "Create board",

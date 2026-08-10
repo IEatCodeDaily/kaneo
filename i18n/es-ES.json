@@ -2516,7 +2516,10 @@
 			},
 			"noDueDate": "Sin fecha de vencimiento",
 			"timeline": {
-				"milestoneDue": "Milestone due"
+				"milestoneDue": "Milestone due",
+				"expandAll": "Expand all",
+				"collapseAll": "Collapse all",
+				"scheduledNoMilestone": "Scheduled without milestone"
 			}
 		},
 		"search": {
