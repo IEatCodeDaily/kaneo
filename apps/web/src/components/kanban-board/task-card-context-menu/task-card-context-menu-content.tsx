@@ -22,6 +22,7 @@ import { useUpdateTaskPriority } from "@/hooks/mutations/task/use-update-task-st
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
@@ -61,6 +62,7 @@ export default function TaskCardContextMenuContent({
 }: TaskCardContextMenuContentProps) {
   const { t } = useTranslation();
   const { board } = useBoardStore();
+  const { data: organization } = useActiveOrganization();
   const { data: columnsData = [] } = useGetColumns(taskCardContext.boardId);
   const columns =
     board?.columns && board.columns.length > 0
@@ -102,7 +104,12 @@ export default function TaskCardContextMenuContent({
   }, [organizationMembers]);
 
   const handleCopyTaskLink = () => {
-    const path = `/dashboard/organization/${taskCardContext.worskpaceId}/board/${taskCardContext.boardId}/task/${task.id}`;
+    const orgSlug = organization?.slug ?? taskCardContext.worskpaceId;
+    const boardKey = board?.slug ?? "";
+    const ticketKey = boardKey && task.number
+      ? `${boardKey.toUpperCase()}-${task.number}`
+      : task.id;
+    const path = `/dashboard/${orgSlug}/tickets/${ticketKey}`;
     const taskLink = generateLink(path);
 
     navigator.clipboard.writeText(taskLink);
