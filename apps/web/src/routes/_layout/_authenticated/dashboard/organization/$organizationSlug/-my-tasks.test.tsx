@@ -48,9 +48,10 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
     await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
+    useParams: () => ({ organizationSlug: "org-1" }),
     createFileRoute: () => (options: object) => ({
       ...options,
-      useParams: () => ({ organizationId: "org-1" }),
+      useParams: () => ({ organizationSlug: "org-1" }),
     }),
     Link: ({ children }: { children: React.ReactNode }) => (
       <a href="/">{children}</a>

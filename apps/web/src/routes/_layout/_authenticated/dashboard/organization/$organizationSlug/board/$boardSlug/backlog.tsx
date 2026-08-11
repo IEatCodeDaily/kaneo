@@ -1,17 +1,14 @@
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BacklogListView from "@/components/backlog-list-view";
 import BoardToolbar from "@/components/board/board-toolbar";
-
 import BoardLayout from "@/components/common/board-layout";
 import SortControl from "@/components/common/sort-control";
 import PageTitle from "@/components/page-title";
 import CreateTaskAction from "@/components/task/create-task-action";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-
 import {
   AlertDialog,
   AlertDialogClose,
@@ -27,6 +24,7 @@ import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
 import type { SortConfig } from "@/lib/sort-tasks";
@@ -52,6 +50,7 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const { boardId, organizationId, organizationSlug } = useBoardSlug();
+  const { boardSlug } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data } = useGetTasks(boardId);
@@ -89,20 +88,29 @@ function RouteComponent() {
           setViewMode("board");
           navigate({
             to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
-            params: { organizationId, boardId },
+            params: {
+              organizationSlug: organizationSlug,
+              boardSlug: boardSlug,
+            },
           });
         },
         [shortcuts.view.list]: () => {
           setViewMode("list");
           navigate({
             to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
-            params: { organizationId, boardId },
+            params: {
+              organizationSlug: organizationSlug,
+              boardSlug: boardSlug,
+            },
           });
         },
         [shortcuts.view.gantt]: () => {
           navigate({
             to: "/dashboard/organization/$organizationSlug/board/$boardSlug/gantt",
-            params: { organizationId, boardId },
+            params: {
+              organizationSlug: organizationSlug,
+              boardSlug: boardSlug,
+            },
           });
         },
         [shortcuts.view.backlog]: () => {},

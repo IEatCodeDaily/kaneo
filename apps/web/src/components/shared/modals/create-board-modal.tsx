@@ -66,10 +66,10 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
       await queryClient.invalidateQueries({ queryKey: ["boards"] });
 
       navigate({
-        to: "/dashboard/organization/$organizationId/board/$boardSlug/board",
+        to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
         params: {
-          organizationId: organization?.id ?? "",
-          boardId: id,
+          organizationSlug: organization?.id ?? "",
+          boardSlug: id,
         },
       });
 

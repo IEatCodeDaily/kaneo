@@ -103,9 +103,9 @@ export function NavRepos() {
 
   const openRepo = (repoId: string) =>
     navigate({
-      to: `/dashboard/organization/$organizationId/repo/$repoId/${targetRepoView}`,
+      to: `/dashboard/organization/$organizationSlug/repo/$repoId/${targetRepoView}`,
       params: {
-        organizationId: organization.id,
+        organizationSlug: organization.id,
         repoId,
       },
     });
@@ -125,8 +125,8 @@ export function NavRepos() {
               data-testid="sidebar-repos-collapsed"
               onClick={() =>
                 navigate({
-                  to: "/dashboard/organization/$organizationId/repo",
-                  params: { organizationId: organization.id },
+                  to: "/dashboard/organization/$organizationSlug/repo",
+                  params: { organizationSlug: organization.id },
                 })
               }
               tooltip={t("navigation:sidebar.repos")}
@@ -157,8 +157,8 @@ export function NavRepos() {
             render={<button type="button" />}
             onClick={() =>
               navigate({
-                to: "/dashboard/organization/$organizationId/repo",
-                params: { organizationId: organization.id },
+                to: "/dashboard/organization/$organizationSlug/repo",
+                params: { organizationSlug: organization.id },
               })
             }
           >

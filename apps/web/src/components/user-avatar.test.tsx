@@ -43,7 +43,7 @@ vi.mock("@/hooks/queries/invitation/use-pending-invitations", () => ({
   usePendingInvitations: () => ({ data: [] }),
 }));
 const mocks = {
-  organization: { id: "org-1", name: "Org" } as
+  organization: { id: "org-1", slug: "org-1", name: "Org" } as
     | { id: string; name: string }
     | undefined,
 };
@@ -80,7 +80,7 @@ import { UserAvatar } from "./user-avatar";
 afterEach(() => {
   cleanup();
   navigate.mockClear();
-  mocks.organization = { id: "org-1", name: "Org" };
+  mocks.organization = { id: "org-1", slug: "org-1", name: "Org" };
 });
 
 function openMenu() {

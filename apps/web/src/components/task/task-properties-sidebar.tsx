@@ -1,3 +1,4 @@
+import { useParams } from "@tanstack/react-router";
 import {
   Calendar,
   CalendarClock,
@@ -119,6 +120,7 @@ export default function TaskPropertiesSidebar({
   const statusIcon = statusColumn?.icon;
 
   const boardSlug = board?.slug;
+  const { organizationSlug: orgSlug } = useParams({ strict: false });
   const taskNumber = task?.number;
   // Branch names are a task convenience only. They no longer imply a board
   // GitHub/Gitea integration: Repos are a separate, org-level domain.
@@ -143,8 +145,12 @@ export default function TaskPropertiesSidebar({
   });
 
   const handleCopyTaskLink = () => {
+    const ticketKey =
+      board?.slug && task?.number
+        ? `${board.slug.toUpperCase()}-${task.number}`
+        : taskId;
     navigator.clipboard.writeText(
-      `${window.location.origin}/dashboard/organization/${organizationId}/board/${boardSlug}/task/${taskId}`,
+      `${window.location.origin}/dashboard/${orgSlug ?? organizationId}/tickets/${ticketKey}`,
     );
     toast.message(t("tasks:properties.copyTaskLink"));
   };

@@ -39,8 +39,12 @@ export default function TaskLayout({
 
   const handleTaskSwitch = (nextTaskId: string) => {
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
-      params: { organizationId, boardId, taskId: nextTaskId },
+      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
+      params: {
+        organizationSlug: organizationId,
+        boardSlug: boardId,
+        taskId: nextTaskId,
+      },
     });
   };
 
@@ -55,8 +59,11 @@ export default function TaskLayout({
                   type="button"
                   onClick={() =>
                     navigate({
-                      to: "/dashboard/organization/$organizationId/board/$boardSlug/board",
-                      params: { organizationId, boardId },
+                      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
+                      params: {
+                        organizationSlug: organizationId,
+                        boardSlug: boardId,
+                      },
                     })
                   }
                   className="max-w-40 truncate text-left text-xs text-foreground hover:underline"

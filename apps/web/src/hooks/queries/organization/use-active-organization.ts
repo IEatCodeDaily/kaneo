@@ -12,28 +12,24 @@ function useActiveOrganization() {
     isPending: isOrganizationsPending,
     refetch: refetchOrganizations,
   } = authClient.useListOrganizations();
-  const { organizationSlug, organizationId: legacyOrganizationId } = useParams({
-    strict: false,
-    select: (params) => ({
-      organizationSlug:
-        "organizationSlug" in params &&
-        typeof params.organizationSlug === "string"
-          ? params.organizationSlug
-          : undefined,
-      organizationId:
-        "organizationId" in params &&
-        typeof params.organizationId === "string"
-          ? params.organizationId
-          : undefined,
-    }),
-  });
+  const params = useParams({ strict: false }) as {
+    organizationSlug?: string;
+    organizationId?: string;
+  };
+  const organizationSlug =
+    typeof params?.organizationSlug === "string"
+      ? params.organizationSlug
+      : undefined;
+  const legacyOrganizationId =
+    typeof params?.organizationId === "string"
+      ? params.organizationId
+      : undefined;
 
   // Resolve org from URL: the param could be a slug OR a legacy UUID
   const organizationFromRoute = organizationSlug
     ? organizations?.find(
         (organization) =>
-          organization.slug.toLowerCase() ===
-            organizationSlug.toLowerCase() ||
+          organization.slug.toLowerCase() === organizationSlug.toLowerCase() ||
           organization.id === organizationSlug,
       )
     : legacyOrganizationId

@@ -40,9 +40,13 @@ export default function SubtaskOfBadge({
       <Link
         className="shrink-0 font-medium hover:text-primary hover:underline"
         onClick={(event) => event.stopPropagation()}
-        params={{ organizationId, boardId, taskId: parent.id }}
+        params={{
+          organizationSlug: organizationId,
+          boardSlug: boardId,
+          taskId: parent.id,
+        }}
         title={parent.title}
-        to="/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId"
+        to="/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId"
       >
         {label}
       </Link>

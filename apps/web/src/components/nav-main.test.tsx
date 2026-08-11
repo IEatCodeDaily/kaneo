@@ -14,7 +14,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
-  default: () => ({ data: { id: "org-1", name: "Org" } }),
+  default: () => ({ data: { id: "org-1", slug: "org-1", name: "Org" } }),
 }));
 
 vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({

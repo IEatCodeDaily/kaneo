@@ -1,13 +1,12 @@
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import MilestonesView from "@/components/board/milestones-view";
 import BoardLayout from "@/components/common/board-layout";
 import PageTitle from "@/components/page-title";
-
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestones-by-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 
 type MilestonesSearchParams = { taskId?: string };
 

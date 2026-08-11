@@ -494,8 +494,8 @@ export default function TaskResources({
                 }}
                 to={
                   item.itemType === "issues"
-                    ? "/dashboard/organization/$organizationId/repo/$repoId/issues/$number"
-                    : "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number"
+                    ? "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number"
+                    : "/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number"
                 }
               >
                 <span className="font-mono text-xs text-muted-foreground">
@@ -616,7 +616,7 @@ export default function TaskResources({
               const pullTarget = isPullRequest
                 ? {
                     ...internal,
-                    to: "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number" as const,
+                    to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number" as const,
                   }
                 : internal;
 

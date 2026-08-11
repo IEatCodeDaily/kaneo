@@ -21,8 +21,12 @@ describe("kanban drag hot path (#124)", () => {
     expect(card).toContain('transition: isDragging ? "none" : transition');
   });
 
-  it("does not clone and rerender the board during pointer movement", () => {
-    expect(board).not.toContain("onDragOver=");
-    expect(board).not.toContain("previewBoard");
+  it("dedupes cross-column preview updates by destination", () => {
+    expect(board).toContain(
+      "lastPreviewDestinationRef.current === destination.id",
+    );
+    expect(board).toContain(
+      "lastPreviewDestinationRef.current = destination.id",
+    );
   });
 });

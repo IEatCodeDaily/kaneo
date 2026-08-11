@@ -3,6 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   CalendarDays,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
   Milestone,
   Tag,
 } from "lucide-react";
+import type { RefObject } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +26,7 @@ import {
   groupSameBucketSubtasks,
   type TaskTreeNode,
 } from "@/lib/group-subtasks";
+import { shouldVirtualizeKanbanColumn } from "@/lib/kanban-virtualization";
 import { getPriorityIcon } from "@/lib/priority";
 import type { BoardWithTasks } from "@/types/board";
 import { useBoardGroupBy } from "../board-view-context";
@@ -32,6 +35,7 @@ import TaskCard from "../task-card";
 type ColumnDropzoneProps = {
   column: BoardWithTasks["columns"][number];
   disableDragDrop?: boolean;
+  scrollElementRef?: RefObject<HTMLDivElement | null>;
 };
 
 /**
@@ -50,6 +54,7 @@ const NESTED_INDENT = ["", "ml-4", "ml-8", "ml-12"] as const;
 export function ColumnDropzone({
   column,
   disableDragDrop = false,
+  scrollElementRef,
 }: ColumnDropzoneProps) {
   const { t } = useTranslation();
   const groupBy = useBoardGroupBy();
@@ -70,6 +75,17 @@ export function ColumnDropzone({
     () => groupSameBucketSubtasks(column.tasks),
     [column.tasks],
   );
+  const shouldVirtualize = shouldVirtualizeKanbanColumn({
+    groupBy,
+    itemCount: groups.length,
+  });
+  const virtualizer = useVirtualizer({
+    count: shouldVirtualize ? groups.length : 0,
+    getScrollElement: () => scrollElementRef?.current ?? null,
+    estimateSize: () => CARD_HEIGHT_PX + 8,
+    getItemKey: (index) => groups[index]?.task.id ?? index,
+    overscan: 8,
+  });
 
   /*
     Status is stored as a slug (`to-do`) but must display as the column's name
@@ -146,8 +162,8 @@ export function ColumnDropzone({
   }, [mountCount, totalGroups]);
 
   const visibleGroups = useMemo(
-    () => groups.slice(0, mountCount),
-    [groups, mountCount],
+    () => (shouldVirtualize ? [] : groups.slice(0, mountCount)),
+    [groups, mountCount, shouldVirtualize],
   );
 
   // Board-level "group by": buckets this column's tasks under a heading.
@@ -229,6 +245,8 @@ export function ColumnDropzone({
       </div>
     );
   };
+
+  const virtualItems = shouldVirtualize ? virtualizer.getVirtualItems() : [];
 
   return (
     <div
@@ -328,6 +346,36 @@ export function ColumnDropzone({
                 {t("tasks:column.empty")}
               </div>
             ) : null}
+          </div>
+        ) : shouldVirtualize ? (
+          <div
+            data-slot="virtual-task-list"
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            {virtualItems.map((virtualItem) => {
+              const node = groups[virtualItem.index];
+              if (!node) return null;
+              return (
+                <div
+                  data-index={virtualItem.index}
+                  key={virtualItem.key}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    left: 0,
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${virtualItem.start}px)`,
+                    width: "100%",
+                  }}
+                >
+                  {renderTreeNode(node)}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div

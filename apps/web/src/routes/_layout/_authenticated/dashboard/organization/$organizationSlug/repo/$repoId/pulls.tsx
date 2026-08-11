@@ -23,11 +23,11 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoPullRequests from "@/hooks/queries/repo/use-get-repo-pull-requests";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium } from "@/lib/format";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import type { RepoPullRequestStateFilter } from "@/types/repo";
 
 const STATE_FILTERS: RepoPullRequestStateFilter[] = [
@@ -53,7 +53,9 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const location = useLocation();
-  const { organizationId, repoId } = Route.useParams();
+  const { organizationSlug, repoId } = Route.useParams();
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationId = activeOrganization?.id ?? "";
   const { state } = Route.useSearch();
   const navigate = useNavigate();
   const { data: repo } = useGetRepo({ id: repoId });

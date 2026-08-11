@@ -31,6 +31,7 @@ import useClearNotifications from "@/hooks/mutations/notification/use-clear-noti
 import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { formatRelativeTime } from "@/lib/format";
@@ -38,7 +39,6 @@ import {
   groupInboxNotifications,
   isFlaggedNotification,
 } from "@/lib/group-inbox-notifications";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import type { Notification } from "@/types/notification";
 
 type InboxSearch = {

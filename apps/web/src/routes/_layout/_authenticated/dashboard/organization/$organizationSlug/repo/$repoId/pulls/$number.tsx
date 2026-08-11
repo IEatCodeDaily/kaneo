@@ -13,9 +13,9 @@ import {
 } from "@/components/repo/repo-item-detail-layout";
 import RepoLabelList from "@/components/repo/repo-label-list";
 import RepoStateBadge from "@/components/repo/repo-state-badge";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoPullRequest from "@/hooks/queries/repo/use-get-repo-pull-request";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { formatDateMedium } from "@/lib/format";
 
 export const Route = createFileRoute(
@@ -24,7 +24,9 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { organizationId, repoId, number: numberParam } = Route.useParams();
+  const { organizationSlug, repoId, number: numberParam } = Route.useParams();
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationId = activeOrganization?.id ?? "";
   const number = Number(numberParam);
   const { data: repo } = useGetRepo({ id: repoId });
   // Tracked here because the tabs live in PullRequestLiveDetails but the

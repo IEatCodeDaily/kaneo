@@ -4,6 +4,7 @@ import {
   DndContext,
   type DragCancelEvent,
   type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   type DropAnimation,
@@ -17,7 +18,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BoardSkeleton } from "@/components/common/board-skeleton";
 import { PendingSyncIndicator } from "@/components/common/pending-sync-indicator";
 import { useReorderTasks } from "@/hooks/mutations/task/use-reorder-tasks";
@@ -56,6 +57,9 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     clearFocus,
   } = useBulkSelectionStore();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [previewBoard, setPreviewBoard] = useState<BoardWithTasks | null>(null);
+  const previewBoardRef = useRef<BoardWithTasks | null>(null);
+  const lastPreviewDestinationRef = useRef<string | null>(null);
 
   const { isPending: isReorderPending, mutate: reorderTasks } =
     useReorderTasks();
@@ -93,10 +97,10 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       Enter: () => {
         if (focusedTaskId && board) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
+            to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
             params: {
-              organizationId: board.organizationId,
-              boardId: board.id,
+              organizationSlug: board.organizationId,
+              boardSlug: board.id,
               taskId: focusedTaskId,
             },
           });
@@ -132,22 +136,60 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id);
+    previewBoardRef.current = null;
+    lastPreviewDestinationRef.current = null;
+  };
+
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (!over) return;
+
+    const activeTaskId = active.id.toString();
+    const overId = over.id.toString();
+    const currentBoard = previewBoardRef.current ?? board;
+    const source = currentBoard.columns.find((column) =>
+      column.tasks.some((task) => task.id === activeTaskId),
+    );
+    const destination = currentBoard.columns.find(
+      (column) =>
+        column.id === overId || column.tasks.some((task) => task.id === overId),
+    );
+    if (!source || !destination || source.id === destination.id) return;
+
+    // Cross-column preview is intentionally deduped by destination. This
+    // restores the missing bucket animation without cloning the full board on
+    // every pointer frame (the performance regression fixed in 2e89abde).
+    if (lastPreviewDestinationRef.current === destination.id) return;
+    const result = reorderBoardTask(currentBoard, activeTaskId, overId);
+    if (!result) return;
+    lastPreviewDestinationRef.current = destination.id;
+    previewBoardRef.current = result.board;
+    setPreviewBoard(result.board);
   };
 
   const handleDragCancel = (_event: DragCancelEvent) => {
+    previewBoardRef.current = null;
+    lastPreviewDestinationRef.current = null;
+    setPreviewBoard(null);
     setActiveId(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    const hadPreview = previewBoardRef.current !== null;
+    const currentBoard = previewBoardRef.current ?? board;
     setActiveId(null);
+    previewBoardRef.current = null;
+    lastPreviewDestinationRef.current = null;
+    setPreviewBoard(null);
 
-    if (!over || !board?.columns) return;
+    if (!over || !currentBoard?.columns) return;
 
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    const result = reorderBoardTask(board, activeId, overId);
+    const result = hadPreview
+      ? { board: currentBoard }
+      : reorderBoardTask(currentBoard, activeId, overId);
     if (!result) return;
     setBoard(result.board);
     reorderTasks({
@@ -164,8 +206,9 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
     return <BoardSkeleton />;
   }
 
+  const renderedBoard = previewBoard ?? board;
   const activeTask = activeId
-    ? board.columns
+    ? renderedBoard.columns
         .flatMap((col) => col.tasks)
         .find((task) => task.id === activeId)
     : null;
@@ -176,12 +219,13 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       collisionDetection={pointerThenCorners}
       onDragCancel={handleDragCancel}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full w-full flex-col bg-linear-to-b from-muted/20 to-background">
         <div className="min-h-0 flex-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <div className="flex h-full min-w-max gap-4 px-4 py-4 md:px-5">
-            {board.columns?.map((column) => (
+            {renderedBoard.columns?.map((column) => (
               <div
                 key={column.id}
                 className="h-full max-w-96 min-w-80 shrink-0 flex-1"

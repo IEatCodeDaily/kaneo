@@ -63,7 +63,8 @@ function InvitationsPage() {
       navigate({
         to: "/dashboard/organization/$organizationSlug",
         params: {
-          organizationSlug: data?.invitation.organizationSlug || organizationSlug,
+          organizationSlug:
+            data?.invitation.organizationSlug || organizationSlug,
         },
       });
     } catch (error) {

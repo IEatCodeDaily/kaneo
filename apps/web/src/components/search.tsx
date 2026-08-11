@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 export default function Search() {
@@ -23,7 +24,7 @@ export default function Search() {
   const { state } = useSidebar();
   const location = useLocation();
   const isCollapsed = state === "collapsed";
-  const boardId = location.pathname.match(/\/board\/([^/]+)/)?.[1];
+  const { boardId } = useBoardSlug();
   const isBacklog = location.pathname.endsWith("/backlog");
 
   useRegisterShortcuts({

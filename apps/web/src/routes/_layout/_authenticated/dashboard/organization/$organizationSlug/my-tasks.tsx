@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveLabelColor } from "@/constants/label-colors";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useInfiniteMyTasks from "@/hooks/queries/task/use-infinite-my-tasks";
 import { getColumnIcon } from "@/lib/column";
 import {
@@ -16,7 +17,6 @@ import {
   type MyTasksSort,
   sortMyTasks,
 } from "@/lib/my-tasks-view";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { getPriorityIcon } from "@/lib/priority";
 
 export const Route = createFileRoute(

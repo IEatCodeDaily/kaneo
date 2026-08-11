@@ -47,14 +47,14 @@ export function getRepoIssueRelationLink(
 }
 
 export const REPO_ISSUE_ROUTE =
-  "/dashboard/organization/$organizationId/repo/$repoId/issues/$number";
+  "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number";
 
 export type RepoIssueRelationTarget =
   | {
       internal: true;
       href: string;
       to: typeof REPO_ISSUE_ROUTE;
-      params: { organizationId: string; repoId: string; number: string };
+      params: { organizationSlug: string; repoId: string; number: string };
     }
   | { internal: false; href: string | null };
 
@@ -76,7 +76,7 @@ export function getRepoIssueRelationTarget(
   if (!link) return { internal: false, href: relation.html_url ?? null };
 
   const params = {
-    organizationId,
+    organizationSlug: organizationId,
     repoId: link.repoId,
     number: String(link.number),
   };

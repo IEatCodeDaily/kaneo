@@ -1,6 +1,7 @@
 import {
   useLocation,
   useNavigate,
+  useParams,
   useRouterState,
 } from "@tanstack/react-router";
 import {
@@ -23,8 +24,8 @@ import OrganizationCrumbSelect from "@/components/common/header/organization-cru
 import Layout from "@/components/common/layout";
 import BoardAccessAvatars from "@/components/presence/board-access-avatars";
 import CreateBoardModal from "@/components/shared/modals/create-board-modal";
-
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
 import { type BoardView, boardViewFromPathname } from "@/lib/board-view";
@@ -50,9 +51,11 @@ export default function BoardLayout({
   activeView,
 }: BoardLayoutProps) {
   const { t } = useTranslation();
+  const { organizationSlug } = useParams({ strict: false });
   const navigate = useNavigate();
   const location = useLocation();
   const { data: board } = useGetBoard({ id: boardId, organizationId });
+  const { data: boards } = useGetBoards({ organizationId });
   const { data: boardWithTasks } = useGetTasks(boardId);
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
   const { viewMode, setViewMode } = useUserPreferencesStore();
@@ -127,8 +130,11 @@ export default function BoardLayout({
     if (view === resolvedView) return;
     setPendingView(view);
     navigate({
-      to: `/dashboard/organization/$organizationId/board/$boardSlug/${view}`,
-      params: { organizationId, boardId },
+      to: `/dashboard/organization/$organizationSlug/board/$boardSlug/${view}`,
+      params: {
+        organizationSlug: organizationSlug ?? organizationId,
+        boardSlug: board?.slug ?? boardId,
+      },
     });
   };
 
@@ -140,11 +146,12 @@ export default function BoardLayout({
   const handleBoardSwitch = (nextBoardId: string) => {
     if (nextBoardId === boardId) return;
     setPendingBoardId(nextBoardId);
+    const nextBoard = boards?.find((b) => b.id === nextBoardId);
     navigate({
-      to: `/dashboard/organization/$organizationId/board/$boardSlug/${resolvedView}`,
+      to: `/dashboard/organization/$organizationSlug/board/$boardSlug/${resolvedView}`,
       params: {
-        organizationId,
-        boardId: nextBoardId,
+        organizationSlug: organizationSlug ?? organizationId,
+        boardSlug: nextBoard?.slug ?? nextBoardId,
       },
     });
   };

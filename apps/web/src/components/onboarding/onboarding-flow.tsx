@@ -89,8 +89,8 @@ export function OnboardingFlow() {
 
       setTimeout(() => {
         navigate({
-          to: "/dashboard/organization/$organizationId",
-          params: { organizationId: organization.id },
+          to: "/dashboard/organization/$organizationSlug",
+          params: { organizationSlug: organization.id },
           replace: true,
         });
       }, 1500);

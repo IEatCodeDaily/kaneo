@@ -108,10 +108,10 @@ export default function TaskMovePopover({
       setOpen(false);
       startTransition(() => {
         navigate({
-          to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
+          to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
           params: {
-            organizationId,
-            boardId: result.task.boardId,
+            organizationSlug: organizationId,
+            boardSlug: result.task.boardId,
             taskId: task.id,
           },
         });

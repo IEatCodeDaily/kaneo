@@ -50,8 +50,8 @@ export default function MilestonesView({
 
   const openTask = (taskId: string) =>
     navigate({
-      to: "/dashboard/organization/$organizationId/board/$boardSlug/milestones",
-      params: { organizationId, boardId },
+      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/milestones",
+      params: { organizationSlug: organizationId, boardSlug: boardId },
       search: { taskId },
     });
 

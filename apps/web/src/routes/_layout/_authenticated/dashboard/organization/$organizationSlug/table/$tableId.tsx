@@ -16,8 +16,8 @@ import {
   useDataTable,
   useDataTableMutations,
 } from "@/hooks/data-table/use-data-tables";
-import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
@@ -27,7 +27,9 @@ export const Route = createFileRoute(
 function DataTableRoute() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { organizationId, tableId } = Route.useParams();
+  const { organizationSlug, tableId } = Route.useParams();
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationId = activeOrganization?.id ?? "";
   const {
     data: table,
     isLoading,
@@ -139,7 +141,7 @@ function DataTableRoute() {
                     toast.success(t("navigation:tables.deleted"));
                     navigate({
                       to: "/dashboard/organization/$organizationSlug",
-                      params: { organizationId },
+                      params: { organizationSlug },
                     });
                   } catch {
                     toast.error(t("navigation:tables.deleteTableError"));

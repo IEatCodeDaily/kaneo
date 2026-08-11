@@ -97,10 +97,12 @@ export function NavBoards() {
     setBoardSidebarOrder,
   } = useUserPreferencesStore();
   const navigate = useNavigate();
-  const { organizationSlug: currentOrganizationSlug, boardSlug: currentBoardSlug } =
-    useParams({
-      strict: false,
-    });
+  const {
+    organizationSlug: currentOrganizationSlug,
+    boardSlug: currentBoardSlug,
+  } = useParams({
+    strict: false,
+  });
 
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
@@ -207,7 +209,7 @@ export function NavBoards() {
   const handleBoardSettings = (board: BoardWithTasks) => {
     navigate({
       to: "/dashboard/settings/boards/$boardId/general",
-      params: { boardId: board.id },
+      params: { boardSlug: board.id },
     });
   };
 
@@ -246,8 +248,8 @@ export function NavBoards() {
               data-testid="sidebar-boards-collapsed"
               onClick={() =>
                 navigate({
-                  to: "/dashboard/organization/$organizationId",
-                  params: { organizationId: organization.id },
+                  to: "/dashboard/organization/$organizationSlug",
+                  params: { organizationSlug: organization.id },
                 })
               }
               tooltip={t("navigation:sidebar.boards")}
@@ -263,9 +265,9 @@ export function NavBoards() {
                   data-testid={`sidebar-board-collapsed-${board.id}`}
                   onClick={() =>
                     navigate({
-                      to: "/dashboard/organization/$organizationId/board/$boardSlug",
+                      to: "/dashboard/organization/$organizationSlug/board/$boardSlug",
                       params: {
-                        organizationId: organization.id,
+                        organizationSlug: organization.id,
                         boardSlug: board.slug,
                       },
                     })
@@ -288,8 +290,8 @@ export function NavBoards() {
             render={<button type="button" />}
             onClick={() =>
               navigate({
-                to: "/dashboard/organization/$organizationId",
-                params: { organizationId: organization.id },
+                to: "/dashboard/organization/$organizationSlug",
+                params: { organizationSlug: organization.id },
               })
             }
           >
@@ -557,8 +559,8 @@ export function NavBoards() {
           setBoardToArchive(null);
           if (currentBoardSlug === board.id)
             navigate({
-              to: "/dashboard/organization/$organizationId",
-              params: { organizationId: organization.id },
+              to: "/dashboard/organization/$organizationSlug",
+              params: { organizationSlug: organization.id },
             });
         }}
       />
@@ -592,7 +594,7 @@ export function NavBoards() {
                   queryKey: ["boards"],
                 });
                 navigate({
-                  to: "/dashboard/organization/$organizationId",
+                  to: "/dashboard/organization/$organizationSlug",
                   params: {
                     organizationSlug: organization?.slug || "",
                   },

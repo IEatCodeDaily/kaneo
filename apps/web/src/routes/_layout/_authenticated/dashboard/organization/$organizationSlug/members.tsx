@@ -8,10 +8,10 @@ import PageTitle from "@/components/page-title";
 import InviteTeamMemberModal from "@/components/team/invite-team-member-modal";
 import { OrganizationMembersGroups } from "@/components/team/organization-members-groups";
 import { Button } from "@/components/ui/button";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { TeamsManagement } from "../../settings/organization/teams";
 
 type MembersTab = "members" | "teams";
@@ -49,7 +49,7 @@ function RouteComponent() {
     flushSync(() => setActiveTab(nextTab));
     void navigate({
       to: "/dashboard/organization/$organizationSlug/members",
-      params: { organizationId },
+      params: { organizationSlug },
       search: { tab: nextTab },
       replace: true,
     });
@@ -121,8 +121,8 @@ function RouteComponent() {
           ) : (
             <OrganizationMembersGroups
               organizationId={organizationId}
-              users={organization?.members ?? []}
-              invitations={organization?.invitations ?? []}
+              users={fullOrganization?.members ?? []}
+              invitations={fullOrganization?.invitations ?? []}
               canManageAgents={isAdmin}
             />
           )}

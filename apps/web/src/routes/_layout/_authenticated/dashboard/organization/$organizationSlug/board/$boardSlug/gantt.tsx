@@ -1,4 +1,3 @@
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import {
   closestCorners,
   DndContext,
@@ -86,6 +85,7 @@ import useGetMilestonesByBoard from "@/hooks/queries/milestone/use-get-milestone
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetBoardTaskRelations from "@/hooks/queries/task-relation/use-get-board-task-relations";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
 import { getAvatarTone } from "@/lib/avatar-tone";

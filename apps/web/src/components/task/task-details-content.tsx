@@ -61,10 +61,10 @@ export default function TaskDetailsContent({
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
             onClick={() =>
               navigate({
-                to: "/dashboard/organization/$organizationId/board/$boardSlug/task/$taskId",
+                to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
                 params: {
-                  organizationId,
-                  boardId,
+                  organizationSlug: organizationId,
+                  boardSlug: boardId,
                   taskId: parentTask.id,
                 },
               })

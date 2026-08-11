@@ -47,8 +47,8 @@ export default function CreateDataTableModal({
       toast.success(t("navigation:tables.created"));
       close();
       navigate({
-        to: "/dashboard/organization/$organizationId/table/$tableId",
-        params: { organizationId, tableId: table.id },
+        to: "/dashboard/organization/$organizationSlug/table/$tableId",
+        params: { organizationSlug: organizationId, tableId: table.id },
       });
     } catch (error) {
       toast.error(

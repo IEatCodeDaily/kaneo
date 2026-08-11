@@ -43,8 +43,8 @@ describe("RepoListRow search forwarding (#94)", () => {
     number: 42,
     state: "closed" as const,
     labels: [],
-    to: "/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
-    params: { organizationId: "org-1", repoId: "repo-1", number: "42" },
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number",
+    params: { organizationSlug: "org-1", repoId: "repo-1", number: "42" },
   };
 
   it("forwards the active state filter to the detail route", () => {
@@ -71,7 +71,7 @@ describe("RepoListRow search forwarding (#94)", () => {
     render(<RepoListRow {...baseProps} search={{ state: "closed" }} />);
 
     expect(linkProps[0]?.params).toEqual({
-      organizationId: "org-1",
+      organizationSlug: "org-1",
       repoId: "repo-1",
       number: "42",
     });

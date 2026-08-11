@@ -39,10 +39,10 @@ import icons from "@/constants/board-icons";
 import { shortcuts } from "@/constants/shortcuts";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useMilestonesByBoardIds from "@/hooks/queries/milestone/use-milestones-by-board-ids";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { formatDateMedium } from "@/lib/format";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export const Route = createFileRoute(
@@ -97,8 +97,7 @@ function RouteComponent() {
       to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
       params: {
         organizationSlug: organization?.slug ?? "",
-        boardSlug:
-          boards?.find((b) => b.id === boardId)?.slug ?? boardId,
+        boardSlug: boards?.find((b) => b.id === boardId)?.slug ?? boardId,
       },
     });
   };

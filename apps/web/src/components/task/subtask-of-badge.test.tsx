@@ -72,11 +72,11 @@ describe("SubtaskOfBadge", () => {
 
     // A board-scoped route is required; an organization-only path 404s.
     expect(mocks.linkProps[0].to).toBe(
-      "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+      "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
     );
     expect(mocks.linkProps[0].params).toEqual({
-      organizationId: "org-1",
-      boardId: "board-1",
+      organizationSlug: "org-1",
+      boardSlug: "board-1",
       taskId: "parent-1",
     });
   });

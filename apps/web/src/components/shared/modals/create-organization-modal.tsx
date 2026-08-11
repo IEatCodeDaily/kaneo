@@ -67,9 +67,9 @@ function CreateOrganizationModal({
       });
 
       navigate({
-        to: "/dashboard/organization/$organizationId",
+        to: "/dashboard/organization/$organizationSlug",
         params: {
-          organizationId: createdOrganization.id,
+          organizationSlug: createdOrganization.id,
         },
       });
 

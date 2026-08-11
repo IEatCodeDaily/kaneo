@@ -354,13 +354,25 @@ function CreateTaskModal({
   const [selectedColor, setSelectedColor] = useState<LabelColor>("gray");
   const [newLabelName, setNewLabelName] = useState("");
 
-  const routeBoardId = location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
-  const [selectedBoardId, setSelectedBoardId] = useState("");
-  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
-  const [boardSearch, setBoardSearch] = useState("");
   const { data: boards = [] } = useGetBoards({
     organizationId: organization?.id || "",
   });
+  const routeBoardSlug =
+    location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? null;
+  // Resolve the URL segment (slug like "KFL" or legacy UUID) to a board UUID.
+  // While boards are loading, only pass through values that already look like
+  // IDs — otherwise useGetColumns and friends fire with the raw slug and 400.
+  const routeBoardId = routeBoardSlug
+    ? (boards.find(
+        (b) =>
+          b.slug?.toLowerCase() === routeBoardSlug.toLowerCase() ||
+          b.id === routeBoardSlug,
+      )?.id ??
+      (/^[a-z0-9]{20,}$/i.test(routeBoardSlug) ? routeBoardSlug : null))
+    : null;
+  const [selectedBoardId, setSelectedBoardId] = useState("");
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
+  const [boardSearch, setBoardSearch] = useState("");
   const resolvedBoardId = resolveCreateTaskBoardId(
     boardId,
     routeBoardId,

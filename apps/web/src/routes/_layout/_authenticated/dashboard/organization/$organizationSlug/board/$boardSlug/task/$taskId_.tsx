@@ -1,7 +1,7 @@
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import TicketPage from "@/components/ticket/ticket-page";
 import { resolveTicketIdentity } from "@/fetchers/ticket/resolve-ticket-identity";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_",
@@ -10,7 +10,7 @@ export const Route = createFileRoute(
     let identity: Awaited<ReturnType<typeof resolveTicketIdentity>>;
     try {
       identity = await resolveTicketIdentity(
-        params.organizationId,
+        params.organizationSlug,
         params.taskId,
       );
     } catch {
@@ -29,7 +29,8 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { boardId, organizationId, organizationSlug, organizationSlug: slug } = useBoardSlug();
+  const { boardId, organizationId } = useBoardSlug();
+  const { taskId } = Route.useParams();
   return (
     <TicketPage
       ticketId={taskId}

@@ -48,8 +48,8 @@ export function OrganizationMenuSection({
 
         setTimeout(() => {
           navigate({
-            to: "/dashboard/organization/$organizationId",
-            params: { organizationId: selectedOrganization.id },
+            to: "/dashboard/organization/$organizationSlug",
+            params: { organizationSlug: selectedOrganization.id },
           });
         }, 50);
       } catch (error) {

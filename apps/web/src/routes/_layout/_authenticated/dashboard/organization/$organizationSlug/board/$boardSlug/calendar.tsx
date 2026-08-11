@@ -1,4 +1,3 @@
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   addMonths,
@@ -35,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useTaskFiltersWithLabelsSupport } from "@/hooks/use-task-filters-with-labels-support";
 import { cn } from "@/lib/cn";
 import {

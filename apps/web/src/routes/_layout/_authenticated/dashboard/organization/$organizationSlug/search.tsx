@@ -6,8 +6,8 @@ import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { getPriorityIcon } from "@/lib/priority";
 
 export const Route = createFileRoute(

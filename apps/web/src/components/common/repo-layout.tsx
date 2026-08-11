@@ -23,31 +23,31 @@ const VIEWS = [
     label: "Code",
     icon: Code2,
     key: "code" as const,
-    to: "/dashboard/organization/$organizationId/repo/$repoId/code" as const,
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/code" as const,
   },
   {
     label: "Issues",
     icon: CircleDot,
     key: "issues" as const,
-    to: "/dashboard/organization/$organizationId/repo/$repoId/issues" as const,
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues" as const,
   },
   {
     label: "Pull requests",
     icon: GitPullRequest,
     key: "pulls" as const,
-    to: "/dashboard/organization/$organizationId/repo/$repoId/pulls" as const,
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls" as const,
   },
   {
     label: "Releases",
     icon: Rocket,
     key: "releases" as const,
-    to: "/dashboard/organization/$organizationId/repo/$repoId/releases" as const,
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/releases" as const,
   },
   {
     label: "Packages",
     icon: Package,
     key: "packages" as const,
-    to: "/dashboard/organization/$organizationId/repo/$repoId/packages" as const,
+    to: "/dashboard/organization/$organizationSlug/repo/$repoId/packages" as const,
   },
 ];
 
@@ -94,7 +94,7 @@ export default function RepoLayout({
                   label: view.label,
                   icon: <Icon className="size-3.5" />,
                   to: view.to,
-                  params: { organizationId, repoId },
+                  params: { organizationSlug: organizationId, repoId },
                 };
               })}
               value={activeView}

@@ -7,7 +7,7 @@ import type { Repo, RepoIssueGithub } from "@/types/repo";
 const repos: Repo[] = [
   {
     id: "repo-synced",
-    organizationId: "org-1",
+    organizationSlug: "org-1",
     provider: "github",
     owner: "Acme",
     name: "Widget",
@@ -42,13 +42,13 @@ vi.mock("@tanstack/react-router", () => ({
     ...props
   }: {
     children: ReactNode;
-    params: { organizationId: string; repoId: string; number: string };
+    params: { organizationSlug: string; repoId: string; number: string };
     [key: string]: unknown;
   }) => (
     <a
       {...props}
       data-router-link="true"
-      href={`/dashboard/organization/${params.organizationId}/repo/${params.repoId}/issues/${params.number}`}
+      href={`/dashboard/organization/${params.organizationSlug}/repo/${params.repoId}/issues/${params.number}`}
     >
       {children}
     </a>

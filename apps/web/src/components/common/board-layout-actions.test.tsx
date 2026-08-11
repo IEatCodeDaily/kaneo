@@ -6,6 +6,7 @@ import BoardLayout from "./board-layout";
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
+  useParams: () => ({ organizationSlug: "org-1", boardSlug: "board-1" }),
   useLocation: () => ({ pathname: "/board/board-1/board" }),
   useRouterState: ({
     select,
@@ -18,6 +19,11 @@ vi.mock("react-i18next", () => ({
 }));
 vi.mock("@/hooks/queries/board/use-get-board", () => ({
   default: () => ({ data: { id: "board-1", name: "Board" } }),
+}));
+vi.mock("@/hooks/queries/board/use-get-boards", () => ({
+  default: () => ({
+    data: [{ id: "board-1", slug: "board-1", name: "Board" }],
+  }),
 }));
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({

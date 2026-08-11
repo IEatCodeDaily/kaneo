@@ -10,8 +10,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages",
@@ -37,7 +37,9 @@ async function getPackages(repoId: string) {
 }
 
 function RouteComponent() {
-  const { organizationId, repoId } = Route.useParams();
+  const { organizationSlug, repoId } = Route.useParams();
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationId = activeOrganization?.id ?? "";
   const { data, error, isLoading } = useQuery({
     queryKey: ["repo-packages", repoId],
     queryFn: () => getPackages(repoId),

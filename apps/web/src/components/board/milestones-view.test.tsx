@@ -74,8 +74,8 @@ describe("MilestonesView (#57)", () => {
     renderView();
     fireEvent.click(screen.getByRole("button", { name: /#57Ship UI/ }));
     expect(navigate).toHaveBeenCalledWith({
-      to: "/dashboard/organization/$organizationId/board/$boardId/milestones",
-      params: { organizationId: "o1", boardId: "b1" },
+      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/milestones",
+      params: { organizationSlug: "o1", boardSlug: "b1" },
       search: { taskId: "t1" },
     });
   });

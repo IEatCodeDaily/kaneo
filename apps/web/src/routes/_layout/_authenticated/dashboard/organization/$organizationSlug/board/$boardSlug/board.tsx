@@ -18,10 +18,10 @@ import CreateTaskAction from "@/components/task/create-task-action";
 
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { shortcuts } from "@/constants/shortcuts";
-import { useBoardSlug } from "@/hooks/use-board-slug";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useBoardSort } from "@/hooks/use-board-sort";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import {
@@ -48,6 +48,7 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const { boardId, organizationId, organizationSlug } = useBoardSlug();
+  const { boardSlug } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   // isPlaceholderData is true while the incoming board's tasks are still in
@@ -101,12 +102,18 @@ function RouteComponent() {
         [shortcuts.view.gantt]: () =>
           navigate({
             to: "/dashboard/organization/$organizationSlug/board/$boardSlug/gantt",
-            params: { organizationId, boardId },
+            params: {
+              organizationSlug: organizationSlug,
+              boardSlug: boardSlug,
+            },
           }),
         [shortcuts.view.backlog]: () =>
           navigate({
             to: "/dashboard/organization/$organizationSlug/board/$boardSlug/backlog",
-            params: { organizationId, boardId },
+            params: {
+              organizationSlug: organizationSlug,
+              boardSlug: boardSlug,
+            },
           }),
       },
     },

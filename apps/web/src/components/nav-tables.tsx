@@ -95,9 +95,9 @@ export function NavTables() {
                   tooltip={table.name}
                   onClick={() =>
                     navigate({
-                      to: "/dashboard/organization/$organizationId/table/$tableId",
+                      to: "/dashboard/organization/$organizationSlug/table/$tableId",
                       params: {
-                        organizationId: organization.id,
+                        organizationSlug: organization.id,
                         tableId: table.id,
                       },
                     })

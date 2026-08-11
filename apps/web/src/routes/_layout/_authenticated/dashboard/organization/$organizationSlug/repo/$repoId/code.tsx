@@ -22,10 +22,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoContents from "@/hooks/queries/repo/use-get-repo-contents";
 import useGetRepoTree from "@/hooks/queries/repo/use-get-repo-tree";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import type { RepoContentEntry } from "@/types/repo";
 
 export const Route = createFileRoute(
@@ -163,7 +163,9 @@ function FileContent({
 }
 
 function RouteComponent() {
-  const { organizationId, repoId } = Route.useParams();
+  const { organizationSlug, repoId } = Route.useParams();
+  const { data: activeOrganization } = useActiveOrganization();
+  const organizationId = activeOrganization?.id ?? "";
   const { path, ref } = Route.useSearch();
   const { data: repo } = useGetRepo({ id: repoId });
   const tree = useGetRepoTree({ repoId, ref });
