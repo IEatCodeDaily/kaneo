@@ -1,3 +1,24 @@
+## [3.1.0](https://github.com/IEatCodeDaily/kaneo/compare/v3.0.0...v3.1.0) (2026-08-11)
+
+### Highlights
+
+- Add canonical organization, board, and ticket identities with readable slug routes, aliases, and UUID compatibility.
+- Expand Boards Overview and board timelines with hierarchy, milestone disclosure, aggregate bars, date ranges, filtering, and navigation improvements.
+- Add hierarchical teams, inherited membership, organization visibility defaults, per-resource visibility baselines, and board default assignees.
+- Improve repository synchronization, connection lifecycle, notifications, personal-ticket management, localization, and accessible sidebar controls.
+- Virtualize large Kanban columns while preserving dnd-kit cross-column dragging and canonical ticket navigation.
+- Harden task-image storage, CORS handling, MCP/agent discovery, task archival, client cache invalidation, and production-runtime gates.
+
+### Database migrations
+
+- `0065_team_parent`
+- `0066_organization_visibility_defaults`
+- `0067_resource_organization_privilege`
+- `0068_board_default_assignee`
+- `0069_ticket_identity_aliases`
+
+> Review candidate only. Tagging, GitHub release publication, container builds, and deployment remain pending human acceptance.
+
 ## [3.0.0](https://github.com/IEatCodeDaily/kaneo/compare/v2.12.1...v3.0.0) (2026-08-04)
 
 ### Major release
