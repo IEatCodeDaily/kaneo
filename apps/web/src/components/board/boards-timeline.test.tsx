@@ -135,7 +135,14 @@ describe("BoardsTimeline", () => {
       <BoardsTimeline
         boards={[boardWithTasks]}
         milestonesByBoardId={{
-          a: [{ id: "ms1", name: "MVP milestone", status: "active" }],
+          a: [
+            {
+              id: "ms1",
+              name: "MVP milestone",
+              status: "active",
+              dueDate: "2026-06-08T00:00:00.000Z",
+            },
+          ],
         }}
         onBoardClick={vi.fn()}
         zoom="week"
@@ -163,6 +170,11 @@ describe("BoardsTimeline", () => {
     expect(
       screen.getByTestId("boards-timeline-section-bar-a-ms1"),
     ).toBeTruthy();
+    const sectionDiamond = screen.getByTestId(
+      "boards-timeline-section-milestone-a-ms1",
+    );
+    expect(sectionDiamond.parentElement?.style.gridColumn).toBe("22");
+    expect(sectionDiamond.parentElement?.style.gridRow).toBe("1");
 
     // Expand the milestone section
     fireEvent.click(screen.getByTestId("boards-timeline-section-toggle-a-ms1"));

@@ -650,21 +650,6 @@ export default function BoardsTimeline({
                                     <ChevronRight className="size-3" />
                                   )}
                                 </button>
-                                {section.kind === "milestone" && (
-                                  <Diamond
-                                    className={cn(
-                                      "mr-1 size-3 shrink-0 fill-current stroke-[1.5]",
-                                      MILESTONE_STATUS_CLASSES[
-                                        (milestonesByBoardId?.[board.id] ?? [])
-                                          .find(
-                                            (m) =>
-                                              m.id === section.milestone.id,
-                                          )
-                                          ?.status?.toLowerCase() ?? "planned"
-                                      ] ?? MILESTONE_STATUS_CLASSES.planned,
-                                    )}
-                                  />
-                                )}
                                 <span className="truncate text-foreground">
                                   {sectionLabel}
                                 </span>
@@ -750,6 +735,44 @@ export default function BoardsTimeline({
                                         </span>
                                       )}
                                     </div>
+                                    {section.kind === "milestone" &&
+                                      (() => {
+                                        const dueDate = toDate(
+                                          section.milestone.dueDate,
+                                        );
+                                        if (!dueDate) return null;
+                                        const dayIndex =
+                                          differenceInCalendarDays(
+                                            dueDate,
+                                            timeline.rangeStart,
+                                          );
+                                        if (
+                                          dayIndex < 0 ||
+                                          dayIndex >= timeline.days.length
+                                        )
+                                          return null;
+                                        return (
+                                          <div
+                                            className="pointer-events-none relative z-[6] flex justify-center self-center"
+                                            style={{
+                                              gridColumn: `${dayIndex + 1}`,
+                                              gridRow: 1,
+                                            }}
+                                          >
+                                            <Diamond
+                                              aria-label={`${sectionLabel} milestone`}
+                                              className={cn(
+                                                "size-3.5 shrink-0 fill-current stroke-[1.5] drop-shadow-sm",
+                                                MILESTONE_STATUS_CLASSES[
+                                                  section.milestone.status.toLowerCase()
+                                                ] ??
+                                                  MILESTONE_STATUS_CLASSES.planned,
+                                              )}
+                                              data-testid={`boards-timeline-section-milestone-${sectionId}`}
+                                            />
+                                          </div>
+                                        );
+                                      })()}
                                   </div>
                                 );
                               })()}
