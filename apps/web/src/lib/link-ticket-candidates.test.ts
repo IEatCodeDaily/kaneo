@@ -15,6 +15,8 @@ const candidate = (
   boardSlug: "be",
   status: "to-do",
   statusName: "To Do",
+  statusIcon: null,
+  statusIsFinal: false,
   ...overrides,
 });
 
@@ -34,12 +36,19 @@ describe("groupTicketCandidatesByBoard", () => {
     expect(groups[1].items.map((item) => item.id)).toEqual(["t2"]);
   });
 
-  it("keeps the human status name on every candidate for badge rendering", () => {
+  it("keeps status metadata for the icon on every candidate", () => {
     const groups = groupTicketCandidatesByBoard([
-      candidate({ status: "in-progress", statusName: "In Progress" }),
+      candidate({
+        status: "in-progress",
+        statusName: "In Progress",
+        statusIcon: "Timer",
+        statusIsFinal: false,
+      }),
     ]);
     expect(groups[0].items[0].statusName).toBe("In Progress");
     expect(groups[0].items[0].status).toBe("in-progress");
+    expect(groups[0].items[0].statusIcon).toBe("Timer");
+    expect(groups[0].items[0].statusIsFinal).toBe(false);
   });
 
   it("omits boards with no candidates", () => {

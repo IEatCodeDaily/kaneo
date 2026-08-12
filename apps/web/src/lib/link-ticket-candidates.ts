@@ -16,8 +16,12 @@ export type TicketCandidate = {
   boardSlug: string;
   /** Column slug, e.g. "in-progress". */
   status: string;
-  /** Human column name, e.g. "In Progress", for the status badge. */
+  /** Human column name, e.g. "In Progress", for the icon tooltip. */
   statusName: string;
+  /** Column's configured icon name (null = default for the slug). */
+  statusIcon: string | null;
+  /** Whether the column is final ("done"), for the filled done icon. */
+  statusIsFinal: boolean;
 };
 
 export type TicketCandidateGroup = {

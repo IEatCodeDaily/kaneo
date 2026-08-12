@@ -34,12 +34,14 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 import getTasks from "@/fetchers/task/get-tasks";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { cn } from "@/lib/cn";
 import {
   groupTicketCandidatesByBoard,
   type TicketCandidate,
 } from "@/lib/link-ticket-candidates";
 import { toast } from "@/lib/toast";
 import type { RepoTaskLink } from "@/types/repo";
+import LinkTicketCandidateRow from "./link-ticket-candidate-row";
 
 type Props = {
   organizationId: string;
@@ -73,6 +75,7 @@ export default function RepoTaskLinks({
   const canManageSyncedTasks = canUpdateBoards();
   const [linkOpen, setLinkOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [linkBoardId, setLinkBoardId] = useState("all");
   const { data: boards, isLoading: boardsLoading } = useGetBoards({
     organizationId,
   });
@@ -100,7 +103,13 @@ export default function RepoTaskLinks({
     for (const [index, board] of (boards ?? []).entries()) {
       const payload = taskQueries[index]?.data as
         | {
-            columns?: Array<{ name?: string; slug?: string; tasks?: unknown }>;
+            columns?: Array<{
+              name?: string;
+              slug?: string;
+              icon?: string | null;
+              isFinal?: boolean;
+              tasks?: unknown;
+            }>;
             archivedTasks?: unknown;
             plannedTasks?: unknown;
           }
@@ -109,21 +118,29 @@ export default function RepoTaskLinks({
         tasks: unknown;
         status: string;
         statusName: string;
+        statusIcon: string | null;
+        statusIsFinal: boolean;
       }> = [
         ...(payload?.columns ?? []).map((column) => ({
           tasks: column?.tasks,
           status: column?.slug ?? "",
           statusName: column?.name ?? column?.slug ?? "",
+          statusIcon: column?.icon ?? null,
+          statusIsFinal: column?.isFinal ?? false,
         })),
         {
           tasks: payload?.archivedTasks,
           status: "archived",
           statusName: "Archived",
+          statusIcon: null,
+          statusIsFinal: false,
         },
         {
           tasks: payload?.plannedTasks,
           status: "planned",
           statusName: "Planned",
+          statusIcon: null,
+          statusIsFinal: false,
         },
       ];
       for (const bucket of buckets) {
@@ -144,6 +161,8 @@ export default function RepoTaskLinks({
             boardSlug: board.slug,
             status: bucket.status,
             statusName: bucket.statusName,
+            statusIcon: bucket.statusIcon,
+            statusIsFinal: bucket.statusIsFinal,
           });
         }
       }
@@ -220,10 +239,12 @@ export default function RepoTaskLinks({
   });
 
   const normalizedSearch = search.trim().toLocaleLowerCase();
-  const filtered = candidates.filter((task) =>
-    `${task.boardSlug}-${task.number ?? ""} ${task.title} ${task.boardName} ${task.statusName}`
-      .toLocaleLowerCase()
-      .includes(normalizedSearch),
+  const filtered = candidates.filter(
+    (task) =>
+      (linkBoardId === "all" || task.boardId === linkBoardId) &&
+      `${task.boardSlug}-${task.number ?? ""} ${task.title} ${task.boardName} ${task.statusName}`
+        .toLocaleLowerCase()
+        .includes(normalizedSearch),
   );
   const candidateGroups = groupTicketCandidatesByBoard(filtered);
   const linked = taskLinks.filter((link) => !link.syncEnabled);
@@ -310,7 +331,7 @@ export default function RepoTaskLinks({
             >
               <Link2 className="size-3.5" /> Link ticket
             </DialogTrigger>
-            <DialogPopup>
+            <DialogPopup className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Link an existing ticket</DialogTitle>
                 <DialogDescription>
@@ -318,58 +339,80 @@ export default function RepoTaskLinks({
                   request remains authoritative.
                 </DialogDescription>
               </DialogHeader>
-              <DialogPanel className="space-y-3">
-                <Input
-                  aria-label="Search tickets"
-                  autoFocus
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search tickets across this organization…"
-                  value={search}
-                />
-                <div className="max-h-72 overflow-y-auto rounded-md border">
-                  {isLoading ? (
-                    <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                      <LoaderCircle className="size-4 animate-spin" /> Loading
-                      tickets…
-                    </p>
-                  ) : candidateGroups.length === 0 ? (
-                    <p className="p-4 text-sm text-muted-foreground">
-                      No unlinked tickets found.
-                    </p>
-                  ) : (
-                    candidateGroups.map((group) => (
-                      <div key={group.boardId}>
-                        <div
-                          className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
-                          data-testid={`link-ticket-board-${group.boardId}`}
+              {/* Same two-pane layout as the parent selector: a board rail on
+                  the left (jump/filter), search + sectioned results right. */}
+              <DialogPanel className="p-0">
+                <div className="grid min-h-80 sm:grid-cols-[12rem_1fr]">
+                  <nav
+                    aria-label="Boards"
+                    className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-x-visible sm:border-r sm:border-b-0"
+                  >
+                    {[{ id: "all", name: "All" }, ...(boards ?? [])].map(
+                      (board) => (
+                        <button
+                          aria-pressed={linkBoardId === board.id}
+                          className={cn(
+                            "flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full",
+                            linkBoardId === board.id
+                              ? "bg-accent font-medium"
+                              : "hover:bg-accent/60",
+                          )}
+                          data-testid={`link-ticket-rail-${board.id}`}
+                          key={board.id}
+                          onClick={() => setLinkBoardId(board.id)}
+                          type="button"
                         >
-                          {group.boardName}
-                        </div>
-                        {group.items.map((task) => (
-                          <button
-                            className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
-                            disabled={add.isPending}
-                            key={task.id}
-                            onClick={() => add.mutate(task.id)}
-                            type="button"
-                          >
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {task.boardSlug}-{task.number ?? "—"}
-                            </span>
-                            <span className="min-w-0 flex-1 truncate text-sm">
-                              {task.title}
-                            </span>
-                            <span
-                              className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                              data-testid={`link-ticket-status-${task.id}`}
+                          <span className="truncate">{board.name}</span>
+                        </button>
+                      ),
+                    )}
+                  </nav>
+                  <div className="min-w-0">
+                    <div className="border-b p-3">
+                      <Input
+                        aria-label="Search tickets"
+                        autoFocus
+                        className="h-8"
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search tickets across this organization…"
+                        value={search}
+                      />
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {isLoading ? (
+                        <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+                          <LoaderCircle className="size-4 animate-spin" />{" "}
+                          Loading tickets…
+                        </p>
+                      ) : candidateGroups.length === 0 ? (
+                        <p className="p-4 text-sm text-muted-foreground">
+                          No unlinked tickets found.
+                        </p>
+                      ) : (
+                        candidateGroups.map((group) => (
+                          <div key={group.boardId}>
+                            <div
+                              className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
+                              data-testid={`link-ticket-board-${group.boardId}`}
                             >
-                              {task.statusName}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ))
-                  )}
+                              {group.boardName}
+                            </div>
+                            {group.items.map((task) => (
+                              <button
+                                className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
+                                disabled={add.isPending}
+                                key={task.id}
+                                onClick={() => add.mutate(task.id)}
+                                type="button"
+                              >
+                                <LinkTicketCandidateRow task={task} />
+                              </button>
+                            ))}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </DialogPanel>
               <DialogFooter>

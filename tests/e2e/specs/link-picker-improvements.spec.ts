@@ -32,11 +32,15 @@ test("link issue/PR palette shows state badges and repo sections", async ({
   const badgeTexts = await badges.allTextContents();
   console.log("badge sample:", badgeTexts.slice(0, 6));
 
-  // repo section headers exist (CommandGroupLabel)
-  const groupLabels = page.locator(
-    '[data-slot="command-group-label"], [role="group"] >> text=/\\//',
-  );
-  console.log("group label count:", await groupLabels.count());
+  // repo side rail exists and filters (KFL-333 feedback round 2)
+  const rail = page.locator('[data-testid^="resource-picker-rail-"]');
+  const railCount = await rail.count();
+  console.log("repo rail entries:", railCount);
+  expect(railCount).toBeGreaterThan(1);
+  // click a specific repo in the rail and confirm the list narrows
+  await rail.nth(1).click();
+  await page.waitForTimeout(800);
+  console.log("after rail click, badge count:", await badges.count());
 
   await page.screenshot({ path: "/tmp/link-palette.png" });
 });
@@ -73,13 +77,25 @@ test("repo issue Link-ticket dialog sections by board with status badges", async
     (await boardSections.allTextContents()).slice(0, 6),
   );
 
-  const statusBadges = page.locator('[data-testid^="link-ticket-status-"]');
+  // status ICONS, not text badges (KFL-333 feedback round 2)
+  const statusIcons = page.locator('[data-testid^="link-ticket-status-icon-"]');
   await expect
-    .poll(() => statusBadges.count(), { timeout: 15_000, intervals: [500] })
+    .poll(() => statusIcons.count(), { timeout: 15_000, intervals: [500] })
     .toBeGreaterThan(0);
+  // every icon wrapper contains an svg and no visible status text
+  const firstIcon = statusIcons.first();
+  expect(await firstIcon.locator("svg").count()).toBeGreaterThan(0);
+
+  // board side rail exists and filters
+  const boardRail = page.locator('[data-testid^="link-ticket-rail-"]');
+  const boardRailCount = await boardRail.count();
+  console.log("board rail entries:", boardRailCount);
+  expect(boardRailCount).toBeGreaterThan(1);
+  await boardRail.nth(1).click();
+  await page.waitForTimeout(800);
   console.log(
-    "status badge sample:",
-    (await statusBadges.allTextContents()).slice(0, 8),
+    "after board rail click, sections:",
+    (await boardSections.allTextContents()).slice(0, 4),
   );
 
   await page.screenshot({ path: "/tmp/link-ticket-dialog.png" });
