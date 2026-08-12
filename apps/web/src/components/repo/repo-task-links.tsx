@@ -11,6 +11,15 @@ import {
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogDescription,
   DialogFooter,
@@ -25,6 +34,10 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 import getTasks from "@/fetchers/task/get-tasks";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import {
+  groupTicketCandidatesByBoard,
+  type TicketCandidate,
+} from "@/lib/link-ticket-candidates";
 import { toast } from "@/lib/toast";
 import type { RepoTaskLink } from "@/types/repo";
 
@@ -35,15 +48,6 @@ type Props = {
   itemType: "issues" | "pull-requests";
   taskLinks?: RepoTaskLink[];
   compact?: boolean;
-};
-
-type CandidateTask = {
-  id: string;
-  title: string;
-  number: number | null;
-  boardId: string;
-  boardName: string;
-  boardSlug: string;
 };
 
 async function request(path: string, init: RequestInit) {
@@ -91,24 +95,40 @@ export default function RepoTaskLinks({
   ];
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
   const existingTaskIds = new Set(taskLinks.map((link) => link.taskId));
-  const candidates = useMemo<CandidateTask[]>(() => {
-    const result: CandidateTask[] = [];
+  const candidates = useMemo<TicketCandidate[]>(() => {
+    const result: TicketCandidate[] = [];
     for (const [index, board] of (boards ?? []).entries()) {
       const payload = taskQueries[index]?.data as
         | {
-            columns?: Array<{ tasks?: unknown }>;
+            columns?: Array<{ name?: string; slug?: string; tasks?: unknown }>;
             archivedTasks?: unknown;
             plannedTasks?: unknown;
           }
         | undefined;
-      const buckets: unknown[] = [
-        ...(payload?.columns ?? []).map((column) => column?.tasks),
-        payload?.archivedTasks,
-        payload?.plannedTasks,
+      const buckets: Array<{
+        tasks: unknown;
+        status: string;
+        statusName: string;
+      }> = [
+        ...(payload?.columns ?? []).map((column) => ({
+          tasks: column?.tasks,
+          status: column?.slug ?? "",
+          statusName: column?.name ?? column?.slug ?? "",
+        })),
+        {
+          tasks: payload?.archivedTasks,
+          status: "archived",
+          statusName: "Archived",
+        },
+        {
+          tasks: payload?.plannedTasks,
+          status: "planned",
+          statusName: "Planned",
+        },
       ];
       for (const bucket of buckets) {
-        if (!Array.isArray(bucket)) continue;
-        for (const task of bucket as Array<{
+        if (!Array.isArray(bucket.tasks)) continue;
+        for (const task of bucket.tasks as Array<{
           id?: string;
           title?: string;
           number?: number | null;
@@ -122,6 +142,8 @@ export default function RepoTaskLinks({
             boardId: board.id,
             boardName: board.name,
             boardSlug: board.slug,
+            status: bucket.status,
+            statusName: bucket.statusName,
           });
         }
       }
@@ -199,10 +221,11 @@ export default function RepoTaskLinks({
 
   const normalizedSearch = search.trim().toLocaleLowerCase();
   const filtered = candidates.filter((task) =>
-    `${task.boardSlug}-${task.number ?? ""} ${task.title} ${task.boardName}`
+    `${task.boardSlug}-${task.number ?? ""} ${task.title} ${task.boardName} ${task.statusName}`
       .toLocaleLowerCase()
       .includes(normalizedSearch),
   );
+  const candidateGroups = groupTicketCandidatesByBoard(filtered);
   const linked = taskLinks.filter((link) => !link.syncEnabled);
   const synced = taskLinks.filter((link) => link.syncEnabled);
   const row = (link: RepoTaskLink, isSynced: boolean) => (
@@ -309,29 +332,42 @@ export default function RepoTaskLinks({
                       <LoaderCircle className="size-4 animate-spin" /> Loading
                       tickets…
                     </p>
-                  ) : filtered.length === 0 ? (
+                  ) : candidateGroups.length === 0 ? (
                     <p className="p-4 text-sm text-muted-foreground">
                       No unlinked tickets found.
                     </p>
                   ) : (
-                    filtered.map((task) => (
-                      <button
-                        className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
-                        disabled={add.isPending}
-                        key={task.id}
-                        onClick={() => add.mutate(task.id)}
-                        type="button"
-                      >
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {task.boardSlug}-{task.number ?? "—"}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          {task.title}
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {task.boardName}
-                        </span>
-                      </button>
+                    candidateGroups.map((group) => (
+                      <div key={group.boardId}>
+                        <div
+                          className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
+                          data-testid={`link-ticket-board-${group.boardId}`}
+                        >
+                          {group.boardName}
+                        </div>
+                        {group.items.map((task) => (
+                          <button
+                            className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
+                            disabled={add.isPending}
+                            key={task.id}
+                            onClick={() => add.mutate(task.id)}
+                            type="button"
+                          >
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {task.boardSlug}-{task.number ?? "—"}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm">
+                              {task.title}
+                            </span>
+                            <span
+                              className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                              data-testid={`link-ticket-status-${task.id}`}
+                            >
+                              {task.statusName}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     ))
                   )}
                 </div>
@@ -390,19 +426,36 @@ export default function RepoTaskLinks({
                   <DialogPanel>
                     <label className="space-y-2 text-sm">
                       <span>Board</span>
-                      <select
-                        aria-label="Board for synced ticket"
-                        className="w-full rounded-md border bg-background px-3 py-2"
-                        onChange={(event) => setBoardId(event.target.value)}
-                        value={boardId}
+                      <Combobox
+                        autoHighlight
+                        itemToStringLabel={(board: { name: string }) =>
+                          board.name
+                        }
+                        items={boards ?? []}
+                        onValueChange={(board) => setBoardId(board?.id ?? "")}
+                        value={
+                          (boards ?? []).find(
+                            (board) => board.id === boardId,
+                          ) ?? null
+                        }
                       >
-                        <option value="">Select a board…</option>
-                        {(boards ?? []).map((board) => (
-                          <option key={board.id} value={board.id}>
-                            {board.name}
-                          </option>
-                        ))}
-                      </select>
+                        <ComboboxInput
+                          aria-label="Board for synced ticket"
+                          placeholder="Search boards…"
+                        />
+                        <ComboboxPopup>
+                          <ComboboxEmpty>No boards found.</ComboboxEmpty>
+                          <ComboboxList>
+                            <ComboboxCollection>
+                              {(board: { id: string; name: string }) => (
+                                <ComboboxItem key={board.id} value={board}>
+                                  {board.name}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxCollection>
+                          </ComboboxList>
+                        </ComboboxPopup>
+                      </Combobox>
                     </label>
                   </DialogPanel>
                   <DialogFooter>

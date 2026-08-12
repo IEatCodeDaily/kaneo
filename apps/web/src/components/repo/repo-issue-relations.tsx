@@ -164,7 +164,7 @@ export default function RepoIssueRelations({
                 {filtered.length ? (
                   filtered.map((issue) => (
                     <button
-                      className="flex w-full gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
                       key={issue.number}
                       onClick={() => add.mutate(issue.number)}
                       type="button"
@@ -172,7 +172,12 @@ export default function RepoIssueRelations({
                       <span className="text-muted-foreground">
                         #{issue.number}
                       </span>
-                      {issue.title}
+                      <span className="min-w-0 flex-1 truncate">
+                        {issue.title}
+                      </span>
+                      <RepoStateBadge
+                        state={issue.state === "closed" ? "closed" : "open"}
+                      />
                     </button>
                   ))
                 ) : (

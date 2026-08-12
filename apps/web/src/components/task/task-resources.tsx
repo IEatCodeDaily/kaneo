@@ -61,6 +61,7 @@ import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 import { extractDescriptionResources } from "./description-resources";
+import ResourcePickerRow from "./resource-picker-row";
 import { ResourceSyncBadge } from "./resource-sync-badge";
 import { selectResourceAutoLinks } from "./task-resource-links";
 
@@ -82,6 +83,8 @@ type ResourceItem = {
   title: string;
   repoId: string;
   repoLabel: string;
+  state: string;
+  isDraft: boolean | null;
 };
 
 type ResourceGroup = {
@@ -431,6 +434,8 @@ export default function TaskResources({
           title: resource.title,
           repoId: repo.id,
           repoLabel,
+          state: resource.state,
+          isDraft: "isDraft" in resource ? (resource.isDraft ?? null) : null,
         }));
 
       return items.length > 0
@@ -915,17 +920,10 @@ export default function TaskResources({
                             onClick={() => handleLink(item)}
                             className="flex items-center gap-3 py-2"
                           >
-                            {resourceType === "issues" ? (
-                              <CircleDot className="size-4 shrink-0 text-muted-foreground" />
-                            ) : (
-                              <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
-                            )}
-                            <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                              #{item.number}
-                            </span>
-                            <span className="text-sm truncate flex-1">
-                              {item.title}
-                            </span>
+                            <ResourcePickerRow
+                              item={item}
+                              itemType={resourceType}
+                            />
                           </CommandItem>
                         )}
                       </CommandCollection>
