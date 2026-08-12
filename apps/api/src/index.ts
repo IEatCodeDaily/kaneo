@@ -72,10 +72,17 @@ import taskTemplate from "./task-template";
 import team from "./team";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
+<<<<<<< HEAD
 import {
   authenticateApiRequest,
   resolveAssetBearerOrCookie,
 } from "./utils/authenticate-api-request";
+=======
+import user from "./user";
+import getAvatar from "./user/controllers/get-avatar";
+import { authenticateApiRequest } from "./utils/authenticate-api-request";
+import { authorizeAssetAccess } from "./utils/authorize-asset-access";
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
 import { getInvitationDetails } from "./utils/check-registration-allowed";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
@@ -307,8 +314,7 @@ export function createApp() {
       },
     }),
     async (c) => {
-      const session = await auth.api.getSession({ headers: c.req.raw.headers });
-      return c.json(session ?? null);
+      return auth.handler(c.req.raw);
     },
   );
 
@@ -420,6 +426,52 @@ export function createApp() {
         console.error("Failed to stream asset:", error);
         throw new HTTPException(404, { message: "Asset object not found" });
       }
+    },
+  );
+
+  api.get(
+    "/user/avatar/:id",
+    describeRoute({
+      operationId: "getUserAvatar",
+      tags: ["User"],
+      description: "Download a user avatar by its avatar ID",
+      security: [],
+      responses: {
+        200: {
+          description: "The avatar image",
+          content: {
+            "image/*": { schema: { type: "string", format: "binary" } },
+          },
+        },
+        404: {
+          description: "Avatar not found",
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const avatar = await getAvatar(id);
+
+      if (!avatar) {
+        throw new HTTPException(404, { message: "Avatar not found" });
+      }
+
+      const etag = `"${avatar.id}"`;
+      if (c.req.header("If-None-Match") === etag) {
+        return new Response(null, { status: 304, headers: { ETag: etag } });
+      }
+
+      return new Response(new Uint8Array(avatar.data) as BodyInit, {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Content-Length": avatar.size.toString(),
+          "Content-Type": avatar.mimeType,
+          "X-Content-Type-Options": "nosniff",
+          ETag: etag,
+          "Last-Modified": avatar.updatedAt.toUTCString(),
+        },
+      });
     },
   );
 
@@ -670,12 +722,17 @@ export function createApp() {
   const externalLinkApi = api.route("/external-link", externalLink);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
   const invitationApi = api.route("/invitation", invitation);
+<<<<<<< HEAD
   const organizationApi = api.route("/organization", organization);
   const agentApi = api.route("/agent", agent);
   const organizationGithubApi = api.route(
     "/organization-github",
     organizationGithub,
   );
+=======
+  const workspaceApi = api.route("/workspace", workspace);
+  const userApi = api.route("/user", user);
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
 
   app.route(
     "/",
@@ -862,6 +919,7 @@ export function createApp() {
     taskRelationApi,
     telegramIntegrationApi,
     timeEntryApi,
+    userApi,
     workflowRuleApi,
     organizationApi,
     organizationGithubApi,
@@ -988,6 +1046,7 @@ const {
   taskRelationApi,
   telegramIntegrationApi,
   timeEntryApi,
+  userApi,
   workflowRuleApi,
   organizationApi,
   oauthApi,
@@ -1027,8 +1086,14 @@ export type AppType =
   | typeof externalLinkApi
   | typeof workflowRuleApi
   | typeof invitationApi
+<<<<<<< HEAD
   | typeof organizationApi
   | typeof publicBoardApi
+=======
+  | typeof workspaceApi
+  | typeof userApi
+  | typeof publicProjectApi
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
   | typeof invitationPublicApi
   | typeof oauthApi;
 

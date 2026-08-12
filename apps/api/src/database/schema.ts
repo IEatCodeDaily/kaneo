@@ -3,7 +3,11 @@ import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
+<<<<<<< HEAD
   check,
+=======
+  customType,
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
   foreignKey,
   index,
   integer,
@@ -14,6 +18,12 @@ import {
   unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 export const userTable = pgTable("user", {
   id: text("id")
@@ -90,16 +100,22 @@ export const accountTable = pgTable(
   (table) => [index("account_userId_idx").on(table.userId)],
 );
 
+<<<<<<< HEAD
 // Separate from Better Auth's `account` table: this grant permits Kaneo to act
 // as a member on GitHub; a `github` account remains exclusively for sign-in.
 export const githubUserGrantTable = pgTable(
   "github_user_grant",
+=======
+export const userAvatarTable = pgTable(
+  "user_avatar",
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
     userId: text("user_id")
       .notNull()
+<<<<<<< HEAD
       .references(() => userTable.id, { onDelete: "cascade" }),
     providerId: text("provider_id").notNull(),
     githubUserId: text("github_user_id").notNull(),
@@ -145,6 +161,23 @@ export const githubDelegationStateTable = pgTable(
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => [index("github_delegation_state_expires_idx").on(table.expiresAt)],
+=======
+      .unique("user_avatar_user_id_unique")
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("user_avatar_userId_idx").on(table.userId)],
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
 );
 
 export const verificationTable = pgTable(
@@ -268,6 +301,56 @@ export const organizationMemberTable = pgTable(
   ],
 );
 
+<<<<<<< HEAD
+=======
+export const workspaceBillingTable = pgTable(
+  "workspace_billing",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .unique("workspace_billing_workspace_id_unique")
+      .references(() => workspaceTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    foundingFree: boolean("founding_free").notNull().default(false),
+    trialEndsAt: timestamp("trial_ends_at", { mode: "date" }),
+    creemCustomerId: text("creem_customer_id"),
+    creemSubscriptionId: text("creem_subscription_id").unique(),
+    creemProductId: text("creem_product_id"),
+    plan: text("plan"),
+    billingInterval: text("billing_interval"),
+    status: text("status"),
+    seats: integer("seats").notNull().default(1),
+    currentPeriodEnd: timestamp("current_period_end", { mode: "date" }),
+    canceledAt: timestamp("canceled_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("workspace_billing_workspaceId_idx").on(table.workspaceId)],
+);
+
+export const trialGrantTable = pgTable("trial_grant", {
+  emailHash: text("email_hash").primaryKey(),
+  trialEndsAt: timestamp("trial_ends_at", { mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const billingEventTable = pgTable("billing_event", {
+  id: text("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  processedAt: timestamp("processed_at", { mode: "date" })
+    .defaultNow()
+    .notNull(),
+});
+
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
 export const teamTable = pgTable(
   "team",
   {
@@ -788,10 +871,13 @@ export const taskTable = pgTable(
     number: integer("number").default(1),
     userId: text("assignee_id").references(() => userTable.id, {
       onDelete: "set null",
+<<<<<<< HEAD
       onUpdate: "cascade",
     }),
     teamId: text("team_assignee_id").references(() => teamTable.id, {
       onDelete: "set null",
+=======
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
       onUpdate: "cascade",
     }),
     title: text("title").notNull(),
@@ -975,7 +1061,7 @@ export const timeEntryTable = pgTable(
         onUpdate: "cascade",
       }),
     userId: text("user_id").references(() => userTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
     description: text("description"),
@@ -1013,7 +1099,7 @@ export const activityTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     userId: text("user_id").references(() => userTable.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
       onUpdate: "cascade",
     }),
     content: text("content"),

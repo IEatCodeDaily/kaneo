@@ -33,6 +33,7 @@ import {
 import type { AccessControl } from "better-auth/plugins/access";
 import type { UserWithAnonymous } from "better-auth/plugins/anonymous";
 import { config } from "dotenv-mono";
+<<<<<<< HEAD
 import { and, count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
@@ -42,6 +43,19 @@ import {
   checkRegistrationAllowed,
   hasPendingInvitationForEmail,
 } from "./utils/check-registration-allowed";
+=======
+import { count, eq, sql } from "drizzle-orm";
+import {
+  findBillableWorkspaces,
+  formatBillableWorkspacesMessage,
+} from "./billing/controllers/find-billable-workspaces";
+import { syncWorkspaceSeats } from "./billing/controllers/sync-seats";
+import db, { schema } from "./database";
+import { publishEvent } from "./events";
+import deleteAccountData from "./user/controllers/delete-account-data";
+import { checkRegistrationAllowed } from "./utils/check-registration-allowed";
+import { checkWorkspaceName } from "./utils/check-workspace-name";
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
 import { mapCustomOAuthProfileToUser } from "./utils/custom-oauth-profile";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getInvitationEmailSubject } from "./utils/get-invitation-email-subject";
@@ -210,6 +224,12 @@ export const auth = betterAuth({
         type: "string",
         input: true,
         required: false,
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        await deleteAccountData(user.id);
       },
     },
   },
@@ -478,6 +498,33 @@ export const auth = betterAuth({
             ownerId: user.id,
           });
         },
+<<<<<<< HEAD
+=======
+        beforeDeleteOrganization: async ({ organization }) => {
+          const billable = await findBillableWorkspaces([organization.id]);
+          if (billable.length > 0) {
+            throw new APIError("CONFLICT", {
+              message: formatBillableWorkspacesMessage(
+                billable.map((workspace) => workspace.name),
+              ),
+            });
+          }
+        },
+        afterAddMember: async ({ member }) => {
+          if (member?.organizationId) {
+            void syncWorkspaceSeats(member.organizationId).catch((error) => {
+              console.error("Seat sync after member add failed:", error);
+            });
+          }
+        },
+        afterRemoveMember: async ({ member }) => {
+          if (member?.organizationId) {
+            void syncWorkspaceSeats(member.organizationId).catch((error) => {
+              console.error("Seat sync after member remove failed:", error);
+            });
+          }
+        },
+>>>>>>> 384eb005 (feat(account): change avatar and delete account)
       },
       async sendInvitationEmail(data) {
         const inviteLink = `${process.env.KANEO_CLIENT_URL}/invitation/accept/${data.id}`;
