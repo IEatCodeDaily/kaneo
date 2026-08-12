@@ -378,7 +378,8 @@
 			"members": {
 				"people": "People"
 			}
-		}
+		},
+		"unknown": "Desconhecido"
 	},
 	"activity": {
 		"assignedToSelf": "atribuiu a tarefa a si mesmo",
@@ -619,7 +620,8 @@
 				}
 			},
 			"activity": "Atividade",
-			"titlePlaceholder": "Clique para adicionar um título"
+			"titlePlaceholder": "Clique para adicionar um título",
+			"close": "Fechar detalhes do ticket"
 		},
 		"editor": {
 			"table": {
@@ -786,7 +788,8 @@
 			"taskHeader": "Tarefa",
 			"showTasks": "Mostrar tarefas",
 			"hideTasks": "Ocultar tarefas",
-			"today": "Today"
+			"today": "Today",
+			"noMilestone": "Sem marco"
 		},
 		"relations": {
 			"types": {
@@ -804,7 +807,8 @@
 			"related": "Relacionado",
 			"openTask": "Abrir tarefa",
 			"selectTask": "Selecione uma tarefa para vincular",
-			"tasksInProject": "Tarefas no projeto"
+			"tasksInProject": "Tarefas no projeto",
+			"blockedBy": "Bloqueado por"
 		},
 		"sort": {
 			"descending": "Decrescente",
@@ -895,6 +899,17 @@
 				"clear": "Limpar data de início",
 				"updateError": "Falha ao atualizar a data de início da tarefa"
 			}
+		},
+		"groupBy": {
+			"status": "Status",
+			"milestone": "Marco"
+		},
+		"nest": {
+			"willNestUnder": "Aninhar sob {{title}}",
+			"releaseToNest": "Solte para aninhar este ticket sob {{title}}.",
+			"cannotNestHere": "Não é possível aninhar aqui",
+			"cannotNestReason": "Este ticket não pode ser aninhado sob esse destino. Escolha outro pai.",
+			"unknownTarget": "este ticket"
 		}
 	},
 	"navigation": {

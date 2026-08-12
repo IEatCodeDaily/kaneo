@@ -135,7 +135,8 @@
 			"members": {
 				"people": "People"
 			}
-		}
+		},
+		"unknown": "Không rõ"
 	},
 	"auth": {
 		"signIn": {
@@ -1686,7 +1687,8 @@
 					},
 					"onlyYoutubeInline": "Chỉ có thể nhúng URL YouTube. Hãy dùng chế độ liên kết thay thế."
 				}
-			}
+			},
+			"close": "Đóng chi tiết ticket"
 		},
 		"entity": {
 			"task": "Công việc"
@@ -1707,7 +1709,8 @@
 				"blocks": "chặn",
 				"blocked_by": "bị chặn bởi",
 				"related": "liên quan đến"
-			}
+			},
+			"blockedBy": "Bị chặn bởi"
 		},
 		"subtasks": {
 			"title": "Công việc con",
@@ -1862,7 +1865,8 @@
 			"resizeStart": "Thay đổi kích thước ngày bắt đầu",
 			"resizeDue": "Thay đổi kích thước ngày đến hạn",
 			"taskAriaLabel": "{{title}}: mở hoặc kéo để di chuyển",
-			"today": "Today"
+			"today": "Today",
+			"noMilestone": "Không có cột mốc"
 		},
 		"delete": {
 			"title": "Xóa công việc?",
@@ -1962,6 +1966,17 @@
 				"deleteRow": "Xóa hàng",
 				"deleteTable": "Xóa bảng"
 			}
+		},
+		"groupBy": {
+			"status": "Trạng thái",
+			"milestone": "Cột mốc"
+		},
+		"nest": {
+			"willNestUnder": "Lồng dưới {{title}}",
+			"releaseToNest": "Thả để lồng ticket này dưới {{title}}.",
+			"cannotNestHere": "Không thể lồng ở đây",
+			"cannotNestReason": "Ticket này không thể được lồng dưới mục tiêu đó. Hãy chọn mục cha khác.",
+			"unknownTarget": "ticket này"
 		}
 	},
 	"invitations": {

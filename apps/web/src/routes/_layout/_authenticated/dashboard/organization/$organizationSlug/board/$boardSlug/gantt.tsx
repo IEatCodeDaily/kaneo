@@ -923,7 +923,7 @@ function RouteComponent() {
         navigate({ to: ".", search: { taskId: task.id }, replace: true });
       }
     },
-    [navigate, organizationId],
+    [navigate, organizationSlug],
   );
 
   // Month header: group timeline.days into month spans for a row above the day numbers.

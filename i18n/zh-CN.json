@@ -135,7 +135,8 @@
 			"members": {
 				"people": "People"
 			}
-		}
+		},
+		"unknown": "未知"
 	},
 	"auth": {
 		"signIn": {
@@ -1686,7 +1687,8 @@
 					},
 					"onlyYoutubeInline": "仅支持嵌入 YouTube URL，请改用链接模式。"
 				}
-			}
+			},
+			"close": "关闭工单详情"
 		},
 		"entity": {
 			"task": "任务"
@@ -1707,7 +1709,8 @@
 				"blocks": "阻塞",
 				"blocked_by": "被阻塞",
 				"related": "关联"
-			}
+			},
+			"blockedBy": "被阻塞于"
 		},
 		"subtasks": {
 			"title": "子任务",
@@ -1862,7 +1865,8 @@
 			"resizeStart": "调整开始日期",
 			"resizeDue": "调整截止日期",
 			"taskAriaLabel": "{{title}}：打开或拖动以移动",
-			"today": "Today"
+			"today": "Today",
+			"noMilestone": "无里程碑"
 		},
 		"delete": {
 			"title": "删除任务？",
@@ -1962,6 +1966,17 @@
 				"deleteRow": "删除行",
 				"deleteTable": "删除表格"
 			}
+		},
+		"groupBy": {
+			"status": "状态",
+			"milestone": "里程碑"
+		},
+		"nest": {
+			"willNestUnder": "嵌套到 {{title}} 下",
+			"releaseToNest": "松开以将此工单嵌套到 {{title}} 下。",
+			"cannotNestHere": "无法在此嵌套",
+			"cannotNestReason": "此工单无法嵌套到该目标下。请选择其他父级。",
+			"unknownTarget": "此工单"
 		}
 	},
 	"invitations": {

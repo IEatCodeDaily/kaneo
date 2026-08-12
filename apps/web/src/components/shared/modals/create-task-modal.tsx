@@ -615,6 +615,7 @@ function CreateTaskModal({
     }
   }, [
     assigneeId,
+    assigneeTeamId,
     createTask,
     description,
     draftTask,

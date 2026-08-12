@@ -69,10 +69,10 @@ test("repo list refreshes automatically after resync (REPO_SYNCED push)", async 
 
   // Wait for the REPO_SYNCED push (mirror of a small repo takes seconds).
   await expect
-    .poll(
-      () => wsMessages.filter((m) => m.type === "REPO_SYNCED").length,
-      { timeout: 120_000, intervals: [1000] },
-    )
+    .poll(() => wsMessages.filter((m) => m.type === "REPO_SYNCED").length, {
+      timeout: 120_000,
+      intervals: [1000],
+    })
     .toBeGreaterThan(0);
   console.log(
     "REPO_SYNCED messages:",

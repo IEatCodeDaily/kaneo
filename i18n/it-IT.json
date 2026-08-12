@@ -135,7 +135,8 @@
 			"members": {
 				"people": "People"
 			}
-		}
+		},
+		"unknown": "Sconosciuto"
 	},
 	"auth": {
 		"signIn": {
@@ -1686,7 +1687,8 @@
 					},
 					"onlyYoutubeInline": "Solo gli URL YouTube possono essere incorporati. Usa invece la modalità link."
 				}
-			}
+			},
+			"close": "Chiudi i dettagli del ticket"
 		},
 		"entity": {
 			"task": "Attività"
@@ -1707,7 +1709,8 @@
 				"blocks": "blocca",
 				"blocked_by": "bloccata da",
 				"related": "correlata a"
-			}
+			},
+			"blockedBy": "Bloccato da"
 		},
 		"subtasks": {
 			"title": "Sotto-attività",
@@ -1862,7 +1865,8 @@
 			"resizeStart": "Ridimensiona data inizio",
 			"resizeDue": "Ridimensiona data scadenza",
 			"taskAriaLabel": "{{title}}: apri o trascina per spostare",
-			"today": "Today"
+			"today": "Today",
+			"noMilestone": "Nessuna milestone"
 		},
 		"delete": {
 			"title": "Eliminare l'Attività?",
@@ -1962,6 +1966,17 @@
 				"deleteRow": "Elimina riga",
 				"deleteTable": "Elimina tabella"
 			}
+		},
+		"groupBy": {
+			"status": "Stato",
+			"milestone": "Milestone"
+		},
+		"nest": {
+			"willNestUnder": "Annida sotto {{title}}",
+			"releaseToNest": "Rilascia per annidare questo ticket sotto {{title}}.",
+			"cannotNestHere": "Impossibile annidare qui",
+			"cannotNestReason": "Questo ticket non può essere annidato sotto quella destinazione. Scegli un altro genitore.",
+			"unknownTarget": "questo ticket"
 		}
 	},
 	"invitations": {

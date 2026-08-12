@@ -16,8 +16,11 @@ describe("getDueDateStatus", () => {
   });
 
   it("never warns about a completed task, however overdue", () => {
-    expect(getDueDateStatus(YESTERDAY, true)).toBe("far-future");
-    expect(getDueDateStatus(TOMORROW, true)).toBe("far-future");
+    // The fork returns the dedicated "completed" status (#178) instead of
+    // upstream's "far-future" so surfaces can grey the date out rather than
+    // merely not-warn. Either way, no overdue/due-soon warning may appear.
+    expect(getDueDateStatus(YESTERDAY, true)).toBe("completed");
+    expect(getDueDateStatus(TOMORROW, true)).toBe("completed");
   });
 });
 

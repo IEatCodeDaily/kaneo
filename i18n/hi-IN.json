@@ -135,7 +135,8 @@
 			"members": {
 				"people": "People"
 			}
-		}
+		},
+		"unknown": "अज्ञात"
 	},
 	"auth": {
 		"signIn": {
@@ -1686,7 +1687,8 @@
 					},
 					"onlyYoutubeInline": "केवल YouTube URL एम्बेड किए जा सकते हैं। इसके बजाय लिंक मोड का उपयोग करें।"
 				}
-			}
+			},
+			"close": "टिकट विवरण बंद करें"
 		},
 		"entity": {
 			"task": "कार्य"
@@ -1707,7 +1709,8 @@
 				"blocks": "ब्लॉक करता है",
 				"blocked_by": "ब्लॉक किया गया",
 				"related": "संबंधित है"
-			}
+			},
+			"blockedBy": "द्वारा अवरुद्ध"
 		},
 		"subtasks": {
 			"title": "उप-कार्य",
@@ -1862,7 +1865,8 @@
 			"resizeStart": "शुरू तारीख बदलें",
 			"resizeDue": "नियत तारीख बदलें",
 			"taskAriaLabel": "{{title}}: खोलें या ले जाने के लिए खींचें",
-			"today": "Today"
+			"today": "Today",
+			"noMilestone": "कोई माइलस्टोन नहीं"
 		},
 		"delete": {
 			"title": "कार्य हटाएँ?",
@@ -1962,6 +1966,17 @@
 				"deleteRow": "पंक्ति हटाएँ",
 				"deleteTable": "तालिका हटाएँ"
 			}
+		},
+		"groupBy": {
+			"status": "स्थिति",
+			"milestone": "माइलस्टोन"
+		},
+		"nest": {
+			"willNestUnder": "{{title}} के अंतर्गत रखें",
+			"releaseToNest": "इस टिकट को {{title}} के अंतर्गत रखने के लिए छोड़ें।",
+			"cannotNestHere": "यहाँ नेस्ट नहीं कर सकते",
+			"cannotNestReason": "यह टिकट उस लक्ष्य के अंतर्गत नेस्ट नहीं किया जा सकता। कोई अन्य पैरेंट चुनें।",
+			"unknownTarget": "यह टिकट"
 		}
 	},
 	"invitations": {
