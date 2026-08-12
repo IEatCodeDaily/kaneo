@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Search, X } from "lucide-react";
+import { Check, Github, Plus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -8,15 +8,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { resolveLabelColor } from "@/constants/label-colors";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useDeleteLabel from "@/hooks/mutations/label/use-delete-label";
+import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
+
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
+import {
+  canSelectLabelSource,
+  isRepoLabel,
+  labelSourceAttribute,
+} from "./label-source";
 
+/**
+ * Local copy carries a `key` for the i18n colour names in the swatch picker.
+ * Rendering a stored colour goes through `resolveLabelColor` (#169) so that
+ * GitHub-synced hex labels don't all collapse to grey here.
+ */
 const labelColors = [
   { value: "gray", key: "stone", color: "var(--color-stone-500)" },
   { value: "dark-gray", key: "slate", color: "var(--color-slate-500)" },
@@ -27,6 +40,18 @@ const labelColors = [
   { value: "orange", key: "terracotta", color: "var(--color-orange-600)" },
   { value: "pink", key: "rose", color: "var(--color-rose-600)" },
   { value: "red", key: "crimson", color: "var(--color-red-600)" },
+  // #175: additional hues.
+  { value: "blossom", key: "blossom", color: "var(--color-pink-500)" },
+  { value: "honey", key: "honey", color: "var(--color-amber-500)" },
+  { value: "lime", key: "lime", color: "var(--color-lime-600)" },
+  { value: "emerald", key: "emerald", color: "var(--color-emerald-500)" },
+  { value: "lagoon", key: "lagoon", color: "var(--color-cyan-600)" },
+  { value: "sky", key: "sky", color: "var(--color-sky-500)" },
+  { value: "ocean", key: "ocean", color: "var(--color-blue-600)" },
+  { value: "indigo", key: "indigo", color: "var(--color-indigo-500)" },
+  { value: "violet", key: "violet", color: "var(--color-violet-600)" },
+  { value: "orchid", key: "orchid", color: "var(--color-fuchsia-500)" },
+  { value: "cocoa", key: "cocoa", color: "var(--color-amber-800)" },
 ];
 
 type LabelColor =
@@ -38,7 +63,18 @@ type LabelColor =
   | "yellow"
   | "orange"
   | "pink"
-  | "red";
+  | "red"
+  | "blossom"
+  | "honey"
+  | "lime"
+  | "emerald"
+  | "lagoon"
+  | "sky"
+  | "ocean"
+  | "indigo"
+  | "violet"
+  | "orchid"
+  | "cocoa";
 
 type TaskLabelsPopoverProps = {
   task: Task;
@@ -48,6 +84,24 @@ type TaskLabelsPopoverProps = {
 };
 
 type PopoverStep = "select" | "color";
+
+export function LabelSourceIndicator({
+  source,
+  label,
+}: {
+  source: string | null | undefined;
+  label: string;
+}) {
+  if (!isRepoLabel(source)) return null;
+
+  return (
+    <Github
+      aria-label={label}
+      className="ml-auto size-3.5 shrink-0 text-muted-foreground"
+      title={label}
+    />
+  );
+}
 
 export default function TaskLabelsPopover({
   task,
@@ -76,8 +130,11 @@ export default function TaskLabelsPopover({
   const canCreateLabels = canManageLabels();
 
   const { data: taskLabels = [] } = useGetLabelsByTask(task.id);
-  const { data: organizationLabels = [] } =
-    useGetLabelsByOrganization(organizationId);
+  const { data: boardIntegration } = useGetGithubIntegration(task.boardId);
+  const { data: organizationLabels = [] } = useGetLabelsByOrganization(
+    organizationId,
+    { includeRepo: true },
+  );
 
   const taskLabelNames = useMemo(
     () => taskLabels.map((label) => label.name),
@@ -85,8 +142,10 @@ export default function TaskLabelsPopover({
   );
 
   const filteredLabels = useMemo(() => {
-    const searchFiltered = organizationLabels.filter((label) =>
-      label.name.toLowerCase().includes(searchValue.toLowerCase()),
+    const searchFiltered = organizationLabels.filter(
+      (label) =>
+        canSelectLabelSource(label.source, Boolean(boardIntegration)) &&
+        label.name.toLowerCase().includes(searchValue.toLowerCase()),
     );
 
     const labelMap = new Map<string, (typeof organizationLabels)[0]>();
@@ -98,7 +157,7 @@ export default function TaskLabelsPopover({
     }
 
     return Array.from(labelMap.values());
-  }, [organizationLabels, searchValue]);
+  }, [organizationLabels, searchValue, boardIntegration]);
 
   const isCreatingNewLabel = useMemo(
     () =>
@@ -235,6 +294,7 @@ export default function TaskLabelsPopover({
           <button
             key={label.id}
             type="button"
+            data-label-source={labelSourceAttribute(label.source)}
             className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
             onClick={() => handleToggleLabel(label.id)}
           >
@@ -246,12 +306,14 @@ export default function TaskLabelsPopover({
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{
-                backgroundColor:
-                  labelColors.find((c) => c.value === label.color)?.color ||
-                  "var(--color-neutral-400)",
+                backgroundColor: resolveLabelColor(label.color),
               }}
             />
             <span className="max-w-20 truncate">{label.name}</span>
+            <LabelSourceIndicator
+              source={label.source}
+              label={t("tasks:popover.labels.repoSource")}
+            />
           </button>
         ))}
 
@@ -270,9 +332,7 @@ export default function TaskLabelsPopover({
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{
-                backgroundColor:
-                  labelColors.find((c) => c.value === selectedColor)?.color ||
-                  "var(--color-neutral-400)",
+                backgroundColor: resolveLabelColor(selectedColor),
               }}
             />
             <span className="truncate">

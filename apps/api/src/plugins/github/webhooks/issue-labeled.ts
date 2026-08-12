@@ -106,7 +106,14 @@ export async function handleIssueLabeled(payload: IssueLabeledPayload) {
             ),
         });
 
-        if (!existingLabel) {
+        if (existingLabel) {
+          if (existingLabel.source !== "repo") {
+            await db
+              .update(labelTable)
+              .set({ source: "repo" })
+              .where(eq(labelTable.id, existingLabel.id));
+          }
+        } else {
           const color = addedLabel.color ? `#${addedLabel.color}` : "#6B7280";
           await db
             .insert(labelTable)
@@ -115,6 +122,7 @@ export async function handleIssueLabeled(payload: IssueLabeledPayload) {
               color,
               taskId: task.id,
               organizationId: task.board.organizationId,
+              source: "repo",
             })
             .onConflictDoNothing({
               target: [labelTable.taskId, labelTable.name],

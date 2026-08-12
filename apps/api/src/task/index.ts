@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
@@ -25,10 +25,16 @@ import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";
 import exportTasks from "./controllers/export-tasks";
+import getMyTasks from "./controllers/get-my-tasks";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
+import getTrashedTasks from "./controllers/get-trashed-tasks";
 import importTasks from "./controllers/import-tasks";
 import moveTask from "./controllers/move-task";
+import permanentlyDeleteTask from "./controllers/permanently-delete-task";
+import reorderTasks from "./controllers/reorder-tasks";
+import restoreTask from "./controllers/restore-task";
+import setTaskArchived from "./controllers/set-task-archived";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
 import updateTaskDescription from "./controllers/update-task-description";
@@ -43,6 +49,79 @@ const task = new Hono<{
     userId: string;
   };
 }>()
+  .get(
+    "/parent-candidates/:organizationId",
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      return c.json(
+        await db
+          .select({
+            id: taskTable.id,
+            title: taskTable.title,
+            number: taskTable.number,
+            boardId: boardTable.id,
+            boardName: boardTable.name,
+            boardSlug: boardTable.slug,
+          })
+          .from(taskTable)
+          .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+          .where(
+            and(
+              eq(boardTable.organizationId, organizationId),
+              isNull(taskTable.deletedAt),
+            ),
+          )
+          .orderBy(asc(boardTable.name), asc(taskTable.number)),
+      );
+    },
+  )
+  .get(
+    "/my-tasks",
+    describeRoute({
+      operationId: "getMyTasks",
+      tags: ["Tasks"],
+      description:
+        "Cross-board list of tasks related to the current user (assigned, created, or assigned to one of their teams)",
+      responses: {
+        200: {
+          description: "Tasks related to the current user",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator(
+      "query",
+      v.object({
+        organizationId: v.optional(v.string()),
+        relation: v.optional(
+          v.picklist(["assigned", "created", "team", "all"]),
+        ),
+        includeCompleted: v.optional(v.picklist(["true", "false"])),
+        limit: v.optional(v.pipe(v.string(), v.transform(Number))),
+        offset: v.optional(v.pipe(v.string(), v.transform(Number))),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get("userId");
+      const { organizationId, relation, includeCompleted, limit, offset } =
+        c.req.valid("query");
+
+      const tasks = await getMyTasks({
+        userId,
+        organizationId,
+        relation: relation ?? "all",
+        includeCompleted: includeCompleted === "true",
+        limit,
+        offset,
+      });
+
+      return c.json(tasks);
+    },
+  )
   .get(
     "/tasks/:boardId",
     describeRoute({
@@ -95,6 +174,49 @@ const task = new Hono<{
     },
   )
   .patch(
+    "/reorder/:boardId",
+    describeRoute({
+      operationId: "reorderTasks",
+      tags: ["Tasks"],
+      description: "Atomically update task positions after drag and drop",
+      responses: {
+        200: {
+          description: "Task order updated successfully",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({ success: v.boolean(), updatedCount: v.number() }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        tasks: v.pipe(
+          v.array(
+            v.object({
+              id: v.string(),
+              position: v.pipe(v.number(), v.integer(), v.minValue(0)),
+              status: v.string(),
+            }),
+          ),
+          v.minLength(1),
+        ),
+      }),
+    ),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { boardId } = c.req.valid("param");
+      const { tasks } = c.req.valid("json");
+      return c.json(await reorderTasks(boardId, tasks, c.get("userId")));
+    },
+  )
+  .patch(
     "/bulk",
     describeRoute({
       operationId: "bulkUpdateTasks",
@@ -124,10 +246,15 @@ const task = new Hono<{
           "updateStatus",
           "updatePriority",
           "updateAssignee",
+          "updateTeam",
           "delete",
           "addLabel",
           "removeLabel",
           "updateDueDate",
+          // #226: archival is orthogonal to status, so it needs its own
+          // operations — `updateStatus: "archived"` is no longer valid.
+          "archive",
+          "unarchive",
         ] as const),
         value: v.optional(v.nullable(v.string())),
       }),
@@ -143,6 +270,10 @@ const task = new Hono<{
       if (
         operation !== "delete" &&
         operation !== "updateDueDate" &&
+        // archive/unarchive carry their intent in the operation name itself;
+        // they take no value, so requiring one would reject every call.
+        operation !== "archive" &&
+        operation !== "unarchive" &&
         value === undefined
       ) {
         throw new HTTPException(400, {
@@ -185,6 +316,7 @@ const task = new Hono<{
         priority: v.picklist(VALID_PRIORITIES),
         status: v.string(),
         userId: v.optional(v.string()),
+        teamId: v.optional(v.string()),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
@@ -199,12 +331,14 @@ const task = new Hono<{
         priority,
         status,
         userId,
+        teamId,
       } = c.req.valid("json");
 
       const task = await createTask({
         boardId,
         currentUserId: c.get("userId"),
-        userId: userId,
+        userId,
+        teamId,
         title,
         description,
         startDate: startDate ? new Date(startDate) : undefined,
@@ -256,6 +390,9 @@ const task = new Hono<{
                 v.array(
                   v.object({
                     id: v.string(),
+                    // #75: lets the client distinguish a synced issue from a
+                    // merely linked one.
+                    syncEnabled: v.boolean(),
                     itemType: v.picklist(["issues", "pull-requests"] as const),
                     repoId: v.string(),
                     number: v.number(),
@@ -461,12 +598,115 @@ const task = new Hono<{
       return c.json(result);
     },
   )
+  .get(
+    "/trash/board/:boardId",
+    describeRoute({
+      operationId: "listTrashedBoardTasks",
+      tags: ["Tasks"],
+      description: "List soft-deleted (trashed) tasks for a board",
+      responses: {
+        200: {
+          description: "Trashed tasks for the board",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ boardId: v.string() })),
+    organizationAccess.fromBoard("boardId"),
+    async (c) => {
+      const { boardId } = c.req.valid("param");
+
+      const tasks = await getTrashedTasks({ boardId });
+
+      return c.json(tasks);
+    },
+  )
+  .get(
+    "/trash/organization/:organizationId",
+    describeRoute({
+      operationId: "listTrashedOrganizationTasks",
+      tags: ["Tasks"],
+      description: "List soft-deleted (trashed) tasks for an organization",
+      responses: {
+        200: {
+          description: "Trashed tasks for the organization",
+          content: {
+            "application/json": { schema: resolver(v.any()) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+
+      const tasks = await getTrashedTasks({ organizationId });
+
+      return c.json(tasks);
+    },
+  )
+  .post(
+    "/trash/:id/restore",
+    describeRoute({
+      operationId: "restoreTask",
+      tags: ["Tasks"],
+      description: "Restore a soft-deleted task from the recycle bin",
+      responses: {
+        200: {
+          description: "Task restored successfully",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["delete"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+
+      const task = await restoreTask(id, c.get("userId"));
+
+      return c.json(task);
+    },
+  )
+  .delete(
+    "/trash/:id",
+    describeRoute({
+      operationId: "permanentlyDeleteTask",
+      tags: ["Tasks"],
+      description:
+        "Permanently delete a trashed task. This cannot be undone and removes all attached assets.",
+      responses: {
+        200: {
+          description: "Task permanently deleted",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    requireOrganizationPermission({ task: ["delete"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+
+      const task = await permanentlyDeleteTask(id, c.get("userId"));
+
+      return c.json(task);
+    },
+  )
   .delete(
     "/:id",
     describeRoute({
       operationId: "deleteTask",
       tags: ["Tasks"],
-      description: "Delete a task by ID",
+      description: "Move a task to the trash (soft delete)",
       responses: {
         200: {
           description: "Task deleted successfully",
@@ -518,6 +758,38 @@ const task = new Hono<{
     },
   )
   .put(
+    "/archived/:id",
+    describeRoute({
+      operationId: "setTaskArchived",
+      tags: ["Tasks"],
+      description:
+        "Archive or unarchive a task. Archival is separate from status: an archived task retains its status and is hidden everywhere except the backlog's archived section.",
+      responses: {
+        200: {
+          description: "Task archival state updated successfully",
+          content: {
+            "application/json": { schema: resolver(taskSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ archived: v.boolean() })),
+    organizationAccess.fromTask(),
+    // Archiving hides a task from every view, so it is gated on the same
+    // permission as any other task mutation.
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { archived } = c.req.valid("json");
+      const currentUserId = c.get("userId");
+
+      const task = await setTaskArchived({ id, archived, currentUserId });
+
+      return c.json(task);
+    },
+  )
+  .put(
     "/priority/:id",
     describeRoute({
       operationId: "updateTaskPriority",
@@ -551,7 +823,7 @@ const task = new Hono<{
     describeRoute({
       operationId: "updateTaskAssignee",
       tags: ["Tasks"],
-      description: "Assign or unassign a task to a user",
+      description: "Assign or unassign a task to a user or team",
       responses: {
         200: {
           description: "Task assignee updated successfully",
@@ -562,15 +834,35 @@ const task = new Hono<{
       },
     }),
     validator("param", v.object({ id: v.string() })),
-    validator("json", v.object({ userId: v.nullable(v.string()) })),
+    validator(
+      "json",
+      v.object({
+        userId: v.optional(v.nullable(v.string())),
+        teamId: v.optional(v.nullable(v.string())),
+      }),
+    ),
     organizationAccess.fromTask(),
     requireOrganizationPermission({ task: ["assign"] }),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { userId } = c.req.valid("json");
+      const raw = c.req.valid("json");
       const currentUserId = c.get("userId");
 
-      const task = await updateTaskAssignee({ id, userId, currentUserId });
+      // Treat "" as "no assignee". assignee_id/team_assignee_id are FK columns,
+      // so an empty string is not a valid id and reaches Postgres as a literal
+      // value that matches no row — the UPDATE then fails with a 500 instead of
+      // unassigning. Normalising here keeps every client (web, mobile, API
+      // consumers, older cached bundles) from being able to trigger that.
+      const userId = raw.userId ? raw.userId : null;
+      const teamId = raw.teamId ? raw.teamId : null;
+
+      const task = await updateTaskAssignee({
+        id,
+        userId,
+        teamId,
+        currentUserId,
+        organizationId: c.get("organizationId"),
+      });
 
       return c.json(task);
     },

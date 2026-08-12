@@ -1,4 +1,10 @@
-import { addWeeks, endOfWeek, isWithinInterval, startOfWeek } from "date-fns";
+import {
+  addWeeks,
+  endOfWeek,
+  format,
+  isWithinInterval,
+  startOfWeek,
+} from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
@@ -20,6 +26,133 @@ const FILTER_KEYS: Array<keyof BoardFilters> = [
   "dueDate",
   "labels",
 ];
+
+/**
+ * Grouping vocabulary shared by BOTH the board and the list.
+ *
+ * These used to be two separate sets — the board grouped by
+ * assignee/priority/label/dueDate while the list grouped by status/milestone —
+ * rendered as two different "Group by" controls. Switching view silently changed
+ * which options existed. They are now one list so a view switch preserves the
+ * user's choice.
+ *
+ * APPEND-ONLY: the value is persisted per board in localStorage, so renaming or
+ * re-pointing an entry silently changes what a saved preference means.
+ */
+export const BOARD_GROUP_BY_VALUES = [
+  "none",
+  "status",
+  "assignee",
+  "priority",
+  "label",
+  "dueDate",
+  "milestone",
+] as const;
+
+export type BoardGroupBy = (typeof BOARD_GROUP_BY_VALUES)[number];
+
+export type TaskGroup = {
+  /** Stable identity for the group — the raw value, or "" when unset. */
+  key: string;
+  /**
+   * Either a plain label (assignee name / priority / label name) or an i18n key
+   * for the "unset" bucket. Callers translate `labelKey` when present.
+   */
+  label?: string;
+  labelKey?: string;
+  tasks: Task[];
+};
+
+function groupKeysForTask(task: Task, groupBy: BoardGroupBy): string[] {
+  switch (groupBy) {
+    case "status":
+      return [task.status ?? ""];
+    case "assignee":
+      return [task.assigneeName ?? ""];
+    case "priority":
+      return [task.priority ?? ""];
+    case "label": {
+      const labels = task.labels ?? [];
+      return labels.length > 0 ? labels.map((label) => label.name ?? "") : [""];
+    }
+    case "dueDate":
+      return [task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""];
+    case "milestone":
+      return [task.milestoneName ?? ""];
+    default:
+      return [""];
+  }
+}
+
+const UNSET_LABEL_KEYS: Record<BoardGroupBy, string> = {
+  none: "tasks:groupBy.all",
+  status: "tasks:groupBy.noStatus",
+  assignee: "tasks:assignee.unassigned",
+  priority: "tasks:groupBy.noPriority",
+  label: "tasks:groupBy.noLabel",
+  dueDate: "tasks:groupBy.noDueDate",
+  milestone: "tasks:gantt.noMilestone",
+};
+
+/**
+ * Buckets a column's tasks for the shared "group by" control. `none` returns a
+ * single bucket so callers can render one code path regardless of grouping.
+ * A task with several labels appears in each of its label groups.
+ *
+ * `displayNames` maps a raw key to what the user should see — used for status,
+ * where the stored value is a slug (`to-do`) but the UI must show the column's
+ * name (`To Do`). Keys with no entry fall back to the raw value.
+ */
+export function groupTasks(
+  tasks: Task[],
+  groupBy: BoardGroupBy,
+  displayNames?: Record<string, string>,
+): TaskGroup[] {
+  if (groupBy === "none") {
+    return [{ key: "", labelKey: UNSET_LABEL_KEYS.none, tasks }];
+  }
+
+  const buckets = new Map<string, Task[]>();
+
+  for (const task of tasks) {
+    for (const key of groupKeysForTask(task, groupBy)) {
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.push(task);
+      } else {
+        buckets.set(key, [task]);
+      }
+    }
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => {
+      // Unset always sorts last so named groups read first.
+      if (a === "") return 1;
+      if (b === "") return -1;
+      return a.localeCompare(b);
+    })
+    .map(([key, groupedTasks]) => ({
+      key,
+      ...(key === ""
+        ? { labelKey: UNSET_LABEL_KEYS[groupBy] }
+        : {
+            label:
+              groupBy === "dueDate"
+                ? new Intl.DateTimeFormat(undefined, {
+                    dateStyle: "medium",
+                  }).format(new Date(`${key}T00:00:00`))
+                : (displayNames?.[key] ?? key),
+          }),
+      tasks: groupedTasks,
+    }));
+}
+
+function normalizeGroupBy(raw: unknown): BoardGroupBy {
+  return BOARD_GROUP_BY_VALUES.includes(raw as BoardGroupBy)
+    ? (raw as BoardGroupBy)
+    : "none";
+}
 
 function normalizeFilters(raw: unknown): BoardFilters {
   if (!raw || typeof raw !== "object") {
@@ -47,7 +180,22 @@ export function useTaskFiltersWithLabelsSupport(
 ) {
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const storageKey = boardId ? `kaneo:board-filters:${boardId}` : null;
+  const groupByStorageKey = boardId ? `kaneo:board-group-by:${boardId}` : null;
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
+  const [groupBy, setGroupBy] = useState<BoardGroupBy>("none");
+
+  // Same per-board localStorage convention as the filters above.
+  useEffect(() => {
+    if (!groupByStorageKey || typeof window === "undefined") return;
+    setGroupBy(
+      normalizeGroupBy(window.localStorage.getItem(groupByStorageKey)),
+    );
+  }, [groupByStorageKey]);
+
+  useEffect(() => {
+    if (!groupByStorageKey || typeof window === "undefined") return;
+    window.localStorage.setItem(groupByStorageKey, groupBy);
+  }, [groupBy, groupByStorageKey]);
 
   useEffect(() => {
     if (!storageKey || typeof window === "undefined") return;
@@ -79,9 +227,14 @@ export function useTaskFiltersWithLabelsSupport(
         if (normalizedTextQuery) {
           const title = task.title?.toLowerCase() ?? "";
           const description = task.description?.toLowerCase() ?? "";
+          // Match the global search's task-number semantics: a bare number or
+          // a hash-prefixed number resolves to that task number.
+          const searchedNumber = /^#?(\d+)$/.exec(normalizedTextQuery)?.[1];
           const matchesText =
             title.includes(normalizedTextQuery) ||
-            description.includes(normalizedTextQuery);
+            description.includes(normalizedTextQuery) ||
+            (searchedNumber !== undefined &&
+              task.number === Number(searchedNumber));
 
           if (!matchesText) {
             return false;
@@ -181,6 +334,8 @@ export function useTaskFiltersWithLabelsSupport(
 
     return {
       ...board,
+      plannedTasks: filterTasks(board.plannedTasks ?? []),
+      archivedTasks: filterTasks(board.archivedTasks ?? []),
       columns:
         board.columns?.map((column) => ({
           ...column,
@@ -229,5 +384,7 @@ export function useTaskFiltersWithLabelsSupport(
     filteredBoard,
     hasActiveFilters,
     clearFilters,
+    groupBy,
+    setGroupBy,
   };
 }

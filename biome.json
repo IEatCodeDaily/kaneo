@@ -13,6 +13,7 @@
 			"!**/tsconfig*.json",
 			"!**/routeTree.gen.ts",
 			"!**/dist",
+			"!**/dist.*",
 			"!**/cache",
 			"!**/*.css",
 			"!**/*.svg",
@@ -29,7 +30,8 @@
 			"!tests/e2e/.report",
 			"!tests/e2e/.artifacts",
 			"!tests/e2e/.auth",
-			"!**/openapi.json"
+			"!**/openapi.json",
+			"!i18n/schema.json"
 		]
 	},
 	"formatter": {

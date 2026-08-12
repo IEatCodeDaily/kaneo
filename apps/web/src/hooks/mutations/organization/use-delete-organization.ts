@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 
 type DeleteOrganizationRequest = {
@@ -6,6 +6,7 @@ type DeleteOrganizationRequest = {
 };
 
 function useDeleteOrganization() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ organizationId }: DeleteOrganizationRequest) => {
       const { data, error } = await authClient.organization.delete({
@@ -17,6 +18,10 @@ function useDeleteOrganization() {
       }
 
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["active-organization"] });
     },
   });
 }

@@ -1,29 +1,49 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskTable, userTable } from "../../database/schema";
+import { taskTable, teamTable, userTable } from "../../database/schema";
 
-async function getTask(taskId: string) {
+type GetTaskOptions = {
+  /** Include soft-deleted (trashed) tasks. Only recycle-bin paths set this. */
+  includeDeleted?: boolean;
+};
+
+async function getTask(taskId: string, options: GetTaskOptions = {}) {
   const task = await db
     .select({
       id: taskTable.id,
       title: taskTable.title,
       number: taskTable.number,
       description: taskTable.description,
+      descriptionHistory: taskTable.descriptionHistory,
       status: taskTable.status,
       priority: taskTable.priority,
       startDate: taskTable.startDate,
       dueDate: taskTable.dueDate,
       position: taskTable.position,
       createdAt: taskTable.createdAt,
+      updatedAt: taskTable.updatedAt,
+      // #226: callers need this to render Archive/Unarchive without inventing a
+      // fake `status="archived"`. Archival is orthogonal to status.
+      archivedAt: taskTable.archivedAt,
       userId: taskTable.userId,
+      teamId: taskTable.teamId,
+      milestoneId: taskTable.milestoneId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,
+      teamAssigneeName: teamTable.name,
       boardId: taskTable.boardId,
+      deletedAt: taskTable.deletedAt,
+      deletedBy: taskTable.deletedBy,
     })
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
-    .where(eq(taskTable.id, taskId))
+    .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
+    .where(
+      options.includeDeleted
+        ? eq(taskTable.id, taskId)
+        : and(eq(taskTable.id, taskId), isNull(taskTable.deletedAt)),
+    )
     .limit(1);
 
   if (!task.length || !task[0]) {

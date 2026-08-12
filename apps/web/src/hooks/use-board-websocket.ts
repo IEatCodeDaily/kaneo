@@ -1,13 +1,13 @@
 import { windowId } from "@kaneo/libs";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
-import { getApiUrl } from "@/fetchers/get-api-url";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { apiWebSocketUrl } from "@/fetchers/get-ws-url";
 import { authClient } from "@/lib/auth-client";
 
 export function getWsUrl(boardId: string) {
-  const base = getApiUrl("ws");
-  const wsBase = base.replace(/^http/, "ws");
-  return `${wsBase}/${encodeURIComponent(boardId)}?windowId=${encodeURIComponent(windowId)}`;
+  return apiWebSocketUrl(
+    `${encodeURIComponent(boardId)}?windowId=${encodeURIComponent(windowId)}`,
+  );
 }
 
 const MAX_RETRIES = 5;
@@ -17,126 +17,222 @@ const BASE_DELAY = 1000; // 1 second
 // We send a lightweight ping every 30 seconds to keep the connection alive.
 const WS_PING_INTERVAL_MS = 30_000;
 
+/**
+ * How long a connection lingers after its last subscriber unmounts.
+ *
+ * Board/gantt/calendar/backlog each render their own BoardLayout, so switching
+ * views unmounts one and mounts another for the SAME board. Closing on unmount
+ * meant every view switch tore down the socket and re-ran the handshake. The
+ * grace period lets the incoming view adopt the still-open connection.
+ */
+const IDLE_CLOSE_DELAY_MS = 10_000;
+
+type Connection = {
+  socket: WebSocket | null;
+  refs: number;
+  retries: number;
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
+  pingTimer: ReturnType<typeof setInterval> | null;
+  idleTimer: ReturnType<typeof setTimeout> | null;
+};
+
+/**
+ * One connection per boardId, shared across every component that subscribes.
+ * Module scope on purpose: the whole point is to outlive individual mounts.
+ *
+ * ponytail: a plain Map keyed by boardId. Entries are deleted when the last
+ * subscriber leaves and the idle timer fires, so it can't grow unbounded.
+ */
+const connections = new Map<string, Connection>();
+
+function handleMessage(event: MessageEvent, queryClient: QueryClient) {
+  try {
+    const message = JSON.parse(event.data);
+    if (message.type === "PRESENCE_SNAPSHOT") {
+      queryClient.setQueryData(
+        ["board-presence", message.boardId],
+        message.userIds,
+      );
+      return;
+    }
+    if (
+      message.type === "PRESENCE_JOINED" ||
+      message.type === "PRESENCE_LEFT"
+    ) {
+      queryClient.setQueryData<string[]>(
+        ["board-presence", message.boardId],
+        (current = []) =>
+          message.type === "PRESENCE_JOINED"
+            ? [...new Set([...current, message.userId])]
+            : current.filter((id) => id !== message.userId),
+      );
+      return;
+    }
+    if (
+      message.type === "TASK_UPDATED" ||
+      message.type === "TASK_CREATED" ||
+      message.type === "TASK_DELETED" ||
+      message.type === "TASK_LABEL_UPDATED" ||
+      message.type === "TASK_MOVED" ||
+      message.type === "TASK_RELATION_UPDATED" ||
+      message.type === "COMMENT_UPDATED"
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["tasks", message.boardId] });
+
+      if (message.type === "TASK_RELATION_UPDATED") {
+        if (message.sourceTaskId) {
+          queryClient.invalidateQueries({
+            queryKey: ["task", message.sourceTaskId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["task-relations", message.sourceTaskId],
+          });
+        }
+        if (message.targetTaskId) {
+          queryClient.invalidateQueries({
+            queryKey: ["task", message.targetTaskId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["task-relations", message.targetTaskId],
+          });
+        }
+        if (!message.sourceTaskId && !message.targetTaskId) {
+          queryClient.invalidateQueries({ queryKey: ["task-relations"] });
+        }
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["task", message.taskId] });
+      }
+
+      if (message.type === "TASK_LABEL_UPDATED") {
+        queryClient.invalidateQueries({
+          queryKey: ["labels", message.taskId],
+        });
+      }
+
+      if (message.type === "COMMENT_UPDATED") {
+        queryClient.invalidateQueries({
+          queryKey: ["activities", message.taskId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["comments", message.taskId],
+        });
+      }
+    }
+  } catch {
+    // Ignore malformed messages
+  }
+}
+
+function clearPing(conn: Connection) {
+  if (conn.pingTimer) {
+    clearInterval(conn.pingTimer);
+    conn.pingTimer = null;
+  }
+}
+
+function closeSocket(socket: WebSocket) {
+  // Detach handlers first: closing a CONNECTING socket fires onclose, which
+  // would otherwise schedule a reconnect for a teardown we requested.
+  socket.onopen = null;
+  socket.onmessage = null;
+  socket.onclose = null;
+  socket.onerror = null;
+  if (socket.readyState === WebSocket.CONNECTING) {
+    // Aborting a handshake mid-flight is what makes the browser log
+    // "connection interrupted while the page was loading". Wait for the
+    // handshake, then close cleanly.
+    socket.addEventListener("open", () => socket.close(1000), { once: true });
+    return;
+  }
+  socket.close(1000);
+}
+
+function connect(boardId: string, conn: Connection, queryClient: QueryClient) {
+  const socket = new WebSocket(getWsUrl(boardId));
+  conn.socket = socket;
+
+  socket.onopen = () => {
+    conn.retries = 0;
+    clearPing(conn);
+    conn.pingTimer = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "ping" }));
+      }
+    }, WS_PING_INTERVAL_MS);
+  };
+
+  socket.onmessage = (event) => handleMessage(event, queryClient);
+
+  socket.onclose = () => {
+    clearPing(conn);
+    conn.socket = null;
+    // Only retry while something is still listening.
+    if (conn.refs > 0 && conn.retries < MAX_RETRIES) {
+      const delay = BASE_DELAY * 2 ** conn.retries; // 1s, 2s, 4s, 8s, 16s
+      conn.retries += 1;
+      conn.reconnectTimer = setTimeout(
+        () => connect(boardId, conn, queryClient),
+        delay,
+      );
+    }
+  };
+}
+
+/**
+ * Subscribe to a board's realtime updates.
+ *
+ * Safe to call from several components at once (and across view switches) —
+ * they share a single underlying socket per board.
+ */
 export function useBoardWebSocket(boardId: string) {
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
-  const wsRef = useRef<WebSocket | null>(null);
-  const retriesRef = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    if (!boardId || !session?.user?.id) return;
+    if (!boardId || !userId) return;
 
-    retriesRef.current = 0;
-
-    function clearPing() {
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
-      }
+    let conn = connections.get(boardId);
+    if (!conn) {
+      conn = {
+        socket: null,
+        refs: 0,
+        retries: 0,
+        reconnectTimer: null,
+        pingTimer: null,
+        idleTimer: null,
+      };
+      connections.set(boardId, conn);
     }
 
-    function connect() {
-      const url = getWsUrl(boardId);
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        retriesRef.current = 0; // Reset retries on successful connection
-        // Start keepalive pings to prevent Cloudflare idle timeout (100s)
-        clearPing();
-        pingIntervalRef.current = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "ping" }));
-          }
-        }, WS_PING_INTERVAL_MS);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          if (
-            message.type === "TASK_UPDATED" ||
-            message.type === "TASK_CREATED" ||
-            message.type === "TASK_DELETED" ||
-            message.type === "TASK_LABEL_UPDATED" ||
-            message.type === "TASK_MOVED" ||
-            message.type === "TASK_RELATION_UPDATED" ||
-            message.type === "COMMENT_UPDATED"
-          ) {
-            queryClient.invalidateQueries({
-              queryKey: ["tasks", message.boardId],
-            });
-
-            if (message.type === "TASK_RELATION_UPDATED") {
-              if (message.sourceTaskId) {
-                queryClient.invalidateQueries({
-                  queryKey: ["task", message.sourceTaskId],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["task-relations", message.sourceTaskId],
-                });
-              }
-              if (message.targetTaskId) {
-                queryClient.invalidateQueries({
-                  queryKey: ["task", message.targetTaskId],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["task-relations", message.targetTaskId],
-                });
-              }
-              if (!message.sourceTaskId && !message.targetTaskId) {
-                queryClient.invalidateQueries({
-                  queryKey: ["task-relations"],
-                });
-              }
-            } else {
-              queryClient.invalidateQueries({
-                queryKey: ["task", message.taskId],
-              });
-            }
-
-            if (message.type === "TASK_LABEL_UPDATED") {
-              queryClient.invalidateQueries({
-                queryKey: ["labels", message.taskId],
-              });
-            }
-
-            if (message.type === "COMMENT_UPDATED") {
-              queryClient.invalidateQueries({
-                queryKey: ["activities", message.taskId],
-              });
-              queryClient.invalidateQueries({
-                queryKey: ["comments", message.taskId],
-              });
-            }
-          }
-        } catch {
-          // Ignore malformed messages
-        }
-      };
-
-      ws.onclose = () => {
-        clearPing();
-        wsRef.current = null;
-
-        if (retriesRef.current < MAX_RETRIES) {
-          const delay = BASE_DELAY * 2 ** retriesRef.current; // 1s, 2s, 4s, 8s, 16s
-          retriesRef.current += 1;
-          timeoutRef.current = setTimeout(connect, delay);
-        }
-      };
+    // Adopting an existing connection: cancel any pending idle close.
+    if (conn.idleTimer) {
+      clearTimeout(conn.idleTimer);
+      conn.idleTimer = null;
     }
-    connect();
+
+    conn.refs += 1;
+    if (!conn.socket) {
+      conn.retries = 0;
+      connect(boardId, conn, queryClient);
+    }
 
     return () => {
-      retriesRef.current = MAX_RETRIES; // Prevent reconnect after unmount
-      clearPing();
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      wsRef.current?.close();
+      const current = connections.get(boardId);
+      if (!current) return;
+      current.refs -= 1;
+      if (current.refs > 0) return;
+
+      // Last subscriber left. Keep the socket briefly in case this is a view
+      // switch on the same board; only really close if nobody comes back.
+      current.idleTimer = setTimeout(() => {
+        const stale = connections.get(boardId);
+        if (!stale || stale.refs > 0) return;
+        if (stale.reconnectTimer) clearTimeout(stale.reconnectTimer);
+        clearPing(stale);
+        if (stale.socket) closeSocket(stale.socket);
+        connections.delete(boardId);
+      }, IDLE_CLOSE_DELAY_MS);
     };
-  }, [boardId, session?.user?.id, queryClient]);
+  }, [boardId, userId, queryClient]);
 }

@@ -24,8 +24,10 @@ import {
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
 
 type PaletteActionItem = {
@@ -53,14 +55,14 @@ function CommandPalette() {
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
   const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] =
     useState(false);
-  const boardIdFromRoute =
-    location.pathname.match(/\/board\/([^/]+)/)?.[1] ?? undefined;
+  const { boardId: resolvedRouteBoardId } = useBoardSlug();
+  const boardIdFromRoute = resolvedRouteBoardId || undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");
 
   useRegisterShortcuts({
     shortcuts: {
       [shortcuts.help.key]: () => {
-        document.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+        openKeyboardShortcutsHelp();
       },
     },
     modifierShortcuts: {
@@ -75,8 +77,8 @@ function CommandPalette() {
         [shortcuts.board.list]: () => {
           if (!organization?.id) return;
           navigate({
-            to: "/dashboard/organization/$organizationId",
-            params: { organizationId: organization.id },
+            to: "/dashboard/organization/$organizationSlug",
+            params: { organizationSlug: organization.id },
           });
         },
         [shortcuts.board.create]: () => setIsCreateBoardOpen(true),
@@ -110,8 +112,8 @@ function CommandPalette() {
             onRun: () => {
               if (!organization?.id) return;
               navigate({
-                to: "/dashboard/organization/$organizationId",
-                params: { organizationId: organization.id },
+                to: "/dashboard/organization/$organizationSlug",
+                params: { organizationSlug: organization.id },
               });
             },
           },
@@ -175,9 +177,7 @@ function CommandPalette() {
             shortcut: "?",
             onRun: () => {
               setTimeout(() => {
-                document.dispatchEvent(
-                  new KeyboardEvent("keydown", { key: "?" }),
-                );
+                openKeyboardShortcutsHelp();
               }, 100);
             },
           },

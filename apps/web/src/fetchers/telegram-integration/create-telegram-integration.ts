@@ -21,7 +21,7 @@ async function createTelegramIntegration(
   json: CreateTelegramIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/board/${boardId}`),
+    getApiUrl(`/telegram-integration/board/${boardSlug}`),
     {
       method: "POST",
       credentials: "include",

@@ -78,6 +78,8 @@ function RouteComponent() {
     resetDisplayPreferences,
     sidebarDefaultOpen,
     setSidebarDefaultOpen,
+    reduceOverlayBlur,
+    setReduceOverlayBlur,
   } = useUserPreferencesStore();
 
   const themeLabels: Record<string, string> = {
@@ -281,6 +283,24 @@ function RouteComponent() {
             <Switch
               checked={sidebarDefaultOpen}
               onCheckedChange={setSidebarDefaultOpen}
+            />
+          </div>
+
+          <Separator />
+
+          {/* #125: blur behind modals/sheets is opt-out, not removed. */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">
+                {t("settings:preferencesPage.reduceOverlayBlur")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t("settings:preferencesPage.reduceOverlayBlurDescription")}
+              </p>
+            </div>
+            <Switch
+              checked={reduceOverlayBlur}
+              onCheckedChange={setReduceOverlayBlur}
             />
           </div>
         </div>

@@ -21,7 +21,7 @@ export type SlackIntegration = {
 
 async function getSlackIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/board/${boardId}`),
+    getApiUrl(`/slack-integration/board/${boardSlug}`),
     {
       credentials: "include",
     },

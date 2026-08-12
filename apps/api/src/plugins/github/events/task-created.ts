@@ -3,6 +3,7 @@ import type { GitHubConfig } from "../config";
 import {
   createExternalLink,
   findExternalLinkByTaskAndType,
+  linkTaskToRepoIssue,
 } from "../services/link-manager";
 import {
   formatIssueBody,
@@ -72,6 +73,12 @@ export async function handleTaskCreated(
         state: createdIssue.data.state,
         createdFrom: "kaneo",
       },
+    });
+    await linkTaskToRepoIssue({
+      taskId: event.taskId,
+      owner: repositoryOwner,
+      repo: repositoryName,
+      issueNumber: createdIssue.data.number,
     });
   } catch (error) {
     console.error("Failed to create GitHub issue:", error);

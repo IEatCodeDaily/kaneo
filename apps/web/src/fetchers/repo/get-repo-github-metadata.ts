@@ -9,7 +9,9 @@ export default async function getRepoGithubMetadata(
   });
 
   if (!response.ok) {
-    throw new Error((await response.text()) || "Failed to load GitHub metadata");
+    throw new Error(
+      (await response.text()) || "Failed to load GitHub metadata",
+    );
   }
 
   return (await response.json()) as RepoGithubMetadata;

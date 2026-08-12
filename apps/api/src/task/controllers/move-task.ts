@@ -3,8 +3,8 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   assetTable,
-  columnTable,
   boardTable,
+  columnTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";

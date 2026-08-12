@@ -1,5 +1,6 @@
 import { client } from "@kaneo/libs";
 import type { InferRequestType } from "hono/client";
+import type { OrganizationLabel } from "./get-label-by-organization";
 
 export type GetLabelsByTaskRequest = InferRequestType<
   (typeof client)["label"]["task"][":taskId"]["$get"]
@@ -18,7 +19,7 @@ async function getLabelsByTask({ taskId }: GetLabelsByTaskRequest) {
   }
 
   const data = await response.json();
-  return data;
+  return data as OrganizationLabel[];
 }
 
 export default getLabelsByTask;

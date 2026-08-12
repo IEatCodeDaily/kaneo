@@ -309,6 +309,188 @@
 			"when": 1785240000000,
 			"tag": "0043_repair_oidc_team_sync",
 			"breakpoints": true
+		},
+		{
+			"idx": 44,
+			"version": "7",
+			"when": 1785291000000,
+			"tag": "0044_task_synced_issue",
+			"breakpoints": true
+		},
+		{
+			"idx": 45,
+			"version": "7",
+			"when": 1785387000000,
+			"tag": "0045_repo_media_assets",
+			"breakpoints": true
+		},
+		{
+			"idx": 46,
+			"version": "7",
+			"when": 1785388000000,
+			"tag": "0046_organization_ai",
+			"breakpoints": true
+		},
+		{
+			"idx": 47,
+			"version": "7",
+			"when": 1785390000000,
+			"tag": "0047_edit_history",
+			"breakpoints": true
+		},
+		{
+			"idx": 48,
+			"version": "7",
+			"when": 1785391000000,
+			"tag": "0048_task_team_assignee",
+			"breakpoints": true
+		},
+		{
+			"idx": 49,
+			"version": "7",
+			"when": 1785393000000,
+			"tag": "0049_pull_request_diff_delta",
+			"breakpoints": true
+		},
+		{
+			"idx": 50,
+			"version": "7",
+			"when": 1785395000000,
+			"tag": "0050_organization_ai_provider",
+			"breakpoints": true
+		},
+		{
+			"idx": 51,
+			"version": "7",
+			"when": 1785397000000,
+			"tag": "0051_task_soft_delete",
+			"breakpoints": true
+		},
+		{
+			"idx": 52,
+			"version": "7",
+			"when": 1785399000000,
+			"tag": "0052_board_milestone",
+			"breakpoints": true
+		},
+		{
+			"idx": 53,
+			"version": "7",
+			"when": 1785401000000,
+			"tag": "0053_task_flags",
+			"breakpoints": true
+		},
+		{
+			"idx": 54,
+			"version": "7",
+			"when": 1785403000000,
+			"tag": "0054_board_subtask_depth",
+			"breakpoints": true
+		},
+		{
+			"idx": 55,
+			"version": "7",
+			"when": 1785405000000,
+			"tag": "0055_task_flag_resolve_note",
+			"breakpoints": true
+		},
+		{
+			"idx": 56,
+			"version": "7",
+			"when": 1785407000000,
+			"tag": "0056_label_source",
+			"breakpoints": true
+		},
+		{
+			"idx": 57,
+			"version": "7",
+			"when": 1785665000000,
+			"tag": "0057_task_templates",
+			"breakpoints": true
+		},
+		{
+			"idx": 58,
+			"version": "7",
+			"when": 1785729600000,
+			"tag": "0058_backfill_repo_label_source",
+			"breakpoints": true
+		},
+		{
+			"idx": 59,
+			"version": "7",
+			"when": 1785752930846,
+			"tag": "0059_data_tables",
+			"breakpoints": true
+		},
+		{
+			"idx": 60,
+			"version": "7",
+			"when": 1785761000000,
+			"tag": "0060_tables_feature_flag",
+			"breakpoints": true
+		},
+		{
+			"idx": 61,
+			"version": "7",
+			"when": 1785847400000,
+			"tag": "0061_manual_resource_links",
+			"breakpoints": true
+		},
+		{
+			"idx": 62,
+			"version": "7",
+			"when": 1785851000000,
+			"tag": "0062_task_archived_at",
+			"breakpoints": true
+		},
+		{
+			"idx": 63,
+			"version": "7",
+			"when": 1785853700000,
+			"tag": "0063_board_status_order",
+			"breakpoints": true
+		},
+		{
+			"idx": 64,
+			"version": "7",
+			"when": 1785911000000,
+			"tag": "0064_team_icon",
+			"breakpoints": true
+		},
+		{
+			"idx": 65,
+			"version": "7",
+			"when": 1786013000000,
+			"tag": "0065_team_parent",
+			"breakpoints": true
+		},
+		{
+			"idx": 66,
+			"version": "7",
+			"when": 1786114000000,
+			"tag": "0066_organization_resource_defaults",
+			"breakpoints": true
+		},
+		{
+			"idx": 67,
+			"version": "7",
+			"when": 1786118000000,
+			"tag": "0067_per_resource_org_privilege",
+			"breakpoints": true
+		},
+		{
+			"idx": 68,
+			"version": "7",
+			"when": 1786122000000,
+			"tag": "0068_board_default_assignee",
+			"breakpoints": true
+		},
+		{
+			"idx": 69,
+			"version": "7",
+			"when": 1786260000000,
+			"tag": "0069_ticket_identity_aliases",
+			"breakpoints": true
 		}
 	]
 }

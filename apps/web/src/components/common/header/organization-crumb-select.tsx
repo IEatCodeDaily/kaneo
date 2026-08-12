@@ -15,8 +15,8 @@ export default function OrganizationCrumbSelect() {
       className="h-7 justify-between px-2 text-xs text-foreground"
       onClick={() => {
         navigate({
-          to: "/dashboard/organization/$organizationId",
-          params: { organizationId: organization?.id },
+          to: "/dashboard/organization/$organizationSlug",
+          params: { organizationSlug: organization?.id },
         });
       }}
     >

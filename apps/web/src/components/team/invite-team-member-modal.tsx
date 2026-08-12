@@ -1,11 +1,13 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod/v4";
 import useInviteOrganizationMember from "@/hooks/mutations/organization-member/use-invite-organization-member";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { parseInviteEmails } from "@/lib/parse-invite-emails";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
 import {
@@ -25,7 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 
 type Props = {
   open: boolean;
@@ -38,6 +40,9 @@ const teamMemberSchema = z.object({
 
 type TeamMemberFormValues = z.infer<typeof teamMemberSchema>;
 
+/** Per-address outcome, so a partial failure still reports what did land. */
+type InviteFailure = { email: string; reason: string };
+
 function InviteTeamMemberModal({ open, onClose }: Props) {
   const { t } = useTranslation();
   const { mutateAsync } = useInviteOrganizationMember();
@@ -46,6 +51,8 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
   const organizationId = organization?.id;
   const { canInviteUsers } = useOrganizationPermission();
   const canInvite = canInviteUsers();
+  const [failures, setFailures] = useState<InviteFailure[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
   const form = useForm<TeamMemberFormValues>({
     resolver: standardSchemaResolver(teamMemberSchema),
@@ -66,21 +73,71 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
       toast.error(t("team:inviteModal.error"));
       return;
     }
-    try {
-      await mutateAsync({ email, organizationId, role: "member" }); // TODO: role and email
-      await queryClient.refetchQueries({
-        queryKey: ["organization-members", organizationId],
+
+    const { emails, invalid } = parseInviteEmails(email);
+
+    if (invalid.length > 0) {
+      form.setError("email", {
+        message: t("team:inviteModal.invalidEmails", {
+          emails: invalid.join(", "),
+        }),
       });
-
-      toast.success(t("team:inviteModal.success"));
-
-      resetInviteTeamMember();
-      onClose();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("team:inviteModal.error"),
-      );
+      return;
     }
+    if (emails.length === 0) {
+      form.setError("email", {
+        message: t("team:inviteModal.emailRequired"),
+      });
+      return;
+    }
+
+    setFailures([]);
+    setIsSending(true);
+
+    // Sent one at a time on purpose: better-auth invites a single address per
+    // call, and a rejected address (already a member, already invited) must not
+    // discard the invitations that did succeed.
+    const failed: InviteFailure[] = [];
+    let sent = 0;
+    for (const address of emails) {
+      try {
+        await mutateAsync({
+          email: address,
+          organizationId,
+          role: "member",
+        });
+        sent++;
+      } catch (error) {
+        failed.push({
+          email: address,
+          reason:
+            error instanceof Error
+              ? error.message
+              : t("team:inviteModal.error"),
+        });
+      }
+    }
+
+    setIsSending(false);
+    await queryClient.refetchQueries({
+      queryKey: ["organization-members", organizationId],
+    });
+
+    if (sent > 0) {
+      toast.success(t("team:inviteModal.successCount", { count: sent }));
+    }
+
+    // Keep the dialog open when something failed so the reason stays readable
+    // and the remaining addresses can be corrected and retried.
+    if (failed.length > 0) {
+      setFailures(failed);
+      form.setValue("email", failed.map((failure) => failure.email).join("\n"));
+      toast.error(t("team:inviteModal.failedCount", { count: failed.length }));
+      return;
+    }
+
+    await resetInviteTeamMember();
+    onClose();
   };
 
   const resetInviteTeamMember = async () => {
@@ -89,6 +146,7 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
         queryKey: ["organization-members", organizationId],
       });
     }
+    setFailures([]);
     form.reset();
   };
 
@@ -112,18 +170,38 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("team:inviteModal.emailLabel")}</FormLabel>
+                    <FormLabel>{t("team:inviteModal.emailsLabel")}</FormLabel>
                     <FormControl>
-                      <Input
+                      <Textarea
                         {...field}
-                        placeholder={t("team:inviteModal.emailPlaceholder")}
                         autoFocus
+                        className="min-h-24 resize-y"
+                        data-testid="invite-emails-input"
+                        placeholder={t("team:inviteModal.emailsPlaceholder")}
+                        rows={4}
                       />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {t("team:inviteModal.emailsHint")}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {failures.length > 0 && (
+                <ul
+                  className="mt-3 space-y-1 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive"
+                  data-testid="invite-failures"
+                >
+                  {failures.map((failure) => (
+                    <li key={failure.email}>
+                      <span className="font-medium">{failure.email}</span>:{" "}
+                      {failure.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </DialogPanel>
 
             <DialogFooter>
@@ -135,7 +213,7 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
               <Button
                 type="submit"
                 size="sm"
-                disabled={!organizationId || !canInvite}
+                disabled={!organizationId || !canInvite || isSending}
               >
                 {t("team:inviteModal.sendInvitation")}
               </Button>

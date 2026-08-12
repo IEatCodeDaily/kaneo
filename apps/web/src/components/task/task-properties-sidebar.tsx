@@ -1,3 +1,4 @@
+import { useParams } from "@tanstack/react-router";
 import {
   Calendar,
   CalendarClock,
@@ -5,7 +6,9 @@ import {
   CalendarX,
   Copy,
   GitBranch,
+  Github,
   Plus,
+  Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,13 +21,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import labelColors from "@/constants/label-colors";
+import { resolveLabelColor } from "@/constants/label-colors";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTask from "@/hooks/queries/task/use-get-task";
+
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -32,12 +38,20 @@ import { formatDateShort } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
+import { resolveAssignee } from "@/lib/resolve-assignee";
 import { toast } from "@/lib/toast";
+import {
+  canSelectLabelSource,
+  isRepoLabel,
+  labelSourceAttribute,
+} from "./label-source";
 import TaskAssigneePopover from "./task-assignee-popover";
 import TaskDueDatePopover from "./task-due-date-popover";
 import TaskLabelsPopover from "./task-labels-popover";
+import TaskLabelsRow from "./task-labels-row";
 import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
+
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
 
@@ -80,16 +94,23 @@ export default function TaskPropertiesSidebar({
 }: TaskPropertiesSidebarProps) {
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId ?? "");
+
   const { data: board } = useGetBoard({ id: boardId, organizationId });
   const { data: columns = [] } = useGetColumns(boardId);
   const { data: organizationMembers } =
     useGetActiveOrganizationMembers(organizationId);
   const { data: taskLabels = [] } = useGetLabelsByTask(taskId ?? "");
+  const { data: boardIntegration } = useGetGithubIntegration(boardId);
+  const visibleTaskLabels = taskLabels.filter((label) =>
+    canSelectLabelSource(label.source, Boolean(boardIntegration)),
+  );
   const { data: organizationBoards = [] } = useGetBoards({ organizationId });
+  // Milestone and flag controls live together in the task-detail topbar.
   const canMoveTask =
     Boolean(task) && organizationBoards.some((p) => p.id !== task?.boardId);
   const statusColumn = columns.find(
-    (column) => column.slug === task?.status || column.id === task?.status,
+    (column: { id: string; slug?: string }) =>
+      column.slug === task?.status || column.id === task?.status,
   );
   const statusLabel = getStatusDisplayLabel(
     task?.status ?? "",
@@ -99,6 +120,7 @@ export default function TaskPropertiesSidebar({
   const statusIcon = statusColumn?.icon;
 
   const boardSlug = board?.slug;
+  const { organizationSlug: orgSlug } = useParams({ strict: false });
   const taskNumber = task?.number;
   // Branch names are a task convenience only. They no longer imply a board
   // GitHub/Gitea integration: Repos are a separate, org-level domain.
@@ -107,10 +129,28 @@ export default function TaskPropertiesSidebar({
   const assignee = organizationMembers?.members?.find(
     (member) => member.userId === task?.userId,
   );
+  const assigneeTone = getAvatarTone(task?.userId, assignee?.user?.email);
+  // A task can be assigned to a USER or a TEAM (mutually exclusive columns).
+  // Every site here used to branch on `task.userId` alone, so a team assignment
+  // rendered "Unassigned". See lib/resolve-assignee.
+  const {
+    label: assigneeLabel,
+    hasAssignee,
+    teamName: teamAssigneeName,
+  } = resolveAssignee({
+    task,
+    memberName: assignee?.user?.name,
+    unassignedLabel: t("tasks:popover.assignee.unassigned"),
+    teamFallbackLabel: t("tasks:popover.assignee.team"),
+  });
 
   const handleCopyTaskLink = () => {
+    const ticketKey =
+      board?.slug && task?.number
+        ? `${board.slug.toUpperCase()}-${task.number}`
+        : taskId;
     navigator.clipboard.writeText(
-      `${window.location.origin}/dashboard/organization/${organizationId}/board/${boardId}/task/${taskId}`,
+      `${window.location.origin}/dashboard/${orgSlug ?? organizationId}/tickets/${ticketKey}`,
     );
     toast.message(t("tasks:properties.copyTaskLink"));
   };
@@ -127,7 +167,7 @@ export default function TaskPropertiesSidebar({
   };
 
   return (
-    <div className={className}>
+    <div className={className} data-slot="task-properties-sidebar">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
         {/* Compact mode: properties + icons in one row */}
         {compact && (
@@ -189,9 +229,10 @@ export default function TaskPropertiesSidebar({
               {task && (
                 <TaskStatusPopover task={task}>
                   <Button
+                    data-testid="task-status-trigger"
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {getColumnIcon(
                       task.status ?? "",
@@ -209,7 +250,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {getPriorityIcon(task.priority ?? "")}
                     <span className="text-xs font-semibold truncate">
@@ -226,15 +267,22 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
-                    {task.userId ? (
-                      <Avatar className="h-[16px] w-[16px]">
+                    {teamAssigneeName ? (
+                      <div
+                        className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                        title={teamAssigneeName}
+                      >
+                        <Users className="h-2.5 w-2.5" />
+                      </div>
+                    ) : hasAssignee ? (
+                      <Avatar className={cn("h-[16px] w-[16px]", assigneeTone)}>
                         <AvatarImage
                           src={assignee?.user?.image ?? ""}
                           alt={assignee?.user?.name || ""}
                         />
-                        <AvatarFallback className="text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
+                        <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
                           {getInitials(
                             assignee?.user?.name || task.assigneeName,
                           )}
@@ -249,9 +297,7 @@ export default function TaskPropertiesSidebar({
                       </div>
                     )}
                     <span className="text-xs font-semibold truncate max-w-[100px]">
-                      {assignee?.user?.name ||
-                        task.assigneeName ||
-                        t("tasks:popover.assignee.unassigned")}
+                      {assigneeLabel}
                     </span>
                   </Button>
                 </TaskAssigneePopover>
@@ -261,7 +307,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
                     <span
@@ -279,7 +325,7 @@ export default function TaskPropertiesSidebar({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="justify-start h-7 px-1.5 gap-1.5"
+                    className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
                     {task.dueDate ? (
                       <>
@@ -379,9 +425,10 @@ export default function TaskPropertiesSidebar({
                 {task && (
                   <TaskStatusPopover task={task}>
                     <Button
+                      data-testid="task-status-trigger"
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {getColumnIcon(
                         task.status ?? "",
@@ -399,7 +446,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {getPriorityIcon(task.priority ?? "")}
                       <span className="text-xs font-semibold truncate">
@@ -416,15 +463,24 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
-                      {task.userId ? (
-                        <Avatar className="h-[16px] w-[16px]">
+                      {teamAssigneeName ? (
+                        <div
+                          className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                          title={teamAssigneeName}
+                        >
+                          <Users className="h-2.5 w-2.5" />
+                        </div>
+                      ) : hasAssignee ? (
+                        <Avatar
+                          className={cn("h-[16px] w-[16px]", assigneeTone)}
+                        >
                           <AvatarImage
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}
@@ -439,9 +495,7 @@ export default function TaskPropertiesSidebar({
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
-                        {assignee?.user?.name ||
-                          task.assigneeName ||
-                          t("tasks:popover.assignee.unassigned")}
+                        {assigneeLabel}
                       </span>
                     </Button>
                   </TaskAssigneePopover>
@@ -451,7 +505,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
                       <span
@@ -469,7 +523,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start h-7 px-1.5 gap-1.5"
+                      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                     >
                       {task.dueDate ? (
                         <>
@@ -572,6 +626,7 @@ export default function TaskPropertiesSidebar({
                 {task && (
                   <TaskStatusPopover task={task}>
                     <Button
+                      data-testid="task-status-trigger"
                       variant="ghost"
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"
@@ -611,13 +666,22 @@ export default function TaskPropertiesSidebar({
                       size="sm"
                       className="justify-start h-7 px-1.5 gap-1.5 w-full"
                     >
-                      {task.userId ? (
-                        <Avatar className="h-[16px] w-[16px]">
+                      {teamAssigneeName ? (
+                        <div
+                          className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted"
+                          title={teamAssigneeName}
+                        >
+                          <Users className="h-2.5 w-2.5" />
+                        </div>
+                      ) : hasAssignee ? (
+                        <Avatar
+                          className={cn("h-[16px] w-[16px]", assigneeTone)}
+                        >
                           <AvatarImage
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}
@@ -632,9 +696,7 @@ export default function TaskPropertiesSidebar({
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
-                        {assignee?.user?.name ||
-                          task.assigneeName ||
-                          t("tasks:popover.assignee.unassigned")}
+                        {assigneeLabel}
                       </span>
                     </Button>
                   </TaskAssigneePopover>
@@ -703,55 +765,84 @@ export default function TaskPropertiesSidebar({
           </>
         )}
 
-        <div className="hidden lg:flex px-3 flex-col gap-3 p-2">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-foreground/70 px-2">
-              {t("tasks:properties.labels")}
-            </span>
-            <div className="flex flex-wrap items-center gap-1.5 px-2">
-              {task &&
-                taskLabels.length > 0 &&
-                taskLabels.map(
-                  (label: { id: string; name: string; color: string }) => (
-                    <TaskLabelsPopover
-                      key={`edit-${label.id}`}
-                      task={task}
-                      organizationId={organizationId}
-                      triggerNativeButton={false}
-                    >
-                      <Badge
-                        variant="outline"
-                        className="flex items-center gap-1 px-1.5 py-0.5 cursor-pointer hover:bg-accent/50 transition-colors text-[10px]"
-                      >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor:
-                              labelColors.find((c) => c.value === label.color)
-                                ?.color || "var(--color-neutral-400)",
-                          }}
-                        />
-                        <span className="truncate max-w-[60px]">
-                          {label.name}
-                        </span>
-                      </Badge>
-                    </TaskLabelsPopover>
-                  ),
-                )}
-
-              {task && (
-                <TaskLabelsPopover task={task} organizationId={organizationId}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0 rounded-full"
+        <div className="hidden lg:flex min-w-0 flex-col gap-3 p-2">
+          <TaskLabelsRow label={t("tasks:properties.labels")}>
+            {task &&
+              visibleTaskLabels.length > 0 &&
+              visibleTaskLabels.map(
+                (label: {
+                  id: string;
+                  name: string;
+                  color: string;
+                  source?: "kaneo" | "repo";
+                }) => (
+                  <TaskLabelsPopover
+                    key={`edit-${label.id}`}
+                    task={task}
+                    organizationId={organizationId}
+                    triggerNativeButton={false}
                   >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </TaskLabelsPopover>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "flex cursor-pointer items-center gap-1 px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50",
+                        isRepoLabel(label.source) && "opacity-60",
+                      )}
+                      data-label-source={labelSourceAttribute(label.source)}
+                      title={
+                        isRepoLabel(label.source)
+                          ? `${label.name} — ${t("tasks:labels.fromRepository")}`
+                          : label.name
+                      }
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{
+                          backgroundColor: resolveLabelColor(label.color),
+                        }}
+                      />
+                      <span className="truncate max-w-[60px]">
+                        {label.name}
+                      </span>
+                      {/*
+                        #147: repo-owned labels carry the source mark, Kaneo
+                        labels carry nothing. Deliberately an icon rather than
+                        a second text label next to the name.
+                      */}
+                      {isRepoLabel(label.source) && (
+                        <>
+                          <Github
+                            aria-hidden="true"
+                            className="size-2.5 shrink-0 opacity-60"
+                            data-testid="label-repo-mark"
+                          />
+                          <span className="sr-only">
+                            {t("tasks:labels.fromRepository")}
+                          </span>
+                        </>
+                      )}
+                    </Badge>
+                  </TaskLabelsPopover>
+                ),
               )}
-            </div>
-          </div>
+
+            {task && (
+              <TaskLabelsPopover task={task} organizationId={organizationId}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 rounded-full"
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </TaskLabelsPopover>
+            )}
+          </TaskLabelsRow>
+          {/*
+            #75: no synced-issue block under the label list. You asked for it in
+            the status bar and the Resources list only — repeating it here was
+            the "way too many repeated info" the ticket opened with.
+          */}
         </div>
       </div>
     </div>

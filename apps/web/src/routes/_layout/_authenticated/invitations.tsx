@@ -58,7 +58,7 @@ function InvitationsPage() {
       }
 
       await authClient.organization.setActive({
-        organizationId: data?.invitation.organizationId || organizationId,
+        organizationSlug: data?.invitation.organizationSlug || organizationSlug,
       });
 
       toast.success(t("invitations:toast.acceptSuccess"));
@@ -68,9 +68,10 @@ function InvitationsPage() {
       });
 
       navigate({
-        to: "/dashboard/organization/$organizationId",
+        to: "/dashboard/organization/$organizationSlug",
         params: {
-          organizationId: data?.invitation.organizationId || organizationId,
+          organizationSlug:
+            data?.invitation.organizationSlug || organizationSlug,
         },
       });
     } catch (error) {

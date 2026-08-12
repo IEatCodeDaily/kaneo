@@ -46,6 +46,7 @@ import { mapCustomOAuthProfileToUser } from "./utils/custom-oauth-profile";
 import { generateDemoName } from "./utils/generate-demo-name";
 import { getInvitationEmailSubject } from "./utils/get-invitation-email-subject";
 import { getOrganizationInvitationEmailCopy } from "./utils/get-organization-invitation-email-copy";
+import getSettings from "./utils/get-settings";
 import { getGithubSsoOAuthCredentials } from "./utils/github-sso-env";
 import { isCloud } from "./utils/is-cloud";
 import { isDisposableEmail } from "./utils/is-disposable-email";
@@ -308,6 +309,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            tablesEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {
@@ -334,6 +341,34 @@ export const auth = betterAuth({
           fields: {
             organizationId: "organizationId",
           },
+          additionalFields: {
+            /*
+              KFL-257: team avatar glyph. Registered here rather than behind a
+              bespoke endpoint because teams are owned by the organization
+              plugin — a custom route would bypass its permission checks.
+
+              `required: false` and no default: existing teams keep rendering
+              initials until an icon is chosen. Values share the board/repo
+              vocabulary (a lucide name or an emoji) so `lib/resolve-icon`
+              handles them with no second implementation.
+            */
+            icon: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            /*
+              Sub-teams: parent link surfaced through listTeams so the UI can
+              render nesting. NOT writable through Better Auth (`input: false`)
+              — parent changes must go through PUT /api/team/:id/parent, which
+              enforces same-organization and cycle rejection.
+            */
+            parentTeamId: {
+              type: "string",
+              input: false,
+              required: false,
+            },
+          },
         },
       },
       allowUserToCreateOrganization: (user) => user.role === "admin",
@@ -345,10 +380,32 @@ export const auth = betterAuth({
       // that rather than on email verification.
       requireEmailVerificationOnInvitation: false,
       organizationHooks: {
+        beforeUpdateOrganization: async ({ organization, user }) => {
+          if (organization.slug !== undefined && user.role !== "admin") {
+            throw new APIError("FORBIDDEN", {
+              message:
+                "Instance administrator required to change organization slug",
+            });
+          }
+        },
         beforeCreateOrganization: async ({ organization }) => {
           const check = checkOrganizationName(organization.name ?? "");
           if (!check.ok) {
             throw new APIError("BAD_REQUEST", { message: check.reason });
+          }
+          // Single-org mode permits exactly one organization. Enforced here
+          // rather than in the UI so the API cannot be used to bypass it.
+          if (getSettings().singleOrgMode) {
+            const [existing] = await db
+              .select({ id: schema.organizationTable.id })
+              .from(schema.organizationTable)
+              .limit(1);
+            if (existing) {
+              throw new APIError("BAD_REQUEST", {
+                message:
+                  "This instance runs in single-organization mode and already has an organization",
+              });
+            }
           }
         },
         afterCreateOrganization: async ({ organization, user }) => {

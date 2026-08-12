@@ -12,6 +12,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
+import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
@@ -20,8 +21,10 @@ import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-stat
 import { useUpdateTaskPriority } from "@/hooks/mutations/task/use-update-task-status-priority";
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { generateLink } from "@/lib/generate-link";
 import { getInitials } from "@/lib/get-initials";
@@ -40,15 +43,26 @@ type TaskCardContextMenuContentProps = {
   task: Task;
   taskCardContext: TaskCardContext;
   onDeleteClick: () => void;
+  /**
+   * Only provided where the task is rendered as part of a relation (a subtask
+   * row, a relation row). Kanban cards have no relation to unlink, so the item
+   * is absent there rather than shown disabled.
+   */
+  onUnlink?: () => void;
+  /** Label for the unlink action, e.g. "Unlink subtask" vs "Unlink relation". */
+  unlinkLabel?: string;
 };
 
 export default function TaskCardContextMenuContent({
   task,
   taskCardContext,
   onDeleteClick,
+  onUnlink,
+  unlinkLabel,
 }: TaskCardContextMenuContentProps) {
   const { t } = useTranslation();
   const { board } = useBoardStore();
+  const { data: organization } = useActiveOrganization();
   const { data: columnsData = [] } = useGetColumns(taskCardContext.boardId);
   const columns =
     board?.columns && board.columns.length > 0
@@ -74,6 +88,7 @@ export default function TaskCardContextMenuContent({
   const { mutateAsync: updateTaskTitle } = useUpdateTaskTitle();
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
   const { mutateAsync: updateTaskDueDate } = useUpdateTaskDueDate();
+  const { mutateAsync: setArchived } = useSetTaskArchived();
   const { canManageTasks, canAssignTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const canAssign = canAssignTasks();
@@ -84,11 +99,18 @@ export default function TaskCardContextMenuContent({
       value: member.userId,
       image: member?.user?.image ?? "",
       name: member?.user?.name ?? "",
+      email: member?.user?.email ?? "",
     }));
   }, [organizationMembers]);
 
   const handleCopyTaskLink = () => {
-    const path = `/dashboard/organization/${taskCardContext.worskpaceId}/board/${taskCardContext.boardId}/task/${task.id}`;
+    const orgSlug = organization?.slug ?? taskCardContext.worskpaceId;
+    const boardKey = board?.slug ?? "";
+    const ticketKey =
+      boardKey && task.number
+        ? `${boardKey.toUpperCase()}-${task.number}`
+        : task.id;
+    const path = `/dashboard/${orgSlug}/tickets/${ticketKey}`;
     const taskLink = generateLink(path);
 
     navigator.clipboard.writeText(taskLink);
@@ -279,9 +301,11 @@ export default function TaskCardContextMenuContent({
                 onCheckedChange={() => handleChange("userId", user.value ?? "")}
                 closeOnClick
               >
-                <Avatar className="h-6 w-6">
+                <Avatar
+                  className={`h-6 w-6 ${getAvatarTone(user.value, user.email)}`}
+                >
                   <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                  <AvatarFallback className="text-xs font-medium border border-border/30">
+                  <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -297,13 +321,53 @@ export default function TaskCardContextMenuContent({
         <>
           <ContextMenuSeparator />
 
-          <ContextMenuItem onClick={() => handleChange("status", "archived")}>
-            <span>{t("tasks:actions.archive")}</span>
+          {/*
+            #226: archival writes `task.archived_at`, NOT status. This used to
+            call handleChange("status", "archived"), which now 400s because
+            "archived" is not a valid status.
+          */}
+          <ContextMenuItem
+            data-testid="context-menu-archive"
+            onClick={() => {
+              setArchived({
+                taskId: task.id,
+                archived: !task.archivedAt,
+                boardId: task.boardId,
+              }).catch((error) => {
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : t("tasks:archive.error"),
+                );
+              });
+            }}
+          >
+            <span>
+              {task.archivedAt
+                ? t("tasks:actions.unarchive")
+                : t("tasks:actions.archive")}
+            </span>
           </ContextMenuItem>
 
           <ContextMenuItem onClick={() => handleChange("status", "planned")}>
             <span>{t("tasks:actions.markAsPlanned")}</span>
           </ContextMenuItem>
+
+          {onUnlink && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => {
+                    onUnlink();
+                  }, 0);
+                }}
+              >
+                <span>{unlinkLabel ?? t("tasks:actions.unlink")}</span>
+              </ContextMenuItem>
+            </>
+          )}
 
           <ContextMenuSeparator />
 

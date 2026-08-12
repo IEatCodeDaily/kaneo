@@ -5,6 +5,7 @@ import {
   repoPullRequestTable,
   repoTable,
 } from "../../database/schema";
+import { publishEvent } from "../../events";
 
 /**
  * Mirror a Gitea repository's issues and pull requests into repo_issue /
@@ -231,6 +232,12 @@ export async function syncGiteaRepo(repoId: string): Promise<{
     .update(repoTable)
     .set({ lastSyncedAt: new Date() })
     .where(eq(repoTable.id, repo.id));
+
+  // Mirror completion signal — see syncGitHubRepo for rationale.
+  await publishEvent("repo.synced", {
+    repoId: repo.id,
+    organizationId: repo.organizationId,
+  });
 
   return { issues: issueCount, pullRequests: prCount };
 }

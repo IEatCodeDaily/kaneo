@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   activityTable,
@@ -94,11 +94,11 @@ function getActivitySearchContent(
     case "priority_changed":
       return `changed priority from ${toDisplayCase(String(data.oldPriority ?? ""))} to ${toDisplayCase(String(data.newPriority ?? ""))}`;
     case "unassigned":
-      return "unassigned the task";
+      return "unassigned the ticket";
     case "assignee_changed":
       return data.isSelfAssigned
-        ? "assigned the task to themselves"
-        : `assigned the task to ${String(data.newAssignee ?? "someone")}`;
+        ? "assigned the ticket to themselves"
+        : `assigned the ticket to ${String(data.newAssignee ?? "someone")}`;
     case "due_date_changed":
       if (!data.newDueDate) {
         return "cleared the due date";
@@ -110,7 +110,7 @@ function getActivitySearchContent(
     case "title_changed":
       return `changed title from "${String(data.oldTitle ?? "")}" to "${String(data.newTitle ?? "")}"`;
     case "task":
-      return "created the task";
+      return "created the ticket";
     default:
       return undefined;
   }
@@ -220,6 +220,7 @@ async function globalSearch(params: SearchParams): Promise<{
             boardId ? eq(taskTable.boardId, boardId) : undefined,
             ilike(boardTable.slug, slug),
             eq(taskTable.number, taskNumber),
+            isNull(taskTable.deletedAt),
           ),
         )
         .limit(1);
@@ -247,9 +248,18 @@ async function globalSearch(params: SearchParams): Promise<{
       }
     }
 
-    // Also run text search for tasks
+    // Also run text search for tasks. `searchedNumber` is set when the query is
+    // a bare number or "#78", which lets users find a task by the number shown
+    // in the UI. It stays undefined for non-numeric queries like "abc" so plain
+    // text search is unaffected.
+    const taskNumberMatch =
+      searchedNumber === undefined
+        ? undefined
+        : eq(taskTable.number, searchedNumber);
+
     const taskRelevanceScore = sql<number>`
       CASE
+        ${taskNumberMatch ? sql`WHEN ${taskTable.number} = ${searchedNumber} THEN 4` : sql``}
         WHEN LOWER(${taskTable.title}) LIKE ${searchPattern} THEN 3
         WHEN LOWER(${taskTable.description}) LIKE ${searchPattern} THEN 2
         ELSE 1
@@ -285,9 +295,11 @@ async function globalSearch(params: SearchParams): Promise<{
         and(
           organizationFilter,
           boardId ? eq(taskTable.boardId, boardId) : undefined,
+          isNull(taskTable.deletedAt),
           or(
             ilike(taskTable.title, searchPattern),
             ilike(taskTable.description, searchPattern),
+            taskNumberMatch,
           ),
         ),
       )
@@ -716,27 +728,32 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
+  const privilegeChecks = new Map<string, Promise<boolean>>();
   const visibility = await Promise.all(
-    results.map(async (result) => {
-      if (result.boardId && result.organizationId) {
-        return requireResourcePrivilege({
-          organizationId: result.organizationId,
-          resourceType: "board",
-          resourceId: result.boardId,
-          userId: resolvedUserId,
-          required: "view",
-        });
+    results.map((result) => {
+      const resourceType = result.boardId
+        ? "board"
+        : result.repoId
+          ? "repo"
+          : null;
+      const resourceId = result.boardId ?? result.repoId;
+      if (!resourceType || !resourceId || !result.organizationId) {
+        return true;
       }
-      if (result.repoId && result.organizationId) {
-        return requireResourcePrivilege({
-          organizationId: result.organizationId,
-          resourceType: "repo",
-          resourceId: result.repoId,
-          userId: resolvedUserId,
-          required: "view",
-        });
-      }
-      return true;
+
+      const key = `${resourceType}:${resourceId}`;
+      const existing = privilegeChecks.get(key);
+      if (existing) return existing;
+
+      const check = requireResourcePrivilege({
+        organizationId: result.organizationId,
+        resourceType,
+        resourceId,
+        userId: resolvedUserId,
+        required: "view",
+      });
+      privilegeChecks.set(key, check);
+      return check;
     }),
   );
   const filteredResults = results.filter((_, index) => visibility[index]);

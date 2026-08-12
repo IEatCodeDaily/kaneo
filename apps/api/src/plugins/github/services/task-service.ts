@@ -6,6 +6,10 @@ import {
   integrationTable,
   taskTable,
 } from "../../../database/schema";
+import {
+  isClosedStatus,
+  NON_COLUMN_STATUS_SLUGS,
+} from "../../../task/status-taxonomy";
 
 export type TaskRow = InferSelectModel<typeof taskTable>;
 
@@ -13,7 +17,7 @@ export type UpdateTaskStatusResult =
   | { applied: false }
   | { applied: true; before: TaskRow; after: TaskRow };
 
-const NON_COLUMN_STATUSES = new Set(["planned", "archived"]);
+const NON_COLUMN_STATUSES = new Set(NON_COLUMN_STATUS_SLUGS);
 
 export async function findTaskByNumber(boardId: string, taskNumber: number) {
   return db.query.taskTable.findFirst({
@@ -80,7 +84,11 @@ export async function isTaskInFinalState(task: {
   boardId: string;
   status: string;
   columnId: string | null;
+  archivedAt?: Date | null;
 }): Promise<boolean> {
+  // #226: archived work is hidden and must not be silently moved by provider
+  // automation while archived. Its retained status remains untouched.
+  if (task.archivedAt) return true;
   if (task.columnId) {
     const columnById = await db.query.columnTable.findFirst({
       where: and(
@@ -105,7 +113,7 @@ export async function isTaskInFinalState(task: {
     return columnByStatus.isFinal;
   }
 
-  return task.status === "done";
+  return isClosedStatus(task.status);
 }
 
 export async function getIntegrationWithBoard(integrationId: string) {

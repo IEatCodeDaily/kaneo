@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import db from "../../../database";
 import { externalLinkTable, taskTable } from "../../../database/schema";
 import { publishEvent } from "../../../events";
+import { syncFollowerStatusForIssue } from "../../../repo/controllers/sync-follower-status-for-issue";
 import { updateExternalLink } from "../services/link-manager";
 import {
   findAllIntegrationsByRepo,
@@ -26,6 +27,11 @@ type IssueClosedPayload = {
 
 export async function handleIssueClosed(payload: IssueClosedPayload) {
   const { issue, repository } = payload;
+
+  // #2: tasks linked directly to this issue must sync even when their board
+  // has no repo integration at all. Track what the integration path already
+  // updated so a board-synced task isn't touched twice.
+  const handledTaskIds: string[] = [];
 
   const integrations = await findAllIntegrationsByRepo(
     repository.owner.login,
@@ -61,6 +67,9 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
       continue;
     }
 
+    // Was `task.projectId`, which does not exist on the task row — the board
+    // rename left this reading `undefined`, so resolveTargetStatus never found
+    // the board's columns and silently fell back for every close.
     const targetStatus = await resolveTargetStatus(
       task.boardId,
       "issue_closed",
@@ -91,6 +100,16 @@ export async function handleIssueClosed(payload: IssueClosedPayload) {
       },
     });
 
-    return;
+    handledTaskIds.push(task.id);
+    break;
   }
+
+  await syncFollowerStatusForIssue({
+    owner: repository.owner.login,
+    repo: repository.name,
+    issueNumber: issue.number,
+    eventType: "issue_closed",
+    fallbackStatus: "done",
+    alreadyHandledTaskIds: handledTaskIds,
+  });
 }

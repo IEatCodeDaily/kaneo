@@ -4,10 +4,18 @@ type BulkOperationType =
   | "updateStatus"
   | "updatePriority"
   | "updateAssignee"
+  | "updateTeam"
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateDueDate";
+  | "updateDueDate"
+  /**
+   * #226: archival is orthogonal to status. Bulk archive used to be sent as
+   * `updateStatus: "archived"`, which now fails validation because "archived"
+   * is not a status. These operations write `archived_at` and take no value.
+   */
+  | "archive"
+  | "unarchive";
 
 async function bulkOperation({
   taskIds,

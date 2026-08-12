@@ -11,6 +11,7 @@ function useCreateTask() {
       title,
       description,
       userId,
+      teamId,
       boardId,
       status,
       startDate,
@@ -26,6 +27,7 @@ function useCreateTask() {
         startDate ? new Date(startDate) : undefined,
         dueDate ? new Date(dueDate) : undefined,
         priority,
+        teamId,
       ),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({

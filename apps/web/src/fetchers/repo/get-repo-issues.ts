@@ -1,5 +1,5 @@
 import { getApiUrl } from "@/fetchers/get-api-url";
-import type { RepoIssuesResponse, RepoIssueStateFilter } from "@/types/repo";
+import type { RepoIssueStateFilter, RepoIssuesResponse } from "@/types/repo";
 
 export type GetRepoIssuesRequest = {
   repoId: string;

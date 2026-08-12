@@ -1,7 +1,7 @@
 import { getApiUrl } from "@/fetchers/get-api-url";
 import type {
-  RepoPullRequestsResponse,
   RepoPullRequestStateFilter,
+  RepoPullRequestsResponse,
 } from "@/types/repo";
 
 export type GetRepoPullRequestsRequest = {

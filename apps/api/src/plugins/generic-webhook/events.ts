@@ -1,12 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
+  boardTable,
   columnTable,
   integrationTable,
-  boardTable,
+  organizationTable,
   taskTable,
   userTable,
-  organizationTable,
 } from "../../database/schema";
 import type {
   PluginContext,
@@ -64,7 +64,10 @@ async function getTaskData(
     })
     .from(taskTable)
     .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-    .innerJoin(organizationTable, eq(boardTable.organizationId, organizationTable.id))
+    .innerJoin(
+      organizationTable,
+      eq(boardTable.organizationId, organizationTable.id),
+    )
     .leftJoin(
       columnTable,
       and(

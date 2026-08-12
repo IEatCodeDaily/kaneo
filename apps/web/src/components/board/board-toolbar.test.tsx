@@ -1,0 +1,196 @@
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * #61 rework: search, view options and grouping were rejected for living in
+ * the page header. They must sit in the SAME bar as Filter and Sort. These
+ * tests assert co-location by querying one rendered toolbar for all of them.
+ */
+
+afterEach(cleanup);
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+import BoardToolbar from "./board-toolbar";
+
+const baseProps = {
+  board: { id: "b1", name: "Board", columns: [] } as never,
+  filters: {} as never,
+  updateFilter: vi.fn(),
+  updateLabelFilter: vi.fn(),
+  clearFilters: vi.fn(),
+  hasActiveFilters: false,
+  users: { members: [] },
+  organizationLabels: [],
+  viewMode: "board" as const,
+  setViewMode: vi.fn(),
+  sort: { field: "position", direction: "asc" } as never,
+  onSortChange: vi.fn(),
+  searchQuery: "",
+  onSearchQueryChange: vi.fn(),
+  groupBy: "none" as never,
+  onGroupByChange: vi.fn(),
+};
+
+describe("BoardToolbar", () => {
+  it("embeds filter controls without duplicating the Tasks toolbar chrome", () => {
+    render(<BoardToolbar {...baseProps} filtersOnly />);
+
+    expect(screen.getByTestId("board-filter-controls")).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/boardSearchPlaceholder/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /groupBy\.label/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/view\.board/)).not.toBeInTheDocument();
+  });
+
+  it("mounts view-specific actions at the far right of the toolbar", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const actionSlot = screen.getByTestId("board-toolbar-actions");
+    expect(actionSlot).toContainElement(
+      screen.getByRole("button", { name: "Create ticket" }),
+    );
+    expect(actionSlot).toBe(actionSlot.parentElement?.lastElementChild);
+  });
+
+  it("puts search and view options in the same bar as filter and sort", () => {
+    const { container } = render(<BoardToolbar {...baseProps} />);
+
+    const bar = container.firstElementChild as HTMLElement;
+    const scope = (name: RegExp) =>
+      Array.from(bar.querySelectorAll("button")).filter((button) =>
+        name.test(`${button.textContent} ${button.getAttribute("aria-label")}`),
+      );
+
+    expect(
+      scope(/boardFilters\.filterBy|actions\.filter/).length,
+    ).toBeGreaterThan(0);
+    expect(scope(/sort/i).length).toBeGreaterThan(0);
+    expect(scope(/groupBy\.label/).length).toBeGreaterThan(0);
+    expect(scope(/display\.label/).length).toBeGreaterThan(0);
+    expect(
+      bar.querySelector('input[placeholder="tasks:boardSearchPlaceholder"]'),
+    ).toBeTruthy();
+  });
+
+  it("reports search typing upward", () => {
+    const onSearchQueryChange = vi.fn();
+    render(
+      <BoardToolbar {...baseProps} onSearchQueryChange={onSearchQueryChange} />,
+    );
+
+    fireEvent.change(
+      screen.getByPlaceholderText("tasks:boardSearchPlaceholder"),
+      { target: { value: "login bug" } },
+    );
+
+    expect(onSearchQueryChange).toHaveBeenCalledWith("login bug");
+  });
+
+  it("clears an active search from the input", () => {
+    const onSearchQueryChange = vi.fn();
+    render(
+      <BoardToolbar
+        {...baseProps}
+        onSearchQueryChange={onSearchQueryChange}
+        searchQuery="login bug"
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:boardClearSearch" }),
+    );
+
+    expect(onSearchQueryChange).toHaveBeenCalledWith("");
+  });
+
+  it("exposes grouping from the toolbar view options control", () => {
+    const onGroupByChange = vi.fn();
+    render(<BoardToolbar {...baseProps} onGroupByChange={onGroupByChange} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /groupBy\.label/ }));
+    fireEvent.click(
+      screen.getByRole("menuitemradio", { name: "tasks:groupBy.priority" }),
+    );
+
+    expect(onGroupByChange).toHaveBeenCalledWith("priority");
+  });
+});
+
+describe("BoardToolbar list-view slots", () => {
+  /*
+    List view used to render a SECOND toolbar row of its own, holding only the
+    "Ctrl + drag to nest" hint and Bulk Actions. Both now mount into this
+    toolbar: the hint beside the search field, Bulk Actions immediately left of
+    the Create ticket action.
+  */
+  it("renders the search adornment next to the search field", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        searchAdornment={<span data-testid="nest-hint">hint</span>}
+      />,
+    );
+
+    const adornment = screen.getByTestId("board-toolbar-search-adornment");
+    expect(adornment).toContainElement(screen.getByTestId("nest-hint"));
+
+    // position, not mere presence: it must follow the search input
+    const search = screen.getByPlaceholderText("tasks:boardSearchPlaceholder");
+    expect(
+      search.compareDocumentPosition(adornment) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("places secondary actions to the LEFT of the primary action", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        secondaryActions={<button type="button">Bulk Actions</button>}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const bulk = screen.getByRole("button", { name: "Bulk Actions" });
+    const create = screen.getByRole("button", { name: "Create ticket" });
+    const slot = screen.getByTestId("board-toolbar-actions");
+
+    expect(slot).toContainElement(bulk);
+    expect(slot).toContainElement(create);
+    expect(
+      bulk.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("omits both slots when the view supplies neither", () => {
+    render(<BoardToolbar {...baseProps} />);
+
+    expect(
+      screen.queryByTestId("board-toolbar-search-adornment"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the action slot last in the toolbar", () => {
+    render(
+      <BoardToolbar
+        {...baseProps}
+        secondaryActions={<button type="button">Bulk Actions</button>}
+        actions={<button type="button">Create ticket</button>}
+      />,
+    );
+
+    const slot = screen.getByTestId("board-toolbar-actions");
+    expect(slot).toBe(slot.parentElement?.lastElementChild);
+  });
+});

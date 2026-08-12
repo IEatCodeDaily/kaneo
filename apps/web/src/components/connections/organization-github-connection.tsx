@@ -17,7 +17,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import getGitHubAppInfo from "@/fetchers/github-integration/get-app-info";
+import { getOrganizationGithubInstallUrl } from "@/fetchers/organization-github/organization-github";
 import {
   useConnectOrganizationGithubInstallation,
   useDisconnectOrganizationGithubInstallation,
@@ -55,17 +55,18 @@ export function OrganizationGithubConnection() {
     useOrganizationGithubInstallations(organizationId);
   // Installations that exist on GitHub but aren't linked to this org yet.
   // Without surfacing these, a freshly installed App is invisible in Kaneo.
-  const { data: available = [] } =
-    useAvailableOrganizationGithubInstallations(organizationId);
-  const { data: appInfo } = useQuery({
-    queryFn: getGitHubAppInfo,
-    queryKey: ["github-app-info"],
+  const { data: available = [] } = useAvailableOrganizationGithubInstallations(
+    organizationId,
+    canManage,
+  );
+  const { data: install } = useQuery({
+    enabled: canManage && Boolean(organizationId),
+    queryFn: () => getOrganizationGithubInstallUrl(organizationId),
+    queryKey: ["organization-github-install-url", organizationId],
   });
   const disconnectInstallation = useDisconnectOrganizationGithubInstallation();
   const connectInstallation = useConnectOrganizationGithubInstallation();
-  const installUrl = appInfo?.appName
-    ? `https://github.com/apps/${appInfo.appName}/installations/new`
-    : null;
+  const installUrl = install?.url ?? null;
 
   const linkedIds = new Set(
     installations.map((installation) => installation.installationId),

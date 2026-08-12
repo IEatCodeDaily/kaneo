@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_layout/_authenticated/dashboard/")({
         organizations.some((ws) => ws.id === activeOrganizationId)
       ) {
         throw redirect({
-          to: "/dashboard/organization/$organizationId",
+          to: "/dashboard/organization/$organizationSlug",
           params: { organizationId: activeOrganizationId },
         });
       }
@@ -34,8 +34,8 @@ export const Route = createFileRoute("/_layout/_authenticated/dashboard/")({
       });
 
       throw redirect({
-        to: "/dashboard/organization/$organizationId",
-        params: { organizationId: firstOrganization.id },
+        to: "/dashboard/organization/$organizationSlug",
+        params: { organizationSlug: firstOrganization.slug },
       });
     }
     throw redirect({ to: "/onboarding" });

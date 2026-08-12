@@ -119,6 +119,16 @@ input:-webkit-autofill:active {
       background-position: -200% 0;
     }
   }
+  /* Indeterminate bar for view/board navigation: the incoming view's render
+     time isn't measurable up front, so this reports "working", not progress. */
+  @keyframes nav-progress {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(400%);
+    }
+  }
 }
 
 :root {
@@ -139,107 +149,115 @@ input:-webkit-autofill:active {
     "Courier New",
     monospace;
   --radius: 0.625rem;
-  --accent: --alpha(var(--color-black) / 4%);
-  --accent-foreground: var(--color-neutral-800);
-  --background: var(--color-white);
-  --border: --alpha(var(--color-black) / 8%);
-  --card: var(--color-white);
-  --card-foreground: var(--color-neutral-800);
-  --destructive: var(--color-red-500);
-  --destructive-foreground: var(--color-red-700);
-  --foreground: var(--color-neutral-800);
+  /*
+   * #162: `--accent` is the hover/highlight SURFACE. It was set to the solid
+   * inverse colour (identical to `--primary`), so every `hover:bg-accent` row
+   * painted a near-black/near-white slab under light text — unreadable. It is
+   * now a faint tint of the foreground, matching `--sidebar-accent`.
+   * Components that genuinely want the inverse fill use `--primary`.
+   */
+  --accent: --alpha(var(--color-black) / 6%);
+  --accent-foreground: #171719;
+  --background: #f6f6f7;
+  --border: #e2e2e5;
+  --card: #ffffff;
+  --card-foreground: #171719;
+  --destructive: #fca5a5;
+  --destructive-foreground: #b91c1c;
+  --foreground: #171719;
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
   --input: --alpha(var(--color-black) / 10%);
   --muted: --alpha(var(--color-black) / 4%);
-  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-black));
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-800);
-  --primary: var(--color-neutral-800);
-  --primary-foreground: var(--color-neutral-50);
+  --muted-foreground: #5d5d60;
+  --popover: #ffffff;
+  --popover-foreground: #171719;
+  --primary: #2a2a2e;
+  --primary-foreground: #ffffff;
   --ring: var(--color-neutral-400);
   --secondary: --alpha(var(--color-black) / 4%);
-  --secondary-foreground: var(--color-neutral-800);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-700);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-700);
+  --secondary-foreground: #171719;
+  --success: #86efac;
+  --success-foreground: #15803d;
+  --warning: #fcd34d;
+  --warning-foreground: #a16207;
   --chart-1: var(--color-orange-600);
   --chart-2: var(--color-teal-600);
   --chart-3: var(--color-cyan-900);
   --chart-4: var(--color-amber-400);
   --chart-5: var(--color-amber-500);
-  --sidebar: var(--color-neutral-50);
-  --sidebar-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-800) 64%,
-    var(--sidebar)
-  );
-  --sidebar-primary: var(--color-neutral-800);
-  --sidebar-primary-foreground: var(--color-neutral-50);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #5d5d60;
+  --sidebar-primary: #2a2a2e;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: --alpha(var(--color-black) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-800);
-  --sidebar-border: --alpha(var(--color-black) / 6%);
+  --sidebar-accent-foreground: #171719;
+  --sidebar-border: #e2e2e5;
   --sidebar-ring: var(--color-neutral-400);
   --code: var(--color-white);
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-black) / 4%);
+
+  /*
+   * Declares the theme to the CSS engine, not just to our own tokens. Third
+   * party components that use `light-dark()` — @pierre/trees paints its
+   * <file-tree-container> that way — read this and nothing else, so without it
+   * they render their light palette inside our dark UI.
+   */
+  color-scheme: light;
 }
 
 .dark {
-  --accent: --alpha(var(--color-white) / 4%);
-  --accent-foreground: var(--color-neutral-100);
-  --background: color-mix(
-    in srgb,
-    var(--color-neutral-950) 96%,
-    var(--color-white)
-  );
-  --border: --alpha(var(--color-white) / 6%);
-  --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --card-foreground: var(--color-neutral-100);
-  --destructive: color-mix(in srgb, var(--color-red-500) 90%, var(--color-white));
-  --destructive-foreground: var(--color-red-400);
-  --foreground: var(--color-neutral-100);
+  --accent: --alpha(var(--color-white) / 6%);
+  --accent-foreground: #e6e6e6;
+  --background: #0a0a0b;
+  --border: #262629;
+  --card: #131315;
+  --card-foreground: #e6e6e6;
+  --destructive: #fca5a5;
+  --destructive-foreground: #fca5a5;
+  --foreground: #e6e6e6;
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-400);
   --input: --alpha(var(--color-white) / 8%);
   --muted: --alpha(var(--color-white) / 4%);
-  --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 90%, var(--color-white));
-  --popover: color-mix(in srgb, var(--background) 98%, var(--color-white));
-  --popover-foreground: var(--color-neutral-100);
-  --primary: var(--color-neutral-100);
-  --primary-foreground: var(--color-neutral-800);
+  --muted-foreground: #999a9c;
+  --popover: #131315;
+  --popover-foreground: #e6e6e6;
+  --primary: #c9c9c9;
+  --primary-foreground: #0a0a0b;
   --ring: var(--color-neutral-500);
   --secondary: --alpha(var(--color-white) / 4%);
-  --secondary-foreground: var(--color-neutral-100);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-400);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-400);
+  --secondary-foreground: #e6e6e6;
+  --success: #86efac;
+  --success-foreground: #86efac;
+  --warning: #fcd34d;
+  --warning-foreground: #fcd34d;
   --chart-1: var(--color-blue-700);
   --chart-2: var(--color-emerald-500);
   --chart-3: var(--color-amber-500);
   --chart-4: var(--color-purple-500);
   --chart-5: var(--color-rose-500);
-  --sidebar: color-mix(
-    in srgb,
-    var(--color-neutral-950) 97%,
-    var(--color-white)
-  );
-  --sidebar-foreground: color-mix(
-    in srgb,
-    var(--color-neutral-100) 64%,
-    var(--sidebar)
-  );
-  --sidebar-primary: var(--color-neutral-100);
-  --sidebar-primary-foreground: var(--color-neutral-800);
+  --sidebar: #131315;
+  --sidebar-foreground: #999a9c;
+  --sidebar-primary: #c9c9c9;
+  --sidebar-primary-foreground: #0a0a0b;
   --sidebar-accent: --alpha(var(--color-white) / 4%);
-  --sidebar-accent-foreground: var(--color-neutral-100);
-  --sidebar-border: --alpha(var(--color-white) / 5%);
+  --sidebar-accent-foreground: #e6e6e6;
+  --sidebar-border: #262629;
   --sidebar-ring: var(--color-neutral-400);
   --code: color-mix(in srgb, var(--background) 98%, var(--color-white));
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-white) / 4%);
+
+  /*
+   * Required for third-party components that theme via `light-dark()`.
+   * @pierre/trees paints <file-tree-container> with
+   * `light-dark(#f8f8f8, #141415)`, and that function keys off `color-scheme`
+   * rather than our `.dark` class — so without this the changed-files tree and
+   * the Code Explorer tree both render bright white in dark mode.
+   */
+  color-scheme: dark;
 }
 
 @layer base {
@@ -685,13 +703,24 @@ input:-webkit-autofill:active {
     color: color-mix(in srgb, var(--foreground) 78%, transparent);
   }
 
+  /*
+   * @pierre/trees sets `color-scheme: light dark` on its own <file-tree-container>,
+   * which wins over the inherited scheme — so its `light-dark(#f8f8f8, #141415)`
+   * background always resolved to the light value and the tree rendered bright
+   * white inside our dark UI (Code Explorer and the PR changed-files tree both).
+   * Pinning the scheme on the element is what actually reaches it.
+   */
+  .dark file-tree-container {
+    color-scheme: dark;
+  }
+
   .kaneo-tiptap-content .ProseMirror img.kaneo-editor-image,
   .kaneo-comment-editor-prose img.kaneo-editor-image {
     display: block;
     max-width: min(100%, 44rem);
     width: auto;
     height: auto;
-    margin: 0.75rem 0;
+    margin: 0;
     border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
     border-radius: calc(var(--radius) - 2px);
     background: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -699,9 +728,67 @@ input:-webkit-autofill:active {
     overflow: hidden;
   }
 
+  .kaneo-editor-image-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 0.75rem 0;
+    line-height: 0;
+    border-radius: calc(var(--radius) - 1px);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    cursor: default;
+    transition:
+      outline-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .kaneo-editor-image-wrapper.is-selected,
+  .kaneo-editor-image-wrapper.is-resizing {
+    outline-color: var(--ring);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ring) 18%, transparent);
+  }
+
+  .kaneo-editor-image-resize-handle {
+    position: absolute;
+    right: -0.45rem;
+    bottom: -0.45rem;
+    z-index: 2;
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--background);
+    border-radius: 9999px;
+    background: var(--ring);
+    box-shadow: 0 1px 4px color-mix(in srgb, black 35%, transparent);
+    cursor: nwse-resize;
+    touch-action: none;
+  }
+
+  .kaneo-editor-image-wrapper.is-selected
+    .kaneo-editor-image-resize-handle,
+  .kaneo-editor-image-wrapper.is-resizing
+    .kaneo-editor-image-resize-handle {
+    display: block;
+  }
+
+  /*
+   * The create-task modal is a fixed-height dialog, so a pasted image competes
+   * with the typing area for the same vertical space. Cap it well below the
+   * editor height and always leave a clickable, visible line after it —
+   * otherwise the image fills the body and there is nowhere to type.
+   */
   .kaneo-create-task-modal .kaneo-comment-editor-prose img.kaneo-editor-image {
-    max-height: min(50vh, 28rem);
-    width: 100%;
+    max-height: min(32vh, 16rem);
+    width: auto;
+  }
+
+  .kaneo-create-task-modal
+    .kaneo-comment-editor-content
+    .ProseMirror
+    > p:last-child {
+    min-height: 1.5rem;
+    scroll-margin-bottom: 1.5rem;
   }
 
   .kaneo-tiptap-content .ProseMirror .is-editor-empty:first-child::before {
@@ -1104,11 +1191,54 @@ input:-webkit-autofill:active {
     margin: 0;
   }
 
+  /*
+    Paragraph spacing in READ-ONLY (viewer) mode.
+    The margin: 0 above is correct for the edit surface where TipTap
+    manages spacing, but in the viewer consecutive <p> tags collapse
+    with no visual gap — so blank lines the user typed vanish.
+    Restore standard prose spacing only for the viewer.
+  */
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p {
+    margin: 0.5em 0;
+  }
+
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p:first-child {
+    margin-top: 0;
+  }
+
+  .kaneo-comment-viewer .kaneo-comment-editor-prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  /*
+    #179: these three rules set spacing but never a font-size, so h1/h2/h3 all
+    inherited the base body size and rendered identically — typing "# Header 1"
+    through "### Header 3" produced three lines of the same size.
+
+    Sizes mirror `.kaneo-tiptap-content` (the task description editor) so a
+    heading looks the same wherever it is written or read.
+  */
   .kaneo-comment-editor-prose h1,
   .kaneo-comment-editor-prose h2,
   .kaneo-comment-editor-prose h3 {
     margin: 0.12rem 0 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.02em;
     line-height: 1.32;
+    color: var(--foreground);
+  }
+
+  .kaneo-comment-editor-prose h1 {
+    font-size: 1.24rem;
+  }
+
+  .kaneo-comment-editor-prose h2 {
+    font-size: 1.12rem;
+  }
+
+  .kaneo-comment-editor-prose h3 {
+    font-size: 1.02rem;
   }
 
   .kaneo-comment-editor-prose ul,
@@ -1214,6 +1344,61 @@ input:-webkit-autofill:active {
     padding: 0.08rem 0.36rem;
     font-size: 0.79em;
     font-family: var(--font-mono);
+  }
+
+  /*
+   * Collapsible <details> sections from GitHub issue/PR bodies. Slim by
+   * design: a marker, a clickable summary row, and an indented body — no
+   * chunky card treatment competing with the surrounding prose.
+   */
+  .kaneo-details {
+    margin: 0.5rem 0;
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 0.4rem;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    padding: 0.15rem 0.5rem;
+  }
+
+  .kaneo-details-summary {
+    cursor: pointer;
+    padding: 0.25rem 0;
+    font-size: 0.86em;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--foreground) 90%, transparent);
+    list-style: none;
+  }
+
+  /* Replace the default triangle with a marker that follows the open state. */
+  .kaneo-details-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .kaneo-details-summary::before {
+    content: "▸";
+    display: inline-block;
+    width: 0.85em;
+    color: color-mix(in srgb, var(--foreground) 55%, transparent);
+    transition: transform 120ms ease;
+  }
+
+  .kaneo-details[open] > .kaneo-details-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .kaneo-details-summary:hover {
+    color: var(--foreground);
+  }
+
+  .kaneo-details-content {
+    padding: 0.1rem 0 0.3rem 0.85rem;
+  }
+
+  .kaneo-details-content > :first-child {
+    margin-top: 0;
+  }
+
+  .kaneo-details-content > :last-child {
+    margin-bottom: 0;
   }
 
   .kaneo-comment-editor-prose pre {
@@ -1341,4 +1526,45 @@ input:-webkit-autofill:active {
     background: color-mix(in srgb, var(--primary) 18%, transparent);
   }
 
+}
+
+/*
+ * #125: opt-out for the backdrop blur behind overlays.
+ *
+ * The blur is set by the overlay primitives (dialog, sheet, alert-dialog,
+ * command) via Tailwind's `backdrop-blur-*`. Rather than threading a
+ * preference through each of them, the root class switches the filter off
+ * everywhere at once. The dimming layer is kept, so overlays still read as
+ * modal — only the (expensive, visually noisy) blur is removed.
+ */
+.reduce-overlay-blur [data-slot="dialog-backdrop"],
+.reduce-overlay-blur [data-slot="sheet-backdrop"],
+.reduce-overlay-blur [data-slot="alert-dialog-backdrop"],
+.reduce-overlay-blur [data-slot="command-dialog-backdrop"] {
+  /*
+   * Tailwind v4 composes `backdrop-filter` from custom properties, so
+   * overriding the shorthand alone loses to the utility: the blur length must
+   * be zeroed at its source variable as well.
+   */
+  --tw-backdrop-blur: ;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+/*
+ * Resizable sidebar: while a drag is in flight the width transitions on the
+ * sidebar gap/container (wanted for collapse/expand animation) would make the
+ * panel rubber-band behind the pointer. The resize handle sets this attribute
+ * for the duration of the drag only.
+ */
+[data-sidebar-resizing] [data-slot="sidebar-gap"],
+[data-sidebar-resizing] [data-slot="sidebar-container"],
+[data-sidebar-resizing] [data-slot="sidebar-inset"] {
+  transition: none !important;
+}
+[data-sidebar-resizing] {
+  cursor: col-resize;
+  user-select: none;
+  -webkit-user-select: none;
 }

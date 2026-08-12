@@ -16,7 +16,15 @@ export async function sendOtpEmail(
   return undefined;
 }
 
-export async function sendWorkspaceInvitationEmail(
+export async function sendOrganizationInvitationEmail(
+  _to: string,
+  _subject: string,
+  _data: unknown,
+): Promise<EmailResult> {
+  return { success: true };
+}
+
+export async function sendNotificationEmail(
   _to: string,
   _subject: string,
   _data: unknown,

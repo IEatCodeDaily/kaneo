@@ -1,13 +1,64 @@
-import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+import {
+  addDays,
+  differenceInCalendarDays,
+  format,
+  startOfDay,
+} from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
+import { statusBarClasses } from "./gantt-timeline";
 
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
+
+/**
+ * Resize handles are sized as a share of ONE DAY column, so they stay slim and
+ * consistent whether the bar spans one day or three weeks.
+ *
+ * History: they were a fixed 24px each. Two of those need 48px, but a
+ * single-day bar is only ~36px wide, so the handles ate the whole bar and
+ * drag-to-move was impossible. Hiding them on short bars fixed dragging but
+ * left a single-day bar with no way to resize at all. A slim handle only needs
+ * to read as an edge, so both fit even on the narrowest bar.
+ */
+const RESIZE_HANDLE_DAY_FRACTION = 0.15;
+/** Thin enough to look like an edge, wide enough to hit. */
+const RESIZE_HANDLE_MIN_PX = 4;
+/** Never let a handle dominate a narrow bar. */
+const RESIZE_HANDLE_MAX_PX = 10;
+/** Dragging must always be possible, so the move zone gets first claim. */
+const MIN_MOVE_ZONE_PX = 12;
+
+/**
+ * @param pixelsPerDay width of one day column
+ * @param barWidthPx   width of this bar, used only to guarantee the move zone
+ *                     survives. At week/month zoom a day column is 16px/6px, so
+ *                     a single-day bar cannot afford two handles at all.
+ */
+export function resolveResizeHandleWidth(
+  pixelsPerDay: number,
+  barWidthPx?: number,
+): number {
+  if (!Number.isFinite(pixelsPerDay) || pixelsPerDay <= 0) {
+    return RESIZE_HANDLE_MIN_PX;
+  }
+  const proportional = Math.round(pixelsPerDay * RESIZE_HANDLE_DAY_FRACTION);
+  const preferred = Math.max(
+    RESIZE_HANDLE_MIN_PX,
+    Math.min(RESIZE_HANDLE_MAX_PX, proportional),
+  );
+  if (!Number.isFinite(barWidthPx) || barWidthPx === undefined) {
+    return preferred;
+  }
+  // Two handles plus a draggable middle must fit, otherwise drop the handles.
+  const affordable = Math.floor((barWidthPx - MIN_MOVE_ZONE_PX) / 2);
+  if (affordable < RESIZE_HANDLE_MIN_PX) return 0;
+  return Math.min(preferred, affordable);
+}
 
 type ScheduledTask = Task & {
   scheduleStart: Date;
@@ -16,6 +67,8 @@ type ScheduledTask = Task & {
 
 type GanttTaskBarProps = {
   task: ScheduledTask;
+  /** Tasks from another board are shown for context only — not editable here. */
+  readOnly?: boolean;
   timeline: {
     days: Date[];
     rangeStart: Date;
@@ -55,6 +108,7 @@ export function GanttTaskBar({
   timeline,
   pixelsPerDay,
   isMobile = false,
+  readOnly = false,
   onOpenTask,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
@@ -280,31 +334,82 @@ export function GanttTaskBar({
     return null;
   }
 
+  const colors = statusBarClasses(task.status);
+
+  // Handles are sized off a single day column so they stay slim on every bar,
+  // but never at the cost of the draggable middle (week/month zoom is narrow).
+  const barWidthPx = (lineEnd - lineStart) * pixelsPerDay - 8;
+  const resizeHandlePx = resolveResizeHandleWidth(pixelsPerDay, barWidthPx);
+  const showResizeHandles = resizeHandlePx > 0;
+
+  // Foreign tasks render as a plain, non-interactive band with no drag handles.
+  if (readOnly) {
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] grid"
+        style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
+      >
+        <div
+          style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
+          className={cn(
+            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded border border-dashed bg-card px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
+            colors.border,
+          )}
+        >
+          <div className={cn("absolute inset-0 z-0 opacity-50", colors.fill)} />
+          <button
+            type="button"
+            onClick={onOpenTask}
+            className="relative z-10 min-w-0 flex-1 truncate text-left"
+          >
+            {task.title}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[1] grid items-center"
+      className="pointer-events-none absolute inset-0 z-[1] grid"
       style={{
         gridTemplateColumns: timeline.gridTemplateColumns,
       }}
     >
       <div
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
-        className="group pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border border-primary/25 bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40 sm:h-11 sm:min-h-0"
+        className={cn(
+          "group pointer-events-auto relative mx-1 flex h-7 min-w-0 items-stretch overflow-visible rounded border bg-background text-left text-xs font-medium leading-none text-foreground shadow-sm transition-colors",
+          colors.border,
+        )}
       >
-        <button
-          type="button"
-          aria-label={t("tasks:gantt.resizeStart")}
-          onPointerDown={handleResizeLeftPointerDown}
-          className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-primary/15 bg-primary/8 hover:bg-primary/18",
-            "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-          )}
-        />
+        {/* Live date readout while dragging or resizing. dragDisplay is already
+            the optimistic range, so this needs no extra state. */}
+        {dragDisplay ? (
+          <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-popover-foreground shadow-md">
+            {format(displayStart, "MMM d")}
+            {differenceInCalendarDays(displayEnd, displayStart) === 0
+              ? ""
+              : ` → ${format(displayEnd, "MMM d")}`}
+          </div>
+        ) : null}
+        {showResizeHandles ? (
+          <button
+            type="button"
+            aria-label={t("tasks:gantt.resizeStart")}
+            onPointerDown={handleResizeLeftPointerDown}
+            style={{ width: `${resizeHandlePx}px` }}
+            className={cn(
+              "relative z-20 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:right-0 after:w-1.5 after:border-r after:border-black/5 dark:after:border-white/10",
+              colors.handle,
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+            )}
+          />
+        ) : null}
         <button
           type="button"
           aria-label={t("tasks:gantt.taskAriaLabel", { title: task.title })}
-          className="relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5"
+          className="relative z-10 min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-1.5 text-left active:cursor-grabbing"
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -313,19 +418,27 @@ export function GanttTaskBar({
             }
           }}
         >
-          <div className="absolute inset-0 z-0 bg-primary/12 transition-colors group-hover:bg-primary/18" />
+          <div
+            className={cn(
+              "absolute inset-0 z-0 transition-colors",
+              colors.fill,
+            )}
+          />
           <span className="relative z-10 block truncate">{task.title}</span>
         </button>
-        <button
-          type="button"
-          aria-label={t("tasks:gantt.resizeDue")}
-          onPointerDown={handleResizeRightPointerDown}
-          className={cn(
-            "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-primary/15 bg-primary/8 hover:bg-primary/18",
-            "min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:w-2",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-          )}
-        />
+        {showResizeHandles ? (
+          <button
+            type="button"
+            aria-label={t("tasks:gantt.resizeDue")}
+            onPointerDown={handleResizeRightPointerDown}
+            style={{ width: `${resizeHandlePx}px` }}
+            className={cn(
+              "relative z-20 shrink-0 cursor-ew-resize touch-none after:absolute after:inset-y-0 after:left-0 after:w-1.5 after:border-l after:border-black/5 dark:after:border-white/10",
+              colors.handle,
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+            )}
+          />
+        ) : null}
       </div>
     </div>
   );

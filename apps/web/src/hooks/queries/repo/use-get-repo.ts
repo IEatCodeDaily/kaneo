@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import getRepo from "@/fetchers/repo/get-repo";
+import { repoQueryOptions } from "@/lib/navigation-prefetch";
 
 function useGetRepo({ id }: { id: string }) {
   return useQuery({
-    queryFn: () => getRepo(id),
-    queryKey: ["repo", id],
+    ...repoQueryOptions(id),
     enabled: !!id,
   });
 }

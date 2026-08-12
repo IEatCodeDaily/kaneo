@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Bell } from "lucide-react";
+import { Bell, ChevronDown, X } from "lucide-react";
 import { forwardRef, useCallback, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,17 +27,27 @@ import {
 } from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
 import useClearNotifications from "@/hooks/mutations/notification/use-clear-notifications";
+import useDeleteNotification from "@/hooks/mutations/notification/use-delete-notification";
 import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
 import { formatRelativeTime } from "@/lib/format";
-import { getStatusLabel } from "@/lib/i18n/domain";
+import { getPriorityLabel, getStatusLabel } from "@/lib/i18n/domain";
 import type { Notification } from "@/types/notification";
 
 export type NotificationDropdownRef = {
   toggle: () => void;
+};
+
+export type NotificationGroup = {
+  key: string;
+  taskTitle: string | null;
+  taskNumber: number | null;
+  notifications: Notification[];
+  latestCreatedAt: string;
+  unreadCount: number;
 };
 
 function getEventDataRecord(
@@ -48,6 +58,56 @@ function getEventDataRecord(
   }
 
   return eventData as Record<string, unknown>;
+}
+
+export function groupNotifications(
+  notifications: Notification[],
+): NotificationGroup[] {
+  const groups = new Map<string, NotificationGroup & { firstIndex: number }>();
+  notifications.forEach((notification, index) => {
+    const isTask =
+      notification.resourceType === "task" && Boolean(notification.resourceId);
+    const key = isTask
+      ? `task:${notification.resourceId}`
+      : `notification:${notification.id}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.notifications.push(notification);
+      existing.unreadCount += notification.isRead ? 0 : 1;
+      if (
+        Date.parse(notification.createdAt) >
+        Date.parse(existing.latestCreatedAt)
+      )
+        existing.latestCreatedAt = notification.createdAt;
+      return;
+    }
+    const eventData = getEventDataRecord(notification.eventData);
+    groups.set(key, {
+      key,
+      taskTitle:
+        isTask && typeof eventData?.taskTitle === "string"
+          ? eventData.taskTitle
+          : null,
+      taskNumber:
+        isTask && typeof eventData?.taskNumber === "number"
+          ? eventData.taskNumber
+          : null,
+      notifications: [notification],
+      latestCreatedAt: notification.createdAt,
+      unreadCount: notification.isRead ? 0 : 1,
+      firstIndex: index,
+    });
+  });
+  return [...groups.values()]
+    .map(({ firstIndex: _firstIndex, ...group }) => ({
+      ...group,
+      notifications: [...group.notifications].sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+      ),
+    }))
+    .sort(
+      (a, b) => Date.parse(b.latestCreatedAt) - Date.parse(a.latestCreatedAt),
+    );
 }
 
 function getReminderLeadTime(
@@ -87,6 +147,20 @@ export function getNotificationTitle(
         });
       case "task_status_changed":
         return t("notifications:events.task_status_changed.title", {
+          ...eventData,
+          defaultValue: notification.title ?? notification.type,
+        });
+      case "task_title_changed":
+      case "task_description_changed":
+      case "task_priority_changed":
+      case "task_due_date_changed":
+      case "task_flag_raised":
+      case "task_flag_resolved":
+      case "task_unassigned":
+      case "task_moved":
+      case "task_label_assigned":
+      case "task_label_unassigned":
+        return t(`notifications:events.${notification.type}.title`, {
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
@@ -152,6 +226,22 @@ export function getNotificationContent(
           newStatus: getStatusLabel(String(eventData.newStatus ?? "")),
           defaultValue: notification.content ?? "",
         });
+      case "task_title_changed":
+      case "task_description_changed":
+      case "task_priority_changed":
+      case "task_due_date_changed":
+      case "task_flag_raised":
+      case "task_flag_resolved":
+      case "task_unassigned":
+      case "task_moved":
+      case "task_label_assigned":
+      case "task_label_unassigned":
+        return t(`notifications:events.${notification.type}.content`, {
+          ...eventData,
+          oldPriority: getPriorityLabel(String(eventData.oldPriority ?? "")),
+          newPriority: getPriorityLabel(String(eventData.newPriority ?? "")),
+          defaultValue: notification.content ?? "",
+        });
       case "task_assignee_changed":
         return t("notifications:events.task_assignee_changed.content", {
           ...eventData,
@@ -203,9 +293,13 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
     const { data: notifications } = useGetNotifications();
     const [isOpen, setIsOpen] = useState(false);
     const [showClearDialog, setShowClearDialog] = useState(false);
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+      new Set(),
+    );
 
     const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
     const { mutate: clearAll } = useClearNotifications();
+    const { mutate: deleteNotifications } = useDeleteNotification();
     const { mutate: markAsRead } = useMarkNotificationAsRead();
 
     const handleNotificationClick = useCallback(
@@ -227,8 +321,12 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
           taskId
         ) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
-            params: { organizationId, boardId, taskId },
+            to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
+            params: {
+              organizationSlug: organizationId,
+              boardSlug: boardId,
+              taskId,
+            },
           });
         }
       },
@@ -237,6 +335,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
 
     const unreadNotifications = notifications?.filter((n) => !n.isRead) || [];
     const hasNotifications = notifications && notifications.length > 0;
+    const notificationGroups = groupNotifications(notifications ?? []);
 
     useImperativeHandle(ref, () => ({
       toggle: () => setIsOpen(!isOpen),
@@ -320,48 +419,132 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                     </p>
                   </div>
                 ) : (
-                  notifications.map((notification) => {
-                    const content = getNotificationContent(notification, t);
-                    return (
-                      <DropdownMenuItem
-                        key={notification.id}
-                        onClick={() => handleNotificationClick(notification)}
-                        className="cursor-pointer items-start rounded-md px-2.5 py-2"
+                  notificationGroups.flatMap((group) => {
+                    const isTaskGroup = group.key.startsWith("task:");
+                    const isExpanded = expandedGroups.has(group.key);
+                    const clearButton = (
+                      notificationIds: string[],
+                      label: string,
+                    ) => (
+                      <button
+                        type="button"
+                        aria-label={label}
+                        title={label}
+                        className="ml-1 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          deleteNotifications(notificationIds);
+                        }}
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={cn(
-                                "truncate text-sm transition-colors duration-150",
-                                notification.isRead
-                                  ? "text-muted-foreground"
-                                  : "font-medium text-foreground",
+                        <X className="size-3.5" />
+                      </button>
+                    );
+                    const rows = group.notifications.map((notification) => {
+                      const content = getNotificationContent(notification, t);
+                      return (
+                        <DropdownMenuItem
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className="group cursor-pointer items-start rounded-md px-2.5 py-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "truncate text-sm transition-colors duration-150",
+                                  notification.isRead
+                                    ? "text-muted-foreground"
+                                    : "font-medium text-foreground",
+                                )}
+                              >
+                                {getNotificationTitle(notification, t)}
+                              </span>
+                              <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
+                                {formatRelativeTime(notification.createdAt)}
+                              </span>
+                              {!notification.isRead && (
+                                <span className="size-1.5 shrink-0 rounded-full bg-info" />
                               )}
-                            >
-                              {getNotificationTitle(notification, t)}
-                            </span>
-                            <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
-                              {formatRelativeTime(notification.createdAt)}
-                            </span>
-                            {!notification.isRead && (
-                              <span className="size-1.5 shrink-0 rounded-full bg-info" />
+                              {clearButton(
+                                [notification.id],
+                                t("common:actions.clear", {
+                                  defaultValue: "Clear notification",
+                                }),
+                              )}
+                            </div>
+                            {content && (
+                              <p
+                                className={cn(
+                                  "mt-0.5 line-clamp-1 text-xs transition-colors duration-150",
+                                  notification.isRead
+                                    ? "text-muted-foreground/60"
+                                    : "text-muted-foreground",
+                                )}
+                              >
+                                {content}
+                              </p>
                             )}
                           </div>
-                          {content && (
-                            <p
-                              className={cn(
-                                "mt-0.5 line-clamp-1 text-xs transition-colors duration-150",
-                                notification.isRead
-                                  ? "text-muted-foreground/60"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              {content}
+                        </DropdownMenuItem>
+                      );
+                    });
+                    if (!isTaskGroup) return rows;
+                    const header = (
+                      <div
+                        key={`${group.key}:header`}
+                        className="group flex w-full items-center rounded-md hover:bg-accent"
+                      >
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left"
+                          onClick={() =>
+                            setExpandedGroups((current) => {
+                              const next = new Set(current);
+                              if (next.has(group.key)) next.delete(group.key);
+                              else next.add(group.key);
+                              return next;
+                            })
+                          }
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium text-sm">
+                                {group.taskNumber
+                                  ? `#${group.taskNumber} · `
+                                  : ""}
+                                {group.taskTitle ??
+                                  getNotificationTitle(
+                                    group.notifications[0],
+                                    t,
+                                  )}
+                              </span>
+                              <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
+                                {formatRelativeTime(group.latestCreatedAt)}
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                              {group.notifications.length} events ·{" "}
+                              {group.unreadCount} unread
                             </p>
-                          )}
-                        </div>
-                      </DropdownMenuItem>
+                          </div>
+                          <ChevronDown
+                            className={cn(
+                              "size-4 transition-transform",
+                              isExpanded && "rotate-180",
+                            )}
+                          />
+                        </button>
+                        {clearButton(
+                          group.notifications.map(({ id }) => id),
+                          t("notifications:clearGroup", {
+                            defaultValue: "Clear notification group",
+                          }),
+                        )}
+                      </div>
                     );
+                    return isExpanded ? [header, ...rows] : [header];
                   })
                 )}
               </div>

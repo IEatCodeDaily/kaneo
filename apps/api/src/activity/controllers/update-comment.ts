@@ -10,6 +10,7 @@ async function updateComment(userId: string, id: string, content: string) {
     .select({
       id: activityTable.id,
       content: activityTable.content,
+      editHistory: activityTable.editHistory,
       taskId: activityTable.taskId,
     })
     .from(activityTable)
@@ -30,7 +31,20 @@ async function updateComment(userId: string, id: string, content: string) {
 
   const [updated] = await db
     .update(activityTable)
-    .set({ content })
+    .set({
+      content,
+      editHistory:
+        existing.content === content
+          ? existing.editHistory
+          : [
+              ...existing.editHistory,
+              {
+                content: existing.content ?? "",
+                editedAt: new Date().toISOString(),
+                userId,
+              },
+            ],
+    })
     .where(
       and(
         eq(activityTable.id, id),

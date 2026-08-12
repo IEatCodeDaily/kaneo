@@ -1,125 +1,92 @@
-import { useNavigate } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Inbox, ListChecks, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import InboxUnreadBadge from "@/components/inbox-unread-badge";
+import MyTasksCountBadge from "@/components/my-tasks-count-badge";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
-import {
-  Collapsible,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 
+/**
+ * Top-level organization navigation.
+ *
+ * Previously this was a collapsible "Overview" group containing Boards,
+ * Members, Repos and Invitations. Boards and Repos now own their own sidebar
+ * sections (whose headers navigate to the same overviews), and Invitations is
+ * account-scoped so it moved to the profile dropdown. That left a collapsible
+ * group wrapping a single item, so the group itself is gone and Members is
+ * rendered directly.
+ *
+ * Trash (#145) also moved to the profile dropdown: it is a recovery surface
+ * users reach occasionally, not a daily navigation target, so it no longer
+ * earns a slot in the main nav.
+ */
 export function NavMain() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: invitations = [] } = usePendingInvitations();
+  const location = useLocation();
 
   if (!organization && user?.role !== "admin") return null;
+  if (!organization) return null;
 
-  const pendingCount = invitations.length;
-  const reposEnabled = Boolean(
-    (
-      organization as
-        | (typeof organization & { reposEnabled?: boolean })
-        | undefined
-    )?.reposEnabled,
-  );
-
-  const navItems = [
-    ...(organization
-      ? [
-          {
-            title: t("navigation:sidebar.boards"),
-            url: `/dashboard/organization/${organization.id}`,
-            isActive:
-              window.location.pathname ===
-              `/dashboard/organization/${organization.id}`,
-            badge: null,
-          },
-          {
-            title: t("navigation:sidebar.members"),
-            url: `/dashboard/organization/${organization.id}/members`,
-            isActive:
-              window.location.pathname ===
-              `/dashboard/organization/${organization.id}/members`,
-            badge: null,
-          },
-          ...(reposEnabled
-            ? [
-                {
-                  title: t("navigation:sidebar.repos"),
-                  url: `/dashboard/organization/${organization.id}/repo`,
-                  isActive: window.location.pathname.startsWith(
-                    `/dashboard/organization/${organization.id}/repo`,
-                  ),
-                  badge: "Beta",
-                },
-              ]
-            : []),
-          {
-            title: t("navigation:sidebar.invitations"),
-            url: "/dashboard/invitations",
-            isActive: window.location.pathname === "/dashboard/invitations",
-            badge: pendingCount > 0 ? pendingCount : null,
-          },
-        ]
-      : []),
-  ];
+  const membersUrl = `/dashboard/organization/${organization.slug}/members`;
+  const myTasksUrl = `/dashboard/organization/${organization.slug}/my-tasks`;
+  const inboxUrl = `/dashboard/organization/${organization.slug}/inbox`;
 
   return (
-    <Collapsible defaultOpen className="group/collapsible">
-      <SidebarGroup className="gap-1 p-2">
-        <CollapsibleTrigger
-          className="data-panel-open:[&_svg]:rotate-90"
-          render={
-            <SidebarGroupLabel className="h-7 cursor-pointer justify-between px-0 text-sidebar-accent-foreground" />
-          }
-        >
-          <span>{t("navigation:sidebar.overview")}</span>
-          <ChevronRight className="h-3.5 w-3.5 text-sidebar-foreground/60 transition-transform duration-200" />
-        </CollapsibleTrigger>
-        <CollapsiblePanel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    tooltip={item.title}
-                    isActive={item.isActive}
-                    size="default"
-                    className="h-8 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-                    onClick={() => navigate({ to: item.url })}
-                  >
-                    <span>{item.title}</span>
-                    {item.badge !== null && (
-                      <span
-                        className={
-                          item.badge === "Beta"
-                            ? "ml-auto flex h-5 items-center justify-center rounded-full border border-sidebar-border/60 px-1.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/80"
-                            : "ml-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-sidebar-border/60 px-1 text-[11px] font-medium text-sidebar-foreground/80"
-                        }
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </CollapsiblePanel>
-      </SidebarGroup>
-    </Collapsible>
+    <SidebarGroup className="gap-1 p-2 pb-0">
+      <SidebarGroupContent>
+        <SidebarMenu className="gap-0.5">
+          {/* Cross-board, user-scoped views (#58) sit above Members: they are
+              the operator's own work, not organization administration. */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+              isActive={location.pathname === inboxUrl}
+              onClick={() => navigate({ to: inboxUrl })}
+              size="default"
+              tooltip={t("navigation:sidebar.inbox")}
+            >
+              <Inbox aria-hidden="true" />
+              <span>{t("navigation:sidebar.inbox")}</span>
+              <InboxUnreadBadge />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+              isActive={location.pathname === myTasksUrl}
+              onClick={() => navigate({ to: myTasksUrl })}
+              size="default"
+              tooltip={t("navigation:sidebar.myTasks")}
+            >
+              <ListChecks aria-hidden="true" />
+              <span>{t("navigation:sidebar.myTasks")}</span>
+              <MyTasksCountBadge organizationId={organization.id} />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+              isActive={location.pathname === membersUrl}
+              onClick={() => navigate({ to: membersUrl })}
+              size="default"
+              tooltip={t("navigation:sidebar.members")}
+            >
+              <Users aria-hidden="true" />
+              <span>{t("navigation:sidebar.members")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 }

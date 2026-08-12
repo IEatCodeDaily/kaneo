@@ -3,16 +3,17 @@ export function VersionDisplay() {
   const changelogUrl =
     "https://github.com/usekaneo/kaneo/blob/main/CHANGELOG.md";
 
+  // #96: the version is a discreet marker tucked into the bottom-left corner of
+  // the sidebar, not a footer element competing for attention.
   return (
-    <div className="flex items-center justify-center px-2 py-1.5">
-      <a
-        href={changelogUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
-      >
-        v{version}
-      </a>
-    </div>
+    <a
+      className="px-1 text-[10px] leading-none text-muted-foreground/50 transition-colors duration-200 hover:text-muted-foreground group-data-[collapsible=icon]:hidden"
+      data-testid="version-display"
+      href={changelogUrl}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      v{version}
+    </a>
   );
 }

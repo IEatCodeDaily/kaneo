@@ -105,13 +105,12 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
 
     switch (item.type) {
       case "task":
-        if (item.boardId && item.id && organization?.id) {
+        if (item.boardSlug && item.taskNumber && organization?.slug) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/$organizationSlug/tickets/$ticketKey",
             params: {
-              organizationId: organization.id,
-              boardId: item.boardId,
-              taskId: item.id,
+              organizationSlug: organization.slug,
+              ticketKey: `${item.boardSlug.toUpperCase()}-${item.taskNumber}`,
             },
           });
         }
@@ -119,10 +118,10 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "board":
         if (item.id && organization?.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/board",
+            to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
             params: {
-              organizationId: organization.id,
-              boardId: item.id,
+              organizationSlug: organization.id,
+              boardSlug: item.id,
             },
           });
         }
@@ -130,22 +129,21 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "organization":
         if (item.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId",
+            to: "/dashboard/organization/$organizationSlug",
             params: {
-              organizationId: item.id,
+              organizationSlug: item.id,
             },
           });
         }
         break;
       case "comment":
       case "activity":
-        if (item.boardId && item.id && organization?.id) {
+        if (item.boardSlug && item.taskNumber && organization?.slug) {
           navigate({
-            to: "/dashboard/organization/$organizationId/board/$boardId/task/$taskId",
+            to: "/dashboard/$organizationSlug/tickets/$ticketKey",
             params: {
-              organizationId: organization.id,
-              boardId: item.boardId,
-              taskId: item.id,
+              organizationSlug: organization.slug,
+              ticketKey: `${item.boardSlug.toUpperCase()}-${item.taskNumber}`,
             },
           });
         }
@@ -153,8 +151,8 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "repository":
         if (item.repoId && organization?.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId/repo/$repoId/code",
-            params: { organizationId: organization.id, repoId: item.repoId },
+            to: "/dashboard/organization/$organizationSlug/repo/$repoId/code",
+            params: { organizationSlug: organization.id, repoId: item.repoId },
             search: { path: "" },
           });
         }
@@ -162,9 +160,9 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "issue":
         if (item.repoId && item.itemNumber && organization?.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId/repo/$repoId/issues/$number",
+            to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number",
             params: {
-              organizationId: organization.id,
+              organizationSlug: organization.id,
               repoId: item.repoId,
               number: String(item.itemNumber),
             },
@@ -174,9 +172,9 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       case "pull_request":
         if (item.repoId && item.itemNumber && organization?.id) {
           navigate({
-            to: "/dashboard/organization/$organizationId/repo/$repoId/pulls/$number",
+            to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number",
             params: {
-              organizationId: organization.id,
+              organizationSlug: organization.id,
               repoId: item.repoId,
               number: String(item.itemNumber),
             },

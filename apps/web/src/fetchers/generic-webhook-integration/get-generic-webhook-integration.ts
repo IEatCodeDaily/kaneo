@@ -31,7 +31,7 @@ async function getGenericWebhookIntegration(
   boardId: string,
 ): Promise<GenericWebhookIntegration | null> {
   const response = await fetch(
-    getApiUrl(`/generic-webhook-integration/board/${boardId}`),
+    getApiUrl(`/generic-webhook-integration/board/${boardSlug}`),
     {
       credentials: "include",
     },

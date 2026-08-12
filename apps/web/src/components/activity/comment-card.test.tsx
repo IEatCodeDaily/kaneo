@@ -93,7 +93,11 @@ vi.mock("@/components/ui/tooltip", async () => {
   };
 });
 
-function renderCommentCard() {
+function renderCommentCard({
+  editHistory = [],
+}: {
+  editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -108,6 +112,7 @@ function renderCommentCard() {
         taskId="task-1"
         content="Test comment"
         createdAt="2026-04-05T09:38:50.000Z"
+        editHistory={editHistory}
         user={{
           id: "user-1",
           name: "Tin",
@@ -135,5 +140,21 @@ describe("CommentCard", () => {
 
     fireEvent.focus(trigger);
     expect(await screen.findByText("Apr 5, 2026, 11:38 AM")).toBeVisible();
+  });
+
+  it("lets users inspect previous comment versions", () => {
+    renderCommentCard({
+      editHistory: [
+        {
+          content: "Original comment",
+          editedAt: "2026-04-05T08:00:00.000Z",
+          userId: "user-1",
+        },
+      ],
+    });
+
+    const history = screen.getByText("activity:comment.editHistory");
+    fireEvent.click(history);
+    expect(screen.getByText("Original comment")).toBeVisible();
   });
 });

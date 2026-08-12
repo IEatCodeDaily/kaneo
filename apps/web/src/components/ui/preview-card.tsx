@@ -5,31 +5,58 @@ import * as React from "react";
 
 import { cn } from "@/lib/cn";
 
+/**
+ * #110: Base UI moved the hover-intent delays from `PreviewCard.Root` onto
+ * `PreviewCard.Trigger` (`delay`/`closeDelay`, defaulting to 600ms/300ms).
+ * This wrapper used to accept `openDelay`/`closeDelay` on the root and throw
+ * them away, so every caller silently got the 600ms default and previews felt
+ * sluggish. The delays are now carried down through context to the trigger.
+ */
+const PreviewCardDelayContext = React.createContext<{
+  openDelay?: number;
+  closeDelay?: number;
+}>({});
+
 function PreviewCard({
   closeDelay,
   openDelay,
+  children,
   ...props
 }: PreviewCardPrimitive.Root.Props & {
   openDelay?: number;
   closeDelay?: number;
 }) {
-  void openDelay;
-  void closeDelay;
-  return <PreviewCardPrimitive.Root {...props} />;
+  const delays = React.useMemo(
+    () => ({ closeDelay, openDelay }),
+    [closeDelay, openDelay],
+  );
+
+  return (
+    <PreviewCardDelayContext.Provider value={delays}>
+      <PreviewCardPrimitive.Root {...props}>
+        {children}
+      </PreviewCardPrimitive.Root>
+    </PreviewCardDelayContext.Provider>
+  );
 }
 
 function PreviewCardTrigger({
   asChild = false,
   children,
   render,
+  delay,
+  closeDelay,
   ...props
 }: PreviewCardPrimitive.Trigger.Props & { asChild?: boolean }) {
+  const delays = React.useContext(PreviewCardDelayContext);
   const resolvedRender =
     asChild && React.isValidElement(children) ? children : render;
 
   return (
     <PreviewCardPrimitive.Trigger
+      closeDelay={closeDelay ?? delays.closeDelay}
       data-slot="preview-card-trigger"
+      delay={delay ?? delays.openDelay}
       render={resolvedRender}
       {...props}
     >

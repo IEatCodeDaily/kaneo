@@ -80,8 +80,8 @@ function SettingsLayout() {
               size="sm"
               onClick={() =>
                 navigate({
-                  to: "/dashboard/organization/$organizationId",
-                  params: { organizationId: organization?.id ?? "" },
+                  to: "/dashboard/organization/$organizationSlug",
+                  params: { organizationSlug: organization?.slug ?? "" },
                 })
               }
             >

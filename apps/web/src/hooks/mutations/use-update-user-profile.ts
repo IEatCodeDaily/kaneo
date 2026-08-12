@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 
 type UpdateUserProfileRequest = {
@@ -7,6 +7,7 @@ type UpdateUserProfileRequest = {
 };
 
 function useUpdateUserProfile() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ name, locale }: UpdateUserProfileRequest) => {
       const { data, error } = await authClient.updateUser({
@@ -19,6 +20,9 @@ function useUpdateUserProfile() {
       }
 
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["session"] });
     },
   });
 }

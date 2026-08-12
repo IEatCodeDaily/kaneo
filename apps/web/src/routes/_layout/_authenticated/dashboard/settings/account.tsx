@@ -16,6 +16,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
@@ -58,9 +59,11 @@ function RouteComponent() {
       <aside className="w-64 flex-shrink-0">
         <div className="p-2">
           <div className="mb-1 flex items-center gap-3 rounded-md px-2 py-2">
-            <Avatar className="h-9 w-9">
+            <Avatar
+              className={`h-9 w-9 ${getAvatarTone(user?.id, user?.email)}`}
+            >
               <AvatarImage src={user?.image ?? ""} alt={user?.name || ""} />
-              <AvatarFallback className="text-xs font-medium border border-border/30">
+              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                 {getInitials(user?.name)}
               </AvatarFallback>
             </Avatar>
