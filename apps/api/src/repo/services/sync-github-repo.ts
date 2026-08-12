@@ -5,6 +5,7 @@ import {
   repoPullRequestTable,
   repoTable,
 } from "../../database/schema";
+import { publishEvent } from "../../events";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
 import { resolveInstallationId } from "../controllers/manage-github-repo";
 
@@ -295,6 +296,14 @@ export async function syncGitHubRepo(repoId: string): Promise<{
     .update(repoTable)
     .set({ lastSyncedAt: new Date() })
     .where(eq(repoTable.id, repo.id));
+
+  // Tell connected clients the mirror changed so they can drop cached repo
+  // queries. Every sync path (manual resync, webhooks, the stale-repo
+  // scheduler, issue management) funnels through here.
+  await publishEvent("repo.synced", {
+    repoId: repo.id,
+    organizationId: repo.organizationId,
+  });
 
   return { issues: issueCount, pullRequests: prCount };
 }

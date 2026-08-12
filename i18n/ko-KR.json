@@ -2582,6 +2582,7 @@
 			"emptyTitle": "No repos yet",
 			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
 			"neverSynced": "Never synced",
+			"resyncStarted": "재동기화가 시작되었습니다 — 미러가 완료되면 이 목록이 새로 고쳐집니다",
 			"backToRepos": "Back to repos",
 			"table": {
 				"name": "Repository",

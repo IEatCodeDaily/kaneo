@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   CircleDot,
@@ -65,10 +65,14 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data: repos, isLoading } = useGetRepos({ organizationId });
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const resyncRepo = useMutation({
     mutationFn: async (repoId: string) => {
+      // background=true is load-bearing: a full mirror of a large repository
+      // outlives an edge proxy's request window (KFL-279 was exactly that
+      // 504). The server publishes repo.synced when the mirror finishes and
+      // the user websocket's REPO_SYNCED handler invalidates every repo-*
+      // query, so fresh rows appear without refetching stale ones here.
       const response = await fetch(
         getApiUrl(`/repo/${repoId}/sync?background=true`),
         { method: "POST", credentials: "include" },
@@ -76,11 +80,8 @@ function RouteComponent() {
       if (!response.ok) throw new Error(await response.text());
       return response.json();
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["repos", organizationId],
-      });
-      toast.success("Resync started");
+    onSuccess: () => {
+      toast.success(t("organization:repos.resyncStarted"));
     },
     onError: (error) =>
       toast.error(

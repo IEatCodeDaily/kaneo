@@ -12112,6 +12112,9 @@
 						"neverSynced": {
 							"type": "string"
 						},
+						"resyncStarted": {
+							"type": "string"
+						},
 						"backToRepos": {
 							"type": "string"
 						},
@@ -12273,6 +12276,7 @@
 						"emptyTitle",
 						"emptyDescription",
 						"neverSynced",
+						"resyncStarted",
 						"backToRepos",
 						"table",
 						"state",

@@ -2984,6 +2984,7 @@
 			"emptyTitle": "No repos yet",
 			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
 			"neverSynced": "Never synced",
+			"resyncStarted": "Resync started — this list will refresh when the mirror finishes",
 			"backToRepos": "Back to repos",
 			"table": {
 				"name": "Repository",

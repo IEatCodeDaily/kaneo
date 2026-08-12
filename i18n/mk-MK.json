@@ -2582,6 +2582,7 @@
 			"emptyTitle": "No repos yet",
 			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
 			"neverSynced": "Never synced",
+			"resyncStarted": "Ресинхронизацијата започна — листата ќе се освежи кога огледалото ќе заврши",
 			"backToRepos": "Back to repos",
 			"table": {
 				"name": "Repository",

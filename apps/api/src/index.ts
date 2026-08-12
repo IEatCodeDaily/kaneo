@@ -104,6 +104,7 @@ import {
   removeUserConnection,
   shutdownWebSocketAdapter,
 } from "./ws";
+import { registerRepoSyncBroadcast } from "./ws/repo-sync-broadcast";
 
 type ApiKey = {
   id: string;
@@ -906,6 +907,7 @@ export async function runStartupTasks() {
   initializePlugins();
   initializeScheduler();
   await initializeWebSocketAdapter();
+  await registerRepoSyncBroadcast();
 }
 
 export async function startServer(

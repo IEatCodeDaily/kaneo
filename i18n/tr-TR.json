@@ -2583,6 +2583,7 @@
 			"emptyTitle": "No repos yet",
 			"emptyDescription": "Connect a repository to mirror its issues and pull requests here.",
 			"neverSynced": "Never synced",
+			"resyncStarted": "Yeniden eşitleme başladı — ayna tamamlandığında bu liste yenilenecek",
 			"backToRepos": "Back to repos",
 			"table": {
 				"name": "Repository",

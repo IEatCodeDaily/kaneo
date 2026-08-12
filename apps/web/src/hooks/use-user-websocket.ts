@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { apiWebSocketUrl } from "@/fetchers/get-ws-url";
 import { authClient } from "@/lib/auth-client";
+import { invalidateRepoQueries } from "@/lib/repo-sync-invalidation";
 
 export function getUserWsUrl() {
   return apiWebSocketUrl(`user?windowId=${encodeURIComponent(windowId)}`);
@@ -56,9 +57,16 @@ export function useUserWebSocket() {
         try {
           const message = JSON.parse(event.data as string) as {
             type?: string;
+            repoId?: string;
           };
           if (message.type === "NOTIFICATION_CREATED") {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          }
+          if (message.type === "REPO_SYNCED") {
+            // A provider mirror finished (webhook, scheduler or manual
+            // resync). Repo queries never poll, so this push is the only
+            // way the UI learns about new issues/PRs without a reload.
+            invalidateRepoQueries(queryClient, message.repoId);
           }
         } catch {
           // Ignore malformed messages
