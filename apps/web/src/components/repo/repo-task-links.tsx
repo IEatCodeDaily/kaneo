@@ -39,6 +39,7 @@ import {
   groupTicketCandidatesByBoard,
   type TicketCandidate,
 } from "@/lib/link-ticket-candidates";
+import { capGroupItems, PICKER_GROUP_CAP } from "@/lib/picker-group-cap";
 import { toast } from "@/lib/toast";
 import type { RepoTaskLink } from "@/types/repo";
 import LinkTicketCandidateRow from "./link-ticket-candidate-row";
@@ -246,7 +247,16 @@ export default function RepoTaskLinks({
         .toLocaleLowerCase()
         .includes(normalizedSearch),
   );
-  const candidateGroups = groupTicketCandidatesByBoard(filtered);
+  // Cap rendered rows per board — all rows are real DOM nodes and orgs with
+  // 1400+ tickets lagged the dialog (KFL-333 perf). Search runs pre-cap.
+  const candidateGroups = capGroupItems(
+    groupTicketCandidatesByBoard(filtered).map((group) => ({
+      value: group.boardId,
+      label: group.boardName,
+      items: group.items,
+    })),
+    PICKER_GROUP_CAP,
+  );
   const linked = taskLinks.filter((link) => !link.syncEnabled);
   const synced = taskLinks.filter((link) => link.syncEnabled);
   const row = (link: RepoTaskLink, isSynced: boolean) => (
@@ -390,12 +400,12 @@ export default function RepoTaskLinks({
                         </p>
                       ) : (
                         candidateGroups.map((group) => (
-                          <div key={group.boardId}>
+                          <div key={group.value}>
                             <div
                               className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
-                              data-testid={`link-ticket-board-${group.boardId}`}
+                              data-testid={`link-ticket-board-${group.value}`}
                             >
-                              {group.boardName}
+                              {group.label}
                             </div>
                             {group.items.map((task) => (
                               <button

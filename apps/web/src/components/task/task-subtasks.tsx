@@ -52,6 +52,8 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { getColumnIcon } from "@/lib/column";
+import { filterThenCapGroups, PICKER_GROUP_CAP } from "@/lib/picker-group-cap";
 import { toast } from "@/lib/toast";
 import { useSectionOpenState } from "@/lib/use-section-open-state";
 import queryClient from "@/query-client";
@@ -77,6 +79,8 @@ export default function TaskSubtasks({
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkQuery, setLinkQuery] = useState("");
+  // Board side rail filter — parity with the other linking pickers (KFL-333).
+  const [railBoardId, setRailBoardId] = useState("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -321,6 +325,7 @@ export default function TaskSubtasks({
     }> = [];
 
     for (const b of organizationBoards ?? []) {
+      if (railBoardId !== "all" && b.id !== railBoardId) continue;
       const items: (typeof groups)[number]["items"] = [];
       for (const bucket of [
         (b as { tasks?: unknown }).tasks,
@@ -355,8 +360,16 @@ export default function TaskSubtasks({
     groups.sort((a, x) =>
       a.value === boardId ? -1 : x.value === boardId ? 1 : 0,
     );
-    return groups;
-  }, [organizationBoards, relations, taskId, boardId]);
+    // Filter by the query FIRST, then cap rows per group: the palette mounts
+    // every item as a DOM node, so uncapped orgs (1400+ tickets) lagged.
+    return filterThenCapGroups(
+      groups,
+      linkQuery,
+      (item) =>
+        `${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`,
+      PICKER_GROUP_CAP,
+    );
+  }, [organizationBoards, relations, taskId, boardId, railBoardId, linkQuery]);
 
   const handleLinkExistingSubtask = async (targetTaskId: string) => {
     try {
@@ -571,61 +584,100 @@ export default function TaskSubtasks({
       </AlertDialog>
 
       <CommandDialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <CommandDialogPopup>
-          <Command items={linkCandidates}>
-            <CommandInput
-              placeholder={t("tasks:subtasks.searchPlaceholder")}
-              value={linkQuery}
-              onChange={(e) => setLinkQuery(e.target.value)}
-            />
-            <CommandPanel>
-              <CommandEmpty>
-                <div className="text-center py-6">
-                  <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {t("tasks:relations.noTasksFound")}
-                  </p>
-                </div>
-              </CommandEmpty>
-              <CommandList>
-                {(
-                  group: (typeof linkCandidates)[number],
-                  groupIndex: number,
-                ) => (
-                  <Fragment key={group.value}>
-                    <CommandGroup items={group.items}>
-                      <CommandGroupLabel>{group.label}</CommandGroupLabel>
-                      <CommandCollection>
-                        {(item: (typeof group.items)[number]) => (
-                          <CommandItem
-                            key={item.id}
-                            value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
-                            onClick={() => handleLinkExistingSubtask(item.id)}
-                            className="flex items-center gap-3 py-2"
-                          >
-                            <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                              {item.boardSlug}-{item.number}
-                            </span>
-                            <span className="text-sm truncate flex-1">
-                              {item.title}
-                            </span>
-                          </CommandItem>
+        <CommandDialogPopup className="h-105 max-w-3xl">
+          {/* Two-pane board rail + palette layout, parity with the other
+              linking pickers (KFL-333). */}
+          <div className="grid min-h-0 flex-1 overflow-hidden sm:grid-cols-[12rem_1fr]">
+            <nav
+              aria-label="Boards"
+              className="flex min-h-0 gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-y-auto sm:overflow-x-visible sm:border-r sm:border-b-0"
+            >
+              {[
+                { id: "all", name: t("tasks:relations.allBoards") },
+                ...(organizationBoards ?? []),
+              ].map((board) => (
+                <button
+                  aria-pressed={railBoardId === board.id}
+                  className={`flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full ${
+                    railBoardId === board.id
+                      ? "bg-accent font-medium"
+                      : "hover:bg-accent/60"
+                  }`}
+                  data-testid={`subtask-picker-rail-${board.id}`}
+                  key={board.id}
+                  onClick={() => setRailBoardId(board.id)}
+                  type="button"
+                >
+                  <span className="truncate">{board.name}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <Command items={linkCandidates}>
+                <CommandInput
+                  placeholder={t("tasks:subtasks.searchPlaceholder")}
+                  value={linkQuery}
+                  onChange={(e) => setLinkQuery(e.target.value)}
+                />
+                <CommandPanel className="flex-1 overflow-y-auto">
+                  <CommandEmpty>
+                    <div className="text-center py-6">
+                      <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {t("tasks:relations.noTasksFound")}
+                      </p>
+                    </div>
+                  </CommandEmpty>
+                  <CommandList>
+                    {(
+                      group: (typeof linkCandidates)[number],
+                      groupIndex: number,
+                    ) => (
+                      <Fragment key={group.value}>
+                        <CommandGroup items={group.items}>
+                          <CommandGroupLabel>{group.label}</CommandGroupLabel>
+                          <CommandCollection>
+                            {(item: (typeof group.items)[number]) => (
+                              <CommandItem
+                                key={item.id}
+                                value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
+                                onClick={() =>
+                                  handleLinkExistingSubtask(item.id)
+                                }
+                                className="flex items-center gap-3 py-2"
+                              >
+                                <span
+                                  className="shrink-0"
+                                  data-testid={`subtask-status-icon-${item.id}`}
+                                  title={item.status}
+                                >
+                                  {getColumnIcon(item.status, false, null)}
+                                </span>
+                                <span className="text-xs text-muted-foreground shrink-0 font-mono">
+                                  {item.boardSlug}-{item.number}
+                                </span>
+                                <span className="text-sm truncate flex-1">
+                                  {item.title}
+                                </span>
+                              </CommandItem>
+                            )}
+                          </CommandCollection>
+                        </CommandGroup>
+                        {groupIndex < linkCandidates.length - 1 && (
+                          <CommandSeparator />
                         )}
-                      </CommandCollection>
-                    </CommandGroup>
-                    {groupIndex < linkCandidates.length - 1 && (
-                      <CommandSeparator />
+                      </Fragment>
                     )}
-                  </Fragment>
-                )}
-              </CommandList>
-            </CommandPanel>
-            <CommandFooter>
-              <span className="text-muted-foreground/60">
-                {t("tasks:subtasks.linkExistingHint")}
-              </span>
-            </CommandFooter>
-          </Command>
+                  </CommandList>
+                </CommandPanel>
+                <CommandFooter>
+                  <span className="text-muted-foreground/60">
+                    {t("tasks:subtasks.linkExistingHint")}
+                  </span>
+                </CommandFooter>
+              </Command>
+            </div>
+          </div>
         </CommandDialogPopup>
       </CommandDialog>
     </>

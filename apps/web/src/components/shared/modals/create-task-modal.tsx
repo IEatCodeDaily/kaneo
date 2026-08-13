@@ -1417,7 +1417,15 @@ function CreateTaskModal({
                     <button
                       type="button"
                       data-testid="create-task-assignee-trigger"
-                      className="inline-flex items-center gap-1.5 h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      className={cn(
+                        // Match the sibling property chips (dates, priority,
+                        // labels): same border pill, same padding. It was the
+                        // only chip without an outline.
+                        "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                        assigneeId || selectedTeam
+                          ? "bg-accent/30 text-foreground"
+                          : "text-muted-foreground",
+                      )}
                     >
                       {assigneeId ? (
                         (() => {

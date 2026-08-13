@@ -49,6 +49,7 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
+import { filterThenCapGroups, PICKER_GROUP_CAP } from "@/lib/picker-group-cap";
 import { toast } from "@/lib/toast";
 import { useSectionOpenState } from "@/lib/use-section-open-state";
 import type Task from "@/types/task";
@@ -268,8 +269,16 @@ export default function TaskRelations({
       });
     }
 
-    return groups;
-  }, [filteredTasks, boardId, t]);
+    // Filter by query first, then cap per group — the palette mounts every
+    // row as DOM, which lagged with 1400+ org tickets (KFL-333 perf).
+    return filterThenCapGroups(
+      groups,
+      searchQuery,
+      (item) =>
+        `${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`,
+      PICKER_GROUP_CAP,
+    );
+  }, [filteredTasks, boardId, t, searchQuery]);
 
   const handleLinkTask = async (selectedTaskId: string) => {
     try {
