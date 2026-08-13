@@ -901,7 +901,7 @@ export default function TaskResources({
         <CommandDialogPopup className="max-w-3xl">
           {/* Repo rail on the left, palette on the right — same two-pane
               layout as the parent selector (KFL-333 review feedback). */}
-          <div className="grid sm:grid-cols-[12rem_1fr]">
+          <div className="grid min-h-0 flex-1 sm:grid-cols-[12rem_1fr]">
             <nav
               aria-label="Repositories"
               className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:max-h-96 sm:overflow-y-auto sm:overflow-x-visible sm:border-r sm:border-b-0"
@@ -925,75 +925,82 @@ export default function TaskResources({
                 </button>
               ))}
             </nav>
-            <Command className="min-w-0" items={commandGroups}>
-              <CommandInput
-                placeholder="Search issues and pull requests..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-              <CommandPanel>
-                <CommandEmpty>
-                  <div className="text-center py-6">
-                    <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      {repos.length === 0
-                        ? "No repositories are connected to this organization yet."
-                        : isLoadingResources
-                          ? "Loading…"
-                          : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
-                    </p>
+            {/* Command (Autocomplete.Root) renders NO DOM node — without this
+                wrapper its children become separate grid items and the panel
+                wraps into the rail column below the nav (the reported break). */}
+            <div className="flex min-w-0 flex-col">
+              <Command items={commandGroups}>
+                <CommandInput
+                  placeholder="Search issues and pull requests..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+                <CommandPanel>
+                  <CommandEmpty>
+                    <div className="text-center py-6">
+                      <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {repos.length === 0
+                          ? "No repositories are connected to this organization yet."
+                          : isLoadingResources
+                            ? "Loading…"
+                            : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
+                      </p>
+                    </div>
+                  </CommandEmpty>
+                  <CommandList>
+                    {(group: ResourceGroup, groupIndex: number) => (
+                      <Fragment key={group.value}>
+                        <CommandGroup items={group.items}>
+                          <CommandGroupLabel>{group.label}</CommandGroupLabel>
+                          <CommandCollection>
+                            {(item: ResourceItem) => (
+                              <CommandItem
+                                key={item.id}
+                                value={`#${item.number} ${item.title} ${item.repoLabel}`}
+                                onClick={() => handleLink(item)}
+                                className="flex items-center gap-3 py-2"
+                              >
+                                <ResourcePickerRow
+                                  item={item}
+                                  itemType={resourceType}
+                                />
+                              </CommandItem>
+                            )}
+                          </CommandCollection>
+                        </CommandGroup>
+                        {groupIndex < commandGroups.length - 1 && (
+                          <CommandSeparator />
+                        )}
+                      </Fragment>
+                    )}
+                  </CommandList>
+                </CommandPanel>
+                <CommandFooter>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "issues" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setResourceType("issues")}
+                    >
+                      <CircleDot className="size-3" />
+                      Issues
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "pull-requests" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setResourceType("pull-requests")}
+                    >
+                      <GitPullRequest className="size-3" />
+                      Pull requests
+                    </button>
                   </div>
-                </CommandEmpty>
-                <CommandList>
-                  {(group: ResourceGroup, groupIndex: number) => (
-                    <Fragment key={group.value}>
-                      <CommandGroup items={group.items}>
-                        <CommandGroupLabel>{group.label}</CommandGroupLabel>
-                        <CommandCollection>
-                          {(item: ResourceItem) => (
-                            <CommandItem
-                              key={item.id}
-                              value={`#${item.number} ${item.title} ${item.repoLabel}`}
-                              onClick={() => handleLink(item)}
-                              className="flex items-center gap-3 py-2"
-                            >
-                              <ResourcePickerRow
-                                item={item}
-                                itemType={resourceType}
-                              />
-                            </CommandItem>
-                          )}
-                        </CommandCollection>
-                      </CommandGroup>
-                      {groupIndex < commandGroups.length - 1 && (
-                        <CommandSeparator />
-                      )}
-                    </Fragment>
-                  )}
-                </CommandList>
-              </CommandPanel>
-              <CommandFooter>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "issues" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => setResourceType("issues")}
-                  >
-                    <CircleDot className="size-3" />
-                    Issues
-                  </button>
-                  <button
-                    type="button"
-                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "pull-requests" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => setResourceType("pull-requests")}
-                  >
-                    <GitPullRequest className="size-3" />
-                    Pull requests
-                  </button>
-                </div>
-                <span className="text-muted-foreground/60">Select to link</span>
-              </CommandFooter>
-            </Command>
+                  <span className="text-muted-foreground/60">
+                    Select to link
+                  </span>
+                </CommandFooter>
+              </Command>
+            </div>
           </div>
         </CommandDialogPopup>
       </CommandDialog>
