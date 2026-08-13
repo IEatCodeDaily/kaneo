@@ -748,7 +748,8 @@
 			"related": "Terkait",
 			"openTask": "Buka tugas",
 			"selectTask": "Pilih tugas untuk ditautkan",
-			"tasksInProject": "Tugas dalam proyek"
+			"tasksInProject": "Tugas dalam proyek",
+			"allBoards": "Semua"
 		},
 		"sort": {
 			"descending": "Turun",

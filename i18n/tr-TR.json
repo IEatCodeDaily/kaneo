@@ -748,7 +748,8 @@
 			"related": "İlişkili",
 			"openTask": "Talebi aç",
 			"selectTask": "Bağlanacak bir talep seç",
-			"tasksInProject": "Projedeki talepler"
+			"tasksInProject": "Projedeki talepler",
+			"allBoards": "Tümü"
 		},
 		"sort": {
 			"descending": "Azalan",

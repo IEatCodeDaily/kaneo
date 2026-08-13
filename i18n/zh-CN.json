@@ -1710,7 +1710,8 @@
 				"blocked_by": "被阻塞",
 				"related": "关联"
 			},
-			"blockedBy": "被阻塞于"
+			"blockedBy": "被阻塞于",
+			"allBoards": "全部"
 		},
 		"subtasks": {
 			"title": "子任务",

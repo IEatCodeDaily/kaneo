@@ -760,7 +760,8 @@
 			"related": "Связана",
 			"openTask": "Открыть задачу",
 			"selectTask": "Выберите задачу для связывания",
-			"tasksInProject": "Задачи в проекте"
+			"tasksInProject": "Задачи в проекте",
+			"allBoards": "Все"
 		},
 		"sort": {
 			"descending": "По убыванию",

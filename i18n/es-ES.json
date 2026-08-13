@@ -739,6 +739,7 @@
 			"searchPlaceholder": "Buscar tareas para vincular...",
 			"noTasksFound": "No se han encontrado tareas",
 			"tasksInBoard": "Tareas en el proyecto",
+			"allBoards": "Todos",
 			"removeRelation": "Eliminar relación",
 			"blocks": "Bloquea",
 			"otherBoard": "otro tablero",

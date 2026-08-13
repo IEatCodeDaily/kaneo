@@ -748,7 +748,8 @@
 			"related": "Liée",
 			"openTask": "Ouvrir la tâche",
 			"selectTask": "Sélectionnez une tâche à lier",
-			"tasksInProject": "Tâches dans le projet"
+			"tasksInProject": "Tâches dans le projet",
+			"allBoards": "Tous"
 		},
 		"sort": {
 			"descending": "Décroissant",

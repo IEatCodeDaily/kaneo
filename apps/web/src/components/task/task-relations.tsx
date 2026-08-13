@@ -91,6 +91,8 @@ export default function TaskRelations({
   const navigate = useNavigate();
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  // Board side rail filter, mirroring the other linking pickers (KFL-333).
+  const [railBoardId, setRailBoardId] = useState("all");
   const [selectedRelationType, setSelectedRelationType] =
     useState<RelationIntent>("related");
 
@@ -230,7 +232,9 @@ export default function TaskRelations({
   }, [boardData]);
 
   const filteredTasks = allTasks.filter(
-    (t) => !existingRelatedTaskIds.has(t.id),
+    (t) =>
+      !existingRelatedTaskIds.has(t.id) &&
+      (railBoardId === "all" || t.boardId === railBoardId),
   );
 
   const commandGroups = useMemo<TaskGroup[]>(() => {
@@ -512,89 +516,120 @@ export default function TaskRelations({
       </Collapsible>
 
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandDialogPopup>
-          <Command items={commandGroups}>
-            <CommandInput
-              placeholder={t("tasks:relations.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <CommandPanel>
-              <CommandEmpty>
-                <div className="text-center py-6">
-                  <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {t("tasks:relations.noTasksFound")}
-                  </p>
-                </div>
-              </CommandEmpty>
-              <CommandList>
-                {(group: TaskGroup, groupIndex: number) => (
-                  <Fragment key={group.value}>
-                    <CommandGroup items={group.items}>
-                      <CommandGroupLabel>{group.label}</CommandGroupLabel>
-                      <CommandCollection>
-                        {(item: TaskItem) => (
-                          <CommandItem
-                            key={item.id}
-                            value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
-                            onClick={() => handleLinkTask(item.id)}
-                            className="flex items-center gap-3 py-2"
-                          >
-                            {getColumnIcon(
-                              item.status,
-                              false,
-                              columnIconBySlug.get(item.status),
+        <CommandDialogPopup className="h-105 max-w-3xl">
+          {/* Board rail + palette, the same two-pane layout as the repo and
+              issue/PR pickers (KFL-333). Command renders no DOM node, so it
+              needs a real flex cell to keep the panel in the right column. */}
+          <div className="grid min-h-0 flex-1 overflow-hidden sm:grid-cols-[12rem_1fr]">
+            <nav
+              aria-label="Boards"
+              className="flex min-h-0 gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-y-auto sm:overflow-x-visible sm:border-r sm:border-b-0"
+            >
+              {[
+                { id: "all", name: t("tasks:relations.allBoards") },
+                ...(organizationBoards ?? []),
+              ].map((board) => (
+                <button
+                  aria-pressed={railBoardId === board.id}
+                  className={`flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full ${
+                    railBoardId === board.id
+                      ? "bg-accent font-medium"
+                      : "hover:bg-accent/60"
+                  }`}
+                  data-testid={`relation-picker-rail-${board.id}`}
+                  key={board.id}
+                  onClick={() => setRailBoardId(board.id)}
+                  type="button"
+                >
+                  <span className="truncate">{board.name}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <Command items={commandGroups}>
+                <CommandInput
+                  placeholder={t("tasks:relations.searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <CommandPanel className="flex-1 overflow-y-auto">
+                  <CommandEmpty>
+                    <div className="text-center py-6">
+                      <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {t("tasks:relations.noTasksFound")}
+                      </p>
+                    </div>
+                  </CommandEmpty>
+                  <CommandList>
+                    {(group: TaskGroup, groupIndex: number) => (
+                      <Fragment key={group.value}>
+                        <CommandGroup items={group.items}>
+                          <CommandGroupLabel>{group.label}</CommandGroupLabel>
+                          <CommandCollection>
+                            {(item: TaskItem) => (
+                              <CommandItem
+                                key={item.id}
+                                value={`${item.boardSlug}-${item.number} ${item.title} ${item.boardName}`}
+                                onClick={() => handleLinkTask(item.id)}
+                                className="flex items-center gap-3 py-2"
+                              >
+                                {getColumnIcon(
+                                  item.status,
+                                  false,
+                                  columnIconBySlug.get(item.status),
+                                )}
+                                <span className="text-xs text-muted-foreground shrink-0 font-mono">
+                                  {item.boardSlug}-{item.number}
+                                </span>
+                                <span className="text-sm truncate flex-1">
+                                  {item.title}
+                                </span>
+                              </CommandItem>
                             )}
-                            <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                              {item.boardSlug}-{item.number}
-                            </span>
-                            <span className="text-sm truncate flex-1">
-                              {item.title}
-                            </span>
-                          </CommandItem>
+                          </CommandCollection>
+                        </CommandGroup>
+                        {groupIndex < commandGroups.length - 1 && (
+                          <CommandSeparator />
                         )}
-                      </CommandCollection>
-                    </CommandGroup>
-                    {groupIndex < commandGroups.length - 1 && (
-                      <CommandSeparator />
+                      </Fragment>
                     )}
-                  </Fragment>
-                )}
-              </CommandList>
-            </CommandPanel>
-            <CommandFooter>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "related" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("related")}
-                >
-                  <Link2 className="size-3" />
-                  {t("tasks:relations.related")}
-                </button>
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocks" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("blocks")}
-                >
-                  <X className="size-3" />
-                  {t("tasks:relations.blocks")}
-                </button>
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocked_by" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("blocked_by")}
-                >
-                  <X className="size-3" />
-                  {t("tasks:relations.blockedBy")}
-                </button>
-              </div>
-              <span className="text-muted-foreground/60">
-                {t("tasks:relations.selectTask")}
-              </span>
-            </CommandFooter>
-          </Command>
+                  </CommandList>
+                </CommandPanel>
+                <CommandFooter>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "related" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setSelectedRelationType("related")}
+                    >
+                      <Link2 className="size-3" />
+                      {t("tasks:relations.related")}
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocks" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setSelectedRelationType("blocks")}
+                    >
+                      <X className="size-3" />
+                      {t("tasks:relations.blocks")}
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocked_by" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setSelectedRelationType("blocked_by")}
+                    >
+                      <X className="size-3" />
+                      {t("tasks:relations.blockedBy")}
+                    </button>
+                  </div>
+                  <span className="text-muted-foreground/60">
+                    {t("tasks:relations.selectTask")}
+                  </span>
+                </CommandFooter>
+              </Command>
+            </div>
+          </div>
         </CommandDialogPopup>
       </CommandDialog>
     </>

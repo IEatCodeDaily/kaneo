@@ -1710,7 +1710,8 @@
 				"blocked_by": "ब्लॉक किया गया",
 				"related": "संबंधित है"
 			},
-			"blockedBy": "द्वारा अवरुद्ध"
+			"blockedBy": "द्वारा अवरुद्ध",
+			"allBoards": "सभी"
 		},
 		"subtasks": {
 			"title": "उप-कार्य",

@@ -748,7 +748,8 @@
 			"related": "Verwandt",
 			"openTask": "Aufgabe öffnen",
 			"selectTask": "Wähle eine Aufgabe zum Verknüpfen aus",
-			"tasksInProject": "Aufgaben im Projekt"
+			"tasksInProject": "Aufgaben im Projekt",
+			"allBoards": "Alle"
 		},
 		"sort": {
 			"descending": "Absteigend",

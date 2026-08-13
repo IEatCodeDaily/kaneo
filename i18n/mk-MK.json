@@ -748,7 +748,8 @@
 			"related": "Поврзана",
 			"openTask": "Отвори задача",
 			"selectTask": "Избери задача за поврзување",
-			"tasksInProject": "Задачи во проект"
+			"tasksInProject": "Задачи во проект",
+			"allBoards": "Сите"
 		},
 		"sort": {
 			"descending": "Опаѓачки",

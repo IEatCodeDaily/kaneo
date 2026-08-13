@@ -844,6 +844,7 @@
 			"searchPlaceholder": "Search tickets to link...",
 			"noTasksFound": "No tickets found",
 			"tasksInBoard": "Tickets in board",
+			"allBoards": "All",
 			"removeRelation": "Remove relation",
 			"blocks": "Blocks",
 			"otherBoard": "other board",

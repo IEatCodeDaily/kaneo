@@ -1710,7 +1710,8 @@
 				"blocked_by": "bị chặn bởi",
 				"related": "liên quan đến"
 			},
-			"blockedBy": "Bị chặn bởi"
+			"blockedBy": "Bị chặn bởi",
+			"allBoards": "Tất cả"
 		},
 		"subtasks": {
 			"title": "Công việc con",

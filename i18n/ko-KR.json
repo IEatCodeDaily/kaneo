@@ -748,7 +748,8 @@
 			"related": "관련",
 			"openTask": "작업 열기",
 			"selectTask": "연결할 작업 선택",
-			"tasksInProject": "프로젝트의 작업"
+			"tasksInProject": "프로젝트의 작업",
+			"allBoards": "전체"
 		},
 		"sort": {
 			"descending": "내림차순",

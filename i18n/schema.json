@@ -3411,6 +3411,9 @@
 						"tasksInBoard": {
 							"type": "string"
 						},
+						"allBoards": {
+							"type": "string"
+						},
 						"removeRelation": {
 							"type": "string"
 						},
@@ -3440,6 +3443,7 @@
 					"required": [
 						"title",
 						"tasksInBoard",
+						"allBoards",
 						"linkError",
 						"empty",
 						"searchPlaceholder",

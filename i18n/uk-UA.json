@@ -756,7 +756,8 @@
 			"related": "Пов'язано",
 			"openTask": "Відкрити завдання",
 			"selectTask": "Обрати завдання для зв'язування",
-			"tasksInProject": "Завдання в проєкті"
+			"tasksInProject": "Завдання в проєкті",
+			"allBoards": "Усі"
 		},
 		"sort": {
 			"descending": "За спаданням",

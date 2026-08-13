@@ -748,7 +748,8 @@
 			"related": "Σχετικές",
 			"openTask": "Άνοιγμα εργασίας",
 			"selectTask": "Επιλέξτε εργασία για σύνδεση",
-			"tasksInProject": "Εργασίες στο έργο"
+			"tasksInProject": "Εργασίες στο έργο",
+			"allBoards": "Όλα"
 		},
 		"sort": {
 			"descending": "Φθίνουσα",

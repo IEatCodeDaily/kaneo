@@ -808,7 +808,8 @@
 			"openTask": "Abrir tarefa",
 			"selectTask": "Selecione uma tarefa para vincular",
 			"tasksInProject": "Tarefas no projeto",
-			"blockedBy": "Bloqueado por"
+			"blockedBy": "Bloqueado por",
+			"allBoards": "Todos"
 		},
 		"sort": {
 			"descending": "Decrescente",

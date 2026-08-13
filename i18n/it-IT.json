@@ -1710,7 +1710,8 @@
 				"blocked_by": "bloccata da",
 				"related": "correlata a"
 			},
-			"blockedBy": "Bloccato da"
+			"blockedBy": "Bloccato da",
+			"allBoards": "Tutte"
 		},
 		"subtasks": {
 			"title": "Sotto-attività",
