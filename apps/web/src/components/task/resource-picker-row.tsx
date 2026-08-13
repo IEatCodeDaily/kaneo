@@ -10,6 +10,8 @@ export type ResourcePickerItem = {
   /** Provider state as mirrored: open | closed | merged. */
   state: string;
   isDraft: boolean | null;
+  /** Which kind of resource this row is; drives the type icon. */
+  itemType?: "issues" | "pull-requests";
 };
 
 function badgeState(
@@ -31,21 +33,29 @@ export default function ResourcePickerRow({
   itemType,
 }: {
   item: ResourcePickerItem;
-  itemType: "issues" | "pull-requests";
+  /** Fallback when the item doesn't carry its own type (single-kind lists). */
+  itemType?: "issues" | "pull-requests";
 }) {
+  const kind = item.itemType ?? itemType ?? "issues";
   return (
     <>
-      {itemType === "issues" ? (
-        <CircleDot className="size-4 shrink-0 text-muted-foreground" />
+      {kind === "issues" ? (
+        <CircleDot
+          className="size-4 shrink-0 text-muted-foreground"
+          data-testid={`resource-picker-kind-issue-${item.id}`}
+        />
       ) : (
-        <GitPullRequest className="size-4 shrink-0 text-muted-foreground" />
+        <GitPullRequest
+          className="size-4 shrink-0 text-muted-foreground"
+          data-testid={`resource-picker-kind-pr-${item.id}`}
+        />
       )}
       <span className="shrink-0 font-mono text-xs text-muted-foreground">
         #{item.number}
       </span>
       <span className="min-w-0 flex-1 truncate text-sm">{item.title}</span>
       <span data-testid={`resource-picker-state-${item.id}`}>
-        <RepoStateBadge state={badgeState(item, itemType)} />
+        <RepoStateBadge state={badgeState(item, kind)} />
       </span>
     </>
   );

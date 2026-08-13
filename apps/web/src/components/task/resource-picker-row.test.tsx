@@ -74,4 +74,25 @@ describe("ResourcePickerRow", () => {
     const badge = screen.getByTestId("resource-picker-state-r1-4");
     expect(badge.textContent?.toLowerCase()).toContain("draft");
   });
+
+  it("uses the item's own type for the icon in mixed all-view lists", () => {
+    render(
+      <ResourcePickerRow
+        item={{
+          id: "r1-pull-requests-7",
+          number: 7,
+          title: "Mixed list PR",
+          repoId: "r1",
+          repoLabel: "acme/widgets",
+          state: "open",
+          isDraft: null,
+          itemType: "pull-requests",
+        }}
+      />,
+    );
+    // The PR icon must win even without a list-level itemType fallback.
+    expect(
+      screen.getByTestId("resource-picker-kind-pr-r1-pull-requests-7"),
+    ).toBeTruthy();
+  });
 });

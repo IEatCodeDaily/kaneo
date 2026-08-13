@@ -85,6 +85,7 @@ type ResourceItem = {
   repoLabel: string;
   state: string;
   isDraft: boolean | null;
+  itemType: ResourceType;
 };
 
 type ResourceGroup = {
@@ -185,7 +186,11 @@ export default function TaskResources({
   const [createOpen, setCreateOpen] = useState(false);
   const [createRepoId, setCreateRepoId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [resourceType, setResourceType] = useState<ResourceType>("issues");
+  // "all" shows issues and PRs merged (they share one number counter); the
+  // footer toggle narrows to a single kind. Per-row icons differentiate.
+  const [resourceFilter, setResourceFilter] = useState<"all" | ResourceType>(
+    "all",
+  );
   // "all" or a repo id — the side rail filter, mirroring the parent selector's
   // board rail (KFL-333 review feedback).
   const [commandRepoId, setCommandRepoId] = useState("all");
@@ -221,7 +226,7 @@ export default function TaskResources({
           limit: RESOURCE_LIMIT,
         }),
       queryKey: ["repo-issues", repoId, "all", 1, RESOURCE_LIMIT],
-      enabled: commandOpen && resourceType === "issues",
+      enabled: commandOpen && resourceFilter !== "pull-requests",
     })),
   });
 
@@ -235,7 +240,7 @@ export default function TaskResources({
           limit: RESOURCE_LIMIT,
         }),
       queryKey: ["repo-pull-requests", repoId, "all", 1, RESOURCE_LIMIT],
-      enabled: commandOpen && resourceType === "pull-requests",
+      enabled: commandOpen && resourceFilter !== "issues",
     })),
   });
 
@@ -418,29 +423,46 @@ export default function TaskResources({
   // Repos with no matching items are omitted so the palette does not show
   // empty headers.
   const commandGroups = useMemo<ResourceGroup[]>(() => {
-    const sources =
-      resourceType === "issues" ? issueQueries : pullRequestQueries;
-
     return repos.flatMap((repo, index) => {
       if (commandRepoId !== "all" && repo.id !== commandRepoId) return [];
-      const source = sources[index]?.data?.data;
-      if (!source) return [];
 
       const repoLabel = `${repo.owner}/${repo.name}`;
-      const items = source
-        .filter(
-          (resource) =>
-            !linkedKeys.has(`${repo.id}-${resourceType}-${resource.number}`),
-        )
-        .map((resource) => ({
-          id: `${repo.id}-${resource.number}`,
-          number: resource.number,
-          title: resource.title,
-          repoId: repo.id,
-          repoLabel,
-          state: resource.state,
-          isDraft: "isDraft" in resource ? (resource.isDraft ?? null) : null,
-        }));
+      const fromSource = (
+        source: Array<{
+          number: number;
+          title: string;
+          state: string;
+          isDraft?: boolean | null;
+        }>,
+        itemType: ResourceType,
+      ): ResourceItem[] =>
+        source
+          .filter(
+            (resource) =>
+              !linkedKeys.has(`${repo.id}-${itemType}-${resource.number}`),
+          )
+          .map((resource) => ({
+            id: `${repo.id}-${itemType}-${resource.number}`,
+            number: resource.number,
+            title: resource.title,
+            repoId: repo.id,
+            repoLabel,
+            state: resource.state,
+            isDraft: resource.isDraft ?? null,
+            itemType,
+          }));
+
+      const items: ResourceItem[] = [
+        ...(resourceFilter !== "pull-requests"
+          ? fromSource(issueQueries[index]?.data?.data ?? [], "issues")
+          : []),
+        ...(resourceFilter !== "issues"
+          ? fromSource(
+              pullRequestQueries[index]?.data?.data ?? [],
+              "pull-requests",
+            )
+          : []),
+      ].sort((a, b) => b.number - a.number);
 
       return items.length > 0
         ? [{ value: repo.id, label: repoLabel, items }]
@@ -452,16 +474,16 @@ export default function TaskResources({
     linkedKeys,
     pullRequestQueries,
     repos,
-    resourceType,
+    resourceFilter,
   ]);
 
-  const isLoadingResources = (
-    resourceType === "issues" ? issueQueries : pullRequestQueries
-  ).some((query) => query.isLoading);
+  const isLoadingResources = [...issueQueries, ...pullRequestQueries].some(
+    (query) => query.isLoading,
+  );
 
   const handleLink = (item: ResourceItem) => {
     link.mutate({
-      itemType: resourceType,
+      itemType: item.itemType,
       number: item.number,
       repoId: item.repoId,
       taskId,
@@ -898,13 +920,13 @@ export default function TaskResources({
       </Dialog>
 
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandDialogPopup className="max-w-3xl">
+        <CommandDialogPopup className="h-105 max-w-3xl">
           {/* Repo rail on the left, palette on the right — same two-pane
               layout as the parent selector (KFL-333 review feedback). */}
-          <div className="grid min-h-0 flex-1 sm:grid-cols-[12rem_1fr]">
+          <div className="grid min-h-0 flex-1 overflow-hidden sm:grid-cols-[12rem_1fr]">
             <nav
               aria-label="Repositories"
-              className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:max-h-96 sm:overflow-y-auto sm:overflow-x-visible sm:border-r sm:border-b-0"
+              className="flex min-h-0 gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-y-auto sm:overflow-x-visible sm:border-r sm:border-b-0"
             >
               {[{ id: "all", owner: "", name: "All" }, ...repos].map((repo) => (
                 <button
@@ -928,14 +950,14 @@ export default function TaskResources({
             {/* Command (Autocomplete.Root) renders NO DOM node — without this
                 wrapper its children become separate grid items and the panel
                 wraps into the rail column below the nav (the reported break). */}
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-h-0 min-w-0 flex-col">
               <Command items={commandGroups}>
                 <CommandInput
                   placeholder="Search issues and pull requests..."
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
-                <CommandPanel>
+                <CommandPanel className="flex-1 overflow-y-auto">
                   <CommandEmpty>
                     <div className="text-center py-6">
                       <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
@@ -944,7 +966,9 @@ export default function TaskResources({
                           ? "No repositories are connected to this organization yet."
                           : isLoadingResources
                             ? "Loading…"
-                            : `No ${resourceType === "issues" ? "issues" : "pull requests"} found.`}
+                            : resourceFilter === "all"
+                              ? "No issues or pull requests found."
+                              : `No ${resourceFilter === "issues" ? "issues" : "pull requests"} found.`}
                       </p>
                     </div>
                   </CommandEmpty>
@@ -961,10 +985,7 @@ export default function TaskResources({
                                 onClick={() => handleLink(item)}
                                 className="flex items-center gap-3 py-2"
                               >
-                                <ResourcePickerRow
-                                  item={item}
-                                  itemType={resourceType}
-                                />
+                                <ResourcePickerRow item={item} />
                               </CommandItem>
                             )}
                           </CommandCollection>
@@ -980,16 +1001,26 @@ export default function TaskResources({
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "issues" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setResourceType("issues")}
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceFilter === "all" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      data-testid="resource-filter-all"
+                      onClick={() => setResourceFilter("all")}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceFilter === "issues" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      data-testid="resource-filter-issues"
+                      onClick={() => setResourceFilter("issues")}
                     >
                       <CircleDot className="size-3" />
                       Issues
                     </button>
                     <button
                       type="button"
-                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceType === "pull-requests" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setResourceType("pull-requests")}
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${resourceFilter === "pull-requests" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      data-testid="resource-filter-pull-requests"
+                      onClick={() => setResourceFilter("pull-requests")}
                     >
                       <GitPullRequest className="size-3" />
                       Pull requests
