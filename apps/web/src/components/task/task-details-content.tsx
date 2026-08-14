@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { Archive, ArrowUpRight } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Activity, { type ActivityItem } from "@/components/activity";
@@ -12,6 +12,7 @@ import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
+import { formatArchivedSubtext } from "@/lib/archive-display";
 import TaskDescription from "./task-description";
 import TaskDescriptionHistory from "./task-description-history";
 import TaskRelations from "./task-relations";
@@ -76,6 +77,17 @@ export default function TaskDetailsContent({
               <span className="font-medium">{parentTask.title}</span>
             </span>
           </button>
+        )}
+        {task?.archivedAt && (
+          <div
+            className="flex items-center gap-1 text-xs text-muted-foreground w-fit"
+            data-testid="archived-subtext"
+          >
+            <Archive className="size-3" />
+            <span>
+              {formatArchivedSubtext(task.archivedAt, task.archivedByName)}
+            </span>
+          </div>
         )}
         {/*
           #258 follow-up: the task identifier used to be repeated here, directly

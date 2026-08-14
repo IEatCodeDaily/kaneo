@@ -60,6 +60,8 @@ type Task = {
    * the backlog's archived section. Never encode archival in `status`.
    */
   archivedAt?: string | null;
+  /** Display name of the archiving user; null for pre-migration rows. */
+  archivedByName?: string | null;
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];
   repoLinks?: TaskRepoLinkSummary[];

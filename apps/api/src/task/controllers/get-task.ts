@@ -1,7 +1,11 @@
 import { and, eq, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable, teamTable, userTable } from "../../database/schema";
+
+// The archiver is a second join against user, separate from the assignee join.
+const archivedByUser = alias(userTable, "archived_by_user");
 
 type GetTaskOptions = {
   /** Include soft-deleted (trashed) tasks. Only recycle-bin paths set this. */
@@ -26,6 +30,8 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
       // #226: callers need this to render Archive/Unarchive without inventing a
       // fake `status="archived"`. Archival is orthogonal to status.
       archivedAt: taskTable.archivedAt,
+      archivedBy: taskTable.archivedBy,
+      archivedByName: archivedByUser.name,
       userId: taskTable.userId,
       teamId: taskTable.teamId,
       milestoneId: taskTable.milestoneId,
@@ -39,6 +45,7 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
     .from(taskTable)
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
     .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
+    .leftJoin(archivedByUser, eq(taskTable.archivedBy, archivedByUser.id))
     .where(
       options.includeDeleted
         ? eq(taskTable.id, taskId)

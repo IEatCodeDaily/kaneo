@@ -76,7 +76,12 @@ export async function prepareAvatarImage(file: File): Promise<PreparedAvatar> {
     throw new Error("The image could not be read.");
   }
 
-  const { sourceX, sourceY, side } = getCoverCropRect(width, height);
+  // The crop dialog exports an exact square; only raw non-square inputs get
+  // the center-crop fallback.
+  const { sourceX, sourceY, side } =
+    width === height
+      ? { sourceX: 0, sourceY: 0, side: width }
+      : getCoverCropRect(width, height);
   const canvas = document.createElement("canvas");
   canvas.width = AVATAR_OUTPUT_SIZE;
   canvas.height = AVATAR_OUTPUT_SIZE;

@@ -4,6 +4,14 @@ import { authClient } from "@/lib/auth-client";
 import { prepareAvatarImage } from "@/lib/prepare-avatar-image";
 import invalidateUserProfileQueries from "./invalidate-user-profile-queries";
 
+/**
+ * The File is normally produced by AvatarCropDialog, which already exported a
+ * 256x256 WebP/PNG. prepareAvatarImage still runs as the guard rail: it
+ * re-encodes to exactly AVATAR_OUTPUT_SIZE, so hand-rolled callers that pass
+ * a raw photo still end up square and size-bounded. A center-crop is only
+ * applied when the input is NOT already square (crop dialog output is, so it
+ * passes through untouched apart from re-encode).
+ */
 function useUpdateUserAvatar() {
   const queryClient = useQueryClient();
 

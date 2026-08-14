@@ -149,11 +149,20 @@ export default function TaskStatusPopover({
             className="h-7 justify-start gap-1.5 rounded-md border border-border bg-transparent px-2.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
           >
             {selectedOption ? (
-              getColumnIcon(
-                selectedOption.value,
-                selectedOption.isFinal,
-                selectedOption.icon,
-              )
+              <span className="relative inline-flex items-center justify-center">
+                {getColumnIcon(
+                  selectedOption.value,
+                  selectedOption.isFinal,
+                  selectedOption.icon,
+                )}
+                {isArchived && (
+                  <Archive
+                    aria-hidden="true"
+                    className="absolute -bottom-1 -right-1.5 size-3 rounded-full bg-background text-muted-foreground"
+                    data-testid="status-trigger-archived"
+                  />
+                )}
+              </span>
             ) : (
               <Circle className="size-4 text-muted-foreground/60" />
             )}

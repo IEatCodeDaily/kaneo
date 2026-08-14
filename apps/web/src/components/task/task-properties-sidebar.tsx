@@ -1,5 +1,6 @@
 import { useParams } from "@tanstack/react-router";
 import {
+  Archive,
   Calendar,
   CalendarClock,
   CalendarDays,
@@ -31,6 +32,7 @@ import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-me
 import useGetTask from "@/hooks/queries/task/use-get-task";
 
 import { getAvatarTone } from "@/lib/avatar-tone";
+import { generateBranchName } from "@/lib/branch-name";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { dueDateStatusColors, getDueDateStatus } from "@/lib/due-date-status";
@@ -51,31 +53,8 @@ import TaskLabelsPopover from "./task-labels-popover";
 import TaskLabelsRow from "./task-labels-row";
 import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
-
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
-
-function slugify(text: string | undefined): string {
-  if (!text) return "";
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 50);
-}
-
-function generateBranchName(
-  pattern: string,
-  boardSlug: string | undefined,
-  taskNumber: number | null | undefined,
-  taskTitle: string | undefined,
-): string {
-  if (!boardSlug || !taskNumber) return "";
-  return pattern
-    .replace("{slug}", boardSlug.toLowerCase())
-    .replace("{number}", taskNumber.toString())
-    .replace("{title}", slugify(taskTitle));
-}
 
 type TaskPropertiesSidebarProps = {
   taskId: string | undefined;
@@ -209,6 +188,7 @@ export default function TaskPropertiesSidebar({
                       variant="outline"
                       size="sm"
                       className="text-foreground rounded-l-none"
+                      data-testid="copy-task-branch"
                       onClick={() => handleCopyTaskBranch()}
                     >
                       <GitBranch className="size-4" />
@@ -234,11 +214,20 @@ export default function TaskPropertiesSidebar({
                     size="sm"
                     className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
                   >
-                    {getColumnIcon(
-                      task.status ?? "",
-                      statusIsFinal,
-                      statusIcon,
-                    )}
+                    <span className="relative inline-flex items-center justify-center">
+                      {getColumnIcon(
+                        task.status ?? "",
+                        statusIsFinal,
+                        statusIcon,
+                      )}
+                      {task.archivedAt && (
+                        <Archive
+                          aria-hidden="true"
+                          className="absolute -bottom-1 -right-1.5 size-3 rounded-full bg-background text-muted-foreground"
+                          data-testid="detail-status-archived"
+                        />
+                      )}
+                    </span>
                     <span className="text-xs font-semibold truncate">
                       {statusLabel}
                     </span>

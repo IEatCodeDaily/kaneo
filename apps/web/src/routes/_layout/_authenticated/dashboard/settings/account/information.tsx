@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import PageTitle from "@/components/page-title";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
+import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -85,6 +86,7 @@ function RouteComponent() {
   const { mutateAsync: deleteAccount, isPending: isDeletingAccount } =
     useDeleteAccount();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const canConfirmDelete =
@@ -179,8 +181,17 @@ function RouteComponent() {
 
       if (!file) return;
 
+      // Open the crop dialog instead of uploading the blind center-crop.
+      setCropFile(file);
+    },
+    [],
+  );
+
+  const handleAvatarCropped = useCallback(
+    async (cropped: File) => {
+      setCropFile(null);
       try {
-        await updateAvatar(file);
+        await updateAvatar(cropped);
         await refetchUser();
         toast.success(t("settings:informationPage.avatar.updateSuccess"));
       } catch (error) {
@@ -514,6 +525,12 @@ function RouteComponent() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <AvatarCropDialog
+        file={cropFile}
+        onCancel={() => setCropFile(null)}
+        onCropped={handleAvatarCropped}
+        open={Boolean(cropFile)}
+      />
     </>
   );
 }

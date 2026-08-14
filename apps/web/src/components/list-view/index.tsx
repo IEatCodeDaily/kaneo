@@ -214,11 +214,22 @@ const ColumnSection = memo(function ColumnSection({
                 */
                 return (
                   <span
-                    className="inline-flex size-5 shrink-0 items-center justify-center"
+                    className="relative inline-flex size-5 shrink-0 items-center justify-center"
                     data-testid="list-task-status"
-                    title={status.name}
+                    title={
+                      node.task.archivedAt
+                        ? `${status.name} (archived)`
+                        : status.name
+                    }
                   >
                     {getColumnIcon(status.id, status.isFinal, status.icon)}
+                    {node.task.archivedAt && (
+                      <Archive
+                        aria-hidden="true"
+                        className="absolute -bottom-1 -right-1 size-3 rounded-full bg-background text-muted-foreground"
+                        data-testid="list-task-archived"
+                      />
+                    )}
                   </span>
                 );
               })()}

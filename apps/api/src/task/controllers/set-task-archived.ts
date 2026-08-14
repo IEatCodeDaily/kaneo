@@ -41,9 +41,14 @@ async function setTaskArchived({
     return existingTask;
   }
 
+  const now = new Date();
   const [updatedTask] = await db
     .update(taskTable)
-    .set({ archivedAt: archived ? new Date() : null })
+    .set(
+      archived
+        ? { archivedAt: now, archivedBy: currentUserId }
+        : { archivedAt: null, archivedBy: null },
+    )
     .where(eq(taskTable.id, id))
     .returning();
 

@@ -834,6 +834,10 @@ export const taskTable = pgTable(
      * dropdown; `status` keeps meaning workflow state only.
      */
     archivedAt: timestamp("archived_at", { mode: "date" }),
+    archivedBy: text("archived_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     deletedAt: timestamp("deleted_at", { mode: "date" }),
     deletedBy: text("deleted_by").references(() => userTable.id, {
       onDelete: "set null",
