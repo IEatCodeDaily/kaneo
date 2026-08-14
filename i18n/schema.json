@@ -7921,6 +7921,7 @@
 				},
 				"informationPage": {
 					"type": "object",
+					"additionalProperties": false,
 					"properties": {
 						"sectionTitle": {
 							"type": "string"
@@ -7945,6 +7946,7 @@
 						},
 						"validation": {
 							"type": "object",
+							"additionalProperties": false,
 							"properties": {
 								"invalidEmail": {
 									"type": "string"
@@ -7956,11 +7958,10 @@
 									"type": "string"
 								}
 							},
-							"additionalProperties": false,
 							"required": [
-								"nameRequired",
+								"invalidEmail",
 								"nameShort",
-								"invalidEmail"
+								"nameRequired"
 							]
 						},
 						"profilePicture": {
@@ -7977,23 +7978,116 @@
 						},
 						"sectionSubtitle": {
 							"type": "string"
+						},
+						"avatar": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"hint": {
+									"type": "string"
+								},
+								"remove": {
+									"type": "string"
+								},
+								"updateSuccess": {
+									"type": "string"
+								},
+								"updateError": {
+									"type": "string"
+								},
+								"removeSuccess": {
+									"type": "string"
+								},
+								"removeError": {
+									"type": "string"
+								},
+								"edit": {
+									"type": "string"
+								},
+								"change": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"hint",
+								"remove",
+								"updateSuccess",
+								"updateError",
+								"removeSuccess",
+								"removeError",
+								"edit",
+								"change"
+							]
+						},
+						"deleteAccount": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"sectionTitle": {
+									"type": "string"
+								},
+								"sectionSubtitle": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"modalTitle": {
+									"type": "string"
+								},
+								"modalDescription": {
+									"type": "string"
+								},
+								"confirmLabel": {
+									"type": "string"
+								},
+								"confirm": {
+									"type": "string"
+								},
+								"success": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								},
+								"sessionTooOld": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"sectionTitle",
+								"sectionSubtitle",
+								"title",
+								"description",
+								"modalTitle",
+								"modalDescription",
+								"confirmLabel",
+								"confirm",
+								"success",
+								"error",
+								"sessionTooOld"
+							]
 						}
 					},
-					"additionalProperties": false,
 					"required": [
-						"pageTitle",
-						"title",
-						"subtitle",
 						"sectionTitle",
-						"sectionSubtitle",
-						"profilePicture",
-						"fullName",
+						"title",
 						"fullNamePlaceholder",
-						"email",
 						"emailPlaceholder",
-						"updateSuccess",
+						"subtitle",
+						"pageTitle",
+						"email",
+						"validation",
+						"profilePicture",
 						"updateError",
-						"validation"
+						"updateSuccess",
+						"fullName",
+						"sectionSubtitle",
+						"avatar",
+						"deleteAccount"
 					]
 				},
 				"telegramIntegration": {

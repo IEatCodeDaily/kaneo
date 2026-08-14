@@ -72,6 +72,8 @@ import {
   teamMemberTable,
   teamTable,
   timeEntryTable,
+  trialGrantTable,
+  userAvatarTable,
   userNotificationOrgBoardTable,
   userNotificationOrgRuleTable,
   userNotificationPreferenceTable,

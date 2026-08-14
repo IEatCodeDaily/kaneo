@@ -1644,7 +1644,9 @@
 				"verifyError": "Failed to verify Gitea access",
 				"removed": "Gitea integration removed",
 				"issuesImported": "Issues imported successfully",
-				"verifyOk": "Gitea token can access this repository"
+				"verifyOk": "Gitea token can access this repository",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "Comment Kaneo link on new issues",
 			"connect": "Connect",
@@ -2005,23 +2007,46 @@
 			"slackSectionSubtitle": "Испрати ажурирања за задачи на проектот во Slack канал преку дојдовен webhook."
 		},
 		"informationPage": {
-			"sectionTitle": "Информации за сметката",
-			"title": "Лични информации",
-			"fullNamePlaceholder": "Внеси го твоето име",
-			"emailPlaceholder": "Внеси ја твојата е-пошта",
-			"subtitle": "Управувај со твоите лични податоци и информации за сметката.",
-			"pageTitle": "Лични информации",
-			"email": "Е-пошта",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "Невалидна е-пошта",
-				"nameShort": "Името мора да има најмалку 2 знаци",
-				"nameRequired": "Името е задолжително"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Профилна слика",
-			"updateError": "Неуспешно ажурирање на профилот",
-			"updateSuccess": "Профилот е успешно ажуриран",
-			"fullName": "Целосно име",
-			"sectionSubtitle": "Управувај со твојот профил и детали за сметката."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "Поставки за ознаки",

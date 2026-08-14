@@ -1644,7 +1644,9 @@
 				"verifyError": "Gitea 접근 확인에 실패했습니다",
 				"removed": "Gitea 연동이 제거되었습니다",
 				"issuesImported": "이슈를 가져왔습니다",
-				"verifyOk": "Gitea 토큰이 이 저장소에 접근할 수 있습니다"
+				"verifyOk": "Gitea 토큰이 이 저장소에 접근할 수 있습니다",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "새 이슈에 Kaneo 링크 댓글 달기",
 			"connect": "연결",
@@ -2005,23 +2007,46 @@
 			"telegramSectionSubtitle": "봇을 사용하여 프로젝트 작업 업데이트를 Telegram 채팅 또는 토픽으로 전송합니다."
 		},
 		"informationPage": {
-			"sectionTitle": "계정 정보",
-			"title": "개인 정보",
-			"fullNamePlaceholder": "이름을 입력하세요",
-			"emailPlaceholder": "이메일을 입력하세요",
-			"subtitle": "개인 세부 정보 및 계정 정보를 관리합니다.",
-			"pageTitle": "개인 정보",
-			"email": "이메일",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "잘못된 이메일 주소입니다",
-				"nameShort": "이름은 2자 이상이어야 합니다",
-				"nameRequired": "이름은 필수입니다"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "프로필 사진",
-			"updateError": "프로필 업데이트에 실패했습니다",
-			"updateSuccess": "프로필이 업데이트되었습니다",
-			"fullName": "이름",
-			"sectionSubtitle": "프로필 및 계정 세부 정보를 관리합니다."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "라벨 설정",

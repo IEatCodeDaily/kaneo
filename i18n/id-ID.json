@@ -1644,7 +1644,9 @@
 				"verifyError": "Gagal memverifikasi akses Gitea",
 				"removed": "Integrasi Gitea dihapus",
 				"issuesImported": "Issue berhasil diimpor",
-				"verifyOk": "Token Gitea dapat mengakses repositori ini"
+				"verifyOk": "Token Gitea dapat mengakses repositori ini",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "Komentari tautan Kaneo pada issue baru",
 			"connect": "Hubungkan",
@@ -2143,23 +2145,46 @@
 			"telegramSectionSubtitle": "Kirim pembaruan tugas proyek ke chat atau topik Telegram dengan bot."
 		},
 		"informationPage": {
-			"sectionTitle": "Informasi Akun",
-			"title": "Informasi Pribadi",
-			"fullNamePlaceholder": "Masukkan nama Anda",
-			"emailPlaceholder": "Masukkan email Anda",
-			"subtitle": "Kelola detail pribadi dan informasi akun Anda.",
-			"pageTitle": "Informasi Pribadi",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
 			"email": "Email",
 			"validation": {
-				"invalidEmail": "Alamat email tidak valid",
-				"nameShort": "Nama harus minimal 2 karakter",
-				"nameRequired": "Nama wajib diisi"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Foto profil",
-			"updateError": "Gagal memperbarui profil",
-			"updateSuccess": "Profil berhasil diperbarui",
-			"fullName": "Nama lengkap",
-			"sectionSubtitle": "Kelola profil dan detail akun Anda."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "Pengaturan Label",

@@ -4,6 +4,7 @@ import {
   type AnyPgColumn,
   boolean,
   check,
+  customType,
   foreignKey,
   index,
   integer,
@@ -1867,3 +1868,34 @@ export const taskRepoItemLinkTable = pgTable(
     ),
   ],
 );
+
+export const userAvatarTable = pgTable(
+  "user_avatar",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique("user_avatar_user_id_unique")
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("user_avatar_userId_idx").on(table.userId)],
+);
+
+export const trialGrantTable = pgTable("trial_grant", {
+  emailHash: text("email_hash").primaryKey(),
+  trialEndsAt: timestamp("trial_ends_at", { mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});

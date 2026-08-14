@@ -1666,7 +1666,9 @@
 				"commentOnDisabled": "Reacties met taaklinks op nieuwe issues staan uit",
 				"settingsUpdateError": "Bijwerken Gitea-integratie mislukt",
 				"secretCopied": "Gekopieerd",
-				"unableToCopySecret": "Kopiëren van geheim mislukt"
+				"unableToCopySecret": "Kopiëren van geheim mislukt",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"webhookShow": "Tonen",
 			"webhookHide": "Verbergen",
@@ -1985,23 +1987,46 @@
 			"slackSectionSubtitle": "Verstuur updates van boardtaken naar een Slack-kanaal met een binnenkomende webhook."
 		},
 		"informationPage": {
-			"sectionTitle": "Accountinformatie",
-			"title": "Persoonlijke Informatie",
-			"fullNamePlaceholder": "Voer je naam in",
-			"emailPlaceholder": "Voer je e-mailadres in",
-			"subtitle": "Beheer je persoonlijke gegevens en accountinformatie.",
-			"pageTitle": "Persoonlijke Informatie",
-			"email": "E-mail",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "Ongeldig e-mailadres",
-				"nameShort": "Naam moet minimaal 2 tekens bevatten",
-				"nameRequired": "Naam is verplicht"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Profielfoto",
-			"updateError": "Bijwerken profiel mislukt",
-			"updateSuccess": "Profiel succesvol bijgewerkt",
-			"fullName": "Volledige naam",
-			"sectionSubtitle": "Beheer je profiel- en accountgegevens."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "Labelinstellingen",

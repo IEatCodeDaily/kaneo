@@ -72,6 +72,8 @@ import taskTemplate from "./task-template";
 import team from "./team";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
+import user from "./user";
+import getAvatar from "./user/controllers/get-avatar";
 import {
   authenticateApiRequest,
   resolveAssetBearerOrCookie,
@@ -688,6 +690,7 @@ export function createApp() {
   const commentApi = api.route("/comment", comment);
   const dataTableApi = api.route("/data-table", dataTable);
   const timeEntryApi = api.route("/time-entry", timeEntry);
+  const userApi = api.route("/user", user);
   const flagApi = api.route("/flag", flag);
   const labelApi = api.route("/label", label);
   const milestoneApi = api.route("/milestone", milestone);

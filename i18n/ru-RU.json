@@ -1702,7 +1702,9 @@
 				"verifyError": "Не удалось проверить доступ к Gitea",
 				"removed": "Интеграция с Gitea удалена",
 				"issuesImported": "Issues успешно импортированы",
-				"verifyOk": "Токен Gitea может получить доступ к этому репозиторию"
+				"verifyOk": "Токен Gitea может получить доступ к этому репозиторию",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "Комментировать ссылкой Kaneo в новых issues",
 			"connect": "Подключить",
@@ -2065,23 +2067,46 @@
 			"telegramSectionSubtitle": "Отправка обновлений по задачам проекта в чат или тему Telegram через бота."
 		},
 		"informationPage": {
-			"sectionTitle": "Информация об аккаунте",
-			"title": "Личная информация",
-			"fullNamePlaceholder": "Введите ваше имя",
-			"emailPlaceholder": "Введите вашу почту",
-			"subtitle": "Управляйте вашими персональными данными и информацией об аккаунте.",
-			"pageTitle": "Личная информация",
-			"email": "Электронная почта",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "Некорректный адрес электронной почты",
-				"nameShort": "Имя должно содержать не менее 2 символов",
-				"nameRequired": "Имя обязательно"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Фото профиля",
-			"updateError": "Не удалось обновить профиль",
-			"updateSuccess": "Профиль успешно обновлён",
-			"fullName": "Полное имя",
-			"sectionSubtitle": "Управляйте вашим профилем и данными аккаунта."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "Настройки меток",

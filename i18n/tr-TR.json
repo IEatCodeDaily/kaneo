@@ -1644,7 +1644,9 @@
 				"verifyError": "Gitea erişimi doğrulanamadı",
 				"removed": "Gitea entegrasyonu kaldırıldı",
 				"issuesImported": "Sorunlar başarıyla içe aktarıldı",
-				"verifyOk": "Gitea belirteci bu depoya erişebiliyor"
+				"verifyOk": "Gitea belirteci bu depoya erişebiliyor",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "Yeni sorunlara Kaneo bağlantısı yorumu yap",
 			"connect": "Bağlan",
@@ -2005,23 +2007,46 @@
 			"telegramSectionSubtitle": "Proje talep güncellemelerini bir bot ile Telegram sohbetine veya konusuna gönderin."
 		},
 		"informationPage": {
-			"sectionTitle": "Hesap Bilgileri",
-			"title": "Kişisel Bilgiler",
-			"fullNamePlaceholder": "Adınızı girin",
-			"emailPlaceholder": "E-postanızı girin",
-			"subtitle": "Kişisel ayrıntılarınızı ve hesap bilgilerinizi yönetin.",
-			"pageTitle": "Kişisel Bilgiler",
-			"email": "E-posta",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "Geçersiz e-posta adresi",
-				"nameShort": "Ad en az 2 karakter olmalıdır",
-				"nameRequired": "Ad gereklidir"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Profil fotoğrafı",
-			"updateError": "Profil güncellenemedi",
-			"updateSuccess": "Profil başarıyla güncellendi",
-			"fullName": "Ad Soyad",
-			"sectionSubtitle": "Profilinizi ve hesap ayrıntılarınızı yönetin."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"pageTitle": "Etiket Ayarları",

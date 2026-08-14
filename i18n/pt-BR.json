@@ -1300,7 +1300,9 @@
 				"verifyError": "Falha ao verificar o acesso ao Gitea",
 				"removed": "Integração com o Gitea removida",
 				"issuesImported": "Issues importadas com sucesso",
-				"verifyOk": "O token do Gitea pode acessar este repositório"
+				"verifyOk": "O token do Gitea pode acessar este repositório",
+				"notGiteaInstance": "The URL does not point to a Gitea instance",
+				"redirected": "Gitea URL redirected (usually to HTTPS). Use the final URL directly."
 			},
 			"commentTaskLinkTitle": "Comentar link do Kaneo em novas issues",
 			"connect": "Conectar",
@@ -1630,23 +1632,46 @@
 			"webhookDescription": "Envie notificações da conta para seu próprio endpoint como JSON."
 		},
 		"informationPage": {
-			"sectionTitle": "Informações da conta",
-			"title": "Informações pessoais",
-			"fullNamePlaceholder": "Digite seu nome",
-			"emailPlaceholder": "Digite seu e-mail",
-			"subtitle": "Gerencie seus dados pessoais e informações da conta.",
-			"pageTitle": "Informações pessoais",
-			"email": "E-mail",
+			"sectionTitle": "Account Information",
+			"title": "Personal Information",
+			"fullNamePlaceholder": "Enter your name",
+			"emailPlaceholder": "Enter your email",
+			"subtitle": "Manage your personal details and account information.",
+			"pageTitle": "Personal Information",
+			"email": "Email",
 			"validation": {
-				"invalidEmail": "Endereço de e-mail inválido",
-				"nameShort": "O nome deve ter pelo menos 2 caracteres",
-				"nameRequired": "O nome é obrigatório"
+				"invalidEmail": "Invalid email address",
+				"nameShort": "Name must be at least 2 characters",
+				"nameRequired": "Name is required"
 			},
-			"profilePicture": "Foto de perfil",
-			"updateError": "Falha ao atualizar perfil",
-			"updateSuccess": "Perfil atualizado com sucesso",
-			"fullName": "Nome completo",
-			"sectionSubtitle": "Gerencie seu perfil e os detalhes da conta."
+			"profilePicture": "Profile picture",
+			"updateError": "Failed to update profile",
+			"updateSuccess": "Profile updated successfully",
+			"fullName": "Full name",
+			"sectionSubtitle": "Manage your profile and account details.",
+			"avatar": {
+				"hint": "Click your picture to change or remove it. Cropped to a square and resized to 256x256.",
+				"remove": "Remove avatar",
+				"updateSuccess": "Profile picture updated",
+				"updateError": "Failed to update profile picture",
+				"removeSuccess": "Profile picture removed",
+				"removeError": "Failed to remove profile picture",
+				"edit": "Change your profile picture",
+				"change": "Change avatar"
+			},
+			"deleteAccount": {
+				"sectionTitle": "Danger zone",
+				"sectionSubtitle": "Permanent actions that affect your whole account.",
+				"title": "Delete account",
+				"description": "Workspaces only you belong to are deleted with your account. Elsewhere, your tasks stay and become unassigned, and your comments are removed.",
+				"modalTitle": "Delete your account?",
+				"modalDescription": "This permanently deletes your account and cannot be undone.",
+				"confirmLabel": "Type {{email}} to confirm",
+				"confirm": "Delete account",
+				"success": "Your account has been deleted",
+				"error": "Failed to delete account",
+				"sessionTooOld": "For security, sign out and sign back in before deleting your account."
+			}
 		},
 		"workspaceLabels": {
 			"deleteError": "Falha ao excluir etiqueta",

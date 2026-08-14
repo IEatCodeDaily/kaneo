@@ -59,7 +59,7 @@ describe("isTaskCompleted", () => {
     expect(isTaskCompleted("shipped", columns)).toBe(true);
     expect(
       getDueDateStatus(YESTERDAY, isTaskCompleted("shipped", columns)),
-    ).toBe("far-future");
+    ).toBe("completed");
     expect(getDueDateStatus(YESTERDAY, isTaskCompleted("shipped"))).toBe(
       "overdue",
     );
