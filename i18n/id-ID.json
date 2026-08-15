@@ -1322,6 +1322,9 @@
 		},
 		"boardSettings": {
 			"boardLabel": "Proyek"
+		},
+		"repoSettings": {
+			"repoLabel": "Repository"
 		}
 	},
 	"settings": {
@@ -2559,6 +2562,12 @@
 				"transferring": "Mentransfer…",
 				"confirm": "Transfer kepemilikan"
 			}
+		},
+		"repoSwitcher": {
+			"selectRepo": "Select repository"
+		},
+		"repoVisibility": {
+			"title": "Visibility"
 		}
 	},
 	"invitations": {

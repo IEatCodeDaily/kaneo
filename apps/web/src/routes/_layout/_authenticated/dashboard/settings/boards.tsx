@@ -8,7 +8,7 @@ import {
 import { Eye, GitBranch, Plug, Settings } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SettingsOrgHeader from "@/components/settings/settings-org-header";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,7 +26,6 @@ import {
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
-import { getInitials } from "@/lib/get-initials";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/boards",
@@ -65,8 +64,6 @@ function RouteComponent() {
     organizationId: organization?.id || "",
   });
 
-  const organizationInitials = getInitials(organization?.name, "WS");
-
   const selectedBoardMatch = location.pathname.match(
     /^\/dashboard\/settings\/boards\/([^/]+)\//,
   );
@@ -98,23 +95,11 @@ function RouteComponent() {
     <div className="flex gap-6 h-full">
       <aside className="w-64 flex-shrink-0">
         <div className="p-2">
-          <div className="mb-1 flex items-center gap-3 rounded-md px-2 py-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={organization?.logo ?? ""}
-                alt={organization?.name || ""}
-              />
-              <AvatarFallback className="border border-sidebar-border/70 bg-sidebar-accent/70 text-[11px] font-medium text-sidebar-accent-foreground">
-                {organizationInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="text-sm">{organization?.name}</p>
-              <p className="text-[11px] text-sidebar-foreground/60 capitalize">
-                {t(`team:roles.${role}`, { defaultValue: role })}
-              </p>
-            </div>
-          </div>
+          <SettingsOrgHeader
+            organizationLogo={organization?.logo}
+            organizationName={organization?.name}
+            role={role}
+          />
 
           <SidebarGroup className="gap-1 p-1">
             <SidebarGroupLabel className="h-7 px-2 text-[11px] uppercase tracking-wide text-sidebar-foreground/70">

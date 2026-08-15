@@ -12785,5 +12785,18 @@
 		"trash"
 	],
 	"$id": "https://kaneo.app/i18n/schema.json",
-	"$schema": "https://json-schema.org/draft/2020-12/schema"
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"navigation": {
+		"repoSettings": {
+			"repoLabel": "Repository"
+		}
+	},
+	"settings": {
+		"repoSwitcher": {
+			"selectRepo": "Select repository"
+		},
+		"repoVisibility": {
+			"title": "Visibility"
+		}
+	}
 }

@@ -1524,6 +1524,9 @@
 		},
 		"boardSettings": {
 			"boardLabel": "Board"
+		},
+		"repoSettings": {
+			"repoLabel": "Repository"
 		}
 	},
 	"settings": {
@@ -2787,6 +2790,12 @@
 			"issue": "Issue",
 			"merged": "Merged",
 			"draft": "Draft"
+		},
+		"repoSwitcher": {
+			"selectRepo": "Select repository"
+		},
+		"repoVisibility": {
+			"title": "Visibility"
 		}
 	},
 	"invitations": {

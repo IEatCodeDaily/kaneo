@@ -1319,6 +1319,9 @@
 		},
 		"boardSettings": {
 			"boardLabel": "Proyecto"
+		},
+		"repoSettings": {
+			"repoLabel": "Repository"
 		}
 	},
 	"settings": {
@@ -2403,6 +2406,12 @@
 		},
 		"organizationRoles": {
 			"permissionCount": "{{count}} permissions"
+		},
+		"repoSwitcher": {
+			"selectRepo": "Select repository"
+		},
+		"repoVisibility": {
+			"title": "Visibility"
 		}
 	},
 	"invitations": {

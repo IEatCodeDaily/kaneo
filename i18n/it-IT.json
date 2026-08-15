@@ -1285,6 +1285,12 @@
 		},
 		"organizationRoles": {
 			"permissionCount": "{{count}} permissions"
+		},
+		"repoSwitcher": {
+			"selectRepo": "Select repository"
+		},
+		"repoVisibility": {
+			"title": "Visibility"
 		}
 	},
 	"navigation": {
@@ -1407,6 +1413,9 @@
 		"tables": {
 			"field": "Field",
 			"row": "Row"
+		},
+		"repoSettings": {
+			"repoLabel": "Repository"
 		}
 	},
 	"notifications": {
