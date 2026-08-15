@@ -8,8 +8,10 @@ import {
 import { ChevronLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
+import SettingsSectionNav, {
+  type SettingsSection,
+} from "@/components/settings/settings-section-nav";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import getOrganizations from "@/fetchers/organization/get-organizations";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -50,30 +52,32 @@ function SettingsLayout() {
     enabled: organization?.reposEnabled === true,
   });
 
-  const getActiveTab = () => {
+  const getActiveSection = (): SettingsSection => {
     const pathname = location.pathname;
-    if (pathname.includes("/dashboard/settings/account")) {
-      return "account";
-    }
     if (pathname.includes("/dashboard/settings/organization")) {
       return "organization";
     }
     if (pathname.includes("/dashboard/settings/boards")) {
-      return "board";
+      return "boards";
     }
     if (pathname.includes("/dashboard/settings/repos")) {
-      return "repo";
+      return "repos";
     }
     return "account";
   };
 
-  const activeTab = getActiveTab();
+  const activeSection = getActiveSection();
 
   return (
     <>
       <PageTitle title={t("navigation:page.settingsTitle")} />
       <div className="flex flex-col gap-4 p-4 bg-sidebar w-full h-full">
         <div className="flex flex-col gap-4 bg-card h-full border border-border rounded-md p-4 relative overflow-hidden">
+          {/*
+            KFL-188: Back to Dashboard stays TOP LEFT, above the section list,
+            exactly where it was in the tab-strip layout — the request was to
+            restyle the navigation, not to move the escape hatch.
+          */}
           <div>
             <Button
               variant="ghost"
@@ -92,53 +96,28 @@ function SettingsLayout() {
             <h1 className="text-2xl font-semibold pl-2 mt-2">
               {t("navigation:page.settingsTitle")}
             </h1>
-
-            <Tabs value={activeTab} className="w-fit pt-2">
-              <TabsList className="bg-sidebar gap-2">
-                <TabsTrigger
-                  className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
-                  value="account"
-                  onClick={() =>
-                    navigate({ to: "/dashboard/settings/account/information" })
-                  }
-                >
-                  {t("settings:account")}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="organization"
-                  className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
-                  onClick={() =>
-                    navigate({ to: "/dashboard/settings/organization/general" })
-                  }
-                >
-                  {t("navigation:page.settingsOrganizationTab")}
-                </TabsTrigger>
-                <TabsTrigger
-                  disabled={boards?.length === 0}
-                  value="board"
-                  className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
-                  onClick={() => navigate({ to: "/dashboard/settings/boards" })}
-                >
-                  {t("navigation:sidebar.boards")}
-                </TabsTrigger>
-                {organization?.reposEnabled ? (
-                  <TabsTrigger
-                    disabled={repos?.length === 0}
-                    value="repo"
-                    className="[&[data-state=active]]:border [&[data-state=active]]:border-border [&[data-state=active]]:rounded-md [&[data-state=active]]:bg-card"
-                    onClick={() =>
-                      navigate({ to: "/dashboard/settings/repos" })
-                    }
-                  >
-                    Repos
-                  </TabsTrigger>
-                ) : null}
-              </TabsList>
-            </Tabs>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <Outlet />
+          {/*
+            Two-pane dashboard shape: the section list on the left, the
+            selected settings page in the viewport beside it. Each page keeps
+            rendering its own nested navigation, so nothing that was reachable
+            before becomes unreachable here.
+          */}
+          <div className="flex min-h-0 flex-1 gap-4">
+            <aside className="w-48 shrink-0 overflow-y-auto border-r border-border pr-2">
+              <SettingsSectionNav
+                activeSection={activeSection}
+                hasBoards={(boards?.length ?? 0) > 0}
+                hasRepos={(repos?.length ?? 0) > 0}
+                onNavigate={(to) => navigate({ to })}
+                reposEnabled={organization?.reposEnabled === true}
+              />
+            </aside>
+
+            <div className="min-w-0 flex-1 overflow-y-auto">
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
