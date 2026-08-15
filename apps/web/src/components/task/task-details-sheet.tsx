@@ -1,6 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Maximize2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -30,7 +37,16 @@ import {
   widthFromPointer,
 } from "@/lib/task-drawer-width";
 import { resolveTemplateDate } from "@/lib/task-template-date-offset";
-import TaskDetailsContent from "./task-details-content";
+
+/*
+  KFL-86: the drawer body pulls in the whole TipTap/ProseMirror editor via
+  task-description + comment-input. This sheet is imported by the board,
+  backlog, gantt, calendar and milestone routes, so a static import put the
+  editor in the ENTRY chunk for every one of them. The drawer only renders
+  after a user opens a ticket, so the content is loaded then.
+*/
+const TaskDetailsContent = lazy(() => import("./task-details-content"));
+
 import TaskPropertiesSidebar from "./task-properties-sidebar";
 import TaskTemplateMenu, { type TaskTemplateData } from "./task-template-menu";
 import TaskTopbarControls from "./task-topbar-controls";
@@ -317,12 +333,18 @@ export default function TaskDetailsSheet({
 
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="px-4 py-4">
-              <TaskDetailsContent
-                taskId={currentTaskId}
-                boardId={boardId}
-                organizationId={organizationId}
-                className="flex flex-col gap-3"
-              />
+              <Suspense
+                fallback={
+                  <div className="min-h-[240px] animate-pulse rounded-md bg-muted/20" />
+                }
+              >
+                <TaskDetailsContent
+                  taskId={currentTaskId}
+                  boardId={boardId}
+                  organizationId={organizationId}
+                  className="flex flex-col gap-3"
+                />
+              </Suspense>
             </div>
           </div>
         </div>

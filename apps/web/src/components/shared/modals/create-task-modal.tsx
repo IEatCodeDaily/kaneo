@@ -11,7 +11,15 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import PrincipalPickerList from "@/components/principal-picker-list";
 import TitleTokenSuggestions, {
@@ -19,7 +27,18 @@ import TitleTokenSuggestions, {
   type TitleTokenOption,
 } from "@/components/shared/modals/title-token-suggestions";
 import CreateTaskTopbar from "@/components/task/create-task-topbar";
-import TaskDescriptionEditor from "@/components/task/task-description-editor";
+
+/*
+  KFL-86: the TipTap/ProseMirror stack is ~760KB of source and was landing in
+  the ENTRY chunk, because this modal is mounted from the board, list, backlog
+  and search surfaces — so every route, including login, paid for an editor it
+  never showed. Loading it lazily moves it into its own chunk that is fetched
+  only when someone actually opens the create-ticket modal.
+*/
+const TaskDescriptionEditor = lazy(
+  () => import("@/components/task/task-description-editor"),
+);
+
 import { formatTaskMarkdown } from "@/components/task/task-markdown";
 import TaskStatusPopover from "@/components/task/task-status-popover";
 import TaskTemplateMenu from "@/components/task/task-template-menu";
@@ -65,14 +84,13 @@ import { useGetOrganizationPrincipals } from "@/hooks/queries/organization-membe
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import { cn } from "@/lib/cn";
+import { formatDateMedium } from "@/lib/format";
+import { getInitials } from "@/lib/get-initials";
 import {
   buildPrincipalPickerOptions,
   resolvePrincipalSelection,
 } from "@/lib/principal-picker-options";
-import { cn } from "@/lib/cn";
-
-import { formatDateMedium } from "@/lib/format";
-import { getInitials } from "@/lib/get-initials";
 
 import { getPriorityIcon } from "@/lib/priority";
 import { resolveTemplateDate } from "@/lib/task-template-date-offset";
@@ -1228,18 +1246,28 @@ function CreateTaskModal({
             </div>
 
             <div className="min-h-[200px]">
-              <TaskDescriptionEditor
-                value={description}
-                onChange={(value) => {
-                  descriptionRef.current = value;
-                  setDescription(value);
-                }}
-                placeholder={t(
-                  "common:modals.createTask.descriptionPlaceholder",
-                )}
-                taskId={draftTask?.id}
-                ensureTaskId={ensureDraftTask}
-              />
+              {/*
+                The fallback reserves the same min-height as the editor so the
+                modal does not jump when the lazy chunk resolves.
+              */}
+              <Suspense
+                fallback={
+                  <div className="min-h-[200px] rounded-md border border-border/60 bg-muted/20" />
+                }
+              >
+                <TaskDescriptionEditor
+                  value={description}
+                  onChange={(value) => {
+                    descriptionRef.current = value;
+                    setDescription(value);
+                  }}
+                  placeholder={t(
+                    "common:modals.createTask.descriptionPlaceholder",
+                  )}
+                  taskId={draftTask?.id}
+                  ensureTaskId={ensureDraftTask}
+                />
+              </Suspense>
             </div>
           </div>
 

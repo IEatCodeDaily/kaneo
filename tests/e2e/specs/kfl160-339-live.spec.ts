@@ -19,6 +19,8 @@ test("KFL-160/339: follow chip + three-group assignee picker", async ({
   // --- KFL-339: the Follow chip ---
   const follow = page.getByTestId("task-follow-toggle").first();
   await expect(follow).toBeVisible({ timeout: 15_000 });
+  // The chip moved into the icon action group (later change), so it is now
+  // icon-only. Label assertions live in follow-action-group.spec.ts.
   const label = await follow.innerText();
   const box = await follow.boundingBox();
   const border = await follow.evaluate(
@@ -37,7 +39,8 @@ test("KFL-160/339: follow chip + three-group assignee picker", async ({
   await page.waitForTimeout(2500);
   const after = (await follow.innerText()).trim();
   console.log("after click:", after);
-  expect(after).not.toBe(label.trim());
+  // Icon-only now: state is carried by the svg, asserted in
+  // follow-action-group.spec.ts. Nothing to compare here.
   await page.screenshot({ path: "/tmp/kfl339-following.png" });
   // restore
   await follow.click();
