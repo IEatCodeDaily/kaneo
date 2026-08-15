@@ -11,6 +11,7 @@ import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
 import getOrganizationMembersCtrl from "./controllers/get-organization-members";
+import getOrganizationPrincipalsCtrl from "./controllers/get-organization-principals";
 import listOrganizationsCtrl from "./controllers/list-organizations";
 import {
   getVisibilityDefaults,
@@ -167,6 +168,39 @@ const organization = new Hono<{
       const members = await getOrganizationMembersCtrl(organizationId);
       return c.json(members);
     },
+  )
+  .get(
+    "/:organizationId/principals",
+    describeRoute({
+      operationId: "getOrganizationPrincipals",
+      tags: ["Organizations"],
+      description:
+        'List the organization\'s member principals with an explicit `kind` discriminator ("user" or "agent"). Better Auth\'s organization listMembers hard-codes its user projection to {id,name,email,image}, stripping `user.role`, so clients cannot otherwise tell agent principals from human members.',
+      responses: {
+        200: {
+          description: "List of organization principals",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.array(
+                  v.object({
+                    id: v.string(),
+                    name: v.string(),
+                    email: v.string(),
+                    image: v.nullable(v.string()),
+                    kind: v.picklist(["user", "agent"]),
+                  }),
+                ),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) =>
+      c.json(await getOrganizationPrincipalsCtrl(c.get("organizationId"))),
   )
   .get(
     "/:organizationId/visibility-defaults",
