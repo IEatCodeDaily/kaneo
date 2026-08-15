@@ -20,6 +20,9 @@
 				"includeCompleted": {
 					"type": "string"
 				},
+				"boardArchived": {
+					"type": "string"
+				},
 				"relation": {
 					"type": "object",
 					"additionalProperties": false,

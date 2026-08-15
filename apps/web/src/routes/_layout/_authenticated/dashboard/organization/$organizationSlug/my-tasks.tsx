@@ -1,5 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, Check, ChevronDown, Flag, Loader2 } from "lucide-react";
+import {
+  Archive,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Flag,
+  Loader2,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
@@ -236,6 +243,15 @@ export function MyTasksComponent() {
                           const flagColor = task.flagColor ?? undefined;
                           const flagLabel =
                             task.flagName ?? t("myTasks:flagged");
+                          /*
+                            Same rule as `archiveBadgeParts` (#226): archival is
+                            orthogonal to status, so the status icon keeps
+                            rendering and the Archive glyph layers on top. The
+                            predicate is inlined rather than imported because
+                            lib/archive-display pulls in the i18n runtime, which
+                            the other archived-glyph surfaces avoid too.
+                          */
+                          const boardArchived = task.boardArchivedAt != null;
                           return (
                             <li key={task.id}>
                               <Link
@@ -287,10 +303,19 @@ export function MyTasksComponent() {
                             alignment against its neighbours.
                           */}
                                 <span
-                                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                                  className="relative inline-flex size-4 shrink-0 items-center justify-center"
                                   data-testid="my-task-status-icon"
                                   title={
-                                    task.columnName ?? task.status ?? undefined
+                                    boardArchived
+                                      ? [
+                                          task.columnName ?? task.status ?? "",
+                                          t("myTasks:boardArchived"),
+                                        ]
+                                          .filter(Boolean)
+                                          .join(" · ")
+                                      : (task.columnName ??
+                                        task.status ??
+                                        undefined)
                                   }
                                 >
                                   {getColumnIcon(
@@ -303,6 +328,20 @@ export function MyTasksComponent() {
                                     task.isFinal ?? false,
                                     task.columnIcon ?? null,
                                   )}
+                                  {/*
+                                    KFL-190: the ticket's BOARD is archived, so
+                                    the row reuses the same layered Archive
+                                    glyph the list view and detail sidebar use
+                                    for archived tickets — archival stays
+                                    orthogonal to the workflow status icon.
+                                  */}
+                                  {boardArchived ? (
+                                    <Archive
+                                      aria-hidden="true"
+                                      className="-bottom-1 -right-1 absolute size-2.5 rounded-full bg-background text-muted-foreground"
+                                      data-testid="my-task-board-archived"
+                                    />
+                                  ) : null}
                                 </span>
                                 {getPriorityIcon(task.priority ?? "")}
                                 {/* Long titles clip rather than overflowing the row;

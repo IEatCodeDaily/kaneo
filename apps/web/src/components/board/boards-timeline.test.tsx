@@ -763,4 +763,42 @@ describe("BoardsTimeline", () => {
       "text-violet-500",
     );
   });
+
+  /*
+    KFL-190: the boards list arrives archived-last from the server, but this
+    view re-sorts by start date client-side, which floated an archived board
+    back to the top. Archival has to outrank the date sort.
+  */
+  it("keeps archived boards last despite an earlier start date", () => {
+    const archivedEarly: TimelineBoard = {
+      ...board(
+        "archived",
+        "2026-06-01T00:00:00.000Z",
+        "2026-06-10T00:00:00.000Z",
+      ),
+      archivedAt: "2026-08-01T00:00:00.000Z",
+    };
+    const activeLate = board(
+      "active",
+      "2026-07-01T00:00:00.000Z",
+      "2026-07-10T00:00:00.000Z",
+    );
+
+    render(
+      <BoardsTimeline
+        boards={[archivedEarly, activeLate]}
+        onBoardClick={vi.fn()}
+        zoom="week"
+      />,
+    );
+
+    // The sticky column header shares the prefix, so match the board ids only.
+    const rows = screen.getAllByTestId(
+      /^boards-timeline-name-(active|archived)$/,
+    );
+    expect(rows.map((row) => row.getAttribute("data-testid"))).toEqual([
+      "boards-timeline-name-active",
+      "boards-timeline-name-archived",
+    ]);
+  });
 });

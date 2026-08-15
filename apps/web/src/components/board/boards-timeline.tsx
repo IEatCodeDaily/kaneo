@@ -51,6 +51,8 @@ export type TimelineBoard = {
   } | null;
   /** Present only when the overview caller already has board tasks available. */
   tasks?: OverviewTimelineTask[];
+  /** Set when the board is archived; archived boards always render last. */
+  archivedAt?: string | Date | null;
 };
 
 type ScheduledBoard = {
@@ -174,19 +176,32 @@ export default function BoardsTimeline({
   const [expandedSectionIds, setExpandedSectionIds] = useState<string[]>([]);
 
   const scheduled = useMemo<ScheduledBoard[]>(() => {
-    return boards
-      .map((board) => {
-        const start = toDate(board.statistics?.startsAt);
-        const end = toDate(board.statistics?.endsAt);
-        if (!start || !end) return null;
-        // Inverted data means the board's own task dates disagree; rendering it
-        // would place a bar at a misleading position, so drop it the same way an
-        // undated board is dropped. Equal dates are fine — a single-day bar.
-        if (end < start) return null;
-        return { board, start, end };
-      })
-      .filter((entry): entry is ScheduledBoard => entry !== null)
-      .sort((a, b) => a.start.getTime() - b.start.getTime());
+    return (
+      boards
+        .map((board) => {
+          const start = toDate(board.statistics?.startsAt);
+          const end = toDate(board.statistics?.endsAt);
+          if (!start || !end) return null;
+          // Inverted data means the board's own task dates disagree; rendering it
+          // would place a bar at a misleading position, so drop it the same way an
+          // undated board is dropped. Equal dates are fine — a single-day bar.
+          if (end < start) return null;
+          return { board, start, end };
+        })
+        .filter((entry): entry is ScheduledBoard => entry !== null)
+        /*
+        KFL-190: the boards list arrives archived-last from the server, and this
+        chronological re-sort used to undo that whenever an archived board
+        started earliest. Archival is compared first so it survives the local
+        sort; start date still orders each group.
+      */
+        .sort((a, b) => {
+          const aArchived = a.board.archivedAt != null ? 1 : 0;
+          const bArchived = b.board.archivedAt != null ? 1 : 0;
+          if (aArchived !== bArchived) return aArchived - bArchived;
+          return a.start.getTime() - b.start.getTime();
+        })
+    );
   }, [boards]);
 
   const filteredScheduled = useMemo(

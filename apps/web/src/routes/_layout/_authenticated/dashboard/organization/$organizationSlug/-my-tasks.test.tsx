@@ -32,6 +32,15 @@ vi.mock("@/hooks/queries/task/use-infinite-my-tasks", () => ({
             flagName: "Blocked",
             flagColor: "#ef4444",
           },
+          {
+            id: "task-3",
+            title: "Archived board ticket",
+            number: 3,
+            boardId: "board-2",
+            boardName: "Board two",
+            boardArchivedAt: "2026-08-01T00:00:00.000Z",
+            flagged: false,
+          },
         ],
       ],
     },
@@ -89,5 +98,28 @@ describe("My Tickets board groups", () => {
     fireEvent.click(screen.getByText("myTasks:flagged"));
     expect(screen.queryByText("Ticket one")).not.toBeInTheDocument();
     expect(screen.getByText("Flagged ticket")).toBeInTheDocument();
+  });
+
+  /*
+    KFL-190: My Tickets is the cross-board surface, so it is the one place a
+    row's board context is not implied by the page. Tickets on an archived
+    board get the same layered Archive glyph the list view and detail sidebar
+    use, so archival reads identically everywhere.
+  */
+  it("marks tickets whose board is archived and leaves the rest unmarked", () => {
+    render(<MyTasksComponent />);
+
+    const archived = screen.getByTestId("my-task-board-archived");
+    expect(archived).toBeInTheDocument();
+    expect(screen.getAllByTestId("my-task-board-archived")).toHaveLength(1);
+
+    // The glyph is layered over the row's own status slot, not a separate cell.
+    const statusSlots = screen.getAllByTestId("my-task-status-icon");
+    expect(statusSlots).toHaveLength(3);
+    expect(statusSlots[2]).toContainElement(archived);
+    expect(statusSlots[2]).toHaveAttribute(
+      "title",
+      expect.stringContaining("myTasks:boardArchived"),
+    );
   });
 });

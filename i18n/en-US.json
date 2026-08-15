@@ -5,6 +5,7 @@
 		"empty": "Nothing assigned to you right now.",
 		"count": "{{count}} tickets",
 		"includeCompleted": "Include completed",
+		"boardArchived": "Archived board",
 		"relation": {
 			"all": "All",
 			"assigned": "Assigned",

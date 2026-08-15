@@ -14,12 +14,22 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
 
-export function reconcileSidebarOrder<T extends { id: string }>(
-  items: T[],
-  savedIds: string[],
-): T[] {
+/**
+ * KFL-190: archival outranks the persisted drag order. The server already
+ * returns boards archived-last; honouring a stale saved position here would
+ * float an archived board back above the active ones, so the archived flag is
+ * compared first and the saved order only breaks ties within each group.
+ * Entries without an `archivedAt` field (repos) are all "active" and behave
+ * exactly as before.
+ */
+export function reconcileSidebarOrder<
+  T extends { id: string; archivedAt?: string | Date | null },
+>(items: T[], savedIds: string[]): T[] {
   const positions = new Map(savedIds.map((id, index) => [id, index]));
   return [...items].sort((a, b) => {
+    const aArchived = a.archivedAt != null ? 1 : 0;
+    const bArchived = b.archivedAt != null ? 1 : 0;
+    if (aArchived !== bArchived) return aArchived - bArchived;
     const aPosition = positions.get(a.id);
     const bPosition = positions.get(b.id);
     if (aPosition === undefined && bPosition === undefined) return 0;

@@ -25,6 +25,9 @@ vi.mock("react-i18next", () => ({
     t: (key: string, opts?: { defaultValue?: string }) =>
       opts?.defaultValue ?? key,
   }),
+  // `@/lib/i18n` calls `i18n.use(initReactI18next)` at import time, so a mock
+  // that omits this export makes the whole module graph fail to load.
+  initReactI18next: { type: "3rdParty", init: () => {} },
 }));
 
 // --- data layer: one task, on one board, with one milestone assigned ---
