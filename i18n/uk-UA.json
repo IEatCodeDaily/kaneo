@@ -728,7 +728,9 @@
 			"start": "Початок",
 			"noDate": "Немає дати",
 			"copyTaskBranch": "Копіювати гілку завдання",
-			"startDate": "Дата початку"
+			"startDate": "Дата початку",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Пошук тікетів...",
 		"common": {

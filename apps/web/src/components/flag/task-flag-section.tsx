@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { PrincipalOption } from "@/components/principal-selector";
-import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetOrganizationPrincipals } from "@/hooks/queries/organization-members/use-get-organization-principals";
 import { authClient } from "@/lib/auth-client";
 import TaskFlagPicker from "./task-flag-picker";
 
@@ -22,8 +22,10 @@ export function TaskFlagSection({
   boardId,
   organizationId,
 }: TaskFlagSectionProps) {
-  const { data: memberData, isPending: membersPending } =
-    useGetActiveOrganizationMembers(organizationId);
+  // KFL-160: principals carry an explicit kind ("user" | "agent"), which
+  // listMembers strips, so the flag target picker can group agents apart.
+  const { data: principalData, isPending: membersPending } =
+    useGetOrganizationPrincipals(organizationId);
 
   const { data: teams = [], isPending: teamsPending } = useQuery({
     queryKey: ["organization-teams", organizationId, "task-flags"],
@@ -39,22 +41,14 @@ export function TaskFlagSection({
     },
   });
 
-  // authClient.organization.listMembers resolves to { members, total }, NOT an
-  // array. Treating it as an array crashed the whole task detail route with
-  // "l.map is not a function" — every other call site reads `.members`.
   const principals: PrincipalOption[] = useMemo(
     () => [
-      ...(memberData?.members ?? []).map(
-        (member: {
-          userId?: string;
-          user?: { name?: string; email?: string };
-        }) => ({
-          id: member.userId ?? "",
-          kind: "member" as const,
-          name: member.user?.name ?? member.user?.email ?? "",
-          detail: member.user?.email,
-        }),
-      ),
+      ...(principalData ?? []).map((principal) => ({
+        id: principal.id,
+        kind: principal.kind === "agent" ? ("agent" as const) : ("member" as const),
+        name: principal.name || principal.email,
+        detail: principal.email,
+      })),
       ...teams.map((team: { id: string; name: string }) => ({
         id: team.id,
         kind: "team" as const,
@@ -62,7 +56,7 @@ export function TaskFlagSection({
         detail: "Team",
       })),
     ],
-    [memberData, teams],
+    [principalData, teams],
   );
 
   return (

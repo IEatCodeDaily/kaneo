@@ -720,7 +720,9 @@
 			"start": "Start",
 			"noDate": "Kein Datum",
 			"copyTaskBranch": "Aufgaben-Branch kopieren",
-			"startDate": "Startdatum"
+			"startDate": "Startdatum",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Tickets suchen...",
 		"common": {

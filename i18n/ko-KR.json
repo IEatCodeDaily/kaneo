@@ -720,7 +720,9 @@
 			"start": "시작",
 			"noDate": "날짜 없음",
 			"copyTaskBranch": "작업 브랜치 복사",
-			"startDate": "시작일"
+			"startDate": "시작일",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "티켓 검색...",
 		"common": {

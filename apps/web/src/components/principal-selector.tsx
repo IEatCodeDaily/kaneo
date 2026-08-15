@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
 
-export type PrincipalKind = "member" | "team";
+// KFL-160: agents are member-like principals that must stay distinguishable
+// from humans downstream (the assignee picker groups them separately).
+export type PrincipalKind = "member" | "agent" | "team";
 
 export type PrincipalOption = {
   id: string;

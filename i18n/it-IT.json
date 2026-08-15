@@ -1766,7 +1766,9 @@
 			"copyTaskBranch": "Copia ramo attività",
 			"start": "Inizio",
 			"startDate": "Data inizio",
-			"noDate": "Nessuna data"
+			"noDate": "Nessuna data",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"move": {
 			"title": "Sposta attività",

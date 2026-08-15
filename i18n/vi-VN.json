@@ -1766,7 +1766,9 @@
 			"copyTaskBranch": "Sao chép nhánh công việc",
 			"start": "Bắt đầu",
 			"startDate": "Ngày bắt đầu",
-			"noDate": "Không có ngày"
+			"noDate": "Không có ngày",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"move": {
 			"title": "Di chuyển công việc",

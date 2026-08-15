@@ -49,6 +49,7 @@ import {
 } from "./label-source";
 import TaskAssigneePopover from "./task-assignee-popover";
 import TaskDueDatePopover from "./task-due-date-popover";
+import TaskFollowToggle from "./task-follow-toggle";
 import TaskLabelsPopover from "./task-labels-popover";
 import TaskLabelsRow from "./task-labels-row";
 import TaskMovePopover from "./task-move-popover";
@@ -349,6 +350,8 @@ export default function TaskPropertiesSidebar({
                   </Button>
                 </TaskDueDatePopover>
               )}
+              {/* KFL-339: personal notification subscription, never gated on edit rights. */}
+              <TaskFollowToggle taskId={taskId} />
             </div>
           </div>
         )}
@@ -548,6 +551,8 @@ export default function TaskPropertiesSidebar({
                     </Button>
                   </TaskDueDatePopover>
                 )}
+                {/* KFL-339: personal notification subscription. */}
+                <TaskFollowToggle taskId={taskId} />
               </div>
             </div>
 

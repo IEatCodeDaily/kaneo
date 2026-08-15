@@ -61,9 +61,14 @@ import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetOrganizationPrincipals } from "@/hooks/queries/organization-members/use-get-organization-principals";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import {
+  buildPrincipalPickerOptions,
+  resolvePrincipalSelection,
+} from "@/lib/principal-picker-options";
 import { cn } from "@/lib/cn";
 
 import { formatDateMedium } from "@/lib/format";
@@ -309,6 +314,11 @@ function CreateTaskModal({
   const location = useLocation();
   const { data: organization } = useActiveOrganization();
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
+    organization?.id || "",
+  );
+  // KFL-160: the assignee picker needs `kind` to group agents separately;
+  // listMembers strips it, so the picker reads principals instead.
+  const { data: organizationPrincipals } = useGetOrganizationPrincipals(
     organization?.id || "",
   );
   const { data: organizationTeams } = useQuery({
@@ -1480,7 +1490,7 @@ function CreateTaskModal({
                         if (!option) {
                           setAssigneeId("");
                           setAssigneeTeamId("");
-                        } else if (option.type === "user") {
+                        } else if (option.type !== "team") {
                           setAssigneeId(option.value);
                           setAssigneeTeamId("");
                         } else {
@@ -1488,26 +1498,14 @@ function CreateTaskModal({
                           setAssigneeId("");
                         }
                       }}
-                      options={[
-                        ...(organizationMembers?.members?.map((member) => ({
-                          type: "user" as const,
-                          value: member.userId,
-                          label: member.user?.name ?? member.userId,
-                          image: member.user?.image ?? undefined,
-                        })) ?? []),
-                        ...(organizationTeams?.map((team) => ({
-                          type: "team" as const,
-                          value: team.id,
-                          label: team.name,
-                        })) ?? []),
-                      ]}
-                      selected={
-                        assigneeId
-                          ? { type: "user", value: assigneeId }
-                          : assigneeTeamId
-                            ? { type: "team", value: assigneeTeamId }
-                            : null
-                      }
+                      options={buildPrincipalPickerOptions(
+                        organizationPrincipals,
+                        organizationTeams,
+                      )}
+                      selected={resolvePrincipalSelection(
+                        { userId: assigneeId, teamId: assigneeTeamId },
+                        organizationPrincipals,
+                      )}
                       searchAriaLabel={t("common:modals.createTask.assign")}
                     />
                   </PopoverContent>

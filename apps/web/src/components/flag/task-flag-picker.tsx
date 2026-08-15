@@ -54,7 +54,14 @@ export default function TaskFlagPicker({
   const pickerOptions = useMemo<PrincipalPickerOption[]>(
     () =>
       principals.map((principal) => ({
-        type: principal.kind === "team" ? ("team" as const) : ("user" as const),
+        // KFL-160: agents get their own group, so the kind is carried through
+        // rather than collapsed into "user".
+        type:
+          principal.kind === "team"
+            ? ("team" as const)
+            : principal.kind === "agent"
+              ? ("agent" as const)
+              : ("user" as const),
         value: principal.id,
         label: principal.name,
       })),

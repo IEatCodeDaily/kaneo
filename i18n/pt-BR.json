@@ -704,7 +704,9 @@
 			"start": "Início",
 			"noDate": "Sem data",
 			"copyTaskBranch": "Copiar branch da tarefa",
-			"startDate": "Data de início"
+			"startDate": "Data de início",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Buscar tickets...",
 		"update": {

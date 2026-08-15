@@ -720,7 +720,9 @@
 			"start": "Début",
 			"noDate": "Pas de date",
 			"copyTaskBranch": "Copier la branche de la tâche",
-			"startDate": "Date de début"
+			"startDate": "Date de début",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Rechercher des tickets...",
 		"common": {

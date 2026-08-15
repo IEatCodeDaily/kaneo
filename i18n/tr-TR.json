@@ -720,7 +720,9 @@
 			"start": "Başlat",
 			"noDate": "Tarih yok",
 			"copyTaskBranch": "Talep dalını kopyala",
-			"startDate": "Başlangıç tarihi"
+			"startDate": "Başlangıç tarihi",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Talep ara...",
 		"common": {

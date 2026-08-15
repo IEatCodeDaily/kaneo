@@ -720,7 +720,9 @@
 			"start": "Έναρξη",
 			"noDate": "Χωρίς ημερομηνία",
 			"copyTaskBranch": "Αντιγραφή κλάδου εργασίας",
-			"startDate": "Ημερομηνία έναρξης"
+			"startDate": "Ημερομηνία έναρξης",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Αναζήτηση αιτημάτων...",
 		"common": {

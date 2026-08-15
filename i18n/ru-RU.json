@@ -732,7 +732,9 @@
 			"start": "Начало",
 			"noDate": "Без даты",
 			"copyTaskBranch": "Скопировать ветку задачи",
-			"startDate": "Дата начала"
+			"startDate": "Дата начала",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Поиск задач...",
 		"common": {

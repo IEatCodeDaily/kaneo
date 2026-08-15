@@ -3333,6 +3333,12 @@
 						},
 						"startDate": {
 							"type": "string"
+						},
+						"follow": {
+							"type": "string"
+						},
+						"following": {
+							"type": "string"
 						}
 					},
 					"additionalProperties": false,
@@ -3343,7 +3349,9 @@
 						"copyTaskBranch",
 						"start",
 						"startDate",
-						"noDate"
+						"noDate",
+						"follow",
+						"following"
 					]
 				},
 				"boardSearchPlaceholder": {

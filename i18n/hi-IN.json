@@ -1766,7 +1766,9 @@
 			"copyTaskBranch": "कार्य शाखा कॉपी करें",
 			"start": "शुरू",
 			"startDate": "शुरू की तारीख",
-			"noDate": "कोई तारीख नहीं"
+			"noDate": "कोई तारीख नहीं",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"move": {
 			"title": "कार्य ले जाएँ",

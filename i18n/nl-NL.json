@@ -718,7 +718,9 @@
 			"start": "Start",
 			"noDate": "Geen datum",
 			"copyTaskBranch": "Taakbranch kopiëren",
-			"startDate": "Startdatum"
+			"startDate": "Startdatum",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Tickets zoeken...",
 		"common": {

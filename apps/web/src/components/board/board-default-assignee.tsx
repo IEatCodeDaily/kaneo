@@ -11,10 +11,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
+import { useGetOrganizationPrincipals } from "@/hooks/queries/organization-members/use-get-organization-principals";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import {
+  buildPrincipalPickerOptions,
+  resolvePrincipalSelection,
+} from "@/lib/principal-picker-options";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 
@@ -43,8 +47,8 @@ export function BoardDefaultAssignee({
 }: Props) {
   const [open, setOpen] = useState(false);
   const organizationId = board?.organizationId ?? "";
-  const { data: organizationMembers } =
-    useGetActiveOrganizationMembers(organizationId);
+  // KFL-160: principals carry `kind`, so agents land in the Agents group.
+  const { data: principals } = useGetOrganizationPrincipals(organizationId);
   const teams = useQuery({
     queryKey: ["organization-teams", organizationId, "default-assignee"],
     enabled: open && Boolean(organizationId),
@@ -58,24 +62,13 @@ export function BoardDefaultAssignee({
     },
   });
 
-  const options = useMemo<PrincipalPickerOption[]>(() => {
-    const users =
-      organizationMembers?.members?.map((member) => ({
-        type: "user" as const,
-        value: member.userId,
-        label: member.user?.name ?? member.userId,
-        image: member.user?.image ?? undefined,
-      })) ?? [];
-    const teamOptions = (teams.data ?? []).map((team) => ({
-      type: "team" as const,
-      value: team.id,
-      label: team.name,
-    }));
-    return [...users, ...teamOptions];
-  }, [organizationMembers, teams.data]);
+  const options = useMemo<PrincipalPickerOption[]>(
+    () => buildPrincipalPickerOptions(principals, teams.data),
+    [principals, teams.data],
+  );
 
-  const selectedMember = organizationMembers?.members?.find(
-    (m) => m.userId === board?.defaultAssigneeId,
+  const selectedMember = principals?.find(
+    (p) => p.id === board?.defaultAssigneeId,
   );
   const selectedTeam = teams.data?.find(
     (t) => t.id === board?.defaultAssigneeTeamId,
@@ -85,7 +78,8 @@ export function BoardDefaultAssignee({
     async (option?: PrincipalPickerOption) => {
       try {
         await onUpdate({
-          defaultAssigneeId: option?.type === "user" ? option.value : null,
+          defaultAssigneeId:
+            option && option.type !== "team" ? option.value : null,
           defaultAssigneeTeamId: option?.type === "team" ? option.value : null,
         });
         await onDone();
@@ -108,11 +102,10 @@ export function BoardDefaultAssignee({
 
   const isTeam = Boolean(board.defaultAssigneeTeamId);
   const isUser = Boolean(board.defaultAssigneeId);
-  const label =
-    selectedMember?.user?.name ?? selectedTeam?.name ?? "No default";
+  const label = selectedMember?.name ?? selectedTeam?.name ?? "No default";
   const tone = getAvatarTone(
     board.defaultAssigneeId ?? "",
-    selectedMember?.user?.email,
+    selectedMember?.email,
   );
 
   return (
@@ -131,11 +124,11 @@ export function BoardDefaultAssignee({
           ) : isUser ? (
             <Avatar className={`h-[16px] w-[16px] ${tone}`}>
               <AvatarImage
-                src={selectedMember?.user?.image ?? ""}
-                alt={selectedMember?.user?.name ?? ""}
+                src={selectedMember?.image ?? ""}
+                alt={selectedMember?.name ?? ""}
               />
               <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
-                {getInitials(selectedMember?.user?.name)}
+                {getInitials(selectedMember?.name)}
               </AvatarFallback>
             </Avatar>
           ) : (
@@ -155,13 +148,13 @@ export function BoardDefaultAssignee({
           clearLabel="No default"
           onSelect={(option) => assign(option)}
           options={options}
-          selected={
-            isUser
-              ? { type: "user", value: board.defaultAssigneeId! }
-              : isTeam
-                ? { type: "team", value: board.defaultAssigneeTeamId! }
-                : null
-          }
+          selected={resolvePrincipalSelection(
+            {
+              userId: board.defaultAssigneeId,
+              teamId: board.defaultAssigneeTeamId,
+            },
+            principals,
+          )}
           searchAriaLabel="Search default assignee"
         />
       </PopoverContent>

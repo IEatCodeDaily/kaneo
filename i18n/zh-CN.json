@@ -1766,7 +1766,9 @@
 			"copyTaskBranch": "复制任务分支",
 			"start": "开始",
 			"startDate": "开始日期",
-			"noDate": "无日期"
+			"noDate": "无日期",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"move": {
 			"title": "移动任务",

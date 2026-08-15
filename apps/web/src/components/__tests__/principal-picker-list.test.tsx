@@ -112,6 +112,121 @@ describe("PrincipalPickerList (#107)", () => {
   });
 
   /**
+   * KFL-160: the picker must show three labelled groups — Users / Agents /
+   * Teams — so agent principals are visually distinct from human members.
+   * Previously agents were rendered identically to humans (the kind label was
+   * a binary user/team ternary, so agents fell through to "Member").
+   */
+  describe("KFL-160 grouping", () => {
+    const GROUPED = [
+      { type: "user" as const, value: "user-a", label: "Ada Lovelace" },
+      { type: "agent" as const, value: "agent-1", label: "Codex Bot" },
+      { type: "team" as const, value: "team-1", label: "Platform" },
+      { type: "agent" as const, value: "agent-2", label: "Review Bot" },
+      { type: "user" as const, value: "user-b", label: "Grace Hopper" },
+    ];
+
+    it("renders three labelled groups in Users / Agents / Teams order", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={GROUPED} />);
+
+      const headings = screen.getAllByTestId(/^principal-group-heading-/);
+      expect(headings.map((h) => h.getAttribute("data-testid"))).toEqual([
+        "principal-group-heading-user",
+        "principal-group-heading-agent",
+        "principal-group-heading-team",
+      ]);
+      expect(headings.map((h) => h.textContent)).toEqual([
+        "Users",
+        "Agents",
+        "Teams",
+      ]);
+    });
+
+    it("puts each principal under its own group heading", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={GROUPED} />);
+
+      expect(screen.getByTestId("principal-option-agent-agent-1")).toBeTruthy();
+      expect(screen.getByTestId("principal-option-agent-agent-2")).toBeTruthy();
+
+      // Rows are ordered by group, not by the caller's array order.
+      const rows = screen.getAllByTestId(/^principal-option-(user|agent|team)-/);
+      expect(rows.map((r) => r.getAttribute("data-testid"))).toEqual([
+        "principal-option-user-user-a",
+        "principal-option-user-user-b",
+        "principal-option-agent-agent-1",
+        "principal-option-agent-agent-2",
+        "principal-option-team-team-1",
+      ]);
+    });
+
+    it("labels an agent row Agent, not Member", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={GROUPED} />);
+
+      const kinds = screen.getAllByTestId("principal-option-kind");
+      expect(kinds.map((k) => k.textContent)).toEqual([
+        "Member",
+        "Member",
+        "Agent",
+        "Agent",
+        "Team",
+      ]);
+    });
+
+    it("hides a group heading when that group has no options", () => {
+      render(
+        <PrincipalPickerList
+          onSelect={vi.fn()}
+          options={[
+            { type: "user", value: "user-a", label: "Ada Lovelace" },
+            { type: "team", value: "team-1", label: "Platform" },
+          ]}
+        />,
+      );
+
+      expect(screen.getByTestId("principal-group-heading-user")).toBeTruthy();
+      expect(screen.queryByTestId("principal-group-heading-agent")).toBeNull();
+      expect(screen.getByTestId("principal-group-heading-team")).toBeTruthy();
+    });
+
+    it("searches across every group and drops groups that no longer match", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={GROUPED} />);
+
+      fireEvent.change(screen.getByLabelText("Search people and teams"), {
+        target: { value: "bot" },
+      });
+
+      expect(screen.getByTestId("principal-option-agent-agent-1")).toBeTruthy();
+      expect(screen.getByTestId("principal-option-agent-agent-2")).toBeTruthy();
+      expect(screen.queryByTestId("principal-option-user-user-a")).toBeNull();
+      expect(screen.queryByTestId("principal-group-heading-user")).toBeNull();
+      expect(screen.queryByTestId("principal-group-heading-team")).toBeNull();
+      expect(screen.getByTestId("principal-group-heading-agent")).toBeTruthy();
+    });
+
+    it("selects an agent and reports it back with type agent", () => {
+      const onSelect = vi.fn();
+      render(<PrincipalPickerList onSelect={onSelect} options={GROUPED} />);
+
+      fireEvent.click(screen.getByTestId("principal-option-agent-agent-1"));
+
+      expect(onSelect).toHaveBeenCalledWith(GROUPED[1]);
+    });
+
+    it("marks the selected agent as checked without matching a same-id user", () => {
+      render(
+        <PrincipalPickerList
+          onSelect={vi.fn()}
+          options={GROUPED}
+          selected={{ type: "agent", value: "agent-1" }}
+        />,
+      );
+
+      const row = screen.getByTestId("principal-option-agent-agent-1");
+      expect(row.querySelector("svg.lucide-check")).toBeTruthy();
+    });
+  });
+
+  /**
    * #107 (fourth round), verbatim: "Bound the user/team selector. make it
    * scrollable. right now it'll extend infinitely."
    *

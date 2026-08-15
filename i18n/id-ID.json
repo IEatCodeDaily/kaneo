@@ -720,7 +720,9 @@
 			"start": "Mulai",
 			"noDate": "Tanpa tanggal",
 			"copyTaskBranch": "Salin branch tugas",
-			"startDate": "Tanggal mulai"
+			"startDate": "Tanggal mulai",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Cari tiket...",
 		"common": {

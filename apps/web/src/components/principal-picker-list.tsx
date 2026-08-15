@@ -1,5 +1,5 @@
-import { Check, Search, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Bot, Check, Search, Users } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,10 @@ import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
+export type PrincipalPickerKind = "user" | "agent" | "team";
+
 export type PrincipalPickerOption = {
-  type: "user" | "team";
+  type: PrincipalPickerKind;
   value: string;
   label: string;
   image?: string;
@@ -17,7 +19,7 @@ export type PrincipalPickerOption = {
 type PrincipalPickerListProps = {
   options: PrincipalPickerOption[];
   /** Currently selected option, or null/undefined when nothing is chosen. */
-  selected?: { type: "user" | "team"; value: string } | null;
+  selected?: { type: PrincipalPickerKind; value: string } | null;
   onSelect: (option?: PrincipalPickerOption) => void;
   loading?: boolean;
   /** Renders a leading "no selection" row (used by the assignee popover). */
@@ -26,16 +28,24 @@ type PrincipalPickerListProps = {
   searchAriaLabel?: string;
   emptyMessage?: string;
   memberLabel?: string;
+  agentLabel?: string;
   teamLabel?: string;
+  usersGroupLabel?: string;
+  agentsGroupLabel?: string;
+  teamsGroupLabel?: string;
 };
 
 /**
- * The compact member/team picker body: a search box over a flat list of people
- * and teams.
+ * The compact member/agent/team picker body: a search box over grouped rows.
  *
  * #107: the flag dialog originally used the bulky `PrincipalSelector` combobox.
  * This is the assignment selector's list, extracted so both surfaces use one
  * control — "very compact and useful", and only one dropdown pattern to learn.
+ *
+ * KFL-160: rows are split into three labelled groups — Users / Agents / Teams —
+ * because agent principals previously rendered identically to human members
+ * (the kind label was a binary user/team ternary, so agents read "Member").
+ * Empty groups drop their heading, including while searching.
  */
 export function PrincipalPickerList({
   options,
@@ -47,7 +57,11 @@ export function PrincipalPickerList({
   searchAriaLabel = "Search people and teams",
   emptyMessage = "No people or teams found",
   memberLabel = "Member",
+  agentLabel = "Agent",
   teamLabel = "Team",
+  usersGroupLabel = "Users",
+  agentsGroupLabel = "Agents",
+  teamsGroupLabel = "Teams",
 }: PrincipalPickerListProps) {
   const [search, setSearch] = useState("");
 
@@ -58,6 +72,35 @@ export function PrincipalPickerList({
       option.label.toLocaleLowerCase().includes(needle),
     );
   }, [options, search]);
+
+  const groups = useMemo(() => {
+    const definitions: Array<{
+      kind: PrincipalPickerKind;
+      heading: string;
+      rowLabel: string;
+    }> = [
+      { kind: "user", heading: usersGroupLabel, rowLabel: memberLabel },
+      { kind: "agent", heading: agentsGroupLabel, rowLabel: agentLabel },
+      { kind: "team", heading: teamsGroupLabel, rowLabel: teamLabel },
+    ];
+
+    return definitions
+      .map((definition) => ({
+        ...definition,
+        items: visibleOptions.filter(
+          (option) => option.type === definition.kind,
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [
+    visibleOptions,
+    usersGroupLabel,
+    agentsGroupLabel,
+    teamsGroupLabel,
+    memberLabel,
+    agentLabel,
+    teamLabel,
+  ]);
 
   return (
     <>
@@ -96,56 +139,78 @@ export function PrincipalPickerList({
         {loading ? (
           <p className="p-2 text-sm text-muted-foreground">Loading…</p>
         ) : (
-          visibleOptions.map((option) => {
-            const isSelected =
-              selected?.type === option.type &&
-              selected?.value === option.value;
-
-            return (
-              <Button
-                className="w-full justify-start gap-2"
-                data-testid={`principal-option-${option.type}-${option.value}`}
-                key={`${option.type}:${option.value}`}
-                onClick={() => onSelect(option)}
-                size="sm"
-                variant="ghost"
+          groups.map((group) => (
+            /*
+              KFL-160: a Fragment, not a wrapper element, so every row stays a
+              direct child of the single bounded scroll container (#107).
+            */
+            <Fragment key={group.kind}>
+              {/*
+                KFL-160: a lightweight heading, not a separate container, so the
+                compact row rhythm and the single scroll area are preserved.
+              */}
+              <p
+                className="px-2 pt-1 pb-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                data-testid={`principal-group-heading-${group.kind}`}
               >
-                {option.type === "team" ? (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Users className="h-4 w-4" />
-                  </span>
-                ) : (
-                  <Avatar
-                    className={cn(
-                      "h-6 w-6 shrink-0",
-                      getAvatarTone(option.value),
-                    )}
+                {group.heading}
+              </p>
+              {group.items.map((option) => {
+                const isSelected =
+                  selected?.type === option.type &&
+                  selected?.value === option.value;
+
+                return (
+                  <Button
+                    className="w-full justify-start gap-2"
+                    data-testid={`principal-option-${option.type}-${option.value}`}
+                    key={`${option.type}:${option.value}`}
+                    onClick={() => onSelect(option)}
+                    size="sm"
+                    variant="ghost"
                   >
-                    <AvatarImage alt={option.label} src={option.image} />
-                    <AvatarFallback className="bg-transparent">
-                      {getInitials(option.label)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                <span className="min-w-0 truncate">{option.label}</span>
-                {/*
-                  #107: the member/team kind is secondary information, so it is
-                  pushed to the right edge instead of crowding the name it
-                  follows. `ml-auto` on the kind means the check that used to
-                  own that class now simply trails it.
-                */}
-                <span
-                  className={cn(
-                    "ml-auto shrink-0 text-xs text-muted-foreground",
-                  )}
-                  data-testid="principal-option-kind"
-                >
-                  {option.type === "team" ? teamLabel : memberLabel}
-                </span>
-                {isSelected && <Check className="h-4 w-4 shrink-0" />}
-              </Button>
-            );
-          })
+                    {option.type === "team" ? (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                        <Users className="h-4 w-4" />
+                      </span>
+                    ) : option.type === "agent" ? (
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                        <Bot className="h-4 w-4" />
+                      </span>
+                    ) : (
+                      <Avatar
+                        className={cn(
+                          "h-6 w-6 shrink-0",
+                          getAvatarTone(option.value),
+                        )}
+                      >
+                        <AvatarImage alt={option.label} src={option.image} />
+                        <AvatarFallback className="bg-transparent">
+                          {getInitials(option.label)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <span className="min-w-0 truncate">{option.label}</span>
+                    {/*
+                      #107: the principal kind is secondary information, so it
+                      is pushed to the right edge instead of crowding the name
+                      it follows. `ml-auto` on the kind means the check that
+                      used to own that class now simply trails it.
+                    */}
+                    <span
+                      className={cn(
+                        "ml-auto shrink-0 text-xs text-muted-foreground",
+                      )}
+                      data-testid="principal-option-kind"
+                    >
+                      {group.rowLabel}
+                    </span>
+                    {isSelected && <Check className="h-4 w-4 shrink-0" />}
+                  </Button>
+                );
+              })}
+            </Fragment>
+          ))
         )}
 
         {!loading && visibleOptions.length === 0 && (

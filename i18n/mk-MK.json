@@ -720,7 +720,9 @@
 			"start": "Почеток",
 			"noDate": "Без датум",
 			"copyTaskBranch": "Копирај гранка на задача",
-			"startDate": "Почетен датум"
+			"startDate": "Почетен датум",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Пребарај тикети...",
 		"common": {

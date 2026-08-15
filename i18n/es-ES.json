@@ -718,7 +718,9 @@
 			"start": "Comenzar",
 			"noDate": "Sin fecha",
 			"copyTaskBranch": "Copiar la rama de la tarea",
-			"startDate": "Fecha de inicio"
+			"startDate": "Fecha de inicio",
+			"follow": "Follow",
+			"following": "Following"
 		},
 		"boardSearchPlaceholder": "Buscar tickets...",
 		"common": {
