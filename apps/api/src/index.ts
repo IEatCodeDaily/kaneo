@@ -67,6 +67,7 @@ import search from "./search";
 import slackIntegration from "./slack-integration";
 import { getPrivateObject } from "./storage/s3";
 import task from "./task";
+import getPublicTicketEmbed from "./task/controllers/get-public-ticket-embed";
 import taskRelation from "./task-relation";
 import taskTemplate from "./task-template";
 import team from "./team";
@@ -274,6 +275,24 @@ export function createApp() {
 
     return c.json(board);
   });
+
+  /*
+    KFL-177: minimal public ticket embed for Teams/Discord/Telegram/Outline.
+    Registered here, alongside the other public routes and BEFORE the auth
+    middleware, because an embed is fetched by a third-party site with no
+    Kaneo session. Returns only ticket key, title and organization name; the
+    controller 404s (never 403s) on a private board so the endpoint cannot be
+    used to probe which ticket ids exist.
+  */
+  const publicTicketEmbedApi = api.get(
+    "/public-ticket-embed/:id",
+    async (c) => {
+      const { id } = c.req.param();
+      const ticket = await getPublicTicketEmbed(id);
+
+      return c.json(ticket);
+    },
+  );
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
   // GitHub returns here as a browser navigation, before API auth middleware.
@@ -902,6 +921,7 @@ export function createApp() {
     notificationPreferencesApi,
     boardApi,
     publicBoardApi,
+    publicTicketEmbedApi,
     repoApi,
     resourceGrantApi,
     searchApi,
