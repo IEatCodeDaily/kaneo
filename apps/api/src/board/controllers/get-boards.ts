@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import db from "../../database";
 import { boardTable } from "../../database/schema";
 import { listAccessibleResourceIds } from "../../resource-access";
@@ -17,6 +17,16 @@ async function getBoards(
           eq(boardTable.organizationId, organizationId),
           isNull(boardTable.archivedAt),
         ),
+    /*
+      KFL-190: archived boards rank LAST. `(archived_at is not null)` sorts
+      false (active) before true (archived) ascending, so archiving a board
+      demotes it without hiding it, and `createdAt` keeps a stable order
+      within each group.
+    */
+    orderBy: [
+      sql`(${boardTable.archivedAt} is not null)`,
+      asc(boardTable.createdAt),
+    ],
     with: {
       tasks: true,
     },

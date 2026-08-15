@@ -11851,6 +11851,12 @@
 				},
 				"unreadCount": {
 					"type": "string"
+				},
+				"dismiss": {
+					"type": "string"
+				},
+				"clearGroup": {
+					"type": "string"
 				}
 			},
 			"required": [

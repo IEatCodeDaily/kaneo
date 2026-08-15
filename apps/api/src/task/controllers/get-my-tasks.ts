@@ -132,6 +132,8 @@ async function getMyTasks({
       boardId: taskTable.boardId,
       boardName: boardTable.name,
       boardSlug: boardTable.slug,
+      // KFL-190: My Tasks marks tickets that live on an archived board.
+      boardArchivedAt: boardTable.archivedAt,
       organizationId: boardTable.organizationId,
       columnId: taskTable.columnId,
       columnName: columnTable.name,

@@ -176,6 +176,9 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
     assigneeImage: userTable.image,
     teamAssigneeName: teamTable.name,
     boardId: taskTable.boardId,
+    // KFL-190: tickets on an archived board render an "Archived" indicator,
+    // so the board's archival timestamp travels with every task payload.
+    boardArchivedAt: boardTable.archivedAt,
   };
 
   const query = db

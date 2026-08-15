@@ -7,6 +7,7 @@ import {
   Inbox as InboxIcon,
   LayoutDashboard,
   Trash2,
+  X,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import useClearNotifications from "@/hooks/mutations/notification/use-clear-notifications";
+import useDeleteNotification from "@/hooks/mutations/notification/use-delete-notification";
 import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
@@ -87,7 +89,7 @@ function getFlagMeta(notification: Notification): {
  * from the dropdown module so the two never drift), read/unread affordance,
  * mark-as-read on click, mark-all-read and clear-all.
  */
-function InboxComponent() {
+export function InboxComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organizationSlug } = Route.useParams();
@@ -103,6 +105,9 @@ function InboxComponent() {
   const { mutate: markAsRead } = useMarkNotificationAsRead();
   const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
   const { mutate: clearAll } = useClearNotifications();
+  // KFL-329: granular clearing — one notification, or one board group — on top
+  // of the existing blunt clear-all. Both call DELETE /notification/:id.
+  const { mutate: deleteNotifications } = useDeleteNotification();
 
   const notifications: Notification[] = data ?? [];
   // Flagged items are standing alerts, not "unread": they are excluded from the
@@ -214,48 +219,72 @@ function InboxComponent() {
                     key={board.key}
                     className="overflow-hidden rounded-lg border border-border/80 bg-card"
                   >
-                    <button
-                      type="button"
-                      aria-expanded={!collapsed}
-                      onClick={() =>
-                        setCollapsedBoards((current) => {
-                          const next = new Set(current);
-                          if (next.has(board.key)) next.delete(board.key);
-                          else next.add(board.key);
-                          return next;
-                        })
-                      }
-                      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-muted/40"
-                    >
-                      <LayoutDashboard className="size-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">{board.name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {board.tickets.length} tickets
-                      </span>
-                      <div className="ml-auto flex items-center gap-1.5">
-                        {board.flaggedCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 font-medium text-destructive text-xs">
-                            <Flag className="size-3" aria-hidden />
-                            {t("inbox:flaggedCount", {
-                              count: board.flaggedCount,
-                            })}
-                          </span>
-                        ) : null}
-                        {board.unreadCount > 0 ? (
-                          <span className="rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
-                            {t("inbox:unreadCount", {
-                              count: board.unreadCount,
-                            })}
-                          </span>
-                        ) : null}
-                      </div>
-                      <ChevronDown
-                        className={cn(
-                          "size-4 text-muted-foreground transition-transform",
-                          collapsed && "-rotate-90",
-                        )}
-                      />
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        aria-expanded={!collapsed}
+                        onClick={() =>
+                          setCollapsedBoards((current) => {
+                            const next = new Set(current);
+                            if (next.has(board.key)) next.delete(board.key);
+                            else next.add(board.key);
+                            return next;
+                          })
+                        }
+                        className="flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left hover:bg-muted/40"
+                      >
+                        <LayoutDashboard className="size-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">
+                          {board.name}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {board.tickets.length} tickets
+                        </span>
+                        <div className="ml-auto flex items-center gap-1.5">
+                          {board.flaggedCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 font-medium text-destructive text-xs">
+                              <Flag className="size-3" aria-hidden />
+                              {t("inbox:flaggedCount", {
+                                count: board.flaggedCount,
+                              })}
+                            </span>
+                          ) : null}
+                          {board.unreadCount > 0 ? (
+                            <span className="rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
+                              {t("inbox:unreadCount", {
+                                count: board.unreadCount,
+                              })}
+                            </span>
+                          ) : null}
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            "size-4 text-muted-foreground transition-transform",
+                            collapsed && "-rotate-90",
+                          )}
+                        />
+                      </button>
+                      {/* Group clear sits OUTSIDE the disclosure button: nesting
+                        it would be invalid HTML and every clear would also
+                        collapse the board. */}
+                      <button
+                        type="button"
+                        aria-label={t("inbox:clearGroup")}
+                        title={t("inbox:clearGroup")}
+                        onClick={() =>
+                          deleteNotifications(
+                            board.tickets.flatMap((ticket) =>
+                              ticket.notifications.map(
+                                (notification) => notification.id,
+                              ),
+                            ),
+                          )
+                        }
+                        className="mr-2 shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
 
                     {collapsed ? null : (
                       <div className="border-t border-border/70">
@@ -444,6 +473,17 @@ function InboxComponent() {
                                           {t("inbox:markAsRead")}
                                         </Button>
                                       )}
+                                      <button
+                                        type="button"
+                                        aria-label={t("inbox:dismiss")}
+                                        title={t("inbox:dismiss")}
+                                        onClick={() =>
+                                          deleteNotifications([notification.id])
+                                        }
+                                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted/60 hover:text-destructive"
+                                      >
+                                        <X className="size-3.5" />
+                                      </button>
                                     </span>
                                   </li>
                                 );

@@ -2691,6 +2691,8 @@
 	},
 	"inbox": {
 		"flaggedCount": "{{count}} flagged",
-		"unreadCount": "{{count}} unread"
+		"unreadCount": "{{count}} unread",
+		"dismiss": "Dismiss",
+		"clearGroup": "Clear group"
 	}
 }

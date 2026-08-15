@@ -2921,7 +2921,9 @@
 		"flaggedCount_other": "{{count}} flagged",
 		"unflagAction": "Unflag",
 		"flaggedCount": "{{count}} flagged",
-		"unreadCount": "{{count}} unread"
+		"unreadCount": "{{count}} unread",
+		"dismiss": "Dismiss",
+		"clearGroup": "Clear group"
 	},
 	"organization": {
 		"boards": {

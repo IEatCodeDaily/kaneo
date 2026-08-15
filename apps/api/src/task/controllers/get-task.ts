@@ -2,7 +2,12 @@ import { and, eq, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { taskTable, teamTable, userTable } from "../../database/schema";
+import {
+  boardTable,
+  taskTable,
+  teamTable,
+  userTable,
+} from "../../database/schema";
 
 // The archiver is a second join against user, separate from the assignee join.
 const archivedByUser = alias(userTable, "archived_by_user");
@@ -39,6 +44,10 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
       assigneeId: userTable.id,
       teamAssigneeName: teamTable.name,
       boardId: taskTable.boardId,
+      // KFL-190: the detail view shows an "Archived" indicator when the
+      // ticket's board itself is archived, which is distinct from the task's
+      // own `archivedAt`.
+      boardArchivedAt: boardTable.archivedAt,
       deletedAt: taskTable.deletedAt,
       deletedBy: taskTable.deletedBy,
     })
@@ -46,6 +55,7 @@ async function getTask(taskId: string, options: GetTaskOptions = {}) {
     .leftJoin(userTable, eq(taskTable.userId, userTable.id))
     .leftJoin(teamTable, eq(taskTable.teamId, teamTable.id))
     .leftJoin(archivedByUser, eq(taskTable.archivedBy, archivedByUser.id))
+    .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
     .where(
       options.includeDeleted
         ? eq(taskTable.id, taskId)
