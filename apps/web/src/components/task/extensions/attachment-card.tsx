@@ -3,6 +3,7 @@ import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import { FileText } from "lucide-react";
 import { AttachmentContextMenu } from "@/components/task/attachment-context-menu";
+import { escapeHtml, isValidUrl } from "./url-safety";
 
 function formatBytes(size: number) {
   if (!Number.isFinite(size) || size <= 0) return "";
@@ -15,7 +16,9 @@ function formatBytes(size: number) {
 
 /** Exported for tests: proves the card is wrapped in the context menu. */
 export function AttachmentCardView({ node, editor, getPos }: NodeViewProps) {
-  const url = String(node.attrs.url || "");
+  const rawUrl = String(node.attrs.url || "");
+  // Reject non-http(s) URLs (javascript:, data:, ...) — upstream 700da1b2.
+  const url = isValidUrl(rawUrl) ? rawUrl : "";
   const filename = String(node.attrs.filename || "Attachment");
   const mimeType = String(node.attrs.mimeType || "");
   const size = Number(node.attrs.size || 0);
@@ -119,6 +122,6 @@ export const AttachmentCard = Node.create({
 
     if (!url) return "";
 
-    return `\n<kaneo-attachment url="${url}" filename="${filename}" mime-type="${mimeType}" size="${size}" />\n`;
+    return `\n<kaneo-attachment url="${escapeHtml(url)}" filename="${escapeHtml(filename)}" mime-type="${escapeHtml(mimeType)}" size="${size} />\n`;
   },
 });

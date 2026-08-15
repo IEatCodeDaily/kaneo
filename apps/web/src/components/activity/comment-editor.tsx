@@ -73,6 +73,7 @@ import {
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
+import { preserveParagraphSpacing } from "@/lib/comment-blank-lines";
 import { toReferenceSearchQuery } from "@/lib/editor-reference-query";
 import { parseTaskListMarkdownToNodes } from "@/lib/editor-task-list-paste";
 import {
@@ -182,12 +183,9 @@ function renderMarkdownFragment(markdown: string) {
 }
 
 function normalizeMarkdown(markdown: string) {
-  return markdown
-    .replace(/\r\n/g, "\n")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\u00A0/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/\n{2,}$/g, "\n");
+  return preserveParagraphSpacing(
+    markdown.replace(/&nbsp;/g, " ").replace(/\u00A0/g, " "),
+  );
 }
 
 /**

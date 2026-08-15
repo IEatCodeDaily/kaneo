@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/preview-card";
 import getBoard from "@/fetchers/board/get-board";
 import getTask from "@/fetchers/task/get-task";
+import { escapeHtml, isValidUrl } from "./url-safety";
 
 function parseTaskRouteFromUrl(url: string) {
   try {
@@ -70,18 +71,20 @@ function KaneoIssueLinkView({ node }: NodeViewProps) {
     ? t(`tasks:priority.${task.priority}`)
     : t("tasks:priority.no-priority");
   const assignee = task?.assigneeName || t("tasks:assignee.unassigned");
-  const href =
+  const resolvedHref =
     taskRoute?.organizationId && taskRoute?.boardId && task?.id
       ? `/dashboard/organization/${taskRoute.organizationId}/board/${taskRoute.boardId}/task/${task.id}`
       : url;
-  const isInternal = href.startsWith("/");
+  const isInternal = resolvedHref.startsWith("/");
+  // Reject non-http(s) external URLs (javascript:, data:, ...).
+  const href = isInternal || isValidUrl(resolvedHref) ? resolvedHref : "";
 
   return (
     <NodeViewWrapper as="span" className="kaneo-issue-link-node">
       <HoverCard openDelay={160} closeDelay={120}>
         <HoverCardTrigger asChild>
           <a
-            href={href}
+            href={href || undefined}
             target={isInternal ? undefined : "_blank"}
             rel={isInternal ? undefined : "noopener noreferrer"}
             className="kaneo-issue-link-chip"
@@ -200,6 +203,6 @@ export const KaneoIssueLink = Node.create({
      * which is why a description lost all of its text following a mention.
      * Custom elements must be written `<tag ...></tag>`.
      */
-    return `\n<kaneo-issue-link url="${url}" issue-key="${issueKey}" task-id="${taskId}"></kaneo-issue-link>\n`;
+    return `\n<kaneo-issue-link url="${escapeHtml(url)}" issue-key="${escapeHtml(issueKey)}" task-id="${escapeHtml(taskId)}"></kaneo-issue-link>\n`;
   },
 });

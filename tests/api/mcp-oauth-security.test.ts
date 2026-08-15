@@ -34,44 +34,6 @@ vi.mock("../../apps/api/src/mcp/tools", () => ({
   registerMcpTools: vi.fn(),
 }));
 
-<<<<<<< HEAD
-=======
-vi.mock("../../apps/api/src/mcp/oauth-store", () => {
-  const rows = new Map<string, { payload: unknown; expiresAt: Date }>();
-  const keyOf = (kind: string, key: string) => `${kind}:${key}`;
-  return {
-    putState: async (
-      kind: string,
-      key: string,
-      payload: unknown,
-      expiresAt: Date,
-    ) => {
-      rows.set(keyOf(kind, key), { payload, expiresAt });
-    },
-    getState: async (kind: string, key: string) => {
-      const row = rows.get(keyOf(kind, key));
-      if (!row) return null;
-      if (row.expiresAt.getTime() < Date.now()) return null;
-      return row.payload;
-    },
-    consumeState: async (kind: string, key: string) => {
-      const row = rows.get(keyOf(kind, key));
-      rows.delete(keyOf(kind, key));
-      if (!row) return null;
-      if (row.expiresAt.getTime() < Date.now()) return null;
-      return row.payload;
-    },
-    enforceStateCap: async () => {},
-    deleteExpiredStates: async () => {
-      const now = Date.now();
-      for (const [key, row] of rows) {
-        if (row.expiresAt.getTime() < now) rows.delete(key);
-      }
-    },
-  };
-});
-
->>>>>>> 3da2ac5f (fix(mcp): cap pending OAuth authorization requests)
 import mcpRoutes from "../../apps/api/src/mcp";
 import {
   createAuthorizationRequest,
