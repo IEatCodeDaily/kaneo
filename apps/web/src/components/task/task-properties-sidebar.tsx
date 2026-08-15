@@ -188,7 +188,7 @@ export default function TaskPropertiesSidebar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-foreground rounded-l-none"
+                      className="text-foreground rounded-none border-r-0"
                       data-testid="copy-task-branch"
                       onClick={() => handleCopyTaskBranch()}
                     >
@@ -201,6 +201,17 @@ export default function TaskPropertiesSidebar({
                       description={t("tasks:properties.copyTaskBranch")}
                       separator=""
                     />
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TaskFollowToggle
+                      taskId={taskId}
+                      className="rounded-l-none"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("tasks:properties.follow")}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -352,7 +363,6 @@ export default function TaskPropertiesSidebar({
                 </TaskDueDatePopover>
               )}
               {/* KFL-339: personal notification subscription, never gated on edit rights. */}
-              <TaskFollowToggle taskId={taskId} />
             </div>
           </div>
         )}
@@ -397,7 +407,7 @@ export default function TaskPropertiesSidebar({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-foreground rounded-l-none"
+                        className="text-foreground rounded-none border-r-0"
                         onClick={() => handleCopyTaskBranch()}
                       >
                         <GitBranch className="size-4" />
@@ -409,6 +419,17 @@ export default function TaskPropertiesSidebar({
                         description={t("tasks:properties.copyTaskBranch")}
                         separator=""
                       />
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <TaskFollowToggle
+                        taskId={taskId}
+                        className="rounded-l-none"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t("tasks:properties.follow")}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -553,7 +574,6 @@ export default function TaskPropertiesSidebar({
                   </TaskDueDatePopover>
                 )}
                 {/* KFL-339: personal notification subscription. */}
-                <TaskFollowToggle taskId={taskId} />
               </div>
             </div>
 
@@ -599,7 +619,7 @@ export default function TaskPropertiesSidebar({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-foreground rounded-l-none"
+                          className="text-foreground rounded-none border-r-0"
                           onClick={() => handleCopyTaskBranch()}
                         >
                           <GitBranch className="size-4" />
@@ -611,6 +631,17 @@ export default function TaskPropertiesSidebar({
                           description={t("tasks:properties.copyTaskBranch")}
                           separator=""
                         />
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <TaskFollowToggle
+                          taskId={taskId}
+                          className="rounded-l-none"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t("tasks:properties.follow")}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

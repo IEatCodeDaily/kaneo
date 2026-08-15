@@ -3,24 +3,33 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import useSetTaskFollowing from "@/hooks/mutations/task/use-set-task-following";
 import useGetTaskFollowing from "@/hooks/queries/task/use-get-task-following";
+import { cn } from "@/lib/cn";
 
 type TaskFollowToggleProps = {
   taskId: string | undefined;
+  className?: string;
 };
 
 /**
  * KFL-339: subscribe yourself to a ticket's notifications.
  *
- * Styled as one of the outlined property pills in the same row (Status,
- * Priority, Assign, dates). KFL-337 was filed because the Assign chip had lost
- * that outline, so these classes are copied verbatim from its siblings rather
- * than re-invented.
+ * Lives in the ACTION BUTTON GROUP next to copy-link and copy-branch, so it is
+ * an icon-only segmented `outline` button rather than a labelled property pill.
+ *
+ * State reads at a glance without a text label:
+ *   following      -> FILLED bell (fill="currentColor")
+ *   not following  -> hollow bell with a diagonal slash (BellOff)
+ * The two lucide glyphs share an outline, so the fill is what distinguishes
+ * them — hence the explicit `fill` attribute rather than a colour change alone.
  *
  * Deliberately NOT gated on edit permission: the endpoint is gated on READ
  * because following is a personal subscription, so a read-only member must be
  * able to follow too.
  */
-export default function TaskFollowToggle({ taskId }: TaskFollowToggleProps) {
+export default function TaskFollowToggle({
+  taskId,
+  className,
+}: TaskFollowToggleProps) {
   const { t } = useTranslation();
   const { data } = useGetTaskFollowing(taskId ?? "");
   const { mutate: setFollowing, isPending } = useSetTaskFollowing();
@@ -30,28 +39,36 @@ export default function TaskFollowToggle({ taskId }: TaskFollowToggleProps) {
   }
 
   const following = Boolean(data?.following);
+  const label = following
+    ? t("tasks:properties.following")
+    : t("tasks:properties.follow");
 
   return (
     <Button
-      data-testid="task-follow-toggle"
-      type="button"
-      variant="ghost"
-      size="sm"
+      aria-label={label}
       aria-pressed={following}
+      className={cn("text-foreground", className)}
+      data-testid="task-follow-toggle"
       disabled={isPending}
       onClick={() => setFollowing({ taskId, following: !following })}
-      className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
+      size="sm"
+      title={label}
+      type="button"
+      variant="outline"
     >
       {following ? (
-        <Bell className="w-3.5 h-3.5 text-muted-foreground" />
+        <Bell
+          className="size-4"
+          data-follow-state="following"
+          fill="currentColor"
+        />
       ) : (
-        <BellOff className="w-3.5 h-3.5 text-muted-foreground" />
+        <BellOff
+          className="size-4"
+          data-follow-state="not-following"
+          fill="none"
+        />
       )}
-      <span className="text-xs font-semibold truncate">
-        {following
-          ? t("tasks:properties.following")
-          : t("tasks:properties.follow")}
-      </span>
     </Button>
   );
 }

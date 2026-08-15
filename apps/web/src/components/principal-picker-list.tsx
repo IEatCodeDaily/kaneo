@@ -1,5 +1,5 @@
 import { Bot, Check, Search, Users } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,8 +102,59 @@ export function PrincipalPickerList({
     teamLabel,
   ]);
 
+  /*
+    Keyboard navigation moves over a FLAT row order, not per-group: group
+    headings are presentational, so a keyboard user should never have to step
+    over them. This flattening is what makes ArrowDown cross a group boundary
+    in one press.
+  */
+  const flatRows = useMemo(
+    () => groups.flatMap((group) => group.items),
+    [groups],
+  );
+
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  // A changed result set invalidates the old highlight position.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on result change
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [search, options]);
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (flatRows.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      // Clamp instead of wrapping: wrapping past the end silently teleports the
+      // highlight to the top, which reads as a glitch in a short list.
+      setActiveIndex((current) => Math.min(current + 1, flatRows.length - 1));
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((current) => Math.max(current - 1, 0));
+      return;
+    }
+
+    if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      const row = flatRows[activeIndex];
+      if (row) onSelect(row);
+    }
+  };
+
   return (
-    <>
+    /*
+      The handler sits on a wrapper in the CAPTURE phase, not just on the input:
+      Base UI's Popover implements its own roving focus and consumes ArrowUp /
+      ArrowDown at the container level, so a bubble-phase listener on the input
+      never fires inside a popover. It passed in jsdom, which has no popover
+      focus manager — a reminder that jsdom green is not browser green.
+    */
+    // biome-ignore lint/a11y/noStaticElementInteractions: routes keys to the list below
+    <div onKeyDownCapture={handleKeyDown}>
       <div className="relative mb-1">
         <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -120,7 +171,7 @@ export function PrincipalPickerList({
         other controls (the flag popover stacks types, notes and actions around
         it) still fits on screen.
       */}
-      <div className="max-h-56 space-y-1 overflow-y-auto">
+      <div className="max-h-96 space-y-1 overflow-y-auto">
         {clearLabel ? (
           <Button
             className="w-full justify-start gap-2"
@@ -159,10 +210,16 @@ export function PrincipalPickerList({
                 const isSelected =
                   selected?.type === option.type &&
                   selected?.value === option.value;
+                const isActive =
+                  activeIndex >= 0 && flatRows[activeIndex] === option;
 
                 return (
                   <Button
-                    className="w-full justify-start gap-2"
+                    className={cn(
+                      "w-full justify-start gap-2",
+                      isActive && "bg-accent text-accent-foreground",
+                    )}
+                    data-active={isActive ? "true" : undefined}
                     data-testid={`principal-option-${option.type}-${option.value}`}
                     key={`${option.type}:${option.value}`}
                     onClick={() => onSelect(option)}
@@ -217,7 +274,7 @@ export function PrincipalPickerList({
           <p className="p-2 text-sm text-muted-foreground">{emptyMessage}</p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

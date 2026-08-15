@@ -3,19 +3,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import TaskFollowToggle from "./task-follow-toggle";
 
 /**
- * KFL-339: users must be able to subscribe themselves to a ticket's
- * notifications.
+ * KFL-339: subscribe yourself to a ticket's notifications.
  *
- * Two things this pins down that were easy to get wrong:
+ * The control lives in the ACTION BUTTON GROUP (alongside copy-link and
+ * copy-branch), not in the property-chip row. Three things this pins down:
  *
- *  1. STYLING. KFL-337 was filed because the Assign chip lost its outline. The
- *     property chips in that row are outlined pills — `h-7 ... rounded-md
- *     border border-border bg-transparent px-2.5`. This chip must match, so the
- *     test asserts the outline classes rather than eyeballing a screenshot.
- *
- *  2. PERMISSION. The backend gates following on READ access, not task:update,
- *     because following is a personal subscription. So the chip must never be
- *     gated on edit rights.
+ *  1. PLACEMENT/STYLE. It is an icon-only segmented action button — outline
+ *     variant, no text label — so it matches its siblings in that group rather
+ *     than the property pills.
+ *  2. STATE. Following renders a FILLED bell; not-following renders a hollow
+ *     bell with a diagonal slash (BellOff). "Filled" is asserted via the SVG
+ *     fill, because a hollow and a filled bell are otherwise the same glyph.
+ *  3. PERMISSION. The backend gates following on READ access, not task:update,
+ *     because following is a personal subscription — never gate on edit rights.
  */
 
 const followingState = { following: false };
@@ -46,49 +46,41 @@ afterEach(() => {
 });
 
 describe("KFL-339 follow toggle", () => {
-  it("renders as an outlined property chip matching the sibling chips", () => {
+  it("renders as an icon-only action button, not a labelled property chip", () => {
     render(<TaskFollowToggle taskId="task-1" />);
 
-    const chip = screen.getByTestId("task-follow-toggle");
-    for (const cls of [
-      "h-7",
-      "rounded-md",
-      "border",
-      "border-border",
-      "bg-transparent",
-      "px-2.5",
-    ]) {
-      expect(chip.className).toContain(cls);
-    }
+    const button = screen.getByTestId("task-follow-toggle");
+    // No visible text label — the action group is icons only.
+    expect(button.textContent?.trim()).toBe("");
+    // Accessible name still required for screen readers.
+    expect(button).toHaveAccessibleName("Follow");
   });
 
-  it("shows Follow when the user is not following", () => {
+  it("shows a hollow slashed bell when NOT following", () => {
+    followingState.following = false;
     render(<TaskFollowToggle taskId="task-1" />);
-    expect(screen.getByTestId("task-follow-toggle").textContent).toContain(
-      "Follow",
-    );
-    expect(screen.getByTestId("task-follow-toggle")).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
+
+    const icon = screen.getByTestId("task-follow-toggle").querySelector("svg");
+    expect(icon).toBeTruthy();
+    expect(icon?.getAttribute("data-follow-state")).toBe("not-following");
+    // Hollow: outline only, no fill.
+    expect(icon?.getAttribute("fill")).toBe("none");
   });
 
-  // NEGATIVE CONTROL: without reading the query the label would be a constant
-  // and the assertion above would pass on a hardcoded string.
-  it("shows Following when the user already follows the ticket", () => {
+  it("shows a FILLED bell when following", () => {
     followingState.following = true;
     render(<TaskFollowToggle taskId="task-1" />);
-    expect(screen.getByTestId("task-follow-toggle").textContent).toContain(
-      "Following",
-    );
-    expect(screen.getByTestId("task-follow-toggle")).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+
+    const icon = screen.getByTestId("task-follow-toggle").querySelector("svg");
+    expect(icon?.getAttribute("data-follow-state")).toBe("following");
+    // Filled: the glyph is painted, not just outlined.
+    expect(icon?.getAttribute("fill")).toBe("currentColor");
   });
 
   it("subscribes on click", () => {
+    followingState.following = false;
     render(<TaskFollowToggle taskId="task-1" />);
+
     fireEvent.click(screen.getByTestId("task-follow-toggle"));
     expect(setFollowing).toHaveBeenCalledWith({
       taskId: "task-1",
@@ -99,11 +91,22 @@ describe("KFL-339 follow toggle", () => {
   it("unsubscribes on click when already following", () => {
     followingState.following = true;
     render(<TaskFollowToggle taskId="task-1" />);
+
     fireEvent.click(screen.getByTestId("task-follow-toggle"));
     expect(setFollowing).toHaveBeenCalledWith({
       taskId: "task-1",
       following: false,
     });
+  });
+
+  it("exposes pressed state for assistive tech", () => {
+    followingState.following = true;
+    render(<TaskFollowToggle taskId="task-1" />);
+
+    expect(screen.getByTestId("task-follow-toggle")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("renders nothing without a task id", () => {

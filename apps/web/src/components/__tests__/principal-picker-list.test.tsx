@@ -149,7 +149,9 @@ describe("PrincipalPickerList (#107)", () => {
       expect(screen.getByTestId("principal-option-agent-agent-2")).toBeTruthy();
 
       // Rows are ordered by group, not by the caller's array order.
-      const rows = screen.getAllByTestId(/^principal-option-(user|agent|team)-/);
+      const rows = screen.getAllByTestId(
+        /^principal-option-(user|agent|team)-/,
+      );
       expect(rows.map((r) => r.getAttribute("data-testid"))).toEqual([
         "principal-option-user-user-a",
         "principal-option-user-user-b",
@@ -250,5 +252,96 @@ describe("PrincipalPickerList (#107)", () => {
     // alone still lets the container stretch or clip.
     expect(classes).toContain("overflow-y-auto");
     expect(classes.some((token) => token.startsWith("max-h-"))).toBe(true);
+  });
+  /**
+   * KFL-160 follow-up: the picker must be usable without a mouse.
+   *
+   * Arrow keys move a roving highlight across ALL rows regardless of group,
+   * because group headings are presentational — a keyboard user should not have
+   * to skip over them. Enter commits the highlighted row.
+   */
+  describe("keyboard navigation", () => {
+    it("moves the active row with ArrowDown from the search box", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={OPTIONS} />);
+
+      const search = screen.getByRole("textbox");
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+
+      expect(
+        screen.getByTestId("principal-option-user-user-a"),
+      ).toHaveAttribute("data-active", "true");
+    });
+
+    it("crosses a group boundary with ArrowDown", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={OPTIONS} />);
+      const search = screen.getByRole("textbox");
+
+      // user-a -> user-b -> (into the Teams group) team-1
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+
+      expect(
+        screen.getByTestId("principal-option-team-team-1"),
+      ).toHaveAttribute("data-active", "true");
+    });
+
+    it("moves back up with ArrowUp", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={OPTIONS} />);
+      const search = screen.getByRole("textbox");
+
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+      fireEvent.keyDown(search, { key: "ArrowUp" });
+
+      expect(
+        screen.getByTestId("principal-option-user-user-a"),
+      ).toHaveAttribute("data-active", "true");
+    });
+
+    it("selects the active row with Enter", () => {
+      const onSelect = vi.fn();
+      render(<PrincipalPickerList onSelect={onSelect} options={OPTIONS} />);
+      const search = screen.getByRole("textbox");
+
+      fireEvent.keyDown(search, { key: "ArrowDown" });
+      fireEvent.keyDown(search, { key: "Enter" });
+
+      expect(onSelect).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "user", value: "user-a" }),
+      );
+    });
+
+    it("does not wrap past the last row", () => {
+      render(<PrincipalPickerList onSelect={vi.fn()} options={OPTIONS} />);
+      const search = screen.getByRole("textbox");
+
+      for (let i = 0; i < 12; i += 1) {
+        fireEvent.keyDown(search, { key: "ArrowDown" });
+      }
+
+      // The final row stays active rather than cycling back to the top.
+      expect(
+        screen.getByTestId("principal-option-team-team-1"),
+      ).toHaveAttribute("data-active", "true");
+    });
+  });
+
+  it("gives the list room to breathe (taller than the old 6-row cap)", () => {
+    const many = Array.from({ length: 60 }, (_, index) => ({
+      type: "user" as const,
+      value: `user-${index}`,
+      label: `Member ${index}`,
+    }));
+
+    render(<PrincipalPickerList onSelect={vi.fn()} options={many} />);
+
+    const row = screen.getByTestId("principal-option-user-user-0");
+    const list = row.parentElement as HTMLElement;
+    const classes = Array.from(list.classList);
+
+    // The old cap was max-h-56 (~6 rows), which the user found too short.
+    expect(classes).not.toContain("max-h-56");
+    expect(classes).toContain("max-h-96");
   });
 });
