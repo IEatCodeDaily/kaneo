@@ -1180,6 +1180,36 @@ export const taskTemplateTable = pgTable(
   ],
 );
 
+/**
+ * KFL-339: explicit ticket following.
+ *
+ * Following is ORTHOGONAL to assignment and to activity participation: a user
+ * may follow a ticket they never touched, and unfollowing must not remove them
+ * from the assignee/participant recipient sets those relations imply. The
+ * UNIQUE(task_id, user_id) pair makes follow idempotent, so a double-click
+ * cannot create duplicate rows or duplicate notifications.
+ */
+export const taskFollowerTable = pgTable(
+  "task_follower",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("task_follower_task_user_unique").on(table.taskId, table.userId),
+    index("task_follower_task_idx").on(table.taskId),
+    index("task_follower_user_idx").on(table.userId),
+  ],
+);
+
 export const notificationTable = pgTable(
   "notification",
   {

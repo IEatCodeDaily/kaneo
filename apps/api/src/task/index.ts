@@ -35,6 +35,9 @@ import permanentlyDeleteTask from "./controllers/permanently-delete-task";
 import reorderTasks from "./controllers/reorder-tasks";
 import restoreTask from "./controllers/restore-task";
 import setTaskArchived from "./controllers/set-task-archived";
+import setTaskFollowing, {
+  isFollowingTask,
+} from "./controllers/set-task-following";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
 import updateTaskDescription from "./controllers/update-task-description";
@@ -755,6 +758,69 @@ const task = new Hono<{
       const task = await updateTaskStatus({ id, status, currentUserId });
 
       return c.json(task);
+    },
+  )
+  .get(
+    "/following/:id",
+    describeRoute({
+      operationId: "isFollowingTask",
+      tags: ["Tasks"],
+      description:
+        "Whether the current user follows this ticket. Following is separate from assignment: it records an explicit interest so the user keeps receiving notifications.",
+      responses: {
+        200: {
+          description: "Following state for the current user",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ following: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromTask(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const following = await isFollowingTask({
+        taskId: id,
+        userId: c.get("userId"),
+      });
+      return c.json({ following });
+    },
+  )
+  .put(
+    "/following/:id",
+    describeRoute({
+      operationId: "setTaskFollowing",
+      tags: ["Tasks"],
+      description:
+        "Follow or unfollow a ticket. Idempotent on both sides. Gated on READ, not update: following is a personal subscription and must not require mutate rights on the ticket.",
+      responses: {
+        200: {
+          description: "Following state updated",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({ taskId: v.string(), following: v.boolean() }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ following: v.boolean() })),
+    organizationAccess.fromTask(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { following } = c.req.valid("json");
+      const result = await setTaskFollowing({
+        taskId: id,
+        userId: c.get("userId"),
+        following,
+      });
+      return c.json(result);
     },
   )
   .put(

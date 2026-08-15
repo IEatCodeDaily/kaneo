@@ -4,6 +4,7 @@ import {
   activityTable,
   boardTable,
   organizationMemberTable,
+  taskFollowerTable,
   taskTable,
 } from "../database/schema";
 
@@ -21,7 +22,7 @@ export async function getTaskNotificationRecipientIds({
   actorId: string;
   directUserIds?: Array<string | null | undefined>;
 }) {
-  const [taskRows, activityUsers] = await Promise.all([
+  const [taskRows, activityUsers, followerRows] = await Promise.all([
     db
       .select({ assigneeId: taskTable.userId })
       .from(taskTable)
@@ -45,6 +46,22 @@ export async function getTaskNotificationRecipientIds({
           ne(activityTable.userId, actorId),
         ),
       ),
+    // KFL-339: explicit followers. Gated on org membership for the same reason
+    // participants are — a user who lost access must stop receiving mail even
+    // if their follow row survives.
+    db
+      .selectDistinct({ userId: taskFollowerTable.userId })
+      .from(taskFollowerTable)
+      .innerJoin(taskTable, eq(taskFollowerTable.taskId, taskTable.id))
+      .innerJoin(boardTable, eq(taskTable.boardId, boardTable.id))
+      .innerJoin(
+        organizationMemberTable,
+        and(
+          eq(organizationMemberTable.organizationId, boardTable.organizationId),
+          eq(organizationMemberTable.userId, taskFollowerTable.userId),
+        ),
+      )
+      .where(eq(taskFollowerTable.taskId, taskId)),
   ]);
 
   const task = taskRows[0];
@@ -52,6 +69,7 @@ export async function getTaskNotificationRecipientIds({
     actorId,
     assigneeId: task?.assigneeId,
     participantIds: activityUsers.map((row) => row.userId),
+    followerIds: followerRows.map((row) => row.userId),
     directUserIds,
   });
 }
@@ -71,14 +89,21 @@ export function mergeTaskNotificationRecipientIds({
   assigneeId,
   participantIds,
   directUserIds,
+  followerIds = [],
 }: {
   actorId: string;
   assigneeId?: string | null;
   participantIds: Array<string | null | undefined>;
   directUserIds: Array<string | null | undefined>;
+  /**
+   * KFL-339: users who explicitly follow the ticket. A follower has a durable
+   * interest even when they never commented and are not the assignee, so they
+   * are merged alongside participants rather than derived from activity.
+   */
+  followerIds?: Array<string | null | undefined>;
 }) {
   const recipients = new Set<string>(
-    [...participantIds, ...directUserIds, assigneeId].filter(
+    [...participantIds, ...directUserIds, ...followerIds, assigneeId].filter(
       (id): id is string => Boolean(id),
     ),
   );
