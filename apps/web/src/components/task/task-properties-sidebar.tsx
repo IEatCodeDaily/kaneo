@@ -255,6 +255,7 @@ export default function TaskPropertiesSidebar({
                   organizationId={organizationId}
                 >
                   <Button
+                    data-testid="task-assignee-trigger"
                     variant="ghost"
                     size="sm"
                     className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
