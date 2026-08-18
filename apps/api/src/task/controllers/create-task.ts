@@ -8,8 +8,10 @@ import {
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { parseMentionIds } from "../../utils/parse-mentions";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
+import { notifyDescriptionMentions } from "./notify-description-mentions";
 
 async function createTask({
   boardId,
@@ -109,6 +111,36 @@ async function createTask({
   if (!createdTask) {
     throw new HTTPException(500, {
       message: "Failed to create task",
+    });
+  }
+
+  /*
+    Mentioning someone while WRITING a new ticket previously notified nobody:
+    this path never looked at the description, while editing that same
+    description afterwards did. Same helper as the edit path so the two cannot
+    drift again.
+  */
+  const mentionedIds = parseMentionIds(createdTask.description);
+  if (mentionedIds.length > 0) {
+    const [creator] = await db
+      .select({ name: userTable.name })
+      .from(userTable)
+      .where(eq(userTable.id, currentUserId))
+      .limit(1);
+    const [taskBoard] = await db
+      .select({ organizationId: boardTable.organizationId })
+      .from(boardTable)
+      .where(eq(boardTable.id, createdTask.boardId))
+      .limit(1);
+
+    await notifyDescriptionMentions({
+      description: createdTask.description,
+      actorId: currentUserId,
+      taskId: createdTask.id,
+      taskTitle: createdTask.title,
+      actorName: creator?.name ?? null,
+      boardId: createdTask.boardId,
+      organizationId: taskBoard?.organizationId ?? null,
     });
   }
 
