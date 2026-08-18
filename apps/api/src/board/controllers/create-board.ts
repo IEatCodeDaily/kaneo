@@ -1,4 +1,3 @@
-import { eq, max } from "drizzle-orm";
 import db from "../../database";
 import { boardTable, columnTable } from "../../database/schema";
 
@@ -16,6 +15,18 @@ async function createBoard(
   slug: string,
 ) {
   return db.transaction(async (tx) => {
+    /*
+      No `position` here on purpose. Upstream's reordering commit (207504dc)
+      added `position: maxPosition === null ? 0 : maxPosition + 1` plus a `max`
+      import, but never the query defining `maxPosition` — so every board
+      insert threw "maxPosition is not defined".
+
+      The rest of that feature never landed in this fork: boardTable has no
+      `position` field, no migration adds the column, and there is no board
+      reorder endpoint. Sidebar order is reconciled client-side in
+      reconcileSidebarOrder instead. Writing a column that does not exist would
+      just move the 500 from JS to SQL.
+    */
     const [createdBoard] = await tx
       .insert(boardTable)
       .values({
@@ -23,7 +34,6 @@ async function createBoard(
         name,
         icon,
         slug,
-        position: maxPosition === null ? 0 : maxPosition + 1,
       })
       .returning();
 
