@@ -141,6 +141,16 @@ export default defineConfig({
             return undefined; // keep shiki's per-language chunks intact
           }
 
+          /**
+           * KFL-86: stable libraries that ship once and change only on a
+           * deliberate dependency bump. Keeping them out of the app entry
+           * chunk lets browsers reuse the cached copy across releases instead
+           * of re-downloading ~100 KB because an app string changed.
+           */
+          if (id.includes("i18next")) return "vendor-i18n"; // core + react-i18next
+          if (id.includes("zod")) return "vendor-zod";
+          if (id.includes("immer")) return "vendor-immer";
+
           return undefined;
         },
       },

@@ -2,10 +2,9 @@
 
 import { useLocation } from "@tanstack/react-router";
 import { PlusIcon, SearchIcon } from "lucide-react";
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchCommandMenu from "@/components/search-command-menu";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import { SidebarGroup, useSidebar } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -16,6 +15,17 @@ import {
 import { shortcuts } from "@/constants/shortcuts";
 import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+
+/**
+ * Lazy by design (KFL-86): this component is part of the layout rendered on
+ * every route, and a static import here dragged the whole create-task modal
+ * tree (~23 KB min) into the entry chunk. Every other consumer loads it on
+ * demand; the sidebar does too now.
+ */
+const CreateTaskModal = lazy(
+  () => import("@/components/shared/modals/create-task-modal"),
+);
+
 
 export default function Search() {
   const { t } = useTranslation();
