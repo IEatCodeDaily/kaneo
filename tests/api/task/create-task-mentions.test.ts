@@ -68,6 +68,10 @@ describe("createTask notification wiring", () => {
       "../../../apps/api/src/notification/controllers/create-notification",
       () => ({ default: createNotification }),
     );
+    vi.doMock(
+      "../../../apps/api/src/task/controllers/ensure-task-followers",
+      () => ({ default: vi.fn() }),
+    );
 
     const { notifyDescriptionMentions } = await import(
       "../../../apps/api/src/task/controllers/notify-description-mentions"

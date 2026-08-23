@@ -9,12 +9,18 @@ import {
   milestoneTable,
   organizationMemberTable,
   taskFlagTable,
+  taskFollowerTable,
   taskTable,
   userTable,
 } from "../../database/schema";
 import { getEffectiveTeamIdsForUser } from "../../team/effective-membership";
 
-export type MyTasksRelation = "assigned" | "created" | "team" | "all";
+export type MyTasksRelation =
+  | "assigned"
+  | "created"
+  | "team"
+  | "followed"
+  | "all";
 
 type GetMyTasksOptions = {
   userId: string;
@@ -84,6 +90,12 @@ async function getMyTasks({
       and ${activityTable.type} <> 'created'
   )`;
 
+  const followedByUser = sql`exists (
+    select 1 from ${taskFollowerTable}
+    where ${taskFollowerTable.taskId} = ${taskTable.id}
+      and ${taskFollowerTable.userId} = ${userId}
+  )`;
+
   const relationFilter =
     relation === "assigned"
       ? assignedToUser
@@ -91,12 +103,14 @@ async function getMyTasks({
         ? assignedToUserTeam
         : relation === "created"
           ? createdByUser
-          : or(
-              assignedToUser,
-              assignedToUserTeam,
-              createdByUser,
-              participatedByUser,
-            );
+          : relation === "followed"
+            ? followedByUser
+            : or(
+                assignedToUser,
+                assignedToUserTeam,
+                createdByUser,
+                participatedByUser,
+              );
 
   const conditions = [
     // Membership gate: never leak tasks from an organization the user left.

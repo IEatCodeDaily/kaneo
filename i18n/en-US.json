@@ -10,7 +10,8 @@
 			"all": "All",
 			"assigned": "Assigned",
 			"created": "Created",
-			"team": "Team"
+			"team": "Team",
+			"followed": "Followed"
 		},
 		"flaggedCount": "{{count}} flagged ticket",
 		"flaggedCount_other": "{{count}} flagged tickets",

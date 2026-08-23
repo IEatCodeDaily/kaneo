@@ -37,6 +37,7 @@ const RELATIONS: { value: MyTasksRelation; labelKey: string }[] = [
   { value: "assigned", labelKey: "myTasks:relation.assigned" },
   { value: "created", labelKey: "myTasks:relation.created" },
   { value: "team", labelKey: "myTasks:relation.team" },
+  { value: "followed", labelKey: "myTasks:relation.followed" },
 ];
 
 /**

@@ -15,6 +15,7 @@ import { publishEvent } from "../../events";
 import createNotification from "../../notification/controllers/create-notification";
 import { getTaskNotificationRecipientIds } from "../../notification/task-notification-recipients";
 import { createGitHubItemComment } from "../../repo/controllers/manage-github-repo";
+import ensureTaskFollowers from "../../task/controllers/ensure-task-followers";
 import { parseMentionIds } from "../../utils/parse-mentions";
 
 async function createComment(taskId: string, userId: string, content: string) {
@@ -95,6 +96,10 @@ async function createComment(taskId: string, userId: string, content: string) {
 
   // Notify any organization members @mentioned in the comment (not the author).
   const mentionedIds = parseMentionIds(content).filter((id) => id !== userId);
+  await ensureTaskFollowers({
+    taskId,
+    userIds: [userId, ...mentionedIds],
+  });
   for (const mentionedId of mentionedIds) {
     await createNotification({
       userId: mentionedId,

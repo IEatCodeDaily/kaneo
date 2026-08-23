@@ -101,7 +101,7 @@ const task = new Hono<{
       v.object({
         organizationId: v.optional(v.string()),
         relation: v.optional(
-          v.picklist(["assigned", "created", "team", "all"]),
+          v.picklist(["assigned", "created", "team", "followed", "all"]),
         ),
         includeCompleted: v.optional(v.picklist(["true", "false"])),
         limit: v.optional(v.pipe(v.string(), v.transform(Number))),

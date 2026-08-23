@@ -11,6 +11,7 @@ import { publishEvent } from "../../events";
 import { parseMentionIds } from "../../utils/parse-mentions";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
+import ensureTaskFollowers from "./ensure-task-followers";
 import { notifyDescriptionMentions } from "./notify-description-mentions";
 
 async function createTask({
@@ -121,6 +122,10 @@ async function createTask({
     drift again.
   */
   const mentionedIds = parseMentionIds(createdTask.description);
+  await ensureTaskFollowers({
+    taskId: createdTask.id,
+    userIds: [currentUserId, effectiveUserId, ...mentionedIds],
+  });
   if (mentionedIds.length > 0) {
     const [creator] = await db
       .select({ name: userTable.name })

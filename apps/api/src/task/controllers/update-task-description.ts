@@ -7,6 +7,7 @@ import createNotification from "../../notification/controllers/create-notificati
 import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
 import { parseMentionIds } from "../../utils/parse-mentions";
 import { appendDescriptionRevision } from "../utils/description-history";
+import ensureTaskFollowers from "./ensure-task-followers";
 
 async function updateTaskDescription({
   id,
@@ -71,6 +72,10 @@ async function updateTaskDescription({
   );
 
   if (newlyMentioned.length > 0) {
+    await ensureTaskFollowers({
+      taskId: updatedTask.id,
+      userIds: newlyMentioned,
+    });
     const [editor] = await db
       .select({ name: userTable.name })
       .from(userTable)

@@ -8,6 +8,7 @@ import {
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import ensureTaskFollowers from "./ensure-task-followers";
 
 async function updateTaskAssignee({
   id,
@@ -84,6 +85,10 @@ async function updateTaskAssignee({
     .returning();
   if (!updatedTask) {
     throw new HTTPException(500, { message: "Failed to update task assignee" });
+  }
+
+  if (userId) {
+    await ensureTaskFollowers({ taskId: updatedTask.id, userIds: [userId] });
   }
 
   if (!userId && !teamId) {

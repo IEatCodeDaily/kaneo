@@ -38,13 +38,17 @@
 						},
 						"team": {
 							"type": "string"
+						},
+						"followed": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"all",
 						"assigned",
 						"created",
-						"team"
+						"team",
+						"followed"
 					]
 				},
 				"flaggedCount": {

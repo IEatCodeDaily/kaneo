@@ -1,5 +1,6 @@
 import createNotification from "../../notification/controllers/create-notification";
 import { parseMentionIds } from "../../utils/parse-mentions";
+import ensureTaskFollowers from "./ensure-task-followers";
 
 type NotifyDescriptionMentionsInput = {
   description?: string | null;
@@ -34,6 +35,8 @@ export async function notifyDescriptionMentions({
   const mentionedIds = parseMentionIds(description).filter(
     (id) => id !== actorId,
   );
+
+  await ensureTaskFollowers({ taskId, userIds: mentionedIds });
 
   for (const mentionedId of mentionedIds) {
     await createNotification({
