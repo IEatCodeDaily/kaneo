@@ -26,7 +26,6 @@ const CreateTaskModal = lazy(
   () => import("@/components/shared/modals/create-task-modal"),
 );
 
-
 export default function Search() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);

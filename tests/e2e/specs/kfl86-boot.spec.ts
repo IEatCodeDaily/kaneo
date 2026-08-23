@@ -10,7 +10,8 @@ test("board loads on split chunks", async ({ page }) => {
   page.on("pageerror", (e) => failed.push(String(e)));
   const responses: { url: string; status: number }[] = [];
   page.on("response", (r) => {
-    if (r.url().includes("/assets/")) responses.push({ url: r.url(), status: r.status() });
+    if (r.url().includes("/assets/"))
+      responses.push({ url: r.url(), status: r.status() });
   });
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
