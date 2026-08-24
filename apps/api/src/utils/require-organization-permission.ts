@@ -7,6 +7,17 @@ import { isInstanceAdmin } from "./is-instance-admin";
 
 type PermissionMap = Record<string, string[]>;
 
+type ApiKeyAuthorization = {
+  permissions?: Record<string, string[]> | null;
+  metadata?: { type?: string } | null;
+};
+
+export function isAgentApiKey(
+  apiKey: ApiKeyAuthorization | undefined,
+): boolean {
+  return apiKey?.metadata?.type === "agent";
+}
+
 function builtInRoleStatements(
   role: string,
 ): Record<string, readonly string[]> | null {
@@ -91,10 +102,12 @@ export async function hasOrganizationPermission(
   const organizationId = c.get("organizationId");
   if (!organizationId) return false;
 
-  const apiKey = c.get("apiKey") as
-    | { permissions?: Record<string, string[]> | null }
-    | undefined;
-  if (apiKey?.permissions && !satisfies(apiKey.permissions, permissions)) {
+  const apiKey = c.get("apiKey") as ApiKeyAuthorization | undefined;
+  if (
+    !isAgentApiKey(apiKey) &&
+    apiKey?.permissions &&
+    !satisfies(apiKey.permissions, permissions)
+  ) {
     return false;
   }
 
@@ -139,10 +152,16 @@ export function requireOrganizationPermission(permissions: PermissionMap) {
       });
     }
 
-    const apiKey = c.get("apiKey") as
-      | { permissions?: Record<string, string[]> | null }
-      | undefined;
-    if (apiKey?.permissions && !satisfies(apiKey.permissions, permissions)) {
+    const apiKey = c.get("apiKey") as ApiKeyAuthorization | undefined;
+    // Agent keys authenticate a first-class organization member. Their
+    // organization role is the authority, exactly as it is for a human user;
+    // the legacy key permission map must not become a second ACL. Non-agent
+    // API keys remain scope-limited.
+    if (
+      !isAgentApiKey(apiKey) &&
+      apiKey?.permissions &&
+      !satisfies(apiKey.permissions, permissions)
+    ) {
       throw new HTTPException(403, { message: "Insufficient API key scope" });
     }
 

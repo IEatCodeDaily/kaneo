@@ -54,7 +54,9 @@ export function AgentManager() {
         organizationId,
         name: trimmedName,
         expiresAt: expiryFromNow(),
-        permissions: { board: ["read"], task: ["read", "create", "update"] },
+        // Kept for API-key record compatibility only. Agent authorization is
+        // derived from the agent member's organization role, not this map.
+        permissions: { board: ["read"] },
       });
       setSecret(created.key);
       setName("");

@@ -3116,7 +3116,7 @@
 		"agentManager": {
 			"title": "Organization AI agents",
 			"alphaBadge": "Alpha",
-			"description": "Non-interactive identities. New agents receive board read and ticket read/create/update access only.",
+			"description": "Non-interactive identities with the same role-based access as organization members.",
 			"nameLabel": "Agent name",
 			"namePlaceholder": "e.g. Release bot",
 			"create": "Create agent",
@@ -3124,7 +3124,7 @@
 			"secretWarning": "Copy this secret now. It will not be shown again.",
 			"copy": "Copy",
 			"agentBadge": "Agent",
-			"agentMeta": "Expires {{date}} · ticket read/create/update · board read",
+			"agentMeta": "Expires {{date}} · access follows organization role",
 			"revoke": "Revoke agent",
 			"createError": "Could not create agent",
 			"deleteError": "Could not delete agent"

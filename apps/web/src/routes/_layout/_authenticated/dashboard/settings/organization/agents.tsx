@@ -1,24 +1,29 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/organization/agents",
 )({
+  beforeLoad: async () => {
+    const { data: organization } =
+      await authClient.organization.getFullOrganization();
+    if (!organization?.slug) return;
+    throw redirect({
+      to: "/dashboard/organization/$organizationSlug/members",
+      params: { organizationSlug: organization.slug },
+      search: { tab: "members" },
+      replace: true,
+    });
+  },
   component: AgentSettings,
 });
 
 /**
  * AI agents belong to an organization, not to a personal account: their key is
  * scoped to one organization and only an owner/admin may issue or revoke one.
- * This previously lived under Account → Developer, where organization admins
- * could not find it.
+ * This route redirects to the organization members surface where agents are
+ * shown as first-class members and their credentials are managed.
  */
 function AgentSettings() {
-  const { data: organization } = useActiveOrganization();
-  if (!organization?.id) return null;
-  throw redirect({
-    to: "/dashboard/organization/$organizationSlug/members",
-    params: { organizationId: organization.id },
-    search: { tab: "members" },
-  });
+  return null;
 }
