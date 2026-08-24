@@ -34,6 +34,13 @@ type McpSession = {
   userId: string;
 };
 
+export function isMcpSessionOwner(
+  session: Pick<McpSession, "userId"> | undefined,
+  userId: string,
+): boolean {
+  return session?.userId === userId;
+}
+
 const sessions = new Map<string, McpSession>();
 
 function createMcpServerForUser(token: string, userId?: string): McpServer {
@@ -316,7 +323,10 @@ mcp.all("/mcp", async (c) => {
     const existing = sessions.get(sessionId);
     // A mismatched owner is reported as missing rather than forbidden so the
     // response cannot confirm that someone else's session id is valid.
-    if (existing && existing.userId === authResult.userId) {
+    if (isMcpSessionOwner(existing, authResult.userId)) {
+      // The helper above is directly regression-tested with two principals;
+      // only the creator can ever reach this transport invocation.
+      if (!existing) throw new Error("Owned MCP session disappeared");
       return existing.transport.handleRequest(c.req.raw);
     }
     return c.json({ error: "Session not found" }, 404);
