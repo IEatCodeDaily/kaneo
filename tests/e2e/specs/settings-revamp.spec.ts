@@ -50,9 +50,15 @@ test("every settings route still renders after the revamp", async ({
     const body = (await page.locator("body").innerText()).trim();
     const hasSectionNav =
       (await page.getByTestId("settings-section-account").count()) > 0;
+    const redirectedToMembers =
+      route === "/dashboard/settings/organization/agents" &&
+      page.url().includes("/members?tab=members") &&
+      body.includes("Organization AI agents");
 
-    // A working settings page shows the section sidebar and some content.
-    if (!hasSectionNav || body.length < 40) {
+    // Most settings pages keep the section sidebar. Agents intentionally lives
+    // on the organization members surface, where role and credential management
+    // are shown together.
+    if ((!hasSectionNav && !redirectedToMembers) || body.length < 40) {
       broken.push(`${route} (nav=${hasSectionNav} len=${body.length})`);
       console.log(`BROKEN: ${route} nav=${hasSectionNav} len=${body.length}`);
     } else {
