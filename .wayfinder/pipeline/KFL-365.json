@@ -1,0 +1,31 @@
+{
+  "ticket": "KFL-365",
+  "stages": [
+    {
+      "stage": "spec-review",
+      "status": "pass",
+      "agent": "orchestrator (pre-pipeline: architecture doc + board audit)",
+      "at": "2026-08-25T13:34:59+00:00"
+    },
+    {
+      "stage": "implementation",
+      "status": "pass",
+      "agent": "hermes sa-0-a8857ab1 (timed out) + omp 88089140 gate-finish",
+      "at": "2026-08-25T13:34:59+00:00",
+      "cycles": 1
+    },
+    {
+      "stage": "qc-review",
+      "status": "pass",
+      "agent": "orchestrator (transcript-verified RED/GREEN/negative-control, diff audit)",
+      "at": "2026-08-25T13:34:59+00:00"
+    },
+    {
+      "stage": "merge-check",
+      "status": "pass",
+      "agent": "orchestrator",
+      "at": "2026-08-25T13:34:59+00:00",
+      "commit": "01e79646"
+    }
+  ]
+}
