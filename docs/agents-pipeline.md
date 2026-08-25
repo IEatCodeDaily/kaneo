@@ -35,7 +35,23 @@ S1 spec-review ──> S2 implementation ──> S3 qc-review ──> S4 merge-c
 ### S4: Merge check (orchestrator, not delegated)
 - Full gates: `pnpm test`, `pnpm exec biome ci .` (no NEW errors vs HEAD baseline), `pnpm build`.
 - Diff audit: ticket-owned paths only; no worker debris; no peer work swept in.
-- Commit with Zephyr trailer; tracker proof comment + In Review (never Done).
+- Commit with Zephyr trailer; push branch; **open a PR on IEatCodeDaily/kaneo whose body
+  contains `Closes #<issue>`** for the ticket's mirrored GitHub issue
+  (mapping: `.wayfinder/pipeline/github-map.json`). Stack the PR on the current
+  stellarc integration branch, not `main`, so the diff shows only this ticket's commits.
+- Tracker proof comment (incl. PR URL) + In Review (never Done). The GitHub issue is
+  closed by the PR merge, not by hand; the Kaneo ticket is the status source of truth.
+
+## GitHub issue/PR mirror
+
+Every pipeline ticket has a mirrored issue on IEatCodeDaily/kaneo (labels `kfl`,
+`pipeline:projects-initiatives`), created and cross-linked by the sync flow. The
+mapping lives in `.wayfinder/pipeline/github-map.json`. Gate rules:
+
+1. No implementation PR without its mirrored issue; the PR must reference it (`Closes #N`).
+2. One ticket = one PR. Rework cycles push to the same branch/PR.
+3. PR merge closes the issue; the orchestrator then advances the Kaneo ticket.
+4. Kaneo board remains the planning source of truth; GitHub is the code-review gate.
 
 ## Stage state file
 
