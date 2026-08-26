@@ -9,6 +9,8 @@ import {
 export const statement = {
   ...defaultStatements,
   board: ["create", "read", "update", "delete", "share"],
+  // KFL-366: Project is an outcome-tracking domain, parallel to Board.
+  project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
   // `manage_connections` and `manage_members` are split out from the broad
@@ -29,6 +31,7 @@ export const ac = createAccessControl(statement);
 export const viewer = ac.newRole({
   ...memberAc.statements,
   board: ["read"],
+  project: ["read"],
   task: ["read"],
   label: ["read"],
   organization: ["read"],
@@ -37,6 +40,7 @@ export const viewer = ac.newRole({
 export const member = ac.newRole({
   ...memberAc.statements,
   board: ["create", "read"],
+  project: ["create", "read"],
   task: ["create", "read", "update"],
   label: ["create", "read", "update", "delete"],
   organization: ["read"],
@@ -45,6 +49,7 @@ export const member = ac.newRole({
 export const admin = ac.newRole({
   ...adminAc.statements,
   board: ["create", "read", "update", "delete", "share"],
+  project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
   organization: [
@@ -59,6 +64,7 @@ export const admin = ac.newRole({
 export const owner = ac.newRole({
   ...ownerAc.statements,
   board: ["create", "read", "update", "delete", "share"],
+  project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
   label: ["create", "read", "update", "delete"],
   organization: [

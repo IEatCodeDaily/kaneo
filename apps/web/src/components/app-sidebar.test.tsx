@@ -42,6 +42,9 @@ vi.mock("@/components/nav-main", () => ({ NavMain: () => <div /> }));
 vi.mock("@/components/nav-boards", () => ({
   NavBoards: () => <div data-testid="nav-boards" />,
 }));
+vi.mock("@/components/nav-projects", () => ({
+  NavProjects: () => <div data-testid="nav-projects" />,
+}));
 vi.mock("@/components/nav-repos", () => ({
   NavRepos: () => <div data-testid="nav-repos" />,
 }));
@@ -107,6 +110,24 @@ describe("AppSidebar layout (#96)", () => {
     const divider = screen.getByTestId("sidebar-boards-repos-divider");
     expect(divider.className).toContain("hidden");
     expect(divider.className).toContain("group-data-[collapsible=icon]:block");
+  });
+
+  it("renders Plan/Projects navigation before Board/Repo/Table resource navigation", () => {
+    render(<AppSidebar />);
+    const nav = screen.getByTestId("sidebar-content-slot");
+    const projects = nav.querySelector("[data-testid='nav-projects']");
+    const boards = nav.querySelector("[data-testid='nav-boards']");
+    const repos = nav.querySelector("[data-testid='nav-repos']");
+    const tables = nav.querySelector("[data-testid='nav-tables']");
+    expect(projects).not.toBeNull();
+    expect(boards).not.toBeNull();
+    expect(repos).not.toBeNull();
+    expect(tables).not.toBeNull();
+    const position = (el: Element | null) =>
+      el ? Array.from(nav.querySelectorAll("*")).indexOf(el) : -1;
+    expect(position(projects)).toBeLessThan(position(boards));
+    expect(position(projects)).toBeLessThan(position(repos));
+    expect(position(projects)).toBeLessThan(position(tables));
   });
 
   it("does not render the organization selector at the sidebar top", () => {

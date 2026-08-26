@@ -59,6 +59,7 @@ import organization from "./organization";
 import organizationGithub from "./organization-github";
 import { handleOrganizationGithubInstallCallback } from "./organization-github/install-callback";
 import { initializePlugins } from "./plugins";
+import project from "./project";
 import repo from "./repo";
 import { getResourcePrivilege, privilegeAllows } from "./resource-access";
 import resourceGrant from "./resource-grant";
@@ -107,6 +108,7 @@ import {
   removeUserConnection,
   shutdownWebSocketAdapter,
 } from "./ws";
+import { registerProjectSyncBroadcast } from "./ws/project-sync-broadcast";
 import { registerRepoSyncBroadcast } from "./ws/repo-sync-broadcast";
 
 type ApiKey = {
@@ -698,6 +700,7 @@ export function createApp() {
   );
 
   const boardApi = api.route("/board", board);
+  const projectApi = api.route("/project", project);
   const taskApi = api.route("/task", task);
   const repoApi = api.route("/repo", repo);
   const resourceGrantApi = api.route("/resource-grant", resourceGrant);
@@ -920,6 +923,7 @@ export function createApp() {
     notificationApi,
     notificationPreferencesApi,
     boardApi,
+    projectApi,
     publicBoardApi,
     publicTicketEmbedApi,
     repoApi,
@@ -977,6 +981,7 @@ export async function runStartupTasks() {
   initializeScheduler();
   await initializeWebSocketAdapter();
   await registerRepoSyncBroadcast();
+  await registerProjectSyncBroadcast();
 }
 
 export async function startServer(
@@ -1048,6 +1053,7 @@ const {
   notificationApi,
   notificationPreferencesApi,
   boardApi,
+  projectApi,
   publicBoardApi,
   repoApi,
   resourceGrantApi,
@@ -1075,6 +1081,7 @@ export type AppType =
   | typeof agentApi
   | typeof configApi
   | typeof boardApi
+  | typeof projectApi
   | typeof taskApi
   | typeof repoApi
   | typeof columnApi
