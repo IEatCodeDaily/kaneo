@@ -3171,6 +3171,31 @@
 			"archived": "Archived",
 			"noDueDate": "No target date"
 		},
+		"tabs": {
+			"overview": "Overview",
+			"tickets": "Tickets",
+			"label": "Project navigation"
+		},
+		"progress": {
+			"label": "Progress",
+			"completedOfEligible": "{{completed}} of {{eligible}} complete",
+			"noScopedWork": "No scoped work"
+		},
+		"tickets": {
+			"title": "Tickets",
+			"add": "Add ticket",
+			"remove": "Remove",
+			"emptyTitle": "No scoped tickets",
+			"emptyDescription": "Scope tickets from boards you can edit to track them here.",
+			"loading": "Loading tickets…",
+			"boardKey": "Board key",
+			"openTicket": "Open ticket",
+			"addSuccess": "Ticket scoped to project",
+			"removeSuccess": "Ticket removed from project",
+			"mutationError": "Could not update project tickets. Please try again.",
+			"alreadyScoped": "Already scoped",
+			"noEditableTickets": "No editable tickets available"
+		},
 		"labels": {
 			"name": "Name",
 			"summary": "Summary",
@@ -3219,7 +3244,10 @@
 			"slugInvalid": "Invalid project slug",
 			"slugReserved": "Project slug is already reserved",
 			"leadMustBelongToOrganization": "Project lead must be an active member of the organization",
-			"teamMustBelongToOrganization": "Project lead team must belong to the organization"
+			"teamMustBelongToOrganization": "Project lead team must belong to the organization",
+			"ticketRequired": "Ticket is required",
+			"ticketAlreadyScoped": "Ticket is already scoped to a project",
+			"ticketMustBelongToOrganization": "Ticket must belong to the project's organization"
 		}
 	}
 }

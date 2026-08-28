@@ -13208,6 +13208,15 @@
 						},
 						"teamMustBelongToOrganization": {
 							"type": "string"
+						},
+						"ticketRequired": {
+							"type": "string"
+						},
+						"ticketAlreadyScoped": {
+							"type": "string"
+						},
+						"ticketMustBelongToOrganization": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -13217,7 +13226,110 @@
 						"slugInvalid",
 						"slugReserved",
 						"leadMustBelongToOrganization",
-						"teamMustBelongToOrganization"
+						"teamMustBelongToOrganization",
+						"ticketRequired",
+						"ticketAlreadyScoped",
+						"ticketMustBelongToOrganization"
+					]
+				},
+				"tabs": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"overview": {
+							"type": "string"
+						},
+						"tickets": {
+							"type": "string"
+						},
+						"label": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"overview",
+						"tickets",
+						"label"
+					]
+				},
+				"progress": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"completedOfEligible": {
+							"type": "string"
+						},
+						"noScopedWork": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"completedOfEligible",
+						"noScopedWork"
+					]
+				},
+				"tickets": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"remove": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"boardKey": {
+							"type": "string"
+						},
+						"openTicket": {
+							"type": "string"
+						},
+						"addSuccess": {
+							"type": "string"
+						},
+						"removeSuccess": {
+							"type": "string"
+						},
+						"mutationError": {
+							"type": "string"
+						},
+						"alreadyScoped": {
+							"type": "string"
+						},
+						"noEditableTickets": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"add",
+						"remove",
+						"emptyTitle",
+						"emptyDescription",
+						"loading",
+						"boardKey",
+						"openTicket",
+						"addSuccess",
+						"removeSuccess",
+						"mutationError",
+						"alreadyScoped",
+						"noEditableTickets"
 					]
 				}
 			},
@@ -13227,7 +13339,10 @@
 				"lifecycle",
 				"actions",
 				"outcomes",
-				"validation"
+				"validation",
+				"tabs",
+				"progress",
+				"tickets"
 			]
 		}
 	},

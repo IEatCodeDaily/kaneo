@@ -18,7 +18,7 @@ async function resolveProject(
 ) {
   const normalized = slug.toLowerCase();
 
-  let project = await findProjectBySlug(organizationId, normalized);
+  let project = await findProjectBySlug(organizationId, normalized, userId);
   let usedSlugAlias = false;
 
   if (!project) {
@@ -33,7 +33,7 @@ async function resolveProject(
       )
       .limit(1);
     if (alias) {
-      project = await findProjectById(organizationId, alias.projectId);
+      project = await findProjectById(organizationId, alias.projectId, userId);
       usedSlugAlias = true;
     }
   }

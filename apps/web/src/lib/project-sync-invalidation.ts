@@ -19,5 +19,8 @@ export function invalidateProjectQueries(
   queryClient.invalidateQueries({
     queryKey: projectId ? ["project", projectId] : ["project"],
   });
+  queryClient.invalidateQueries({
+    queryKey: projectId ? ["project-tickets", projectId] : ["project-tickets"],
+  });
   queryClient.invalidateQueries({ queryKey: ["sidebar"] });
 }

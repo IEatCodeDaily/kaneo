@@ -711,6 +711,44 @@ export const projectSlugAliasTable = pgTable(
   ],
 );
 
+export const projectTicketTable = pgTable(
+  "project_ticket",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    rank: integer("rank").notNull().default(0),
+    addedBy: text("added_by")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    addedAt: timestamp("added_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("project_ticket_task_unique").on(table.taskId),
+    unique("project_ticket_project_task_unique").on(
+      table.projectId,
+      table.taskId,
+    ),
+    index("project_ticket_project_rank_idx").on(table.projectId, table.rank),
+    index("project_ticket_task_idx").on(table.taskId),
+  ],
+);
+
 export const dataTableTable = pgTable(
   "data_table",
   {
