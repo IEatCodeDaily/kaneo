@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
+import useGetLatestProjectUpdate from "@/hooks/queries/project/use-get-latest-project-update";
 import { formatDateMedium } from "@/lib/format";
+import ProjectHealthBadge from "./project-health-badge";
 import type { ProjectRowData } from "./project-row";
 
 type ProjectOverviewProps = {
@@ -17,6 +19,7 @@ type ProjectOverviewProps = {
  * there is no Kanban/board projection to redirect into.
  */
 export function ProjectOverview({ project }: ProjectOverviewProps) {
+  const { data: latest } = useGetLatestProjectUpdate({ projectId: project.id });
   const { t } = useTranslation();
 
   return (
@@ -76,20 +79,21 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       </section>
       <section>
         <h2 className="text-sm font-medium text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
+          {t("projects:labels.latestHealth", "Latest health")}
         </h2>
-        <p className="mt-1 text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
-        </p>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {t("projects:labels.noUpdate")}
-        </h2>
-        <p className="mt-1 text-muted-foreground">
-          {t("projects:labels.noUpdate")}
-        </p>
+        {latest ? (
+          <div className="mt-1 space-y-1">
+            <ProjectHealthBadge health={latest.health} />
+            <p className="text-sm">{latest.content}</p>
+            <p className="text-xs text-muted-foreground">
+              {latest.authorName ?? "Unknown"}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-muted-foreground">
+            {t("projects:labels.noUpdate")}
+          </p>
+        )}
       </section>
     </div>
   );

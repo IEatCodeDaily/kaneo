@@ -16,7 +16,14 @@ import { broadcastToUser } from "./index";
  * project-* query caches (see the web app's use-user-websocket +
  * invalidateProjectQueries).
  */
-type ProjectSyncEvent = { organizationId: string; projectId: string };
+type ProjectSyncEvent = {
+  organizationId: string;
+  projectId: string;
+  // KFL-370 update events additionally carry these; the broadcaster forwards
+  // only what clients need for cache invalidation.
+  updateId?: string;
+  health?: string;
+};
 
 async function broadcastProjectSync(
   messageType: string,
@@ -46,5 +53,18 @@ export async function registerProjectSyncBroadcast(): Promise<void> {
   );
   await subscribeToEvent<ProjectSyncEvent>("project.unarchived", (data) =>
     broadcastProjectSync("PROJECT_UNARCHIVED", data),
+  );
+  // KFL-370: authored-health Updates ride the same org-scoped fan-out. The
+  // payload carries updateId/health so the client can invalidate its
+  // project-updates caches; recipient semantics (notifications, followers)
+  // are deliberately NOT specified here.
+  await subscribeToEvent<ProjectSyncEvent>("project-update.created", (data) =>
+    broadcastProjectSync("PROJECT_UPDATE_CREATED", data),
+  );
+  await subscribeToEvent<ProjectSyncEvent>("project-update.updated", (data) =>
+    broadcastProjectSync("PROJECT_UPDATE_UPDATED", data),
+  );
+  await subscribeToEvent<ProjectSyncEvent>("project-update.deleted", (data) =>
+    broadcastProjectSync("PROJECT_UPDATE_DELETED", data),
   );
 }

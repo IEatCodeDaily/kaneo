@@ -7,12 +7,16 @@ import archiveProjectCtrl from "./controllers/archive-project";
 import createProjectCtrl, {
   PROJECT_STATUSES,
 } from "./controllers/create-project";
+import createProjectUpdateCtrl from "./controllers/create-project-update";
+import deleteProjectUpdateCtrl from "./controllers/delete-project-update";
 import getProjectCtrl from "./controllers/get-project";
+import listProjectUpdatesCtrl from "./controllers/list-project-updates";
 import listProjectsCtrl from "./controllers/list-projects";
 import renameProjectSlugCtrl from "./controllers/rename-project-slug";
 import resolveProjectCtrl from "./controllers/resolve-project";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
+import updateProjectUpdateCtrl from "./controllers/update-project-update";
 
 const PROJECT_PRIORITY_VALUES = [
   "no-priority",
@@ -54,6 +58,26 @@ const projectSchema = v.object({
 });
 
 const optionalNullableString = v.optional(v.nullable(v.string()));
+
+// KFL-370: authored-health Update payload shape (OpenAPI response schema).
+const projectUpdateSchema = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  projectId: v.string(),
+  authorId: v.string(),
+  authorName: v.nullable(v.string()),
+  content: v.string(),
+  health: v.picklist(["on-track", "at-risk", "off-track"]),
+  editHistory: v.array(
+    v.object({
+      content: v.string(),
+      editedAt: v.string(),
+      userId: v.string(),
+    }),
+  ),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
 
 const project = new Hono<{
   Variables: { userId: string; organizationId: string };
@@ -341,6 +365,157 @@ const project = new Hono<{
       const organizationId = c.get("organizationId");
       const unarchived = await unarchiveProjectCtrl(id, organizationId);
       return c.json(unarchived);
+    },
+  )
+  .get(
+    "/:id/updates",
+    describeRoute({
+      operationId: "listProjectUpdates",
+      tags: ["Projects"],
+      description: "List a project's updates, newest first",
+      responses: {
+        200: {
+          description: "Project updates (possibly empty)",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(projectUpdateSchema)),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const updates = await listProjectUpdatesCtrl({
+        organizationId,
+        projectId: id,
+        userId,
+      });
+      return c.json(updates);
+    },
+  )
+  .post(
+    "/:id/updates",
+    describeRoute({
+      operationId: "createProjectUpdate",
+      tags: ["Projects"],
+      description: "Publish an authored health update on a project",
+      responses: {
+        200: {
+          description: "Update published",
+          content: {
+            "application/json": { schema: resolver(projectUpdateSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        content: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(65535),
+        ),
+        health: v.picklist(["on-track", "at-risk", "off-track"]),
+      }),
+    ),
+    organizationAccess.fromProject(),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const created = await createProjectUpdateCtrl({
+        organizationId,
+        projectId: id,
+        userId,
+        body,
+      });
+      return c.json(created);
+    },
+  )
+  .put(
+    "/:id/updates/:updateId",
+    describeRoute({
+      operationId: "updateProjectUpdate",
+      tags: ["Projects"],
+      description: "Edit an authored update (author only)",
+      responses: {
+        200: {
+          description: "Update edited",
+          content: {
+            "application/json": { schema: resolver(projectUpdateSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), updateId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        content: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(65535),
+        ),
+        health: v.picklist(["on-track", "at-risk", "off-track"]),
+      }),
+    ),
+    organizationAccess.fromProject(),
+    async (c) => {
+      const { id, updateId } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const updated = await updateProjectUpdateCtrl({
+        organizationId,
+        projectId: id,
+        updateId,
+        userId,
+        body,
+      });
+      return c.json(updated);
+    },
+  )
+  .delete(
+    "/:id/updates/:updateId",
+    describeRoute({
+      operationId: "deleteProjectUpdate",
+      tags: ["Projects"],
+      description: "Delete an authored update (author only, hard delete)",
+      responses: {
+        200: {
+          description: "Update deleted",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ success: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), updateId: v.string() })),
+    organizationAccess.fromProject(),
+    async (c) => {
+      const { id, updateId } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const result = await deleteProjectUpdateCtrl({
+        organizationId,
+        projectId: id,
+        updateId,
+        userId,
+      });
+      return c.json(result);
     },
   );
 
