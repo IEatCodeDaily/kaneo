@@ -13312,25 +13312,17 @@
 						"alreadyScoped": {
 							"type": "string"
 						},
-						"noEditableTickets": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"add",
-						"remove",
-						"emptyTitle",
-						"emptyDescription",
-						"loading",
-						"boardKey",
-						"openTicket",
-						"addSuccess",
-						"removeSuccess",
-						"mutationError",
-						"alreadyScoped",
-						"noEditableTickets"
-					]
+            "noEditableTickets": { "type": "string" },
+            "views": { "type": "object", "additionalProperties": false, "properties": { "list": { "type": "string" }, "board": { "type": "string" }, "timeline": { "type": "string" } }, "required": ["list", "board", "timeline"] },
+            "filters": { "type": "object", "additionalProperties": false, "properties": { "search": { "type": "string" }, "status": { "type": "string" }, "priority": { "type": "string" }, "schedule": { "type": "string" }, "scheduled": { "type": "string" }, "unscheduled": { "type": "string" }, "clear": { "type": "string" } }, "required": ["search", "status", "priority", "schedule", "scheduled", "unscheduled", "clear"] },
+            "sort": { "type": "object", "additionalProperties": false, "properties": { "rank": { "type": "string" }, "title": { "type": "string" }, "priority": { "type": "string" }, "dueDate": { "type": "string" }, "directionAsc": { "type": "string" }, "directionDesc": { "type": "string" } }, "required": ["rank", "title", "priority", "dueDate", "directionAsc", "directionDesc"] },
+            "board": { "type": "object", "additionalProperties": false, "properties": { "otherStatus": { "type": "string" } }, "required": ["otherStatus"] },
+            "timeline": { "type": "object", "additionalProperties": false, "properties": { "unassigned": { "type": "string" }, "noScheduledWork": { "type": "string" }, "openTicket": { "type": "string" } }, "required": ["unassigned", "noScheduledWork", "openTicket"] },
+            "emptyFilteredTitle": { "type": "string" },
+            "emptyFilteredDescription": { "type": "string" },
+            "loadError": { "type": "string" }
+          },
+          "required": ["title", "add", "remove", "emptyTitle", "emptyDescription", "loading", "boardKey", "openTicket", "addSuccess", "removeSuccess", "mutationError", "alreadyScoped", "noEditableTickets", "views", "filters", "sort", "board", "timeline", "emptyFilteredTitle", "emptyFilteredDescription", "loadError"]
 				}
 			},
 			"required": [

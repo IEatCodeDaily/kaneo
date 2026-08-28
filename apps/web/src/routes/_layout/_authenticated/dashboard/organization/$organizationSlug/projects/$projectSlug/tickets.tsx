@@ -21,9 +21,11 @@ export function ProjectTicketsRouteComponent() {
   const navigate = useNavigate();
   const { project, usedSlugAlias, isLoading, organizationSlug } =
     useProjectSlug();
-  const { data, isLoading: isLoadingTickets } = useGetProjectTickets({
-    id: project?.id ?? "",
-  });
+  const {
+    data,
+    error: ticketsError,
+    isLoading: isLoadingTickets,
+  } = useGetProjectTickets({ id: project?.id ?? "" });
 
   useEffect(() => {
     if (project && usedSlugAlias) {
@@ -61,9 +63,12 @@ export function ProjectTicketsRouteComponent() {
           tickets={data?.tickets ?? []}
         />
         <ProjectTickets
+          key={project.id}
           isLoading={isLoadingTickets}
           organizationSlug={organizationSlug}
+          projectId={project.id}
           tickets={data?.tickets}
+          error={Boolean(ticketsError)}
         />
       </ProjectHeader>
     </>
