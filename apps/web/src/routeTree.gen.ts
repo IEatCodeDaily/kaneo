@@ -86,6 +86,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRe
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdReleasesRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/releases'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
 
@@ -613,6 +614,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTask
         LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRouteImport.update(
+    {
+      id: '/projects/$projectSlug/updates/',
+      path: '/projects/$projectSlug/updates/',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute =
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRouteImport.update(
     {
@@ -710,6 +720,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
   '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
   '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
+  '/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -786,6 +797,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
   '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
   '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
+  '/dashboard/organization/$organizationSlug/projects/$projectSlug/updates': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -868,6 +880,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIssuesNumberRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsNumberRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -949,6 +962,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId'
     | '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
     | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
+    | '/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1025,6 +1039,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId'
     | '/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
     | '/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
+    | '/dashboard/organization/$organizationSlug/projects/$projectSlug/updates'
   id:
     | '__root__'
     | '/'
@@ -1106,6 +1121,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId_'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1660,6 +1676,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/'
+      path: '/projects/$projectSlug/updates'
+      fullPath: '/dashboard/organization/$organizationSlug/projects/$projectSlug/updates/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
+    }
     '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number': {
       id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number'
       path: '/$number'
@@ -1875,6 +1898,7 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren 
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute
 }
 
 const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren =
@@ -1925,6 +1949,8 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren: Lay
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdIndexRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugTaskTaskIdRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsProjectSlugUpdatesIndexRoute,
   }
 
 const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteWithChildren =

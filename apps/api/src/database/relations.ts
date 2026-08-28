@@ -23,6 +23,7 @@ import {
   organizationTable,
   projectSlugAliasTable,
   projectTable,
+  projectUpdateTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -528,6 +529,24 @@ export const repoPullRequestTableRelations = relations(
     repo: one(repoTable, {
       fields: [repoPullRequestTable.repoId],
       references: [repoTable.id],
+    }),
+  }),
+);
+
+export const projectUpdateTableRelations = relations(
+  projectUpdateTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [projectUpdateTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [projectUpdateTable.projectId],
+      references: [projectTable.id],
+    }),
+    author: one(userTable, {
+      fields: [projectUpdateTable.authorId],
+      references: [userTable.id],
     }),
   }),
 );

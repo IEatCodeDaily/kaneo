@@ -13003,6 +13003,15 @@
 						},
 						"noDueDate": {
 							"type": "string"
+						},
+						"latestHealth": {
+							"type": "string"
+						},
+						"latestUpdate": {
+							"type": "string"
+						},
+						"freshness": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -13017,7 +13026,207 @@
 						"completed",
 						"canceled",
 						"archived",
-						"noDueDate"
+						"noDueDate",
+						"latestHealth",
+						"latestUpdate",
+						"freshness"
+					]
+				},
+				"health": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"onTrack": {
+							"type": "string"
+						},
+						"atRisk": {
+							"type": "string"
+						},
+						"offTrack": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"onTrack",
+						"atRisk",
+						"offTrack"
+					]
+				},
+				"updates": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"subtitle": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"composer": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"placeholder": {
+									"type": "string"
+								},
+								"healthLabel": {
+									"type": "string"
+								},
+								"contentLabel": {
+									"type": "string"
+								},
+								"submit": {
+									"type": "string"
+								},
+								"submitting": {
+									"type": "string"
+								},
+								"cancel": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"placeholder",
+								"healthLabel",
+								"contentLabel",
+								"submit",
+								"submitting",
+								"cancel"
+							]
+						},
+						"actions": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"edit": {
+									"type": "string"
+								},
+								"delete": {
+									"type": "string"
+								},
+								"editing": {
+									"type": "string"
+								},
+								"deleting": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"edit",
+								"delete",
+								"editing",
+								"deleting"
+							]
+						},
+						"confirmDeleteTitle": {
+							"type": "string"
+						},
+						"confirmDeleteDescription": {
+							"type": "string"
+						},
+						"confirmDelete": {
+							"type": "string"
+						},
+						"fresh": {
+							"type": "string"
+						},
+						"stale": {
+							"type": "string"
+						},
+						"by": {
+							"type": "string"
+						},
+						"edited": {
+							"type": "string"
+						},
+						"edited_one": {
+							"type": "string"
+						},
+						"history": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"empty"
+							]
+						},
+						"outcomes": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"createSuccess": {
+									"type": "string"
+								},
+								"updateSuccess": {
+									"type": "string"
+								},
+								"deleteSuccess": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"createSuccess",
+								"updateSuccess",
+								"deleteSuccess",
+								"error"
+							]
+						},
+						"validation": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"contentRequired": {
+									"type": "string"
+								},
+								"contentTooLong": {
+									"type": "string"
+								},
+								"healthRequired": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"contentRequired",
+								"contentTooLong",
+								"healthRequired"
+							]
+						}
+					},
+					"required": [
+						"title",
+						"subtitle",
+						"emptyTitle",
+						"emptyDescription",
+						"composer",
+						"actions",
+						"confirmDeleteTitle",
+						"confirmDeleteDescription",
+						"confirmDelete",
+						"fresh",
+						"stale",
+						"by",
+						"edited",
+						"edited_one",
+						"history",
+						"outcomes",
+						"validation"
 					]
 				},
 				"labels": {
@@ -13059,6 +13268,15 @@
 						},
 						"noUpdate": {
 							"type": "string"
+						},
+						"latestHealth": {
+							"type": "string"
+						},
+						"lastUpdate": {
+							"type": "string"
+						},
+						"updateFreshness": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -13073,7 +13291,10 @@
 						"successCriteria",
 						"description",
 						"noScopedWork",
-						"noUpdate"
+						"noUpdate",
+						"latestHealth",
+						"lastUpdate",
+						"updateFreshness"
 					]
 				},
 				"lifecycle": {
@@ -13223,6 +13444,8 @@
 			},
 			"required": [
 				"overview",
+				"health",
+				"updates",
 				"labels",
 				"lifecycle",
 				"actions",

@@ -74,7 +74,10 @@ export function useUserWebSocket() {
             message.type === "PROJECT_CREATED" ||
             message.type === "PROJECT_UPDATED" ||
             message.type === "PROJECT_ARCHIVED" ||
-            message.type === "PROJECT_UNARCHIVED"
+            message.type === "PROJECT_UNARCHIVED" ||
+            message.type === "PROJECT_UPDATE_CREATED" ||
+            message.type === "PROJECT_UPDATE_UPDATED" ||
+            message.type === "PROJECT_UPDATE_DELETED"
           ) {
             // Project mutations never poll and Kaneo disables
             // refetch-on-focus, so this push is the only way the Projects
