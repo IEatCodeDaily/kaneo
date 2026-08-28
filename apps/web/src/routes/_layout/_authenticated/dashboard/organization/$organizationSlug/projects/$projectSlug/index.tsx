@@ -21,9 +21,13 @@ export const Route = createFileRoute(
 export function ProjectDetailRouteComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { project, usedSlugAlias, isLoading, organizationSlug } =
-    useProjectSlug();
-
+  const {
+    project,
+    usedSlugAlias,
+    isLoading,
+    organizationSlug,
+    organizationId,
+  } = useProjectSlug();
   // Alias resolution redirects with `replace` to the canonical slug.
   useEffect(() => {
     if (project && usedSlugAlias) {
@@ -51,7 +55,11 @@ export function ProjectDetailRouteComponent() {
     <>
       <PageTitle title={project.name} />
       <ProjectHeader title={project.name}>
-        <ProjectOverview project={project} />
+        <ProjectOverview
+          organizationId={organizationId}
+          organizationSlug={organizationSlug}
+          project={project}
+        />
       </ProjectHeader>
     </>
   );

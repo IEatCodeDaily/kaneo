@@ -3212,6 +3212,49 @@
 			"unarchiveSuccess": "Project unarchived successfully",
 			"error": "Something went wrong. Please try again."
 		},
+		"resources": {
+			"title": "Resources",
+			"emptyTitle": "No linked resources",
+			"emptyDescription": "Link boards, repositories, or tables to give this project context.",
+			"loading": "Loading resources…",
+			"addResource": "Add resource",
+			"editLink": "Edit link",
+			"unlink": "Unlink",
+			"unlinkTitle": "Unlink resource?",
+			"unlinkDescription": "This removes the contextual link from the project. The resource itself is not changed.",
+			"confirmUnlink": "Unlink resource",
+			"types": {
+				"board": "Board",
+				"repo": "Repository",
+				"table": "Table"
+			},
+			"relationships": {
+				"context": "Context",
+				"dependency": "Dependency",
+				"deliverable": "Deliverable"
+			},
+			"fields": {
+				"resourceType": "Resource type",
+				"resource": "Resource",
+				"relationship": "Relationship",
+				"label": "Label",
+				"note": "Note",
+				"rank": "Rank"
+			},
+			"validation": {
+				"resourceRequired": "Select a resource",
+				"relationshipRequired": "Select a relationship",
+				"rankInvalid": "Rank must be a non-negative integer",
+				"alreadyLinked": "This resource is already linked to the project",
+				"resourceNotFound": "Resource not found"
+			},
+			"outcomes": {
+				"linkSuccess": "Resource linked",
+				"updateSuccess": "Link updated",
+				"unlinkSuccess": "Resource unlinked",
+				"error": "Something went wrong. Please try again."
+			}
+		},
 		"validation": {
 			"nameRequired": "Name is required",
 			"summaryRequired": "Summary is required",

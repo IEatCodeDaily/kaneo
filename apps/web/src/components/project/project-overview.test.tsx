@@ -10,6 +10,9 @@ vi.mock("@/lib/format", () => ({
   formatDateMedium: () => "Apr 5, 2026",
 }));
 
+vi.mock("./project-contextual-resources", () => ({
+  default: () => <div data-testid="project-contextual-resources" />,
+}));
 afterEach(() => cleanup());
 
 const baseProject = {
@@ -39,14 +42,26 @@ const baseProject = {
  */
 describe("ProjectOverview detail root", () => {
   it("renders the outcome summary", () => {
-    render(<ProjectOverview project={baseProject} />);
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
 
     expect(screen.getByTestId("project-overview")).toBeInTheDocument();
     expect(screen.getByText("Ship the growth loop")).toBeInTheDocument();
   });
 
   it("renders 'No scoped work' when there is no success criteria or scoped work", () => {
-    render(<ProjectOverview project={baseProject} />);
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
 
     // "projects:labels.noScopedWork" appears for BOTH the success-criteria
     // fallback and the dedicated scoped-work section — this ticket persists
@@ -56,7 +71,13 @@ describe("ProjectOverview detail root", () => {
   });
 
   it("renders 'No update' since health is presentation-only and never persisted", () => {
-    render(<ProjectOverview project={baseProject} />);
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
 
     expect(
       screen.getAllByText("projects:labels.noUpdate").length,
@@ -66,6 +87,8 @@ describe("ProjectOverview detail root", () => {
   it("renders the provided success criteria instead of the empty state when present", () => {
     render(
       <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
         project={{ ...baseProject, successCriteria: "Ship it" }}
       />,
     );
