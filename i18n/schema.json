@@ -13184,6 +13184,183 @@
 						"error"
 					]
 				},
+				"resources": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"addResource": {
+							"type": "string"
+						},
+						"editLink": {
+							"type": "string"
+						},
+						"unlink": {
+							"type": "string"
+						},
+						"unlinkTitle": {
+							"type": "string"
+						},
+						"unlinkDescription": {
+							"type": "string"
+						},
+						"confirmUnlink": {
+							"type": "string"
+						},
+						"types": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"board": {
+									"type": "string"
+								},
+								"repo": {
+									"type": "string"
+								},
+								"table": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"board",
+								"repo",
+								"table"
+							]
+						},
+						"relationships": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"context": {
+									"type": "string"
+								},
+								"dependency": {
+									"type": "string"
+								},
+								"deliverable": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"context",
+								"dependency",
+								"deliverable"
+							]
+						},
+						"fields": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"resourceType": {
+									"type": "string"
+								},
+								"resource": {
+									"type": "string"
+								},
+								"relationship": {
+									"type": "string"
+								},
+								"label": {
+									"type": "string"
+								},
+								"note": {
+									"type": "string"
+								},
+								"rank": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"resourceType",
+								"resource",
+								"relationship",
+								"label",
+								"note",
+								"rank"
+							]
+						},
+						"validation": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"resourceRequired": {
+									"type": "string"
+								},
+								"relationshipRequired": {
+									"type": "string"
+								},
+								"rankInvalid": {
+									"type": "string"
+								},
+								"alreadyLinked": {
+									"type": "string"
+								},
+								"resourceNotFound": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"resourceRequired",
+								"relationshipRequired",
+								"rankInvalid",
+								"alreadyLinked",
+								"resourceNotFound"
+							]
+						},
+						"outcomes": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"linkSuccess": {
+									"type": "string"
+								},
+								"updateSuccess": {
+									"type": "string"
+								},
+								"unlinkSuccess": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"linkSuccess",
+								"updateSuccess",
+								"unlinkSuccess",
+								"error"
+							]
+						}
+					},
+					"required": [
+						"title",
+						"emptyTitle",
+						"emptyDescription",
+						"loading",
+						"addResource",
+						"editLink",
+						"unlink",
+						"unlinkTitle",
+						"unlinkDescription",
+						"confirmUnlink",
+						"types",
+						"relationships",
+						"fields",
+						"validation",
+						"outcomes"
+					]
+				},
 				"validation": {
 					"type": "object",
 					"additionalProperties": false,
@@ -13227,6 +13404,7 @@
 				"lifecycle",
 				"actions",
 				"outcomes",
+				"resources",
 				"validation"
 			]
 		}
