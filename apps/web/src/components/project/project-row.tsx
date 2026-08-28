@@ -4,6 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateMedium } from "@/lib/format";
 
+export type ProjectProgress = {
+  completed: number;
+  eligible: number;
+  percent: number | null;
+};
+
 export type ProjectRowData = {
   id: string;
   slug: string;
@@ -16,7 +22,7 @@ export type ProjectRowData = {
   startDate: string | null;
   targetDate: string | null;
   archivedAt: string | null;
-  progress: null;
+  progress: ProjectProgress;
   health: null;
 };
 
@@ -82,7 +88,12 @@ export function ProjectRow({
         {project.targetDate ? formatDateMedium(project.targetDate) : "—"}
       </span>
       <span className="w-32 shrink-0 truncate text-sm text-muted-foreground">
-        {t("projects:labels.noScopedWork")}
+        {project.progress.percent === null
+          ? t("projects:progress.noScopedWork")
+          : t("projects:progress.completedOfEligible", {
+              completed: project.progress.completed,
+              eligible: project.progress.eligible,
+            })}
       </span>
       {canArchive && (
         <Button

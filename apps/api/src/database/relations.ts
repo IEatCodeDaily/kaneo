@@ -23,6 +23,7 @@ import {
   organizationTable,
   projectSlugAliasTable,
   projectTable,
+  projectTicketTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -202,6 +203,7 @@ export const projectTableRelations = relations(
       references: [userTable.id],
     }),
     slugAliases: many(projectSlugAliasTable),
+    tickets: many(projectTicketTable),
   }),
 );
 
@@ -215,6 +217,24 @@ export const projectSlugAliasTableRelations = relations(
     project: one(projectTable, {
       fields: [projectSlugAliasTable.projectId],
       references: [projectTable.id],
+    }),
+  }),
+);
+
+export const projectTicketTableRelations = relations(
+  projectTicketTable,
+  ({ one }) => ({
+    project: one(projectTable, {
+      fields: [projectTicketTable.projectId],
+      references: [projectTable.id],
+    }),
+    task: one(taskTable, {
+      fields: [projectTicketTable.taskId],
+      references: [taskTable.id],
+    }),
+    addedByUser: one(userTable, {
+      fields: [projectTicketTable.addedBy],
+      references: [userTable.id],
     }),
   }),
 );

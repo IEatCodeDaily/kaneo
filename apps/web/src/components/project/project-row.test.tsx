@@ -26,7 +26,7 @@ const project = {
   startDate: null,
   targetDate: null,
   archivedAt: null,
-  progress: null,
+  progress: { completed: 0, eligible: 0, percent: null },
   health: null,
 };
 

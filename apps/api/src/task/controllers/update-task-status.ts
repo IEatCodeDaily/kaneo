@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { publishProjectTicketUpdates } from "../../project/publish-project-ticket-updates";
 import { CLOSED_STATUS_SLUGS } from "../status-taxonomy";
 import { sealDescriptionHistory } from "../utils/description-history";
 import { assertValidTaskStatus } from "../validate-task-fields";
@@ -88,6 +89,8 @@ async function updateTaskStatus({
     boardId: updatedTask.boardId,
     userId: currentUserId,
   });
+
+  await publishProjectTicketUpdates(updatedTask.id);
 
   return updatedTask;
 }

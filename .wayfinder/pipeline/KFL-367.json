@@ -1,0 +1,67 @@
+{
+	"ticket": "KFL-367",
+	"stages": [
+		{
+			"stage": "spec-review",
+			"status": "pass",
+			"agent": "omp/9router/cx/gpt-5.6-terra",
+			"at": "2026-08-26T00:00:00Z",
+			"artifact": ".wayfinder/pipeline/KFL-367.spec.md"
+		},
+		{
+			"stage": "implementation",
+			"cycle": 1,
+			"status": "ready-for-qc",
+			"summary": "Persistence slice only: project_ticket table, relations, exports, migration 0073, journal entry. QC returned REWORK (five defects + one tracker-state note).",
+			"shared_file_edits": [
+				"apps/api/src/database/schema.ts",
+				"apps/api/src/database/relations.ts",
+				"apps/api/src/database/index.ts"
+			],
+			"red": "not executed",
+			"pass_counts": "0 verified",
+			"missing": [
+				"membership controllers/routes",
+				"authorized ticket/progress projection",
+				"task mutation broadcasts",
+				"web tickets UI/hooks/routes/i18n"
+			],
+			"spec_deviations": ["migration journal entry added manually"]
+		},
+		{
+			"stage": "implementation",
+			"cycle": 2,
+			"status": "ready-for-qc",
+			"summary": "Implemented defects 1-5. Membership API (GET/POST /project/:id/tickets, DELETE /project/:id/tickets/:taskId) with same-org proof inside the insert transaction, 409 duplicate, non-leaking 404, idempotent remove. Shared authorization-filtered progress+ticket projection replacing withPresentationOnlyFields everywhere (list/get/resolve). project.updated publication from add/remove and task status/archive/delete/move boundaries (cross-org move removes membership atomically); project-sync-invalidation extended with ['project-tickets', projectId]. Web vertical: tickets tab/route, project-tabs/tickets/row/picker, fetchers+query/mutation hooks, overview/row progress consumption, i18n en-US+schema in lockstep. Export-existence test now pins the task_id unique constraint (sabotage control goes RED).",
+			"shared_file_edits": [
+				"apps/api/src/project/index.ts",
+				"apps/api/src/project/project-projection.ts",
+				"apps/api/src/database/index.ts",
+				"apps/web/src/lib/project-sync-invalidation.ts",
+				"apps/web/src/components/project/project-row.tsx",
+				"apps/web/src/components/project/project-overview.tsx",
+				"i18n/en-US.json",
+				"i18n/schema.json"
+			],
+			"red": "tests/api-integration/project-ticket.test.ts (10 cases) captured RED before controllers: all 10 failed (routes absent -> 404; plus 'relation project_ticket does not exist' against the stale provisioned test DB).",
+			"pass_counts": "integration 10/10 (tests/api-integration/project-ticket.test.ts, real Postgres, mounted API); component 21/21 (project/*.test.tsx + project-sync-invalidation.test.ts); export/unit 2/2 (tests/api/project/project-ticket.test.ts, now pins project_ticket_task_unique).",
+			"missing": [
+				"routeTree.gen.ts not regenerated (no tsr CLI; generated via vite build which was not run — tickets.tsx route file exists but route tree is stale)",
+				"project-ticket-picker 'only editable tickets' board-edit filtering (picker currently takes a taskId input)",
+				"component case 9 route alias test not written"
+			],
+			"spec_deviations": [
+				"database/index.ts: added missing projectTicketTableRelations import (persistence slice export was incomplete and blocked every integration import)",
+				"test DB provisioned via drizzle-kit push + populated drizzle.__drizzle_migrations marker (migration chain is not fresh-applicable; see QC positive note that 0073 applied incrementally)"
+			]
+		},
+		{
+			"stage": "qc-review",
+			"cycle": 2,
+			"status": "pass",
+			"agent": "omp/9router/glm/glm-5.3",
+			"at": "2026-08-27T14:15:04Z",
+			"artifact": ".wayfinder/pipeline/KFL-367.qc2.md"
+		}
+	]
+}

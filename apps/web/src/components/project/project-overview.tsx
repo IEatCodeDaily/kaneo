@@ -76,10 +76,15 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       </section>
       <section>
         <h2 className="text-sm font-medium text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
+          {t("projects:progress.label")}
         </h2>
         <p className="mt-1 text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
+          {project.progress.percent === null
+            ? t("projects:progress.noScopedWork")
+            : t("projects:progress.completedOfEligible", {
+                completed: project.progress.completed,
+                eligible: project.progress.eligible,
+              })}
         </p>
       </section>
 

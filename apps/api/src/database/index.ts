@@ -21,6 +21,7 @@ import {
   organizationTableRelations,
   projectSlugAliasTableRelations,
   projectTableRelations,
+  projectTicketTableRelations,
   repoIssueTableRelations,
   repoPullRequestTableRelations,
   repoTableRelations,
@@ -66,6 +67,7 @@ import {
   organizationTable,
   projectSlugAliasTable,
   projectTable,
+  projectTicketTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -134,6 +136,7 @@ export const schema = {
   repoPullRequestTable,
   projectTable,
   projectSlugAliasTable,
+  projectTicketTable,
   accountTableRelations,
   assetTableRelations,
   activityTableRelations,
@@ -168,6 +171,7 @@ export const schema = {
   repoPullRequestTableRelations,
   projectTableRelations,
   projectSlugAliasTableRelations,
+  projectTicketTableRelations,
 };
 
 type DatabaseInstance = ReturnType<typeof drizzle<typeof schema>>;

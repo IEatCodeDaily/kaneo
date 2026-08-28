@@ -9,6 +9,7 @@ async function listProjects(
   const projects = await listProjectsForOrganization(
     organizationId,
     includeArchived,
+    userId,
   );
 
   const accessibleIds = new Set(

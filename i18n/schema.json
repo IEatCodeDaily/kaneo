@@ -13208,6 +13208,15 @@
 						},
 						"teamMustBelongToOrganization": {
 							"type": "string"
+						},
+						"ticketRequired": {
+							"type": "string"
+						},
+						"ticketAlreadyScoped": {
+							"type": "string"
+						},
+						"ticketMustBelongToOrganization": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -13217,8 +13226,103 @@
 						"slugInvalid",
 						"slugReserved",
 						"leadMustBelongToOrganization",
-						"teamMustBelongToOrganization"
+						"teamMustBelongToOrganization",
+						"ticketRequired",
+						"ticketAlreadyScoped",
+						"ticketMustBelongToOrganization"
 					]
+				},
+				"tabs": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"overview": {
+							"type": "string"
+						},
+						"tickets": {
+							"type": "string"
+						},
+						"label": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"overview",
+						"tickets",
+						"label"
+					]
+				},
+				"progress": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"completedOfEligible": {
+							"type": "string"
+						},
+						"noScopedWork": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"completedOfEligible",
+						"noScopedWork"
+					]
+				},
+				"tickets": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"remove": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"boardKey": {
+							"type": "string"
+						},
+						"openTicket": {
+							"type": "string"
+						},
+						"addSuccess": {
+							"type": "string"
+						},
+						"removeSuccess": {
+							"type": "string"
+						},
+						"mutationError": {
+							"type": "string"
+						},
+						"alreadyScoped": {
+							"type": "string"
+						},
+            "noEditableTickets": { "type": "string" },
+            "views": { "type": "object", "additionalProperties": false, "properties": { "list": { "type": "string" }, "board": { "type": "string" }, "timeline": { "type": "string" } }, "required": ["list", "board", "timeline"] },
+            "filters": { "type": "object", "additionalProperties": false, "properties": { "search": { "type": "string" }, "status": { "type": "string" }, "priority": { "type": "string" }, "schedule": { "type": "string" }, "scheduled": { "type": "string" }, "unscheduled": { "type": "string" }, "clear": { "type": "string" } }, "required": ["search", "status", "priority", "schedule", "scheduled", "unscheduled", "clear"] },
+            "sort": { "type": "object", "additionalProperties": false, "properties": { "rank": { "type": "string" }, "title": { "type": "string" }, "priority": { "type": "string" }, "dueDate": { "type": "string" }, "directionAsc": { "type": "string" }, "directionDesc": { "type": "string" } }, "required": ["rank", "title", "priority", "dueDate", "directionAsc", "directionDesc"] },
+            "board": { "type": "object", "additionalProperties": false, "properties": { "otherStatus": { "type": "string" } }, "required": ["otherStatus"] },
+            "timeline": { "type": "object", "additionalProperties": false, "properties": { "unassigned": { "type": "string" }, "noScheduledWork": { "type": "string" }, "openTicket": { "type": "string" } }, "required": ["unassigned", "noScheduledWork", "openTicket"] },
+            "emptyFilteredTitle": { "type": "string" },
+            "emptyFilteredDescription": { "type": "string" },
+            "loadError": { "type": "string" }
+          },
+          "required": ["title", "add", "remove", "emptyTitle", "emptyDescription", "loading", "boardKey", "openTicket", "addSuccess", "removeSuccess", "mutationError", "alreadyScoped", "noEditableTickets", "views", "filters", "sort", "board", "timeline", "emptyFilteredTitle", "emptyFilteredDescription", "loadError"]
 				}
 			},
 			"required": [
@@ -13227,7 +13331,10 @@
 				"lifecycle",
 				"actions",
 				"outcomes",
-				"validation"
+				"validation",
+				"tabs",
+				"progress",
+				"tickets"
 			]
 		}
 	},

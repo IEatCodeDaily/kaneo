@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { invalidateProjectQueries } from "./project-sync-invalidation";
 
 describe("invalidateProjectQueries", () => {
-  it("invalidates the projects list, project detail, and sidebar query families for the given project", () => {
+  it("invalidates the projects list, project detail, scoped tickets, and sidebar query families for the given project", () => {
     const queryClient = new QueryClient();
     const invalidated: unknown[][] = [];
     vi.spyOn(queryClient, "invalidateQueries").mockImplementation((filters) => {
@@ -15,6 +15,7 @@ describe("invalidateProjectQueries", () => {
 
     expect(invalidated).toContainEqual(["projects"]);
     expect(invalidated).toContainEqual(["project", "project-1"]);
+    expect(invalidated).toContainEqual(["project-tickets", "project-1"]);
     expect(invalidated).toContainEqual(["sidebar"]);
   });
 
