@@ -109,3 +109,55 @@ describe("useBoardWebSocket connection sharing", () => {
     b.unmount();
   });
 });
+
+describe("task lifecycle invalidation (KFL-376)", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    FakeWebSocket.instances = [];
+    vi.stubGlobal("WebSocket", FakeWebSocket);
+    vi.resetModules();
+    ({ useBoardWebSocket } = await import("./use-board-websocket"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  function mountWithClient() {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const clientWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useBoardWebSocket("board-1"), {
+      wrapper: clientWrapper,
+    });
+    return { client, hook };
+  }
+
+  for (const type of [
+    "TASK_CREATED",
+    "TASK_UPDATED",
+    "TASK_DELETED",
+    "TASK_MOVED",
+  ] as const) {
+    it(`invalidates search and parent-candidate caches on ${type}`, () => {
+      const { client, hook } = mountWithClient();
+      const spy = vi.spyOn(client, "invalidateQueries");
+
+      FakeWebSocket.instances[0].onmessage?.({
+        data: JSON.stringify({ type, boardId: "board-1", taskId: "t1" }),
+      } as MessageEvent);
+
+      const keys = spy.mock.calls.map(
+        (c) => (c[0] as { queryKey: unknown[] }).queryKey[0],
+      );
+      expect(keys).toContain("search");
+      expect(keys).toContain("parent-candidates");
+
+      hook.unmount();
+    });
+  }
+});

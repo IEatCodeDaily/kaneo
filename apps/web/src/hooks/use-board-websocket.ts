@@ -79,6 +79,19 @@ function handleMessage(event: MessageEvent, queryClient: QueryClient) {
     ) {
       queryClient.invalidateQueries({ queryKey: ["tasks", message.boardId] });
 
+      // Ticket pickers (relations, sub-tickets, parent) read from these
+      // caches; without this, a new ticket is invisible to search until
+      // gcTime expires (KFL-376).
+      if (
+        message.type === "TASK_CREATED" ||
+        message.type === "TASK_UPDATED" ||
+        message.type === "TASK_DELETED" ||
+        message.type === "TASK_MOVED"
+      ) {
+        queryClient.invalidateQueries({ queryKey: ["search"] });
+        queryClient.invalidateQueries({ queryKey: ["parent-candidates"] });
+      }
+
       if (message.type === "TASK_RELATION_UPDATED") {
         if (message.sourceTaskId) {
           queryClient.invalidateQueries({
