@@ -197,6 +197,301 @@ const project = new Hono<{
   Variables: { userId: string; organizationId: string };
 }>()
   .get(
+    "/",
+    describeRoute({
+      operationId: "listProjects",
+      tags: ["Projects"],
+      description: "Get all projects in an organization",
+      responses: {
+        200: {
+          description: "List of projects",
+          content: {
+            "application/json": { schema: resolver(v.array(projectSchema)) },
+          },
+        },
+      },
+    }),
+    validator(
+      "query",
+      v.object({
+        organizationId: v.string(),
+        includeArchived: v.optional(v.string()),
+      }),
+    ),
+    organizationAccess.fromQuery(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const { includeArchived } = c.req.valid("query");
+      const projects = await listProjectsCtrl(
+        organizationId,
+        userId,
+        includeArchived === "true",
+      );
+      return c.json(projects);
+    },
+  )
+  .post(
+    "/",
+    describeRoute({
+      operationId: "createProject",
+      tags: ["Projects"],
+      description: "Create a new project in an organization",
+      responses: {
+        200: {
+          description: "Project created successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator(
+      "json",
+      v.object({
+        organizationId: v.string(),
+        name: v.string(),
+        summary: v.string(),
+        leadUserId: v.string(),
+        leadTeamId: optionalNullableString,
+        slug: v.optional(v.string()),
+        status: v.optional(v.string()),
+        priority: optionalNullableString,
+        icon: optionalNullableString,
+        color: optionalNullableString,
+        description: optionalNullableString,
+        successCriteria: optionalNullableString,
+        startDate: optionalNullableString,
+        targetDate: optionalNullableString,
+      }),
+    ),
+    organizationAccess.fromBody(),
+    requireOrganizationPermission({ project: ["create"] }),
+    async (c) => {
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const created = await createProjectCtrl({
+        organizationId,
+        name: body.name,
+        summary: body.summary,
+        leadUserId: body.leadUserId,
+        leadTeamId: body.leadTeamId,
+        createdBy: userId,
+        slug: body.slug,
+        status: body.status,
+        priority: body.priority,
+        icon: body.icon,
+        color: body.color,
+        description: body.description,
+        successCriteria: body.successCriteria,
+        startDate: body.startDate,
+        targetDate: body.targetDate,
+      });
+      return c.json(created);
+    },
+  )
+  .get(
+    "/resolve",
+    describeRoute({
+      operationId: "resolveProject",
+      tags: ["Projects"],
+      description:
+        "Resolve a project slug (canonical or alias) to its canonical projection",
+      responses: {
+        200: {
+          description: "Resolved project",
+          content: {
+            "application/json": {
+              schema: resolver(
+                v.object({
+                  ...projectSchema.entries,
+                  usedSlugAlias: v.boolean(),
+                }),
+              ),
+            },
+          },
+        },
+      },
+    }),
+    validator(
+      "query",
+      v.object({ organizationId: v.string(), slug: v.string() }),
+    ),
+    organizationAccess.fromQuery(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { slug } = c.req.valid("query");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const resolved = await resolveProjectCtrl(organizationId, slug, userId);
+      return c.json(resolved);
+    },
+  )
+  .get(
+    "/:id",
+    describeRoute({
+      operationId: "getProject",
+      tags: ["Projects"],
+      description: "Get a specific project by ID",
+      responses: {
+        200: {
+          description: "Project details",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const projectData = await getProjectCtrl(organizationId, id, userId);
+      return c.json(projectData);
+    },
+  )
+  .put(
+    "/:id",
+    describeRoute({
+      operationId: "updateProject",
+      tags: ["Projects"],
+      description: "Update project metadata",
+      responses: {
+        200: {
+          description: "Project updated successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        name: v.string(),
+        summary: v.string(),
+        status: v.string(),
+        priority: v.nullable(v.string()),
+        icon: v.nullable(v.string()),
+        color: v.nullable(v.string()),
+        description: v.nullable(v.string()),
+        successCriteria: v.nullable(v.string()),
+        leadUserId: v.string(),
+        leadTeamId: v.nullable(v.string()),
+        startDate: v.nullable(v.string()),
+        targetDate: v.nullable(v.string()),
+        orgPrivilege: v.nullable(
+          v.picklist(["none", "view", "edit", "manage"] as const),
+        ),
+      }),
+    ),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const updatedBy = c.get("userId");
+      const updated = await updateProjectCtrl(id, {
+        organizationId,
+        updatedBy,
+        ...body,
+      });
+      return c.json(updated);
+    },
+  )
+  .put(
+    "/:id/slug",
+    describeRoute({
+      operationId: "renameProjectSlug",
+      tags: ["Projects"],
+      description: "Rename a project's canonical slug",
+      responses: {
+        200: {
+          description: "Project slug renamed successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator("json", v.object({ slug: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { slug } = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const updated = await renameProjectSlugCtrl(
+        id,
+        organizationId,
+        slug,
+        userId,
+      );
+      return c.json(updated);
+    },
+  )
+  .put(
+    "/:id/archive",
+    describeRoute({
+      operationId: "archiveProject",
+      tags: ["Projects"],
+      description: "Archive a project",
+      responses: {
+        200: {
+          description: "Project archived successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const archived = await archiveProjectCtrl(id, organizationId, userId);
+      return c.json(archived);
+    },
+  )
+  .put(
+    "/:id/unarchive",
+    describeRoute({
+      operationId: "unarchiveProject",
+      tags: ["Projects"],
+      description: "Unarchive a project",
+      responses: {
+        200: {
+          description: "Project unarchived successfully",
+          content: {
+            "application/json": { schema: resolver(projectSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const unarchived = await unarchiveProjectCtrl(id, organizationId, userId);
+      return c.json(unarchived);
+    },
+  )
+  .get(
     "/:id/tickets",
     describeRoute({
       operationId: "listProjectTickets",
@@ -242,7 +537,11 @@ const project = new Hono<{
     validator("param", v.object({ id: v.string() })),
     validator(
       "json",
-      v.object({ taskId: v.string(), rank: v.optional(v.number()) }),
+      v.object({
+        taskId: v.string(),
+        rank: v.optional(v.number()),
+        projectMilestoneId: v.optional(v.nullable(v.string())),
+      }),
     ),
     organizationAccess.fromProject(),
     requireOrganizationPermission({ project: ["update"] }),
