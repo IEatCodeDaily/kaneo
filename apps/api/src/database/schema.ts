@@ -711,6 +711,51 @@ export const projectSlugAliasTable = pgTable(
   ],
 );
 
+export const projectMilestoneTable = pgTable(
+  "project_milestone",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    description: text("description"),
+    targetDate: text("target_date"),
+    rank: integer("rank").notNull().default(0),
+    completedAt: timestamp("completed_at", { mode: "date" }),
+    completedBy: text("completed_by").references(() => userTable.id, {
+      onDelete: "restrict",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("project_milestone_project_id_id_unique").on(
+      table.projectId,
+      table.id,
+    ),
+    index("project_milestone_project_rank_created_idx").on(
+      table.projectId,
+      table.rank,
+      table.createdAt,
+    ),
+    index("project_milestone_completed_by_idx").on(table.completedBy),
+    check(
+      "project_milestone_completion_pair_check",
+      sql`(${table.completedAt} IS NULL) = (${table.completedBy} IS NULL)`,
+    ),
+  ],
+);
+
 export const projectTicketTable = pgTable(
   "project_ticket",
   {
@@ -729,6 +774,10 @@ export const projectTicketTable = pgTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
+    projectMilestoneId: text("project_milestone_id").references(
+      () => projectMilestoneTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
     rank: integer("rank").notNull().default(0),
     addedBy: text("added_by")
       .notNull()
@@ -746,6 +795,21 @@ export const projectTicketTable = pgTable(
     ),
     index("project_ticket_project_rank_idx").on(table.projectId, table.rank),
     index("project_ticket_task_idx").on(table.taskId),
+    index("project_ticket_project_milestone_rank_idx").on(
+      table.projectId,
+      table.projectMilestoneId,
+      table.rank,
+    ),
+    foreignKey({
+      columns: [table.projectId, table.projectMilestoneId],
+      foreignColumns: [
+        projectMilestoneTable.projectId,
+        projectMilestoneTable.id,
+      ],
+      name: "project_ticket_project_milestone_project_id_fk",
+    })
+      .onDelete("set null")
+      .onUpdate("cascade"),
   ],
 );
 

@@ -10,6 +10,10 @@ vi.mock("@/lib/format", () => ({
   formatDateMedium: () => "Apr 5, 2026",
 }));
 
+vi.mock("./project-milestones-section", () => ({
+  default: () => null,
+}));
+
 afterEach(() => cleanup());
 
 const baseProject = {

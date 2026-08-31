@@ -12,6 +12,7 @@ import {
 
 export type UpdateProjectInput = {
   organizationId: string;
+  updatedBy: string;
   name: string;
   summary: string;
   status: string;
@@ -70,7 +71,11 @@ async function updateProject(projectId: string, input: UpdateProjectInput) {
     })
     .where(eq(projectTable.id, projectId));
 
-  const project = await findProjectById(input.organizationId, projectId);
+  const project = await findProjectById(
+    input.organizationId,
+    projectId,
+    input.updatedBy,
+  );
   if (!project) {
     throw new HTTPException(500, { message: "Failed to load updated project" });
   }

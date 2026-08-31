@@ -16,6 +16,9 @@ describe("invalidateProjectQueries", () => {
     expect(invalidated).toContainEqual(["projects"]);
     expect(invalidated).toContainEqual(["project", "project-1"]);
     expect(invalidated).toContainEqual(["project-tickets", "project-1"]);
+    expect(invalidated).toContainEqual(["project-milestones", "project-1"]);
+    expect(invalidated).toContainEqual(["project-tickets"]);
+    expect(invalidated).toContainEqual(["project-milestones"]);
     expect(invalidated).toContainEqual(["sidebar"]);
   });
 

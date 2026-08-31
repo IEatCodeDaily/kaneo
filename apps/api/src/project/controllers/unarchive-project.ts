@@ -9,7 +9,11 @@ import { findProjectById } from "../project-projection";
  * Clears ONLY archivedAt/archivedBy — status (planned/started/completed/
  * canceled) is untouched, keeping lifecycle and archive independent.
  */
-async function unarchiveProject(projectId: string, organizationId: string) {
+async function unarchiveProject(
+  projectId: string,
+  organizationId: string,
+  userId: string,
+) {
   const [existing] = await db
     .select({ id: projectTable.id })
     .from(projectTable)
@@ -29,7 +33,7 @@ async function unarchiveProject(projectId: string, organizationId: string) {
     .set({ archivedAt: null, archivedBy: null })
     .where(eq(projectTable.id, projectId));
 
-  const project = await findProjectById(organizationId, projectId);
+  const project = await findProjectById(organizationId, projectId, userId);
   if (!project) {
     throw new HTTPException(500, {
       message: "Failed to load unarchived project",
@@ -39,4 +43,10 @@ async function unarchiveProject(projectId: string, organizationId: string) {
   return project;
 }
 
-export default unarchiveProject;
+export default async function unarchiveProjectController(
+  projectId: string,
+  organizationId: string,
+  userId: string,
+) {
+  await unarchiveProject(projectId, organizationId, userId);
+}

@@ -13020,6 +13020,255 @@
 						"noDueDate"
 					]
 				},
+				"tabs": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"overview": {
+							"type": "string"
+						},
+						"tickets": {
+							"type": "string"
+						},
+						"label": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"overview",
+						"tickets",
+						"label"
+					]
+				},
+				"progress": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"label": {
+							"type": "string"
+						},
+						"completedOfEligible": {
+							"type": "string"
+						},
+						"noScopedWork": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"label",
+						"completedOfEligible",
+						"noScopedWork"
+					]
+				},
+				"tickets": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"remove": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"boardKey": {
+							"type": "string"
+						},
+						"openTicket": {
+							"type": "string"
+						},
+						"addSuccess": {
+							"type": "string"
+						},
+						"removeSuccess": {
+							"type": "string"
+						},
+						"mutationError": {
+							"type": "string"
+						},
+						"alreadyScoped": {
+							"type": "string"
+						},
+						"noEditableTickets": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"add",
+						"remove",
+						"emptyTitle",
+						"emptyDescription",
+						"loading",
+						"boardKey",
+						"openTicket",
+						"addSuccess",
+						"removeSuccess",
+						"mutationError",
+						"alreadyScoped",
+						"noEditableTickets"
+					]
+				},
+				"milestones": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"edit": {
+							"type": "string"
+						},
+						"delete": {
+							"type": "string"
+						},
+						"complete": {
+							"type": "string"
+						},
+						"reopen": {
+							"type": "string"
+						},
+						"unassigned": {
+							"type": "string"
+						},
+						"name": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"targetDate": {
+							"type": "string"
+						},
+						"rank": {
+							"type": "string"
+						},
+						"progress": {
+							"type": "string"
+						},
+						"completedBy": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"noTargetDate": {
+							"type": "string"
+						},
+						"noScopedWork": {
+							"type": "string"
+						},
+						"createSuccess": {
+							"type": "string"
+						},
+						"updateSuccess": {
+							"type": "string"
+						},
+						"deleteSuccess": {
+							"type": "string"
+						},
+						"completeSuccess": {
+							"type": "string"
+						},
+						"reopenSuccess": {
+							"type": "string"
+						},
+						"assignSuccess": {
+							"type": "string"
+						},
+						"mutationError": {
+							"type": "string"
+						},
+						"deleteTitle": {
+							"type": "string"
+						},
+						"deleteDescription": {
+							"type": "string"
+						},
+						"validation": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"nameRequired": {
+									"type": "string"
+								},
+								"nameTooLong": {
+									"type": "string"
+								},
+								"descriptionTooLong": {
+									"type": "string"
+								},
+								"invalidTargetDate": {
+									"type": "string"
+								},
+								"invalidRank": {
+									"type": "string"
+								},
+								"milestoneNotInProject": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"nameRequired",
+								"nameTooLong",
+								"descriptionTooLong",
+								"invalidTargetDate",
+								"invalidRank",
+								"milestoneNotInProject"
+							]
+						}
+					},
+					"required": [
+						"title",
+						"add",
+						"edit",
+						"delete",
+						"complete",
+						"reopen",
+						"unassigned",
+						"name",
+						"description",
+						"targetDate",
+						"rank",
+						"progress",
+						"completedBy",
+						"emptyTitle",
+						"emptyDescription",
+						"loading",
+						"noTargetDate",
+						"noScopedWork",
+						"createSuccess",
+						"updateSuccess",
+						"deleteSuccess",
+						"completeSuccess",
+						"reopenSuccess",
+						"assignSuccess",
+						"mutationError",
+						"deleteTitle",
+						"deleteDescription",
+						"validation"
+					]
+				},
 				"labels": {
 					"type": "object",
 					"additionalProperties": false,
@@ -13231,118 +13480,19 @@
 						"ticketAlreadyScoped",
 						"ticketMustBelongToOrganization"
 					]
-				},
-				"tabs": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"overview": {
-							"type": "string"
-						},
-						"tickets": {
-							"type": "string"
-						},
-						"label": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"overview",
-						"tickets",
-						"label"
-					]
-				},
-				"progress": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"label": {
-							"type": "string"
-						},
-						"completedOfEligible": {
-							"type": "string"
-						},
-						"noScopedWork": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"label",
-						"completedOfEligible",
-						"noScopedWork"
-					]
-				},
-				"tickets": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"title": {
-							"type": "string"
-						},
-						"add": {
-							"type": "string"
-						},
-						"remove": {
-							"type": "string"
-						},
-						"emptyTitle": {
-							"type": "string"
-						},
-						"emptyDescription": {
-							"type": "string"
-						},
-						"loading": {
-							"type": "string"
-						},
-						"boardKey": {
-							"type": "string"
-						},
-						"openTicket": {
-							"type": "string"
-						},
-						"addSuccess": {
-							"type": "string"
-						},
-						"removeSuccess": {
-							"type": "string"
-						},
-						"mutationError": {
-							"type": "string"
-						},
-						"alreadyScoped": {
-							"type": "string"
-						},
-						"noEditableTickets": {
-							"type": "string"
-						}
-					},
-					"required": [
-						"title",
-						"add",
-						"remove",
-						"emptyTitle",
-						"emptyDescription",
-						"loading",
-						"boardKey",
-						"openTicket",
-						"addSuccess",
-						"removeSuccess",
-						"mutationError",
-						"alreadyScoped",
-						"noEditableTickets"
-					]
 				}
 			},
 			"required": [
 				"overview",
+				"tabs",
+				"progress",
+				"tickets",
+				"milestones",
 				"labels",
 				"lifecycle",
 				"actions",
 				"outcomes",
-				"validation",
-				"tabs",
-				"progress",
-				"tickets"
+				"validation"
 			]
 		}
 	},
