@@ -6,11 +6,18 @@ import {
   boardTable,
   organizationSlugAliasTable,
   organizationTable,
+  projectSlugAliasTable,
+  projectTable,
 } from "../database/schema";
-import { normalizeBoardKey, normalizeOrganizationSlug } from "./identity";
+import {
+  normalizeBoardKey,
+  normalizeOrganizationSlug,
+  normalizeProjectSlug,
+} from "./identity";
 
 const ORGANIZATION_SLUG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const BOARD_KEY = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/;
+const PROJECT_SLUG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export async function renameOrganizationSlug(
   organizationId: string,
@@ -146,6 +153,80 @@ export async function renameBoardKey(
       .set({ slug: key })
       .where(eq(boardTable.id, boardId))
       .returning({ id: boardTable.id, key: boardTable.slug });
+    return updated;
+  });
+}
+
+export async function renameProjectSlug(
+  projectId: string,
+  organizationId: string,
+  requestedSlug: string,
+) {
+  const slug = normalizeProjectSlug(requestedSlug);
+  if (slug.length < 2 || slug.length > 63 || !PROJECT_SLUG.test(slug)) {
+    throw new HTTPException(400, { message: "Invalid project slug" });
+  }
+  return db.transaction(async (tx) => {
+    const [project] = await tx
+      .select({ id: projectTable.id, slug: projectTable.slug })
+      .from(projectTable)
+      .where(
+        and(
+          eq(projectTable.id, projectId),
+          eq(projectTable.organizationId, organizationId),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!project)
+      throw new HTTPException(404, { message: "Project not found" });
+    if (normalizeProjectSlug(project.slug) === slug)
+      return { id: project.id, slug };
+
+    const [currentOwner] = await tx
+      .select({ id: projectTable.id })
+      .from(projectTable)
+      .where(
+        and(
+          eq(projectTable.organizationId, organizationId),
+          sql`lower(${projectTable.slug}) = ${slug}`,
+          ne(projectTable.id, projectId),
+        ),
+      )
+      .limit(1);
+    const [aliasOwner] = await tx
+      .select({ projectId: projectSlugAliasTable.projectId })
+      .from(projectSlugAliasTable)
+      .where(
+        and(
+          eq(projectSlugAliasTable.organizationId, organizationId),
+          sql`lower(${projectSlugAliasTable.slug}) = ${slug}`,
+        ),
+      )
+      .limit(1);
+    if (currentOwner || (aliasOwner && aliasOwner.projectId !== projectId)) {
+      throw new HTTPException(409, {
+        message: "Project slug is already reserved",
+      });
+    }
+
+    await tx
+      .insert(projectSlugAliasTable)
+      .values({ organizationId, projectId, slug: project.slug })
+      .onConflictDoNothing();
+    await tx
+      .delete(projectSlugAliasTable)
+      .where(
+        and(
+          eq(projectSlugAliasTable.projectId, projectId),
+          sql`lower(${projectSlugAliasTable.slug}) = ${slug}`,
+        ),
+      );
+    const [updated] = await tx
+      .update(projectTable)
+      .set({ slug })
+      .where(eq(projectTable.id, projectId))
+      .returning({ id: projectTable.id, slug: projectTable.slug });
     return updated;
   });
 }

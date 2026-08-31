@@ -5,6 +5,7 @@ import {
   dataTableTable,
   organizationMemberTable,
   organizationTable,
+  projectTable,
   repoTable,
   resourceGrantTable,
   userTable,
@@ -14,7 +15,7 @@ import { getEffectiveTeamIdsForUser } from "./team/effective-membership";
 
 export const RESOURCE_PRIVILEGES = ["none", "view", "edit", "manage"] as const;
 export type ResourcePrivilege = (typeof RESOURCE_PRIVILEGES)[number];
-export const RESOURCE_TYPES = ["board", "repo", "table"] as const;
+export const RESOURCE_TYPES = ["board", "repo", "table", "project"] as const;
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
 /**
@@ -38,6 +39,7 @@ const RESOURCE_TABLES = {
   board: boardTable,
   repo: repoTable,
   table: dataTableTable,
+  project: projectTable,
 } as const;
 
 /** The resource's own org baseline column, NULL when it follows the org. */

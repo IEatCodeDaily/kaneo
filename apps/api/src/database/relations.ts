@@ -21,6 +21,8 @@ import {
   organizationMemberTable,
   organizationRoleTable,
   organizationTable,
+  projectSlugAliasTable,
+  projectTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -175,6 +177,47 @@ export const boardTableRelations = relations(boardTable, ({ one, many }) => ({
   integrations: many(integrationTable),
   notificationOrganizationBoards: many(userNotificationOrgBoardTable),
 }));
+
+export const projectTableRelations = relations(
+  projectTable,
+  ({ one, many }) => ({
+    organization: one(organizationTable, {
+      fields: [projectTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    lead: one(userTable, {
+      fields: [projectTable.leadUserId],
+      references: [userTable.id],
+    }),
+    leadTeam: one(teamTable, {
+      fields: [projectTable.leadTeamId],
+      references: [teamTable.id],
+    }),
+    archivedByUser: one(userTable, {
+      fields: [projectTable.archivedBy],
+      references: [userTable.id],
+    }),
+    createdByUser: one(userTable, {
+      fields: [projectTable.createdBy],
+      references: [userTable.id],
+    }),
+    slugAliases: many(projectSlugAliasTable),
+  }),
+);
+
+export const projectSlugAliasTableRelations = relations(
+  projectSlugAliasTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [projectSlugAliasTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [projectSlugAliasTable.projectId],
+      references: [projectTable.id],
+    }),
+  }),
+);
 
 export const columnTableRelations = relations(columnTable, ({ one, many }) => ({
   board: one(boardTable, {
