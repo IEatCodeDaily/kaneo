@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { formatDateMedium } from "@/lib/format";
 import ProjectMilestonesSection from "./project-milestones-section";
+import ProjectContextualResources from "./project-contextual-resources";
 import type { ProjectRowData } from "./project-row";
 
 type ProjectOverviewProps = {
@@ -10,14 +11,15 @@ type ProjectOverviewProps = {
     successCriteria: string | null;
     startDate: string | null;
   };
+  organizationId: string;
+  organizationSlug: string;
 };
 
-/**
- * Project detail root. Unlike Board's `board/$boardSlug/index.tsx` (which
- * redirects to Kanban), Project detail root RENDERS this Overview directly —
- * there is no Kanban/board projection to redirect into.
- */
-export function ProjectOverview({ project }: ProjectOverviewProps) {
+export function ProjectOverview({
+  project,
+  organizationId,
+  organizationSlug,
+}: ProjectOverviewProps) {
   const { t } = useTranslation();
 
   return (
@@ -88,6 +90,12 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
               })}
         </p>
       </section>
+
+      <ProjectContextualResources
+        organizationId={organizationId}
+        organizationSlug={organizationSlug}
+        projectId={project.id}
+      />
 
       <section>
         <h2 className="text-sm font-medium text-muted-foreground">

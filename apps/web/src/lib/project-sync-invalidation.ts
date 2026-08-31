@@ -26,5 +26,13 @@ export function invalidateProjectQueries(
       queryKey: ["project-milestones", projectId],
     });
   }
+  queryClient.invalidateQueries({
+    queryKey: projectId ? ["project", projectId] : ["project"],
+  });
+  queryClient.invalidateQueries({
+    queryKey: projectId
+      ? ["project-resources", projectId]
+      : ["project-resources"],
+  });
   queryClient.invalidateQueries({ queryKey: ["sidebar"] });
 }

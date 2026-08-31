@@ -26,9 +26,18 @@ import removeProjectTicketCtrl from "./controllers/remove-project-ticket";
 import renameProjectSlugCtrl from "./controllers/rename-project-slug";
 import reopenProjectMilestoneCtrl from "./controllers/reopen-project-milestone";
 import resolveProjectCtrl from "./controllers/resolve-project";
+import createProjectResourceLinkCtrl from "./controllers/resources/create-project-resource-link";
+import deleteProjectResourceLinkCtrl from "./controllers/resources/delete-project-resource-link";
+import listProjectResourcesCtrl from "./controllers/resources/list-project-resources";
+import updateProjectResourceLinkCtrl from "./controllers/resources/update-project-resource-link";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
 import updateProjectMilestoneCtrl from "./controllers/update-project-milestone";
+import {
+  projectResourceLinkSchema,
+  projectResourceRelationshipSchema,
+  projectResourceTypeSchema,
+} from "./project-resource-projection";
 
 const PROJECT_PRIORITY_VALUES = [
   "no-priority",
@@ -469,6 +478,17 @@ const project = new Hono<{
           content: {
             "application/json": {
               schema: resolver(projectTicketsResponseSchema),
+    "/:id/resources",
+    describeRoute({
+      operationId: "listProjectResources",
+      tags: ["Projects"],
+      description: "List contextual resource links for a project",
+      responses: {
+        200: {
+          description: "List of project resource links",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(projectResourceLinkSchema)),
             },
           },
         },
@@ -495,6 +515,21 @@ const project = new Hono<{
           description: "Scoped ticket projection",
           content: {
             "application/json": { schema: resolver(projectTicketSchema) },
+      const links = await listProjectResourcesCtrl(organizationId, id, userId);
+      return c.json(links);
+    },
+  )
+  .post(
+    "/:id/resources",
+    describeRoute({
+      operationId: "createProjectResourceLink",
+      tags: ["Projects"],
+      description: "Link a contextual resource to a project",
+      responses: {
+        200: {
+          description: "Project resource link created",
+          content: {
+            "application/json": { schema: resolver(projectResourceLinkSchema) },
           },
         },
       },
@@ -506,6 +541,12 @@ const project = new Hono<{
         taskId: v.string(),
         rank: v.optional(v.number()),
         projectMilestoneId: optionalNullableString,
+        resourceType: projectResourceTypeSchema,
+        resourceId: v.string(),
+        relationship: projectResourceRelationshipSchema,
+        label: v.optional(v.nullable(v.string())),
+        note: v.optional(v.nullable(v.string())),
+        rank: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
       }),
     ),
     organizationAccess.fromProject(),
@@ -788,6 +829,86 @@ const project = new Hono<{
         userId,
       );
       return c.json(ticket);
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const link = await createProjectResourceLinkCtrl({
+        organizationId,
+        projectId: id,
+        userId,
+        ...body,
+      });
+      return c.json(link);
+    },
+  )
+  .put(
+    "/:id/resources/:linkId",
+    describeRoute({
+      operationId: "updateProjectResourceLink",
+      tags: ["Projects"],
+      description: "Update a project resource link's metadata",
+      responses: {
+        200: {
+          description: "Project resource link updated",
+          content: {
+            "application/json": { schema: resolver(projectResourceLinkSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), linkId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        relationship: projectResourceRelationshipSchema,
+        label: v.optional(v.nullable(v.string())),
+        note: v.optional(v.nullable(v.string())),
+        rank: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
+      }),
+    ),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, linkId } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const link = await updateProjectResourceLinkCtrl({
+        organizationId,
+        projectId: id,
+        linkId,
+        userId,
+        ...body,
+      });
+      return c.json(link);
+    },
+  )
+  .delete(
+    "/:id/resources/:linkId",
+    describeRoute({
+      operationId: "deleteProjectResourceLink",
+      tags: ["Projects"],
+      description: "Remove a project resource link",
+      responses: {
+        204: { description: "Project resource link removed" },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), linkId: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, linkId } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      await deleteProjectResourceLinkCtrl({
+        organizationId,
+        projectId: id,
+        linkId,
+        userId,
+      });
+      return new Response(null, { status: 204 });
     },
   );
 

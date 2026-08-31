@@ -25,6 +25,11 @@ import {
   projectSlugAliasTable,
   projectTable,
   projectTicketTable,
+  projectBoardTable,
+  projectRepoTable,
+  projectSlugAliasTable,
+  projectTable,
+  projectTableLinkTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -103,6 +108,7 @@ export const dataTableTableRelations = relations(
     }),
     fields: many(dataTableFieldTable),
     rows: many(dataTableRowTable),
+    projectLinks: many(projectTableLinkTable),
   }),
 );
 
@@ -176,8 +182,8 @@ export const boardTableRelations = relations(boardTable, ({ one, many }) => ({
   columns: many(columnTable),
   workflowRules: many(workflowRuleTable),
   githubIntegration: many(githubIntegrationTable),
-  integrations: many(integrationTable),
   notificationOrganizationBoards: many(userNotificationOrgBoardTable),
+  projectLinks: many(projectBoardTable),
 }));
 
 export const projectTableRelations = relations(
@@ -206,6 +212,9 @@ export const projectTableRelations = relations(
     slugAliases: many(projectSlugAliasTable),
     tickets: many(projectTicketTable),
     milestones: many(projectMilestoneTable),
+    boardLinks: many(projectBoardTable),
+    repoLinks: many(projectRepoTable),
+    tableLinks: many(projectTableLinkTable),
   }),
 );
 
@@ -553,6 +562,7 @@ export const repoTableRelations = relations(repoTable, ({ one, many }) => ({
   }),
   issues: many(repoIssueTable),
   pullRequests: many(repoPullRequestTable),
+  projectLinks: many(projectRepoTable),
 }));
 
 export const repoIssueTableRelations = relations(repoIssueTable, ({ one }) => ({
@@ -568,6 +578,71 @@ export const repoPullRequestTableRelations = relations(
     repo: one(repoTable, {
       fields: [repoPullRequestTable.repoId],
       references: [repoTable.id],
+    }),
+  }),
+);
+export const projectBoardTableRelations = relations(
+  projectBoardTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [projectBoardTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [projectBoardTable.projectId],
+      references: [projectTable.id],
+    }),
+    board: one(boardTable, {
+      fields: [projectBoardTable.boardId],
+      references: [boardTable.id],
+    }),
+    creator: one(userTable, {
+      fields: [projectBoardTable.createdBy],
+      references: [userTable.id],
+    }),
+  }),
+);
+
+export const projectRepoTableRelations = relations(
+  projectRepoTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [projectRepoTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [projectRepoTable.projectId],
+      references: [projectTable.id],
+    }),
+    repo: one(repoTable, {
+      fields: [projectRepoTable.repoId],
+      references: [repoTable.id],
+    }),
+    creator: one(userTable, {
+      fields: [projectRepoTable.createdBy],
+      references: [userTable.id],
+    }),
+  }),
+);
+
+export const projectTableLinkTableRelations = relations(
+  projectTableLinkTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
+      fields: [projectTableLinkTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [projectTableLinkTable.projectId],
+      references: [projectTable.id],
+    }),
+    table: one(dataTableTable, {
+      fields: [projectTableLinkTable.tableId],
+      references: [dataTableTable.id],
+    }),
+    creator: one(userTable, {
+      fields: [projectTableLinkTable.createdBy],
+      references: [userTable.id],
     }),
   }),
 );

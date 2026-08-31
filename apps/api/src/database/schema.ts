@@ -832,7 +832,14 @@ export const dataTableTable = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("data_table_organization_idx").on(table.organizationId)],
+  (table) => [
+    index("data_table_organization_idx").on(table.organizationId),
+    // KFL-368: composite identity for type-safe association-table FKs.
+    unique("data_table_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+  ],
 );
 
 export const dataTableFieldTable = pgTable(
@@ -1972,9 +1979,184 @@ export const repoTable = pgTable(
       table.owner,
       table.name,
     ),
+    // KFL-368: composite identity for type-safe association-table FKs.
+    unique("repo_organization_id_id_unique").on(table.organizationId, table.id),
   ],
 );
 
+/**
+ * KFL-368: type-safe Project↔Resource association tables (ADR 18).
+ *
+ * These are context-only links — they grant no privilege, contribute no
+ * progress, and never transfer ownership. Same-organization identity is
+ * database-enforced on every association via composite foreign keys against
+ * both Project and the target Resource `(organization_id, id)` keys.
+ * Deleting a Project or Resource cascades only these association rows.
+ */
+export const projectBoardTable = pgTable(
+  "project_board",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    projectId: text("project_id").notNull(),
+    boardId: text("board_id").notNull(),
+    relationship: text("relationship").notNull(),
+    label: text("label"),
+    note: text("note"),
+    rank: integer("rank").notNull().default(0),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projectTable.organizationId, projectTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.boardId],
+      foreignColumns: [boardTable.organizationId, boardTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    unique("project_board_project_id_board_id_unique").on(
+      table.projectId,
+      table.boardId,
+    ),
+    index("project_board_project_id_idx").on(table.projectId),
+    index("project_board_board_id_idx").on(table.boardId),
+    index("project_board_project_id_rank_idx").on(table.projectId, table.rank),
+    check(
+      "project_board_relationship_check",
+      sql`${table.relationship} in ('context', 'dependency', 'deliverable')`,
+    ),
+    check("project_board_rank_check", sql`${table.rank} >= 0`),
+  ],
+);
+
+export const projectRepoTable = pgTable(
+  "project_repo",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    projectId: text("project_id").notNull(),
+    repoId: text("repo_id").notNull(),
+    relationship: text("relationship").notNull(),
+    label: text("label"),
+    note: text("note"),
+    rank: integer("rank").notNull().default(0),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projectTable.organizationId, projectTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.repoId],
+      foreignColumns: [repoTable.organizationId, repoTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    unique("project_repo_project_id_repo_id_unique").on(
+      table.projectId,
+      table.repoId,
+    ),
+    index("project_repo_project_id_idx").on(table.projectId),
+    index("project_repo_repo_id_idx").on(table.repoId),
+    index("project_repo_project_id_rank_idx").on(table.projectId, table.rank),
+    check(
+      "project_repo_relationship_check",
+      sql`${table.relationship} in ('context', 'dependency', 'deliverable')`,
+    ),
+    check("project_repo_rank_check", sql`${table.rank} >= 0`),
+  ],
+);
+
+export const projectTableLinkTable = pgTable(
+  "project_table_link",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    projectId: text("project_id").notNull(),
+    tableId: text("table_id").notNull(),
+    relationship: text("relationship").notNull(),
+    label: text("label"),
+    note: text("note"),
+    rank: integer("rank").notNull().default(0),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.projectId],
+      foreignColumns: [projectTable.organizationId, projectTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    foreignKey({
+      columns: [table.organizationId, table.tableId],
+      foreignColumns: [dataTableTable.organizationId, dataTableTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    unique("project_table_link_project_id_table_id_unique").on(
+      table.projectId,
+      table.tableId,
+    ),
+    index("project_table_link_project_id_idx").on(table.projectId),
+    index("project_table_link_table_id_idx").on(table.tableId),
+    index("project_table_link_project_id_rank_idx").on(
+      table.projectId,
+      table.rank,
+    ),
+    check(
+      "project_table_link_relationship_check",
+      sql`${table.relationship} in ('context', 'dependency', 'deliverable')`,
+    ),
+    check("project_table_link_rank_check", sql`${table.rank} >= 0`),
+  ],
+);
 export const repoIssueTable = pgTable(
   "repo_issue",
   {
