@@ -22,7 +22,9 @@ test("boards and repos settings both show the org header", async ({ page }) => {
     .getByTestId("settings-org-header")
     .innerText()
     .catch(() => "");
-  console.log(`boards org header count=${boardsHeader} text=${boardsName.replace(/\n/g, " | ")}`);
+  console.log(
+    `boards org header count=${boardsHeader} text=${boardsName.replace(/\n/g, " | ")}`,
+  );
   await page.screenshot({ path: "/tmp/kfl188-boards-settings.png" });
 
   await page.goto(`${BASE}/dashboard/settings/repos`, {
@@ -34,7 +36,9 @@ test("boards and repos settings both show the org header", async ({ page }) => {
     .getByTestId("settings-org-header")
     .innerText()
     .catch(() => "");
-  console.log(`repos org header count=${reposHeader} text=${reposName.replace(/\n/g, " | ")}`);
+  console.log(
+    `repos org header count=${reposHeader} text=${reposName.replace(/\n/g, " | ")}`,
+  );
   await page.screenshot({ path: "/tmp/kfl188-repos-settings.png" });
 
   expect(boardsHeader).toBe(1);

@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { getProjectTicketMemberships } from "../../project/publish-project-ticket-updates";
 import { deleteS3Keys, getTaskAssetKeys } from "../../storage/cleanup-assets";
 
 /**
@@ -12,6 +13,8 @@ import { deleteS3Keys, getTaskAssetKeys } from "../../storage/cleanup-assets";
  */
 async function permanentlyDeleteTask(taskId: string, currentUserId: string) {
   const assetKeys = await getTaskAssetKeys(taskId);
+  // Capture before the hard delete: the task FK cascades membership rows.
+  const memberships = await getProjectTicketMemberships(taskId);
 
   const [deletedTask] = await db
     .delete(taskTable)
@@ -31,6 +34,13 @@ async function permanentlyDeleteTask(taskId: string, currentUserId: string) {
     userId: currentUserId,
     title: deletedTask.title,
   });
+
+  for (const membership of memberships) {
+    await publishEvent("project.updated", {
+      organizationId: membership.organizationId,
+      projectId: membership.projectId,
+    });
+  }
 
   // Fire-and-forget S3 cleanup after successful DB delete
   if (assetKeys.length > 0) {

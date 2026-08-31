@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -48,7 +48,8 @@ describe("KFL-86 entry chunk budget", () => {
       package path because paths do not survive minification, whereas this
       error text is emitted verbatim in the shipped bundle.
     */
-    const PROSEMIRROR_VIEW_MARKER = "Adding different instances of a keyed plugin";
+    const PROSEMIRROR_VIEW_MARKER =
+      "Adding different instances of a keyed plugin";
 
     expect(source.includes(PROSEMIRROR_VIEW_MARKER)).toBe(false);
   });

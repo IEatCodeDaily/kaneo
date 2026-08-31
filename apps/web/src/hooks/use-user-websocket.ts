@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { apiWebSocketUrl } from "@/fetchers/get-ws-url";
 import { authClient } from "@/lib/auth-client";
+import { invalidateProjectQueries } from "@/lib/project-sync-invalidation";
 import { invalidateRepoQueries } from "@/lib/repo-sync-invalidation";
 
 export function getUserWsUrl() {
@@ -58,6 +59,7 @@ export function useUserWebSocket() {
           const message = JSON.parse(event.data as string) as {
             type?: string;
             repoId?: string;
+            projectId?: string;
           };
           if (message.type === "NOTIFICATION_CREATED") {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -67,6 +69,21 @@ export function useUserWebSocket() {
             // resync). Repo queries never poll, so this push is the only
             // way the UI learns about new issues/PRs without a reload.
             invalidateRepoQueries(queryClient, message.repoId);
+          }
+          if (
+            message.type === "PROJECT_CREATED" ||
+            message.type === "PROJECT_UPDATED" ||
+            message.type === "PROJECT_ARCHIVED" ||
+            message.type === "PROJECT_UNARCHIVED" ||
+            message.type === "PROJECT_UPDATE_CREATED" ||
+            message.type === "PROJECT_UPDATE_UPDATED" ||
+            message.type === "PROJECT_UPDATE_DELETED"
+          ) {
+            // Project mutations never poll and Kaneo disables
+            // refetch-on-focus, so this push is the only way the Projects
+            // overview, detail page and sidebar learn about a change made
+            // in another tab or by another org member.
+            invalidateProjectQueries(queryClient, message.projectId);
           }
         } catch {
           // Ignore malformed messages

@@ -16,3 +16,6 @@ export const parseTicketKey = (
 
   return { boardKey: normalizeBoardKey(match[1]), number };
 };
+
+export const normalizeProjectSlug = (value: string): string =>
+  value.toLowerCase();

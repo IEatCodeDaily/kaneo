@@ -1,0 +1,128 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ProjectOverview } from "./project-overview";
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("@/lib/format", () => ({
+  formatDateMedium: () => "Apr 5, 2026",
+}));
+
+vi.mock("./project-milestones-section", () => ({
+  default: () => null,
+}));
+
+vi.mock("./project-contextual-resources", () => ({
+  default: () => <div data-testid="project-contextual-resources" />,
+}));
+vi.mock("@/hooks/queries/project/use-get-latest-project-update", () => ({
+  default: () => ({ data: null, isLoading: false }),
+}));
+afterEach(() => cleanup());
+
+const baseProject = {
+  id: "project-1",
+  slug: "growth",
+  name: "Growth Initiative",
+  summary: "Ship the growth loop",
+  status: "started" as const,
+  priority: "high",
+  leadUserName: "Ada Lovelace",
+  leadTeamName: null,
+  startDate: null,
+  targetDate: null,
+  archivedAt: null,
+  health: null,
+  description: null,
+  successCriteria: null,
+  progress: { completed: 0, eligible: 0, percent: null },
+};
+
+describe("ProjectOverview detail root", () => {
+  it("renders the outcome summary", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
+
+    expect(screen.getByTestId("project-overview")).toBeInTheDocument();
+    expect(screen.getByText("Ship the growth loop")).toBeInTheDocument();
+  });
+
+  it("renders derived completed/eligible progress when percent is present", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={{
+          ...baseProject,
+          progress: { completed: 1, eligible: 2, percent: 50 },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("projects:progress.completedOfEligible"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders 'No scoped work' when there is no success criteria or scoped work", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
+
+    expect(
+      screen.getByText("projects:labels.noScopedWork"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders 'No update' when the project has no authored updates", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={baseProject}
+      />,
+    );
+
+    expect(screen.getByText("projects:labels.noUpdate")).toBeInTheDocument();
+  });
+
+  it("renders the provided success criteria instead of the empty state when present", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={{ ...baseProject, successCriteria: "Ship it" }}
+      />,
+    );
+    expect(screen.getByText("Ship it")).toBeInTheDocument();
+  });
+
+  it("renders No scoped work only when percent is null", () => {
+    render(
+      <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
+        project={{
+          ...baseProject,
+          progress: { completed: 0, eligible: 0, percent: null },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("projects:progress.noScopedWork"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("projects:progress.completedOfEligible"),
+    ).toBeNull();
+  });
+});

@@ -1,0 +1,35 @@
+{
+	"ticket": "KFL-370",
+	"stages": [
+		{
+			"stage": "spec-review",
+			"status": "pass",
+			"agent": "omp/9router/ocg/minimax-m3",
+			"at": "2026-08-26T00:00:00Z",
+			"artifact": ".wayfinder/pipeline/KFL-370.spec.md",
+			"summary": "Spec written on top of uncommitted KFL-366."
+		},
+		{
+			"stage": "implementation",
+			"status": "ready-for-qc",
+			"cycle": 3,
+			"at": "2026-08-27T15:20:00Z",
+			"summary": "Implemented Web Updates surface, repaired locale schema, hardened migration CHECK/index, tightened integration contract coverage, and added equal-timestamp ordering proof. Exact integration run remains blocked by PostgreSQL permission denied to create database; full build timed out during web Vite transform."
+		},
+		{
+			"stage": "qc-review",
+			"status": "rework",
+			"cycle": 4,
+			"at": "2026-08-28T05:20:00Z",
+			"artifact": ".wayfinder/pipeline/KFL-370.qc2.md",
+			"summary": "REWORK: project-update integration passed 14/14; project and board regressions passed 9/9 and 3/3; the scoped middleware sabotage control red/green-proved the no-leak mapping. Focused web component suites for the nine Updates scenarios are absent, changed-path Biome has 8 errors and 4 warnings, locale lockstep is unproven, and ticket scope still needs final classification."
+		},
+		{
+			"stage": "implementation",
+			"status": "ready-for-qc",
+			"cycle": 5,
+			"at": "2026-08-28T05:29:00Z",
+			"summary": "Added focused Updates component suite: 9 tests passed. Regenerated i18n/schema.json from en-US.json with repository schema generator; JSON parses. Biome formatted six changed web files with zero reported issues. Scope classified: KFL-370-owned paths are the project update API/web/i18n changes and declared middleware touchpoint; unrelated KFL-367/KFL-368 artifacts and prior QC/spec artifacts remain in the worktree and were not changed. Integration/API/security verdicts retained from QC cycle 4."
+		}
+	]
+}

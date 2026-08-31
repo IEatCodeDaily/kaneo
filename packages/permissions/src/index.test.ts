@@ -20,6 +20,15 @@ describe("@kaneo/permissions statement surface", () => {
       "delete",
       "share",
     ]);
+    // KFL-366: Project statements mirror Board's — Project is a parallel
+    // outcome-tracking resource, not a variant of Board.
+    expect(statement.project).toEqual([
+      "create",
+      "read",
+      "update",
+      "delete",
+      "share",
+    ]);
     expect(statement.task).toEqual([
       "create",
       "read",
@@ -50,6 +59,7 @@ describe("@kaneo/permissions statement surface", () => {
 describe("built-in role privileges", () => {
   it("viewer can read but cannot create or modify", () => {
     expect(viewer.statements.board).toEqual(["read"]);
+    expect(viewer.statements.project).toEqual(["read"]);
     expect(viewer.statements.task).toEqual(["read"]);
     expect(viewer.statements.label).toEqual(["read"]);
     expect(viewer.statements.organization).toEqual(["read"]);
@@ -61,6 +71,8 @@ describe("built-in role privileges", () => {
     expect(member.statements.task).not.toContain("delete");
     expect(member.statements.board).toContain("create");
     expect(member.statements.board).not.toContain("delete");
+    expect(member.statements.project).toContain("create");
+    expect(member.statements.project).not.toContain("delete");
     expect(member.statements.organization).toEqual(["read"]);
   });
 
@@ -69,6 +81,8 @@ describe("built-in role privileges", () => {
     expect(admin.statements.task).toContain("assign");
     expect(admin.statements.board).toContain("delete");
     expect(admin.statements.board).toContain("share");
+    expect(admin.statements.project).toContain("delete");
+    expect(admin.statements.project).toContain("share");
     expect(admin.statements.organization).toContain("manage_settings");
     expect(admin.statements.organization).not.toContain("delete");
   });
@@ -78,6 +92,9 @@ describe("built-in role privileges", () => {
       expect.arrayContaining(["create", "read", "update", "delete", "assign"]),
     );
     expect(owner.statements.board).toEqual(
+      expect.arrayContaining(["create", "read", "update", "delete", "share"]),
+    );
+    expect(owner.statements.project).toEqual(
       expect.arrayContaining(["create", "read", "update", "delete", "share"]),
     );
     expect(owner.statements.organization).toEqual(

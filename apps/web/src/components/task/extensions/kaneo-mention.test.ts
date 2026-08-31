@@ -20,7 +20,9 @@ function serialize(content: unknown): string {
     content,
   });
   // The app calls editor.getMarkdown() (see comment-editor.tsx:999).
-  const markdown = (editor as unknown as { getMarkdown: () => string }).getMarkdown();
+  const markdown = (
+    editor as unknown as { getMarkdown: () => string }
+  ).getMarkdown();
   editor.destroy();
   return markdown;
 }

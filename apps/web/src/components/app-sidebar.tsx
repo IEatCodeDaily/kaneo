@@ -2,6 +2,7 @@ import type * as React from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
+import { NavProjects } from "@/components/nav-projects";
 import { NavRepos } from "@/components/nav-repos";
 import { NavTables } from "@/components/nav-tables";
 import { TeamViewSelector } from "@/components/team-view-selector";
@@ -94,6 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
           data-testid="sidebar-main-boards-divider"
         />
+        <NavProjects />
         <NavBoards />
         <NavTables />
         <div
