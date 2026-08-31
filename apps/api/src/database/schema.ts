@@ -2334,3 +2334,68 @@ export const trialGrantTable = pgTable("trial_grant", {
   trialEndsAt: timestamp("trial_ends_at", { mode: "date" }).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
+
+/**
+ * KFL-370: a Project Update is an authored health narrative ("how is this
+ * project doing?") published by a member. Health is AUTHORED judgment carried
+ * on the newest update — never derived from progress, never stored as a
+ * sentinel: "no update" is zero rows, rendered as presentation.
+ */
+export const PROJECT_UPDATE_HEALTH_VALUES = [
+  "on-track",
+  "at-risk",
+  "off-track",
+] as const;
+
+export const projectUpdateTable = pgTable(
+  "project_update",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Author identity is preserved exactly as at publish time.
+    authorId: text("author_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    content: text("content").notNull(),
+    health: text("health").notNull(),
+    // Same shape/convention as activityTable.editHistory: pre-edit snapshots,
+    // append-only, no compression window (an Update is an authored narrative).
+    editHistory: jsonb("edit_history")
+      .$type<Array<{ content: string; editedAt: string; userId: string }>>()
+      .default([])
+      .notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("project_update_project_created_at_idx").on(
+      table.projectId,
+      table.createdAt.desc(),
+    ),
+    index("project_update_author_id_idx").on(table.authorId),
+    index("project_update_organization_id_idx").on(table.organizationId),
+    check(
+      "project_update_health_check",
+      sql`${table.health} in ('on-track', 'at-risk', 'off-track')`,
+    ),
+  ],
+);

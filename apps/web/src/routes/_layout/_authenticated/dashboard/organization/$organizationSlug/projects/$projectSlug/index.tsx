@@ -61,7 +61,6 @@ export function ProjectDetailRouteComponent() {
           organizationSlug={organizationSlug}
           projectSlug={project.slug}
         />
-        <ProjectOverview project={project} />
         <ProjectOverview
           organizationId={organizationId}
           organizationSlug={organizationSlug}

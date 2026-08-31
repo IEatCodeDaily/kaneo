@@ -30,6 +30,7 @@ import {
   projectSlugAliasTable,
   projectTable,
   projectTableLinkTable,
+  projectUpdateTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -642,6 +643,12 @@ export const projectTableLinkTableRelations = relations(
     }),
     creator: one(userTable, {
       fields: [projectTableLinkTable.createdBy],
+export const projectUpdateTableRelations = relations(
+  projectUpdateTable,
+      fields: [projectUpdateTable.organizationId],
+      fields: [projectUpdateTable.projectId],
+    author: one(userTable, {
+      fields: [projectUpdateTable.authorId],
       references: [userTable.id],
     }),
   }),

@@ -17,6 +17,8 @@ vi.mock("./project-milestones-section", () => ({
 vi.mock("./project-contextual-resources", () => ({
   default: () => <div data-testid="project-contextual-resources" />,
 }));
+vi.mock("@/hooks/queries/project/use-get-latest-project-update", () => ({
+  default: () => ({ data: null, isLoading: false }),
 afterEach(() => cleanup());
 
 const baseProject = {
@@ -72,11 +74,7 @@ describe("ProjectOverview detail root", () => {
       />,
     );
 
-    // "projects:labels.noScopedWork" appears for BOTH the success-criteria
-    // fallback and the dedicated scoped-work section — this ticket persists
-    // neither, so both must fall back to the same empty-state copy.
-    const noScopedWork = screen.getAllByText("projects:labels.noScopedWork");
-    expect(noScopedWork.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("projects:labels.noScopedWork")).toBeInTheDocument();
   });
 
   it("renders 'No update' since health is presentation-only and never persisted", () => {
@@ -88,9 +86,7 @@ describe("ProjectOverview detail root", () => {
       />,
     );
 
-    expect(
-      screen.getAllByText("projects:labels.noUpdate").length,
-    ).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("projects:labels.noUpdate")).toBeInTheDocument();
   });
 
   it("renders the provided success criteria instead of the empty state when present", () => {

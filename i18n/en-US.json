@@ -3169,7 +3169,55 @@
 			"completed": "Completed",
 			"canceled": "Canceled",
 			"archived": "Archived",
-			"noDueDate": "No target date"
+			"noDueDate": "No target date",
+			"latestHealth": "Latest health",
+			"latestUpdate": "Latest update",
+			"freshness": "Updated {{relative}}"
+		},
+		"health": {
+			"onTrack": "On track",
+			"atRisk": "At risk",
+			"offTrack": "Off track"
+		},
+		"updates": {
+			"title": "Project updates",
+			"subtitle": "Authored health narratives and progress notes.",
+			"emptyTitle": "No updates yet",
+			"emptyDescription": "Publish the first update to set the project's health.",
+			"composer": {
+				"placeholder": "What changed this week?",
+				"healthLabel": "Health",
+				"contentLabel": "Update",
+				"submit": "Publish update",
+				"submitting": "Publishing…",
+				"cancel": "Cancel"
+			},
+			"actions": {
+				"edit": "Edit",
+				"delete": "Delete",
+				"editing": "Editing…",
+				"deleting": "Deleting…"
+			},
+			"confirmDeleteTitle": "Delete update?",
+			"confirmDeleteDescription": "This will permanently remove the update and revert the project's displayed health to the next most recent update.",
+			"confirmDelete": "Delete update",
+			"fresh": "Updated {{relative}}",
+			"stale": "Last updated {{relative}} — stale",
+			"by": "by {{author}}",
+			"edited": "edited {{count}} times",
+			"edited_one": "edited once",
+			"history": { "title": "Edit history", "empty": "No edits yet" },
+			"outcomes": {
+				"createSuccess": "Update published",
+				"updateSuccess": "Update edited",
+				"deleteSuccess": "Update deleted",
+				"error": "Couldn't publish the update. Please try again."
+			},
+			"validation": {
+				"contentRequired": "Update content is required",
+				"contentTooLong": "Update must be 65535 characters or fewer",
+				"healthRequired": "Choose a health status"
+			}
 		},
 		"tabs": {
 			"overview": "Overview",
@@ -3245,7 +3293,10 @@
 			"successCriteria": "Success criteria",
 			"description": "Description",
 			"noScopedWork": "No scoped work",
-			"noUpdate": "No update"
+			"noUpdate": "No update",
+			"latestHealth": "Latest health",
+			"lastUpdate": "Last update",
+			"updateFreshness": "Update freshness"
 		},
 		"lifecycle": {
 			"planned": "Planned",

@@ -21,6 +21,9 @@ import deleteProjectMilestoneCtrl from "./controllers/delete-project-milestone";
 import getProjectCtrl from "./controllers/get-project";
 import listProjectMilestonesCtrl from "./controllers/list-project-milestones";
 import listProjectTicketsCtrl from "./controllers/list-project-tickets";
+import createProjectUpdateCtrl from "./controllers/create-project-update";
+import deleteProjectUpdateCtrl from "./controllers/delete-project-update";
+import listProjectUpdatesCtrl from "./controllers/list-project-updates";
 import listProjectsCtrl from "./controllers/list-projects";
 import removeProjectTicketCtrl from "./controllers/remove-project-ticket";
 import renameProjectSlugCtrl from "./controllers/rename-project-slug";
@@ -38,6 +41,7 @@ import {
   projectResourceRelationshipSchema,
   projectResourceTypeSchema,
 } from "./project-resource-projection";
+import updateProjectUpdateCtrl from "./controllers/update-project-update";
 
 const PROJECT_PRIORITY_VALUES = [
   "no-priority",
@@ -166,6 +170,26 @@ function projectPrivilege(required: "view" | "edit" | "manage") {
 }
 
 const optionalNullableString = v.optional(v.nullable(v.string()));
+
+// KFL-370: authored-health Update payload shape (OpenAPI response schema).
+const projectUpdateSchema = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  projectId: v.string(),
+  authorId: v.string(),
+  authorName: v.nullable(v.string()),
+  content: v.string(),
+  health: v.picklist(["on-track", "at-risk", "off-track"]),
+  editHistory: v.array(
+    v.object({
+      content: v.string(),
+      editedAt: v.string(),
+      userId: v.string(),
+    }),
+  ),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+});
 
 const project = new Hono<{
   Variables: { userId: string; organizationId: string };
@@ -489,6 +513,11 @@ const project = new Hono<{
           content: {
             "application/json": {
               schema: resolver(v.array(projectResourceLinkSchema)),
+    "/:id/updates",
+      operationId: "listProjectUpdates",
+      description: "List a project's updates, newest first",
+          description: "Project updates (possibly empty)",
+              schema: resolver(v.array(projectUpdateSchema)),
             },
           },
         },
@@ -634,6 +663,14 @@ const project = new Hono<{
           description: "Created Project Milestone",
           content: {
             "application/json": { schema: resolver(projectMilestoneSchema) },
+      const updates = await listProjectUpdatesCtrl({
+        organizationId,
+      return c.json(updates);
+    "/:id/updates",
+      operationId: "createProjectUpdate",
+      description: "Publish an authored health update on a project",
+          description: "Update published",
+            "application/json": { schema: resolver(projectUpdateSchema) },
           },
         },
       },
@@ -650,6 +687,14 @@ const project = new Hono<{
     ),
     projectPrivilege("edit"),
     requireOrganizationPermission({ project: ["update"] }),
+        content: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(65535),
+        ),
+        health: v.picklist(["on-track", "at-risk", "off-track"]),
+    organizationAccess.fromProject(),
     async (c) => {
       const { id } = c.req.valid("param");
       const body = c.req.valid("json");
@@ -675,6 +720,15 @@ const project = new Hono<{
           description: "Updated Project Milestone",
           content: {
             "application/json": { schema: resolver(projectMilestoneSchema) },
+      const created = await createProjectUpdateCtrl({
+        projectId: id,
+      });
+      return c.json(created);
+    "/:id/updates/:updateId",
+      operationId: "updateProjectUpdate",
+      description: "Edit an authored update (author only)",
+          description: "Update edited",
+            "application/json": { schema: resolver(projectUpdateSchema) },
           },
         },
       },
@@ -718,6 +772,26 @@ const project = new Hono<{
           content: {
             "application/json": {
               schema: resolver(v.object({ ok: v.boolean() })),
+    validator("param", v.object({ id: v.string(), updateId: v.string() })),
+        content: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(65535),
+        ),
+        health: v.picklist(["on-track", "at-risk", "off-track"]),
+    organizationAccess.fromProject(),
+      const { id, updateId } = c.req.valid("param");
+      const updated = await updateProjectUpdateCtrl({
+        projectId: id,
+        updateId,
+      });
+      return c.json(updated);
+    "/:id/updates/:updateId",
+      operationId: "deleteProjectUpdate",
+      description: "Delete an authored update (author only, hard delete)",
+          description: "Update deleted",
+              schema: resolver(v.object({ success: v.boolean() })),
             },
           },
         },
@@ -909,6 +983,11 @@ const project = new Hono<{
         userId,
       });
       return new Response(null, { status: 204 });
+    validator("param", v.object({ id: v.string(), updateId: v.string() })),
+      const { id, updateId } = c.req.valid("param");
+      const result = await deleteProjectUpdateCtrl({
+        updateId,
+      return c.json(result);
     },
   );
 

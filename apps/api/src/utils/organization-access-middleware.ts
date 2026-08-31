@@ -76,6 +76,15 @@ export function organizationAccessMiddleware(
     }
 
     if (!organizationId) {
+      // Project routes must not leak existence: an unresolvable project id
+      // yields the same 404 a hidden or foreign project yields (KFL-370).
+      if (
+        config.sources.some(
+          (source) => source.type === "lookup" && source.resource === "project",
+        )
+      ) {
+        throw new HTTPException(404, { message: "Project not found" });
+      }
       throw new HTTPException(400, {
         message: "Organization ID could not be determined",
       });
@@ -84,7 +93,22 @@ export function organizationAccessMiddleware(
     const apiKey = c.get("apiKey");
     const apiKeyId = apiKey?.id;
 
-    await validateOrganizationAccess(userId, organizationId, apiKeyId);
+    try {
+      await validateOrganizationAccess(userId, organizationId, apiKeyId);
+    } catch (error) {
+      // Cross-organization access to a project route is indistinguishable
+      // from a missing project: identical non-leaking 404 (KFL-370).
+      if (
+        error instanceof HTTPException &&
+        error.status === 403 &&
+        config.sources.some(
+          (source) => source.type === "lookup" && source.resource === "project",
+        )
+      ) {
+        throw new HTTPException(404, { message: "Project not found" });
+      }
+      throw error;
+    }
 
     // #366: the guarded lookup resource belongs to exactly one resource
     // family (board or project) today; each family maps to its own
