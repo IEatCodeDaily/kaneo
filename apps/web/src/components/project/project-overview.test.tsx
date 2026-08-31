@@ -19,6 +19,7 @@ vi.mock("./project-contextual-resources", () => ({
 }));
 vi.mock("@/hooks/queries/project/use-get-latest-project-update", () => ({
   default: () => ({ data: null, isLoading: false }),
+}));
 afterEach(() => cleanup());
 
 const baseProject = {
@@ -36,18 +37,13 @@ const baseProject = {
   health: null,
   description: null,
   successCriteria: null,
+  progress: { completed: 0, eligible: 0, percent: null },
 };
 
 describe("ProjectOverview detail root", () => {
   it("renders the outcome summary", () => {
     render(
       <ProjectOverview
-        project={{
-          ...baseProject,
-          progress: { completed: 0, eligible: 0, percent: null },
-        }}
-      />,
-    );
         organizationId="org-1"
         organizationSlug="org-slug"
         project={baseProject}
@@ -61,10 +57,19 @@ describe("ProjectOverview detail root", () => {
   it("renders derived completed/eligible progress when percent is present", () => {
     render(
       <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
         project={{
           ...baseProject,
           progress: { completed: 1, eligible: 2, percent: 50 },
         }}
+      />,
+    );
+    expect(
+      screen.getByText("projects:progress.completedOfEligible"),
+    ).toBeInTheDocument();
+  });
+
   it("renders 'No scoped work' when there is no success criteria or scoped work", () => {
     render(
       <ProjectOverview
@@ -74,10 +79,12 @@ describe("ProjectOverview detail root", () => {
       />,
     );
 
-    expect(screen.getByText("projects:labels.noScopedWork")).toBeInTheDocument();
+    expect(
+      screen.getByText("projects:labels.noScopedWork"),
+    ).toBeInTheDocument();
   });
 
-  it("renders 'No update' since health is presentation-only and never persisted", () => {
+  it("renders 'No update' when the project has no authored updates", () => {
     render(
       <ProjectOverview
         organizationId="org-1"
@@ -97,14 +104,14 @@ describe("ProjectOverview detail root", () => {
         project={{ ...baseProject, successCriteria: "Ship it" }}
       />,
     );
-    expect(
-      screen.getByText("projects:progress.completedOfEligible"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Ship it")).toBeInTheDocument();
   });
 
   it("renders No scoped work only when percent is null", () => {
     render(
       <ProjectOverview
+        organizationId="org-1"
+        organizationSlug="org-slug"
         project={{
           ...baseProject,
           progress: { completed: 0, eligible: 0, percent: null },

@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { invalidateProjectQueries } from "./project-sync-invalidation";
 
 describe("invalidateProjectQueries", () => {
-  it("invalidates the projects list, project detail, scoped tickets, and sidebar query families for the given project", () => {
   it("invalidates the projects list, project detail, resources, and sidebar query families for the given project", () => {
     const queryClient = new QueryClient();
     const invalidated: unknown[][] = [];

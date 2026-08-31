@@ -17,12 +17,12 @@ import createProjectCtrl, {
   PROJECT_STATUSES,
 } from "./controllers/create-project";
 import createProjectMilestoneCtrl from "./controllers/create-project-milestone";
+import createProjectUpdateCtrl from "./controllers/create-project-update";
 import deleteProjectMilestoneCtrl from "./controllers/delete-project-milestone";
+import deleteProjectUpdateCtrl from "./controllers/delete-project-update";
 import getProjectCtrl from "./controllers/get-project";
 import listProjectMilestonesCtrl from "./controllers/list-project-milestones";
 import listProjectTicketsCtrl from "./controllers/list-project-tickets";
-import createProjectUpdateCtrl from "./controllers/create-project-update";
-import deleteProjectUpdateCtrl from "./controllers/delete-project-update";
 import listProjectUpdatesCtrl from "./controllers/list-project-updates";
 import listProjectsCtrl from "./controllers/list-projects";
 import removeProjectTicketCtrl from "./controllers/remove-project-ticket";
@@ -36,12 +36,12 @@ import updateProjectResourceLinkCtrl from "./controllers/resources/update-projec
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
 import updateProjectMilestoneCtrl from "./controllers/update-project-milestone";
+import updateProjectUpdateCtrl from "./controllers/update-project-update";
 import {
   projectResourceLinkSchema,
   projectResourceRelationshipSchema,
   projectResourceTypeSchema,
 } from "./project-resource-projection";
-import updateProjectUpdateCtrl from "./controllers/update-project-update";
 
 const PROJECT_PRIORITY_VALUES = [
   "no-priority",
