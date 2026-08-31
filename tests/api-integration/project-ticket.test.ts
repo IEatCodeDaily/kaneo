@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/api/src/database";
 import { subscribeToEvent } from "../../apps/api/src/events";
@@ -40,6 +40,8 @@ async function createTask(
     priority?: string;
     archivedAt?: Date | null;
     deletedAt?: Date | null;
+    startDate?: Date | null;
+    dueDate?: Date | null;
   },
 ) {
   const status = overrides.status ?? "to-do";
@@ -55,6 +57,8 @@ async function createTask(
       position: overrides.number,
       archivedAt: overrides.archivedAt ?? null,
       deletedAt: overrides.deletedAt ?? null,
+      startDate: overrides.startDate ?? null,
+      dueDate: overrides.dueDate ?? null,
     })
     .returning();
   if (!task) throw new Error("Failed to seed task");
@@ -789,5 +793,337 @@ describe("API integration: project ticket membership and progress", () => {
       where: eq(schema.taskTable.id, task.id),
     });
     expect(moved?.boardId).toBe(destinationBoard.id);
+  });
+
+  it("returns one authorized cross-board Project Ticket projection with canonical Board identity and schedule fields", async () => {
+    const member = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(member.user);
+    const { app } = createApp();
+
+    const { board: boardA, columns: columnsA } = await createBoardFixture({
+      organizationId: member.organization.id,
+      name: "Board A",
+      slug: "board-a",
+    });
+    const { board: boardB, columns: columnsB } = await createBoardFixture({
+      organizationId: member.organization.id,
+      name: "Board B",
+      slug: "board-b",
+    });
+    const project = await createProject(
+      app,
+      member.organization.id,
+      member.user.id,
+      { slug: "cross-board-projection" },
+    );
+
+    const taskA = await createTask(boardA, columnsA, {
+      title: "Scheduled A",
+      number: 1,
+      status: "in-progress",
+      startDate: new Date("2026-08-10T00:00:00.000Z"),
+      dueDate: new Date("2026-08-20T00:00:00.000Z"),
+    });
+    const taskB = await createTask(boardB, columnsB, {
+      title: "Unscheduled B",
+      number: 1,
+      status: "done",
+    });
+
+    expect((await addTicket(app, project.id, taskA.id, 2)).status).toBe(200);
+    expect((await addTicket(app, project.id, taskB.id, 1)).status).toBe(200);
+
+    const response = await getTickets(app, project.id);
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      tickets: Array<{
+        id: string;
+        boardId: string;
+        boardSlug: string;
+        boardName: string;
+        key: string;
+        status: string;
+        startDate: string | null;
+        dueDate: string | null;
+        projectMilestoneId: string | null;
+        rank: number;
+      }>;
+    };
+    expect(payload.tickets).toHaveLength(2);
+
+    const a = payload.tickets.find((t) => t.id === taskA.id);
+    const b = payload.tickets.find((t) => t.id === taskB.id);
+    expect(a).toMatchObject({
+      id: taskA.id,
+      boardId: boardA.id,
+      boardSlug: "board-a",
+      boardName: "Board A",
+      key: "board-a-1",
+      status: "in-progress",
+      startDate: "2026-08-10T00:00:00.000Z",
+      dueDate: "2026-08-20T00:00:00.000Z",
+      projectMilestoneId: null,
+      rank: 2,
+    });
+    expect(b).toMatchObject({
+      id: taskB.id,
+      boardSlug: "board-b",
+      boardName: "Board B",
+      key: "board-b-1",
+      status: "done",
+      startDate: null,
+      dueDate: null,
+      projectMilestoneId: null,
+      rank: 1,
+    });
+
+    // No Task/Board mutation: identity and workflow fields are untouched.
+    const persistedA = await db.query.taskTable.findFirst({
+      where: eq(schema.taskTable.id, taskA.id),
+    });
+    expect(persistedA).toMatchObject({
+      boardId: boardA.id,
+      status: "in-progress",
+      startDate: new Date("2026-08-10T00:00:00.000Z"),
+      dueDate: new Date("2026-08-20T00:00:00.000Z"),
+    });
+  });
+
+  it("omits an inaccessible Board from every Project Ticket projection field", async () => {
+    const owner = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(owner.user);
+    const { app } = createApp();
+
+    const { board: visibleBoard, columns: visibleColumns } =
+      await createBoardFixture({
+        organizationId: owner.organization.id,
+        name: "Visible board",
+        slug: "visible-board",
+      });
+    const hiddenBoardSentinel = `hidden-board-${randomUUID()}`;
+    const { board: hiddenBoard, columns: hiddenColumns } =
+      await createBoardFixture({
+        organizationId: owner.organization.id,
+        name: hiddenBoardSentinel,
+        slug: hiddenBoardSentinel,
+      });
+    await db
+      .update(schema.boardTable)
+      .set({ orgPrivilege: "none" })
+      .where(eq(schema.boardTable.id, hiddenBoard.id));
+
+    const project = await createProject(
+      app,
+      owner.organization.id,
+      owner.user.id,
+      { slug: "no-leak-projection" },
+    );
+
+    const visibleTask = await createTask(visibleBoard, visibleColumns, {
+      title: "Visible work",
+      number: 1,
+      status: "done",
+      startDate: new Date("2026-08-10T00:00:00.000Z"),
+    });
+    const hiddenTitleSentinel = `hidden-title-${randomUUID()}`;
+    const hiddenStatusSentinel = "triage";
+    const hiddenPrioritySentinel = "critical";
+    const hiddenTask = await createTask(hiddenBoard, hiddenColumns, {
+      title: hiddenTitleSentinel,
+      number: 987654,
+      status: hiddenStatusSentinel,
+      priority: hiddenPrioritySentinel,
+      startDate: new Date("2026-08-11T00:00:00.000Z"),
+      dueDate: new Date("2026-08-21T00:00:00.000Z"),
+    });
+
+    expect((await addTicket(app, project.id, visibleTask.id)).status).toBe(200);
+    expect((await addTicket(app, project.id, hiddenTask.id)).status).toBe(200);
+    const hiddenAddedBySentinel = `hidden-user-${randomUUID()}`;
+    await db.insert(schema.userTable).values({
+      id: hiddenAddedBySentinel,
+      email: `${hiddenAddedBySentinel}@example.com`,
+      emailVerified: true,
+      name: hiddenAddedBySentinel,
+    });
+    const hiddenAddedAtSentinel = new Date("2020-01-02T03:04:05.000Z");
+    await db
+      .update(schema.projectTicketTable)
+      .set({
+        rank: 987654,
+        addedAt: hiddenAddedAtSentinel,
+        addedBy: hiddenAddedBySentinel,
+      })
+      .where(eq(schema.projectTicketTable.taskId, hiddenTask.id));
+
+    const lowPrivId = `user-${randomUUID()}`;
+    await db.insert(schema.userTable).values({
+      id: lowPrivId,
+      email: `${lowPrivId}@example.com`,
+      emailVerified: true,
+      name: "Low privilege member",
+    });
+    await db.insert(schema.organizationMemberTable).values({
+      id: `member-${randomUUID()}`,
+      organizationId: owner.organization.id,
+      userId: lowPrivId,
+      role: "member",
+      joinedAt: new Date(),
+    });
+    const lowPrivUser = await db.query.userTable.findFirst({
+      where: eq(schema.userTable.id, lowPrivId),
+    });
+    if (!lowPrivUser) throw new Error("Failed to seed low-priv user");
+    mockAuthenticatedSession(lowPrivUser);
+    const { app: lowPrivApp } = createApp();
+
+    const response = await getTickets(lowPrivApp, project.id);
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+      tickets: Array<{
+        id: string;
+        boardSlug: string;
+        boardName: string;
+        key: string;
+        status: string;
+        startDate: string | null;
+        dueDate: string | null;
+        projectMilestoneId: string | null;
+      }>;
+      progress: { completed: number; eligible: number; percent: number | null };
+    };
+    expect(payload.tickets).toHaveLength(1);
+    expect(payload.tickets[0]).toMatchObject({
+      id: visibleTask.id,
+      boardSlug: "visible-board",
+      boardName: "Visible board",
+      key: "visible-board-1",
+      status: "done",
+      startDate: "2026-08-10T00:00:00.000Z",
+      projectMilestoneId: null,
+    });
+    expect(payload.tickets.find((t) => t.id === hiddenTask.id)).toBeUndefined();
+    expect(payload.tickets.some((t) => t.boardSlug === "hidden-board")).toBe(
+      false,
+    );
+    const serialized = JSON.stringify(payload);
+    for (const sentinel of [
+      hiddenBoardSentinel,
+      hiddenTitleSentinel,
+      hiddenStatusSentinel,
+      hiddenPrioritySentinel,
+      hiddenAddedBySentinel,
+      hiddenAddedAtSentinel.toISOString(),
+      "987654",
+      "2026-08-11T00:00:00.000Z",
+      "2026-08-21T00:00:00.000Z",
+    ])
+      expect(serialized).not.toContain(sentinel);
+    expect(payload.progress).toEqual({
+      completed: 1,
+      eligible: 1,
+      percent: 100,
+    });
+  });
+
+  it("keeps Project Ticket schedule sourced from Task and leaves the milestone assignment extension null", async () => {
+    const member = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(member.user);
+    const { app } = createApp();
+
+    const { board, columns } = await createBoardFixture({
+      organizationId: member.organization.id,
+      slug: "schedule-board",
+    });
+    const project = await createProject(
+      app,
+      member.organization.id,
+      member.user.id,
+      { slug: "schedule" },
+    );
+
+    const task = await createTask(board, columns, {
+      title: "Date moves",
+      number: 1,
+      status: "to-do",
+      startDate: new Date("2026-08-10T00:00:00.000Z"),
+      dueDate: new Date("2026-08-20T00:00:00.000Z"),
+    });
+    expect((await addTicket(app, project.id, task.id)).status).toBe(200);
+
+    // Change the Ticket date through the Task surface.
+    await db
+      .update(schema.taskTable)
+      .set({ dueDate: new Date("2026-08-25T00:00:00.000Z") })
+      .where(eq(schema.taskTable.id, task.id));
+
+    const response = await getTickets(app, project.id);
+    const payload = (await response.json()) as {
+      tickets: Array<{
+        id: string;
+        startDate: string | null;
+        dueDate: string | null;
+        projectMilestoneId: string | null;
+        boardSlug: string;
+      }>;
+    };
+    expect(payload.tickets).toHaveLength(1);
+    expect(payload.tickets[0]).toMatchObject({
+      id: task.id,
+      startDate: "2026-08-10T00:00:00.000Z",
+      dueDate: "2026-08-25T00:00:00.000Z",
+      projectMilestoneId: null,
+    });
+    // Board milestone identity/name is never a Project Ticket field.
+    expect(payload.tickets[0]).not.toHaveProperty("milestoneId");
+    expect(payload.tickets[0]).not.toHaveProperty("milestoneName");
+  });
+
+  it("orders equal ranks by addedAt then task ID", async () => {
+    const member = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(member.user);
+    const { app } = createApp();
+    const { board, columns } = await createBoardFixture({
+      organizationId: member.organization.id,
+      slug: "order-board",
+    });
+    const project = await createProject(
+      app,
+      member.organization.id,
+      member.user.id,
+      { slug: "order" },
+    );
+    const tasks = await Promise.all(
+      [1, 2, 3, 4].map((number) =>
+        createTask(board, columns, { title: `Task ${number}`, number }),
+      ),
+    );
+    const [first, second, third, fourth] = tasks;
+    if (!(first && second && third && fourth)) throw new Error("Missing tasks");
+    for (const task of tasks)
+      expect((await addTicket(app, project.id, task.id, 1)).status).toBe(200);
+    const older = new Date("2026-01-01T00:00:00.000Z");
+    const newer = new Date("2026-01-02T00:00:00.000Z");
+    await db
+      .update(schema.projectTicketTable)
+      .set({ addedAt: newer })
+      .where(eq(schema.projectTicketTable.taskId, first.id));
+    await db
+      .update(schema.projectTicketTable)
+      .set({ addedAt: older })
+      .where(
+        inArray(schema.projectTicketTable.taskId, [
+          second.id,
+          third.id,
+          fourth.id,
+        ]),
+      );
+    const response = await getTickets(app, project.id);
+    const payload = (await response.json()) as {
+      tickets: Array<{ id: string }>;
+    };
+    expect(payload.tickets.map((ticket) => ticket.id)).toEqual(
+      [second.id, third.id, fourth.id].sort().concat(first.id),
+    );
   });
 });

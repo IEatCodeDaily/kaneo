@@ -3242,7 +3242,34 @@
 			"removeSuccess": "Ticket removed from project",
 			"mutationError": "Could not update project tickets. Please try again.",
 			"alreadyScoped": "Already scoped",
-			"noEditableTickets": "No editable tickets available"
+			"noEditableTickets": "No editable tickets available",
+			"views": { "list": "List", "board": "Board", "timeline": "Timeline" },
+			"filters": {
+				"search": "Search",
+				"status": "Status",
+				"priority": "Priority",
+				"schedule": "Schedule",
+				"scheduled": "Scheduled",
+				"unscheduled": "Unscheduled",
+				"clear": "Clear filters"
+			},
+			"sort": {
+				"rank": "Rank",
+				"title": "Title",
+				"priority": "Priority",
+				"dueDate": "Due date",
+				"directionAsc": "Ascending",
+				"directionDesc": "Descending"
+			},
+			"board": { "otherStatus": "Other" },
+			"timeline": {
+				"unassigned": "Unassigned",
+				"noScheduledWork": "No scheduled work",
+				"openTicket": "Open ticket"
+			},
+			"emptyFilteredTitle": "No matching tickets",
+			"emptyFilteredDescription": "Try clearing a filter or changing your search.",
+			"loadError": "Could not load project tickets."
 		},
 		"milestones": {
 			"title": "Milestones",

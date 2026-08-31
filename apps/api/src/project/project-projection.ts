@@ -37,6 +37,10 @@ export type ProjectTicket = {
   status: string;
   priority: string | null;
   archivedAt: Date | null;
+  startDate: Date | null;
+  dueDate: Date | null;
+  /** Populated by the KFL-369 membership adapter when its final schema is available. */
+  projectMilestoneId: string | null;
   rank: number;
   addedAt: Date;
   addedBy: string;
@@ -70,6 +74,8 @@ type MembershipRow = {
   status: string;
   priority: string | null;
   archivedAt: Date | null;
+  startDate: Date | null;
+  dueDate: Date | null;
   deletedAt: Date | null;
   rank: number;
   addedAt: Date;
@@ -133,6 +139,8 @@ async function loadMembershipRows(
       status: taskTable.status,
       priority: taskTable.priority,
       archivedAt: taskTable.archivedAt,
+      startDate: taskTable.startDate,
+      dueDate: taskTable.dueDate,
       deletedAt: taskTable.deletedAt,
       rank: projectTicketTable.rank,
       addedAt: projectTicketTable.addedAt,
@@ -201,6 +209,9 @@ export function toProjectTicket(row: MembershipRow): ProjectTicket {
     status: row.status,
     priority: row.priority,
     archivedAt: row.archivedAt,
+    startDate: row.startDate,
+    dueDate: row.dueDate,
+    projectMilestoneId: null,
     rank: row.rank,
     addedAt: row.addedAt,
     addedBy: row.addedBy,
@@ -218,8 +229,14 @@ export async function listProjectTickets(
     userId,
     await loadMembershipRows([projectId]),
   );
+  const orderedRows = [...rows].sort(
+    (left, right) =>
+      left.rank - right.rank ||
+      left.addedAt.getTime() - right.addedAt.getTime() ||
+      left.taskId.localeCompare(right.taskId),
+  );
   return {
-    tickets: rows.map(toProjectTicket),
+    tickets: orderedRows.map(toProjectTicket),
     progress: deriveProjectProgress(rows),
   };
 }
