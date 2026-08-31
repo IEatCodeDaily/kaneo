@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { publishProjectTicketUpdates } from "../../project/publish-project-ticket-updates";
 
 /**
  * Restores a soft-deleted task by clearing `deletedAt`/`deletedBy`.
@@ -28,6 +29,8 @@ async function restoreTask(taskId: string, currentUserId: string) {
     userId: currentUserId,
     title: restoredTask.title,
   });
+
+  await publishProjectTicketUpdates(restoredTask.id);
 
   return restoredTask;
 }

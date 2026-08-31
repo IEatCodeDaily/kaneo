@@ -3,33 +3,32 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
 import ProjectHeader from "@/components/project/project-header";
-import ProjectOverview from "@/components/project/project-overview";
 import ProjectTabs from "@/components/project/project-tabs";
+import ProjectTicketPicker from "@/components/project/project-ticket-picker";
+import ProjectTickets from "@/components/project/project-tickets";
 import { Skeleton } from "@/components/ui/skeleton";
+import useGetProjectTickets from "@/hooks/queries/project/use-get-project-tickets";
 import { useProjectSlug } from "@/hooks/use-project-slug";
 
-/**
- * KFL-366: unlike `board/$boardSlug/index.tsx` (which redirects to Kanban),
- * Project detail root renders Overview directly — there is no board/ticket
- * projection to redirect into for a Project.
- */
 export const Route = createFileRoute(
-  "/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/",
+  "/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/$projectSlug/tickets",
 )({
-  component: ProjectDetailRouteComponent,
+  component: ProjectTicketsRouteComponent,
 });
 
-export function ProjectDetailRouteComponent() {
+export function ProjectTicketsRouteComponent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { project, usedSlugAlias, isLoading, organizationSlug } =
     useProjectSlug();
+  const { data, isLoading: isLoadingTickets } = useGetProjectTickets({
+    id: project?.id ?? "",
+  });
 
-  // Alias resolution redirects with `replace` to the canonical slug.
   useEffect(() => {
     if (project && usedSlugAlias) {
       navigate({
-        to: "/dashboard/organization/$organizationSlug/projects/$projectSlug",
+        to: "/dashboard/organization/$organizationSlug/projects/$projectSlug/tickets",
         params: { organizationSlug, projectSlug: project.slug },
         replace: true,
       });
@@ -39,7 +38,7 @@ export function ProjectDetailRouteComponent() {
   if (isLoading || !project) {
     return (
       <>
-        <PageTitle title={t("projects:overview.loading")} />
+        <PageTitle title={t("projects:tickets.title")} />
         <div className="space-y-2 p-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-24 w-full" />
@@ -50,14 +49,22 @@ export function ProjectDetailRouteComponent() {
 
   return (
     <>
-      <PageTitle title={project.name} />
+      <PageTitle title={`${project.name} — ${t("projects:tickets.title")}`} />
       <ProjectHeader title={project.name}>
         <ProjectTabs
-          active="overview"
+          active="tickets"
           organizationSlug={organizationSlug}
           projectSlug={project.slug}
         />
-        <ProjectOverview project={project} />
+        <ProjectTicketPicker
+          projectId={project.id}
+          tickets={data?.tickets ?? []}
+        />
+        <ProjectTickets
+          isLoading={isLoadingTickets}
+          organizationSlug={organizationSlug}
+          tickets={data?.tickets}
+        />
       </ProjectHeader>
     </>
   );

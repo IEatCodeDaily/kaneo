@@ -3,12 +3,15 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import addProjectTicketCtrl from "./controllers/add-project-ticket";
 import archiveProjectCtrl from "./controllers/archive-project";
 import createProjectCtrl, {
   PROJECT_STATUSES,
 } from "./controllers/create-project";
 import getProjectCtrl from "./controllers/get-project";
+import listProjectTicketsCtrl from "./controllers/list-project-tickets";
 import listProjectsCtrl from "./controllers/list-projects";
+import removeProjectTicketCtrl from "./controllers/remove-project-ticket";
 import renameProjectSlugCtrl from "./controllers/rename-project-slug";
 import resolveProjectCtrl from "./controllers/resolve-project";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
@@ -21,6 +24,32 @@ const PROJECT_PRIORITY_VALUES = [
   "high",
   "urgent",
 ] as const;
+const projectProgressSchema = v.object({
+  completed: v.number(),
+  eligible: v.number(),
+  percent: v.nullable(v.number()),
+});
+
+const projectTicketSchema = v.object({
+  id: v.string(),
+  boardId: v.string(),
+  boardSlug: v.string(),
+  boardName: v.string(),
+  number: v.number(),
+  key: v.string(),
+  title: v.string(),
+  status: v.string(),
+  priority: v.nullable(v.string()),
+  archivedAt: v.nullable(v.date()),
+  rank: v.number(),
+  addedAt: v.date(),
+  addedBy: v.string(),
+});
+
+const projectTicketsResponseSchema = v.object({
+  tickets: v.array(projectTicketSchema),
+  progress: projectProgressSchema,
+});
 
 const projectSchema = v.object({
   id: v.string(),
@@ -47,9 +76,9 @@ const projectSchema = v.object({
   createdAt: v.date(),
   updatedAt: v.date(),
   createdBy: v.string(),
-  // KFL-366 excludes ticket membership/progress/health entirely; these are
-  // presentation-only placeholders for KFL-367+ to fill in.
-  progress: v.null_(),
+  // KFL-367 derives progress from the authorization-filtered visible set;
+  // health remains presentation-only until the Updates ticket.
+  progress: projectProgressSchema,
   health: v.null_(),
 });
 
@@ -212,7 +241,8 @@ const project = new Hono<{
     async (c) => {
       const { id } = c.req.valid("param");
       const organizationId = c.get("organizationId");
-      const projectData = await getProjectCtrl(organizationId, id);
+      const userId = c.get("userId");
+      const projectData = await getProjectCtrl(organizationId, id, userId);
       return c.json(projectData);
     },
   )
@@ -341,6 +371,98 @@ const project = new Hono<{
       const organizationId = c.get("organizationId");
       const unarchived = await unarchiveProjectCtrl(id, organizationId);
       return c.json(unarchived);
+    },
+  )
+  .get(
+    "/:id/tickets",
+    describeRoute({
+      operationId: "listProjectTickets",
+      tags: ["Projects"],
+      description:
+        "List scoped Project tickets with requester-filtered progress",
+      responses: {
+        200: {
+          description: "Scoped tickets and progress",
+          content: {
+            "application/json": {
+              schema: resolver(projectTicketsResponseSchema),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      return c.json(await listProjectTicketsCtrl(organizationId, id, userId));
+    },
+  )
+  .post(
+    "/:id/tickets",
+    describeRoute({
+      operationId: "addProjectTicket",
+      tags: ["Projects"],
+      description: "Scope a ticket into a Project",
+      responses: {
+        200: {
+          description: "Scoped ticket projection",
+          content: {
+            "application/json": { schema: resolver(projectTicketSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({ taskId: v.string(), rank: v.optional(v.number()) }),
+    ),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { taskId, rank } = c.req.valid("json");
+      const userId = c.get("userId");
+      const ticket = await addProjectTicketCtrl({
+        projectId: id,
+        taskId,
+        rank,
+        userId,
+      });
+      return c.json(ticket);
+    },
+  )
+  .delete(
+    "/:id/tickets/:taskId",
+    describeRoute({
+      operationId: "removeProjectTicket",
+      tags: ["Projects"],
+      description: "Remove a ticket from a Project",
+      responses: {
+        200: {
+          description: "Membership removed",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ ok: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), taskId: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id, taskId } = c.req.valid("param");
+      const userId = c.get("userId");
+      await removeProjectTicketCtrl({ projectId: id, taskId, userId });
+      return c.json({ ok: true });
     },
   );
 
