@@ -12,7 +12,9 @@ vi.mock("react-i18next", () => ({
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
   useNavigate: () => navigate,
-  Link: ({ children }: { children: ReactNode }) => <a>{children}</a>,
+  Link: ({ children }: { children: ReactNode }) => (
+    <a href="#mocked">{children}</a>
+  ),
 }));
 
 vi.mock("@/components/page-title", () => ({ default: () => null }));

@@ -17,6 +17,7 @@ vi.mock("@/components/common/view-tabs", () => ({
     <div data-testid="project-tabs" data-value={value}>
       {items.map((item) => (
         <button
+          type="button"
           data-testid={`tab-${item.value}`}
           data-to={item.to}
           key={item.value}
