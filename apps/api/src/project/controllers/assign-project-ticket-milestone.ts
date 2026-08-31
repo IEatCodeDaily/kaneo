@@ -13,30 +13,22 @@ import { getResourcePrivilege, privilegeAllows } from "../../resource-access";
 import { findProjectTicket } from "../project-projection";
 
 /**
- * Scope a ticket into a Project. The same-organization proof and the
- * zero-or-one Project membership check both run inside the insert
- * transaction, so a foreign-org or already-scoped ticket can never leave a
- * partial association behind.
+ * Assign/reassign/clear a Project Milestone on an already-scoped Project
+ * Ticket. This is a mutation of the membership row, not of milestone CRUD or
+ * the Task. The same-Project invariant is enforced atomically: the milestone
+ * lookup is scoped to `projectId` inside the same transaction as the write, so
+ * a cross-Project milestone can never be written.
  */
-export async function addProjectTicket({
-  projectId,
-  taskId,
-  rank,
-  projectMilestoneId,
-  userId,
-}: {
-  projectId: string;
-  taskId: string;
-  rank: number | undefined;
-  projectMilestoneId: string | null | undefined;
-  userId: string;
-}) {
-  const { organizationId } = await db.transaction(async (tx) => {
+async function assignProjectTicketMilestone(
+  organizationId: string,
+  projectId: string,
+  taskId: string,
+  projectMilestoneId: string | null,
+  userId: string,
+) {
+  await db.transaction(async (tx) => {
     const [project] = await tx
-      .select({
-        id: projectTable.id,
-        organizationId: projectTable.organizationId,
-      })
+      .select({ organizationId: projectTable.organizationId })
       .from(projectTable)
       .where(eq(projectTable.id, projectId))
       .limit(1);
@@ -57,9 +49,6 @@ export async function addProjectTicket({
       throw new HTTPException(404, { message: "Task not found" });
     }
 
-    // fromTask-equivalent Board `edit` access, resolved against the board's
-    // own organization. Denials 404 (never 403) so the caller cannot probe
-    // which tasks/boards exist.
     const privilege = await getResourcePrivilege({
       organizationId: task.boardOrganizationId,
       resourceType: "board",
@@ -70,22 +59,25 @@ export async function addProjectTicket({
       throw new HTTPException(404, { message: "Task not found" });
     }
 
-    // The database cannot prove same-organization; the task reaches its org
-    // through its board, so the proof is explicit here.
     if (project.organizationId !== task.boardOrganizationId) {
       throw new HTTPException(404, { message: "Task not found" });
     }
 
-    const [existing] = await tx
+    const [membership] = await tx
       .select({ id: projectTicketTable.id })
       .from(projectTicketTable)
-      .where(eq(projectTicketTable.taskId, taskId))
+      .where(
+        and(
+          eq(projectTicketTable.projectId, projectId),
+          eq(projectTicketTable.taskId, taskId),
+        ),
+      )
+      .for("update")
       .limit(1);
-    if (existing) {
-      throw new HTTPException(409, {
-        message: "Ticket is already scoped to a Project",
-      });
+    if (!membership) {
+      throw new HTTPException(404, { message: "Membership not found" });
     }
+
     if (projectMilestoneId) {
       const [milestone] = await tx
         .select({ id: projectMilestoneTable.id })
@@ -102,24 +94,13 @@ export async function addProjectTicket({
       }
     }
 
-    const [inserted] = await tx
-      .insert(projectTicketTable)
-      .values({
-        projectId,
-        taskId,
-        rank: rank ?? 0,
-        addedBy: userId,
-        projectMilestoneId: projectMilestoneId ?? null,
-      })
-      .returning();
-    if (!inserted) {
-      throw new HTTPException(500, { message: "Failed to scope ticket" });
-    }
-
-    return { organizationId: project.organizationId };
+    await tx
+      .update(projectTicketTable)
+      .set({ projectMilestoneId })
+      .where(eq(projectTicketTable.id, membership.id));
   });
 
-  // Post-commit: refresh every Project consumer in this organization.
+  // Post-commit: refresh Project/Milestone/Ticket consumers in this org.
   await publishEvent("project.updated", { organizationId, projectId });
 
   const ticket = await findProjectTicket(
@@ -134,4 +115,4 @@ export async function addProjectTicket({
   return ticket;
 }
 
-export default addProjectTicket;
+export default assignProjectTicketMilestone;

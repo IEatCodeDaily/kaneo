@@ -17,7 +17,7 @@ export type ProjectTicket = {
   status: string;
   priority: string | null;
   archivedAt: string | null;
-  rank: number;
+  projectMilestoneId: string | null;
   addedAt: string;
   addedBy: string;
 };

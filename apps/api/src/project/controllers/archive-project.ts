@@ -33,7 +33,7 @@ async function archiveProject(
     .set({ archivedAt: new Date(), archivedBy: userId })
     .where(eq(projectTable.id, projectId));
 
-  const project = await findProjectById(organizationId, projectId);
+  const project = await findProjectById(organizationId, projectId, userId);
   if (!project) {
     throw new HTTPException(500, {
       message: "Failed to load archived project",

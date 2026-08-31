@@ -540,6 +540,20 @@
 			"when": 1787800000000,
 			"tag": "0073_project_ticket",
 			"breakpoints": true
+		},
+		{
+			"idx": 74,
+			"version": "7",
+			"when": 1787895112641,
+			"tag": "0074_project_milestone",
+			"breakpoints": true
+		},
+		{
+			"idx": 75,
+			"version": "7",
+			"when": 1787909135420,
+			"tag": "0075_pale_kingpin",
+			"breakpoints": true
 		}
 	]
 }

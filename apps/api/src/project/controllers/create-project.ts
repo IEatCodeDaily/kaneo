@@ -147,7 +147,11 @@ export default async function createProjectController(
   input: CreateProjectInput,
 ) {
   const id = await createProject(input);
-  const project = await findProjectById(input.organizationId, id);
+  const project = await findProjectById(
+    input.organizationId,
+    id,
+    input.createdBy,
+  );
   if (!project) {
     throw new HTTPException(500, { message: "Failed to load created project" });
   }

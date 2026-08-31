@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { formatDateMedium } from "@/lib/format";
+import ProjectMilestonesSection from "./project-milestones-section";
 import type { ProjectRowData } from "./project-row";
 
 type ProjectOverviewProps = {
@@ -96,6 +97,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           {t("projects:labels.noUpdate")}
         </p>
       </section>
+      <ProjectMilestonesSection projectId={project.id} />
     </div>
   );
 }

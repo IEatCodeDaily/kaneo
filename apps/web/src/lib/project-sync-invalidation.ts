@@ -16,11 +16,15 @@ export function invalidateProjectQueries(
   projectId?: string,
 ): void {
   queryClient.invalidateQueries({ queryKey: ["projects"] });
-  queryClient.invalidateQueries({
-    queryKey: projectId ? ["project", projectId] : ["project"],
-  });
-  queryClient.invalidateQueries({
-    queryKey: projectId ? ["project-tickets", projectId] : ["project-tickets"],
-  });
+  queryClient.invalidateQueries({ queryKey: ["project"] });
+  queryClient.invalidateQueries({ queryKey: ["project-tickets"] });
+  queryClient.invalidateQueries({ queryKey: ["project-milestones"] });
+  if (projectId) {
+    queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    queryClient.invalidateQueries({ queryKey: ["project-tickets", projectId] });
+    queryClient.invalidateQueries({
+      queryKey: ["project-milestones", projectId],
+    });
+  }
   queryClient.invalidateQueries({ queryKey: ["sidebar"] });
 }

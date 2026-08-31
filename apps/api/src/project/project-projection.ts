@@ -1,15 +1,19 @@
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import db from "../database";
 import {
   boardTable,
+  projectMilestoneTable,
   projectTable,
   projectTicketTable,
   taskTable,
   teamTable,
   userTable,
 } from "../database/schema";
-import { listAccessibleResourceIds } from "../resource-access";
+import {
+  getResourcePrivilege,
+  listAccessibleResourceIds,
+} from "../resource-access";
 
 // The archiver is a second join against user, separate from the lead join.
 const archivedByUser = alias(userTable, "archived_by_user");
@@ -36,6 +40,22 @@ export type ProjectTicket = {
   rank: number;
   addedAt: Date;
   addedBy: string;
+  projectMilestoneId: string | null;
+};
+
+/** KFL-369 derived, authorization-filtered Project Milestone projection. */
+export type ProjectMilestone = {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  targetDate: string | null;
+  rank: number;
+  completedAt: Date | null;
+  completedBy: { id: string; name: string | null } | null;
+  createdAt: Date;
+  updatedAt: Date;
+  progress: ProjectProgress;
 };
 
 /** Raw membership + task + board join row before visibility filtering. */
@@ -54,6 +74,7 @@ type MembershipRow = {
   rank: number;
   addedAt: Date;
   addedBy: string;
+  projectMilestoneId: string | null;
 };
 
 export const projectSelection = {
@@ -116,6 +137,7 @@ async function loadMembershipRows(
       rank: projectTicketTable.rank,
       addedAt: projectTicketTable.addedAt,
       addedBy: projectTicketTable.addedBy,
+      projectMilestoneId: projectTicketTable.projectMilestoneId,
     })
     .from(projectTicketTable)
     .innerJoin(taskTable, eq(projectTicketTable.taskId, taskTable.id))
@@ -182,6 +204,7 @@ export function toProjectTicket(row: MembershipRow): ProjectTicket {
     rank: row.rank,
     addedAt: row.addedAt,
     addedBy: row.addedBy,
+    projectMilestoneId: row.projectMilestoneId,
   };
 }
 
@@ -199,6 +222,79 @@ export async function listProjectTickets(
     tickets: rows.map(toProjectTicket),
     progress: deriveProjectProgress(rows),
   };
+}
+
+/**
+ * Ordered, requester-filtered Project Milestones with progress derived from the
+ * same visible/eligible membership set KFL-367 uses. Progress is per-milestone:
+ * only rows whose `project_milestone_id` matches the milestone contribute.
+ */
+export async function listProjectMilestones(
+  organizationId: string,
+  projectId: string,
+  userId: string,
+): Promise<ProjectMilestone[]> {
+  const milestones = await db
+    .select({
+      id: projectMilestoneTable.id,
+      projectId: projectMilestoneTable.projectId,
+      name: projectMilestoneTable.name,
+      description: projectMilestoneTable.description,
+      targetDate: projectMilestoneTable.targetDate,
+      rank: projectMilestoneTable.rank,
+      completedAt: projectMilestoneTable.completedAt,
+      completedById: projectMilestoneTable.completedBy,
+      completedByName: userTable.name,
+      createdAt: projectMilestoneTable.createdAt,
+      updatedAt: projectMilestoneTable.updatedAt,
+    })
+    .from(projectMilestoneTable)
+    .leftJoin(userTable, eq(projectMilestoneTable.completedBy, userTable.id))
+    .where(eq(projectMilestoneTable.projectId, projectId))
+    .orderBy(
+      asc(projectMilestoneTable.rank),
+      asc(projectMilestoneTable.createdAt),
+      asc(projectMilestoneTable.id),
+    );
+
+  const rows = await filterVisibleRows(
+    organizationId,
+    userId,
+    await loadMembershipRows([projectId]),
+  );
+
+  return milestones.map((milestone) => ({
+    id: milestone.id,
+    projectId: milestone.projectId,
+    name: milestone.name,
+    description: milestone.description,
+    targetDate: milestone.targetDate,
+    rank: milestone.rank,
+    completedAt: milestone.completedAt,
+    completedBy: milestone.completedById
+      ? { id: milestone.completedById, name: milestone.completedByName }
+      : null,
+    createdAt: milestone.createdAt,
+    updatedAt: milestone.updatedAt,
+    progress: deriveProjectProgress(
+      rows.filter((row) => row.projectMilestoneId === milestone.id),
+    ),
+  }));
+}
+
+/** Single authorization-safe Project Milestone projection (or null). */
+export async function getProjectMilestone(
+  organizationId: string,
+  projectId: string,
+  milestoneId: string,
+  userId: string,
+): Promise<ProjectMilestone | null> {
+  const milestones = await listProjectMilestones(
+    organizationId,
+    projectId,
+    userId,
+  );
+  return milestones.find((milestone) => milestone.id === milestoneId) ?? null;
 }
 
 /** Single authorization-safe ticket projection for a scoped ticket. */
@@ -264,8 +360,15 @@ export async function findProjectById(
     )
     .limit(1);
   if (!row) return null;
+  const viewerPrivilege = await getResourcePrivilege({
+    organizationId,
+    resourceType: "project",
+    resourceId: projectId,
+    userId,
+  });
   return {
     ...row,
+    viewerPrivilege,
     progress: await getProjectProgress(organizationId, projectId, userId),
     health: null,
   };
