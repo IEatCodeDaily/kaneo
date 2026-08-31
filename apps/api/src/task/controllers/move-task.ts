@@ -1,13 +1,15 @@
-import { and, asc, eq, max } from "drizzle-orm";
+import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   assetTable,
   boardTable,
   columnTable,
+  projectTicketTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { getProjectTicketMemberships } from "../../project/publish-project-ticket-updates";
 import { claimTaskNumber } from "./claim-task-numbers";
 
 type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -119,11 +121,10 @@ async function moveTask({
     });
   }
 
-  if (sourceProject.workspaceId !== destinationProject.workspaceId) {
-    throw new HTTPException(400, {
-      message: "Tasks can only be moved within the same workspace",
-    });
-  }
+  // Capture memberships before the move. Cross-organization moves remove the
+  // membership atomically instead of leaving an invalid cross-org relation;
+  // same-org moves keep the membership but change its board identity.
+  const memberships = await getProjectTicketMemberships(taskId);
 
   const resolvedColumn = await resolveDestinationStatus(
     destinationBoardId,
@@ -165,6 +166,23 @@ async function moveTask({
       .set({ boardId: destinationBoardId })
       .where(eq(assetTable.taskId, taskId));
 
+    const crossOrgProjectIds = memberships
+      .filter(
+        (membership) =>
+          membership.organizationId !== destinationProject.organizationId,
+      )
+      .map((membership) => membership.projectId);
+    if (crossOrgProjectIds.length > 0) {
+      await tx
+        .delete(projectTicketTable)
+        .where(
+          and(
+            eq(projectTicketTable.taskId, taskId),
+            inArray(projectTicketTable.projectId, crossOrgProjectIds),
+          ),
+        );
+    }
+
     return updatedTask;
   });
 
@@ -179,6 +197,15 @@ async function moveTask({
     oldStatus: existingTask.status,
     newStatus: resolvedColumn.slug,
   });
+
+  // Refresh every Project that scoped the moved ticket (same-org board change
+  // or cross-org membership removal both change the visible set).
+  for (const membership of memberships) {
+    await publishEvent("project.updated", {
+      organizationId: membership.organizationId,
+      projectId: membership.projectId,
+    });
+  }
 
   return {
     task: movedTask,

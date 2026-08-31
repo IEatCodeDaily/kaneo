@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/page-title";
 import ProjectHeader from "@/components/project/project-header";
 import ProjectOverview from "@/components/project/project-overview";
+import ProjectTabs from "@/components/project/project-tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjectSlug } from "@/hooks/use-project-slug";
 
@@ -51,6 +52,11 @@ export function ProjectDetailRouteComponent() {
     <>
       <PageTitle title={project.name} />
       <ProjectHeader title={project.name}>
+        <ProjectTabs
+          active="overview"
+          organizationSlug={organizationSlug}
+          projectSlug={project.slug}
+        />
         <ProjectOverview project={project} />
       </ProjectHeader>
     </>

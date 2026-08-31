@@ -21,8 +21,10 @@ import {
   organizationMemberTable,
   organizationRoleTable,
   organizationTable,
+  projectMilestoneTable,
   projectSlugAliasTable,
   projectTable,
+  projectTicketTable,
   repoIssueTable,
   repoPullRequestTable,
   repoTable,
@@ -202,6 +204,8 @@ export const projectTableRelations = relations(
       references: [userTable.id],
     }),
     slugAliases: many(projectSlugAliasTable),
+    tickets: many(projectTicketTable),
+    milestones: many(projectMilestoneTable),
   }),
 );
 
@@ -216,6 +220,42 @@ export const projectSlugAliasTableRelations = relations(
       fields: [projectSlugAliasTable.projectId],
       references: [projectTable.id],
     }),
+  }),
+);
+
+export const projectTicketTableRelations = relations(
+  projectTicketTable,
+  ({ one }) => ({
+    project: one(projectTable, {
+      fields: [projectTicketTable.projectId],
+      references: [projectTable.id],
+    }),
+    task: one(taskTable, {
+      fields: [projectTicketTable.taskId],
+      references: [taskTable.id],
+    }),
+    addedByUser: one(userTable, {
+      fields: [projectTicketTable.addedBy],
+      references: [userTable.id],
+    }),
+    projectMilestone: one(projectMilestoneTable, {
+      fields: [projectTicketTable.projectMilestoneId],
+      references: [projectMilestoneTable.id],
+    }),
+  }),
+);
+export const projectMilestoneTableRelations = relations(
+  projectMilestoneTable,
+  ({ one, many }) => ({
+    project: one(projectTable, {
+      fields: [projectMilestoneTable.projectId],
+      references: [projectTable.id],
+    }),
+    completedByUser: one(userTable, {
+      fields: [projectMilestoneTable.completedBy],
+      references: [userTable.id],
+    }),
+    tickets: many(projectTicketTable),
   }),
 );
 

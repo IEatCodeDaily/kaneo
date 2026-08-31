@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskRelationTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { publishProjectTicketUpdates } from "../../project/publish-project-ticket-updates";
 import getTask from "./get-task";
 
 /**
@@ -53,6 +54,8 @@ async function deleteTask(taskId: string, currentUserId: string) {
       targetTaskId: relation.targetTaskId,
     });
   }
+
+  await publishProjectTicketUpdates(taskId);
 
   return task;
 }

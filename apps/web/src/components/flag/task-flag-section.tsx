@@ -45,7 +45,8 @@ export function TaskFlagSection({
     () => [
       ...(principalData ?? []).map((principal) => ({
         id: principal.id,
-        kind: principal.kind === "agent" ? ("agent" as const) : ("member" as const),
+        kind:
+          principal.kind === "agent" ? ("agent" as const) : ("member" as const),
         name: principal.name || principal.email,
         detail: principal.email,
       })),

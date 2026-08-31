@@ -1,18 +1,34 @@
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import db from "../database";
+import { organizationMemberTable, projectTable } from "../database/schema";
+import { requireResourcePrivilege } from "../resource-access";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
+import addProjectTicketCtrl from "./controllers/add-project-ticket";
 import archiveProjectCtrl from "./controllers/archive-project";
+import assignProjectTicketMilestoneCtrl from "./controllers/assign-project-ticket-milestone";
+import completeProjectMilestoneCtrl from "./controllers/complete-project-milestone";
 import createProjectCtrl, {
   PROJECT_STATUSES,
 } from "./controllers/create-project";
+import createProjectMilestoneCtrl from "./controllers/create-project-milestone";
+import deleteProjectMilestoneCtrl from "./controllers/delete-project-milestone";
 import getProjectCtrl from "./controllers/get-project";
+import listProjectMilestonesCtrl from "./controllers/list-project-milestones";
+import listProjectTicketsCtrl from "./controllers/list-project-tickets";
 import listProjectsCtrl from "./controllers/list-projects";
+import removeProjectTicketCtrl from "./controllers/remove-project-ticket";
 import renameProjectSlugCtrl from "./controllers/rename-project-slug";
+import reopenProjectMilestoneCtrl from "./controllers/reopen-project-milestone";
 import resolveProjectCtrl from "./controllers/resolve-project";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
+import updateProjectMilestoneCtrl from "./controllers/update-project-milestone";
 
 const PROJECT_PRIORITY_VALUES = [
   "no-priority",
@@ -21,6 +37,49 @@ const PROJECT_PRIORITY_VALUES = [
   "high",
   "urgent",
 ] as const;
+const projectProgressSchema = v.object({
+  completed: v.number(),
+  eligible: v.number(),
+  percent: v.nullable(v.number()),
+});
+
+const projectTicketSchema = v.object({
+  id: v.string(),
+  boardId: v.string(),
+  boardSlug: v.string(),
+  boardName: v.string(),
+  number: v.number(),
+  key: v.string(),
+  title: v.string(),
+  status: v.string(),
+  priority: v.nullable(v.string()),
+  archivedAt: v.nullable(v.date()),
+  rank: v.number(),
+  addedAt: v.date(),
+  addedBy: v.string(),
+  projectMilestoneId: v.nullable(v.string()),
+});
+
+const projectTicketsResponseSchema = v.object({
+  tickets: v.array(projectTicketSchema),
+  progress: projectProgressSchema,
+});
+
+const projectMilestoneSchema = v.object({
+  id: v.string(),
+  projectId: v.string(),
+  name: v.string(),
+  description: v.nullable(v.string()),
+  targetDate: v.nullable(v.string()),
+  rank: v.number(),
+  completedAt: v.nullable(v.date()),
+  completedBy: v.nullable(
+    v.object({ id: v.string(), name: v.nullable(v.string()) }),
+  ),
+  createdAt: v.date(),
+  updatedAt: v.date(),
+  progress: projectProgressSchema,
+});
 
 const projectSchema = v.object({
   id: v.string(),
@@ -47,11 +106,55 @@ const projectSchema = v.object({
   createdAt: v.date(),
   updatedAt: v.date(),
   createdBy: v.string(),
-  // KFL-366 excludes ticket membership/progress/health entirely; these are
-  // presentation-only placeholders for KFL-367+ to fill in.
-  progress: v.null_(),
+  // KFL-367 derives progress from the authorization-filtered visible set;
+  // health remains presentation-only until the Updates ticket.
+  progress: projectProgressSchema,
   health: v.null_(),
+  // KFL-369: the requesting user's effective Project resource privilege, so
+  // the web surface can gate mutation controls the same way the API does.
+  viewerPrivilege: v.optional(v.picklist(["none", "view", "edit", "manage"])),
 });
+function projectPrivilege(required: "view" | "edit" | "manage") {
+  return createMiddleware<{
+    Variables: { userId: string; organizationId: string };
+  }>(async (c, next) => {
+    const projectId = c.req.param("id") ?? "";
+    const [project] = await db
+      .select({ organizationId: projectTable.organizationId })
+      .from(projectTable)
+      .where(eq(projectTable.id, projectId))
+      .limit(1);
+    const [membership] = project
+      ? await db
+          .select({ id: organizationMemberTable.id })
+          .from(organizationMemberTable)
+          .where(
+            and(
+              eq(
+                organizationMemberTable.organizationId,
+                project.organizationId,
+              ),
+              eq(organizationMemberTable.userId, c.get("userId")),
+            ),
+          )
+          .limit(1)
+      : [];
+    const allowed =
+      membership &&
+      project &&
+      (await requireResourcePrivilege({
+        organizationId: project.organizationId,
+        resourceType: "project",
+        resourceId: projectId,
+        userId: c.get("userId"),
+        required,
+      }));
+    if (!allowed)
+      throw new HTTPException(404, { message: "Project not found" });
+    c.set("organizationId", project.organizationId);
+    await next();
+  });
+}
 
 const optionalNullableString = v.optional(v.nullable(v.string()));
 
@@ -212,7 +315,8 @@ const project = new Hono<{
     async (c) => {
       const { id } = c.req.valid("param");
       const organizationId = c.get("organizationId");
-      const projectData = await getProjectCtrl(organizationId, id);
+      const userId = c.get("userId");
+      const projectData = await getProjectCtrl(organizationId, id, userId);
       return c.json(projectData);
     },
   )
@@ -258,8 +362,10 @@ const project = new Hono<{
       const { id } = c.req.valid("param");
       const body = c.req.valid("json");
       const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
       const updated = await updateProjectCtrl(id, {
         organizationId,
+        updatedBy: userId,
         ...body,
       });
       return c.json(updated);
@@ -288,7 +394,13 @@ const project = new Hono<{
       const { id } = c.req.valid("param");
       const { slug } = c.req.valid("json");
       const organizationId = c.get("organizationId");
-      const updated = await renameProjectSlugCtrl(id, organizationId, slug);
+      const userId = c.get("userId");
+      const updated = await renameProjectSlugCtrl(
+        id,
+        organizationId,
+        slug,
+        userId,
+      );
       return c.json(updated);
     },
   )
@@ -339,8 +451,343 @@ const project = new Hono<{
     async (c) => {
       const { id } = c.req.valid("param");
       const organizationId = c.get("organizationId");
-      const unarchived = await unarchiveProjectCtrl(id, organizationId);
+      const userId = c.get("userId");
+      const unarchived = await unarchiveProjectCtrl(id, organizationId, userId);
       return c.json(unarchived);
+    },
+  )
+  .get(
+    "/:id/tickets",
+    describeRoute({
+      operationId: "listProjectTickets",
+      tags: ["Projects"],
+      description:
+        "List scoped Project tickets with requester-filtered progress",
+      responses: {
+        200: {
+          description: "Scoped tickets and progress",
+          content: {
+            "application/json": {
+              schema: resolver(projectTicketsResponseSchema),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      return c.json(await listProjectTicketsCtrl(organizationId, id, userId));
+    },
+  )
+  .post(
+    "/:id/tickets",
+    describeRoute({
+      operationId: "addProjectTicket",
+      tags: ["Projects"],
+      description: "Scope a ticket into a Project",
+      responses: {
+        200: {
+          description: "Scoped ticket projection",
+          content: {
+            "application/json": { schema: resolver(projectTicketSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        taskId: v.string(),
+        rank: v.optional(v.number()),
+        projectMilestoneId: optionalNullableString,
+      }),
+    ),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { taskId, rank, projectMilestoneId } = c.req.valid("json");
+      const userId = c.get("userId");
+      const ticket = await addProjectTicketCtrl({
+        projectId: id,
+        taskId,
+        rank,
+        projectMilestoneId,
+        userId,
+      });
+      return c.json(ticket);
+    },
+  )
+  .delete(
+    "/:id/tickets/:taskId",
+    describeRoute({
+      operationId: "removeProjectTicket",
+      tags: ["Projects"],
+      description: "Remove a ticket from a Project",
+      responses: {
+        200: {
+          description: "Membership removed",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ ok: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), taskId: v.string() })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id, taskId } = c.req.valid("param");
+      const userId = c.get("userId");
+      await removeProjectTicketCtrl({ projectId: id, taskId, userId });
+      return c.json({ ok: true });
+    },
+  )
+  .get(
+    "/:id/milestones",
+    describeRoute({
+      operationId: "listProjectMilestones",
+      tags: ["Projects"],
+      description: "List Project Milestones with requester-filtered progress",
+      responses: {
+        200: {
+          description: "Ordered Project Milestones",
+          content: {
+            "application/json": {
+              schema: resolver(v.array(projectMilestoneSchema)),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    projectPrivilege("view"),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      return c.json(
+        await listProjectMilestonesCtrl(organizationId, id, userId),
+      );
+    },
+  )
+  .post(
+    "/:id/milestones",
+    describeRoute({
+      operationId: "createProjectMilestone",
+      tags: ["Projects"],
+      description: "Create an open Project Milestone",
+      responses: {
+        200: {
+          description: "Created Project Milestone",
+          content: {
+            "application/json": { schema: resolver(projectMilestoneSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    validator(
+      "json",
+      v.object({
+        name: v.string(),
+        description: optionalNullableString,
+        targetDate: optionalNullableString,
+        rank: v.optional(v.number()),
+      }),
+    ),
+    projectPrivilege("edit"),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const milestone = await createProjectMilestoneCtrl(
+        organizationId,
+        id,
+        userId,
+        body,
+      );
+      return c.json(milestone);
+    },
+  )
+  .put(
+    "/:id/milestones/:milestoneId",
+    describeRoute({
+      operationId: "updateProjectMilestone",
+      tags: ["Projects"],
+      description: "Update Project Milestone metadata and order",
+      responses: {
+        200: {
+          description: "Updated Project Milestone",
+          content: {
+            "application/json": { schema: resolver(projectMilestoneSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), milestoneId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        name: v.string(),
+        description: optionalNullableString,
+        targetDate: optionalNullableString,
+        rank: v.number(),
+      }),
+    ),
+    projectPrivilege("edit"),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, milestoneId } = c.req.valid("param");
+      const body = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const milestone = await updateProjectMilestoneCtrl(
+        organizationId,
+        id,
+        milestoneId,
+        userId,
+        body,
+      );
+      return c.json(milestone);
+    },
+  )
+  .delete(
+    "/:id/milestones/:milestoneId",
+    describeRoute({
+      operationId: "deleteProjectMilestone",
+      tags: ["Projects"],
+      description: "Delete a Project Milestone, clearing assignments",
+      responses: {
+        200: {
+          description: "Milestone deleted",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ ok: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), milestoneId: v.string() })),
+    projectPrivilege("edit"),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, milestoneId } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      await deleteProjectMilestoneCtrl(organizationId, id, milestoneId);
+      return c.json({ ok: true });
+    },
+  )
+  .put(
+    "/:id/milestones/:milestoneId/complete",
+    describeRoute({
+      operationId: "completeProjectMilestone",
+      tags: ["Projects"],
+      description: "Explicitly complete a Project Milestone",
+      responses: {
+        200: {
+          description: "Completed Project Milestone",
+          content: {
+            "application/json": { schema: resolver(projectMilestoneSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), milestoneId: v.string() })),
+    projectPrivilege("edit"),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, milestoneId } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const milestone = await completeProjectMilestoneCtrl(
+        organizationId,
+        id,
+        milestoneId,
+        userId,
+      );
+      return c.json(milestone);
+    },
+  )
+  .put(
+    "/:id/milestones/:milestoneId/reopen",
+    describeRoute({
+      operationId: "reopenProjectMilestone",
+      tags: ["Projects"],
+      description: "Reopen a completed Project Milestone",
+      responses: {
+        200: {
+          description: "Reopened Project Milestone",
+          content: {
+            "application/json": { schema: resolver(projectMilestoneSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), milestoneId: v.string() })),
+    projectPrivilege("edit"),
+    requireOrganizationPermission({ project: ["update"] }),
+    async (c) => {
+      const { id, milestoneId } = c.req.valid("param");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const milestone = await reopenProjectMilestoneCtrl(
+        organizationId,
+        id,
+        milestoneId,
+        userId,
+      );
+      return c.json(milestone);
+    },
+  )
+  .put(
+    "/:id/tickets/:taskId",
+    describeRoute({
+      operationId: "assignProjectTicketMilestone",
+      tags: ["Projects"],
+      description:
+        "Assign, reassign, or clear a Project Milestone on a scoped ticket",
+      responses: {
+        200: {
+          description: "Updated scoped ticket projection",
+          content: {
+            "application/json": { schema: resolver(projectTicketSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string(), taskId: v.string() })),
+    validator("json", v.object({ projectMilestoneId: v.nullable(v.string()) })),
+    organizationAccess.fromProject(),
+    requireOrganizationPermission({ project: ["update"] }),
+    requireOrganizationPermission({ task: ["update"] }),
+    async (c) => {
+      const { id, taskId } = c.req.valid("param");
+      const { projectMilestoneId } = c.req.valid("json");
+      const organizationId = c.get("organizationId");
+      const userId = c.get("userId");
+      const ticket = await assignProjectTicketMilestoneCtrl(
+        organizationId,
+        id,
+        taskId,
+        projectMilestoneId,
+        userId,
+      );
+      return c.json(ticket);
     },
   );
 

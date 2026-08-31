@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { publishProjectTicketUpdates } from "../../project/publish-project-ticket-updates";
 
 /**
  * #226: archive / unarchive a task.
@@ -67,6 +68,8 @@ async function setTaskArchived({
     boardId: updatedTask.boardId,
     userId: currentUserId,
   });
+
+  await publishProjectTicketUpdates(updatedTask.id);
 
   return updatedTask;
 }

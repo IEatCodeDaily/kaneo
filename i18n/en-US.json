@@ -3171,6 +3171,68 @@
 			"archived": "Archived",
 			"noDueDate": "No target date"
 		},
+		"tabs": {
+			"overview": "Overview",
+			"tickets": "Tickets",
+			"label": "Project navigation"
+		},
+		"progress": {
+			"label": "Progress",
+			"completedOfEligible": "{{completed}} of {{eligible}} complete",
+			"noScopedWork": "No scoped work"
+		},
+		"tickets": {
+			"title": "Tickets",
+			"add": "Add ticket",
+			"remove": "Remove",
+			"emptyTitle": "No scoped tickets",
+			"emptyDescription": "Scope tickets from boards you can edit to track them here.",
+			"loading": "Loading tickets…",
+			"boardKey": "Board key",
+			"openTicket": "Open ticket",
+			"addSuccess": "Ticket scoped to project",
+			"removeSuccess": "Ticket removed from project",
+			"mutationError": "Could not update project tickets. Please try again.",
+			"alreadyScoped": "Already scoped",
+			"noEditableTickets": "No editable tickets available"
+		},
+		"milestones": {
+			"title": "Milestones",
+			"add": "Add milestone",
+			"edit": "Edit milestone",
+			"delete": "Delete milestone",
+			"complete": "Complete",
+			"reopen": "Reopen",
+			"unassigned": "Unassigned",
+			"name": "Name",
+			"description": "Description",
+			"targetDate": "Target date",
+			"rank": "Rank",
+			"progress": "Progress",
+			"completedBy": "Completed by",
+			"emptyTitle": "No milestones yet",
+			"emptyDescription": "Add a milestone to track delivery.",
+			"loading": "Loading milestones…",
+			"noTargetDate": "No target date",
+			"noScopedWork": "No scoped work",
+			"createSuccess": "Milestone created",
+			"updateSuccess": "Milestone updated",
+			"deleteSuccess": "Milestone deleted",
+			"completeSuccess": "Milestone completed",
+			"reopenSuccess": "Milestone reopened",
+			"assignSuccess": "Milestone assignment updated",
+			"mutationError": "Could not update milestone.",
+			"deleteTitle": "Delete milestone?",
+			"deleteDescription": "Assigned tickets will remain scoped and become unassigned.",
+			"validation": {
+				"nameRequired": "Name is required",
+				"nameTooLong": "Name is too long",
+				"descriptionTooLong": "Description is too long",
+				"invalidTargetDate": "Invalid target date",
+				"invalidRank": "Invalid rank",
+				"milestoneNotInProject": "Milestone is not in this project"
+			}
+		},
 		"labels": {
 			"name": "Name",
 			"summary": "Summary",
@@ -3219,7 +3281,10 @@
 			"slugInvalid": "Invalid project slug",
 			"slugReserved": "Project slug is already reserved",
 			"leadMustBelongToOrganization": "Project lead must be an active member of the organization",
-			"teamMustBelongToOrganization": "Project lead team must belong to the organization"
+			"teamMustBelongToOrganization": "Project lead team must belong to the organization",
+			"ticketRequired": "Ticket is required",
+			"ticketAlreadyScoped": "Ticket is already scoped to a project",
+			"ticketMustBelongToOrganization": "Ticket must belong to the project's organization"
 		}
 	}
 }

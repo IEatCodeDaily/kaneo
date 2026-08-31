@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { formatDateMedium } from "@/lib/format";
+import ProjectMilestonesSection from "./project-milestones-section";
 import type { ProjectRowData } from "./project-row";
 
 type ProjectOverviewProps = {
@@ -76,10 +77,15 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       </section>
       <section>
         <h2 className="text-sm font-medium text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
+          {t("projects:progress.label")}
         </h2>
         <p className="mt-1 text-muted-foreground">
-          {t("projects:labels.noScopedWork")}
+          {project.progress.percent === null
+            ? t("projects:progress.noScopedWork")
+            : t("projects:progress.completedOfEligible", {
+                completed: project.progress.completed,
+                eligible: project.progress.eligible,
+              })}
         </p>
       </section>
 
@@ -91,6 +97,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           {t("projects:labels.noUpdate")}
         </p>
       </section>
+      <ProjectMilestonesSection projectId={project.id} />
     </div>
   );
 }
