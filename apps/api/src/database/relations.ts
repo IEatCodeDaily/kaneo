@@ -27,8 +27,6 @@ import {
   projectTicketTable,
   projectBoardTable,
   projectRepoTable,
-  projectSlugAliasTable,
-  projectTable,
   projectTableLinkTable,
   projectUpdateTable,
   repoIssueTable,
@@ -643,10 +641,22 @@ export const projectTableLinkTableRelations = relations(
     }),
     creator: one(userTable, {
       fields: [projectTableLinkTable.createdBy],
+      references: [userTable.id],
+    }),
+  }),
+);
+
 export const projectUpdateTableRelations = relations(
   projectUpdateTable,
+  ({ one }) => ({
+    organization: one(organizationTable, {
       fields: [projectUpdateTable.organizationId],
+      references: [organizationTable.id],
+    }),
+    project: one(projectTable, {
       fields: [projectUpdateTable.projectId],
+      references: [projectTable.id],
+    }),
     author: one(userTable, {
       fields: [projectUpdateTable.authorId],
       references: [userTable.id],

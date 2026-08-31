@@ -39,12 +39,10 @@ export type ProjectTicket = {
   archivedAt: Date | null;
   startDate: Date | null;
   dueDate: Date | null;
-  /** Populated by the KFL-369 membership adapter when its final schema is available. */
   projectMilestoneId: string | null;
   rank: number;
   addedAt: Date;
   addedBy: string;
-  projectMilestoneId: string | null;
 };
 
 /** KFL-369 derived, authorization-filtered Project Milestone projection. */
@@ -211,11 +209,10 @@ export function toProjectTicket(row: MembershipRow): ProjectTicket {
     archivedAt: row.archivedAt,
     startDate: row.startDate,
     dueDate: row.dueDate,
-    projectMilestoneId: null,
+    projectMilestoneId: row.projectMilestoneId ?? null,
     rank: row.rank,
     addedAt: row.addedAt,
     addedBy: row.addedBy,
-    projectMilestoneId: row.projectMilestoneId,
   };
 }
 
