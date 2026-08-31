@@ -3155,5 +3155,71 @@
 			"roleUpdateError": "Failed to update role",
 			"removeSuccess": "Team member removed successfully"
 		}
+	},
+	"projects": {
+		"overview": {
+			"title": "Projects",
+			"newProject": "New project",
+			"emptyTitle": "No projects yet",
+			"emptyDescription": "Get started by creating your first project.",
+			"loading": "Loading projects…",
+			"includeArchived": "Include archived",
+			"active": "Active",
+			"planned": "Planned",
+			"completed": "Completed",
+			"canceled": "Canceled",
+			"archived": "Archived",
+			"noDueDate": "No target date"
+		},
+		"labels": {
+			"name": "Name",
+			"summary": "Summary",
+			"lifecycle": "Lifecycle",
+			"priority": "Priority",
+			"lead": "Lead",
+			"leadTeam": "Lead team",
+			"startDate": "Start date",
+			"targetDate": "Target date",
+			"successCriteria": "Success criteria",
+			"description": "Description",
+			"noScopedWork": "No scoped work",
+			"noUpdate": "No update"
+		},
+		"lifecycle": {
+			"planned": "Planned",
+			"started": "Started",
+			"completed": "Completed",
+			"canceled": "Canceled"
+		},
+		"actions": {
+			"create": "Create project",
+			"creating": "Creating…",
+			"edit": "Edit",
+			"save": "Save changes",
+			"saving": "Saving…",
+			"renameSlug": "Rename slug",
+			"archive": "Archive",
+			"unarchive": "Unarchive",
+			"archiveTitle": "Archive project?",
+			"archiveDescription": "{{name}} will be hidden from active project lists. Its metadata will be preserved.",
+			"confirmArchive": "Archive project",
+			"cancel": "Cancel"
+		},
+		"outcomes": {
+			"createSuccess": "Project created successfully",
+			"updateSuccess": "Project updated successfully",
+			"archiveSuccess": "Project archived successfully",
+			"unarchiveSuccess": "Project unarchived successfully",
+			"error": "Something went wrong. Please try again."
+		},
+		"validation": {
+			"nameRequired": "Name is required",
+			"summaryRequired": "Summary is required",
+			"leadRequired": "Lead is required",
+			"slugInvalid": "Invalid project slug",
+			"slugReserved": "Project slug is already reserved",
+			"leadMustBelongToOrganization": "Project lead must be an active member of the organization",
+			"teamMustBelongToOrganization": "Project lead team must belong to the organization"
+		}
 	}
 }

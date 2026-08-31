@@ -594,6 +594,123 @@ export const boardKeyAliasTable = pgTable(
   ],
 );
 
+/**
+ * KFL-366: Projects are an outcome-tracking domain, deliberately NOT owning
+ * Boards/Tickets/Repos/Tables — those stay first-class, organization-scoped
+ * resources. A Project groups related work by intent; linking which Board/
+ * Ticket/Repo/Table serves a Project is a later ticket (KFL-367+).
+ */
+export const projectTable = pgTable(
+  "project",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    icon: text("icon"),
+    color: text("color"),
+    summary: text("summary").notNull(),
+    description: text("description"),
+    successCriteria: text("success_criteria"),
+    status: text("status").notNull().default("planned"),
+    // Reuses the Ticket priority vocabulary/validator (VALID_PRIORITIES);
+    // nullable because a Project need not be prioritized at creation.
+    priority: text("priority"),
+    leadUserId: text("lead_user_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+    leadTeamId: text("lead_team_id").references(() => teamTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    startDate: text("start_date"),
+    targetDate: text("target_date"),
+    /*
+      Per-resource organization baseline, identical contract to
+      board.org_privilege: what every ordinary org member gets for THIS
+      project when they hold no explicit user/team grant. NULL = follow the
+      organization's defaultResourcePrivilege.
+    */
+    orgPrivilege: text("org_privilege"),
+    archivedAt: timestamp("archived_at", { mode: "date" }),
+    archivedBy: text("archived_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "restrict",
+        onUpdate: "cascade",
+      }),
+  },
+  (table) => [
+    unique("project_organization_id_id_unique").on(
+      table.organizationId,
+      table.id,
+    ),
+    uniqueIndex("project_organization_slug_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
+    index("project_organization_archived_idx").on(
+      table.organizationId,
+      table.archivedAt,
+    ),
+    index("project_leadUserId_idx").on(table.leadUserId),
+    index("project_leadTeamId_idx").on(table.leadTeamId),
+    check(
+      "project_status_check",
+      sql`${table.status} in ('planned', 'started', 'completed', 'canceled')`,
+    ),
+  ],
+);
+
+export const projectSlugAliasTable = pgTable(
+  "project_slug_alias",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    slug: text("slug").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("project_slug_alias_organization_slug_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
+    index("project_slug_alias_project_id_idx").on(table.projectId),
+  ],
+);
+
 export const dataTableTable = pgTable(
   "data_table",
   {

@@ -19,7 +19,8 @@ type OrganizationIdSource =
         | "activity"
         | "comment"
         | "column"
-        | "workflowRule";
+        | "workflowRule"
+        | "project";
       idKey: string;
     };
 
@@ -85,9 +86,28 @@ export function organizationAccessMiddleware(
 
     await validateOrganizationAccess(userId, organizationId, apiKeyId);
 
-    const boardSource = config.sources.find(
-      (source) => source.type === "lookup" && source.resource !== "label",
+    // #366: the guarded lookup resource belongs to exactly one resource
+    // family (board or project) today; each family maps to its own
+    // resourceType/id resolver so the privilege check runs against the right
+    // resource regardless of which family the caller is guarding.
+    type BoardFamilySource = {
+      type: "lookup";
+      resource: Exclude<
+        Extract<OrganizationIdSource, { type: "lookup" }>["resource"],
+        "label" | "project"
+      >;
+      idKey: string;
+    };
+    const guardedSource = config.sources.find(
+      (source): source is BoardFamilySource =>
+        source.type === "lookup" &&
+        source.resource !== "label" &&
+        source.resource !== "project",
     );
+    const projectSource = config.sources.find(
+      (source) => source.type === "lookup" && source.resource === "project",
+    );
+    const boardSource = guardedSource;
     if (boardSource?.type === "lookup") {
       const body = await readJsonObjectBody(c);
       const resourceId =
@@ -113,6 +133,40 @@ export function organizationAccessMiddleware(
         }
       }
     }
+    if (projectSource?.type === "lookup") {
+      const body = await readJsonObjectBody(c);
+      const resourceId: string | null =
+        c.req.param(projectSource.idKey) ||
+        c.req.query(projectSource.idKey) ||
+        (typeof body[projectSource.idKey] === "string"
+          ? (body[projectSource.idKey] as string)
+          : null);
+      if (resourceId) {
+        const [project] = await db
+          .select({ id: schema.projectTable.id })
+          .from(schema.projectTable)
+          .where(
+            and(
+              eq(schema.projectTable.id, resourceId),
+              eq(schema.projectTable.organizationId, organizationId),
+            ),
+          )
+          .limit(1);
+        if (!project) {
+          throw new HTTPException(404, { message: "Project not found" });
+        }
+        const privilege = await getResourcePrivilege({
+          organizationId,
+          resourceType: "project",
+          resourceId: project.id,
+          userId,
+        });
+        const required = c.req.method === "GET" ? "view" : "edit";
+        if (!privilegeAllows(privilege, required)) {
+          throw new HTTPException(404, { message: "Project not found" });
+        }
+      }
+    }
 
     c.set("organizationId", organizationId);
 
@@ -129,7 +183,8 @@ async function lookupOrganizationId(
     | "activity"
     | "comment"
     | "column"
-    | "workflowRule",
+    | "workflowRule"
+    | "project",
   id: string,
 ): Promise<string | null> {
   try {
@@ -141,6 +196,15 @@ async function lookupOrganizationId(
           .where(eq(schema.boardTable.id, id))
           .limit(1);
         return board?.organizationId || null;
+      }
+
+      case "project": {
+        const [project] = await db
+          .select({ organizationId: schema.projectTable.organizationId })
+          .from(schema.projectTable)
+          .where(eq(schema.projectTable.id, id))
+          .limit(1);
+        return project?.organizationId || null;
       }
 
       case "task": {
@@ -271,7 +335,7 @@ async function lookupOrganizationId(
 async function lookupBoardId(
   resource: Exclude<
     Extract<OrganizationIdSource, { type: "lookup" }>["resource"],
-    "label"
+    "label" | "project"
   >,
   id: string,
 ): Promise<string | null> {
@@ -350,6 +414,11 @@ export const organizationAccess = {
   fromBoard: (idKey = "id") =>
     organizationAccessMiddleware({
       sources: [{ type: "lookup", resource: "board", idKey }],
+    }),
+
+  fromProject: (idKey = "id") =>
+    organizationAccessMiddleware({
+      sources: [{ type: "lookup", resource: "project", idKey }],
     }),
 
   fromTask: (idKey = "id") =>

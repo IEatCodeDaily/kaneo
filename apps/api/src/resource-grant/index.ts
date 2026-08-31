@@ -7,7 +7,12 @@ import db, { schema } from "../database";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 
-const resourceTypeSchema = v.picklist(["board", "repo", "table"] as const);
+const resourceTypeSchema = v.picklist([
+  "board",
+  "repo",
+  "table",
+  "project",
+] as const);
 const privilegeSchema = v.picklist(["view", "edit", "manage"] as const);
 /**
  * Per-resource organization baseline: what ordinary members get with no
@@ -35,11 +40,16 @@ type ResourceParams = v.InferOutput<typeof resourceParamsSchema>;
 type GrantBody = v.InferOutput<typeof grantBodySchema>;
 
 function resourceTable(resourceType: ResourceParams["resourceType"]) {
-  return resourceType === "board"
-    ? schema.boardTable
-    : resourceType === "repo"
-      ? schema.repoTable
-      : schema.dataTableTable;
+  switch (resourceType) {
+    case "board":
+      return schema.boardTable;
+    case "repo":
+      return schema.repoTable;
+    case "table":
+      return schema.dataTableTable;
+    case "project":
+      return schema.projectTable;
+  }
 }
 
 async function validateResource(params: ResourceParams) {
