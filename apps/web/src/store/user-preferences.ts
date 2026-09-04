@@ -5,6 +5,22 @@ import type { BoardView, RepoView } from "@/lib/board-view";
 export const WEEK_START_DAYS = [0, 1, 6] as const;
 export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
 
+export type RecentPage = {
+  pathname: string;
+  label: string;
+  openedAt: number;
+};
+type PersistedRecentPage = Omit<RecentPage, "openedAt"> & {
+  openedAt?: number;
+};
+
+type PersistedUserPreferences = Omit<
+  Partial<UserPreferencesStore>,
+  "recentPages"
+> & {
+  recentPages?: PersistedRecentPage[];
+};
+
 export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
 }
@@ -79,6 +95,18 @@ type UserPreferencesStore = {
   setLastBoardView: (view: BoardView) => void;
   lastRepoView: RepoView;
   setLastRepoView: (view: RepoView) => void;
+  recentPages: RecentPage[];
+  rememberRecentPage: (page: RecentPage) => void;
+  recentPageLimit: number;
+  setRecentPageLimit: (limit: number) => void;
+  recentOpen: boolean;
+  setRecentOpen: (open: boolean) => void;
+  hiddenProjectIds: string[];
+  setProjectSidebarVisibility: (
+    userId: string,
+    projectId: string,
+    visible: boolean,
+  ) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -199,10 +227,53 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setLastBoardView: (lastBoardView) => set({ lastBoardView }),
       lastRepoView: "issues",
       setLastRepoView: (lastRepoView) => set({ lastRepoView }),
+      recentPages: [],
+      rememberRecentPage: (page) =>
+        set((state) => ({
+          recentPages: [
+            page,
+            ...state.recentPages.filter(
+              (recent) => recent.pathname !== page.pathname,
+            ),
+          ].slice(0, 8),
+        })),
+      recentPageLimit: 5,
+      setRecentPageLimit: (limit) =>
+        set({ recentPageLimit: Math.min(8, Math.max(3, limit)) }),
+      recentOpen: false,
+      setRecentOpen: (recentOpen) => set({ recentOpen }),
+      hiddenProjectIds: [],
+      setProjectSidebarVisibility: (userId, projectId, visible) =>
+        set((state) => {
+          const key = `${userId}:${projectId}`;
+          return {
+            hiddenProjectIds: visible
+              ? state.hiddenProjectIds.filter((id) => id !== key)
+              : Array.from(new Set([...state.hiddenProjectIds, key])),
+          };
+        }),
     }),
     {
       name: "user-preferences",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as PersistedUserPreferences;
+        const hydratedAt = Date.now();
+        return {
+          ...currentState,
+          ...persisted,
+          recentPages:
+            persisted.recentPages?.map((page) => ({
+              ...page,
+              openedAt:
+                typeof page.openedAt === "number" &&
+                Number.isFinite(page.openedAt) &&
+                page.openedAt > 0
+                  ? page.openedAt
+                  : hydratedAt,
+            })) ?? currentState.recentPages,
+        };
+      },
       onRehydrateStorage: () => (state) => {
         if (state && !isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);

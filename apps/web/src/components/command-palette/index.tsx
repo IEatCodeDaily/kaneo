@@ -29,6 +29,7 @@ import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
+import { getOrganizationMembersRoute } from "./members-route";
 
 type PaletteActionItem = {
   value: string;
@@ -75,10 +76,10 @@ function CommandPalette() {
     sequentialShortcuts: {
       [shortcuts.board.prefix]: {
         [shortcuts.board.list]: () => {
-          if (!organization?.id) return;
+          if (!organization?.slug) return;
           navigate({
             to: "/dashboard/organization/$organizationSlug",
-            params: { organizationSlug: organization.id },
+            params: { organizationSlug: organization.slug },
           });
         },
         [shortcuts.board.create]: () => setIsCreateBoardOpen(true),
@@ -110,10 +111,10 @@ function CommandPalette() {
             label: t("navigation:commandPalette.boards"),
             shortcut: `${shortcuts.board.prefix} ${shortcuts.board.list}`,
             onRun: () => {
-              if (!organization?.id) return;
+              if (!organization?.slug) return;
               navigate({
                 to: "/dashboard/organization/$organizationSlug",
-                params: { organizationSlug: organization.id },
+                params: { organizationSlug: organization.slug },
               });
             },
           },
@@ -129,7 +130,8 @@ function CommandPalette() {
               defaultValue: "Members",
             }),
             onRun: () => {
-              navigate({ to: "/dashboard/settings/organization/members" });
+              if (!organization?.slug) return;
+              navigate(getOrganizationMembersRoute(organization.slug));
             },
           },
           {
@@ -184,7 +186,7 @@ function CommandPalette() {
         ],
       },
     ],
-    [navigate, setTheme, t, organization?.id],
+    [navigate, setTheme, t, organization?.slug],
   );
 
   const shortcutHandlers = useMemo(() => {

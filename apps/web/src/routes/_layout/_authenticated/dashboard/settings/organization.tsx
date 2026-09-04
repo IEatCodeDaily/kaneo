@@ -12,6 +12,7 @@ import {
   Settings,
   Shield,
   Tag,
+  Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +48,11 @@ function RouteComponent() {
       title: t("settings:organizationRoles.title", { defaultValue: "Roles" }),
       url: "/dashboard/settings/organization/roles",
       icon: Shield,
+    },
+    {
+      title: t("team:members.title", { defaultValue: "Members" }),
+      url: "/dashboard/settings/organization/members",
+      icon: Users,
     },
     {
       title: "Visibility",

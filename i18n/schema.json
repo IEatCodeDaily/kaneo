@@ -5553,7 +5553,34 @@
 						},
 						"moreRepos": {
 							"type": "string"
-						}
+						},
+						"recent": {
+							"type": "string"
+						},
+						"soon": {
+							"type": "string"
+						},
+						"comingSoon": {
+							"type": "string"
+						},
+						"work": {
+							"type": "string"
+						},
+						"resources": {
+							"type": "string"
+						},
+						"cycles": {
+							"type": "string"
+						},
+						"settings": {
+							"type": "string"
+						},
+						"initiatives": { "type": "string" },
+						"digest": { "type": "string" },
+						"views": { "type": "string" },
+						"alpha": { "type": "string" },
+						"moreProjects": { "type": "string" },
+						"hideFromSidebar": { "type": "string" }
 					},
 					"required": [
 						"myTasks",
@@ -5568,7 +5595,18 @@
 						"more",
 						"overview",
 						"inbox",
-						"moreRepos"
+						"moreRepos",
+						"recent",
+						"work",
+						"resources",
+						"cycles",
+						"settings",
+						"initiatives",
+						"digest",
+						"views",
+						"alpha",
+						"moreProjects",
+						"hideFromSidebar"
 					]
 				},
 				"userMenu": {

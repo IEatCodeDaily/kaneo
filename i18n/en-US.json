@@ -1351,7 +1351,20 @@
 			"more": "More",
 			"overview": "Overview",
 			"inbox": "Inbox",
-			"moreRepos": "More Repos"
+			"moreRepos": "More Repos",
+			"recent": "Recent",
+			"soon": "Soon",
+			"comingSoon": "coming soon",
+			"work": "Work",
+			"resources": "Resources",
+			"cycles": "Cycles",
+			"settings": "Settings",
+			"initiatives": "Initiatives",
+			"digest": "Digest",
+			"views": "Views",
+			"alpha": "Alpha",
+			"moreProjects": "More Projects",
+			"hideFromSidebar": "Hide from sidebar"
 		},
 		"userMenu": {
 			"themeLight": "Light",

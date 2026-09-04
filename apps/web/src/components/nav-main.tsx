@@ -1,90 +1,170 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Inbox, ListChecks, Users } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  Inbox,
+  ListChecks,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
 import MyTasksCountBadge from "@/components/my-tasks-count-badge";
-import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
-/**
- * Top-level organization navigation.
- *
- * Previously this was a collapsible "Overview" group containing Boards,
- * Members, Repos and Invitations. Boards and Repos now own their own sidebar
- * sections (whose headers navigate to the same overviews), and Invitations is
- * account-scoped so it moved to the profile dropdown. That left a collapsible
- * group wrapping a single item, so the group itself is gone and Members is
- * rendered directly.
- *
- * Trash (#145) also moved to the profile dropdown: it is a recovery surface
- * users reach occasionally, not a daily navigation target, so it no longer
- * earns a slot in the main nav.
- */
+function relativeTime(openedAt?: number) {
+  if (!openedAt) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - openedAt) / 1000));
+  if (seconds < 60) return "now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
 export function NavMain() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  if (!organization && user?.role !== "admin") return null;
+  const { pathname } = useLocation();
+  const recentOpen = useUserPreferencesStore((state) => state.recentOpen);
+  const setRecentOpen = useUserPreferencesStore((state) => state.setRecentOpen);
+  const recentPages = useUserPreferencesStore((state) => state.recentPages);
+  const recentPageLimit = useUserPreferencesStore(
+    (state) => state.recentPageLimit,
+  );
+  const setRecentPageLimit = useUserPreferencesStore(
+    (state) => state.setRecentPageLimit,
+  );
   if (!organization) return null;
-
-  const membersUrl = `/dashboard/organization/${organization.slug}/members`;
-  const myTasksUrl = `/dashboard/organization/${organization.slug}/my-tasks`;
   const inboxUrl = `/dashboard/organization/${organization.slug}/inbox`;
-
+  const ticketsUrl = `/dashboard/organization/${organization.slug}/my-tasks`;
+  const primary = [
+    {
+      label: t("navigation:sidebar.inbox"),
+      icon: Inbox,
+      url: inboxUrl,
+      badge: <InboxUnreadBadge />,
+    },
+    {
+      label: t("navigation:sidebar.myTasks"),
+      icon: ListChecks,
+      url: ticketsUrl,
+      badge: <MyTasksCountBadge organizationId={organization.id} />,
+    },
+  ];
   return (
-    <SidebarGroup className="gap-1 p-2 pb-0">
+    <SidebarGroup className="p-2 pb-0">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
-          {/* Cross-board, user-scoped views (#58) sit above Members: they are
-              the operator's own work, not organization administration. */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-              isActive={location.pathname === inboxUrl}
-              onClick={() => navigate({ to: inboxUrl })}
-              size="default"
-              tooltip={t("navigation:sidebar.inbox")}
-            >
-              <Inbox aria-hidden="true" />
-              <span>{t("navigation:sidebar.inbox")}</span>
-              <InboxUnreadBadge />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-              isActive={location.pathname === myTasksUrl}
-              onClick={() => navigate({ to: myTasksUrl })}
-              size="default"
-              tooltip={t("navigation:sidebar.myTasks")}
-            >
-              <ListChecks aria-hidden="true" />
-              <span>{t("navigation:sidebar.myTasks")}</span>
-              <MyTasksCountBadge organizationId={organization.id} />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="h-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
-              isActive={location.pathname === membersUrl}
-              onClick={() => navigate({ to: membersUrl })}
-              size="default"
-              tooltip={t("navigation:sidebar.members")}
-            >
-              <Users aria-hidden="true" />
-              <span>{t("navigation:sidebar.members")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {primary.map(({ label, icon: Icon, url, badge }) => (
+            <SidebarMenuItem key={url}>
+              <SidebarMenuButton
+                className="h-7 text-xs"
+                isActive={pathname === url}
+                onClick={() => navigate({ to: url })}
+                tooltip={label}
+              >
+                <Icon />
+                <span className="flex-1">{label}</span>
+                <span
+                  className="w-5"
+                  data-testid={
+                    url === inboxUrl ? "inbox-count-column" : undefined
+                  }
+                >
+                  {badge}
+                </span>
+                <span className="w-5" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {recentPages.length > 0 && (
+            <ContextMenu>
+              <ContextMenuTrigger asChild>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    aria-expanded={recentOpen}
+                    aria-label={t("navigation:sidebar.recent")}
+                    className="h-7 text-xs"
+                    onClick={() => setRecentOpen(!recentOpen)}
+                  >
+                    <Clock3 />
+                    <span className="flex-1">
+                      {t("navigation:sidebar.recent")}
+                    </span>
+                    <span className="w-5 text-right text-[10px] tabular-nums">
+                      {Math.min(recentPages.length, recentPageLimit)}
+                    </span>
+                    <span
+                      className="flex w-5 justify-center"
+                      data-testid="recent-chevron-column"
+                    >
+                      {recentOpen ? <ChevronDown /> : <ChevronRight />}
+                    </span>
+                  </SidebarMenuButton>
+                  {recentOpen && (
+                    <SidebarMenuSub>
+                      {recentPages
+                        .slice(0, recentPageLimit)
+                        .map((page, index) => (
+                          <SidebarMenuSubItem
+                            className={
+                              index >= 3
+                                ? "hidden min-[900px]:block"
+                                : undefined
+                            }
+                            key={page.pathname}
+                          >
+                            <SidebarMenuSubButton
+                              className="h-6 text-[11px]"
+                              onClick={() => navigate({ to: page.pathname })}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {page.label}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {relativeTime(page.openedAt)}
+                              </span>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                    </SidebarMenuSub>
+                  )}
+                </SidebarMenuItem>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="w-44">
+                <ContextMenuRadioGroup
+                  value={String(recentPageLimit)}
+                  onValueChange={(value) => setRecentPageLimit(Number(value))}
+                >
+                  {[3, 4, 5, 6, 7, 8].map((limit) => (
+                    <ContextMenuRadioItem key={limit} value={String(limit)}>
+                      {limit}
+                    </ContextMenuRadioItem>
+                  ))}
+                </ContextMenuRadioGroup>
+              </ContextMenuContent>
+            </ContextMenu>
+          )}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

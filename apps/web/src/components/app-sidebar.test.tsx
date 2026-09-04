@@ -1,44 +1,42 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-/**
- * #96: the sidebar top is `Team selector | Sidebar toggle`, the avatar sits at
- * the bottom, the organization selector and theme toggle live in the avatar
- * popup instead of the sidebar chrome, and the notification bell is gone
- * because it duplicated Inbox.
- */
-
-// `__APP_VERSION__` is a Vite `define`, so it is a bare global at runtime.
 vi.stubGlobal("__APP_VERSION__", "0.0.0-test");
-
+let organization = {
+  id: "org-1",
+  slug: "acme",
+  name: "Acme",
+  logo: null,
+  workEnabled: true,
+};
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
-  useLocation: () => ({ pathname: "/dashboard/organization/org-1" }),
+  useLocation: () => ({ pathname: "/dashboard/organization/acme" }),
 }));
-
 vi.mock("@/hooks/use-remembered-view", () => ({
   useRememberCurrentView: () => undefined,
 }));
 vi.mock("@/hooks/use-user-websocket", () => ({
   useUserWebSocket: () => undefined,
 }));
-vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
-  default: () => ({
-    data: { id: "org-1", name: "NevrLabs", logo: null },
-  }),
-}));
 vi.mock("@/hooks/use-keyboard-shortcuts", () => ({
   useRegisterShortcuts: () => undefined,
   getModifierKeyText: () => "Ctrl",
 }));
-
+vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
+  default: () => ({ data: organization }),
+}));
 vi.mock("@/components/search", () => ({ default: () => <div /> }));
 vi.mock("./search", () => ({ default: () => <div /> }));
-vi.mock("@/components/nav-main", () => ({ NavMain: () => <div /> }));
+vi.mock("@/components/nav-main", () => ({
+  NavMain: () => <div data-testid="nav-main" />,
+}));
+vi.mock("@/components/nav-work", () => ({
+  NavWork: () => <div data-testid="nav-work" />,
+}));
 vi.mock("@/components/nav-boards", () => ({
   NavBoards: () => <div data-testid="nav-boards" />,
 }));
@@ -51,134 +49,142 @@ vi.mock("@/components/nav-repos", () => ({
 vi.mock("@/components/nav-tables", () => ({
   NavTables: () => <div data-testid="nav-tables" />,
 }));
-
 vi.mock("@/components/team-view-selector", () => ({
   TeamViewSelector: () => <div data-testid="team-view-selector" />,
 }));
 vi.mock("@/components/user-avatar", () => ({
   UserAvatar: () => <div data-testid="user-avatar" />,
 }));
-
+vi.mock("@/components/organization-switcher", () => ({
+  OrganizationMenuSection: () => <div data-testid="organization-selector" />,
+}));
+vi.mock("@/components/shared/modals/create-organization-modal", () => ({
+  default: () => null,
+}));
+vi.mock("@/components/ui/menu", () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
 vi.mock("@/components/ui/sidebar", () => ({
   Sidebar: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="sidebar">{children}</div>
+    <div>{children}</div>
   ),
-  SidebarHeader: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="sidebar-header-slot">{children}</div>
-  ),
+  SidebarHeader: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <header className={className}>{children}</header>,
   SidebarContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="sidebar-content-slot">{children}</div>
+    <main>{children}</main>
   ),
   SidebarFooter: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="sidebar-footer-slot">{children}</div>
+    <footer>{children}</footer>
   ),
-
-  SidebarTrigger: (props: Record<string, unknown>) => (
-    <button
-      data-testid={(props["data-testid"] as string) ?? "sidebar-trigger"}
-      type="button"
-    >
-      toggle
-    </button>
-  ),
-  useSidebar: () => ({ toggleSidebar: vi.fn() }),
+  SidebarTrigger: () => <button type="button">toggle</button>,
+  useSidebar: () => ({ toggleSidebar: vi.fn(), state: "expanded" }),
 }));
 
 import { AppSidebar } from "./app-sidebar";
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  sessionStorage.clear();
+  organization = {
+    id: "org-1",
+    slug: "acme",
+    name: "Acme",
+    logo: null,
+    workEnabled: true,
+  };
+});
 
-describe("AppSidebar layout (#96)", () => {
-  it("puts the team-view selector and the sidebar toggle together at the top", () => {
+describe("AppSidebar work and footer structure", () => {
+  it("keeps TeamViewSelector on top and moves organization switching into footer identity", () => {
     render(<AppSidebar />);
-
-    const header = screen.getByTestId("sidebar-header-slot");
-    expect(
-      header.querySelector("[data-testid='team-view-selector']"),
-    ).not.toBeNull();
-    expect(
-      header.querySelector("[data-testid='sidebar-toggle']"),
-    ).not.toBeNull();
+    expect(screen.getByRole("banner")).toContainElement(
+      screen.getByTestId("team-view-selector"),
+    );
+    expect(screen.getByRole("contentinfo")).toContainElement(
+      screen.getByTestId("organization-selector"),
+    );
   });
-
-  it("keeps Boards, Tables, and Repos in one scrollable area with a divider", () => {
+  it("lays out the team selector and toggle horizontally", () => {
     render(<AppSidebar />);
-    expect(screen.queryByRole("tab", { name: "Boards" })).toBeNull();
+    expect(screen.getByRole("banner").className).toContain("flex-row");
+  });
+  it("shows Work/Resources mode only at the feature boundary", () => {
+    render(<AppSidebar />);
+    expect(screen.getByRole("button", { name: "Work" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Resources" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("nav-work")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Resources" }));
     expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
+  });
+  it("uses one flat segmented surface with standard active row semantics", () => {
+    render(<AppSidebar />);
+    const work = screen.getByRole("button", { name: "Work" });
+    const resources = screen.getByRole("button", { name: "Resources" });
+    expect(work.parentElement?.className).toContain("bg-sidebar-accent");
+    for (const button of [work, resources]) {
+      expect(button.className).toContain("gap-1.5");
+      expect(button.className).toContain(
+        "data-[active=true]:bg-sidebar-accent",
+      );
+      expect(button.className).not.toContain("bg-background");
+      expect(button.querySelector("svg")?.getAttribute("class")).toContain(
+        "size-4",
+      );
+    }
+    expect(work).toHaveAttribute("data-active", "true");
+    expect(resources).toHaveAttribute("data-active", "false");
+  });
+  it("contains Work completely when the Alpha feature is disabled", () => {
+    organization = { ...organization, workEnabled: false };
+    render(<AppSidebar />);
+    expect(screen.queryByRole("button", { name: "Work" })).toBeNull();
+    expect(screen.queryByTestId("nav-work")).toBeNull();
+    expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
     expect(screen.getByTestId("nav-repos")).toBeInTheDocument();
-    const divider = screen.getByTestId("sidebar-boards-repos-divider");
-    expect(divider.className).toContain("hidden");
-    expect(divider.className).toContain("group-data-[collapsible=icon]:block");
+    expect(screen.getByTestId("nav-tables")).toBeInTheDocument();
   });
 
-  it("renders Plan/Projects navigation before Board/Repo/Table resource navigation", () => {
+  it("renders Settings once as a bottom navigation link", () => {
     render(<AppSidebar />);
-    const nav = screen.getByTestId("sidebar-content-slot");
-    const projects = nav.querySelector("[data-testid='nav-projects']");
-    const boards = nav.querySelector("[data-testid='nav-boards']");
-    const repos = nav.querySelector("[data-testid='nav-repos']");
-    const tables = nav.querySelector("[data-testid='nav-tables']");
-    expect(projects).not.toBeNull();
-    expect(boards).not.toBeNull();
-    expect(repos).not.toBeNull();
-    expect(tables).not.toBeNull();
-    const position = (el: Element | null) =>
-      el ? Array.from(nav.querySelectorAll("*")).indexOf(el) : -1;
-    expect(position(projects)).toBeLessThan(position(boards));
-    expect(position(projects)).toBeLessThan(position(repos));
-    expect(position(projects)).toBeLessThan(position(tables));
+    expect(screen.getAllByRole("button", { name: "Settings" })).toHaveLength(1);
   });
-
-  it("does not render the organization selector at the sidebar top", () => {
+  it("uses standard sidebar hover styling for Settings", () => {
     render(<AppSidebar />);
-
-    const header = screen.getByTestId("sidebar-header-slot");
     expect(
-      header.querySelector("[data-testid='organization-selector']"),
-    ).toBeNull();
-    expect(screen.queryByTestId("organization-selector")).toBeNull();
+      screen.getByRole("button", { name: "Settings" }).className,
+    ).toContain("hover:bg-sidebar-accent");
+  });
+  /**
+   * better-accessibility: the row was a raw <button>, so it never picked up
+   * the sidebar focus-visible ring and keyboard users fell back to the
+   * browser outline (auto 1px @ 50% alpha) — invisible on the #0a0a0b rail.
+   */
+  it("gives the Settings link a visible keyboard focus ring", () => {
+    render(<AppSidebar />);
+    const cls = screen.getByRole("button", { name: "Settings" }).className;
+    expect(cls).toContain("focus-visible:ring-2");
+    expect(cls).toContain("ring-sidebar-ring");
   });
 
-  it("moves the avatar to the bottom of the sidebar", () => {
+  it("restores the organization-scoped mode from session storage", () => {
+    sessionStorage.setItem("kaneo:sidebar-mode:org-1", "resources");
     render(<AppSidebar />);
-
-    const footer = screen.getByTestId("sidebar-footer-slot");
-    expect(footer.querySelector("[data-testid='user-avatar']")).not.toBeNull();
-    // ...and nowhere near the top any more.
-    expect(
-      screen
-        .getByTestId("sidebar-header-slot")
-        .querySelector("[data-testid='user-avatar']"),
-    ).toBeNull();
-  });
-
-  it("tucks the version number into the bottom of the sidebar", () => {
-    render(<AppSidebar />);
-
-    const footer = screen.getByTestId("sidebar-footer-slot");
-    expect(
-      footer.querySelector("[data-testid='version-display']"),
-    ).not.toBeNull();
-  });
-
-  it("renders no notification bell anywhere in the sidebar", () => {
-    render(<AppSidebar />);
-
-    const sidebar = screen.getByTestId("sidebar");
-    expect(
-      sidebar.querySelector("[data-testid='notification-bell']"),
-    ).toBeNull();
-    expect(sidebar.querySelector(".lucide-bell")).toBeNull();
-    expect(screen.queryByLabelText(/notification/i)).toBeNull();
-  });
-
-  it("does not render the theme toggle in the sidebar chrome", () => {
-    render(<AppSidebar />);
-
-    expect(
-      screen.getByTestId("sidebar").querySelector("[data-slot='switch']"),
-    ).toBeNull();
-    expect(screen.queryByLabelText("Toggle theme")).toBeNull();
+    expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-work")).toBeNull();
   });
 });

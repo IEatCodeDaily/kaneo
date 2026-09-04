@@ -1,12 +1,22 @@
+import { useNavigate } from "@tanstack/react-router";
+import { BriefcaseBusiness, Library, Settings } from "lucide-react";
 import type * as React from "react";
+import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
 import { NavRepos } from "@/components/nav-repos";
 import { NavTables } from "@/components/nav-tables";
+import { NavWork } from "@/components/nav-work";
+import { OrganizationMenuSection } from "@/components/organization-switcher";
+import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
 import { TeamViewSelector } from "@/components/team-view-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import {
   Sidebar,
   SidebarContent,
@@ -25,45 +35,55 @@ import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { cn } from "@/lib/cn";
 import Search from "./search";
 
-/**
- * #96 sidebar shape:
- *
- *   Team selector | Sidebar toggle   <- header
- *   Inbox / My Tasks / Members
- *   Boards, Repos
- *   version | Avatar                 <- footer
- *
- * The organization selector and theme toggle moved into the avatar popup at
- * the bottom; the notification bell is gone entirely because it duplicated
- * Inbox. The version number is a discreet marker in the bottom-left corner.
- */
+function ResourceNavigation() {
+  return (
+    <>
+      <NavBoards />
+      <NavRepos />
+      <NavTables />
+    </>
+  );
+}
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar, state } = useSidebar();
-  const isCollapsed = state === "collapsed";
   const { data: organization } = useActiveOrganization();
-  const organizationInitials = organization?.name
-    ?.split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part: string) => part[0]?.toUpperCase())
-    .join("");
-
-  // Remember the board/repo view the user is in, for the next time they
-  // come back to a board or repo.
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"work" | "resources">("work");
+  const [createOpen, setCreateOpen] = useState(false);
+  const isCollapsed = state === "collapsed";
+  const workEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { workEnabled?: boolean })
+        | undefined
+    )?.workEnabled,
+  );
+  const initials =
+    organization?.name
+      ?.split(/\s+/)
+      .slice(0, 2)
+      .map((part: string) => part[0])
+      .join("")
+      .toUpperCase() || "OR";
+  const modeStorageKey = organization
+    ? `kaneo:sidebar-mode:${organization.id}`
+    : null;
+  useEffect(() => {
+    if (!modeStorageKey) return;
+    const saved = sessionStorage.getItem(modeStorageKey);
+    setMode(saved === "resources" ? "resources" : "work");
+  }, [modeStorageKey]);
+  const selectMode = (nextMode: "work" | "resources") => {
+    setMode(nextMode);
+    if (modeStorageKey) sessionStorage.setItem(modeStorageKey, nextMode);
+  };
   useRememberCurrentView();
-
-  // User-scoped WebSocket for real-time events. This used to be mounted by the
-  // organization switcher, which no longer renders in the sidebar.
   useUserWebSocket();
-
   useRegisterShortcuts({
     modifierShortcuts: {
-      [shortcuts.sidebar.prefix]: {
-        [shortcuts.sidebar.toggle]: toggleSidebar,
-      },
+      [shortcuts.sidebar.prefix]: { [shortcuts.sidebar.toggle]: toggleSidebar },
     },
   });
-
   return (
     <Sidebar
       collapsible="icon"
@@ -71,76 +91,93 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="border-none pt-1.5"
       {...props}
     >
-      <SidebarHeader className="pt-1 pb-1.5">
-        <div
-          className="flex w-full items-center gap-1"
-          data-testid="sidebar-header"
-        >
-          {/*
-            #96: collapsed shows ONLY the sidebar toggle — no team selector.
-            The rail is a navigation strip, not a control panel.
-          */}
-          {!isCollapsed && <TeamViewSelector />}
-          <SidebarTrigger
-            className={cn("shrink-0", !isCollapsed && "ml-auto")}
-            data-testid="sidebar-toggle"
-          />
-        </div>
+      <SidebarHeader className="flex-row items-center">
+        {!isCollapsed && <TeamViewSelector />}
+        <SidebarTrigger className={cn("shrink-0", !isCollapsed && "ml-auto")} />
       </SidebarHeader>
-      <SidebarContent className="gap-1 overflow-y-auto py-1">
+      {/*
+        better-layout: groups must be separated by more than the rhythm
+        inside them. Rows sit on gap-0.5 (2px) and menus on gap-1 (4px),
+        so the group rail needs gap-3 (12px) for the grouping to read as
+        structure instead of noise.
+      */}
+      <SidebarContent className="gap-3 overflow-y-auto py-1">
         <Search />
         <NavMain />
-        <div
-          aria-hidden="true"
-          className="mx-2 hidden h-px bg-sidebar-border group-data-[collapsible=icon]:block"
-          data-testid="sidebar-main-boards-divider"
-        />
-        <NavProjects />
-        <NavBoards />
-        <NavTables />
-        <div
-          aria-hidden="true"
-          className="mx-2 hidden h-px shrink-0 bg-border group-data-[collapsible=icon]:block"
-          data-testid="sidebar-boards-repos-divider"
-        />
-        <NavRepos />
-      </SidebarContent>
-      <SidebarFooter data-testid="sidebar-footer">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex min-w-0 flex-1 items-center gap-2"
-            data-testid="sidebar-organization-identity"
-          >
-            <Avatar className="size-7 shrink-0 rounded-md">
-              <AvatarImage
-                alt={organization?.name ?? ""}
-                src={organization?.logo ?? ""}
-              />
-              <AvatarFallback className="rounded-md text-[10px] font-semibold">
-                {organizationInitials || "OR"}
-              </AvatarFallback>
-            </Avatar>
-            {state !== "collapsed" && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">
-                  {organization?.name ?? "Organization"}
-                </p>
-                <VersionDisplay />
-              </div>
-            )}
+        {workEnabled && (
+          <div className="mx-2 grid grid-cols-2 rounded-md bg-sidebar-accent p-0.5 text-xs">
+            <button
+              type="button"
+              className="flex h-7 items-center justify-center gap-1.5 rounded text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground"
+              data-active={mode === "work"}
+              onClick={() => selectMode("work")}
+            >
+              <BriefcaseBusiness className="size-4" />
+              Work
+            </button>
+            <button
+              type="button"
+              className="flex h-7 items-center justify-center gap-1.5 rounded text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground"
+              data-active={mode === "resources"}
+              onClick={() => selectMode("resources")}
+            >
+              <Library className="size-4" />
+              Resources
+            </button>
           </div>
-          {/*
-            #96: collapsed shows only the organization logo. The user avatar is
-            an extra control in a strip that should read as pure navigation;
-            it returns as soon as the sidebar expands.
-          */}
-          {!isCollapsed && (
-            <div className="h-8 w-8 shrink-0">
-              <UserAvatar />
-            </div>
-          )}
+        )}
+        {workEnabled && mode === "work" ? <NavWork /> : <ResourceNavigation />}
+      </SidebarContent>
+      <SidebarFooter>
+        <button
+          type="button"
+          aria-label="Settings"
+          className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+          onClick={() =>
+            navigate({ to: "/dashboard/settings/account/information" })
+          }
+        >
+          <Settings className="size-4" />
+          <span>Settings</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                data-testid="sidebar-organization-identity"
+              >
+                <Avatar className="size-7 rounded-md">
+                  <AvatarImage
+                    alt={organization?.name ?? ""}
+                    src={organization?.logo ?? ""}
+                  />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+                {!isCollapsed && (
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium">
+                      {organization?.name}
+                    </p>
+                    <VersionDisplay />
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <OrganizationMenuSection
+                onCreateOrganization={() => setCreateOpen(true)}
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {!isCollapsed && <UserAvatar />}
         </div>
       </SidebarFooter>
+      <CreateOrganizationModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
       <SidebarResizeHandle />
     </Sidebar>
   );
