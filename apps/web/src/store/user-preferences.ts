@@ -10,6 +10,16 @@ export type RecentPage = {
   label: string;
   openedAt: number;
 };
+type PersistedRecentPage = Omit<RecentPage, "openedAt"> & {
+  openedAt?: number;
+};
+
+type PersistedUserPreferences = Omit<
+  Partial<UserPreferencesStore>,
+  "recentPages"
+> & {
+  recentPages?: PersistedRecentPage[];
+};
 
 export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
@@ -242,6 +252,24 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
     {
       name: "user-preferences",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as PersistedUserPreferences;
+        const hydratedAt = Date.now();
+        return {
+          ...currentState,
+          ...persisted,
+          recentPages:
+            persisted.recentPages?.map((page) => ({
+              ...page,
+              openedAt:
+                typeof page.openedAt === "number" &&
+                Number.isFinite(page.openedAt) &&
+                page.openedAt > 0
+                  ? page.openedAt
+                  : hydratedAt,
+            })) ?? currentState.recentPages,
+        };
+      },
       onRehydrateStorage: () => (state) => {
         if (state && !isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);
