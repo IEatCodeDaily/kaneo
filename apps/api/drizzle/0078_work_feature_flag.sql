@@ -1,1 +1,1 @@
-ALTER TABLE "organization" ADD COLUMN "work_enabled" boolean DEFAULT false NOT NULL;
+ALTER TABLE "organization" ADD COLUMN IF NOT EXISTS "work_enabled" boolean DEFAULT false NOT NULL;
