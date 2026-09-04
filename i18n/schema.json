@@ -5557,6 +5557,12 @@
 						"recent": {
 							"type": "string"
 						},
+						"soon": {
+							"type": "string"
+						},
+						"comingSoon": {
+							"type": "string"
+						},
 						"work": {
 							"type": "string"
 						},

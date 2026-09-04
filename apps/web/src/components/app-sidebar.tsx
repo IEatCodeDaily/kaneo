@@ -126,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <button
           type="button"
           aria-label="Settings"
-          className="flex h-7 w-full items-center gap-2 rounded-md px-2 text-xs hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex h-7 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
           onClick={() =>
             navigate({ to: "/dashboard/settings/account/information" })
           }

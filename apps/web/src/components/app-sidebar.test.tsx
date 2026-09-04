@@ -169,6 +169,17 @@ describe("AppSidebar work and footer structure", () => {
       screen.getByRole("button", { name: "Settings" }).className,
     ).toContain("hover:bg-sidebar-accent");
   });
+  /**
+   * better-accessibility: the row was a raw <button>, so it never picked up
+   * the sidebar focus-visible ring and keyboard users fell back to the
+   * browser outline (auto 1px @ 50% alpha) — invisible on the #0a0a0b rail.
+   */
+  it("gives the Settings link a visible keyboard focus ring", () => {
+    render(<AppSidebar />);
+    const cls = screen.getByRole("button", { name: "Settings" }).className;
+    expect(cls).toContain("focus-visible:ring-2");
+    expect(cls).toContain("ring-sidebar-ring");
+  });
 
   it("restores the organization-scoped mode from session storage", () => {
     sessionStorage.setItem("kaneo:sidebar-mode:org-1", "resources");
