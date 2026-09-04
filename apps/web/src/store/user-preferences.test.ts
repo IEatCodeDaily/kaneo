@@ -35,4 +35,11 @@ describe("user preferences persistence", () => {
     expect(recentPage.openedAt).toBeGreaterThanOrEqual(hydratedAt);
     expect(recentPage.openedAt).toBeLessThanOrEqual(Date.now());
   });
+
+  it("persists whether Recent is open", async () => {
+    useUserPreferencesStore.getState().setRecentOpen(true);
+
+    expect(useUserPreferencesStore.getState().recentOpen).toBe(true);
+    expect(localStorage.getItem(STORAGE_NAME)).toContain('"recentOpen":true');
+  });
 });

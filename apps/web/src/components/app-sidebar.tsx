@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Settings } from "lucide-react";
+import { BriefcaseBusiness, Library, Settings } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
@@ -102,19 +102,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <div className="mx-2 grid grid-cols-2 rounded-md bg-sidebar-accent p-0.5 text-xs">
             <button
               type="button"
-              className={cn("h-7 rounded", mode === "work" && "bg-background")}
+              className="flex h-7 items-center justify-center gap-1.5 rounded text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground"
+              data-active={mode === "work"}
               onClick={() => selectMode("work")}
             >
+              <BriefcaseBusiness className="size-4" />
               Work
             </button>
             <button
               type="button"
-              className={cn(
-                "h-7 rounded",
-                mode === "resources" && "bg-background",
-              )}
+              className="flex h-7 items-center justify-center gap-1.5 rounded text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground"
+              data-active={mode === "resources"}
               onClick={() => selectMode("resources")}
             >
+              <Library className="size-4" />
               Resources
             </button>
           </div>

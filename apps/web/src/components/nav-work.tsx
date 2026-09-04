@@ -1,8 +1,7 @@
-import { BarChart3, Eye, FolderKanban, Goal } from "lucide-react";
+import { BarChart3, Eye, Goal } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -38,16 +37,7 @@ export function NavWork() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-      <SidebarGroup className="gap-1 p-2 pb-0">
-        <SidebarGroupLabel className="flex h-7 items-center gap-2 px-2 text-xs normal-case text-foreground">
-          <FolderKanban className="size-4" />
-          <span className="flex-1">Projects</span>
-          <span className="rounded bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-medium uppercase">
-            Alpha
-          </span>
-        </SidebarGroupLabel>
-        <NavProjects />
-      </SidebarGroup>
+      <NavProjects />
     </>
   );
 }

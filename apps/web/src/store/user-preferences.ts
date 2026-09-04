@@ -99,6 +99,8 @@ type UserPreferencesStore = {
   rememberRecentPage: (page: RecentPage) => void;
   recentPageLimit: number;
   setRecentPageLimit: (limit: number) => void;
+  recentOpen: boolean;
+  setRecentOpen: (open: boolean) => void;
   hiddenProjectIds: string[];
   setProjectSidebarVisibility: (
     userId: string,
@@ -238,6 +240,8 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       recentPageLimit: 5,
       setRecentPageLimit: (limit) =>
         set({ recentPageLimit: Math.min(8, Math.max(3, limit)) }),
+      recentOpen: false,
+      setRecentOpen: (recentOpen) => set({ recentOpen }),
       hiddenProjectIds: [],
       setProjectSidebarVisibility: (userId, projectId, visible) =>
         set((state) => {

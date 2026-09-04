@@ -100,18 +100,21 @@ vi.mock("@/components/ui/sidebar", () => ({
     onClick,
     isActive,
     tooltip,
+    className,
     ...props
   }: {
     children: React.ReactNode;
     onClick?: () => void;
     isActive?: boolean;
     tooltip?: string;
+    className?: string;
     [key: string]: unknown;
   }) => (
     <button
       type="button"
       aria-current={isActive || undefined}
       aria-label={tooltip}
+      className={className}
       onClick={onClick}
       data-testid={props["data-testid"] as string | undefined}
     >
@@ -157,6 +160,24 @@ beforeEach(() => {
 });
 
 afterEach(() => cleanup());
+
+describe("Projects section navigation", () => {
+  it("renders a non-collapsible canonical overview row with right-side Alpha and chevron", () => {
+    render(<NavProjects />);
+
+    const projects = screen.getByRole("button", { name: "Projects" });
+    expect(projects.className).toContain("h-7");
+    expect(projects.querySelector("svg")).toBeTruthy();
+    expect(projects).toHaveTextContent("ProjectsAlpha");
+    expect(projects).not.toHaveAttribute("aria-expanded");
+
+    fireEvent.click(projects);
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dashboard/organization/$organizationSlug/projects",
+      params: { organizationSlug: "acme" },
+    });
+  });
+});
 
 describe("NavProjects project tree (KFL-378)", () => {
   it("expands one Project into exactly Overview, Boards, Cycles, and Resources", () => {

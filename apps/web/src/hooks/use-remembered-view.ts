@@ -1,11 +1,17 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import useGetProjectSidebar from "@/hooks/queries/project/use-get-project-sidebar";
+import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import {
   type BoardView,
   boardViewFromPathname,
   type RepoView,
   repoViewFromPathname,
 } from "@/lib/board-view";
+import { resolveRecentPage } from "@/lib/recent-page";
+import { useTeamViewStore } from "@/store/team-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 /**
@@ -20,25 +26,40 @@ export function useRememberCurrentView() {
   const rememberRecentPage = useUserPreferencesStore(
     (s) => s.rememberRecentPage,
   );
+  const { data: organization } = useActiveOrganization();
+  const teamId = useTeamViewStore((state) => state.teamId);
+  const { data: boards = [] } = useGetBoards({
+    organizationId: organization?.id ?? "",
+    teamId,
+  });
+  const { data: repos = [] } = useGetRepos({
+    organizationId: organization?.id ?? "",
+    teamId,
+  });
+  const { data: projects = [] } = useGetProjectSidebar(organization?.id ?? "");
 
   useEffect(() => {
     const boardView = boardViewFromPathname(pathname);
-    if (boardView) {
-      setLastBoardView(boardView);
-      return;
-    }
+    if (boardView) setLastBoardView(boardView);
     const repoView = repoViewFromPathname(pathname);
     if (repoView) setLastRepoView(repoView);
-    const segments = pathname.split("/").filter(Boolean);
-    const organizationIndex = segments.indexOf("organization");
-    if (organizationIndex < 0 || segments.length <= organizationIndex + 2)
-      return;
-    const rawLabel = segments[segments.length - 1] ?? "";
-    const label = decodeURIComponent(rawLabel)
-      .replace(/[-_]+/g, " ")
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
-    rememberRecentPage({ pathname, label, openedAt: Date.now() });
-  }, [pathname, rememberRecentPage, setLastBoardView, setLastRepoView]);
+    if (!organization) return;
+    const page = resolveRecentPage(pathname, organization, {
+      boards,
+      repos,
+      projects,
+    });
+    if (page) rememberRecentPage({ ...page, openedAt: Date.now() });
+  }, [
+    boards,
+    organization,
+    pathname,
+    projects,
+    rememberRecentPage,
+    repos,
+    setLastBoardView,
+    setLastRepoView,
+  ]);
 }
 
 /** The view a board link should point at: current view, else last remembered. */

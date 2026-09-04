@@ -6,7 +6,6 @@ import {
   Inbox,
   ListChecks,
 } from "lucide-react";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
 import MyTasksCountBadge from "@/components/my-tasks-count-badge";
@@ -46,7 +45,8 @@ export function NavMain() {
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [recentOpen, setRecentOpen] = useState(false);
+  const recentOpen = useUserPreferencesStore((state) => state.recentOpen);
+  const setRecentOpen = useUserPreferencesStore((state) => state.setRecentOpen);
   const recentPages = useUserPreferencesStore((state) => state.recentPages);
   const recentPageLimit = useUserPreferencesStore(
     (state) => state.recentPageLimit,
@@ -105,7 +105,7 @@ export function NavMain() {
                     aria-expanded={recentOpen}
                     aria-label={t("navigation:sidebar.recent")}
                     className="h-7 text-xs"
-                    onClick={() => setRecentOpen((open) => !open)}
+                    onClick={() => setRecentOpen(!recentOpen)}
                   >
                     <Clock3 />
                     <span className="flex-1">

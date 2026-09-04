@@ -76,10 +76,10 @@ function CommandPalette() {
     sequentialShortcuts: {
       [shortcuts.board.prefix]: {
         [shortcuts.board.list]: () => {
-          if (!organization?.id) return;
+          if (!organization?.slug) return;
           navigate({
             to: "/dashboard/organization/$organizationSlug",
-            params: { organizationSlug: organization.id },
+            params: { organizationSlug: organization.slug },
           });
         },
         [shortcuts.board.create]: () => setIsCreateBoardOpen(true),
@@ -111,10 +111,10 @@ function CommandPalette() {
             label: t("navigation:commandPalette.boards"),
             shortcut: `${shortcuts.board.prefix} ${shortcuts.board.list}`,
             onRun: () => {
-              if (!organization?.id) return;
+              if (!organization?.slug) return;
               navigate({
                 to: "/dashboard/organization/$organizationSlug",
-                params: { organizationSlug: organization.id },
+                params: { organizationSlug: organization.slug },
               });
             },
           },
@@ -186,7 +186,7 @@ function CommandPalette() {
         ],
       },
     ],
-    [navigate, setTheme, t, organization?.id, organization?.slug],
+    [navigate, setTheme, t, organization?.slug],
   );
 
   const shortcutHandlers = useMemo(() => {

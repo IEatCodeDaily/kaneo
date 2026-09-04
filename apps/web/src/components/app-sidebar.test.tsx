@@ -131,6 +131,24 @@ describe("AppSidebar work and footer structure", () => {
     fireEvent.click(screen.getByRole("button", { name: "Resources" }));
     expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
   });
+  it("uses one flat segmented surface with standard active row semantics", () => {
+    render(<AppSidebar />);
+    const work = screen.getByRole("button", { name: "Work" });
+    const resources = screen.getByRole("button", { name: "Resources" });
+    expect(work.parentElement?.className).toContain("bg-sidebar-accent");
+    for (const button of [work, resources]) {
+      expect(button.className).toContain("gap-1.5");
+      expect(button.className).toContain(
+        "data-[active=true]:bg-sidebar-accent",
+      );
+      expect(button.className).not.toContain("bg-background");
+      expect(button.querySelector("svg")?.getAttribute("class")).toContain(
+        "size-4",
+      );
+    }
+    expect(work).toHaveAttribute("data-active", "true");
+    expect(resources).toHaveAttribute("data-active", "false");
+  });
   it("contains Work completely when the Alpha feature is disabled", () => {
     organization = { ...organization, workEnabled: false };
     render(<AppSidebar />);

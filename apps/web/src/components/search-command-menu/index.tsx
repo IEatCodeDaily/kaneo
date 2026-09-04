@@ -31,6 +31,7 @@ import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { getSearchResultRoute } from "./search-result-route";
 
 type SearchResultItem = {
   id: string;
@@ -116,14 +117,9 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         }
         break;
       case "board":
-        if (item.id && organization?.id) {
-          navigate({
-            to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
-            params: {
-              organizationSlug: organization.id,
-              boardSlug: item.id,
-            },
-          });
+        if (organization?.slug) {
+          const route = getSearchResultRoute(item, organization.slug);
+          if (route) navigate(route);
         }
         break;
       case "organization":
@@ -149,20 +145,17 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         }
         break;
       case "repository":
-        if (item.repoId && organization?.id) {
-          navigate({
-            to: "/dashboard/organization/$organizationSlug/repo/$repoId/code",
-            params: { organizationSlug: organization.id, repoId: item.repoId },
-            search: { path: "" },
-          });
+        if (organization?.slug) {
+          const route = getSearchResultRoute(item, organization.slug);
+          if (route) navigate(route);
         }
         break;
       case "issue":
-        if (item.repoId && item.itemNumber && organization?.id) {
+        if (item.repoId && item.itemNumber && organization?.slug) {
           navigate({
             to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number",
             params: {
-              organizationSlug: organization.id,
+              organizationSlug: organization.slug,
               repoId: item.repoId,
               number: String(item.itemNumber),
             },
@@ -170,11 +163,11 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         }
         break;
       case "pull_request":
-        if (item.repoId && item.itemNumber && organization?.id) {
+        if (item.repoId && item.itemNumber && organization?.slug) {
           navigate({
             to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number",
             params: {
-              organizationSlug: organization.id,
+              organizationSlug: organization.slug,
               repoId: item.repoId,
               number: String(item.itemNumber),
             },

@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const setRecentPageLimit = vi.fn();
 const navigate = vi.fn();
+let recentOpen = false;
+const setRecentOpen = vi.fn((open: boolean) => {
+  recentOpen = open;
+});
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigate,
   useLocation: () => ({ pathname: "/dashboard/organization/acme/inbox" }),
@@ -17,6 +21,8 @@ vi.mock("@/store/user-preferences", () => ({
   useUserPreferencesStore: (selector: (state: unknown) => unknown) =>
     selector({
       setRecentPageLimit,
+      recentOpen,
+      setRecentOpen,
       recentPageLimit: 5,
       recentPages: [
         {
@@ -128,24 +134,26 @@ vi.mock("@/components/ui/sidebar", () => ({
 import { NavMain } from "./nav-main";
 
 afterEach(() => {
+  recentOpen = false;
+  setRecentOpen.mockClear();
   cleanup();
   navigate.mockClear();
 });
 describe("NavMain compact personal group", () => {
   it("renders Inbox, My Tickets, and expandable Recent in one group", () => {
-    render(<NavMain />);
+    const view = render(<NavMain />);
     expect(
       screen.getByRole("button", { name: "navigation:sidebar.inbox" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "navigation:sidebar.myTasks" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
-    ).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(
-      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
-    );
+    const recent = screen.getByRole("button", {
+      name: "navigation:sidebar.recent",
+    });
+    expect(recent).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(recent);
+    view.rerender(<NavMain />);
     expect(
       screen.getByRole("button", { name: /Delivery/ }),
     ).toBeInTheDocument();
@@ -162,10 +170,11 @@ describe("NavMain compact personal group", () => {
     );
   });
   it("renders compact Recent rows with relative open times", () => {
-    render(<NavMain />);
+    const view = render(<NavMain />);
     fireEvent.click(
       screen.getByRole("button", { name: "navigation:sidebar.recent" }),
     );
+    view.rerender(<NavMain />);
     const delivery = screen.getByRole("button", { name: /Delivery/ });
     expect(delivery.className).toContain("h-6");
     expect(delivery.className).toContain("text-[11px]");

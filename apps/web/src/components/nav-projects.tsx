@@ -6,10 +6,10 @@ import {
   FolderKanban,
   Github,
   LayoutDashboard,
+  Library,
   RefreshCw,
 } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   ContextMenu,
@@ -20,7 +20,6 @@ import {
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -55,7 +54,6 @@ type Project = {
 };
 
 export function NavProjects() {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
@@ -148,11 +146,30 @@ export function NavProjects() {
   ] as const;
   return (
     <SidebarGroup className="gap-1 p-2 pb-0">
-      <SidebarGroupLabel className="sr-only">
-        {t("navigation:sidebar.projects")}
-      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="gap-0.5">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="h-7 gap-2 text-xs"
+              isActive={
+                pathname ===
+                `/dashboard/organization/${organization.slug}/projects`
+              }
+              onClick={() =>
+                navigate({
+                  to: "/dashboard/organization/$organizationSlug/projects",
+                  params: { organizationSlug: organization.slug },
+                })
+              }
+              tooltip="Projects"
+            >
+              <span className="flex-1">Projects</span>
+              <span className="rounded bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-medium uppercase">
+                Alpha
+              </span>
+              <ChevronRight className="size-4" />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {visibleProjects.map((project) => {
             const open = expanded.includes(project.id);
             const resourcesId = `${project.id}:resources`;
@@ -244,7 +261,7 @@ export function NavProjects() {
                             aria-expanded={resourcesOpen}
                             onClick={() => toggle(resourcesId)}
                           >
-                            <Github className="size-4" />
+                            <Library className="size-4" />
                             <span className="flex-1">Resources</span>
                             <span className="w-5" />
                             {resourcesOpen ? (
