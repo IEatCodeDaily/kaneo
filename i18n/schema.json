@@ -5553,6 +5553,21 @@
 						},
 						"moreRepos": {
 							"type": "string"
+						},
+						"recent": {
+							"type": "string"
+						},
+						"work": {
+							"type": "string"
+						},
+						"resources": {
+							"type": "string"
+						},
+						"cycles": {
+							"type": "string"
+						},
+						"settings": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -5568,7 +5583,12 @@
 						"more",
 						"overview",
 						"inbox",
-						"moreRepos"
+						"moreRepos",
+						"recent",
+						"work",
+						"resources",
+						"cycles",
+						"settings"
 					]
 				},
 				"userMenu": {

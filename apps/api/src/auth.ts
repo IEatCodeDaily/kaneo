@@ -345,6 +345,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            workEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {

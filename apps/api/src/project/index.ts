@@ -22,6 +22,7 @@ import deleteProjectMilestoneCtrl from "./controllers/delete-project-milestone";
 import deleteProjectUpdateCtrl from "./controllers/delete-project-update";
 import getProjectCtrl from "./controllers/get-project";
 import listProjectMilestonesCtrl from "./controllers/list-project-milestones";
+import listProjectSidebarCtrl from "./controllers/list-project-sidebar";
 import listProjectTicketsCtrl from "./controllers/list-project-tickets";
 import listProjectUpdatesCtrl from "./controllers/list-project-updates";
 import listProjectsCtrl from "./controllers/list-projects";
@@ -196,6 +197,22 @@ const projectUpdateSchema = v.object({
 const project = new Hono<{
   Variables: { userId: string; organizationId: string };
 }>()
+  .get(
+    "/sidebar",
+    describeRoute({
+      operationId: "listProjectSidebar",
+      tags: ["Projects"],
+      description: "Get the authorized project navigation tree",
+      responses: { 200: { description: "Project sidebar tree" } },
+    }),
+    validator("query", v.object({ organizationId: v.string() })),
+    organizationAccess.fromQuery(),
+    requireOrganizationPermission({ project: ["read"] }),
+    async (c) =>
+      c.json(
+        await listProjectSidebarCtrl(c.get("organizationId"), c.get("userId")),
+      ),
+  )
   .get(
     "/",
     describeRoute({

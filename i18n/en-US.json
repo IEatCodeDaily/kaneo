@@ -1351,7 +1351,12 @@
 			"more": "More",
 			"overview": "Overview",
 			"inbox": "Inbox",
-			"moreRepos": "More Repos"
+			"moreRepos": "More Repos",
+			"recent": "Recent",
+			"work": "Work",
+			"resources": "Resources",
+			"cycles": "Cycles",
+			"settings": "Settings"
 		},
 		"userMenu": {
 			"themeLight": "Light",

@@ -1,0 +1,30 @@
+{
+  "ticket": "KFL-378",
+  "githubIssue": 31,
+  "stages": [
+    {
+      "stage": "spec-review",
+      "status": "pass",
+      "agent": "Talos",
+      "artifact": ".wayfinder/pipeline/KFL-378.spec.md"
+    },
+    {
+      "stage": "implementation",
+      "status": "complete",
+      "agent": "Paseo",
+      "cycles": 2
+    },
+    {
+      "stage": "qc-review",
+      "status": "pass",
+      "agent": "Talos",
+      "cycles": 2,
+      "artifact": ".wayfinder/pipeline/KFL-378.qc.md"
+    },
+    {
+      "stage": "merge-check",
+      "status": "pending",
+      "agent": "Talos"
+    }
+  ]
+}

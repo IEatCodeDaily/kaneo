@@ -29,6 +29,7 @@ import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
+import { getOrganizationMembersRoute } from "./members-route";
 
 type PaletteActionItem = {
   value: string;
@@ -129,7 +130,8 @@ function CommandPalette() {
               defaultValue: "Members",
             }),
             onRun: () => {
-              navigate({ to: "/dashboard/settings/organization/members" });
+              if (!organization?.slug) return;
+              navigate(getOrganizationMembersRoute(organization.slug));
             },
           },
           {
@@ -184,7 +186,7 @@ function CommandPalette() {
         ],
       },
     ],
-    [navigate, setTheme, t, organization?.id],
+    [navigate, setTheme, t, organization?.id, organization?.slug],
   );
 
   const shortcutHandlers = useMemo(() => {

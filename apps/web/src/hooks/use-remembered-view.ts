@@ -17,6 +17,9 @@ export function useRememberCurrentView() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const setLastBoardView = useUserPreferencesStore((s) => s.setLastBoardView);
   const setLastRepoView = useUserPreferencesStore((s) => s.setLastRepoView);
+  const rememberRecentPage = useUserPreferencesStore(
+    (s) => s.rememberRecentPage,
+  );
 
   useEffect(() => {
     const boardView = boardViewFromPathname(pathname);
@@ -26,7 +29,16 @@ export function useRememberCurrentView() {
     }
     const repoView = repoViewFromPathname(pathname);
     if (repoView) setLastRepoView(repoView);
-  }, [pathname, setLastBoardView, setLastRepoView]);
+    const segments = pathname.split("/").filter(Boolean);
+    const organizationIndex = segments.indexOf("organization");
+    if (organizationIndex < 0 || segments.length <= organizationIndex + 2)
+      return;
+    const rawLabel = segments[segments.length - 1] ?? "";
+    const label = decodeURIComponent(rawLabel)
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    rememberRecentPage({ pathname, label });
+  }, [pathname, rememberRecentPage, setLastBoardView, setLastRepoView]);
 }
 
 /** The view a board link should point at: current view, else last remembered. */

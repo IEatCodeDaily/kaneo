@@ -185,6 +185,7 @@ export const organizationTable = pgTable(
     description: text("description"),
     reposEnabled: boolean("repos_enabled").default(false).notNull(),
     tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+    workEnabled: boolean("work_enabled").default(false).notNull(),
     /*
     Org-wide default member privilege for resources without an explicit
     user/team grant, when the resource itself doesn't set its own baseline

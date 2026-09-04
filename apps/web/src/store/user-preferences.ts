@@ -5,6 +5,11 @@ import type { BoardView, RepoView } from "@/lib/board-view";
 export const WEEK_START_DAYS = [0, 1, 6] as const;
 export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
 
+export type RecentPage = {
+  pathname: string;
+  label: string;
+};
+
 export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
 }
@@ -79,6 +84,8 @@ type UserPreferencesStore = {
   setLastBoardView: (view: BoardView) => void;
   lastRepoView: RepoView;
   setLastRepoView: (view: RepoView) => void;
+  recentPages: RecentPage[];
+  rememberRecentPage: (page: RecentPage) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -199,6 +206,16 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setLastBoardView: (lastBoardView) => set({ lastBoardView }),
       lastRepoView: "issues",
       setLastRepoView: (lastRepoView) => set({ lastRepoView }),
+      recentPages: [],
+      rememberRecentPage: (page) =>
+        set((state) => ({
+          recentPages: [
+            page,
+            ...state.recentPages.filter(
+              (recent) => recent.pathname !== page.pathname,
+            ),
+          ].slice(0, 5),
+        })),
     }),
     {
       name: "user-preferences",
