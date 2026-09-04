@@ -76,9 +76,13 @@ vi.mock("@/components/ui/sidebar", () => ({
   Sidebar: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  SidebarHeader: ({ children }: { children: React.ReactNode }) => (
-    <header>{children}</header>
-  ),
+  SidebarHeader: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <header className={className}>{children}</header>,
   SidebarContent: ({ children }: { children: React.ReactNode }) => (
     <main>{children}</main>
   ),
@@ -93,6 +97,7 @@ import { AppSidebar } from "./app-sidebar";
 
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
   organization = {
     id: "org-1",
     slug: "acme",
@@ -111,6 +116,10 @@ describe("AppSidebar work and footer structure", () => {
     expect(screen.getByRole("contentinfo")).toContainElement(
       screen.getByTestId("organization-selector"),
     );
+  });
+  it("lays out the team selector and toggle horizontally", () => {
+    render(<AppSidebar />);
+    expect(screen.getByRole("banner").className).toContain("flex-row");
   });
   it("shows Work/Resources mode only at the feature boundary", () => {
     render(<AppSidebar />);
@@ -135,5 +144,18 @@ describe("AppSidebar work and footer structure", () => {
   it("renders Settings once as a bottom navigation link", () => {
     render(<AppSidebar />);
     expect(screen.getAllByRole("button", { name: "Settings" })).toHaveLength(1);
+  });
+  it("uses standard sidebar hover styling for Settings", () => {
+    render(<AppSidebar />);
+    expect(
+      screen.getByRole("button", { name: "Settings" }).className,
+    ).toContain("hover:bg-sidebar-accent");
+  });
+
+  it("restores the organization-scoped mode from session storage", () => {
+    sessionStorage.setItem("kaneo:sidebar-mode:org-1", "resources");
+    render(<AppSidebar />);
+    expect(screen.getByTestId("nav-boards")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-work")).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
 export type RecentPage = {
   pathname: string;
   label: string;
+  openedAt: number;
 };
 
 export function isWeekStartDay(value: number): value is WeekStartDay {
@@ -86,6 +87,14 @@ type UserPreferencesStore = {
   setLastRepoView: (view: RepoView) => void;
   recentPages: RecentPage[];
   rememberRecentPage: (page: RecentPage) => void;
+  recentPageLimit: number;
+  setRecentPageLimit: (limit: number) => void;
+  hiddenProjectIds: string[];
+  setProjectSidebarVisibility: (
+    userId: string,
+    projectId: string,
+    visible: boolean,
+  ) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -214,8 +223,21 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
             ...state.recentPages.filter(
               (recent) => recent.pathname !== page.pathname,
             ),
-          ].slice(0, 5),
+          ].slice(0, 8),
         })),
+      recentPageLimit: 5,
+      setRecentPageLimit: (limit) =>
+        set({ recentPageLimit: Math.min(8, Math.max(3, limit)) }),
+      hiddenProjectIds: [],
+      setProjectSidebarVisibility: (userId, projectId, visible) =>
+        set((state) => {
+          const key = `${userId}:${projectId}`;
+          return {
+            hiddenProjectIds: visible
+              ? state.hiddenProjectIds.filter((id) => id !== key)
+              : Array.from(new Set([...state.hiddenProjectIds, key])),
+          };
+        }),
     }),
     {
       name: "user-preferences",

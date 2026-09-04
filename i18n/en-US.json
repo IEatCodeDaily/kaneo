@@ -1356,7 +1356,13 @@
 			"work": "Work",
 			"resources": "Resources",
 			"cycles": "Cycles",
-			"settings": "Settings"
+			"settings": "Settings",
+			"initiatives": "Initiatives",
+			"digest": "Digest",
+			"views": "Views",
+			"alpha": "Alpha",
+			"moreProjects": "More Projects",
+			"hideFromSidebar": "Hide from sidebar"
 		},
 		"userMenu": {
 			"themeLight": "Light",

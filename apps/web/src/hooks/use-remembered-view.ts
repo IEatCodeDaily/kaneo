@@ -37,7 +37,7 @@ export function useRememberCurrentView() {
     const label = decodeURIComponent(rawLabel)
       .replace(/[-_]+/g, " ")
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
-    rememberRecentPage({ pathname, label });
+    rememberRecentPage({ pathname, label, openedAt: Date.now() });
   }, [pathname, rememberRecentPage, setLastBoardView, setLastRepoView]);
 }
 

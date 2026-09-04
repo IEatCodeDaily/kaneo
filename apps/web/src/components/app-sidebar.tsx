@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import type * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavMain } from "@/components/nav-main";
@@ -65,6 +65,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       .map((part: string) => part[0])
       .join("")
       .toUpperCase() || "OR";
+  const modeStorageKey = organization
+    ? `kaneo:sidebar-mode:${organization.id}`
+    : null;
+  useEffect(() => {
+    if (!modeStorageKey) return;
+    const saved = sessionStorage.getItem(modeStorageKey);
+    setMode(saved === "resources" ? "resources" : "work");
+  }, [modeStorageKey]);
+  const selectMode = (nextMode: "work" | "resources") => {
+    setMode(nextMode);
+    if (modeStorageKey) sessionStorage.setItem(modeStorageKey, nextMode);
+  };
   useRememberCurrentView();
   useUserWebSocket();
   useRegisterShortcuts({
@@ -79,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="border-none pt-1.5"
       {...props}
     >
-      <SidebarHeader>
+      <SidebarHeader className="flex-row items-center">
         {!isCollapsed && <TeamViewSelector />}
         <SidebarTrigger className={cn("shrink-0", !isCollapsed && "ml-auto")} />
       </SidebarHeader>
@@ -91,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <button
               type="button"
               className={cn("h-7 rounded", mode === "work" && "bg-background")}
-              onClick={() => setMode("work")}
+              onClick={() => selectMode("work")}
             >
               Work
             </button>
@@ -101,7 +113,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 "h-7 rounded",
                 mode === "resources" && "bg-background",
               )}
-              onClick={() => setMode("resources")}
+              onClick={() => selectMode("resources")}
             >
               Resources
             </button>
@@ -113,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <button
           type="button"
           aria-label="Settings"
-          className="flex h-7 w-full items-center gap-2 rounded-md px-2 text-xs"
+          className="flex h-7 w-full items-center gap-2 rounded-md px-2 text-xs hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           onClick={() =>
             navigate({ to: "/dashboard/settings/account/information" })
           }

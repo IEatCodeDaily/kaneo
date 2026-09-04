@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const setRecentPageLimit = vi.fn();
 const navigate = vi.fn();
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigate,
@@ -15,18 +16,23 @@ vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
 vi.mock("@/store/user-preferences", () => ({
   useUserPreferencesStore: (selector: (state: unknown) => unknown) =>
     selector({
+      setRecentPageLimit,
+      recentPageLimit: 5,
       recentPages: [
         {
           pathname: "/dashboard/organization/acme/board/delivery",
           label: "Delivery",
+          openedAt: Date.now() - 60_000,
         },
         {
           pathname: "/dashboard/organization/acme/projects/launch",
           label: "Launch",
+          openedAt: Date.now() - 3_600_000,
         },
         {
           pathname: "/dashboard/organization/acme/repo/api/code",
           label: "Code",
+          openedAt: Date.now() - 86_400_000,
         },
       ],
     }),
@@ -43,6 +49,21 @@ vi.mock("@/hooks/queries/task/use-get-my-tasks", () => ({
 }));
 vi.mock("@/hooks/queries/flag/use-get-my-flags", () => ({
   default: () => ({ data: [] }),
+}));
+vi.mock("@/components/ui/context-menu", () => ({
+  ContextMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  ContextMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  ContextMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  ContextMenuRadioGroup: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  ContextMenuRadioItem: ({ children }: { children: React.ReactNode }) => (
+    <button type="button">{children}</button>
+  ),
 }));
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
@@ -84,11 +105,23 @@ vi.mock("@/components/ui/sidebar", () => ({
   SidebarMenuSub: ({ children }: { children: React.ReactNode }) => (
     <ul>{children}</ul>
   ),
-  SidebarMenuSubItem: ({ children }: { children: React.ReactNode }) => (
-    <li>{children}</li>
-  ),
-  SidebarMenuSubButton: ({ children }: { children: React.ReactNode }) => (
-    <button type="button">{children}</button>
+  SidebarMenuSubItem: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <li className={className}>{children}</li>,
+  SidebarMenuSubButton: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <button type="button" className={className}>
+      {children}
+    </button>
   ),
 }));
 
@@ -114,7 +147,7 @@ describe("NavMain compact personal group", () => {
       screen.getByRole("button", { name: "navigation:sidebar.recent" }),
     );
     expect(
-      screen.getByRole("button", { name: "Delivery" }),
+      screen.getByRole("button", { name: /Delivery/ }),
     ).toBeInTheDocument();
   });
   it("uses compact rows and separate count and chevron columns", () => {
@@ -127,5 +160,24 @@ describe("NavMain compact personal group", () => {
     expect(screen.getByTestId("recent-chevron-column").className).toContain(
       "w-5",
     );
+  });
+  it("renders compact Recent rows with relative open times", () => {
+    render(<NavMain />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
+    );
+    const delivery = screen.getByRole("button", { name: /Delivery/ });
+    expect(delivery.className).toContain("h-6");
+    expect(delivery.className).toContain("text-[11px]");
+    expect(delivery).toHaveTextContent("1m");
+  });
+
+  it("offers persisted Recent limits from three through eight", () => {
+    render(<NavMain />);
+    for (const limit of [3, 4, 5, 6, 7, 8]) {
+      expect(
+        screen.getByRole("button", { name: String(limit) }),
+      ).toBeInTheDocument();
+    }
   });
 });
