@@ -95,7 +95,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {!isCollapsed && <TeamViewSelector />}
         <SidebarTrigger className={cn("shrink-0", !isCollapsed && "ml-auto")} />
       </SidebarHeader>
-      <SidebarContent className="gap-1 overflow-y-auto py-1">
+      {/*
+        better-layout: groups must be separated by more than the rhythm
+        inside them. Rows sit on gap-0.5 (2px) and menus on gap-1 (4px),
+        so the group rail needs gap-3 (12px) for the grouping to read as
+        structure instead of noise.
+      */}
+      <SidebarContent className="gap-3 overflow-y-auto py-1">
         <Search />
         <NavMain />
         {workEnabled && (

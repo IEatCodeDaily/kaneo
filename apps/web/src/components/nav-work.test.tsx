@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -80,10 +82,19 @@ describe("sidebar polish contracts", () => {
     expect(svg?.getAttribute("stroke-width")).toBe("1.5");
   });
 
-  it("separates the Work group from its neighbours by more than the row gap", () => {
-    const { container } = renderWork();
-    const group = container.querySelector('[data-sidebar="group"]');
-    // better-layout: inter-group space must beat the 2px/gap-0.5 intra-group step.
-    expect(group?.className).toContain("pt-2");
+  it("separates sidebar groups by more than the rhythm inside them", async () => {
+    // better-layout: assert the rail's real gap token, not a class on one
+    // group -- padding inside a group cannot create separation between them.
+    const source = await readFile(
+      path.resolve(process.cwd(), "src/components/app-sidebar.tsx"),
+      "utf8",
+    );
+    const contentClass = source.match(
+      /<SidebarContent className="([^"]+)"/,
+    )?.[1];
+    expect(contentClass).toBeDefined();
+    const gapStep = Number(contentClass?.match(/(?:^|\s)gap-(\d+)/)?.[1]);
+    // rows use gap-0.5 and menus gap-1, so the group rail must exceed gap-2
+    expect(gapStep).toBeGreaterThanOrEqual(3);
   });
 });

@@ -21,12 +21,7 @@ export function NavWork() {
   ];
   return (
     <>
-      {/*
-        better-layout: the Work group needs more space above it than the
-        0.5-step rhythm between its own rows, otherwise the grouping reads
-        as noise rather than structure.
-      */}
-      <SidebarGroup className="p-2 pt-2 pb-0">
+      <SidebarGroup className="p-2 pb-0">
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
             {placeholders.map(({ label, icon: Icon }) => (
