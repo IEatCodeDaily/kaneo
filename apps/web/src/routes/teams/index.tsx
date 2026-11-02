@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AuthLayout } from "@/components/auth/layout";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import { inTeamsHost } from "@/lib/teams-host";
 
 export const Route = createFileRoute("/teams/")({
   component: TeamsTab,
@@ -51,8 +52,9 @@ function TeamsTab() {
 
   useEffect(() => {
     void (async () => {
-      // Not inside a Teams host: this is just the normal app.
-      if (window.self === window.top) {
+      // Not inside a Teams host: this is just the normal app. Teams mobile
+      // loads tabs top-level in a WebView (no iframe) with a nativeInterface.
+      if (!inTeamsHost()) {
         void navigate({ to: "/dashboard", replace: true });
         return;
       }
