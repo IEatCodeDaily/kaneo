@@ -207,6 +207,16 @@
 			"email": "Email",
 			"hidePassword": "Hide password",
 			"passwordPlaceholder": "••••••••"
+		},
+		"teams": {
+			"title": "Kaneo for Teams",
+			"subtitle": "Sign in once to use your boards inside Microsoft Teams.",
+			"signIn": "Sign in",
+			"signingIn": "Signing in...",
+			"failed": "Sign-in did not complete. Please try again.",
+			"cookieBlocked": "This Teams client blocks sign-in cookies inside tabs. Open Kaneo in your browser instead.",
+			"openInBrowser": "Open in browser",
+			"noAccount": "No Kaneo account is linked to your Microsoft account yet. Sign in once in your browser, then reopen this tab."
 		}
 	},
 	"notifications": {

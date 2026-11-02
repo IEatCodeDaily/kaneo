@@ -23,6 +23,7 @@ import { Route as DeviceIndexRouteImport } from './routes/device/index'
 import { Route as DeviceApproveRouteImport } from './routes/device/approve'
 import { Route as McpAuthorizeRouteImport } from './routes/mcp.authorize'
 import { Route as PublicBoardBoardIdRouteImport } from './routes/public-board.$boardId'
+import { Route as TeamsIndexRouteImport } from './routes/teams/index'
 import { Route as LayoutAuthenticatedDashboardRouteImport } from './routes/_layout/_authenticated/dashboard'
 import { Route as LayoutAuthenticatedInvitationsRouteImport } from './routes/_layout/_authenticated/invitations'
 import { Route as LayoutAuthenticatedOnboardingRouteImport } from './routes/_layout/_authenticated/onboarding'
@@ -157,6 +158,11 @@ const McpAuthorizeRoute = McpAuthorizeRouteImport.update({
 const PublicBoardBoardIdRoute = PublicBoardBoardIdRouteImport.update({
   id: '/public-board/$boardId',
   path: '/public-board/$boardId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsIndexRoute = TeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutAuthenticatedDashboardRoute =
@@ -665,6 +671,7 @@ export interface FileRoutesByFullPath {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device/': typeof DeviceIndexRoute
+  '/teams/': typeof TeamsIndexRoute
   '/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
   '/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/onboarding': typeof LayoutAuthenticatedOnboardingRoute
@@ -745,6 +752,7 @@ export interface FileRoutesByTo {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device': typeof DeviceIndexRoute
+  '/teams': typeof TeamsIndexRoute
   '/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/onboarding': typeof LayoutAuthenticatedOnboardingRoute
   '/profile-setup': typeof LayoutAuthenticatedProfileSetupRoute
@@ -827,6 +835,7 @@ export interface FileRoutesById {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device/': typeof DeviceIndexRoute
+  '/teams/': typeof TeamsIndexRoute
   '/_layout/_authenticated/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
   '/_layout/_authenticated/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/_layout/_authenticated/onboarding': typeof LayoutAuthenticatedOnboardingRoute
@@ -910,6 +919,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device/'
+    | '/teams/'
     | '/dashboard'
     | '/invitations'
     | '/onboarding'
@@ -990,6 +1000,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device'
+    | '/teams'
     | '/invitations'
     | '/onboarding'
     | '/profile-setup'
@@ -1071,6 +1082,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device/'
+    | '/teams/'
     | '/_layout/_authenticated/dashboard'
     | '/_layout/_authenticated/invitations'
     | '/_layout/_authenticated/onboarding'
@@ -1148,6 +1160,7 @@ export interface RootRouteChildren {
   TestErrorRoute: typeof TestErrorRoute
   McpAuthorizeRoute: typeof McpAuthorizeRoute
   PublicBoardBoardIdRoute: typeof PublicBoardBoardIdRoute
+  TeamsIndexRoute: typeof TeamsIndexRoute
   InvitationAcceptInviteIdRoute: typeof InvitationAcceptInviteIdRoute
 }
 
@@ -1249,6 +1262,13 @@ declare module '@tanstack/react-router' {
       path: '/public-board/$boardId'
       fullPath: '/public-board/$boardId'
       preLoaderRoute: typeof PublicBoardBoardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/': {
+      id: '/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof TeamsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/_authenticated/dashboard': {
@@ -2083,6 +2103,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestErrorRoute: TestErrorRoute,
   McpAuthorizeRoute: McpAuthorizeRoute,
   PublicBoardBoardIdRoute: PublicBoardBoardIdRoute,
+  TeamsIndexRoute: TeamsIndexRoute,
   InvitationAcceptInviteIdRoute: InvitationAcceptInviteIdRoute,
 }
 export const routeTree = rootRouteImport

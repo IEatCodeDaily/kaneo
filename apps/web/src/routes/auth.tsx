@@ -15,6 +15,10 @@ export const Route = createFileRoute("/auth")({
         to: "/dashboard",
       });
     }
+    // Inside Teams the IdP refuses to be framed; sign in via Teams SSO.
+    if (window.self !== window.top) {
+      throw redirect({ to: "/teams" });
+    }
     return { session };
   },
 });

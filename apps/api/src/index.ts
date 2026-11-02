@@ -23,7 +23,7 @@ import activity from "./activity";
 import admin from "./admin";
 import agent from "./agent";
 import ai from "./ai";
-import { auth } from "./auth";
+import { auth, crossSiteCookies, trustedOrigins } from "./auth";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
 import column from "./column";
@@ -81,6 +81,7 @@ import {
   resolveAssetBearerOrCookie,
 } from "./utils/authenticate-api-request";
 import { getInvitationDetails } from "./utils/check-registration-allowed";
+import { crossSiteCookieGuard } from "./utils/cross-site-cookie-guard";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
 import { migrateOrganizationUserEmail } from "./utils/migrate-organization-user-email";
@@ -234,6 +235,12 @@ export function createApp() {
       },
     }),
   );
+
+  // SameSite=None session cookies ride along on cross-site requests; refuse
+  // those that carry a foreign Origin (CSRF / cross-site WebSocket hijack).
+  if (crossSiteCookies) {
+    app.use("*", crossSiteCookieGuard(trustedOrigins));
+  }
 
   const api = new Hono<ApiVariables>();
 
