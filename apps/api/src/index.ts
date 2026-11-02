@@ -99,6 +99,10 @@ import {
   normalizeOrganizationAuthOperations,
 } from "./utils/openapi-spec";
 import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-roles";
+import {
+  teamsMessagesHandler,
+  teamsUnfurlConfigFromEnv,
+} from "./utils/teams-unfurl";
 import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
 import {
@@ -302,6 +306,13 @@ export function createApp() {
       return c.json(ticket);
     },
   );
+
+  // Teams link unfurling: Bot Framework calls this server-to-server (signed
+  // JWT, no cookies), so it sits with the other pre-auth webhooks.
+  const teamsUnfurlConfig = teamsUnfurlConfigFromEnv();
+  if (teamsUnfurlConfig) {
+    api.post("/teams/messages", teamsMessagesHandler(teamsUnfurlConfig));
+  }
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
   // GitHub returns here as a browser navigation, before API auth middleware.
