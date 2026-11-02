@@ -228,7 +228,19 @@ export function teamsMessagesHandler(
         clockTolerance: 300,
         requiredClaims: ["exp", "serviceurl"],
       }));
-    } catch {
+    } catch (err) {
+      // Reason + non-secret claim names only; never log the token itself.
+      let peek: Record<string, unknown> = {};
+      try {
+        const p = JSON.parse(
+          Buffer.from(token.split(".")[1] ?? "", "base64url").toString(),
+        );
+        const h = JSON.parse(
+          Buffer.from(token.split(".")[0] ?? "", "base64url").toString(),
+        );
+        peek = { iss: p.iss, aud: p.aud, hasExp: "exp" in p, hasServiceUrl: "serviceurl" in p, alg: h.alg, kid: h.kid };
+      } catch {}
+      console.warn("teams-unfurl: token rejected:", (err as Error)?.message, peek);
       return c.json({ error: "unauthorized" }, 401);
     }
     const activity = (await c.req.json().catch(() => ({}))) as Activity;
@@ -238,6 +250,10 @@ export function teamsMessagesHandler(
       claims.serviceurl !== activity.serviceUrl ||
       activity.channelId !== "msteams"
     ) {
+      console.warn("teams-unfurl: activity rejected:", {
+        channelId: activity.channelId,
+        serviceUrlMatches: claims.serviceurl === activity.serviceUrl,
+      });
       return c.json({ error: "unauthorized" }, 401);
     }
     if (
