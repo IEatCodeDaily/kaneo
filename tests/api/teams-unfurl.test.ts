@@ -18,6 +18,11 @@ vi.mock("../../apps/api/src/database", () => ({
     query: { taskTable: { findFirst: async () => dbm.task } },
   },
 }));
+vi.mock("../../apps/api/src/search/controllers/global-search", () => ({
+  default: vi.fn(async ({ query }: { query: string }) => ({
+    results: query === "box" ? [{ id: "abcdefgh12345678abcdefgh" }] : [],
+  })),
+}));
 vi.mock("../../apps/api/src/identity/resolve-ticket-identity", () => ({
   resolveTicketIdentity: vi.fn(async (org: string, key: string) =>
     org === "noovoleum" && key === "ENG-2"
@@ -35,6 +40,7 @@ vi.mock("../../apps/api/src/resource-access", () => ({
 import {
   type CardTask,
   loadCardTask,
+  searchCardTasks,
   type TaskRef,
   taskIdFromUrl,
   taskRefFromUrl,
@@ -170,7 +176,12 @@ describe("POST /teams/messages", () => {
     app = new Hono();
     app.post(
       "/teams/messages",
-      teamsMessagesHandler(config, async () => publicKey, load),
+      teamsMessagesHandler(
+        config,
+        async () => publicKey,
+        load,
+        async (q, oid) => (q === "box" && oid === OID ? [card, card] : []),
+      ),
     );
   });
 
@@ -224,6 +235,30 @@ describe("POST /teams/messages", () => {
     ).toBe(401);
     // serviceurl claim is mandatory, not "checked if present"
     expect((await post(await sign({}), invoke())).status).toBe(401);
+  });
+
+  it("answers the search command with the user's matching tasks only", async () => {
+    const query = (q: string, over: Record<string, unknown> = {}) =>
+      invoke({
+        name: "composeExtension/query",
+        value: {
+          commandId: "searchTasks",
+          parameters: [{ name: "q", value: q }],
+        },
+        ...over,
+      });
+    const tok = await sign({ serviceurl: SVC });
+    expect(await attachments(await post(tok, query("box")))).toBe(2);
+    expect(await attachments(await post(tok, query("nothing")))).toBe(0);
+    expect(
+      await attachments(
+        await post(
+          tok,
+          query("box", { channelData: { tenant: { id: "other" } } }),
+        ),
+      ),
+    ).toBe(0);
+    expect((await post("bad", query("box"))).status).toBe(401);
   });
 
   it("rejects a token without exp even when everything else matches", async () => {
@@ -301,6 +336,18 @@ describe("loadCardTask (access gate)", () => {
     expect(
       await loadCardTask({ taskId: TASK }, OID, config.clientUrl),
     ).toBeNull();
+  });
+
+  it("search returns viewable cards only, nothing for unlinked users", async () => {
+    Object.assign(dbm, { link: [{ userId: "u1" }], task, privilege: "view" });
+    expect(
+      (await searchCardTasks("box", OID, config.clientUrl)).map((t) => t.key),
+    ).toEqual(["IT-7"]);
+    expect(await searchCardTasks("zzz", OID, config.clientUrl)).toEqual([]);
+    Object.assign(dbm, { privilege: "none" });
+    expect(await searchCardTasks("box", OID, config.clientUrl)).toEqual([]);
+    Object.assign(dbm, { link: [], privilege: "manage" });
+    expect(await searchCardTasks("box", OID, config.clientUrl)).toEqual([]);
   });
 
   it("resolves a short ticket key and still enforces board access", async () => {

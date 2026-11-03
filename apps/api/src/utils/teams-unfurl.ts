@@ -11,6 +11,7 @@ import db from "../database";
 import { accountTable, taskTable, userTable } from "../database/schema";
 import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
 import { getResourcePrivilege, privilegeAllows } from "../resource-access";
+import globalSearch from "../search/controllers/global-search";
 import { TEAMS_SSO_PROVIDER } from "./teams-sso";
 
 /**
@@ -125,7 +126,10 @@ type Activity = {
   from?: { aadObjectId?: string };
   conversation?: { tenantId?: string };
   channelData?: { tenant?: { id?: string } };
-  value?: { url?: string };
+  value?: {
+    url?: string;
+    parameters?: Array<{ name?: string; value?: string }>;
+  };
 };
 
 export type CardTask = {
@@ -153,7 +157,7 @@ export function teamsTabLink(url: string, teamsAppId: string): string {
   return `https://teams.microsoft.com/l/entity/${teamsAppId}/kaneo-home?${q}`;
 }
 
-export function unfurlResponse(t: CardTask, teamsAppId?: string) {
+function cardAttachment(t: CardTask, teamsAppId?: string) {
   const card = {
     type: "AdaptiveCard",
     $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -184,7 +188,7 @@ export function unfurlResponse(t: CardTask, teamsAppId?: string) {
       },
     ],
   };
-  const attachment = {
+  return {
     contentType: "application/vnd.microsoft.card.adaptive",
     content: card,
     preview: {
@@ -195,11 +199,17 @@ export function unfurlResponse(t: CardTask, teamsAppId?: string) {
       },
     },
   };
+}
+
+export function unfurlResponse(
+  tasks: CardTask | CardTask[],
+  teamsAppId?: string,
+) {
   return {
     composeExtension: {
       type: "result",
       attachmentLayout: "list",
-      attachments: [attachment],
+      attachments: [tasks].flat().map((t) => cardAttachment(t, teamsAppId)),
     },
   };
 }
@@ -212,11 +222,8 @@ const NO_CARD = {
   },
 };
 
-export async function loadCardTask(
-  ref: TaskRef,
-  aadObjectId: string,
-  clientUrl: string,
-): Promise<CardTask | null> {
+/** Kaneo user linked to this Entra object id via the Teams tab, else null. */
+async function teamsLinkedUser(aadObjectId: string) {
   const [link] = await db
     .select({ userId: accountTable.userId, banned: userTable.banned })
     .from(accountTable)
@@ -229,7 +236,37 @@ export async function loadCardTask(
     )
     .limit(1);
   // Unknown paster (never used the Teams tab) or banned user: no card.
-  if (!link || link.banned) return null;
+  return link && !link.banned ? link.userId : null;
+}
+
+/** Up to 10 tasks matching `query` that this Teams user can view. */
+export async function searchCardTasks(
+  query: string,
+  aadObjectId: string,
+  clientUrl: string,
+): Promise<CardTask[]> {
+  const userId = await teamsLinkedUser(aadObjectId);
+  if (!userId || !query.trim()) return [];
+  // globalSearch already filters by board view privilege for this user.
+  const { results } = await globalSearch({
+    query: query.trim(),
+    userId,
+    type: "tasks",
+    limit: 10,
+  });
+  const cards = await Promise.all(
+    results.map((r) => loadCardTask({ taskId: r.id }, aadObjectId, clientUrl)),
+  );
+  return cards.filter((t): t is CardTask => t !== null);
+}
+
+export async function loadCardTask(
+  ref: TaskRef,
+  aadObjectId: string,
+  clientUrl: string,
+): Promise<CardTask | null> {
+  const userId = await teamsLinkedUser(aadObjectId);
+  if (!userId) return null;
   let taskId: string;
   if ("taskId" in ref) {
     taskId = ref.taskId;
@@ -247,7 +284,7 @@ export async function loadCardTask(
     organizationId: task.board.organizationId,
     resourceType: "board",
     resourceId: task.boardId,
-    userId: link.userId,
+    userId,
   });
   if (!privilegeAllows(privilege, "view")) return null;
   return {
@@ -270,6 +307,7 @@ export function teamsMessagesHandler(
   config: TeamsUnfurlConfig,
   keys: JWTVerifyGetKey = teamsEndorsedKeys(),
   load: typeof loadCardTask = loadCardTask,
+  search: typeof searchCardTasks = searchCardTasks,
 ) {
   return async (c: Context) => {
     const auth = c.req.header("authorization") ?? "";
@@ -326,9 +364,14 @@ export function teamsMessagesHandler(
       activity.type === "invoke" &&
       activity.name === "composeExtension/query"
     ) {
-      // ponytail: search command exists only so Teams registers the extension;
-      // returns no results. Implement search when someone asks for it.
-      return c.json(NO_CARD, 200);
+      const oid = activity.from?.aadObjectId;
+      const tenant =
+        activity.channelData?.tenant?.id ?? activity.conversation?.tenantId;
+      const q = activity.value?.parameters?.[0]?.value ?? "";
+      if (tenant !== config.tenantId || !oid) return c.json(NO_CARD, 200);
+      const tasks = await search(q, oid, config.clientUrl);
+      console.info("teams-unfurl: search", { results: tasks.length });
+      return c.json(unfurlResponse(tasks, config.teamsAppId), 200);
     }
     if (
       activity.type !== "invoke" ||
