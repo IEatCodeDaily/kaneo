@@ -115,6 +115,19 @@ describe("unfurlResponse", () => {
     expect(out).toContain('"version":"1.3"');
     expect(out).not.toMatch(/description/i);
   });
+  it("opens the Teams tab at the task when the Teams app id is known", () => {
+    const out = JSON.stringify(unfurlResponse(card, "app-1"));
+    const url = new URL(
+      JSON.parse(out).composeExtension.attachments[0].content.actions[0].url,
+    );
+    expect(url.origin + url.pathname).toBe(
+      "https://teams.microsoft.com/l/entity/app-1/kaneo-home",
+    );
+    expect(url.searchParams.get("webUrl")).toBe(card.url);
+    expect(
+      JSON.parse(url.searchParams.get("context") ?? "{}").subEntityId,
+    ).toBe(new URL(card.url).pathname);
+  });
 });
 
 describe("teamsUnfurlConfigFromEnv", () => {

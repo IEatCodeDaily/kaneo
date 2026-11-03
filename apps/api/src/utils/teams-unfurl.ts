@@ -29,6 +29,8 @@ export type TeamsUnfurlConfig = {
   botAppId: string;
   tenantId: string;
   clientUrl: string;
+  /** Teams catalog app id; when set, "Open in Kaneo" opens the Teams tab. */
+  teamsAppId?: string;
 };
 
 export function teamsUnfurlConfigFromEnv(
@@ -38,7 +40,8 @@ export function teamsUnfurlConfigFromEnv(
   const tenantId = env.TEAMS_SSO_TENANT_ID?.trim();
   const clientUrl = env.KANEO_CLIENT_URL?.trim().replace(/\/+$/, "");
   if (!botAppId || !tenantId || !clientUrl) return null;
-  return { botAppId, tenantId, clientUrl };
+  const teamsAppId = env.TEAMS_APP_ID?.trim() || undefined;
+  return { botAppId, tenantId, clientUrl, teamsAppId };
 }
 
 const BOT_FRAMEWORK_ISSUER = "https://api.botframework.com";
@@ -136,7 +139,21 @@ export type CardTask = {
 };
 
 /** Adaptive Card 1.3 (Teams link-unfurl limit). Fields only, no body text. */
-export function unfurlResponse(t: CardTask) {
+/**
+ * Deep link into the personal tab ("kaneo-home"); the tab reads subPageId
+ * (context.subEntityId) and navigates there. webUrl is the browser fallback.
+ */
+export function teamsTabLink(url: string, teamsAppId: string): string {
+  const path = new URL(url).pathname;
+  const q = new URLSearchParams({
+    webUrl: url,
+    label: "Kaneo",
+    context: JSON.stringify({ subEntityId: path }),
+  });
+  return `https://teams.microsoft.com/l/entity/${teamsAppId}/kaneo-home?${q}`;
+}
+
+export function unfurlResponse(t: CardTask, teamsAppId?: string) {
   const card = {
     type: "AdaptiveCard",
     $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -159,7 +176,13 @@ export function unfurlResponse(t: CardTask) {
         ],
       },
     ],
-    actions: [{ type: "Action.OpenUrl", title: "Open in Kaneo", url: t.url }],
+    actions: [
+      {
+        type: "Action.OpenUrl",
+        title: "Open in Kaneo",
+        url: teamsAppId ? teamsTabLink(t.url, teamsAppId) : t.url,
+      },
+    ],
   };
   const attachment = {
     contentType: "application/vnd.microsoft.card.adaptive",
@@ -331,6 +354,9 @@ export function teamsMessagesHandler(
     }
     const task = await load(ref, aadObjectId, config.clientUrl);
     console.info("teams-unfurl: queryLink", { card: Boolean(task) });
-    return c.json(task ? unfurlResponse(task) : NO_CARD, 200);
+    return c.json(
+      task ? unfurlResponse(task, config.teamsAppId) : NO_CARD,
+      200,
+    );
   };
 }

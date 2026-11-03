@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthLayout } from "@/components/auth/layout";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { inTeamsHost } from "@/lib/teams-host";
+import { inTeamsHost, tabTarget } from "@/lib/teams-host";
 
 export const Route = createFileRoute("/teams/")({
   component: TeamsTab,
@@ -22,6 +22,7 @@ function TeamsTab() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [state, setState] = useState<TeamsSignIn>("pending");
+  const target = useRef("/dashboard");
 
   const signIn = useCallback(async () => {
     setState("pending");
@@ -42,7 +43,7 @@ function TeamsTab() {
         .getSession({ query: { disableCookieCache: true } })
         .catch(() => ({ data: null }));
       if (!data) return setState("blocked");
-      window.location.assign("/dashboard");
+      window.location.assign(target.current);
     } catch {
       // First use may need consent, which getAuthToken can only show from a
       // user gesture: offer the button.
@@ -60,12 +61,15 @@ function TeamsTab() {
       }
       const { app } = await import("@microsoft/teams-js");
       await app.initialize();
+      // Opened from a ticket card: Teams passes the Kaneo path as subPageId.
+      const ctx = await app.getContext().catch(() => null);
+      target.current = tabTarget(ctx?.page?.subPageId);
       app.notifySuccess();
       const { data } = await authClient
         .getSession()
         .catch(() => ({ data: null }));
       if (data) {
-        void navigate({ to: "/dashboard", replace: true });
+        window.location.replace(target.current);
         return;
       }
       await signIn();
