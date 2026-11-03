@@ -18,6 +18,13 @@ vi.mock("../../apps/api/src/database", () => ({
     query: { taskTable: { findFirst: async () => dbm.task } },
   },
 }));
+vi.mock("../../apps/api/src/identity/resolve-ticket-identity", () => ({
+  resolveTicketIdentity: vi.fn(async (org: string, key: string) =>
+    org === "noovoleum" && key === "ENG-2"
+      ? { ticketId: "abcdefgh12345678abcdefgh" }
+      : null,
+  ),
+}));
 vi.mock("../../apps/api/src/resource-access", () => ({
   getResourcePrivilege: vi.fn(async () => dbm.privilege),
   privilegeAllows: (p: string, r: string) =>
@@ -28,7 +35,9 @@ vi.mock("../../apps/api/src/resource-access", () => ({
 import {
   type CardTask,
   loadCardTask,
+  type TaskRef,
   taskIdFromUrl,
+  taskRefFromUrl,
   teamsEndorsedKeys,
   teamsMessagesHandler,
   teamsUnfurlConfigFromEnv,
@@ -52,6 +61,31 @@ const card: CardTask = {
   board: "IT",
   url: "https://task.example.com/x",
 };
+
+describe("taskRefFromUrl", () => {
+  it("parses the short ticket URL the UI copies", () => {
+    expect(
+      taskRefFromUrl(
+        "https://task.example.com/dashboard/noovoleum/tickets/ENG-2",
+        config.clientUrl,
+      ),
+    ).toEqual({ org: "noovoleum", key: "ENG-2" });
+  });
+  it("still parses the long form, rejects foreign origins", () => {
+    expect(
+      taskRefFromUrl(
+        `https://task.example.com/dashboard/organization/o/board/b/task/${TASK}`,
+        config.clientUrl,
+      ),
+    ).toEqual({ taskId: TASK });
+    expect(
+      taskRefFromUrl(
+        "https://evil.example.com/dashboard/noovoleum/tickets/ENG-2",
+        config.clientUrl,
+      ),
+    ).toBeNull();
+  });
+});
 
 describe("taskIdFromUrl", () => {
   it("accepts only task links on our own origin", () => {
@@ -115,7 +149,8 @@ describe("POST /teams/messages", () => {
         .setExpirationTime("5m")
         .sign(privateKey);
     // Fake loader: OID can see TASK; everything else is "no access".
-    const load = async (taskId: string, oid: string) => {
+    const load = async (ref: TaskRef, oid: string) => {
+      const taskId = "taskId" in ref ? ref.taskId : "";
       seen.push([taskId, oid]);
       return taskId === TASK && oid === OID ? card : null;
     };
@@ -238,7 +273,7 @@ describe("loadCardTask (access gate)", () => {
 
   it("returns fields for a linked Teams user with view access, no description", async () => {
     Object.assign(dbm, { link: [{ userId: "u1" }], task, privilege: "view" });
-    const t = await loadCardTask(TASK, OID, config.clientUrl);
+    const t = await loadCardTask({ taskId: TASK }, OID, config.clientUrl);
     expect(t?.key).toBe("IT-7");
     expect(t?.assignee).toBe("Ann");
     expect(JSON.stringify(t)).not.toContain("DO NOT LEAK");
@@ -246,9 +281,28 @@ describe("loadCardTask (access gate)", () => {
 
   it("returns null without board view access or without a Teams-linked account", async () => {
     Object.assign(dbm, { link: [{ userId: "u1" }], task, privilege: "none" });
-    expect(await loadCardTask(TASK, OID, config.clientUrl)).toBeNull();
+    expect(
+      await loadCardTask({ taskId: TASK }, OID, config.clientUrl),
+    ).toBeNull();
     Object.assign(dbm, { link: [], task, privilege: "manage" });
-    expect(await loadCardTask(TASK, OID, config.clientUrl)).toBeNull();
+    expect(
+      await loadCardTask({ taskId: TASK }, OID, config.clientUrl),
+    ).toBeNull();
+  });
+
+  it("resolves a short ticket key and still enforces board access", async () => {
+    Object.assign(dbm, { link: [{ userId: "u1" }], task, privilege: "view" });
+    const ref = { org: "noovoleum", key: "ENG-2" };
+    expect((await loadCardTask(ref, OID, config.clientUrl))?.key).toBe("IT-7");
+    expect(
+      await loadCardTask(
+        { org: "noovoleum", key: "NOPE-1" },
+        OID,
+        config.clientUrl,
+      ),
+    ).toBeNull();
+    Object.assign(dbm, { privilege: "none" });
+    expect(await loadCardTask(ref, OID, config.clientUrl)).toBeNull();
   });
 });
 
@@ -283,6 +337,8 @@ describe("loadCardTask (banned)", () => {
       },
       privilege: "manage",
     });
-    expect(await loadCardTask(TASK, OID, config.clientUrl)).toBeNull();
+    expect(
+      await loadCardTask({ taskId: TASK }, OID, config.clientUrl),
+    ).toBeNull();
   });
 });

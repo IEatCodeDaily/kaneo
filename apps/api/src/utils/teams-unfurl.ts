@@ -9,6 +9,7 @@ import {
 } from "jose";
 import db from "../database";
 import { accountTable, taskTable, userTable } from "../database/schema";
+import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
 import { getResourcePrivilege, privilegeAllows } from "../resource-access";
 import { TEAMS_SSO_PROVIDER } from "./teams-sso";
 
@@ -77,7 +78,30 @@ async function fetchBotFrameworkKeys(): Promise<EndorsedJwk[]> {
   return keys;
 }
 
-/** Task id from a Kaneo task URL on our own origin, else null. */
+export type TaskRef = { taskId: string } | { org: string; key: string };
+
+/**
+ * Task reference from a Kaneo URL on our own origin, else null. Accepts the
+ * long form /board/<id>/task/<taskId> and the short form
+ * /dashboard/<org>/tickets/<KEY-123> (what the UI's "copy link" produces).
+ */
+export function taskRefFromUrl(raw: string, clientUrl: string): TaskRef | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.origin !== new URL(clientUrl).origin) return null;
+  const short = url.pathname.match(
+    /^\/dashboard\/([A-Za-z0-9_-]{1,64})\/tickets\/([A-Za-z0-9][A-Za-z0-9_-]{0,63}-\d{1,9})\/?$/,
+  );
+  if (short?.[1] && short[2]) return { org: short[1], key: short[2] };
+  const taskId = taskIdFromUrl(raw, clientUrl);
+  return taskId ? { taskId } : null;
+}
+
+/** Task id from a long-form Kaneo task URL on our own origin, else null. */
 export function taskIdFromUrl(raw: string, clientUrl: string): string | null {
   let url: URL;
   try {
@@ -166,7 +190,7 @@ const NO_CARD = {
 };
 
 export async function loadCardTask(
-  taskId: string,
+  ref: TaskRef,
   aadObjectId: string,
   clientUrl: string,
 ): Promise<CardTask | null> {
@@ -183,6 +207,14 @@ export async function loadCardTask(
     .limit(1);
   // Unknown paster (never used the Teams tab) or banned user: no card.
   if (!link || link.banned) return null;
+  let taskId: string;
+  if ("taskId" in ref) {
+    taskId = ref.taskId;
+  } else {
+    const identity = await resolveTicketIdentity(ref.org, ref.key);
+    if (!identity) return null;
+    taskId = identity.ticketId;
+  }
   const task = await db.query.taskTable.findFirst({
     where: eq(taskTable.id, taskId),
     with: { board: true, assignee: true },
@@ -238,9 +270,20 @@ export function teamsMessagesHandler(
         const h = JSON.parse(
           Buffer.from(token.split(".")[0] ?? "", "base64url").toString(),
         );
-        peek = { iss: p.iss, aud: p.aud, hasExp: "exp" in p, hasServiceUrl: "serviceurl" in p, alg: h.alg, kid: h.kid };
+        peek = {
+          iss: p.iss,
+          aud: p.aud,
+          hasExp: "exp" in p,
+          hasServiceUrl: "serviceurl" in p,
+          alg: h.alg,
+          kid: h.kid,
+        };
       } catch {}
-      console.warn("teams-unfurl: token rejected:", (err as Error)?.message, peek);
+      console.warn(
+        "teams-unfurl: token rejected:",
+        (err as Error)?.message,
+        peek,
+      );
       return c.json({ error: "unauthorized" }, 401);
     }
     const activity = (await c.req.json().catch(() => ({}))) as Activity;
@@ -257,6 +300,14 @@ export function teamsMessagesHandler(
       return c.json({ error: "unauthorized" }, 401);
     }
     if (
+      activity.type === "invoke" &&
+      activity.name === "composeExtension/query"
+    ) {
+      // ponytail: search command exists only so Teams registers the extension;
+      // returns no results. Implement search when someone asks for it.
+      return c.json(NO_CARD, 200);
+    }
+    if (
       activity.type !== "invoke" ||
       activity.name !== "composeExtension/queryLink"
     ) {
@@ -265,11 +316,11 @@ export function teamsMessagesHandler(
     const tenant =
       activity.channelData?.tenant?.id ?? activity.conversation?.tenantId;
     const aadObjectId = activity.from?.aadObjectId;
-    const taskId = taskIdFromUrl(activity.value?.url ?? "", config.clientUrl);
-    if (tenant !== config.tenantId || !aadObjectId || !taskId) {
+    const ref = taskRefFromUrl(activity.value?.url ?? "", config.clientUrl);
+    if (tenant !== config.tenantId || !aadObjectId || !ref) {
       return c.json(NO_CARD, 200);
     }
-    const task = await load(taskId, aadObjectId, config.clientUrl);
+    const task = await load(ref, aadObjectId, config.clientUrl);
     return c.json(task ? unfurlResponse(task) : NO_CARD, 200);
   };
 }
