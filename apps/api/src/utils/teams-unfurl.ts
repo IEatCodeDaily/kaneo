@@ -8,7 +8,12 @@ import {
   jwtVerify,
 } from "jose";
 import db from "../database";
-import { accountTable, taskTable, userTable } from "../database/schema";
+import {
+  accountTable,
+  organizationTable,
+  taskTable,
+  userTable,
+} from "../database/schema";
 import { resolveTicketIdentity } from "../identity/resolve-ticket-identity";
 import { getResourcePrivilege, privilegeAllows } from "../resource-access";
 import globalSearch from "../search/controllers/global-search";
@@ -103,6 +108,38 @@ export function taskRefFromUrl(raw: string, clientUrl: string): TaskRef | null {
   if (short?.[1] && short[2]) return { org: short[1], key: short[2] };
   const taskId = taskIdFromUrl(raw, clientUrl);
   return taskId ? { taskId } : null;
+}
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+
+/**
+ * Page title for Teams' link fetcher (SkypeUriPreview), which names a pasted
+ * link with the page's <title> and stores that text in the message. nginx
+ * rewrites that fetcher's ticket-URL requests here. The fetch is anonymous,
+ * so only the organization name (from its slug) and the key already in the
+ * URL are shown: no task lookup, so ticket existence and titles stay private.
+ */
+export async function teamsLinkPreviewHandler(c: Context) {
+  const org = c.req.query("org") ?? "";
+  const key = c.req.query("key") ?? "";
+  if (
+    !/^[A-Za-z0-9_-]{1,64}$/.test(org) ||
+    !/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}-\d{1,9}$/.test(key)
+  ) {
+    return c.notFound();
+  }
+  const [organization] = await db
+    .select({ name: organizationTable.name })
+    .from(organizationTable)
+    .where(eq(organizationTable.slug, org.toLowerCase()))
+    .limit(1);
+  const title = escapeHtml(
+    `${[organization?.name, key.toUpperCase()].filter(Boolean).join(" · ")} | Kaneo`,
+  );
+  return c.html(
+    `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><meta property="og:title" content="${title}"><meta name="twitter:title" content="${title}"><meta property="og:site_name" content="Kaneo"></head><body></body></html>`,
+  );
 }
 
 /** Task id from a long-form Kaneo task URL on our own origin, else null. */

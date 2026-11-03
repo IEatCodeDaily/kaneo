@@ -7,12 +7,14 @@ const dbm = vi.hoisted(() => ({
   link: [] as Array<{ userId: string; banned?: boolean }>,
   task: null as unknown,
   privilege: "none",
+  org: [] as Array<{ name: string }>,
 }));
 vi.mock("../../apps/api/src/database", () => ({
   default: {
     select: () => ({
       from: () => ({
         innerJoin: () => ({ where: () => ({ limit: async () => dbm.link }) }),
+        where: () => ({ limit: async () => dbm.org }),
       }),
     }),
     query: { taskTable: { findFirst: async () => dbm.task } },
@@ -45,6 +47,7 @@ import {
   taskIdFromUrl,
   taskRefFromUrl,
   teamsEndorsedKeys,
+  teamsLinkPreviewHandler,
   teamsMessagesHandler,
   teamsUnfurlConfigFromEnv,
   unfurlResponse,
@@ -111,6 +114,36 @@ describe("taskIdFromUrl", () => {
       taskIdFromUrl("https://task.example.com/dashboard", config.clientUrl),
     ).toBeNull();
     expect(taskIdFromUrl("not a url", config.clientUrl)).toBeNull();
+  });
+});
+
+describe("teamsLinkPreviewHandler", () => {
+  const app = new Hono();
+  app.get("/p", teamsLinkPreviewHandler);
+  const title = async (q: string) => {
+    const r = await app.request(`/p?${q}`);
+    return r.status === 200
+      ? (await r.text()).match(/<title>([^<]*)<\/title>/)?.[1]
+      : r.status;
+  };
+  it("titles a ticket link with org name and key only", async () => {
+    dbm.org = [{ name: "Noovoleum RDE" }];
+    expect(await title("org=noovoleum&key=app-10")).toBe(
+      "Noovoleum RDE · APP-10 | Kaneo",
+    );
+  });
+  it("escapes the org name and drops unknown orgs", async () => {
+    dbm.org = [{ name: '<b>"x"&' }];
+    expect(await title("org=o&key=A-1")).toBe(
+      "&#60;b&#62;&#34;x&#34;&#38; · A-1 | Kaneo",
+    );
+    dbm.org = [];
+    expect(await title("org=ghost&key=A-1")).toBe("A-1 | Kaneo");
+  });
+  it("404s on malformed input", async () => {
+    expect(await title("org=%3Cs%3E&key=A-1")).toBe(404);
+    expect(await title("org=o&key=%3Cs%3E-1")).toBe(404);
+    expect(await title("org=o")).toBe(404);
   });
 });
 

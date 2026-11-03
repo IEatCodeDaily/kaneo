@@ -100,6 +100,7 @@ import {
 } from "./utils/openapi-spec";
 import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-roles";
 import {
+  teamsLinkPreviewHandler,
   teamsMessagesHandler,
   teamsUnfurlConfigFromEnv,
 } from "./utils/teams-unfurl";
@@ -312,6 +313,7 @@ export function createApp() {
   const teamsUnfurlConfig = teamsUnfurlConfigFromEnv();
   if (teamsUnfurlConfig) {
     api.post("/teams/messages", teamsMessagesHandler(teamsUnfurlConfig));
+    api.get("/teams/link-preview", teamsLinkPreviewHandler);
   }
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
