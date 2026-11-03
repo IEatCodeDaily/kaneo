@@ -311,6 +311,10 @@ export function teamsMessagesHandler(
       activity.type !== "invoke" ||
       activity.name !== "composeExtension/queryLink"
     ) {
+      console.info("teams-unfurl: ignored activity:", {
+        type: activity.type,
+        name: activity.name,
+      });
       return c.json({}, 200);
     }
     const tenant =
@@ -318,9 +322,15 @@ export function teamsMessagesHandler(
     const aadObjectId = activity.from?.aadObjectId;
     const ref = taskRefFromUrl(activity.value?.url ?? "", config.clientUrl);
     if (tenant !== config.tenantId || !aadObjectId || !ref) {
+      console.info("teams-unfurl: queryLink skipped", {
+        tenantOk: tenant === config.tenantId,
+        hasOid: Boolean(aadObjectId),
+        urlOk: Boolean(ref),
+      });
       return c.json(NO_CARD, 200);
     }
     const task = await load(ref, aadObjectId, config.clientUrl);
+    console.info("teams-unfurl: queryLink", { card: Boolean(task) });
     return c.json(task ? unfurlResponse(task) : NO_CARD, 200);
   };
 }
