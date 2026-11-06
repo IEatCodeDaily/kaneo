@@ -1,6 +1,4 @@
-import { expect, gotoAndSettle, loadFixtures, test } from "../helpers";
-
-const fixtures = loadFixtures();
+import { expect, gotoAndSettle, test } from "../helpers";
 
 test("AI chat toggle and provider config are managed in organization settings", async ({
   page,

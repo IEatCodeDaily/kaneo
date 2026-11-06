@@ -7,7 +7,7 @@ function useRenameProjectSlug() {
   return useMutation({
     mutationFn: renameProjectSlug,
     onSuccess: (data) => {
-      invalidateProjectQueries(queryClient, data.id);
+      if (data) invalidateProjectQueries(queryClient, data.id);
     },
   });
 }

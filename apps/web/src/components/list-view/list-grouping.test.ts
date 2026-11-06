@@ -107,6 +107,6 @@ describe("list grouping", () => {
   });
 
   it("resolves status independently of grouping", () => {
-    expect(taskStatus(board, board.columns[1].tasks[0]).name).toBe("Done");
+    expect(taskStatus(board, board.columns[1].tasks[0])?.name).toBe("Done");
   });
 });

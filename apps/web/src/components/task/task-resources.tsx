@@ -57,6 +57,7 @@ import getRepoPullRequests from "@/fetchers/repo/get-repo-pull-requests";
 import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import useGetTaskRepoLinks from "@/hooks/queries/task/use-get-task-repo-links";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
@@ -182,6 +183,8 @@ export default function TaskResources({
   organizationId,
   description,
 }: TaskResourcesProps) {
+  const { canManageTasks } = useOrganizationPermission();
+  const canEdit = canManageTasks();
   const [commandOpen, setCommandOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createRepoId, setCreateRepoId] = useState("");
@@ -245,7 +248,10 @@ export default function TaskResources({
   });
 
   const link = useMutation({
-    mutationFn: linkResource,
+    mutationFn: (input: Parameters<typeof linkResource>[0]) => {
+      if (!canEdit) throw new Error("Ticket editing is not permitted");
+      return linkResource(input);
+    },
     onError: (error) =>
       toast.error(
         error instanceof Error ? error.message : "Could not link resource.",
@@ -261,7 +267,10 @@ export default function TaskResources({
   });
 
   const createIssue = useMutation({
-    mutationFn: createSyncedIssue,
+    mutationFn: (input: Parameters<typeof createSyncedIssue>[0]) => {
+      if (!canEdit) throw new Error("Ticket editing is not permitted");
+      return createSyncedIssue(input);
+    },
     onError: (error) =>
       toast.error(
         error instanceof Error
@@ -291,6 +300,7 @@ export default function TaskResources({
       itemType: ResourceType;
       number: number;
     }) => {
+      if (!canEdit) throw new Error("Ticket editing is not permitted");
       const response = await fetch(
         getApiUrl(
           `/repo/${target.repoId}/${target.itemType}/${target.number}/task-links/${taskId}`,
@@ -320,7 +330,10 @@ export default function TaskResources({
    * boards, tickets, repos, files, tables, a Figma doc, whatever.
    */
   const addLink = useMutation({
-    mutationFn: createResourceLink,
+    mutationFn: (input: Parameters<typeof createResourceLink>[0]) => {
+      if (!canEdit) throw new Error("Ticket editing is not permitted");
+      return createResourceLink(input);
+    },
     onError: (error) =>
       toast.error(
         error instanceof Error ? error.message : "Could not add the link.",
@@ -337,7 +350,10 @@ export default function TaskResources({
   });
 
   const removeLink = useMutation({
-    mutationFn: deleteResourceLink,
+    mutationFn: (input: Parameters<typeof deleteResourceLink>[0]) => {
+      if (!canEdit) throw new Error("Ticket editing is not permitted");
+      return deleteResourceLink(input);
+    },
     onError: (error) =>
       toast.error(
         error instanceof Error ? error.message : "Could not remove the link.",
@@ -496,14 +512,16 @@ export default function TaskResources({
         <span className="text-xs font-medium text-foreground/70">
           Resources
         </span>
-        <Button
-          onClick={() => setCommandOpen(true)}
-          size="icon-xs"
-          variant="ghost"
-        >
-          <Link2 className="size-3.5" />
-          <span className="sr-only">Link GitHub resource</span>
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={() => setCommandOpen(true)}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Link2 className="size-3.5" />
+            <span className="sr-only">Link GitHub resource</span>
+          </Button>
+        )}
       </div>
 
       {hasAnyResource && (
@@ -565,22 +583,24 @@ export default function TaskResources({
                 size="icon-xs"
                 variant="ghost"
               />
-              <Button
-                aria-label={`Unlink #${item.number}`}
-                className="opacity-0 group-hover:opacity-100"
-                disabled={unlink.isPending}
-                onClick={() =>
-                  unlink.mutate({
-                    itemType: item.itemType,
-                    number: item.number,
-                    repoId: item.repoId,
-                  })
-                }
-                size="icon-xs"
-                variant="ghost"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              {canEdit && (
+                <Button
+                  aria-label={`Unlink #${item.number}`}
+                  className="opacity-0 group-hover:opacity-100"
+                  disabled={unlink.isPending}
+                  onClick={() =>
+                    unlink.mutate({
+                      itemType: item.itemType,
+                      number: item.number,
+                      repoId: item.repoId,
+                    })
+                  }
+                  size="icon-xs"
+                  variant="ghost"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              )}
             </div>
           ))}
 
@@ -710,15 +730,17 @@ export default function TaskResources({
                 </span>
                 <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
               </a>
-              <Button
-                aria-label={`Remove ${link.title || link.url}`}
-                disabled={removeLink.isPending}
-                onClick={() => removeLink.mutate({ id: link.id, taskId })}
-                size="icon-xs"
-                variant="ghost"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              {canEdit && (
+                <Button
+                  aria-label={`Remove ${link.title || link.url}`}
+                  disabled={removeLink.isPending}
+                  onClick={() => removeLink.mutate({ id: link.id, taskId })}
+                  size="icon-xs"
+                  variant="ghost"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -757,41 +779,43 @@ export default function TaskResources({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-1">
-        <button
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-          data-testid="add-resource-link"
-          onClick={() => setAddLinkOpen(true)}
-          type="button"
-        >
-          <Link2 className="size-4" />
-          <span>Add link</span>
-        </button>
-        <button
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-          onClick={() => setCommandOpen(true)}
-          type="button"
-        >
-          <Github className="size-4" />
-          <span>Link issue or pull request</span>
-        </button>
-        {/*
+      {canEdit && (
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            data-testid="add-resource-link"
+            onClick={() => setAddLinkOpen(true)}
+            type="button"
+          >
+            <Link2 className="size-4" />
+            <span>Add link</span>
+          </button>
+          <button
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+            onClick={() => setCommandOpen(true)}
+            type="button"
+          >
+            <Github className="size-4" />
+            <span>Link issue or pull request</span>
+          </button>
+          {/*
           Creating a synced issue is the inverse of linking an existing one, so
           it sits beside the link action. Hidden once the task already follows
           an issue: the API allows only one synced issue per task, so offering
           it again could only ever produce a 409.
         */}
-        {!syncedIssue && repos.length > 0 && (
-          <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => setCreateOpen(true)}
-            type="button"
-          >
-            <GitPullRequestCreateArrow className="size-4" />
-            <span>Create synced issue in repo</span>
-          </button>
-        )}
-      </div>
+          {!syncedIssue && repos.length > 0 && (
+            <button
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => setCreateOpen(true)}
+              type="button"
+            >
+              <GitPullRequestCreateArrow className="size-4" />
+              <span>Create synced issue in repo</span>
+            </button>
+          )}
+        </div>
+      )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogPopup>

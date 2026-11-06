@@ -25,7 +25,7 @@ export type UpdateProjectInput = {
   leadTeamId: string | null;
   startDate: string | null;
   targetDate: string | null;
-  orgPrivilege: string | null;
+  orgPrivilege: "none" | "view" | "edit" | "manage" | null;
 };
 
 async function updateProject(projectId: string, input: UpdateProjectInput) {

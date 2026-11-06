@@ -191,6 +191,7 @@ export const schema = {
   projectMilestoneTable,
   projectMilestoneTableRelations,
   projectUpdateTable,
+  projectUpdateTableRelations,
 };
 
 type DatabaseInstance = ReturnType<typeof drizzle<typeof schema>>;

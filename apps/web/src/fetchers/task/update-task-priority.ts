@@ -2,10 +2,19 @@ import { client } from "@kaneo/libs";
 import type Task from "@/types/task";
 
 async function updateTaskPriority(taskId: string, task: Task) {
+  const priority = task.priority ?? "no-priority";
+  if (
+    priority !== "no-priority" &&
+    priority !== "low" &&
+    priority !== "medium" &&
+    priority !== "high" &&
+    priority !== "urgent"
+  )
+    throw new Error("Invalid priority");
   const response = await client.task.priority[":id"].$put({
     param: { id: taskId },
     json: {
-      priority: task.priority || "",
+      priority,
     },
   });
 

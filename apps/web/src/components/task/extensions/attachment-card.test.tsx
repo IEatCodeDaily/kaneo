@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { Editor } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AttachmentCardView } from "./attachment-card";
+import { AttachmentCard, AttachmentCardView } from "./attachment-card";
 
 afterEach(cleanup);
 
@@ -32,8 +34,16 @@ describe("AttachmentCardView integration", () => {
   };
 
   it("opens the attachment context menu on right-click", () => {
-    // biome-ignore lint/suspicious/noExplicitAny: only node.attrs is read.
-    render(<AttachmentCardView node={node as any} />);
+    const editor = new Editor({ extensions: [StarterKit, AttachmentCard] });
+    const attachment = editor.schema.nodes.attachmentCard.create(node.attrs);
+    render(
+      <AttachmentCardView
+        node={attachment}
+        editor={editor}
+        getPos={() => undefined}
+      />,
+    );
+    editor.destroy();
 
     // Closed until asked for.
     expect(screen.queryByTestId("attachment-context-menu")).toBeNull();

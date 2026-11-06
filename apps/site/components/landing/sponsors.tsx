@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { FadeIn } from "@/components/landing/fade-in";
 import sponsors from "@/constants/sponsors.json";
 import { cn } from "@/lib/utils";
@@ -66,13 +67,16 @@ export function Sponsors() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <img
+                    <Image
                       alt=""
                       className={cn(
                         "rounded-full border border-border/70",
                         avatarSize(sponsor.tier),
                       )}
                       src={sponsor.avatarUrl}
+                      width={80}
+                      height={80}
+                      unoptimized
                       loading="lazy"
                     />
                     <span>
@@ -107,10 +111,13 @@ export function Sponsors() {
                       sponsor.founding ? " · Founding sponsor" : ""
                     }`}
                   >
-                    <img
+                    <Image
                       alt={sponsor.name ?? sponsor.login}
                       className="size-10 rounded-full border border-border/70 opacity-80 transition-opacity hover:opacity-100"
                       src={sponsor.avatarUrl}
+                      width={80}
+                      height={80}
+                      unoptimized
                       loading="lazy"
                     />
                   </a>

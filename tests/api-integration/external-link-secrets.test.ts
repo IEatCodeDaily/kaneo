@@ -4,8 +4,8 @@ import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
 const GITEA_TOKEN = "gitea-pat-should-never-be-exposed";
@@ -16,16 +16,16 @@ describe("API integration: external link integration secrets", () => {
     await resetTestDatabase();
   });
 
-  it("does not expose integration config to a workspace viewer", async () => {
-    const viewer = await createWorkspaceMember({ role: "viewer" });
-    const { project, columns } = await createProjectFixture({
-      workspaceId: viewer.workspace.id,
+  it("does not expose integration config to an organization viewer", async () => {
+    const viewer = await createOrganizationMember({ role: "viewer" });
+    const { board, columns } = await createBoardFixture({
+      organizationId: viewer.organization.id,
     });
 
     const [task] = await db
       .insert(schema.taskTable)
       .values({
-        projectId: project.id,
+        boardId: board.id,
         title: "Task with a linked Gitea issue",
         status: "to-do",
         columnId: columns.todo.id,
@@ -38,7 +38,7 @@ describe("API integration: external link integration secrets", () => {
     const [integration] = await db
       .insert(schema.integrationTable)
       .values({
-        projectId: project.id,
+        boardId: board.id,
         type: "gitea",
         config: JSON.stringify({
           baseUrl: "https://gitea.example",

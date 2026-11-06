@@ -83,7 +83,7 @@ describe("useDeleteTaskRelation cache invalidation", () => {
       wrapper,
     });
 
-    result.current.mutate({ id: "relation-1" });
+    result.current.mutate("relation-1");
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 

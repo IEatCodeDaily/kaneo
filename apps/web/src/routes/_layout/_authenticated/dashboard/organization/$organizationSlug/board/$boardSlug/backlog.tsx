@@ -219,8 +219,6 @@ function RouteComponent() {
                     hasActiveFilters={hasActiveFilters}
                     users={users}
                     organizationLabels={organizationLabels}
-                    viewMode="board"
-                    setViewMode={() => {}}
                     sort={sort}
                     onSortChange={setSort}
                     searchQuery=""

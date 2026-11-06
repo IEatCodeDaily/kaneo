@@ -1,6 +1,11 @@
 import { client } from "@kaneo/libs";
 
-export type MyTasksRelation = "assigned" | "created" | "team" | "all";
+export type MyTasksRelation =
+  | "assigned"
+  | "created"
+  | "team"
+  | "followed"
+  | "all";
 
 export type MyTasksParams = {
   organizationId?: string;

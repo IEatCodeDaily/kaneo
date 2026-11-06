@@ -56,7 +56,7 @@ const WORKSPACE_LABEL = {
   createdAt: new Date(),
   updatedAt: new Date(),
   taskId: null,
-  workspaceId: "ws-1",
+  organizationId: "ws-1",
 };
 
 const DELETED_WORKSPACE_LABEL = { ...WORKSPACE_LABEL };
@@ -68,7 +68,7 @@ const TASK_LABEL_1 = {
   createdAt: new Date(),
   updatedAt: new Date(),
   taskId: "task-1",
-  workspaceId: "ws-1",
+  organizationId: "ws-1",
 };
 
 const TASK_LABEL_2 = {
@@ -78,7 +78,7 @@ const TASK_LABEL_2 = {
   createdAt: new Date(),
   updatedAt: new Date(),
   taskId: "task-2",
-  workspaceId: "ws-1",
+  organizationId: "ws-1",
 };
 
 /**
@@ -135,13 +135,13 @@ describe("deleteLabel", () => {
             label: TASK_LABEL_1,
             taskId: "task-1",
             boardId: "board-1",
-            workspaceId: "ws-1",
+            organizationId: "ws-1",
           },
           {
             label: TASK_LABEL_2,
             taskId: "task-2",
             boardId: "board-2",
-            workspaceId: "ws-1",
+            organizationId: "ws-1",
           },
         ]),
       );
@@ -178,13 +178,13 @@ describe("deleteLabel", () => {
             label: TASK_LABEL_1,
             taskId: "task-1",
             boardId: "board-1",
-            workspaceId: "ws-1",
+            organizationId: "ws-1",
           },
           {
             label: TASK_LABEL_2,
             taskId: "task-2",
             boardId: "board-2",
-            workspaceId: "ws-1",
+            organizationId: "ws-1",
           },
         ]),
       );

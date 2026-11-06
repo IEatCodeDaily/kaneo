@@ -3,13 +3,11 @@ import type { InferRequestType } from "hono/client";
 
 export type GetBoardRequest = InferRequestType<
   (typeof client)["board"][":id"]["$get"]
->["param"] &
-  InferRequestType<(typeof client)["board"][":id"]["$get"]>["query"];
+>["param"] & { organizationId: string };
 
-async function getBoard({ id, organizationId }: GetBoardRequest) {
+async function getBoard({ id }: GetBoardRequest) {
   const response = await client.board[":id"].$get({
     param: { id },
-    query: { organizationId },
   });
 
   if (!response.ok) {

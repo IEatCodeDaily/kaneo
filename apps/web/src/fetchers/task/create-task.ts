@@ -18,7 +18,7 @@ async function createTask(
   teamId?: string,
 ) {
   if (!boardId) {
-    throw new Error("No board selected for task creation");
+    throw new Error("No board selected for ticket creation");
   }
 
   const json: Record<string, unknown> = {

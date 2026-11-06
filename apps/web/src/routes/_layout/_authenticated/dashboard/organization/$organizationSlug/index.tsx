@@ -54,7 +54,6 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
-  const { organizationSlug } = Route.useParams();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
   const navigate = useNavigate();

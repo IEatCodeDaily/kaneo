@@ -67,6 +67,10 @@ async function deleteLabel(id: string, userId: string) {
     return deletedLabel;
   }
 
+  if (!label.organizationId) {
+    throw new HTTPException(400, { message: "Label has no organization" });
+  }
+
   // Organization-level label: delete the label and cascade to all task-level copies
   const [deletedLabel] = await db
     .delete(labelTable)

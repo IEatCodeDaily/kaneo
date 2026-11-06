@@ -5,7 +5,7 @@ import { getInitials } from "@/lib/get-initials";
 type SettingsOrgHeaderProps = {
   organizationName?: string | null;
   organizationLogo?: string | null;
-  role?: string | null;
+  membershipRole?: string | null;
 };
 
 /**
@@ -18,7 +18,7 @@ type SettingsOrgHeaderProps = {
 export default function SettingsOrgHeader({
   organizationName,
   organizationLogo,
-  role,
+  membershipRole,
 }: SettingsOrgHeaderProps) {
   const { t } = useTranslation();
   const initials = getInitials(organizationName ?? undefined, "WS");
@@ -46,7 +46,9 @@ export default function SettingsOrgHeader({
           className="text-[11px] text-sidebar-foreground/60 capitalize"
           data-testid="settings-org-role"
         >
-          {t(`team:roles.${role}`, { defaultValue: role ?? "" })}
+          {t(`team:roles.${membershipRole}`, {
+            defaultValue: membershipRole ?? "",
+          })}
         </p>
       </div>
     </div>

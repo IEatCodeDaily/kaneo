@@ -3,18 +3,18 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/api/src/database";
 import { checkRegistrationAllowed } from "../../apps/api/src/utils/check-registration-allowed";
 import { resetTestDatabase } from "./helpers/database";
-import { createWorkspaceMember } from "./helpers/fixtures";
+import { createOrganizationMember } from "./helpers/fixtures";
 
 async function seedInvitation(
   email: string,
   overrides?: Partial<{ status: string; expiresAt: Date }>,
 ) {
-  const inviter = await createWorkspaceMember({ role: "owner" });
+  const inviter = await createOrganizationMember({ role: "owner" });
 
   const [invitation] = await db
     .insert(schema.invitationTable)
     .values({
-      workspaceId: inviter.workspace.id,
+      organizationId: inviter.organization.id,
       inviterId: inviter.user.id,
       email: email.toLowerCase(),
       role: "member",

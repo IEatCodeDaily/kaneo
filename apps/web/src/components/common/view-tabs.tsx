@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -22,17 +22,15 @@ import { cn } from "@/lib/cn";
  * navigation model broken.
  */
 
-type LinkProps = ComponentProps<typeof Link>;
-
 export type ViewTabItem = {
   /** Stable identifier, also used as the React key and the change payload. */
   value: string;
   label: string;
   icon: ReactNode;
   /** Route to navigate to. Omit for state-driven tabs. */
-  to?: LinkProps["to"];
+  to?: string;
   /** Route params, when `to` is set. */
-  params?: LinkProps["params"];
+  params?: Record<string, string>;
 };
 
 type ViewTabsProps = {

@@ -1,4 +1,4 @@
-import { Editor } from "@tiptap/core";
+import { type Content, Editor } from "@tiptap/core";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import { describe, expect, it } from "vitest";
@@ -14,7 +14,7 @@ import { KaneoMention } from "./kaneo-mention";
  * the extension's renderMarkdown in isolation, because the failure mode is a
  * serializer that never calls it.
  */
-function serialize(content: unknown): string {
+function serialize(content: Content): string {
   const editor = new Editor({
     extensions: [StarterKit, Markdown, KaneoMention],
     content,

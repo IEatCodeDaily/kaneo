@@ -12,6 +12,7 @@ import TaskPropertiesSidebar from "@/components/task/task-properties-sidebar";
 import { Button } from "@/components/ui/button";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
+import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
 
@@ -36,6 +37,7 @@ export default function TicketPage({
     organizationId,
   });
   const { isLoading: activityLoading } = useGetActivitiesByTaskId(ticketId);
+  const { data: organization } = useActiveOrganization();
   const [shikiReady, setShikiReady] = useState(false);
 
   useEffect(() => {
@@ -74,9 +76,15 @@ export default function TicketPage({
             ? t("tasks:common.loadingTask")
             : isError || !ticket
               ? t("tasks:common.taskNotFound")
-              : `${board?.slug}-${ticket.number} — ${ticket.title}`
+              : [
+                  organization?.name,
+                  `${board?.slug?.toUpperCase()}-${ticket.number}`,
+                  ticket.title,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
         }
-        hideAppName
+        suffix="Kaneo"
       />
       {loading ? (
         <TaskDetailsSkeleton />
@@ -97,7 +105,7 @@ export default function TicketPage({
               navigate({
                 to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
                 params: {
-                  organizationSlug: organizationSlug ?? organizationId,
+                  organizationSlug: organization?.slug ?? organizationId,
                   boardSlug: board?.slug ?? boardId,
                 },
               })

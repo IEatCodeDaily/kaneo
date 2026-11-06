@@ -26,7 +26,7 @@ describe("SettingsOrgHeader", () => {
       <SettingsOrgHeader
         organizationLogo="https://example.test/logo.png"
         organizationName="NevrLabs"
-        role="owner"
+        membershipRole="owner"
       />,
     );
 
@@ -37,7 +37,9 @@ describe("SettingsOrgHeader", () => {
   });
 
   it("falls back to initials when there is no logo", () => {
-    render(<SettingsOrgHeader organizationName="NevrLabs" role="member" />);
+    render(
+      <SettingsOrgHeader organizationName="NevrLabs" membershipRole="member" />,
+    );
 
     // getInitials("NevrLabs") -> "N" style fallback; assert SOMETHING rendered
     // rather than the exact glyph, so the shared initials helper stays free to
@@ -46,7 +48,7 @@ describe("SettingsOrgHeader", () => {
   });
 
   it("renders without an organization name without crashing", () => {
-    render(<SettingsOrgHeader role="member" />);
+    render(<SettingsOrgHeader membershipRole="member" />);
     expect(screen.getByTestId("settings-org-header")).toBeTruthy();
   });
 });

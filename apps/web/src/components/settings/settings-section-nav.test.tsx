@@ -18,6 +18,8 @@ import SettingsSectionNav from "./settings-section-nav";
  * quietly remove a section or make an empty one navigable.
  */
 
+vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
+
 afterEach(cleanup);
 
 const onNavigate = vi.fn();

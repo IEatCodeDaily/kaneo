@@ -18,7 +18,7 @@ import TaskTopbarControls from "./task-topbar-controls";
 afterEach(cleanup);
 
 describe("TaskTopbarControls", () => {
-  it("keeps the flag control directly beside the milestone in one topbar row", () => {
+  it("leaves milestone and flag to the properties bar", () => {
     render(
       <TaskTopbarControls
         taskId="task-1"
@@ -26,18 +26,12 @@ describe("TaskTopbarControls", () => {
         organizationId="org-1"
       />,
     );
-
     const controls = screen.getByTestId("task-topbar-controls");
-    const milestone = within(controls).getByTestId("milestone-control");
-    const flag = within(controls).getByTestId("flag-control");
-    const synced = within(controls).getByTestId("synced-issue");
-
-    expect(controls).toHaveClass("flex", "items-center");
-    expect([...controls.children]).toEqual([milestone, flag, synced]);
-    expect(screen.getAllByTestId("flag-control")).toHaveLength(1);
+    expect(within(controls).queryByTestId("milestone-control")).toBeNull();
+    expect(within(controls).queryByTestId("flag-control")).toBeNull();
   });
 
-  it("shows the synced issue in the header beside Flags, not the status bar", () => {
+  it("shows the synced issue in the header, not the status bar", () => {
     render(
       <TaskTopbarControls
         taskId="task-1"

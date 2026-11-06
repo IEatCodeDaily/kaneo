@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 async function deleteGenericWebhookIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/generic-webhook-integration/board/${boardSlug}`),
+    getApiUrl(`/generic-webhook-integration/board/${boardId}`),
     {
       method: "DELETE",
       credentials: "include",

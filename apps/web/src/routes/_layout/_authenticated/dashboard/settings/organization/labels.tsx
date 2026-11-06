@@ -241,7 +241,8 @@ function RouteComponent() {
               </CardTitle>
               <CardDescription>
                 {t("settings:organizationLabels.cardDescription", {
-                  defaultValue: "Manage labels that can be assigned to tasks.",
+                  defaultValue:
+                    "Manage labels that can be assigned to tickets.",
                 })}
               </CardDescription>
               {canEdit && (
@@ -353,7 +354,7 @@ function RouteComponent() {
             <DialogDescription>
               {t("settings:organizationLabels.createDescription", {
                 defaultValue:
-                  "Create a new label that can be used across tasks in this organization.",
+                  "Create a new label that can be used across tickets in this organization.",
               })}
             </DialogDescription>
           </DialogHeader>
@@ -539,7 +540,7 @@ function RouteComponent() {
             <AlertDialogDescription>
               {t("settings:organizationLabels.deleteConfirmDescription", {
                 defaultValue:
-                  "Any tasks using this label will have it removed. This action cannot be undone.",
+                  "Any tickets using this label will have it removed. This action cannot be undone.",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -68,7 +68,7 @@ export function PublicTaskCard({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
-      aria-label={`View details for task ${task.title}`}
+      aria-label={`View details for ticket ${task.title}`}
     >
       <div className="text-[10px] font-mono text-muted-foreground mb-2">
         {boardSlug}-{task.number}

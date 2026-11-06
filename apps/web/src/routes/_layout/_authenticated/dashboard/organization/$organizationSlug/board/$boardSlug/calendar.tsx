@@ -66,7 +66,7 @@ function parseTaskDate(value: string | null) {
 
 function RouteComponent() {
   const { t } = useTranslation();
-  const { boardId, organizationId, organizationSlug } = useBoardSlug();
+  const { boardId, organizationId } = useBoardSlug();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);
@@ -124,7 +124,7 @@ function RouteComponent() {
       }
       if (
         filters.labels?.length &&
-        !task.labels?.some((label) => filters.labels!.includes(label.id))
+        !task.labels?.some((label) => filters.labels?.includes(label.id))
       )
         return false;
       if (
@@ -212,7 +212,15 @@ function RouteComponent() {
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             groupBy={group}
-            onGroupByChange={setGroup}
+            onGroupByChange={(value) => {
+              if (
+                value === "none" ||
+                value === "status" ||
+                value === "priority" ||
+                value === "assignee"
+              )
+                setGroup(value);
+            }}
             filtersOnly
           />
           <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3">
@@ -221,7 +229,7 @@ function RouteComponent() {
                 variant="outline"
                 size="icon-xs"
                 onClick={() => {
-                  if (calView === "day") setCursor((c) => addDays(c, -1));
+                  if (calView === "year") setCursor((c) => addYears(c, -1));
                   else if (calView === "week")
                     setCursor((c) => addWeeks(c, -1));
                   else setCursor((c) => subMonths(c, 1));

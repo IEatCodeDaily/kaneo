@@ -11,7 +11,7 @@ export type ProjectTicket = {
   boardId: string;
   boardSlug: string;
   boardName: string;
-  number: number;
+  number: number | null;
   key: string;
   title: string;
   status: string;

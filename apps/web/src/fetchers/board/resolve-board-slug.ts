@@ -17,9 +17,8 @@ export async function resolveBoardBySlug(
   boardSlug: string,
 ): Promise<ResolvedBoard | null> {
   const cacheKey = `${organizationId}:${boardSlug}`;
-  if (boardCache.has(cacheKey)) {
-    return boardCache.get(cacheKey)!;
-  }
+  const cached = boardCache.get(cacheKey);
+  if (cached) return cached;
 
   const response = await fetch(
     getApiUrl(`/board?organizationId=${encodeURIComponent(organizationId)}`),

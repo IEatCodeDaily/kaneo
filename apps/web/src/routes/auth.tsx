@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
+import { inTeamsHost } from "@/lib/teams-host";
 
 export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
@@ -14,6 +15,10 @@ export const Route = createFileRoute("/auth")({
       throw redirect({
         to: "/dashboard",
       });
+    }
+    // Inside Teams the IdP refuses to be framed; sign in via Teams SSO.
+    if (inTeamsHost()) {
+      throw redirect({ to: "/teams" });
     }
     return { session };
   },

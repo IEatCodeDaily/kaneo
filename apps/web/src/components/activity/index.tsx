@@ -668,8 +668,8 @@ function Activity({
             </div>
           )}
         {activity.type === "flag_resolved" &&
-          typeof activity.eventData?.resolveNote === "string" &&
-          activity.eventData.resolveNote.trim() && (
+          typeof eventData?.resolveNote === "string" &&
+          eventData.resolveNote.trim() && (
             <div className="mt-1">
               <span
                 className="inline-flex max-w-full rounded-md border border-border/70 bg-muted/35 px-2.5 py-1 text-xs leading-5"
@@ -679,7 +679,7 @@ function Activity({
                   {t("flags:dialog.note")}:
                 </span>
                 <span className="text-foreground/90">
-                  {activity.eventData.resolveNote.trim()}
+                  {eventData.resolveNote.trim()}
                 </span>
               </span>
             </div>

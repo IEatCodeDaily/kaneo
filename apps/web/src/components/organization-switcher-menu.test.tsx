@@ -9,7 +9,13 @@ import {
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
+vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: "/dashboard/organization/nevrlabs/home" }),
+}));
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
   default: () => ({ data: { id: "org-1", name: "NevrLabs" } }),
 }));
@@ -37,7 +43,7 @@ describe("OrganizationMenuSection Base UI contract (#96)", () => {
       <DropdownMenu>
         <DropdownMenuTrigger>Profile</DropdownMenuTrigger>
         <DropdownMenuContent>
-          <OrganizationMenuSection />
+          <OrganizationMenuSection onCreateOrganization={() => {}} />
         </DropdownMenuContent>
       </DropdownMenu>,
     );

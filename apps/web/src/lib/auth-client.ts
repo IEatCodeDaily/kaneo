@@ -42,6 +42,22 @@ export const authClient = createAuthClient({
       teams: {
         enabled: true,
       },
+      schema: {
+        organization: {
+          additionalFields: {
+            description: { type: "string", required: false },
+            reposEnabled: { type: "boolean", required: false },
+            tablesEnabled: { type: "boolean", required: false },
+            workEnabled: { type: "boolean", required: false },
+          },
+        },
+        team: {
+          additionalFields: {
+            icon: { type: "string", required: false },
+            parentTeamId: { type: "string", required: false, input: false },
+          },
+        },
+      },
       roles: {
         viewer,
         member,

@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import TaskCrumbSelect from "@/components/common/header/task-crumb-select";
 import Layout from "@/components/common/layout";
-import TaskTopbarMilestone from "@/components/task/task-topbar-milestone";
 import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useBoardWebSocket } from "@/hooks/use-board-websocket";
@@ -81,7 +80,6 @@ export default function TaskLayout({
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
-              <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
               {/*
                 #146 / #91: board access avatars moved to the BOARD topbar.
                 They describe who can see the board, so repeating them on every

@@ -160,7 +160,10 @@ describe("GitHub <details> bodies stay inside the fold", () => {
   });
 });
 
-function toHtmlWith(markdown, renderInner) {
+function toHtmlWith(
+  markdown: string,
+  renderInner: (markdown: string) => string,
+) {
   const editor = new Editor({
     extensions: [StarterKit, ...DetailsExtensions, Markdown],
     content: inlineDetailsBlocks(markdown, renderInner),
@@ -209,7 +212,7 @@ Tail.`;
     warmup.destroy();
 
     const isolated = new Marked({ gfm: true });
-    const renderIsolated = (md) => isolated.parse(md, { async: false });
+    const renderIsolated = (md: string) => isolated.parse(md, { async: false });
 
     const html = toHtmlWith(BODY_WITH_TASKS, renderIsolated);
     const doc = new DOMParser().parseFromString(html, "text/html");

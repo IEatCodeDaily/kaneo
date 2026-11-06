@@ -21,8 +21,8 @@ vi.mock("react-i18next", async (importOriginal) => ({
 vi.mock("@/hooks/queries/task/use-get-task", () => ({
   default: (taskId: string) => useGetTask(taskId),
 }));
-vi.mock("@/hooks/queries/board/use-get-board", () => ({
-  default: () => ({ data: { slug: "KAN" } }),
+vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
+  useGetTasks: () => ({ data: { slug: "KAN" } }),
 }));
 vi.mock("@/components/presence/board-access-avatars", () => ({
   default: () => null,

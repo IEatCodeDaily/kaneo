@@ -40,7 +40,7 @@ describe("CommentEditor read-only blank-line fidelity", () => {
 
     // The only <br> allowed is TipTap's own trailing break marker.
     const brs = (html.match(/<br/g) ?? []).filter(
-      (m, i) => !html.slice(html.indexOf(m)).includes("trailingBreak"),
+      (m) => !html.slice(html.indexOf(m)).includes("trailingBreak"),
     );
     expect(brs.length).toBe(0);
     expect((html.match(/LINEA<\/p><p>/g) ?? []).length).toBe(1);

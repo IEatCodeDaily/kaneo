@@ -93,7 +93,7 @@ export function NavRepos() {
   );
 
   const isCurrentRepo = (repoId: string) =>
-    currentRepoId === repoId && currentOrganizationId === organization?.id;
+    currentRepoId === repoId && currentOrganizationId === organization?.slug;
 
   // Switching repos keeps the current repo view; arriving fresh uses the last
   // repo view this user was in (persisted in localStorage).
@@ -105,7 +105,7 @@ export function NavRepos() {
     navigate({
       to: `/dashboard/organization/$organizationSlug/repo/$repoId/${targetRepoView}`,
       params: {
-        organizationSlug: organization.id,
+        organizationSlug: organization.slug,
         repoId,
       },
     });
@@ -126,7 +126,7 @@ export function NavRepos() {
               onClick={() =>
                 navigate({
                   to: "/dashboard/organization/$organizationSlug/repo",
-                  params: { organizationSlug: organization.id },
+                  params: { organizationSlug: organization.slug },
                 })
               }
               tooltip={t("navigation:sidebar.repos")}

@@ -7,7 +7,8 @@ import type { Repo, RepoIssueGithub } from "@/types/repo";
 const repos: Repo[] = [
   {
     id: "repo-synced",
-    organizationSlug: "org-1",
+    organizationId: "org-1",
+    config: null,
     provider: "github",
     owner: "Acme",
     name: "Widget",

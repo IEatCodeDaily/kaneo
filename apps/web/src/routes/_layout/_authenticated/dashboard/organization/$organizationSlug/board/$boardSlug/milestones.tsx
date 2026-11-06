@@ -23,7 +23,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const { t } = useTranslation();
-  const { boardId, organizationId, organizationSlug } = useBoardSlug();
+  const { boardId, organizationId } = useBoardSlug();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: board } = useGetTasks(boardId);

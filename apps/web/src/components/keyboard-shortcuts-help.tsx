@@ -64,7 +64,7 @@ export function useShortcutCategories(): ShortcutCategory[] {
           },
           {
             keys: [shortcuts.task.focusTitle],
-            description: "Focus task title (when creating a task)",
+            description: "Focus ticket title (when creating a ticket)",
           },
           {
             keys: [shortcuts.board.prefix, shortcuts.board.create],
@@ -101,6 +101,31 @@ export function useShortcutCategories(): ShortcutCategory[] {
       {
         title: t("navigation:keyboardShortcuts.categories.navigation"),
         shortcuts: [
+          {
+            keys: ["w", "s"],
+            description: t("navigation:organizationSwitcher.organizations"),
+          },
+          {
+            keys: ["w", "1–9"],
+            description: t(
+              "navigation:keyboardShortcuts.items.switchOrganizationByNumber",
+            ),
+          },
+          {
+            keys: ["u"],
+            description: t(
+              "navigation:keyboardShortcuts.items.inboxToggleRead",
+            ),
+          },
+          { keys: ["e", "Delete"], description: t("inbox:dismiss") },
+          {
+            keys: ["r"],
+            description: t("navigation:keyboardShortcuts.items.inboxReply"),
+          },
+          {
+            keys: ["ArrowUp", "ArrowDown"],
+            description: t("navigation:keyboardShortcuts.items.inboxNavigate"),
+          },
           {
             keys: ["j"],
             description: t("navigation:keyboardShortcuts.items.nextTask"),

@@ -1,5 +1,4 @@
 import { client } from "@kaneo/libs";
-import type { TaskFlag } from "./get-task-flags";
 
 async function getMyFlags(organizationId?: string) {
   const response = await client.flag.mine.$get({
@@ -11,7 +10,10 @@ async function getMyFlags(organizationId?: string) {
     throw new Error(error);
   }
 
-  return (await response.json()) as TaskFlag[];
+  const flags = await response.json();
+  return flags.map(
+    (flag): typeof flag & { resolvedAt?: string | null } => flag,
+  );
 }
 
 export default getMyFlags;

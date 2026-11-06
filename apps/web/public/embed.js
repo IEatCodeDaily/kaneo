@@ -4,12 +4,6 @@
  * page runs unauthenticated on third-party sites.
  */
 (() => {
-  function escapeHtml(value) {
-    var div = document.createElement("div");
-    div.appendChild(document.createTextNode(String(value)));
-    return div.innerHTML;
-  }
-
   // Canonical form: /embed.html?id=<ticketId>. Pure static — every host
   // (vite preview, nginx, CDN) serves it without extra routing rules.
   var params = new URLSearchParams(window.location.search);

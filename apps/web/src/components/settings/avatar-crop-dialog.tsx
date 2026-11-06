@@ -20,6 +20,7 @@ import {
 import { AVATAR_OUTPUT_SIZE } from "@/lib/prepare-avatar-image";
 
 const MAX_ZOOM = 8;
+const viewport = AVATAR_OUTPUT_SIZE;
 
 type Props = {
   open: boolean;
@@ -77,8 +78,6 @@ export default function AvatarCropDialog({
     }
   }, [dimensions]);
 
-  const viewport = AVATAR_OUTPUT_SIZE;
-
   const zoomBy = useCallback(
     (factor: number) => {
       if (!dimensions) return;
@@ -105,7 +104,7 @@ export default function AvatarCropDialog({
         return { x: nextX, y: nextY, scale: nextScale };
       });
     },
-    [dimensions, viewport],
+    [dimensions],
   );
 
   const onPointerDown = (event: React.PointerEvent) => {
@@ -183,7 +182,7 @@ export default function AvatarCropDialog({
     } finally {
       setExporting(false);
     }
-  }, [image, dimensions, transform, viewport, onCropped]);
+  }, [image, dimensions, transform, onCropped]);
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>

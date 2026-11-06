@@ -12,14 +12,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useGetOrganizationPrincipals } from "@/hooks/queries/organization-members/use-get-organization-principals";
-import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import { getInitials } from "@/lib/get-initials";
 import {
   buildPrincipalPickerOptions,
   resolvePrincipalSelection,
 } from "@/lib/principal-picker-options";
-import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 
 type Board = {

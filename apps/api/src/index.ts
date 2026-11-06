@@ -23,7 +23,7 @@ import activity from "./activity";
 import admin from "./admin";
 import agent from "./agent";
 import ai from "./ai";
-import { auth } from "./auth";
+import { auth, crossSiteCookies, trustedOrigins } from "./auth";
 import board from "./board";
 import { getPublicBoard } from "./board/controllers/get-public-board";
 import column from "./column";
@@ -38,7 +38,7 @@ import { eventContext } from "./events";
 import externalLink from "./external-link";
 import flag from "./flag";
 import genericWebhookIntegration from "./generic-webhook-integration";
-import { handleGiteaWebhookRoute } from "./gitea-integration";
+import giteaIntegration, { handleGiteaWebhookRoute } from "./gitea-integration";
 import githubDelegation, {
   handleGitHubDelegationCallback,
 } from "./github-delegation";
@@ -81,6 +81,7 @@ import {
   resolveAssetBearerOrCookie,
 } from "./utils/authenticate-api-request";
 import { getInvitationDetails } from "./utils/check-registration-allowed";
+import { crossSiteCookieGuard } from "./utils/cross-site-cookie-guard";
 import { migrateApiKeyReferenceId } from "./utils/migrate-apikey-reference-id";
 import { migrateNotificationPreferencesSchema } from "./utils/migrate-notification-preferences-schema";
 import { migrateOrganizationUserEmail } from "./utils/migrate-organization-user-email";
@@ -98,6 +99,11 @@ import {
   normalizeOrganizationAuthOperations,
 } from "./utils/openapi-spec";
 import { seedDefaultOrganizationRoles } from "./utils/seed-default-organization-roles";
+import {
+  teamsLinkPreviewHandler,
+  teamsMessagesHandler,
+  teamsUnfurlConfigFromEnv,
+} from "./utils/teams-unfurl";
 import { validateOrganizationAccess } from "./utils/validate-organization-access";
 import workflowRule from "./workflow-rule";
 import {
@@ -162,7 +168,7 @@ function buildContentDisposition(filename: string, inline: boolean) {
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[\\/]/g, "-")
-      .replace(/[^\x20-\u7E]+/g, "_")
+      .replace(/[^\x20-\x7E]+/g, "_")
       .replace(/\s+/g, " ")
       .trim() || "file";
   const encodedFilename = encodeURIComponent(safeFilename).replace(
@@ -235,6 +241,12 @@ export function createApp() {
     }),
   );
 
+  // SameSite=None session cookies ride along on cross-site requests; refuse
+  // those that carry a foreign Origin (CSRF / cross-site WebSocket hijack).
+  if (crossSiteCookies) {
+    app.use("*", crossSiteCookieGuard(trustedOrigins));
+  }
+
   const api = new Hono<ApiVariables>();
 
   api.get("/health", (c) => {
@@ -295,6 +307,14 @@ export function createApp() {
       return c.json(ticket);
     },
   );
+
+  // Teams link unfurling: Bot Framework calls this server-to-server (signed
+  // JWT, no cookies), so it sits with the other pre-auth webhooks.
+  const teamsUnfurlConfig = teamsUnfurlConfigFromEnv();
+  if (teamsUnfurlConfig) {
+    api.post("/teams/messages", teamsMessagesHandler(teamsUnfurlConfig));
+    api.get("/teams/link-preview", teamsLinkPreviewHandler);
+  }
 
   api.post("/repo/webhook/github", handleGithubWebhookRoute);
   // GitHub returns here as a browser navigation, before API auth middleware.
@@ -699,6 +719,7 @@ export function createApp() {
     githubIntegration,
   );
 
+  const giteaIntegrationApi = api.route("/gitea-integration", giteaIntegration);
   const boardApi = api.route("/board", board);
   const projectApi = api.route("/project", project);
   const taskApi = api.route("/task", task);
@@ -907,6 +928,13 @@ export function createApp() {
     api,
     injectWebSocket,
     activityApi,
+    agentApi,
+    aiApi,
+    adminApi,
+    githubIntegrationApi,
+    giteaIntegrationApi,
+    oidcTeamSyncApi,
+    teamApi,
     columnApi,
     commentApi,
     dataTableApi,
@@ -1078,6 +1106,13 @@ if (isMainModule) {
 }
 
 export type AppType =
+  | typeof createdApp.adminApi
+  | typeof createdApp.giteaIntegrationApi
+  | typeof createdApp.githubIntegrationApi
+  | typeof createdApp.oidcTeamSyncApi
+  | typeof createdApp.teamApi
+  | typeof resourceGrantApi
+  | typeof userApi
   | typeof agentApi
   | typeof configApi
   | typeof boardApi

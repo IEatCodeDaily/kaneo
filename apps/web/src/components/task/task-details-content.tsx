@@ -12,6 +12,7 @@ import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { formatArchivedSubtext } from "@/lib/archive-display";
 import TaskDescription from "./task-description";
 import TaskDescriptionHistory from "./task-description-history";
@@ -44,6 +45,7 @@ export default function TaskDetailsContent({
   );
   const { data: relations = [] } = useGetTaskRelations(taskId ?? "");
   const { user } = useAuth();
+  const { canManageTasks } = useOrganizationPermission();
 
   const parentRelation = relations.find(
     (rel: { relationType: string; targetTaskId: string }) =>
@@ -128,7 +130,9 @@ export default function TaskDetailsContent({
       <span className="text-sm font-medium text-muted-foreground h-[1px] bg-border w-full block shrink-0" />
       <div className="flex flex-col gap-4">
         <h1 className="text-md font-semibold">{t("tasks:detail.activity")}</h1>
-        {user?.id && taskId && <CommentInput taskId={taskId} />}
+        {user?.id && taskId && canManageTasks() && (
+          <CommentInput taskId={taskId} />
+        )}
         {activities.length > 0 ? (
           <Timeline>
             {/*

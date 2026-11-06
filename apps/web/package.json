@@ -20,6 +20,7 @@
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
 		"@hookform/resolvers": "^5.4.0",
+		"@microsoft/teams-js": "2.58.0",
 		"@pierre/diffs": "^1.2.12",
 		"@pierre/trees": "1.0.0-beta.6",
 		"@radix-ui/react-accordion": "^1.2.16",

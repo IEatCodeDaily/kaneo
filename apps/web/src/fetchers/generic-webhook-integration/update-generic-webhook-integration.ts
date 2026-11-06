@@ -27,7 +27,7 @@ async function updateGenericWebhookIntegration(
   json: UpdateGenericWebhookIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/generic-webhook-integration/board/${boardSlug}`),
+    getApiUrl(`/generic-webhook-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

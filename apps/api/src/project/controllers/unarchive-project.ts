@@ -48,5 +48,5 @@ export default async function unarchiveProjectController(
   organizationId: string,
   userId: string,
 ) {
-  await unarchiveProject(projectId, organizationId, userId);
+  return unarchiveProject(projectId, organizationId, userId);
 }

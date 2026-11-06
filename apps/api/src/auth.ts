@@ -37,6 +37,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
 import { decodeJwtPayload, syncOidcTeams } from "./oidc-team-sync/service";
+import { deleteAccountData } from "./user/controllers/delete-account-data";
 import { checkOrganizationName } from "./utils/check-organization-name";
 import {
   checkRegistrationAllowed,
@@ -51,6 +52,7 @@ import { getGithubSsoOAuthCredentials } from "./utils/github-sso-env";
 import { isCloud } from "./utils/is-cloud";
 import { isDisposableEmail } from "./utils/is-disposable-email";
 import { isLocalSignInPath } from "./utils/is-local-sign-in-path";
+import { teamsSso, teamsSsoConfigFromEnv } from "./utils/teams-sso";
 import { verifyTurnstile } from "./utils/verify-turnstile";
 
 config();
@@ -93,7 +95,13 @@ const isCrossSubdomain = (() => {
   }
 })();
 
-const trustedOrigins = [clientUrl];
+// Teams/Office host the app in a third-party iframe; the session cookie must be
+// SameSite=None + Partitioned (CHIPS) to survive there.
+const allowEmbedding = process.env.ALLOW_EMBEDDING === "true";
+export const crossSiteCookies = isHttps && (isCrossSubdomain || allowEmbedding);
+const teamsSsoConfig = teamsSsoConfigFromEnv();
+
+export const trustedOrigins = [clientUrl];
 try {
   const apiOrigin = new URL(apiUrl);
   const apiOriginString = `${apiOrigin.protocol}//${apiOrigin.host}`;
@@ -345,6 +353,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            workEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {
@@ -500,7 +514,6 @@ export const auth = betterAuth({
           {
             inviterEmail: data.inviter.user.email,
             inviterName: data.inviter.user.name,
-            locale,
             organizationName: data.organization.name,
             invitationLink: inviteLink,
             to: data.email,
@@ -539,6 +552,9 @@ export const auth = betterAuth({
       ],
     }),
     bearer(),
+    // Teams tab sign-in (Entra SSO token -> existing Kaneo user). Off unless
+    // TEAMS_SSO_TENANT_ID / _CLIENT_ID / _ALLOWED_DOMAINS are all set.
+    ...(teamsSsoConfig ? [teamsSso(teamsSsoConfig)] : []),
     apiKey({
       enableSessionForAPIKeys: true,
       apiKeyHeaders: "x-api-key",
@@ -840,6 +856,10 @@ export const auth = betterAuth({
     }),
   },
   advanced: {
+    // A Partitioned cookie does not replace the unpartitioned one of the same
+    // name, so browsers would send both and a stale token could shadow a fresh
+    // one after sign-out. A distinct name sidesteps that (one-time re-login).
+    cookiePrefix: allowEmbedding ? "kaneo-embed" : undefined,
     ipAddress: {
       ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"],
       trustedProxies: trustedProxies(),
@@ -847,9 +867,9 @@ export const auth = betterAuth({
     defaultCookieAttributes: {
       // For cross-subdomain auth with HTTPS, use sameSite: "none" with secure: true
       // For same-domain or HTTP deployments, use sameSite: "lax" with secure: false
-      sameSite: isCrossSubdomain && isHttps ? "none" : "lax",
-      secure: isCrossSubdomain && isHttps, // must be true when sameSite is "none"
-      partitioned: isCrossSubdomain && isHttps,
+      sameSite: crossSiteCookies ? "none" : "lax",
+      secure: crossSiteCookies, // must be true when sameSite is "none"
+      partitioned: crossSiteCookies,
       domain: process.env.COOKIE_DOMAIN || undefined, // Optional: e.g., ".andrej.com" for explicit cross-subdomain cookies
     },
   },

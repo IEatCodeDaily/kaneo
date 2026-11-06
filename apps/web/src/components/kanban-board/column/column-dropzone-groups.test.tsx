@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -38,24 +39,37 @@ vi.mock("../board-view-context", () => ({
 
 import { ColumnDropzone } from "./column-dropzone";
 
-type Task = {
-  id: string;
-  title: string;
-  priority: string;
-  labels?: unknown[];
-  dueDate?: string | null;
-};
+type Column = ComponentProps<typeof ColumnDropzone>["column"];
+type Task = Column["tasks"][number];
+const task = (id: string, title: string, priority: string): Task => ({
+  id,
+  title,
+  priority,
+  number: 1,
+  status: "in-progress",
+  startDate: null,
+  dueDate: null,
+  position: 0,
+  createdAt: "2026-01-01",
+  userId: null,
+  assigneeId: null,
+  assigneeName: null,
+  boardId: "b1",
+});
 
 function makeColumn() {
   const tasks: Task[] = [
-    { id: "t1", title: "High one", priority: "high" },
-    { id: "t2", title: "Low one", priority: "low" },
+    task("t1", "High one", "high"),
+    task("t2", "Low one", "low"),
   ];
   return {
     id: "col-1",
     name: "In Progress",
+    slug: "in-progress",
+    icon: null,
+    isFinal: false,
     tasks,
-  } as never;
+  };
 }
 
 describe("ColumnDropzone grouped sections", () => {
@@ -119,10 +133,11 @@ describe("ColumnDropzone grouped sections", () => {
     const column = makeColumn();
     column.tasks = [
       {
-        id: "t1",
-        title: "Shared task",
-        priority: "high",
-        labels: [{ name: "frontend" }, { name: "bug" }],
+        ...task("t1", "Shared task", "high"),
+        labels: [
+          { id: "l1", name: "frontend", color: "gray" },
+          { id: "l2", name: "bug", color: "red" },
+        ],
       },
     ];
 

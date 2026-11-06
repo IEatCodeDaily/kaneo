@@ -1,15 +1,15 @@
-export type WorkspaceMembershipSummary = {
-  workspaceId: string;
-  workspaceName: string;
+export type OrganizationMembershipSummary = {
+  organizationId: string;
+  organizationName: string;
   isOwner: boolean;
   memberCount: number;
   ownerCount: number;
 };
 
 export type AccountDeletionPlan = {
-  blockedWorkspaceNames: string[];
-  workspaceIdsToDelete: string[];
-  workspaceIdsToLeave: string[];
+  blockedOrganizationNames: string[];
+  organizationIdsToDelete: string[];
+  organizationIdsToLeave: string[];
 };
 
 export function hasOwnerRole(role: string) {
@@ -20,32 +20,32 @@ export function hasOwnerRole(role: string) {
 }
 
 export function planAccountDeletion(
-  memberships: WorkspaceMembershipSummary[],
+  memberships: OrganizationMembershipSummary[],
 ): AccountDeletionPlan {
   const plan: AccountDeletionPlan = {
-    blockedWorkspaceNames: [],
-    workspaceIdsToDelete: [],
-    workspaceIdsToLeave: [],
+    blockedOrganizationNames: [],
+    organizationIdsToDelete: [],
+    organizationIdsToLeave: [],
   };
 
   for (const membership of memberships) {
     if (membership.memberCount <= 1) {
-      plan.workspaceIdsToDelete.push(membership.workspaceId);
+      plan.organizationIdsToDelete.push(membership.organizationId);
       continue;
     }
 
     if (membership.isOwner && membership.ownerCount <= 1) {
-      plan.blockedWorkspaceNames.push(membership.workspaceName);
+      plan.blockedOrganizationNames.push(membership.organizationName);
       continue;
     }
 
-    plan.workspaceIdsToLeave.push(membership.workspaceId);
+    plan.organizationIdsToLeave.push(membership.organizationId);
   }
 
   return plan;
 }
 
-export function formatBlockedWorkspacesMessage(names: string[]) {
+export function formatBlockedOrganizationsMessage(names: string[]) {
   const quoted = names.map((name) => `"${name}"`);
   const list =
     quoted.length === 1

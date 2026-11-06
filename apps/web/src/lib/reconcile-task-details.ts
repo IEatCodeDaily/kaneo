@@ -1,7 +1,13 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { BoardWithTasks } from "@/types/board";
 
-function boardTasks(board: BoardWithTasks) {
+type VersionedTask = { id: string; detailVersion?: string };
+type TaskVersions = {
+  columns: Array<{ tasks: VersionedTask[] }>;
+  plannedTasks: VersionedTask[];
+  archivedTasks: VersionedTask[];
+};
+
+function boardTasks(board: TaskVersions) {
   return [
     ...board.columns.flatMap((column) => column.tasks),
     ...board.plannedTasks,
@@ -11,8 +17,8 @@ function boardTasks(board: BoardWithTasks) {
 
 export function reconcileTaskDetails(
   queryClient: QueryClient,
-  previous: BoardWithTasks | undefined,
-  current: BoardWithTasks,
+  previous: TaskVersions | undefined,
+  current: TaskVersions,
 ) {
   if (!previous) return;
   const previousVersions = new Map(

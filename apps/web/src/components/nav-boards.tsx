@@ -182,7 +182,7 @@ export function NavBoards() {
     const handle =
       typeof requestIdleCallback === "function"
         ? requestIdleCallback(warm, { timeout: 2000 })
-        : setTimeout(warm, 500);
+        : window.setTimeout(warm, 500);
     return () => {
       if (typeof cancelIdleCallback === "function") {
         cancelIdleCallback(handle);
@@ -209,7 +209,7 @@ export function NavBoards() {
   const handleBoardSettings = (board: BoardWithTasks) => {
     navigate({
       to: "/dashboard/settings/boards/$boardId/general",
-      params: { boardSlug: board.id },
+      params: { boardId: board.id },
     });
   };
 

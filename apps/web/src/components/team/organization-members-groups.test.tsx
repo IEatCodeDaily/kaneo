@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OrganizationMembersGroups } from "./organization-members-groups";
 
@@ -13,12 +13,25 @@ vi.mock("react-i18next", () => ({
     t: (key: string) =>
       ({
         "team:members.people": "People",
+        "team:members.pageTitle": "Members",
         "team:members.agents": "Agents",
         "team:members.agentsManagedByAdmins":
           "Organization agents are managed by owners and administrators.",
       })[key] ?? key,
   }),
 }));
+
+vi.mock(
+  "@/hooks/queries/organization-members/use-get-organization-principals",
+  () => ({
+    default: () => ({
+      data: [
+        { id: "u1", kind: "user" },
+        { id: "u2", kind: "agent" },
+      ],
+    }),
+  }),
+);
 
 vi.mock("./members-table", () => ({
   default: ({ users }: { users: Array<{ user: { name: string } }> }) => (
@@ -46,6 +59,21 @@ const agent = {
 };
 
 describe("OrganizationMembersGroups", () => {
+  it("filters the same membership table by explicit principal kind", () => {
+    render(
+      <OrganizationMembersGroups
+        organizationId="org-1"
+        users={[human, agent] as never}
+        invitations={[]}
+        canManageAgents={false}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Member type"), {
+      target: { value: "agent" },
+    });
+    expect(screen.getByTestId("members-table").textContent).toBe("Robot");
+    expect(screen.queryByTestId("agent-manager")).toBeNull();
+  });
   /**
    * Agents are first-class members: "human user and agents user is identical.
    * treat them equally."
@@ -66,7 +94,7 @@ describe("OrganizationMembersGroups", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "People" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Members" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Agents" })).toBeTruthy();
     const table = screen.getByTestId("members-table").textContent;
     expect(table).toContain("Human");

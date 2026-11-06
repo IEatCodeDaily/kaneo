@@ -433,8 +433,6 @@ describe("API integration: project updates (KFL-370)", () => {
       })
     ).json()) as { id: string };
 
-    const invalidCuid = `missing${randomUUID().replaceAll("-", "").slice(0, 17)}`;
-
     mockAuthenticatedSession(outsider.user);
     const listCrossOrg = await app.request(updatesUrl(project.id));
     const listMissing = await app.request(

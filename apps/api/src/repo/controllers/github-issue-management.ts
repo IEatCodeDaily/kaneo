@@ -222,7 +222,9 @@ export async function updateGitHubMilestone(
   },
 ) {
   const { repo, octokit } = await getGitHubRepoClient(repoId);
-  const { data } = await octokit.rest.issues.updateMilestone({
+  const { data } = await octokit.request({
+    method: "PATCH",
+    url: "/repos/{owner}/{repo}/milestones/{milestone_number}",
     owner: repo.owner,
     repo: repo.name,
     milestone_number: number,

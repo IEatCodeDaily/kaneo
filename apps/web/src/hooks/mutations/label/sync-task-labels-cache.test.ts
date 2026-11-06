@@ -13,6 +13,13 @@ describe("updateTaskLabelsInBoard", () => {
       createdAt: "2026-04-16T00:00:00.000Z",
       updatedAt: "2026-04-16T00:00:00.000Z",
       organizationId: "organization-1",
+      defaultAssigneeId: null,
+      defaultAssigneeTeamId: null,
+      orgPrivilege: null,
+      taskStatusOrder: [],
+      backlogStatusOrder: [],
+      subtaskDepthLimit: 3,
+      triageTasks: [],
       columns: [
         {
           id: "todo",
@@ -98,6 +105,13 @@ describe("updateTaskLabelsInBoard", () => {
       createdAt: "2026-04-16T00:00:00.000Z",
       updatedAt: "2026-04-16T00:00:00.000Z",
       organizationId: "organization-1",
+      defaultAssigneeId: null,
+      defaultAssigneeTeamId: null,
+      orgPrivilege: null,
+      taskStatusOrder: [],
+      backlogStatusOrder: [],
+      subtaskDepthLimit: 3,
+      triageTasks: [],
       columns: [],
       plannedTasks: [
         {

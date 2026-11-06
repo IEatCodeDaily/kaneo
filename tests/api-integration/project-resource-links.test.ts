@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import db, { schema } from "../../apps/api/src/database";
 import { subscribeToEvent } from "../../apps/api/src/events";
@@ -640,7 +640,7 @@ describe("API integration: project resource links", () => {
     const detail = await app.request(`/api/project/${project.id}`);
     expect(detail.status).toBe(200);
     const body = (await detail.json()) as { progress: unknown };
-    expect(body.progress).toBeNull();
+    expect(body.progress).toEqual({ completed: 0, eligible: 0, percent: null });
   });
 
   it("publishes project.updated after link create update and delete", async () => {

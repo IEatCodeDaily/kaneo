@@ -27,7 +27,9 @@ function slugify(name: string): string {
     .slice(0, 63);
 }
 
-export function assertValidProjectStatus(status: string): void {
+export function assertValidProjectStatus(
+  status: string,
+): asserts status is ProjectStatus {
   if (!(PROJECT_STATUSES as readonly string[]).includes(status)) {
     throw new HTTPException(400, {
       message: `Invalid status "${status}". Valid values: ${PROJECT_STATUSES.join(", ")}`,

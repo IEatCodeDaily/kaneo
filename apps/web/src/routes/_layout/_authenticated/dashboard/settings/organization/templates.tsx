@@ -126,11 +126,11 @@ function RouteComponent() {
 
   return (
     <>
-      <PageTitle title="Task templates" />
+      <PageTitle title="Ticket templates" />
       <div className="mx-auto max-w-4xl space-y-8">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">Task templates</h1>
+            <h1 className="text-2xl font-semibold">Ticket templates</h1>
             <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
               Beta
             </span>
@@ -216,7 +216,7 @@ function RouteComponent() {
         <SheetContent className="flex w-full max-w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md md:max-w-xl lg:max-w-3xl">
           <SheetHeader className="shrink-0 border-b border-border px-4 py-2.5">
             <SheetTitle>
-              {editingId ? "Edit task template" : "New task template"}
+              {editingId ? "Edit ticket template" : "New ticket template"}
             </SheetTitle>
             <SheetDescription className="sr-only">
               Set reusable defaults. Every value can still be changed after

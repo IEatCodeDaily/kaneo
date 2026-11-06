@@ -41,7 +41,7 @@ function RouteComponent() {
   const back = () =>
     navigate({
       to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls",
-      params: { organizationId, repoId },
+      params: { organizationSlug, repoId },
     });
 
   return (

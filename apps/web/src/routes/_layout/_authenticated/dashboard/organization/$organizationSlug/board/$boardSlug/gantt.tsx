@@ -584,7 +584,7 @@ function RouteComponent() {
             if (
               filters.labels?.length &&
               !(task as { labels?: Array<{ id: string }> }).labels?.some(
-                (label) => filters.labels!.includes(label.id),
+                (label) => filters.labels?.includes(label.id),
               )
             )
               return false;
@@ -972,7 +972,15 @@ function RouteComponent() {
               searchQuery={searchQuery}
               onSearchQueryChange={setSearchQuery}
               groupBy={group}
-              onGroupByChange={setGroup}
+              onGroupByChange={(value) => {
+                if (
+                  value === "none" ||
+                  value === "status" ||
+                  value === "priority" ||
+                  value === "assignee"
+                )
+                  setGroup(value);
+              }}
               filtersOnly
             />
             <div className="relative w-full max-w-[14rem]">

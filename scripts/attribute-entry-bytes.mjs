@@ -16,8 +16,8 @@ const map = JSON.parse(
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 function decodeVlq(str) {
   const out = [];
-  let shift = 0,
-    value = 0;
+  let shift = 0;
+  let value = 0;
   for (const c of str) {
     const digit = B64.indexOf(c);
     if (digit === -1) continue;
@@ -37,7 +37,6 @@ function decodeVlq(str) {
 
 // per-source credited bytes
 const credit = new Array(map.sources.length).fill(0);
-let genLine = 0;
 const prev = { genCol: 0, srcIdx: 0, srcLine: 0, srcCol: 0 };
 let totalMapped = 0;
 
@@ -71,7 +70,6 @@ for (const line of map.mappings.split(";")) {
     }
   }
   totalMapped = lineEnd + 1;
-  genLine++;
 }
 
 console.log(

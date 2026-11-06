@@ -23,6 +23,7 @@ import { Route as DeviceIndexRouteImport } from './routes/device/index'
 import { Route as DeviceApproveRouteImport } from './routes/device/approve'
 import { Route as McpAuthorizeRouteImport } from './routes/mcp.authorize'
 import { Route as PublicBoardBoardIdRouteImport } from './routes/public-board.$boardId'
+import { Route as TeamsIndexRouteImport } from './routes/teams/index'
 import { Route as LayoutAuthenticatedDashboardRouteImport } from './routes/_layout/_authenticated/dashboard'
 import { Route as LayoutAuthenticatedInvitationsRouteImport } from './routes/_layout/_authenticated/invitations'
 import { Route as LayoutAuthenticatedOnboardingRouteImport } from './routes/_layout/_authenticated/onboarding'
@@ -41,6 +42,7 @@ import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRouteImport } 
 import { Route as LayoutAuthenticatedDashboardSettingsReposRouteImport } from './routes/_layout/_authenticated/dashboard/settings/repos'
 import { Route as LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRouteImport } from './routes/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/home'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/members'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
@@ -60,6 +62,7 @@ import { Route as LayoutAuthenticatedDashboardSettingsOrganizationFeaturesRouteI
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/general'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationGithubRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/github'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationLabelsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/labels'
+import { Route as LayoutAuthenticatedDashboardSettingsOrganizationMembersRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/members'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationRolesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/roles'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTeamsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/teams'
 import { Route as LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/organization/templates'
@@ -157,6 +160,11 @@ const McpAuthorizeRoute = McpAuthorizeRouteImport.update({
 const PublicBoardBoardIdRoute = PublicBoardBoardIdRouteImport.update({
   id: '/public-board/$boardId',
   path: '/public-board/$boardId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsIndexRoute = TeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutAuthenticatedDashboardRoute =
@@ -268,6 +276,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRoute =
     {
       id: '/',
       path: '/',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
+    } as any,
+  )
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRouteImport.update(
+    {
+      id: '/home',
+      path: '/home',
       getParentRoute: () =>
         LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
@@ -402,6 +419,12 @@ const LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute =
   LayoutAuthenticatedDashboardSettingsOrganizationLabelsRouteImport.update({
     id: '/labels',
     path: '/labels',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsOrganizationRoute,
+  } as any)
+const LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute =
+  LayoutAuthenticatedDashboardSettingsOrganizationMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsOrganizationRoute,
   } as any)
 const LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute =
@@ -665,6 +688,7 @@ export interface FileRoutesByFullPath {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device/': typeof DeviceIndexRoute
+  '/teams/': typeof TeamsIndexRoute
   '/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
   '/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/onboarding': typeof LayoutAuthenticatedOnboardingRoute
@@ -682,6 +706,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
+  '/dashboard/organization/$organizationSlug/home': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute
   '/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
   '/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
   '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
@@ -701,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
+  '/dashboard/settings/organization/members': typeof LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute
   '/dashboard/settings/organization/roles': typeof LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
@@ -745,6 +771,7 @@ export interface FileRoutesByTo {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device': typeof DeviceIndexRoute
+  '/teams': typeof TeamsIndexRoute
   '/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/onboarding': typeof LayoutAuthenticatedOnboardingRoute
   '/profile-setup': typeof LayoutAuthenticatedProfileSetupRoute
@@ -760,6 +787,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
+  '/dashboard/organization/$organizationSlug/home': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute
   '/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
   '/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
   '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
@@ -779,6 +807,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
+  '/dashboard/settings/organization/members': typeof LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute
   '/dashboard/settings/organization/roles': typeof LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute
   '/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
@@ -827,6 +856,7 @@ export interface FileRoutesById {
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
   '/device/': typeof DeviceIndexRoute
+  '/teams/': typeof TeamsIndexRoute
   '/_layout/_authenticated/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
   '/_layout/_authenticated/invitations': typeof LayoutAuthenticatedInvitationsRoute
   '/_layout/_authenticated/onboarding': typeof LayoutAuthenticatedOnboardingRoute
@@ -844,6 +874,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization': typeof LayoutAuthenticatedDashboardSettingsOrganizationRouteWithChildren
   '/_layout/_authenticated/dashboard/settings/repos': typeof LayoutAuthenticatedDashboardSettingsReposRouteWithChildren
   '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey': typeof LayoutAuthenticatedDashboardOrganizationSlugTicketsTicketKeyRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/home': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/members': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
@@ -863,6 +894,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/organization/general': typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   '/_layout/_authenticated/dashboard/settings/organization/github': typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   '/_layout/_authenticated/dashboard/settings/organization/labels': typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
+  '/_layout/_authenticated/dashboard/settings/organization/members': typeof LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute
   '/_layout/_authenticated/dashboard/settings/organization/roles': typeof LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute
   '/_layout/_authenticated/dashboard/settings/organization/teams': typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   '/_layout/_authenticated/dashboard/settings/organization/templates': typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
@@ -910,6 +942,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device/'
+    | '/teams/'
     | '/dashboard'
     | '/invitations'
     | '/onboarding'
@@ -927,6 +960,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
     | '/dashboard/$organizationSlug/tickets/$ticketKey'
+    | '/dashboard/organization/$organizationSlug/home'
     | '/dashboard/organization/$organizationSlug/inbox'
     | '/dashboard/organization/$organizationSlug/members'
     | '/dashboard/organization/$organizationSlug/my-tasks'
@@ -946,6 +980,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/general'
     | '/dashboard/settings/organization/github'
     | '/dashboard/settings/organization/labels'
+    | '/dashboard/settings/organization/members'
     | '/dashboard/settings/organization/roles'
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
@@ -990,6 +1025,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device'
+    | '/teams'
     | '/invitations'
     | '/onboarding'
     | '/profile-setup'
@@ -1005,6 +1041,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization'
     | '/dashboard/settings/repos'
     | '/dashboard/$organizationSlug/tickets/$ticketKey'
+    | '/dashboard/organization/$organizationSlug/home'
     | '/dashboard/organization/$organizationSlug/inbox'
     | '/dashboard/organization/$organizationSlug/members'
     | '/dashboard/organization/$organizationSlug/my-tasks'
@@ -1024,6 +1061,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/organization/general'
     | '/dashboard/settings/organization/github'
     | '/dashboard/settings/organization/labels'
+    | '/dashboard/settings/organization/members'
     | '/dashboard/settings/organization/roles'
     | '/dashboard/settings/organization/teams'
     | '/dashboard/settings/organization/templates'
@@ -1071,6 +1109,7 @@ export interface FileRouteTypes {
     | '/mcp/authorize'
     | '/public-board/$boardId'
     | '/device/'
+    | '/teams/'
     | '/_layout/_authenticated/dashboard'
     | '/_layout/_authenticated/invitations'
     | '/_layout/_authenticated/onboarding'
@@ -1088,6 +1127,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization'
     | '/_layout/_authenticated/dashboard/settings/repos'
     | '/_layout/_authenticated/dashboard/$organizationSlug/tickets/$ticketKey'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/home'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/members'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
@@ -1107,6 +1147,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/organization/general'
     | '/_layout/_authenticated/dashboard/settings/organization/github'
     | '/_layout/_authenticated/dashboard/settings/organization/labels'
+    | '/_layout/_authenticated/dashboard/settings/organization/members'
     | '/_layout/_authenticated/dashboard/settings/organization/roles'
     | '/_layout/_authenticated/dashboard/settings/organization/teams'
     | '/_layout/_authenticated/dashboard/settings/organization/templates'
@@ -1148,6 +1189,7 @@ export interface RootRouteChildren {
   TestErrorRoute: typeof TestErrorRoute
   McpAuthorizeRoute: typeof McpAuthorizeRoute
   PublicBoardBoardIdRoute: typeof PublicBoardBoardIdRoute
+  TeamsIndexRoute: typeof TeamsIndexRoute
   InvitationAcceptInviteIdRoute: typeof InvitationAcceptInviteIdRoute
 }
 
@@ -1249,6 +1291,13 @@ declare module '@tanstack/react-router' {
       path: '/public-board/$boardId'
       fullPath: '/public-board/$boardId'
       preLoaderRoute: typeof PublicBoardBoardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/': {
+      id: '/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof TeamsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/_authenticated/dashboard': {
@@ -1375,6 +1424,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/dashboard/organization/$organizationSlug/'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
+    }
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/home': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/home'
+      path: '/home'
+      fullPath: '/dashboard/organization/$organizationSlug/home'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
     '/_layout/_authenticated/dashboard/organization/$organizationSlug/inbox': {
@@ -1508,6 +1564,13 @@ declare module '@tanstack/react-router' {
       path: '/labels'
       fullPath: '/dashboard/settings/organization/labels'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
+    }
+    '/_layout/_authenticated/dashboard/settings/organization/members': {
+      id: '/_layout/_authenticated/dashboard/settings/organization/members'
+      path: '/members'
+      fullPath: '/dashboard/settings/organization/members'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationMembersRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRoute
     }
     '/_layout/_authenticated/dashboard/settings/organization/roles': {
@@ -1788,6 +1851,7 @@ interface LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren {
   LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationGeneralRoute
   LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute
   LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute
+  LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute
   LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute
   LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute
   LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute: typeof LayoutAuthenticatedDashboardSettingsOrganizationTemplatesRoute
@@ -1810,6 +1874,8 @@ const LayoutAuthenticatedDashboardSettingsOrganizationRouteChildren: LayoutAuthe
       LayoutAuthenticatedDashboardSettingsOrganizationGithubRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute:
       LayoutAuthenticatedDashboardSettingsOrganizationLabelsRoute,
+    LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute:
+      LayoutAuthenticatedDashboardSettingsOrganizationMembersRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute:
       LayoutAuthenticatedDashboardSettingsOrganizationRolesRoute,
     LayoutAuthenticatedDashboardSettingsOrganizationTeamsRoute:
@@ -1898,6 +1964,7 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoRepoIdPullsRou
   )
 
 interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren {
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
@@ -1927,6 +1994,8 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren 
 
 const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren: LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren =
   {
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugHomeRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugInboxRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugMembersRoute:
@@ -2083,6 +2152,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestErrorRoute: TestErrorRoute,
   McpAuthorizeRoute: McpAuthorizeRoute,
   PublicBoardBoardIdRoute: PublicBoardBoardIdRoute,
+  TeamsIndexRoute: TeamsIndexRoute,
   InvitationAcceptInviteIdRoute: InvitationAcceptInviteIdRoute,
 }
 export const routeTree = rootRouteImport

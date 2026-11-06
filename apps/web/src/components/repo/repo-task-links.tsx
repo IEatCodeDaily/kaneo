@@ -8,7 +8,7 @@ import {
   Trash2,
   Unplug,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -72,6 +72,7 @@ export default function RepoTaskLinks({
   compact = false,
 }: Props) {
   const queryClient = useQueryClient();
+  const syncBoardInputId = useId();
   const { canUpdateBoards } = useOrganizationPermission();
   const canManageSyncedTasks = canUpdateBoards();
   const [linkOpen, setLinkOpen] = useState(false);
@@ -185,7 +186,7 @@ export default function RepoTaskLinks({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : "Could not link task.",
+        error instanceof Error ? error.message : "Could not link ticket.",
       ),
   });
   const remove = useMutation({
@@ -214,7 +215,7 @@ export default function RepoTaskLinks({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Could not create synced task.",
+          : "Could not create synced ticket.",
       ),
   });
   const retry = useMutation({
@@ -477,13 +478,17 @@ export default function RepoTaskLinks({
                     </DialogDescription>
                   </DialogHeader>
                   <DialogPanel>
-                    <label className="space-y-2 text-sm">
+                    <label
+                      className="space-y-2 text-sm"
+                      htmlFor={syncBoardInputId}
+                    >
                       <span>Board</span>
                       <Combobox
                         autoHighlight
-                        itemToStringLabel={(board: { name: string }) =>
-                          board.name
-                        }
+                        itemToStringLabel={(board: {
+                          id: string;
+                          name: string;
+                        }) => board.name}
                         items={boards ?? []}
                         onValueChange={(board) => setBoardId(board?.id ?? "")}
                         value={
@@ -494,6 +499,7 @@ export default function RepoTaskLinks({
                       >
                         <ComboboxInput
                           aria-label="Board for synced ticket"
+                          id={syncBoardInputId}
                           placeholder="Search boards…"
                         />
                         <ComboboxPopup>

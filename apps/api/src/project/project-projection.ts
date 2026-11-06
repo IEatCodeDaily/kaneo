@@ -31,7 +31,7 @@ export type ProjectTicket = {
   boardId: string;
   boardSlug: string;
   boardName: string;
-  number: number;
+  number: number | null;
   key: string;
   title: string;
   status: string;
@@ -67,7 +67,7 @@ type MembershipRow = {
   boardId: string;
   boardSlug: string;
   boardName: string;
-  number: number;
+  number: number | null;
   title: string;
   status: string;
   priority: string | null;
@@ -202,7 +202,7 @@ export function toProjectTicket(row: MembershipRow): ProjectTicket {
     boardSlug: row.boardSlug,
     boardName: row.boardName,
     number: row.number,
-    key: `${row.boardSlug}-${row.number}`,
+    key: row.number === null ? row.taskId : `${row.boardSlug}-${row.number}`,
     title: row.title,
     status: row.status,
     priority: row.priority,

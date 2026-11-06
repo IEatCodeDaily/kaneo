@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
@@ -21,7 +21,6 @@ import {
 type TaskChangeNotification = {
   taskId: string;
   userId: string;
-  type: string;
   [key: string]: unknown;
 };
 
@@ -33,6 +32,10 @@ async function notifyTaskParticipants(
 ) {
   const context = await getTaskNotificationContext(data.taskId);
   if (!context) return;
+  const actor = await db.query.userTable.findFirst({
+    where: (table, { eq }) => eq(table.id, data.userId),
+    columns: { name: true },
+  });
   const recipients = await getTaskNotificationRecipientIds({
     taskId: data.taskId,
     actorId: data.userId,
@@ -50,6 +53,7 @@ async function notifyTaskParticipants(
           boardId: context.boardId,
           organizationId: context.organizationId,
           ...eventData,
+          actorName: actor?.name ?? null,
         },
         resourceId: data.taskId,
         resourceType: "task",
@@ -187,6 +191,12 @@ const notification = new Hono<{
     },
   )
   .patch(
+    "/:id/unread",
+    validator("param", v.object({ id: v.string() })),
+    async (c) =>
+      c.json(await markAsRead(c.req.valid("param").id, c.get("userId"), false)),
+  )
+  .patch(
     "/read-all",
     describeRoute({
       operationId: "markAllNotificationsAsRead",
@@ -255,6 +265,7 @@ const notification = new Hono<{
           and(
             eq(notificationTable.id, id),
             eq(notificationTable.userId, userId),
+            ne(notificationTable.type, "task_flag_raised"),
           ),
         );
       return c.json({ success: true });
@@ -335,6 +346,10 @@ subscribeToEvent<{
   const context = await getTaskNotificationContext(data.taskId);
   if (!context) return;
 
+  const actor = await db.query.userTable.findFirst({
+    where: (table, { eq }) => eq(table.id, data.userId),
+    columns: { name: true },
+  });
   const recipients = getAssignmentNotificationRecipientIds({
     actorId: data.userId,
     newAssigneeId: data.newAssigneeId,
@@ -349,6 +364,7 @@ subscribeToEvent<{
           taskNumber: context.number,
           boardId: context.boardId,
           organizationId: context.organizationId,
+          actorName: actor?.name ?? null,
         },
         resourceId: data.taskId,
         resourceType: "task",

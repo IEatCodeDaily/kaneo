@@ -240,7 +240,7 @@ export default function BoardsTimeline({
         <p className="max-w-sm text-xs text-muted-foreground">
           {t("organization:boards.timeline.emptyDescription", {
             defaultValue:
-              "Boards appear here once their tasks have start or due dates.",
+              "Boards appear here once their tickets have start or due dates.",
           })}
         </p>
       </div>
@@ -779,7 +779,8 @@ export default function BoardsTimeline({
                                               className={cn(
                                                 "size-3.5 shrink-0 fill-current stroke-[1.5] drop-shadow-sm",
                                                 MILESTONE_STATUS_CLASSES[
-                                                  section.milestone.status.toLowerCase()
+                                                  section.milestone.status?.toLowerCase() ??
+                                                    "planned"
                                                 ] ??
                                                   MILESTONE_STATUS_CLASSES.planned,
                                               )}

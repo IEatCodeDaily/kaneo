@@ -10,11 +10,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  *  2. the task identifier (e.g. "KTEST-3") — the drawer topbar renders it, and
  *     TaskDetailsContent rendered it a second time above the title.
  *
- * These tests mount the REAL host chain (TaskDetailsSheet -> TaskTopbarControls
+ * These tests mount the REAL host chain (TaskDetailsSheet -> properties bar
  * -> TaskTopbarMilestone, and TaskDetailsSheet -> TaskDetailsContent) so a
  * duplicate reintroduced at ANY of those levels fails here. Only leaf children
  * irrelevant to the header are stubbed.
  */
+
+vi.mock("@/hooks/use-organization-permission", () => ({
+  useOrganizationPermission: () => ({ canManageTasks: () => true }),
+}));
 
 const MILESTONE = "Test Milestone 2";
 const TASK_IDENT = "KTEST-3";
@@ -43,8 +47,8 @@ vi.mock("@/hooks/queries/task/use-get-task", () => ({
     },
   }),
 }));
-vi.mock("@/hooks/queries/board/use-get-board", () => ({
-  default: () => ({ data: { slug: "KTEST", name: "Kaneo Test" } }),
+vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
+  useGetTasks: () => ({ data: { slug: "KTEST", name: "Kaneo Test" } }),
 }));
 vi.mock("@/hooks/queries/milestone/use-get-milestones-by-board", () => ({
   default: () => ({
@@ -86,7 +90,16 @@ vi.mock("./task-description-history", () => ({ default: () => null }));
 vi.mock("./task-subtasks", () => ({ default: () => null }));
 vi.mock("./task-relations", () => ({ default: () => null }));
 vi.mock("./task-resources", () => ({ default: () => null }));
-vi.mock("./task-properties-sidebar", () => ({ default: () => null }));
+// The milestone now lives in the properties bar; stand that bar in with the
+// real milestone control so a header copy would still be counted twice.
+vi.mock("./task-properties-sidebar", async () => {
+  const { default: Milestone } = await import("./task-topbar-milestone");
+  return {
+    default: ({ taskId, boardId }: { taskId: string; boardId: string }) => (
+      <Milestone taskId={taskId} boardId={boardId} />
+    ),
+  };
+});
 vi.mock("./task-template-menu", () => ({ default: () => null }));
 vi.mock("./task-synced-issue-property", () => ({ default: () => null }));
 vi.mock("@/components/flag/task-flag-section", () => ({ default: () => null }));
@@ -148,7 +161,7 @@ describe("#258 task detail header shows each fact exactly once", () => {
     renderDrawer();
 
     // The surviving copy must be the actionable one, so the user can still
-    // change the milestone from the header.
+    // change the milestone from the drawer.
     expect(screen.getByTestId("task-milestone-trigger").textContent).toContain(
       MILESTONE,
     );

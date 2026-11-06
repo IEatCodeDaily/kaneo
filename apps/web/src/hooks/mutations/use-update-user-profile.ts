@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
-import invalidateUserProfileQueries from "./invalidate-user-profile-queries";
 
 type UpdateUserProfileRequest = {
   name?: string;

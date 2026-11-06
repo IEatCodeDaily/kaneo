@@ -42,10 +42,7 @@ export const DetailsSummary = Node.create({
     ];
   },
 
-  renderMarkdown(
-    node: unknown,
-    helpers: { renderChildren: (n: unknown, sep?: string) => string },
-  ) {
+  renderMarkdown(node, helpers) {
     return `<summary>${helpers.renderChildren(node)}</summary>`;
   },
 });
@@ -75,10 +72,7 @@ export const DetailsContent = Node.create({
     ];
   },
 
-  renderMarkdown(
-    node: unknown,
-    helpers: { renderChildren: (n: unknown, sep?: string) => string },
-  ) {
+  renderMarkdown(node, helpers) {
     return helpers.renderChildren(node, "\n");
   },
 });
@@ -183,10 +177,7 @@ export const Details = Node.create({
     (blank line after the summary) so the saved form matches what GitHub
     produces; the load-time pre-pass folds it back into one HTML block.
   */
-  renderMarkdown(
-    node: { attrs?: { open?: boolean } },
-    helpers: { renderChildren: (n: unknown, sep?: string) => string },
-  ) {
+  renderMarkdown(node, helpers) {
     const inner = helpers.renderChildren(node, "\n");
     return `\n<details${node.attrs?.open === false ? "" : " open"}>\n${inner}\n</details>\n`;
   },

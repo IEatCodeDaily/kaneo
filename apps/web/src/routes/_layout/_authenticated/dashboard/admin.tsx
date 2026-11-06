@@ -360,7 +360,9 @@ function AdminPage() {
                                 </label>
                                 <Select
                                   value={organizationId}
-                                  onValueChange={setOidcOrganizationId}
+                                  onValueChange={(value) =>
+                                    setOidcOrganizationId(value ?? "")
+                                  }
                                 >
                                   <SelectTrigger id="oidc-organization">
                                     <SelectValue placeholder="Select organization" />
@@ -442,6 +444,7 @@ function AdminPage() {
                                       <Select
                                         value={mapping.teamId}
                                         onValueChange={(teamId) => {
+                                          if (teamId === null) return;
                                           const roleMappings = [
                                             ...config.roleMappings,
                                           ];
