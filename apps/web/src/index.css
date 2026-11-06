@@ -323,7 +323,21 @@ input:-webkit-autofill:active {
       background-color 0.15s ease,
       border-color 0.15s ease,
       color 0.15s ease,
+      opacity 0.15s ease,
       transform 0.15s ease;
+  }
+
+  /* In the ticket description the attach button only appears while the
+     editor is in use; at rest it read as a stray control under the text.
+     Touch devices have no hover, so it stays visible there. */
+  @media (hover: hover) {
+    .kaneo-tiptap-shell > .kaneo-editor-quick-attach {
+      opacity: 0;
+    }
+    .kaneo-tiptap-shell:hover > .kaneo-editor-quick-attach,
+    .kaneo-tiptap-shell:focus-within > .kaneo-editor-quick-attach {
+      opacity: 1;
+    }
   }
 
   .kaneo-editor-quick-attach:hover {

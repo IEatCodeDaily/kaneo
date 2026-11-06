@@ -105,7 +105,7 @@ export default function ResourceSettingsShell({
             <h2 className="font-semibold text-lg">{active.label}</h2>
             <nav
               aria-label={`${active.label} settings`}
-              className="-mt-1 flex w-full min-w-0 max-w-full gap-1 overflow-x-auto border-b border-border"
+              className="-mt-1 flex w-full min-w-0 max-w-full flex-wrap gap-x-1 border-b border-border md:flex-nowrap md:overflow-x-auto"
             >
               {tabs.map((tab) => (
                 <Link
