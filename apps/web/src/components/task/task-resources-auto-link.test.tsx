@@ -18,6 +18,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const externalLinks: Array<Record<string, unknown>> = [];
 const repoLinks: Array<Record<string, unknown>> = [];
 const repos: Array<Record<string, unknown>> = [];
+let canEdit = true;
+vi.mock("@/hooks/use-organization-permission", () => ({
+  useOrganizationPermission: () => ({ canManageTasks: () => canEdit }),
+}));
 
 vi.mock("@/hooks/queries/external-link/use-external-links", () => ({
   default: () => ({ data: externalLinks }),
@@ -69,6 +73,7 @@ vi.mock("@tanstack/react-router", () => ({
 import TaskResources from "./task-resources";
 
 afterEach(() => {
+  canEdit = true;
   externalLinks.length = 0;
   repoLinks.length = 0;
   repos.length = 0;
@@ -92,6 +97,29 @@ function row() {
 }
 
 describe("#265 generic link resources", () => {
+  it("keeps resources readable without offering mutations to viewers", () => {
+    canEdit = false;
+    externalLinks.push({
+      id: "manual-1",
+      taskId: "task-1",
+      integrationId: null,
+      resourceType: "link",
+      externalId: "https://example.com/design",
+      url: "https://example.com/design",
+      title: "Design doc",
+      metadata: null,
+    });
+    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    expect(screen.getByTestId("manual-resource-link")).toHaveAttribute(
+      "href",
+      "https://example.com/design",
+    );
+    expect(screen.queryByRole("button", { name: "Add link" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Link issue or pull request" }),
+    ).toBeNull();
+    expect(screen.queryByLabelText("Remove Design doc")).toBeNull();
+  });
   it("renders a manually added link with its label and remove action", () => {
     externalLinks.push({
       id: "manual-1",

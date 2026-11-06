@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../../database";
-import { publishEvent } from "../../events";
 import { getResourcePrivilege, privilegeAllows } from "../../resource-access";
 
 /**

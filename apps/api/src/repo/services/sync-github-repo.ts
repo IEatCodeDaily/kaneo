@@ -82,8 +82,6 @@ function toRepoIssueValues(repoId: string, item: Record<string, unknown>) {
   };
 }
 
-type RepoRow = typeof repoTable.$inferSelect;
-
 type GitHubLabel = string | { name?: string | null; color?: string | null };
 
 function normalizeLabels(

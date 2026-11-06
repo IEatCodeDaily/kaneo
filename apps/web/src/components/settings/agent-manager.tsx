@@ -117,7 +117,7 @@ export function AgentManager() {
               placeholder={t("team:agentManager.namePlaceholder")}
             />
             <Button
-              className="sm:w-auto"
+              className="min-h-11 sm:min-h-8 sm:w-auto"
               onClick={create}
               disabled={!canCreate}
               size="sm"

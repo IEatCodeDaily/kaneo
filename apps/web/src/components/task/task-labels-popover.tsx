@@ -98,7 +98,6 @@ export function LabelSourceIndicator({
     <Github
       aria-label={label}
       className="ml-auto size-3.5 shrink-0 text-muted-foreground"
-      title={label}
     />
   );
 }

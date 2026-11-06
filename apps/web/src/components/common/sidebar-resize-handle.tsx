@@ -22,18 +22,18 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
  */
 export function useSidebarWidth() {
   const sidebarWidth = useUserPreferencesStore((s) => s.sidebarWidth);
-  const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  // Client-only SPA: read the viewport on the first render. A deferred read
+  // painted the default width first, so every page change that remounts the
+  // layout made a resized sidebar shrink and re-expand.
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
 
-  // Hydration guard: render the CSS default until the client viewport is
-  // known, so the first paint cannot clobber (or flash) the saved width.
   useEffect(() => {
-    setViewportWidth(window.innerWidth);
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  if (sidebarWidth === null || viewportWidth === null) {
+  if (sidebarWidth === null) {
     return undefined;
   }
   return `${parseStoredSidebarWidth(sidebarWidth, viewportWidth)}px`;
@@ -47,7 +47,7 @@ export function SidebarResizeHandle() {
   const liveWidthRef = useRef<number | null>(null);
 
   const onPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
+    (event: React.PointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
       setDragging(true);
       const provider = (event.target as HTMLElement).closest(

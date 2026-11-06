@@ -1,6 +1,7 @@
 "use client";
 
 import { Github } from "lucide-react";
+import Image from "next/image";
 import { AppPreview } from "@/components/landing/app-preview";
 import { FadeIn } from "@/components/landing/fade-in";
 import { Button } from "@/components/ui/button";
@@ -67,8 +68,10 @@ export function Hero() {
                     rel="noreferrer"
                     aria-label="View Kaneo on Product Hunt"
                   >
-                    <img
+                    <Image
                       src="/images/product-hunt.svg"
+                      width={20}
+                      height={20}
                       alt=""
                       className="size-5"
                       aria-hidden="true"

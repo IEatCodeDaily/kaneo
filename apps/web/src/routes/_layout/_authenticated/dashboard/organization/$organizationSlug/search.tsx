@@ -18,7 +18,6 @@ export const Route = createFileRoute(
 
 function SearchComponent() {
   const { t } = useTranslation();
-  const { organizationSlug } = Route.useParams();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
   const navigate = useNavigate();

@@ -9,10 +9,10 @@ export default async function updateProjectMilestone({
 }: {
   projectId: string;
   milestoneId: string;
-  name?: string;
+  name: string;
   description?: string | null;
   targetDate?: string | null;
-  rank?: number;
+  rank: number;
 }) {
   const response = await client.project[":id"].milestones[":milestoneId"].$put({
     param: { id: projectId, milestoneId },

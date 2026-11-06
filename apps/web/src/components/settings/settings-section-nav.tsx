@@ -1,12 +1,15 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, FolderGit2, LayoutGrid, User } from "lucide-react";
+import { Building2, FolderGit2, LayoutGrid, Library, User } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 
 export type SettingsSection = "account" | "organization" | "boards" | "repos";
 
 type SettingsSectionNavProps = {
   activeSection: SettingsSection;
+  pathname?: string;
   hasBoards: boolean;
   hasRepos: boolean;
   reposEnabled: boolean;
@@ -25,6 +28,24 @@ type SectionDefinition = {
   to: string;
 };
 
+const ACCOUNT_PAGES = [
+  ["information", "settings:information", "Profile"],
+  ["notifications", "settings:notifications", "Notifications"],
+  ["preferences", "settings:preferences", "Preferences"],
+  ["authentication", "settings:navigation.authentication", "Authentication"],
+  ["developer", "settings:apiKeys", "API keys"],
+];
+const ORGANIZATION_PAGES = [
+  ["general", "settings:organizationGeneral.title", "General"],
+  ["members", "team:members.pageTitle", "Members"],
+  ["teams", "settings:navigation.teams", "Teams"],
+  ["roles", "settings:organizationRoles.title", "Roles"],
+  ["visibility", "settings:navigation.visibility", "Visibility"],
+  ["labels", "settings:organizationLabels.title", "Labels"],
+  ["templates", "settings:navigation.templates", "Templates"],
+  ["connections", "settings:navigation.connections", "Connections"],
+  ["features", "settings:navigation.features", "Features"],
+];
 const SECTIONS: SectionDefinition[] = [
   {
     id: "account",
@@ -56,11 +77,32 @@ const SECTIONS: SectionDefinition[] = [
   },
 ];
 
+function SectionHeader({
+  icon: Icon,
+  className,
+  children,
+}: {
+  icon: LucideIcon;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <p
+      className={cn(
+        "flex items-center gap-2 px-2 pb-1.5 font-semibold text-foreground text-sm",
+        className,
+      )}
+    >
+      <span className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <Icon className="size-3.5" aria-hidden />
+      </span>
+      {children}
+    </p>
+  );
+}
+
 /**
- * KFL-188: the settings section list, as a dashboard-style vertical sidebar
- * instead of the previous horizontal tab strip.
- *
- * This is a RESTYLE, so it deliberately preserves the tab strip's conditional
+ * One sectioned settings navigation, preserving the original conditional
  * behaviour rather than simplifying it: Repos is hidden outright when the
  * organization has repos disabled, and a section with nothing in it is
  * rendered but non-navigable (disabled) so its absence is never mistaken for
@@ -68,12 +110,15 @@ const SECTIONS: SectionDefinition[] = [
  */
 export default function SettingsSectionNav({
   activeSection,
+  pathname = "",
   hasBoards,
   hasRepos,
   reposEnabled,
   onNavigate,
 }: SettingsSectionNavProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(true);
 
   const isDisabled = (id: SettingsSection) => {
     if (id === "boards") return !hasBoards;
@@ -82,9 +127,30 @@ export default function SettingsSectionNav({
   };
 
   return (
-    <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
-      {SECTIONS.filter((section) => section.id !== "repos" || reposEnabled).map(
-        (section) => {
+    <details
+      open={!isMobile || mobileOpen}
+      onToggle={(event) => {
+        if (isMobile) setMobileOpen(event.currentTarget.open);
+      }}
+      className="group/settings"
+    >
+      <summary className="flex min-h-11 cursor-pointer items-center rounded-md border px-3 text-sm md:hidden">
+        {t("navigation:page.settingsTitle")}
+      </summary>
+      <nav
+        aria-label={t("navigation:page.settingsTitle")}
+        className="flex max-h-[45vh] flex-col gap-0.5 overflow-y-auto md:max-h-none"
+      >
+        <SectionHeader icon={Library} className="mt-3">
+          {t("settings:navigation.boardsAndRepos", {
+            defaultValue: "Resources",
+          })}
+        </SectionHeader>
+        {SECTIONS.filter(
+          (section) =>
+            (section.id === "boards" || section.id === "repos") &&
+            (section.id !== "repos" || reposEnabled),
+        ).map((section) => {
           const disabled = isDisabled(section.id);
           const active = activeSection === section.id;
           const Icon = section.icon;
@@ -94,7 +160,7 @@ export default function SettingsSectionNav({
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled ? "true" : undefined}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                "flex min-h-11 w-full items-center gap-2 rounded-md py-1.5 pr-2 pl-8 text-left text-sm transition-colors sm:min-h-8",
                 active
                   ? "bg-accent text-accent-foreground font-medium"
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
@@ -116,8 +182,51 @@ export default function SettingsSectionNav({
               </span>
             </button>
           );
-        },
-      )}
-    </nav>
+        })}
+        {(["account", "organization"] as const).map((section) => (
+          <div
+            key={section}
+            className="order-first mt-3 border-b border-border pb-3"
+          >
+            <SectionHeader icon={section === "account" ? User : Building2}>
+              {t(
+                section === "account"
+                  ? "settings:account"
+                  : "navigation:page.settingsOrganizationTab",
+              )}
+            </SectionHeader>
+            {(section === "account" ? ACCOUNT_PAGES : ORGANIZATION_PAGES).map(
+              ([segment, key, label]) => {
+                const to = `/dashboard/settings/${section}/${segment}`;
+                return (
+                  <button
+                    key={to}
+                    type="button"
+                    data-settings-path={to}
+                    aria-current={pathname === to ? "page" : undefined}
+                    data-testid={
+                      segment ===
+                      (section === "account" ? "information" : "general")
+                        ? `settings-section-${section}`
+                        : undefined
+                    }
+                    data-active={activeSection === section ? "true" : undefined}
+                    onClick={() => onNavigate(to)}
+                    className={cn(
+                      "flex min-h-11 w-full items-center rounded-md pr-2 pl-8 text-left text-sm hover:bg-accent hover:text-foreground sm:min-h-8",
+                      pathname === to
+                        ? "bg-accent font-medium text-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {t(key, { defaultValue: label })}
+                  </button>
+                );
+              },
+            )}
+          </div>
+        ))}
+      </nav>
+    </details>
   );
 }

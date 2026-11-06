@@ -20,7 +20,7 @@ async function updateSlackIntegration(
   json: UpdateSlackIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/board/${boardSlug}`),
+    getApiUrl(`/slack-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

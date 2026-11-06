@@ -19,7 +19,7 @@ import { cn } from "@/lib/cn";
 
 type GiteaRepositoryBrowserModalProps = {
   open: boolean;
-  projectId: string;
+  boardId: string;
   onOpenChange: (open: boolean) => void;
   onSelectRepository: (repository: { owner: string; name: string }) => void;
   selectedRepository?: string;
@@ -29,7 +29,7 @@ type GiteaRepositoryBrowserModalProps = {
 
 export function GiteaRepositoryBrowserModal({
   open,
-  projectId,
+  boardId,
   onOpenChange,
   onSelectRepository,
   selectedRepository,
@@ -43,8 +43,8 @@ export function GiteaRepositoryBrowserModal({
     open && baseUrl.trim().length > 0 && accessToken.trim().length > 0;
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["gitea-repositories", projectId, baseUrl],
-    queryFn: () => listGiteaRepositories({ projectId, baseUrl, accessToken }),
+    queryKey: ["gitea-repositories", boardId, baseUrl],
+    queryFn: () => listGiteaRepositories({ baseUrl, accessToken }),
     enabled: canFetch,
   });
 

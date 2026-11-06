@@ -55,14 +55,14 @@ export function organizationAccessMiddleware(
         organizationId = c.req.query(source.key) || null;
       } else if (source.type === "body") {
         const body = await readJsonObjectBody(c);
-        organizationId =
-          typeof body[source.key] === "string" ? body[source.key] : null;
+        const value = body[source.key];
+        organizationId = typeof value === "string" ? value : null;
       } else if (source.type === "param") {
         organizationId = c.req.param(source.key) || null;
       } else if (source.type === "lookup") {
         const body = await readJsonObjectBody(c);
-        const idFromBody =
-          typeof body[source.idKey] === "string" ? body[source.idKey] : null;
+        const value = body[source.idKey];
+        const idFromBody = typeof value === "string" ? value : null;
         const id =
           c.req.param(source.idKey) || c.req.query(source.idKey) || idFromBody;
         if (id) {
@@ -134,12 +134,11 @@ export function organizationAccessMiddleware(
     const boardSource = guardedSource;
     if (boardSource?.type === "lookup") {
       const body = await readJsonObjectBody(c);
+      const value = body[boardSource.idKey];
       const resourceId =
         c.req.param(boardSource.idKey) ||
         c.req.query(boardSource.idKey) ||
-        (typeof body[boardSource.idKey] === "string"
-          ? body[boardSource.idKey]
-          : null);
+        (typeof value === "string" ? value : null);
       if (resourceId) {
         const boardId = await lookupBoardId(boardSource.resource, resourceId);
         if (!boardId) {

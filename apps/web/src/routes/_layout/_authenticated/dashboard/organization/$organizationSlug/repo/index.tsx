@@ -59,7 +59,6 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);
-  const { organizationSlug } = Route.useParams();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
   const navigate = useNavigate();
@@ -361,20 +360,20 @@ function RouteComponent() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogClose asChild>
-                <Button variant="outline" size="sm">
-                  Cancel
-                </Button>
+              <AlertDialogClose render={<Button variant="outline" size="sm" />}>
+                Cancel
               </AlertDialogClose>
-              <AlertDialogClose asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={deleteRepo.isPending}
-                  onClick={handleDelete}
-                >
-                  {deleteRepo.isPending ? "Removing…" : "Remove"}
-                </Button>
+              <AlertDialogClose
+                render={
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={deleteRepo.isPending}
+                    onClick={handleDelete}
+                  />
+                }
+              >
+                {deleteRepo.isPending ? "Removing…" : "Remove"}
               </AlertDialogClose>
             </AlertDialogFooter>
           </AlertDialogContent>

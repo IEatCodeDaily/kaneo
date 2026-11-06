@@ -1,17 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/organization/agents",
 )({
-  beforeLoad: async () => {
-    const { data: organization } =
-      await authClient.organization.getFullOrganization();
-    if (!organization?.slug) return;
+  beforeLoad: () => {
     throw redirect({
-      to: "/dashboard/organization/$organizationSlug/members",
-      params: { organizationSlug: organization.slug },
-      search: { tab: "members" },
+      to: "/dashboard/settings/organization/members",
       replace: true,
     });
   },

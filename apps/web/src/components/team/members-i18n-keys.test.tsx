@@ -17,6 +17,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
  * component — it could never catch the bug it was written for.
  */
 
+vi.mock(
+  "@/hooks/queries/organization-members/use-get-organization-principals",
+  () => ({ default: () => ({ data: [] }) }),
+);
+
 vi.mock("@/components/settings/agent-manager", () => ({
   AgentManager: () => <div data-testid="agent-manager" />,
   default: () => <div data-testid="agent-manager" />,
@@ -58,7 +63,7 @@ describe("Members page section headings (#109)", () => {
   it("renders real copy for the section headings, never a raw key", () => {
     renderGroups();
 
-    expect(screen.getByRole("heading", { name: "People" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Members" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Agents" })).toBeTruthy();
   });
 

@@ -42,6 +42,7 @@ type ActiveUsers = {
   members?: Array<{
     userId: string;
     user?: {
+      email?: string | null;
       image?: string | null;
       name?: string | null;
     } | null;

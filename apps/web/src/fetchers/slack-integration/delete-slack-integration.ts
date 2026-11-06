@@ -2,7 +2,7 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 
 async function deleteSlackIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/slack-integration/board/${boardSlug}`),
+    getApiUrl(`/slack-integration/board/${boardId}`),
     {
       method: "DELETE",
       credentials: "include",

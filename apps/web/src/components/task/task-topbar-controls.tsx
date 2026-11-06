@@ -1,6 +1,4 @@
-import TaskFlagSection from "@/components/flag/task-flag-section";
 import TaskSyncedIssueProperty from "./task-synced-issue-property";
-import TaskTopbarMilestone from "./task-topbar-milestone";
 
 type TaskTopbarControlsProps = {
   taskId: string;
@@ -8,9 +6,12 @@ type TaskTopbarControlsProps = {
   organizationId: string;
 };
 
+/**
+ * Header-only controls. Milestone and flag moved into the properties bar
+ * (TaskPropertiesSidebar); the synced issue stays here as a link out.
+ */
 export default function TaskTopbarControls({
   taskId,
-  boardId,
   organizationId,
 }: TaskTopbarControlsProps) {
   return (
@@ -18,12 +19,6 @@ export default function TaskTopbarControls({
       className="flex min-w-0 items-center gap-2"
       data-testid="task-topbar-controls"
     >
-      <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
-      <TaskFlagSection
-        taskId={taskId}
-        boardId={boardId}
-        organizationId={organizationId}
-      />
       <TaskSyncedIssueProperty
         compact
         organizationId={organizationId}

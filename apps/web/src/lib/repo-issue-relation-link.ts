@@ -28,7 +28,7 @@ function repositoryPath(url?: string | null) {
  */
 export function getRepoIssueRelationLink(
   relation: GitHubIssueRelation,
-  repos: Repo[],
+  repos: Array<Pick<Repo, "id" | "owner" | "name">>,
 ) {
   if (!relation.number) return null;
 
@@ -68,7 +68,7 @@ export type RepoIssueRelationTarget =
  */
 export function getRepoIssueRelationTarget(
   relation: GitHubIssueRelation,
-  repos: Repo[],
+  repos: Array<Pick<Repo, "id" | "owner" | "name">>,
   organizationId: string,
 ): RepoIssueRelationTarget {
   const link = getRepoIssueRelationLink(relation, repos);

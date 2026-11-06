@@ -343,8 +343,9 @@ function CreateTaskModal({
     queryKey: ["organization-teams", organization?.id, "create-task"],
     enabled: Boolean(organization?.id),
     queryFn: async () => {
+      if (!organization?.id) return [];
       const result = await authClient.organization.listTeams({
-        query: { organizationId: organization!.id },
+        query: { organizationId: organization.id },
       });
       if (result.error)
         throw new Error(result.error.message || "Failed to load teams");
@@ -827,9 +828,6 @@ function CreateTaskModal({
   const selectedPriority = priorityOptions.find((p) => p.value === priority);
 
   const selectedStatus = templateStatus ?? status;
-  const selectedUser = organizationMembers?.members?.find(
-    (u) => u.userId === assigneeId,
-  );
   const selectedTeam = organizationTeams?.find((t) => t.id === assigneeTeamId);
 
   // #72: the option set the inline title picker shows for the active sigil.

@@ -53,7 +53,7 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const location = useLocation();
-  const { organizationSlug, repoId } = Route.useParams();
+  const { repoId } = Route.useParams();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
   const { state } = Route.useSearch();

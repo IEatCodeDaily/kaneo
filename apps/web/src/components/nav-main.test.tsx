@@ -1,48 +1,79 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const setRecentPageLimit = vi.fn();
 const navigate = vi.fn();
-let pathname = "/dashboard/organization/org-1/boards";
-
+let recentOpen = false;
+const setRecentOpen = vi.fn((open: boolean) => {
+  recentOpen = open;
+});
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigate,
-  useLocation: () => ({ pathname }),
+  useLocation: () => ({ pathname: "/dashboard/organization/acme/inbox" }),
 }));
-
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
-  default: () => ({ data: { id: "org-1", slug: "org-1", name: "Org" } }),
+  default: () => ({ data: { id: "org-1", slug: "acme" } }),
 }));
-
+vi.mock("@/store/user-preferences", () => ({
+  useUserPreferencesStore: (selector: (state: unknown) => unknown) =>
+    selector({
+      setRecentPageLimit,
+      recentOpen,
+      setRecentOpen,
+      recentPageLimit: 5,
+      recentPages: [
+        {
+          pathname: "/dashboard/organization/acme/board/delivery",
+          label: "Delivery",
+          openedAt: Date.now() - 60_000,
+        },
+        {
+          pathname: "/dashboard/organization/acme/projects/launch",
+          label: "Launch",
+          openedAt: Date.now() - 3_600_000,
+        },
+        {
+          pathname: "/dashboard/organization/acme/repo/api/code",
+          label: "Code",
+          openedAt: Date.now() - 86_400_000,
+        },
+      ],
+    }),
+}));
 vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
-  useAuth: () => ({ user: { id: "u-1", role: "member" } }),
+  useAuth: () => ({ user: { id: "u-1" } }),
 }));
-
-// InboxUnreadBadge uses a real unread-count query. This suite renders without
-// a QueryClientProvider, so mock the mounted hook directly.
 vi.mock(
   "@/hooks/queries/notification/use-get-unread-notification-count",
   () => ({ default: () => ({ data: { count: 1 } }) }),
 );
-
-// Same story for the My Tasks entry, which renders MyTasksCountBadge on top of
-// useGetMyTasks (KFL-141).
 vi.mock("@/hooks/queries/task/use-get-my-tasks", () => ({
-  default: () => ({ data: [{ id: "t-1" }, { id: "t-2" }, { id: "t-3" }] }),
+  default: () => ({ data: [{ id: "1" }] }),
 }));
-
-// #141: the My Tickets badge counts assigned + flagged, so the flags query
-// needs a stub here too — without it the badge hits a real QueryClient.
 vi.mock("@/hooks/queries/flag/use-get-my-flags", () => ({
   default: () => ({ data: [] }),
 }));
-
+vi.mock("@/components/ui/context-menu", () => ({
+  ContextMenu: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  ContextMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  ContextMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  ContextMenuRadioGroup: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  ContextMenuRadioItem: ({ children }: { children: React.ReactNode }) => (
+    <button type="button">{children}</button>
+  ),
+}));
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    <section>{children}</section>
   ),
   SidebarGroupContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -55,25 +86,46 @@ vi.mock("@/components/ui/sidebar", () => ({
   ),
   SidebarMenuButton: ({
     children,
-    isActive,
     onClick,
+    className,
     tooltip,
+    ...props
   }: {
     children: React.ReactNode;
-    isActive?: boolean;
     onClick?: () => void;
+    className?: string;
     tooltip?: string;
+    "aria-label"?: string;
+    "aria-expanded"?: boolean;
   }) => (
-    // The real primitive renders `tooltip` into a Tooltip popup that is only
-    // visible when the sidebar is collapsed to icons. In jsdom we surface it as
-    // the accessible name + a title, which is what a hover tooltip exposes.
     <button
       type="button"
-      aria-current={isActive}
-      aria-label={typeof tooltip === "string" ? tooltip : undefined}
+      className={className}
+      aria-label={props["aria-label"] ?? tooltip}
+      aria-expanded={props["aria-expanded"]}
       onClick={onClick}
-      title={typeof tooltip === "string" ? tooltip : undefined}
     >
+      {children}
+    </button>
+  ),
+  SidebarMenuSub: ({ children }: { children: React.ReactNode }) => (
+    <ul>{children}</ul>
+  ),
+  SidebarMenuSubItem: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <li className={className}>{children}</li>,
+  SidebarMenuSubButton: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <button type="button" className={className}>
       {children}
     </button>
   ),
@@ -82,123 +134,59 @@ vi.mock("@/components/ui/sidebar", () => ({
 import { NavMain } from "./nav-main";
 
 afterEach(() => {
+  recentOpen = false;
+  setRecentOpen.mockClear();
   cleanup();
   navigate.mockClear();
-  pathname = "/dashboard/organization/org-1/boards";
 });
-
-/**
- * #58 shipped two cross-board pages that were initially unreachable — the
- * routes existed and compiled, but nothing linked to them. These cases pin the
- * nav entries so the pages cannot silently become orphaned again.
- */
-describe("NavMain cross-board entries (#58)", () => {
-  it("links to the Inbox page", () => {
-    render(<NavMain />);
-
-    fireEvent.click(
+describe("NavMain compact personal group", () => {
+  it("renders Inbox, My Tickets, and expandable Recent in one group", () => {
+    const view = render(<NavMain />);
+    expect(
       screen.getByRole("button", { name: "navigation:sidebar.inbox" }),
-    );
-
-    expect(navigate).toHaveBeenCalledWith({
-      to: "/dashboard/organization/org-1/inbox",
-    });
-  });
-
-  it("links to the My Tasks page", () => {
-    render(<NavMain />);
-
-    fireEvent.click(
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "navigation:sidebar.myTasks" }),
+    ).toBeInTheDocument();
+    const recent = screen.getByRole("button", {
+      name: "navigation:sidebar.recent",
+    });
+    expect(recent).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(recent);
+    view.rerender(<NavMain />);
+    expect(
+      screen.getByRole("button", { name: /Delivery/ }),
+    ).toBeInTheDocument();
+  });
+  it("uses compact rows and separate count and chevron columns", () => {
+    render(<NavMain />);
+    expect(
+      screen.getByRole("button", { name: "navigation:sidebar.inbox" })
+        .className,
+    ).toContain("h-7");
+    expect(screen.getByTestId("inbox-count-column").className).toContain("w-5");
+    expect(screen.getByTestId("recent-chevron-column").className).toContain(
+      "w-5",
     );
-
-    expect(navigate).toHaveBeenCalledWith({
-      to: "/dashboard/organization/org-1/my-tasks",
-    });
+  });
+  it("renders compact Recent rows with relative open times", () => {
+    const view = render(<NavMain />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
+    );
+    view.rerender(<NavMain />);
+    const delivery = screen.getByRole("button", { name: /Delivery/ });
+    expect(delivery.className).toContain("h-6");
+    expect(delivery.className).toContain("text-[11px]");
+    expect(delivery).toHaveTextContent("1m");
   });
 
-  it("marks My Tasks active when it is the current route", () => {
-    pathname = "/dashboard/organization/org-1/my-tasks";
+  it("offers persisted Recent limits from three through eight", () => {
     render(<NavMain />);
-
-    expect(
-      screen
-        .getByRole("button", { name: "navigation:sidebar.myTasks" })
-        .getAttribute("aria-current"),
-    ).toBe("true");
-    // Inbox must not also report itself as active.
-    expect(
-      screen
-        .getByRole("button", { name: "navigation:sidebar.inbox" })
-        .getAttribute("aria-current"),
-    ).toBe("false");
-  });
-
-  it("still renders the existing Members entry", () => {
-    render(<NavMain />);
-
-    expect(
-      screen.getByRole("button", { name: "navigation:sidebar.members" }),
-    ).toBeTruthy();
-  });
-});
-
-/**
- * #145: Trash moved out of the sidebar into the profile popup menu. The
- * counterpart assertion — that the entry exists there and routes to the trash
- * page — lives in user-avatar.test.tsx.
- */
-describe("NavMain trash entry moved to the profile menu (#145)", () => {
-  it("no longer renders a Trash entry in the sidebar nav", () => {
-    render(<NavMain />);
-
-    expect(
-      screen.queryByRole("button", { name: "navigation:sidebar.trash" }),
-    ).toBeNull();
-  });
-});
-
-/**
- * #93: the sidebar can be minimized to an icon-only rail, so every nav entry
- * needs (a) an icon that survives the collapse and (b) its name exposed as a
- * hover tooltip, which is the only label left once the text is hidden.
- */
-describe("NavMain icons and minimized tooltips (#93)", () => {
-  const entries = [
-    "navigation:sidebar.inbox",
-    "navigation:sidebar.myTasks",
-    "navigation:sidebar.members",
-  ];
-  // Trash (#53) used to be listed here as an optional entry; it now lives in
-  // the profile popup menu (#145) and is covered by user-avatar.test.tsx.
-
-  it("renders an icon inside every nav entry", () => {
-    render(<NavMain />);
-
-    for (const name of entries) {
-      const button = screen.getByRole("button", { name });
-      expect(button.querySelector("svg")).not.toBeNull();
+    for (const limit of [3, 4, 5, 6, 7, 8]) {
+      expect(
+        screen.getByRole("button", { name: String(limit) }),
+      ).toBeInTheDocument();
     }
-  });
-
-  it("exposes each nav item name as a tooltip for the icon-only state", () => {
-    render(<NavMain />);
-
-    for (const name of entries) {
-      // `tooltip` is what the sidebar primitive shows on hover while collapsed.
-      expect(screen.getByRole("button", { name }).getAttribute("title")).toBe(
-        name,
-      );
-    }
-  });
-
-  it("keeps every entry clickable when only icons are visible", () => {
-    render(<NavMain />);
-
-    fireEvent.click(screen.getByRole("button", { name: entries[0] }));
-
-    expect(navigate).toHaveBeenCalledWith({
-      to: "/dashboard/organization/org-1/inbox",
-    });
   });
 });

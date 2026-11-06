@@ -1,21 +1,19 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
-import type { BoardWithTasks } from "@/types/board";
 import { reconcileTaskDetails } from "./reconcile-task-details";
 
-const board = (versions: Record<string, string>) =>
-  ({
-    columns: [
-      {
-        tasks: Object.entries(versions).map(([id, detailVersion]) => ({
-          id,
-          detailVersion,
-        })),
-      },
-    ],
-    plannedTasks: [],
-    archivedTasks: [],
-  }) as BoardWithTasks;
+const board = (versions: Record<string, string>) => ({
+  columns: [
+    {
+      tasks: Object.entries(versions).map(([id, detailVersion]) => ({
+        id,
+        detailVersion,
+      })),
+    },
+  ],
+  plannedTasks: [],
+  archivedTasks: [],
+});
 
 describe("reconcileTaskDetails", () => {
   it("invalidates only detail records whose thin-payload version changed", () => {

@@ -49,7 +49,7 @@ function RouteComponent() {
         <div className="space-y-6">
           <IntegrationSection
             icon={<Github className="size-4" />}
-            subtitle="Sync GitHub issues into this board and keep task changes connected."
+            subtitle="Sync GitHub issues into this board and keep ticket changes connected."
             title="GitHub"
           >
             <GitHubIntegrationSettings boardId={boardId} />

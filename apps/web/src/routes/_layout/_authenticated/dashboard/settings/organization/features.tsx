@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FolderGit2, Table2 } from "lucide-react";
+import { BriefcaseBusiness, FolderGit2, Table2 } from "lucide-react";
 import { useState } from "react";
 import PageTitle from "@/components/page-title";
 import { AiSettings } from "@/components/settings/ai-settings";
@@ -32,8 +32,15 @@ function RouteComponent() {
         | undefined
     )?.tablesEnabled,
   );
+  const workEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { workEnabled?: boolean })
+        | undefined
+    )?.workEnabled,
+  );
   const [pendingFeature, setPendingFeature] = useState<
-    "repos" | "tables" | null
+    "repos" | "tables" | "work" | null
   >(null);
 
   const updateRepos = async (checked: boolean) => {
@@ -65,6 +72,25 @@ function RouteComponent() {
       });
       await refetchOrganization();
       toast.success(checked ? "Tables enabled" : "Tables disabled");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not update feature",
+      );
+    } finally {
+      setPendingFeature(null);
+    }
+  };
+
+  const updateWork = async (checked: boolean) => {
+    if (!organization?.id) return;
+    setPendingFeature("work");
+    try {
+      await updateOrganization({
+        organizationId: organization.id,
+        workEnabled: checked,
+      });
+      await refetchOrganization();
+      toast.success(checked ? "Work enabled" : "Work disabled");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not update feature",
@@ -110,6 +136,31 @@ function RouteComponent() {
               checked={reposEnabled}
               disabled={!canManageOrganization() || pendingFeature !== null}
               onCheckedChange={updateRepos}
+            />
+          </div>
+          <div className="border-border border-t" />
+          <div className="flex items-start justify-between gap-6 px-4 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="mt-0.5 text-muted-foreground">
+                <BriefcaseBusiness aria-hidden="true" className="size-4" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-medium">Work</h2>
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Alpha
+                  </span>
+                </div>
+                <p className="max-w-xl text-sm text-muted-foreground">
+                  Experimental work management features for your organization.
+                </p>
+              </div>
+            </div>
+            <Switch
+              aria-label="Enable Work"
+              checked={workEnabled}
+              disabled={!canManageOrganization() || pendingFeature !== null}
+              onCheckedChange={updateWork}
             />
           </div>
           <div className="border-border border-t" />

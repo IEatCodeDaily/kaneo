@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 import db from "../../database";
 import { notificationTable } from "../../database/schema";
 
@@ -10,6 +10,7 @@ async function getUnreadNotificationCount(userId: string) {
       and(
         eq(notificationTable.userId, userId),
         eq(notificationTable.isRead, false),
+        ne(notificationTable.type, "task_flag_raised"),
       ),
     );
 

@@ -153,7 +153,6 @@ export function PrincipalPickerList({
       never fires inside a popover. It passed in jsdom, which has no popover
       focus manager — a reminder that jsdom green is not browser green.
     */
-    // biome-ignore lint/a11y/noStaticElementInteractions: routes keys to the list below
     <div onKeyDownCapture={handleKeyDown}>
       <div className="relative mb-1">
         <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />

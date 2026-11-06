@@ -17,7 +17,7 @@ export default async function getPublicTicketEmbed(taskId: string) {
 
   // This endpoint is deliberately unauthenticated. Treat a private-board ticket
   // exactly like a missing ticket so its existence is not disclosed.
-  if (!task || task.board.isPublic !== true) {
+  if (task?.board.isPublic !== true) {
     throw new HTTPException(404, { message: "Ticket not found" });
   }
 

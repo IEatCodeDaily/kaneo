@@ -103,7 +103,10 @@ function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
               required
               value={summary}
             />
-            <Select onValueChange={setLeadUserId} value={leadUserId}>
+            <Select
+              onValueChange={(value) => setLeadUserId(value ?? "")}
+              value={leadUserId}
+            >
               <SelectTrigger aria-label={t("projects:labels.lead")}>
                 <SelectValue placeholder={t("projects:labels.lead")} />
               </SelectTrigger>

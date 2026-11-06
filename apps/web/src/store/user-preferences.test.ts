@@ -1,0 +1,58 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUserPreferencesStore } from "./user-preferences";
+
+const STORAGE_NAME = "user-preferences";
+
+describe("user preferences persistence", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useUserPreferencesStore.setState({ recentPages: [] });
+  });
+
+  it("adds openedAt when hydrating legacy recent pages without clearing paths", async () => {
+    const hydratedAt = Date.now();
+    localStorage.setItem(
+      STORAGE_NAME,
+      JSON.stringify({
+        state: {
+          recentPages: [
+            {
+              pathname: "/dashboard/organization/acme/board/delivery",
+              label: "Delivery",
+            },
+          ],
+        },
+        version: 0,
+      }),
+    );
+
+    await useUserPreferencesStore.persist.rehydrate();
+    const [recentPage] = useUserPreferencesStore.getState().recentPages;
+    expect(recentPage).toMatchObject({
+      pathname: "/dashboard/organization/acme/board/delivery",
+      label: "Delivery",
+    });
+    expect(recentPage.openedAt).toBeGreaterThanOrEqual(hydratedAt);
+    expect(recentPage.openedAt).toBeLessThanOrEqual(Date.now());
+  });
+
+  it("persists ticket display independently per user and organization", async () => {
+    useUserPreferencesStore
+      .getState()
+      .setTicketDisplay("user:org", { sort: "priority", group: "board" });
+    await useUserPreferencesStore.persist.rehydrate();
+    expect(
+      useUserPreferencesStore.getState().ticketDisplay["user:org"],
+    ).toEqual({ sort: "priority", group: "board" });
+    expect(
+      useUserPreferencesStore.getState().ticketDisplay["other:org"],
+    ).toBeUndefined();
+  });
+
+  it("persists whether Recent is open", async () => {
+    useUserPreferencesStore.getState().setRecentOpen(true);
+
+    expect(useUserPreferencesStore.getState().recentOpen).toBe(true);
+    expect(localStorage.getItem(STORAGE_NAME)).toContain('"recentOpen":true');
+  });
+});

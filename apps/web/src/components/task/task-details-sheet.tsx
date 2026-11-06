@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/tooltip";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
-import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
+import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import {
   clampTaskDrawerWidth,
   parseStoredTaskDrawerWidth,
@@ -64,21 +64,10 @@ export default function TaskDetailsSheet({
   organizationId,
   onClose,
 }: TaskDetailsSheetProps) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(
     taskId,
   );
   const [isOpen, setIsOpen] = useState(Boolean(taskId));
-
-  const { data: task } = useGetTask(currentTaskId ?? "");
-  const { mutateAsync: updateTask } = useUpdateTask();
-  const { mutateAsync: createLabel } = useCreateLabel();
-  const { data: organizationLabels = [] } =
-    useGetLabelsByOrganization(organizationId);
-  const [pendingTemplate, setPendingTemplate] =
-    useState<TaskTemplateData | null>(null);
-  const { data: board } = useGetBoard({ id: boardId, organizationId });
 
   useEffect(() => {
     if (taskId) {
@@ -156,18 +145,6 @@ export default function TaskDetailsSheet({
     onClose();
   }, [onClose]);
 
-  const handleOpenFullPage = useCallback(() => {
-    if (!currentTaskId) return;
-    navigate({
-      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
-      params: {
-        organizationSlug: organizationId,
-        boardSlug: boardId,
-        taskId: currentTaskId,
-      },
-    });
-  }, [navigate, organizationId, boardId, currentTaskId]);
-
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <SheetContent
@@ -180,175 +157,219 @@ export default function TaskDetailsSheet({
         // user has dragged; until hydration finishes we keep the CSS default.
         style={width ? { width: `${width}px`, maxWidth: "100vw" } : undefined}
       >
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: resize grip is a pointer affordance mirrored by the width controls */}
         <div
           data-testid="task-drawer-resize-handle"
           onPointerDown={startResize}
           className="absolute inset-y-0 left-0 z-50 w-1.5 cursor-col-resize hover:bg-primary/40 active:bg-primary/60"
         />
-        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-background shrink-0">
-          {/* #276: on mobile the milestone/flag/sync cluster is wider than the
-              drawer, pushing the close button off-screen. Let this group scroll
-              horizontally instead, so the actions on the right stay reachable. */}
-          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="shrink-0 text-sm font-medium text-muted-foreground">
-              {board?.slug}-{task?.number}
-            </span>
-            {currentTaskId && (
-              <TaskTopbarControls
-                taskId={currentTaskId}
-                boardId={boardId}
-                organizationId={organizationId}
-              />
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {task ? (
-              <TaskTemplateMenu
-                iconOnly
-                organizationId={organizationId}
-                onApply={({ data }) => setPendingTemplate(data)}
-              />
-            ) : null}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleOpenFullPage}
-                    className="text-foreground"
-                  >
-                    <Maximize2 className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t("tasks:detail.openInFullPage")}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label={t("tasks:detail.close")}
-              onClick={handleClose}
-              className="text-foreground"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </div>
-
-        <AlertDialog
-          open={Boolean(pendingTemplate)}
-          onOpenChange={(open) => !open && setPendingTemplate(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("tasks:templates.applyTitle")}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("tasks:templates.applyWarning")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setPendingTemplate(null)}
-              >
-                {t("common:actions.cancel")}
-              </Button>
-              <Button
-                onClick={async () => {
-                  if (task && pendingTemplate) {
-                    const statusHint = pendingTemplate.status?.toLowerCase();
-                    const templateStatus = statusHint
-                      ? board?.columns?.find(
-                          (column) =>
-                            column.id.toLowerCase() === statusHint ||
-                            column.slug?.toLowerCase() === statusHint ||
-                            column.name.toLowerCase() === statusHint,
-                        )?.slug
-                      : undefined;
-                    await updateTask({
-                      ...task,
-                      title: pendingTemplate.title,
-                      description: pendingTemplate.description,
-                      priority: pendingTemplate.priority,
-                      status: templateStatus ?? task.status,
-                      startDate:
-                        pendingTemplate.startDate ||
-                        pendingTemplate.startDateOffset
-                          ? (resolveTemplateDate(
-                              pendingTemplate.startDate,
-                              pendingTemplate.startDateOffset,
-                            )?.toISOString() ?? task.startDate)
-                          : task.startDate,
-                      dueDate:
-                        pendingTemplate.dueDate || pendingTemplate.dueDateOffset
-                          ? (resolveTemplateDate(
-                              pendingTemplate.dueDate,
-                              pendingTemplate.dueDateOffset,
-                            )?.toISOString() ?? task.dueDate)
-                          : task.dueDate,
-                    });
-                    for (const labelName of pendingTemplate.labels ?? []) {
-                      const label = organizationLabels.find(
-                        (candidate) =>
-                          !candidate.taskId &&
-                          candidate.name.toLowerCase() ===
-                            labelName.toLowerCase(),
-                      );
-                      if (label) {
-                        await createLabel({
-                          name: label.name,
-                          color: label.color,
-                          taskId: task.id,
-                          organizationId,
-                        });
-                      }
-                    }
-                  }
-                  setPendingTemplate(null);
-                }}
-              >
-                {t("tasks:templates.apply")}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <div
-          className="flex flex-col flex-1 min-h-0 overflow-hidden"
-          key={currentTaskId}
-        >
-          <TaskPropertiesSidebar
+        {currentTaskId ? (
+          <TaskDetailsPanel
             taskId={currentTaskId}
             boardId={boardId}
             organizationId={organizationId}
-            className="w-full bg-sidebar border-b border-border flex flex-col gap-0 overflow-y-auto shrink-0"
-            compact={true}
+            onClose={handleClose}
           />
-
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="px-4 py-4">
-              <Suspense
-                fallback={
-                  <div className="min-h-[240px] animate-pulse rounded-md bg-muted/20" />
-                }
-              >
-                <TaskDetailsContent
-                  taskId={currentTaskId}
-                  boardId={boardId}
-                  organizationId={organizationId}
-                  className="flex flex-col gap-3"
-                />
-              </Suspense>
-            </div>
-          </div>
-        </div>
+        ) : null}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * Ticket header, properties bar and body. The drawer hosts it in a Sheet;
+ * Inbox renders the same panel inline so the preview IS the drawer.
+ */
+export function TaskDetailsPanel({
+  taskId,
+  boardId,
+  organizationId,
+  onClose,
+}: {
+  taskId: string;
+  boardId: string;
+  organizationId: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: task } = useGetTask(taskId);
+  const { mutateAsync: updateTask } = useUpdateTask();
+  const { mutateAsync: createLabel } = useCreateLabel();
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
+  const [pendingTemplate, setPendingTemplate] =
+    useState<TaskTemplateData | null>(null);
+  const { data: board } = useGetTasks(boardId);
+
+  const handleOpenFullPage = () =>
+    navigate({
+      to: "/dashboard/organization/$organizationSlug/board/$boardSlug/task/$taskId",
+      params: {
+        organizationSlug: organizationId,
+        boardSlug: boardId,
+        taskId,
+      },
+    });
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-background shrink-0">
+        {/* #276: on mobile the milestone/flag/sync cluster is wider than the
+            drawer, pushing the close button off-screen. Let this group scroll
+            horizontally instead, so the actions on the right stay reachable. */}
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="shrink-0 text-sm font-medium text-muted-foreground">
+            {board?.slug}-{task?.number}
+          </span>
+          <TaskTopbarControls
+            taskId={taskId}
+            boardId={boardId}
+            organizationId={organizationId}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {task ? (
+            <TaskTemplateMenu
+              iconOnly
+              organizationId={organizationId}
+              onApply={({ data }) => setPendingTemplate(data)}
+            />
+          ) : null}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleOpenFullPage}
+                  className="text-foreground"
+                >
+                  <Maximize2 className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t("tasks:detail.openInFullPage")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t("tasks:detail.close")}
+            onClick={onClose}
+            className="text-foreground"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      <AlertDialog
+        open={Boolean(pendingTemplate)}
+        onOpenChange={(open) => !open && setPendingTemplate(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("tasks:templates.applyTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("tasks:templates.applyWarning")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setPendingTemplate(null)}>
+              {t("common:actions.cancel")}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (task && pendingTemplate) {
+                  const statusHint = pendingTemplate.status?.toLowerCase();
+                  const templateStatus = statusHint
+                    ? board?.columns?.find(
+                        (column) =>
+                          column.id.toLowerCase() === statusHint ||
+                          column.slug?.toLowerCase() === statusHint ||
+                          column.name.toLowerCase() === statusHint,
+                      )?.slug
+                    : undefined;
+                  await updateTask({
+                    ...task,
+                    title: pendingTemplate.title,
+                    description: pendingTemplate.description,
+                    priority: pendingTemplate.priority,
+                    status: templateStatus ?? task.status,
+                    startDate:
+                      pendingTemplate.startDate ||
+                      pendingTemplate.startDateOffset
+                        ? (resolveTemplateDate(
+                            pendingTemplate.startDate,
+                            pendingTemplate.startDateOffset,
+                          )?.toISOString() ?? task.startDate)
+                        : task.startDate,
+                    dueDate:
+                      pendingTemplate.dueDate || pendingTemplate.dueDateOffset
+                        ? (resolveTemplateDate(
+                            pendingTemplate.dueDate,
+                            pendingTemplate.dueDateOffset,
+                          )?.toISOString() ?? task.dueDate)
+                        : task.dueDate,
+                  });
+                  for (const labelName of pendingTemplate.labels ?? []) {
+                    const label = organizationLabels.find(
+                      (candidate) =>
+                        !candidate.taskId &&
+                        candidate.name.toLowerCase() ===
+                          labelName.toLowerCase(),
+                    );
+                    if (label) {
+                      await createLabel({
+                        name: label.name,
+                        color: label.color,
+                        taskId: task.id,
+                        organizationId,
+                      });
+                    }
+                  }
+                }
+                setPendingTemplate(null);
+              }}
+            >
+              {t("tasks:templates.apply")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div
+        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        key={taskId}
+      >
+        <TaskPropertiesSidebar
+          taskId={taskId}
+          boardId={boardId}
+          organizationId={organizationId}
+          className="w-full bg-sidebar border-b border-border flex flex-col gap-0 overflow-y-auto shrink-0"
+          compact={true}
+        />
+
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="px-4 py-4">
+            <Suspense
+              fallback={
+                <div className="min-h-[240px] animate-pulse rounded-md bg-muted/20" />
+              }
+            >
+              <TaskDetailsContent
+                taskId={taskId}
+                boardId={boardId}
+                organizationId={organizationId}
+                className="flex flex-col gap-3"
+              />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

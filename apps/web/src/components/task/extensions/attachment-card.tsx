@@ -15,7 +15,11 @@ function formatBytes(size: number) {
 }
 
 /** Exported for tests: proves the card is wrapped in the context menu. */
-export function AttachmentCardView({ node, editor, getPos }: NodeViewProps) {
+export function AttachmentCardView({
+  node,
+  editor,
+  getPos,
+}: Pick<NodeViewProps, "node" | "editor" | "getPos">) {
   const rawUrl = String(node.attrs.url || "");
   // Reject non-http(s) URLs (javascript:, data:, ...) — upstream 700da1b2.
   const url = isValidUrl(rawUrl) ? rawUrl : "";

@@ -12,6 +12,9 @@ const notification = (
 ) =>
   ({
     id,
+    userId: "recipient",
+    content: null,
+    updatedAt: "2026-08-04T00:00:00.000Z",
     resourceId: taskId,
     resourceType: "task",
     isRead,

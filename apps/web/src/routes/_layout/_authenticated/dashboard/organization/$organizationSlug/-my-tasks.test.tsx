@@ -2,6 +2,11 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MyTasksComponent } from "./my-tasks";
 
+const route = vi.hoisted(() => ({
+  search: {} as { taskId?: string; boardId?: string },
+  links: [] as { to?: string; search?: unknown }[],
+}));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -9,6 +14,14 @@ vi.mock("@/components/common/organization-layout", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock("@/components/page-title", () => ({ default: () => null }));
+vi.mock("@/components/task/task-details-sheet", () => ({
+  default: ({ taskId }: { taskId: string }) => (
+    <div data-testid="ticket-drawer">{taskId}</div>
+  ),
+}));
+vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: "user-1" } }),
+}));
 vi.mock("@/hooks/queries/task/use-infinite-my-tasks", () => ({
   default: () => ({
     data: {
@@ -58,21 +71,55 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   return {
     ...actual,
     useParams: () => ({ organizationSlug: "org-1" }),
+    useNavigate: () => vi.fn(),
     createFileRoute: () => (options: object) => ({
       ...options,
+      fullPath: "/dashboard/organization/$organizationSlug/my-tasks",
       useParams: () => ({ organizationSlug: "org-1" }),
+      useSearch: () => route.search,
     }),
-    Link: ({ children }: { children: React.ReactNode }) => (
-      <a href="/">{children}</a>
-    ),
+    Link: ({
+      children,
+      to,
+      search,
+    }: {
+      children: React.ReactNode;
+      to?: string;
+      search?: unknown;
+    }) => {
+      route.links.push({ to, search });
+      return <a href="/">{children}</a>;
+    },
   };
 });
 
 describe("My Tickets board groups", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    route.search = {};
+    route.links = [];
+  });
+
+  it("opens a ticket in the drawer on My Tickets instead of the board", () => {
+    render(<MyTasksComponent />);
+    expect(route.links).toContainEqual({
+      to: ".",
+      search: { taskId: "task-1", boardId: "board-1" },
+    });
+    expect(route.links.some((link) => link.to?.includes("/board"))).toBe(false);
+    expect(screen.queryByTestId("ticket-drawer")).toBeNull();
+    cleanup();
+    route.search = { taskId: "task-1", boardId: "board-1" };
+    render(<MyTasksComponent />);
+    expect(screen.getByTestId("ticket-drawer")).toHaveTextContent("task-1");
+  });
 
   it("collapses and expands a board", () => {
     render(<MyTasksComponent />);
+    fireEvent.click(screen.getByText("settings:navigation.display"));
+    fireEvent.change(screen.getByLabelText("Group tickets"), {
+      target: { value: "board" },
+    });
     const board = screen.getByRole("button", { name: /Board one/ });
     expect(board).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Ticket one")).toBeInTheDocument();

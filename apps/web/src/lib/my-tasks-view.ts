@@ -1,7 +1,7 @@
 export type MyTaskViewItem = {
   id: string;
   title: string;
-  number: number;
+  number: number | null;
   boardId: string;
   boardName: string;
   status: string | null;
@@ -42,10 +42,13 @@ const priorityRank: Record<string, number> = {
   no_priority: 4,
 };
 
-export function sortMyTasks(tasks: MyTaskViewItem[], sort: MyTasksSort) {
+export function sortMyTasks<T extends MyTaskViewItem>(
+  tasks: T[],
+  sort: MyTasksSort,
+) {
   return [...tasks].sort((a, b) => {
     if (sort === "title") return a.title.localeCompare(b.title);
-    if (sort === "number") return a.number - b.number;
+    if (sort === "number") return (a.number ?? 0) - (b.number ?? 0);
     if (sort === "priority")
       return (
         (priorityRank[a.priority ?? "no_priority"] ?? 5) -
@@ -61,9 +64,37 @@ export function sortMyTasks(tasks: MyTaskViewItem[], sort: MyTasksSort) {
   });
 }
 
-export function groupMyTasks(tasks: MyTaskViewItem[], group: MyTasksGroup) {
-  const groups = new Map<string, MyTaskViewItem[]>();
-  const add = (key: string, task: MyTaskViewItem) =>
+export function localDateKey(value: string | Date): string {
+  const date =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? new Date(`${value}T00:00:00`)
+      : new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function ticketDueState(
+  dueDate: string | null,
+  isFinal: boolean,
+  now = new Date(),
+): "overdue" | "soon" | null {
+  if (!dueDate || isFinal) return null;
+  const due = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
+    ? new Date(`${dueDate}T00:00:00`)
+    : new Date(dueDate);
+  if (!Number.isFinite(due.getTime())) return null;
+  const day = (date: Date) =>
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const days = (day(due) - day(now)) / 86_400_000;
+  return days < 0 ? "overdue" : days <= 7 ? "soon" : null;
+}
+
+export function groupMyTasks<T extends MyTaskViewItem>(
+  tasks: T[],
+  group: MyTasksGroup,
+  now = new Date(),
+) {
+  const groups = new Map<string, T[]>();
+  const add = (key: string, task: T) =>
     groups.set(key, [...(groups.get(key) ?? []), task]);
   for (const task of tasks) {
     if (group === "none") add("All tickets", task);
@@ -76,13 +107,50 @@ export function groupMyTasks(tasks: MyTaskViewItem[], group: MyTasksGroup) {
     else if (group === "dueDate") {
       if (!task.dueDate) add("No due date", task);
       else {
-        const due = new Date(task.dueDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        add(due < today ? "Overdue" : "Upcoming", task);
+        // Date-only values are calendar dates, not UTC instants.
+        const due = /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)
+          ? new Date(`${task.dueDate}T00:00:00`)
+          : new Date(task.dueDate);
+        const day = (date: Date) =>
+          Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+        const days = (day(due) - day(now)) / 86_400_000;
+        add(
+          days < 0
+            ? "Overdue"
+            : days === 0
+              ? "Today"
+              : days <= 7
+                ? "Next 7 days"
+                : "Later",
+          task,
+        );
       }
     } else if (task.labels.length === 0) add("No label", task);
     else for (const label of task.labels) add(label.name, task);
   }
   return [...groups.entries()];
+}
+
+export function summarizeTicketStatuses(
+  tasks: Array<{ status: string | null; columnName?: string | null }>,
+) {
+  const groups = new Map<
+    string,
+    { slug: string; name: string; count: number; percent: number }
+  >();
+  for (const task of tasks) {
+    const slug = task.status ?? "";
+    const group = groups.get(slug) ?? {
+      slug,
+      name: task.columnName ?? slug,
+      count: 0,
+      percent: 0,
+    };
+    group.count++;
+    groups.set(slug, group);
+  }
+  return [...groups.values()].map((group) => ({
+    ...group,
+    percent: Math.round((group.count / tasks.length) * 100),
+  }));
 }

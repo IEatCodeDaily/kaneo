@@ -52,7 +52,7 @@ export function GanttDependencyArrows({
       height={height}
       aria-hidden="true"
     >
-      <title>Task dependencies</title>
+      <title>Ticket dependencies</title>
       <defs>
         <marker
           id="gantt-arrowhead"

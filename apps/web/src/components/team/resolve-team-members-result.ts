@@ -1,6 +1,8 @@
 type TeamMembersResult<T> = {
   data: T[] | null;
   error: {
+    status?: number;
+    statusText?: string;
     code?: string;
     message?: string;
   } | null;

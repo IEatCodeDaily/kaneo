@@ -61,7 +61,7 @@ export const repoIssuesQueryOptions = (
 
 export const repoPullRequestsQueryOptions = (
   repoId: string,
-  state: "open" | "closed" | "all" = "open",
+  state: "open" | "closed" | "merged" | "all" = "open",
   page = 1,
   limit?: number,
 ) => ({

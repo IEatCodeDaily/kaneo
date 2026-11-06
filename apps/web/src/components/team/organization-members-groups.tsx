@@ -1,6 +1,9 @@
 import { Bot, Users } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentManager } from "@/components/settings/agent-manager";
+import { Input } from "@/components/ui/input";
+import useGetOrganizationPrincipals from "@/hooks/queries/organization-members/use-get-organization-principals";
 import type {
   OrganizationMember,
   OrganizationMemberInvitation,
@@ -31,7 +34,19 @@ export function OrganizationMembersGroups({
    * The agent section below stays, but it is now purely credential management
    * (issue/revoke keys) — not the only place an agent is visible.
    */
-  const people = users;
+  const [type, setType] = useState("all");
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("all");
+  const { data: principals } = useGetOrganizationPrincipals(organizationId);
+  const kinds = new Map(principals?.map((item) => [item.id, item.kind]));
+  const people = users.filter(
+    (member) =>
+      (type === "all" || kinds.get(member.userId) === type) &&
+      (role === "all" || member.role === role) &&
+      `${member.user.name} ${member.user.email}`
+        .toLocaleLowerCase()
+        .includes(search.toLocaleLowerCase()),
+  );
 
   return (
     <div className="space-y-8">
@@ -39,12 +54,52 @@ export function OrganizationMembersGroups({
         <div className="flex items-center gap-2 px-1">
           <Users className="size-4 text-muted-foreground" />
           <h2 id="people-heading" className="text-sm font-semibold">
-            {t("team:members.people")}
+            {t("team:members.pageTitle")}
           </h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            aria-label="Member type"
+            value={type}
+            disabled={!principals}
+            onChange={(event) => setType(event.target.value)}
+            className="min-h-11 rounded-md border bg-background px-3 text-sm sm:min-h-8"
+          >
+            <option value="all">
+              {t("settings:navigation.allTypes", { defaultValue: "All types" })}
+            </option>
+            <option value="user">{t("team:members.people")}</option>
+            <option value="agent">{t("team:members.agents")}</option>
+          </select>
+          <select
+            aria-label="Member role"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+            className="min-h-11 rounded-md border bg-background px-3 text-sm sm:min-h-8"
+          >
+            <option value="all">
+              {t("settings:navigation.allRoles", { defaultValue: "All roles" })}
+            </option>
+            {[...new Set(users.map((member) => member.role))].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+          <Input
+            aria-label="Search members"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("settings:navigation.searchMembers", {
+              defaultValue: "Search name or email",
+            })}
+            className="min-h-11 sm:min-h-8 sm:ml-auto sm:w-64"
+          />
         </div>
         <MembersTable
           organizationId={organizationId}
           users={people}
+          principalKinds={kinds}
           invitations={invitations}
         />
       </section>

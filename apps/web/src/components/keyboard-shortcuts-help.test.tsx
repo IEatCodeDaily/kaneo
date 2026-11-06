@@ -116,6 +116,21 @@ describe("#115 editor shortcuts are documented", () => {
   });
 
   // The pre-existing global sections must survive the addition.
+  it("documents organization switching and Inbox triage", () => {
+    render(<Probe />);
+    const keys = Array.from(document.querySelectorAll("[data-keys]")).map(
+      (node) => node.getAttribute("data-keys"),
+    );
+    for (const key of [
+      "w+s",
+      "w+1–9",
+      "u",
+      "e+Delete",
+      "r",
+      "ArrowUp+ArrowDown",
+    ])
+      expect(keys).toContain(key);
+  });
   it("keeps the general shortcuts section", () => {
     render(<Probe />);
     expect(

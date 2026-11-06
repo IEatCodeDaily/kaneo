@@ -30,7 +30,7 @@ vi.mock("@/hooks/mutations/project/use-project-milestone-mutations", () => ({
 vi.mock("@/hooks/use-organization-permission", () => ({
   useOrganizationPermission: () => ({ canUpdateProjects }),
 }));
-const useGetProject = vi.fn(() => ({
+const useGetProject = vi.fn((_args: { id: string }) => ({
   data: { id: "project-1", viewerPrivilege: "manage" },
 }));
 vi.mock("@/hooks/queries/project/use-get-project", () => ({

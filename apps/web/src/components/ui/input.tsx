@@ -5,20 +5,26 @@ import type * as React from "react";
 
 import { cn } from "@/lib/cn";
 
-type InputProps = Omit<
+type BaseInputProps = Omit<
   InputPrimitive.Props & React.RefAttributes<HTMLInputElement>,
   "size"
 > & {
   size?: "sm" | "default" | "lg" | number;
   unstyled?: boolean;
-  nativeInput?: boolean;
 };
+
+type InputProps =
+  | (BaseInputProps & { nativeInput?: false })
+  | (Omit<React.ComponentPropsWithRef<"input">, "size"> & {
+      nativeInput: true;
+      size?: BaseInputProps["size"];
+      unstyled?: boolean;
+    });
 
 function Input({
   className,
   size = "default",
   unstyled = false,
-  nativeInput = false,
   ...props
 }: InputProps) {
   const inputClassName = cn(
@@ -32,6 +38,29 @@ function Input({
       "text-muted-foreground file:me-3 file:bg-transparent file:font-medium file:text-foreground file:text-sm",
   );
 
+  let control: React.ReactNode;
+  if (props.nativeInput) {
+    const { nativeInput: _nativeInput, ...nativeProps } = props;
+    control = (
+      <input
+        className={inputClassName}
+        data-slot="input"
+        size={typeof size === "number" ? size : undefined}
+        {...nativeProps}
+      />
+    );
+  } else {
+    const { nativeInput: _nativeInput, ...baseProps } = props;
+    control = (
+      <InputPrimitive
+        className={inputClassName}
+        data-slot="input"
+        size={typeof size === "number" ? size : undefined}
+        {...baseProps}
+      />
+    );
+  }
+
   return (
     <span
       className={
@@ -44,21 +73,7 @@ function Input({
       data-size={size}
       data-slot="input-control"
     >
-      {nativeInput ? (
-        <input
-          className={inputClassName}
-          data-slot="input"
-          size={typeof size === "number" ? size : undefined}
-          {...props}
-        />
-      ) : (
-        <InputPrimitive
-          className={inputClassName}
-          data-slot="input"
-          size={typeof size === "number" ? size : undefined}
-          {...props}
-        />
-      )}
+      {control}
     </span>
   );
 }

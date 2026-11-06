@@ -82,6 +82,7 @@ function SettingsLayout() {
             <Button
               variant="ghost"
               size="sm"
+              className="min-h-11 sm:min-h-8"
               onClick={() =>
                 navigate({
                   to: "/dashboard/organization/$organizationSlug",
@@ -98,16 +99,12 @@ function SettingsLayout() {
             </h1>
           </div>
 
-          {/*
-            Two-pane dashboard shape: the section list on the left, the
-            selected settings page in the viewport beside it. Each page keeps
-            rendering its own nested navigation, so nothing that was reachable
-            before becomes unreachable here.
-          */}
-          <div className="flex min-h-0 flex-1 gap-4">
-            <aside className="w-48 shrink-0 overflow-y-auto border-r border-border pr-2">
+          {/* One sectioned navigation; child routes own only their content. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+            <aside className="shrink-0 overflow-y-auto md:w-52 md:border-r md:border-border md:pr-3">
               <SettingsSectionNav
                 activeSection={activeSection}
+                pathname={location.pathname}
                 hasBoards={(boards?.length ?? 0) > 0}
                 hasRepos={(repos?.length ?? 0) > 0}
                 onNavigate={(to) => navigate({ to })}
@@ -115,7 +112,7 @@ function SettingsLayout() {
               />
             </aside>
 
-            <div className="min-w-0 flex-1 overflow-y-auto">
+            <div className="w-full min-w-0 flex-1 overflow-y-auto">
               <Outlet />
             </div>
           </div>

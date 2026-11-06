@@ -382,7 +382,6 @@ function ListView({
     isSelectMode,
     selectedTaskIds,
     selectTasks,
-    setSelectMode,
   } = useBulkSelectionStore();
   const { bulkArchive } = useBulkOperations();
   const {

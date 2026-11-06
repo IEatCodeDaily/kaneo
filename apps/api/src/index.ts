@@ -38,7 +38,7 @@ import { eventContext } from "./events";
 import externalLink from "./external-link";
 import flag from "./flag";
 import genericWebhookIntegration from "./generic-webhook-integration";
-import { handleGiteaWebhookRoute } from "./gitea-integration";
+import giteaIntegration, { handleGiteaWebhookRoute } from "./gitea-integration";
 import githubDelegation, {
   handleGitHubDelegationCallback,
 } from "./github-delegation";
@@ -168,7 +168,7 @@ function buildContentDisposition(filename: string, inline: boolean) {
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[\\/]/g, "-")
-      .replace(/[^\x20-\u7E]+/g, "_")
+      .replace(/[^\x20-\x7E]+/g, "_")
       .replace(/\s+/g, " ")
       .trim() || "file";
   const encodedFilename = encodeURIComponent(safeFilename).replace(
@@ -719,6 +719,7 @@ export function createApp() {
     githubIntegration,
   );
 
+  const giteaIntegrationApi = api.route("/gitea-integration", giteaIntegration);
   const boardApi = api.route("/board", board);
   const projectApi = api.route("/project", project);
   const taskApi = api.route("/task", task);
@@ -927,6 +928,13 @@ export function createApp() {
     api,
     injectWebSocket,
     activityApi,
+    agentApi,
+    aiApi,
+    adminApi,
+    githubIntegrationApi,
+    giteaIntegrationApi,
+    oidcTeamSyncApi,
+    teamApi,
     columnApi,
     commentApi,
     dataTableApi,
@@ -1098,6 +1106,13 @@ if (isMainModule) {
 }
 
 export type AppType =
+  | typeof createdApp.adminApi
+  | typeof createdApp.giteaIntegrationApi
+  | typeof createdApp.githubIntegrationApi
+  | typeof createdApp.oidcTeamSyncApi
+  | typeof createdApp.teamApi
+  | typeof resourceGrantApi
+  | typeof userApi
   | typeof agentApi
   | typeof configApi
   | typeof boardApi

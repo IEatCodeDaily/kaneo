@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import useExportTasks from "@/hooks/mutations/task/use-export-tasks";
 import useImportTasks from "@/hooks/mutations/task/use-import-tasks";
+import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type { BoardWithTasks } from "@/types/board";
@@ -22,6 +23,8 @@ type TasksImportExportProps = {
 
 export function TasksImportExport({ board }: TasksImportExportProps) {
   const { t } = useTranslation();
+  const { canCreateTasks } = useOrganizationPermission();
+  const canImport = canCreateTasks();
   const [isImportOpen, setIsImportOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -52,6 +55,7 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
   };
 
   const handleImportClick = () => {
+    if (!canImport) return;
     setIsImportOpen(true);
     fileInputRef.current?.click();
   };
@@ -68,6 +72,7 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
   };
 
   const confirmImport = async (file: File) => {
+    if (!canImport) return;
     try {
       const content = await file.text();
       const jsonData = JSON.parse(content);
@@ -150,14 +155,16 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
           {t("settings:tasksImportExport.exportTasks")}
         </Button>
 
-        <Button
-          className="flex items-center gap-1.5 bg-card hover:bg-accent text-foreground border border-border"
-          size="sm"
-          onClick={() => setIsImportOpen(true)}
-        >
-          <Upload className="h-4 w-4" />
-          {t("settings:tasksImportExport.importTasks")}
-        </Button>
+        {canImport && (
+          <Button
+            className="flex items-center gap-1.5 bg-card hover:bg-accent text-foreground border border-border"
+            size="sm"
+            onClick={() => setIsImportOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+            {t("settings:tasksImportExport.importTasks")}
+          </Button>
+        )}
 
         <input
           ref={fileInputRef}
@@ -168,7 +175,10 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
         />
       </div>
 
-      <Dialog open={isImportOpen} onOpenChange={resetAndCloseModal}>
+      <Dialog
+        open={canImport && isImportOpen}
+        onOpenChange={resetAndCloseModal}
+      >
         <DialogPopup className="w-full max-w-md">
           <div className="bg-card rounded-lg shadow-xl border border-border">
             <div className="flex items-center justify-between p-4 border-b border-border">

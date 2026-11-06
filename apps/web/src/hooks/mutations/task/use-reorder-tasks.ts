@@ -29,7 +29,9 @@ export function useReorderTasks() {
         queryClient.setQueryData(["tasks", boardId], context.previous);
         useBoardStore.getState().setBoard(context.previous);
       }
-      toast.error("The move could not be saved. Your task order was restored.");
+      toast.error(
+        "The move could not be saved. Your ticket order was restored.",
+      );
     },
     onSuccess: (_, { boardId, board }) => {
       queryClient.setQueryData(["tasks", boardId], board);

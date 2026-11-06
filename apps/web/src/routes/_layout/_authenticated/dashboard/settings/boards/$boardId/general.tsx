@@ -331,7 +331,7 @@ function RouteComponent() {
   return (
     <>
       <PageTitle title={t("settings:boardGeneral.pageTitle")} />
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="mx-auto min-w-0 max-w-4xl space-y-8">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">
             {t("settings:boardGeneral.title")}
@@ -352,7 +352,7 @@ function RouteComponent() {
           </div>
 
           <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">
                   {t("settings:boardGeneral.iconLabel")}
@@ -391,7 +391,7 @@ function RouteComponent() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-0.5">
                           <FormLabel className="text-sm font-medium">
                             {t("settings:boardGeneral.boardNameLabel")}
@@ -402,7 +402,7 @@ function RouteComponent() {
                         </div>
                         <FormControl>
                           <Input
-                            className="w-64"
+                            className="w-full sm:w-64"
                             placeholder={t(
                               "settings:boardGeneral.boardNamePlaceholder",
                             )}
@@ -423,7 +423,7 @@ function RouteComponent() {
                   name="slug"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-0.5">
                           <FormLabel className="text-sm font-medium">
                             {t("settings:boardGeneral.keyLabel")}
@@ -436,7 +436,7 @@ function RouteComponent() {
                         </div>
                         <FormControl>
                           <Input
-                            className="w-64"
+                            className="w-full sm:w-64"
                             placeholder={t(
                               "settings:boardGeneral.keyPlaceholder",
                             )}
@@ -495,7 +495,7 @@ function RouteComponent() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-0.5">
                           <FormLabel className="text-sm font-medium">
                             {t("settings:boardGeneral.descriptionLabel")}
@@ -506,7 +506,7 @@ function RouteComponent() {
                         </div>
                         <FormControl>
                           <Input
-                            className="w-64"
+                            className="w-full sm:w-64"
                             placeholder={t(
                               "settings:boardGeneral.descriptionPlaceholder",
                             )}
@@ -522,7 +522,7 @@ function RouteComponent() {
               </form>
             </Form>
             <Separator />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">
                   {t("settings:boardGeneral.importExportTasks")}
@@ -560,17 +560,18 @@ function RouteComponent() {
               <BoardDefaultAssignee
                 board={board}
                 canEdit={canEdit}
-                onUpdate={(updates) =>
-                  updateBoard({
-                    id: board!.id,
-                    name: board!.name,
-                    icon: board!.icon ?? "Layout",
-                    slug: board!.slug,
-                    description: board!.description ?? "",
-                    isPublic: !!board!.isPublic,
+                onUpdate={async (updates) => {
+                  if (!board) return;
+                  return updateBoard({
+                    id: board.id,
+                    name: board.name,
+                    icon: board.icon ?? "Layout",
+                    slug: board.slug,
+                    description: board.description ?? "",
+                    isPublic: !!board.isPublic,
                     ...updates,
-                  })
-                }
+                  });
+                }}
                 onDone={() =>
                   queryClient.invalidateQueries({
                     queryKey: ["tasks", board?.id],
@@ -593,7 +594,7 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">
                     {t("settings:boardGeneral.deleteBoard")}

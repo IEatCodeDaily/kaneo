@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Archive,
   CalendarDays,
@@ -11,25 +11,40 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
+import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
+import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveLabelColor } from "@/constants/label-colors";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useInfiniteMyTasks from "@/hooks/queries/task/use-infinite-my-tasks";
+import { useLocalDay } from "@/hooks/use-local-day";
 import { getColumnIcon } from "@/lib/column";
 import {
   groupMyTasks,
+  localDateKey,
   type MyTasksGroup,
   type MyTasksSort,
   sortMyTasks,
+  summarizeTicketStatuses,
+  ticketDueState,
 } from "@/lib/my-tasks-view";
 import { getPriorityIcon } from "@/lib/priority";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks",
 )({
   component: MyTasksComponent,
+  // The open ticket lives in the URL so the drawer survives reloads and
+  // links, exactly like the board drawer.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { taskId?: string; boardId?: string } => ({
+    taskId: typeof search.taskId === "string" ? search.taskId : undefined,
+    boardId: typeof search.boardId === "string" ? search.boardId : undefined,
+  }),
 });
 
 const RELATIONS: { value: MyTasksRelation; labelKey: string }[] = [
@@ -47,15 +62,30 @@ const RELATIONS: { value: MyTasksRelation; labelKey: string }[] = [
  */
 export function MyTasksComponent() {
   const { t } = useTranslation();
-  const { organizationSlug } = Route.useParams();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
+  const day = useLocalDay();
+  const navigate = useNavigate();
+  const { taskId: openTaskId, boardId: openBoardId } = Route.useSearch();
   const [relation, setRelation] = useState<MyTasksRelation>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<MyTasksSort>("updated");
-  const [group, setGroup] = useState<MyTasksGroup>("board");
+  const { user } = useAuth();
+  const displayKey = `${user?.id ?? ""}:${organizationId}`;
+  const savedDisplay = useUserPreferencesStore(
+    (state) => state.ticketDisplay[displayKey],
+  );
+  const saveDisplay = useUserPreferencesStore(
+    (state) => state.setTicketDisplay,
+  );
+  const sort = savedDisplay?.sort ?? "updated";
+  const group = savedDisplay?.group ?? "status";
+  const setSort = (sort: MyTasksSort) =>
+    saveDisplay(displayKey, { sort, group });
+  const setGroup = (group: MyTasksGroup) =>
+    saveDisplay(displayKey, { sort, group });
+  const [dueFilter, setDueFilter] = useState<"overdue" | "soon" | null>(null);
   const [collapsedBoards, setCollapsedBoards] = useState<Set<string>>(
     new Set(),
   );
@@ -67,6 +97,8 @@ export function MyTasksComponent() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isError,
+    refetch,
   } = useInfiniteMyTasks({ organizationId, relation, includeCompleted });
 
   type MyTask = NonNullable<typeof data>["pages"][number][number];
@@ -83,14 +115,19 @@ export function MyTasksComponent() {
     ? allTasks.filter((task) => task.flagged)
     : allTasks;
   const tasks = sortMyTasks(
-    relationFiltered.filter((task) =>
-      `${task.title} ${task.boardName} ${task.labels.map(({ name }) => name).join(" ")}`
-        .toLocaleLowerCase()
-        .includes(search.toLocaleLowerCase()),
+    relationFiltered.filter(
+      (task) =>
+        (!dueFilter ||
+          ticketDueState(task.dueDate, task.isFinal ?? false, new Date(day)) ===
+            dueFilter) &&
+        `${task.title} ${task.boardName} ${task.labels.map((label: { name: string }) => label.name).join(" ")}`
+          .toLocaleLowerCase()
+          .includes(search.toLocaleLowerCase()),
     ),
     sort,
   );
-  const groupedTasks = groupMyTasks(tasks, group);
+  const groupedTasks = groupMyTasks(tasks, group, new Date(day));
+  const statuses = summarizeTicketStatuses(tasks);
 
   return (
     <OrganizationLayout title={t("myTasks:title")}>
@@ -108,7 +145,7 @@ export function MyTasksComponent() {
                 variant={relation === value ? "secondary" : "ghost"}
                 aria-pressed={relation === value}
                 onClick={() => setRelation(value)}
-                className="h-7 rounded-md px-2 text-xs"
+                className="min-h-11 min-w-11 rounded-md px-3 text-xs sm:min-h-8"
               >
                 {t(labelKey)}
               </Button>
@@ -121,7 +158,7 @@ export function MyTasksComponent() {
             variant={includeCompleted ? "secondary" : "outline"}
             aria-pressed={includeCompleted}
             onClick={() => setIncludeCompleted((previous) => !previous)}
-            className="h-7 gap-1.5 rounded-md px-2 text-xs"
+            className="min-h-11 gap-1.5 rounded-md px-3 text-xs sm:min-h-8"
           >
             {/* An explicit check mark, so the on/off state is legible without
                 relying on a subtle background shade alone. */}
@@ -140,7 +177,7 @@ export function MyTasksComponent() {
             variant={flaggedOnly ? "secondary" : "outline"}
             aria-pressed={flaggedOnly}
             onClick={() => setFlaggedOnly((previous) => !previous)}
-            className="h-7 gap-1.5 rounded-md px-2 text-xs"
+            className="min-h-11 gap-1.5 rounded-md px-3 text-xs sm:min-h-8"
           >
             <Flag
               aria-hidden
@@ -149,41 +186,73 @@ export function MyTasksComponent() {
             {t("myTasks:flagged")}
           </Button>
 
+          {(["overdue", "soon"] as const).map((value) => (
+            <Button
+              key={value}
+              type="button"
+              size="sm"
+              variant={dueFilter === value ? "secondary" : "outline"}
+              aria-pressed={dueFilter === value}
+              onClick={() =>
+                setDueFilter((previous) => (previous === value ? null : value))
+              }
+              className="min-h-11 gap-1.5 sm:min-h-8"
+            >
+              <CalendarDays className="size-3.5" />
+              {t(
+                value === "overdue"
+                  ? "home:due.Overdue"
+                  : "home:due.Next 7 days",
+                {
+                  defaultValue: value === "overdue" ? "Overdue" : "Next 7 days",
+                },
+              )}
+            </Button>
+          ))}
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Filter tickets…"
             aria-label="Filter tickets"
-            className="h-7 w-44 text-xs"
+            className="min-h-11 w-full text-xs sm:min-h-8 sm:w-44"
           />
-          <select
-            aria-label="Sort tickets"
-            value={sort}
-            onChange={(event) => setSort(event.target.value as MyTasksSort)}
-            className="h-7 rounded-md border bg-background px-2 text-xs"
-          >
-            <option value="updated">Recently updated</option>
-            <option value="created">Created date</option>
-            <option value="dueDate">Due date</option>
-            <option value="priority">Priority</option>
-            <option value="title">Title</option>
-            <option value="number">Ticket number</option>
-          </select>
-          <select
-            aria-label="Group tickets"
-            value={group}
-            onChange={(event) => setGroup(event.target.value as MyTasksGroup)}
-            className="h-7 rounded-md border bg-background px-2 text-xs"
-          >
-            <option value="board">Board</option>
-            <option value="none">None</option>
-            <option value="status">Status</option>
-            <option value="priority">Priority</option>
-            <option value="label">Label</option>
-            <option value="dueDate">Due date</option>
-            <option value="assignee">Assignee</option>
-            <option value="milestone">Milestone</option>
-          </select>
+          <details className="relative ml-auto">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border px-3 text-xs sm:min-h-8">
+              {t("settings:navigation.display", { defaultValue: "Display" })}
+            </summary>
+            <div className="absolute right-0 z-20 mt-2 flex w-64 flex-col gap-3 rounded-lg border bg-popover p-4 shadow-lg">
+              <select
+                aria-label="Sort tickets"
+                value={sort}
+                onChange={(event) => setSort(event.target.value as MyTasksSort)}
+                className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+              >
+                <option value="updated">Recently updated</option>
+                <option value="created">Created date</option>
+                <option value="dueDate">Due date</option>
+                <option value="priority">Priority</option>
+                <option value="title">Title</option>
+                <option value="number">Ticket number</option>
+              </select>
+              <select
+                aria-label="Group tickets"
+                value={group}
+                onChange={(event) =>
+                  setGroup(event.target.value as MyTasksGroup)
+                }
+                className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+              >
+                <option value="board">Board</option>
+                <option value="none">None</option>
+                <option value="status">Status</option>
+                <option value="priority">Priority</option>
+                <option value="label">Label</option>
+                <option value="dueDate">Due date</option>
+                <option value="assignee">Assignee</option>
+                <option value="milestone">Milestone</option>
+              </select>
+            </div>
+          </details>
 
           {isFetching ? (
             <Loader2
@@ -197,7 +266,46 @@ export function MyTasksComponent() {
           </span>
         </div>
 
+        <section
+          className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-4 py-3 text-xs"
+          aria-label={t("myTasks:loadedSummary", { count: tasks.length })}
+        >
+          <span className="text-muted-foreground">
+            {t("myTasks:loadedSummary", { count: tasks.length })}
+          </span>
+          {statuses.map(({ slug, name, count, percent }) => (
+            <span
+              key={slug}
+              className="inline-flex items-center gap-1.5 tabular-nums"
+            >
+              {getColumnIcon(
+                slug,
+                tasks.find((task) => task.status === slug)?.isFinal ?? false,
+                tasks.find((task) => task.status === slug)?.columnIcon,
+              )}
+              {name || t("myTasks:noStatus")} <strong>{count}</strong>
+              <span className="text-muted-foreground">{percent}%</span>
+            </span>
+          ))}
+        </section>
         <div className="flex-1 overflow-y-auto px-4 py-3">
+          {isError && (
+            <div role="alert" className="mb-3 flex items-center gap-3 text-sm">
+              <span>{t("home:loadError")}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void refetch()}
+              >
+                {t("common:error.tryAgain")}
+              </Button>
+            </div>
+          )}
+          {hasNextPage && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              {t("home:loadedOnly")}
+            </p>
+          )}
           {isLoading ? (
             <p className="text-muted-foreground text-sm">
               {t("myTasks:loading")}
@@ -226,10 +334,16 @@ export function MyTasksComponent() {
                           return next;
                         })
                       }
-                      className="flex w-full items-center gap-2 bg-muted/20 px-3 py-2 text-left hover:bg-muted/40"
+                      className="flex min-h-11 w-full items-center gap-2 bg-muted/20 px-3 py-2 text-left hover:bg-muted/40 sm:min-h-8"
                     >
                       <span className="font-medium text-muted-foreground text-xs">
-                        {groupName}
+                        {group === "dueDate"
+                          ? t(`home:due.${groupName}`, {
+                              defaultValue: groupName,
+                            })
+                          : group === "status"
+                            ? (boardTasks[0]?.columnName ?? groupName)
+                            : groupName}
                       </span>
                       <span className="text-muted-foreground/70 text-xs">
                         {boardTasks.length} tickets
@@ -256,13 +370,16 @@ export function MyTasksComponent() {
                           return (
                             <li key={task.id}>
                               <Link
-                                to="/dashboard/organization/$organizationSlug/board/$boardSlug/board"
-                                params={{
-                                  organizationSlug: organization?.slug ?? "",
-                                  boardSlug: task.boardSlug ?? task.boardId,
+                                from={Route.fullPath}
+                                to="."
+                                search={{
+                                  taskId: task.id,
+                                  boardId: task.boardId,
                                 }}
-                                search={{ taskId: task.id }}
-                                className="flex items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-sm hover:bg-muted/40"
+                                aria-current={
+                                  openTaskId === task.id ? "true" : undefined
+                                }
+                                className="flex flex-wrap items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-sm hover:bg-muted/40 aria-[current=true]:bg-muted/60"
                                 // Flagged rows are tinted in the flag's own
                                 // colour (faint bg + a matching left accent),
                                 // so the flag reads at a glance.
@@ -348,29 +465,45 @@ export function MyTasksComponent() {
                                 {/* Long titles clip rather than overflowing the row;
                               the full value stays available as a tooltip. */}
                                 <span
-                                  className="min-w-0 flex-1 truncate"
+                                  className="order-first w-full whitespace-normal break-words font-medium sm:order-none sm:w-auto sm:min-w-0 sm:flex-1 sm:truncate"
                                   title={task.title}
                                 >
                                   {task.title}
                                 </span>
-                                {task.labels.map((label) => {
-                                  const colors = resolveLabelColor(label.color);
-                                  return (
-                                    <span
-                                      key={label.id}
-                                      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] ${colors.bg} ${colors.text}`}
-                                    >
-                                      {label.name}
-                                    </span>
-                                  );
-                                })}
+                                {task.labels.map(
+                                  (label: {
+                                    id: string;
+                                    name: string;
+                                    color: string;
+                                  }) => {
+                                    const colors = resolveLabelColor(
+                                      label.color,
+                                    );
+                                    return (
+                                      <span
+                                        key={label.id}
+                                        className="shrink-0 rounded-full border px-1.5 py-0.5 text-[10px]"
+                                        style={{
+                                          color: colors,
+                                          borderColor: colors,
+                                        }}
+                                      >
+                                        {label.name}
+                                      </span>
+                                    );
+                                  },
+                                )}
                                 {task.dueDate ? (
                                   <span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
                                     <CalendarDays className="size-3" />
                                     {new Intl.DateTimeFormat(undefined, {
                                       month: "short",
                                       day: "numeric",
-                                    }).format(new Date(task.dueDate))}
+                                    }).format(
+                                      new Date(
+                                        `${localDateKey(task.dueDate)}T00:00:00`,
+                                      ),
+                                    )}
                                   </span>
                                 ) : null}
                                 {task.flagged ? (
@@ -416,6 +549,14 @@ export function MyTasksComponent() {
           )}
         </div>
       </div>
+      {openTaskId && openBoardId ? (
+        <TaskDetailsSheet
+          taskId={openTaskId}
+          boardId={openBoardId}
+          organizationId={organizationId}
+          onClose={() => navigate({ to: ".", search: {} })}
+        />
+      ) : null}
     </OrganizationLayout>
   );
 }

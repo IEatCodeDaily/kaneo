@@ -105,7 +105,7 @@ export default function TicketPage({
               navigate({
                 to: "/dashboard/organization/$organizationSlug/board/$boardSlug/board",
                 params: {
-                  organizationSlug: organizationSlug ?? organizationId,
+                  organizationSlug: organization?.slug ?? organizationId,
                   boardSlug: board?.slug ?? boardId,
                 },
               })

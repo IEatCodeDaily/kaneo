@@ -45,7 +45,7 @@ async function getReleases(repoId: string) {
 }
 
 function RouteComponent() {
-  const { organizationSlug, repoId } = Route.useParams();
+  const { repoId } = Route.useParams();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
   const { data, error, isLoading } = useQuery({

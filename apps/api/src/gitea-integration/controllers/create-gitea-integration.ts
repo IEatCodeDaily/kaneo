@@ -74,7 +74,12 @@ async function createGiteaIntegration({
     await client.getRepo(repositoryOwner, repositoryName);
   } catch (error) {
     if (error instanceof GiteaApiError) {
-      throw new HTTPException(error.status || 400, { message: error.message });
+      throw new HTTPException(
+        error.status === 401 || error.status === 403 || error.status === 404
+          ? error.status
+          : 400,
+        { message: error.message },
+      );
     }
     throw error;
   }

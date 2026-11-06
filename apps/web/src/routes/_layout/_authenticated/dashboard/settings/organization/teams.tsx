@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   CornerDownRight,
   Pencil,
@@ -59,18 +59,7 @@ import { toast } from "@/lib/toast";
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/settings/organization/teams",
 )({
-  beforeLoad: async () => {
-    const { data: organization } =
-      await authClient.organization.getFullOrganization();
-    if (!organization?.id) return;
-    throw redirect({
-      to: "/dashboard/organization/$organizationSlug/members",
-      params: { organizationId: organization.id },
-      search: { tab: "teams" },
-      replace: true,
-    });
-  },
-  component: TeamsSettings,
+  component: TeamsManagement,
 });
 
 type Team = NonNullable<
@@ -79,10 +68,6 @@ type Team = NonNullable<
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
-}
-
-function TeamsSettings() {
-  return null;
 }
 
 export function TeamsManagement({

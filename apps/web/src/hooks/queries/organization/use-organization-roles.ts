@@ -42,7 +42,7 @@ function useOrganizationRoles(organizationId: string | undefined) {
         id: string;
         organizationId: string;
         role: string;
-        permission: string;
+        permission: unknown;
         createdAt: Date | string;
         updatedAt?: Date | string | null;
       }>;

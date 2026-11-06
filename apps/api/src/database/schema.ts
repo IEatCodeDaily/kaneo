@@ -185,6 +185,7 @@ export const organizationTable = pgTable(
     description: text("description"),
     reposEnabled: boolean("repos_enabled").default(false).notNull(),
     tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+    workEnabled: boolean("work_enabled").default(false).notNull(),
     /*
     Org-wide default member privilege for resources without an explicit
     user/team grant, when the resource itself doesn't set its own baseline
@@ -486,7 +487,9 @@ export const boardTable = pgTable(
       the organization's defaultResourcePrivilege ("follow org"). Explicit
       grants and owner/admin manage always win over this value.
     */
-    orgPrivilege: text("org_privilege"),
+    orgPrivilege: text("org_privilege", {
+      enum: ["none", "view", "edit", "manage"],
+    }),
     /**
      * #226: per-board ordering for statuses shown in regular Task surfaces.
      * JSON is intentional: this is a small ordered list of global, append-only
@@ -619,7 +622,11 @@ export const projectTable = pgTable(
     summary: text("summary").notNull(),
     description: text("description"),
     successCriteria: text("success_criteria"),
-    status: text("status").notNull().default("planned"),
+    status: text("status", {
+      enum: ["planned", "started", "completed", "canceled"],
+    })
+      .notNull()
+      .default("planned"),
     // Reuses the Ticket priority vocabulary/validator (VALID_PRIORITIES);
     // nullable because a Project need not be prioritized at creation.
     priority: text("priority"),
@@ -641,7 +648,9 @@ export const projectTable = pgTable(
       project when they hold no explicit user/team grant. NULL = follow the
       organization's defaultResourcePrivilege.
     */
-    orgPrivilege: text("org_privilege"),
+    orgPrivilege: text("org_privilege", {
+      enum: ["none", "view", "edit", "manage"],
+    }),
     archivedAt: timestamp("archived_at", { mode: "date" }),
     archivedBy: text("archived_by").references(() => userTable.id, {
       onDelete: "set null",
@@ -825,7 +834,9 @@ export const dataTableTable = pgTable(
     name: text("name").notNull(),
     icon: text("icon"),
     // Per-resource org baseline; NULL = follow the organization default.
-    orgPrivilege: text("org_privilege"),
+    orgPrivilege: text("org_privilege", {
+      enum: ["none", "view", "edit", "manage"],
+    }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -1962,7 +1973,9 @@ export const repoTable = pgTable(
     config: jsonb("config").$type<Record<string, unknown>>(),
     isActive: boolean("is_active").default(true).notNull(),
     // Per-resource org baseline; NULL = follow the organization default.
-    orgPrivilege: text("org_privilege"),
+    orgPrivilege: text("org_privilege", {
+      enum: ["none", "view", "edit", "manage"],
+    }),
     lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
@@ -2373,7 +2386,9 @@ export const projectUpdateTable = pgTable(
         onUpdate: "cascade",
       }),
     content: text("content").notNull(),
-    health: text("health").notNull(),
+    health: text("health", {
+      enum: ["on-track", "at-risk", "off-track"],
+    }).notNull(),
     // Same shape/convention as activityTable.editHistory: pre-edit snapshots,
     // append-only, no compression window (an Update is an authored narrative).
     editHistory: jsonb("edit_history")

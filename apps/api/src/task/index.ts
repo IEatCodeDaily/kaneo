@@ -50,6 +50,7 @@ import { VALID_PRIORITIES } from "./validate-task-fields";
 const task = new Hono<{
   Variables: {
     userId: string;
+    organizationId: string;
   };
 }>()
   .get(

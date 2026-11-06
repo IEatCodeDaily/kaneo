@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useCancelInvitation from "@/hooks/mutations/organization-member/use-cancel-invitation";
 import useDeleteOrganizationMember from "@/hooks/mutations/organization-member/use-delete-organization-member";
+import useInviteOrganizationMember from "@/hooks/mutations/organization-member/use-invite-organization-member";
 import useUpdateOrganizationMemberRole from "@/hooks/mutations/organization-member/use-update-organization-member-role";
 import useOrganizationRoles from "@/hooks/queries/organization/use-organization-roles";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -56,6 +57,7 @@ type Props = {
   organizationId: string;
   invitations: OrganizationMemberInvitation[];
   users: OrganizationMember[];
+  principalKinds?: ReadonlyMap<string, string>;
 };
 
 // Names that are NOT "truly custom" — viewer/member/admin are seeded as
@@ -69,7 +71,12 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function MembersTable({ organizationId, invitations, users }: Props) {
+function MembersTable({
+  organizationId,
+  invitations,
+  users,
+  principalKinds,
+}: Props) {
   const { t } = useTranslation();
   const [memberToDelete, setMemberToDelete] =
     useState<OrganizationMember | null>(null);
@@ -82,6 +89,29 @@ function MembersTable({ organizationId, invitations, users }: Props) {
   const { mutateAsync: cancelInvitation, isPending: isCancelling } =
     useCancelInvitation();
   const { mutateAsync: updateMemberRole } = useUpdateOrganizationMemberRole();
+  const { mutateAsync: resendInvitation, isPending: isResending } =
+    useInviteOrganizationMember();
+  const resend = async (invitation: OrganizationMemberInvitation) => {
+    try {
+      await resendInvitation({
+        organizationId,
+        email: invitation.email,
+        role: invitation.role as "admin" | "member" | "owner",
+        resend: true,
+      });
+      toast.success(
+        t("team:invitations.resent", { defaultValue: "Invitation resent" }),
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("team:invitations.resendError", {
+              defaultValue: "Could not resend invitation",
+            }),
+      );
+    }
+  };
   const { data: allOrganizationRoles = [] } =
     useOrganizationRoles(organizationId);
   const { canManageTeam, canRemoveMembers, canInviteUsers } =
@@ -161,10 +191,10 @@ function MembersTable({ organizationId, invitations, users }: Props) {
 
   return (
     <>
-      <Table>
-        <TableHeader>
+      <Table className="max-md:block max-md:[&_tbody]:block max-md:[&_tr]:grid max-md:[&_tr]:grid-cols-[1fr_auto] max-md:[&_td:first-child]:col-span-2 max-md:[&_td]:whitespace-normal">
+        <TableHeader className="max-md:hidden">
           <TableRow>
-            <TableHead className="ps-6 text-foreground font-medium">
+            <TableHead className="ps-3 sm:ps-6 text-foreground font-medium">
               {t("team:membersTable.columns.name", {
                 defaultValue: "Member",
               })}
@@ -172,7 +202,7 @@ function MembersTable({ organizationId, invitations, users }: Props) {
             <TableHead className="text-foreground font-medium">
               {t("team:membersTable.columns.role", { defaultValue: "Role" })}
             </TableHead>
-            <TableHead className="text-foreground font-medium">
+            <TableHead className="hidden text-foreground font-medium md:table-cell">
               {t("team:membersTable.columns.joined", {
                 defaultValue: "Joined",
               })}
@@ -188,7 +218,7 @@ function MembersTable({ organizationId, invitations, users }: Props) {
             const tone = getAvatarTone(member.userId, member.user.email);
             return (
               <TableRow key={member.user.email}>
-                <TableCell className="ps-6 py-3">
+                <TableCell className="ps-3 sm:ps-6 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar className={cn("size-8", tone)}>
                       <AvatarImage
@@ -204,6 +234,11 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                         <span className="text-sm font-medium">
                           {member.user.name}
                         </span>
+                        {principalKinds?.get(member.userId) === "agent" && (
+                          <Badge variant="outline">
+                            {t("team:agentManager.agentBadge")}
+                          </Badge>
+                        )}
                         {isSelf ? (
                           <span className="text-xs text-muted-foreground">
                             ({t("team:members.you", { defaultValue: "You" })})
@@ -231,7 +266,10 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                         }
                       }}
                     >
-                      <SelectTrigger size="sm" className="h-8 w-32">
+                      <SelectTrigger
+                        size="sm"
+                        className="min-h-11 w-28 sm:min-h-8 sm:w-32"
+                      >
                         <SelectValue>
                           {t(`team:roles.${member.role}`, {
                             defaultValue: capitalize(member.role),
@@ -267,10 +305,10 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="py-3 text-sm text-muted-foreground tabular-nums">
+                <TableCell className="hidden py-3 text-sm text-muted-foreground tabular-nums md:table-cell">
                   {member.createdAt ? formatDateMedium(member.createdAt) : "—"}
                 </TableCell>
-                <TableCell className="pe-6 py-3 text-right">
+                <TableCell className="pe-3 py-3 text-right sm:pe-6">
                   {!isSelf && canRemove ? (
                     <Menu>
                       <MenuTrigger
@@ -278,7 +316,7 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground"
+                            className="size-11 text-muted-foreground sm:size-8"
                             aria-label={t("team:membersTable.ariaRemoveMember")}
                           />
                         }
@@ -300,14 +338,14 @@ function MembersTable({ organizationId, invitations, users }: Props) {
 
           {pendingInvitations.map((invitation) => (
             <TableRow key={`invite-${invitation.id}`}>
-              <TableCell className="ps-6 py-3">
+              <TableCell className="ps-3 sm:ps-6 py-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <MailIcon className="size-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">
+                      <span className="break-all text-sm font-medium">
                         {invitation.email}
                       </span>
                       <Badge
@@ -315,9 +353,14 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                         size="sm"
                         className="font-mono text-[9px] uppercase tracking-wider"
                       >
-                        {t("team:invitations.pendingBadge", {
-                          defaultValue: "pending",
-                        })}
+                        {invitation.expiresAt &&
+                        new Date(invitation.expiresAt).getTime() < Date.now()
+                          ? t("team:invitations.expiredBadge", {
+                              defaultValue: "Expired",
+                            })
+                          : t("team:invitations.pendingBadge", {
+                              defaultValue: "pending",
+                            })}
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -338,16 +381,27 @@ function MembersTable({ organizationId, invitations, users }: Props) {
                   })}
                 </Badge>
               </TableCell>
-              <TableCell className="py-3 text-sm text-muted-foreground">
+              <TableCell className="hidden py-3 text-sm text-muted-foreground md:table-cell">
                 —
               </TableCell>
-              <TableCell className="pe-6 py-3 text-right">
+              <TableCell className="pe-3 py-3 text-right sm:pe-6">
+                {canInvite && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isResending}
+                    onClick={() => void resend(invitation)}
+                    className="mr-2 min-h-11 sm:min-h-8"
+                  >
+                    {t("team:invitations.resend", { defaultValue: "Resend" })}
+                  </Button>
+                )}
                 {canInvite ? (
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setInvitationToCancel(invitation)}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    className="size-11 text-muted-foreground hover:text-destructive sm:size-8"
                     aria-label={t("team:membersTable.ariaCancelInvitation")}
                   >
                     <TrashIcon className="size-4" />

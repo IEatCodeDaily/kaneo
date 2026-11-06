@@ -26,6 +26,64 @@ export type InboxBoardGroup = {
   tickets: InboxTicketGroup[];
 };
 
+export type InboxTimeTicket = InboxTicketGroup & {
+  unread: boolean;
+  boardName: string;
+  boardSlug: string | null;
+  organizationId: string | null;
+};
+
+export function groupInboxByTime(
+  notifications: Notification[],
+  now = new Date(),
+) {
+  const tickets = new Map<string, InboxTimeTicket>();
+  for (const notification of [...notifications].sort(
+    (a, b) => Date.parse(String(b.createdAt)) - Date.parse(String(a.createdAt)),
+  )) {
+    const data = dataOf(notification);
+    const org =
+      typeof data.organizationId === "string" ? data.organizationId : null;
+    const key = `${org ?? ""}:${String(data.boardId ?? "")}:${notification.resourceType === "task" ? notification.resourceId : notification.id}`;
+    let ticket = tickets.get(key);
+    if (!ticket) {
+      const base = groupInboxNotifications([notification])[0].tickets[0];
+      ticket = {
+        ...base,
+        key,
+        notifications: [],
+        flaggedCount: 0,
+        unread: false,
+        boardName: String(data.boardName ?? ""),
+        boardSlug: typeof data.boardSlug === "string" ? data.boardSlug : null,
+        organizationId: org,
+      };
+      tickets.set(key, ticket);
+    }
+    ticket.notifications.push(notification);
+    if (isFlaggedNotification(notification)) ticket.flaggedCount++;
+    else if (!notification.isRead) ticket.unread = true;
+  }
+  const groups = new Map<string, InboxTimeTicket[]>();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  for (const ticket of tickets.values()) {
+    const date = new Date(ticket.notifications[0].createdAt);
+    const name = ticket.flaggedCount
+      ? "flagged"
+      : date >= today
+        ? "today"
+        : date >= yesterday
+          ? "yesterday"
+          : "earlier";
+    groups.set(name, [...(groups.get(name) ?? []), ticket]);
+  }
+  return ["flagged", "today", "yesterday", "earlier"]
+    .filter((name) => groups.has(name))
+    .map((name) => ({ name, tickets: groups.get(name) ?? [] }));
+}
+
 function dataOf(notification: Notification) {
   const data = notification.eventData;
   return data && typeof data === "object" && !Array.isArray(data)

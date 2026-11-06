@@ -22,7 +22,7 @@ async function updateTelegramIntegration(
   json: UpdateTelegramIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/board/${boardSlug}`),
+    getApiUrl(`/telegram-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

@@ -74,12 +74,14 @@ describe("Project Updates focused component scenarios", () => {
     vi.useFakeTimers();
     const now = Date.now();
     const { rerender } = render(
-      <ProjectStalenessIndicator updatedAt={new Date(now - 1000)} />,
+      <ProjectStalenessIndicator
+        updatedAt={new Date(now - 1000).toISOString()}
+      />,
     );
     expect(screen.getByText(/projects:updates.fresh/)).toBeInTheDocument();
     rerender(
       <ProjectStalenessIndicator
-        updatedAt={new Date(now - 8 * 24 * 60 * 60 * 1000)}
+        updatedAt={new Date(now - 8 * 24 * 60 * 60 * 1000).toISOString()}
       />,
     );
     expect(screen.getByText(/projects:updates.stale/)).toBeInTheDocument();

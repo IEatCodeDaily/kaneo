@@ -50,9 +50,15 @@ function InvitationsPage() {
         return;
       }
 
-      await authClient.organization.setActive({
-        organizationSlug: data?.invitation.organizationSlug || organizationSlug,
+      const acceptedOrganizationId =
+        data?.invitation.organizationId ?? organizationId;
+      const active = await authClient.organization.setActive({
+        organizationId: acceptedOrganizationId,
       });
+      if (active.error) throw new Error(active.error.message);
+      const organizationSlug = active.data?.slug;
+      if (!organizationSlug)
+        throw new Error(t("invitations:toast.acceptError"));
 
       toast.success(t("invitations:toast.acceptSuccess"));
 
@@ -63,8 +69,7 @@ function InvitationsPage() {
       navigate({
         to: "/dashboard/organization/$organizationSlug",
         params: {
-          organizationSlug:
-            data?.invitation.organizationSlug || organizationSlug,
+          organizationSlug,
         },
       });
     } catch (error) {

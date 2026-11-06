@@ -38,7 +38,7 @@ export type ProjectPropertiesFormProject = {
   leadTeamId: string | null;
   startDate: string | null;
   targetDate: string | null;
-  orgPrivilege: string | null;
+  orgPrivilege: "none" | "view" | "edit" | "manage" | null;
 };
 
 type ProjectPropertiesFormProps = {
@@ -147,7 +147,10 @@ export function ProjectPropertiesForm({ project }: ProjectPropertiesFormProps) {
           ))}
         </SelectContent>
       </Select>
-      <Select onValueChange={setLeadUserId} value={leadUserId}>
+      <Select
+        onValueChange={(value) => setLeadUserId(value ?? "")}
+        value={leadUserId}
+      >
         <SelectTrigger aria-label={t("projects:labels.lead")}>
           <SelectValue />
         </SelectTrigger>

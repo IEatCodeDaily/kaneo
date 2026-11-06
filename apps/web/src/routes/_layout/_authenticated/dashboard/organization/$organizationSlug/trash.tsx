@@ -38,7 +38,6 @@ export type TrashedTaskRow = {
 };
 
 function TrashRouteComponent() {
-  const { organizationSlug } = Route.useParams();
   const { data: organization } = useActiveOrganization();
   const organizationId = organization?.id ?? "";
 

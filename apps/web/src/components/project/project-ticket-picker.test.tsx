@@ -72,6 +72,8 @@ const ticket = {
   status: "to-do",
   priority: "high",
   archivedAt: null,
+  startDate: null,
+  dueDate: null,
   projectMilestoneId: "milestone-1",
   rank: 0,
   addedAt: "2026-08-27T00:00:00.000Z",

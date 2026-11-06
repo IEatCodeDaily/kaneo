@@ -49,7 +49,7 @@ export default function TaskTemplateMenu({
         getApiUrl(`task-template/organization/${organizationId}`),
         { credentials: "include" },
       );
-      if (!response.ok) throw new Error("Failed to load task templates");
+      if (!response.ok) throw new Error("Failed to load ticket templates");
       return response.json();
     },
   });

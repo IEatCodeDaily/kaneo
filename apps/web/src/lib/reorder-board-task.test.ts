@@ -37,7 +37,8 @@ describe("reorderBoardTask — same column", () => {
   it("moves a task DOWN onto a lower task, landing at that task's slot", () => {
     const result = reorderBoardTask(board, "B", "D");
     expect(result).not.toBeNull();
-    expect(layout(result!.board).todo).toEqual(["A", "C", "D", "B", "E"]);
+    if (!result) throw new Error("Expected a valid reorder");
+    expect(layout(result.board).todo).toEqual(["A", "C", "D", "B", "E"]);
   });
 
   it("moves a task UP onto a higher task, taking that task's slot", () => {
@@ -46,28 +47,33 @@ describe("reorderBoardTask — same column", () => {
     // row too low, in both the list view and the kanban board.
     const result = reorderBoardTask(board, "D", "B");
     expect(result).not.toBeNull();
-    expect(layout(result!.board).todo).toEqual(["A", "D", "B", "C", "E"]);
+    if (!result) throw new Error("Expected a valid reorder");
+    expect(layout(result.board).todo).toEqual(["A", "D", "B", "C", "E"]);
   });
 
   it("can move a task to the very top of the column", () => {
     // Previously unreachable: `findIndex(over) + 1` floored the insert at 1.
     const result = reorderBoardTask(board, "E", "A");
     expect(result).not.toBeNull();
-    expect(layout(result!.board).todo).toEqual(["E", "A", "B", "C", "D"]);
+    if (!result) throw new Error("Expected a valid reorder");
+    expect(layout(result.board).todo).toEqual(["E", "A", "B", "C", "D"]);
   });
 
   it("can move a task to the very bottom of the column", () => {
     const result = reorderBoardTask(board, "A", "E");
     expect(result).not.toBeNull();
-    expect(layout(result!.board).todo).toEqual(["B", "C", "D", "E", "A"]);
+    if (!result) throw new Error("Expected a valid reorder");
+    expect(layout(result.board).todo).toEqual(["B", "C", "D", "E", "A"]);
   });
 
   it("is symmetric: moving down then back up restores the original order", () => {
     const down = reorderBoardTask(board, "B", "D");
     expect(down).not.toBeNull();
-    const backUp = reorderBoardTask(down!.board, "B", "C");
+    if (!down) throw new Error("Expected a valid reorder");
+    const backUp = reorderBoardTask(down.board, "B", "C");
     expect(backUp).not.toBeNull();
-    expect(layout(backUp!.board).todo).toEqual(["A", "B", "C", "D", "E"]);
+    if (!backUp) throw new Error("Expected a valid reorder");
+    expect(layout(backUp.board).todo).toEqual(["A", "B", "C", "D", "E"]);
   });
 
   it("moves each task onto every other slot without duplicating or losing tasks", () => {
@@ -77,7 +83,8 @@ describe("reorderBoardTask — same column", () => {
         if (active === over) continue;
         const result = reorderBoardTask(board, active, over);
         expect(result).not.toBeNull();
-        const after = layout(result!.board).todo;
+        if (!result) throw new Error("Expected a valid reorder");
+        const after = layout(result.board).todo;
         expect(after).toHaveLength(5);
         expect([...after].sort()).toEqual([...ids].sort());
         // The dragged task must end up exactly where the user dropped it: at
@@ -104,7 +111,8 @@ describe("reorderBoardTask — across columns", () => {
     // indices, so no adjustment applies — B takes Y's slot.
     const result = reorderBoardTask(board, "B", "Y");
     expect(result).not.toBeNull();
-    const after = layout(result!.board);
+    if (!result) throw new Error("Expected a valid reorder");
+    const after = layout(result.board);
     expect(after.todo).toEqual(["A", "C"]);
     expect(after.doing).toEqual(["X", "B", "Y"]);
   });
@@ -112,13 +120,15 @@ describe("reorderBoardTask — across columns", () => {
   it("inserts at the top when dropping on the first task of another column", () => {
     const result = reorderBoardTask(board, "B", "X");
     expect(result).not.toBeNull();
-    expect(layout(result!.board).doing).toEqual(["B", "X", "Y"]);
+    if (!result) throw new Error("Expected a valid reorder");
+    expect(layout(result.board).doing).toEqual(["B", "X", "Y"]);
   });
 
   it("appends when dropping on a column container", () => {
     const result = reorderBoardTask(board, "A", "doing");
     expect(result).not.toBeNull();
-    const after = layout(result!.board);
+    if (!result) throw new Error("Expected a valid reorder");
+    const after = layout(result.board);
     expect(after.todo).toEqual(["B", "C"]);
     expect(after.doing).toEqual(["X", "Y", "A"]);
   });
@@ -126,14 +136,16 @@ describe("reorderBoardTask — across columns", () => {
   it("moves into an empty column", () => {
     const result = reorderBoardTask(board, "A", "done");
     expect(result).not.toBeNull();
-    const after = layout(result!.board);
+    if (!result) throw new Error("Expected a valid reorder");
+    const after = layout(result.board);
     expect(after.todo).toEqual(["B", "C"]);
     expect(after.done).toEqual(["A"]);
   });
 
   it("rewrites the moved task's status to the destination column", () => {
     const result = reorderBoardTask(board, "B", "Y");
-    const moved = result!.board.columns
+    if (!result) throw new Error("Expected a valid reorder");
+    const moved = result.board.columns
       .flatMap((column) => column.tasks)
       .find((task) => task.id === "B");
     expect(moved?.status).toBe("doing");
@@ -141,8 +153,9 @@ describe("reorderBoardTask — across columns", () => {
 
   it("emits contiguous positions for both affected columns", () => {
     const result = reorderBoardTask(board, "B", "Y");
+    if (!result) throw new Error("Expected a valid reorder");
     const byColumn = new Map<string, number[]>();
-    for (const update of result!.updates) {
+    for (const update of result.updates) {
       byColumn.set(update.status, [
         ...(byColumn.get(update.status) ?? []),
         update.position,

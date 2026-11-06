@@ -20,7 +20,7 @@ async function updateDiscordIntegration(
   json: UpdateDiscordIntegrationRequest,
 ) {
   const response = await fetch(
-    getApiUrl(`/discord-integration/board/${boardSlug}`),
+    getApiUrl(`/discord-integration/board/${boardId}`),
     {
       method: "PATCH",
       credentials: "include",

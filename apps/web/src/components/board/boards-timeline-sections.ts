@@ -9,6 +9,8 @@ export type OverviewTimelineTask = {
 export type OverviewTimelineMilestone = {
   id: string;
   name: string;
+  dueDate?: string | Date | null;
+  status?: string;
 };
 
 export type OverviewTimelineSection =

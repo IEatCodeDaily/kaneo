@@ -7,11 +7,11 @@ import deleteAccountData from "../../apps/api/src/user/controllers/delete-accoun
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
-  createProjectFixture,
-  createWorkspaceMember,
+  createBoardFixture,
+  createOrganizationMember,
 } from "./helpers/fixtures";
 
-async function addMember(workspaceId: string, role: string) {
+async function addMember(organizationId: string, role: string) {
   const userId = `user-${randomUUID()}`;
 
   const [user] = await db
@@ -24,8 +24,8 @@ async function addMember(workspaceId: string, role: string) {
     })
     .returning();
 
-  await db.insert(schema.workspaceUserTable).values({
-    workspaceId,
+  await db.insert(schema.organizationMemberTable).values({
+    organizationId,
     userId: user.id,
     role,
     joinedAt: new Date(),
@@ -34,73 +34,90 @@ async function addMember(workspaceId: string, role: string) {
   return user;
 }
 
+const findOrganization = (id: string) =>
+  db
+    .select()
+    .from(schema.organizationTable)
+    .where(eq(schema.organizationTable.id, id));
+
 describe("API integration: account deletion", () => {
   beforeEach(async () => {
     await resetTestDatabase();
   });
 
-  it("deletes a workspace the account is the only member of", async () => {
-    const owner = await createWorkspaceMember({ role: "owner" });
+  it("deletes an organization the account is the only member of", async () => {
+    const owner = await createOrganizationMember({ role: "owner" });
 
     await deleteAccountData(owner.user.id);
 
-    const workspaces = await db
-      .select()
-      .from(schema.workspaceTable)
-      .where(eq(schema.workspaceTable.id, owner.workspace.id));
-
-    expect(workspaces).toHaveLength(0);
+    expect(await findOrganization(owner.organization.id)).toHaveLength(0);
   });
 
-  it("refuses to delete while the account is the only owner of a shared workspace", async () => {
-    const owner = await createWorkspaceMember({
+  it("refuses to delete while the account is the only owner of a shared organization", async () => {
+    const owner = await createOrganizationMember({
       role: "owner",
-      workspaceName: "Acme",
+      organizationName: "Acme",
     });
-    await addMember(owner.workspace.id, "member");
+    await addMember(owner.organization.id, "member");
 
     await expect(deleteAccountData(owner.user.id)).rejects.toThrow(
       /only owner of "Acme"/,
     );
 
-    const workspaces = await db
-      .select()
-      .from(schema.workspaceTable)
-      .where(eq(schema.workspaceTable.id, owner.workspace.id));
-
-    expect(workspaces).toHaveLength(1);
+    expect(await findOrganization(owner.organization.id)).toHaveLength(1);
   });
 
-  it("leaves a shared workspace that keeps another owner", async () => {
-    const owner = await createWorkspaceMember({ role: "owner" });
-    await addMember(owner.workspace.id, "owner");
+  it("leaves a shared organization that keeps another owner", async () => {
+    const owner = await createOrganizationMember({ role: "owner" });
+    await addMember(owner.organization.id, "owner");
 
     await deleteAccountData(owner.user.id);
 
-    const workspaces = await db
-      .select()
-      .from(schema.workspaceTable)
-      .where(eq(schema.workspaceTable.id, owner.workspace.id));
     const members = await db
       .select()
-      .from(schema.workspaceUserTable)
-      .where(eq(schema.workspaceUserTable.userId, owner.user.id));
+      .from(schema.organizationMemberTable)
+      .where(eq(schema.organizationMemberTable.userId, owner.user.id));
 
-    expect(workspaces).toHaveLength(1);
+    expect(await findOrganization(owner.organization.id)).toHaveLength(1);
     expect(members).toHaveLength(0);
   });
 
-  it("keeps tasks, time entries, and activity of another workspace after the user row is deleted", async () => {
-    const host = await createWorkspaceMember({ role: "owner" });
-    const guest = await addMember(host.workspace.id, "member");
-    const { project } = await createProjectFixture({
-      workspaceId: host.workspace.id,
+  it("refuses, and rolls back the membership change, while the account still leads a project", async () => {
+    const host = await createOrganizationMember({ role: "owner" });
+    const guest = await addMember(host.organization.id, "member");
+    await db.insert(schema.projectTable).values({
+      id: `project-${randomUUID()}`,
+      organizationId: host.organization.id,
+      slug: `proj-${randomUUID().slice(0, 8)}`,
+      name: "Launch",
+      summary: "Shared project",
+      leadUserId: guest.id,
+      createdBy: host.user.id,
+    });
+
+    await expect(deleteAccountData(guest.id)).rejects.toThrow(
+      /lead or authored records in "Launch"/,
+    );
+
+    const members = await db
+      .select()
+      .from(schema.organizationMemberTable)
+      .where(eq(schema.organizationMemberTable.userId, guest.id));
+    expect(members).toHaveLength(1);
+  });
+
+  it("keeps tasks, time entries, and activity of another organization after the user row is deleted", async () => {
+    const host = await createOrganizationMember({ role: "owner" });
+    const guest = await addMember(host.organization.id, "member");
+    const { board, columns } = await createBoardFixture({
+      organizationId: host.organization.id,
     });
 
     const [task] = await db
       .insert(schema.taskTable)
       .values({
-        projectId: project.id,
+        boardId: board.id,
+        columnId: columns.todo.id,
         userId: guest.id,
         title: "Assigned to the leaving user",
         status: "to-do",
@@ -155,7 +172,7 @@ describe("API integration: account deletion", () => {
   });
 
   it("removes the stored avatar with the account", async () => {
-    const member = await createWorkspaceMember({ role: "owner" });
+    const member = await createOrganizationMember({ role: "owner" });
 
     const [avatar] = await db
       .insert(schema.userAvatarTable)
@@ -186,7 +203,7 @@ describe("API integration: avatar routes", () => {
   });
 
   it("stores an uploaded avatar and serves it back without authentication", async () => {
-    const member = await createWorkspaceMember({ role: "owner" });
+    const member = await createOrganizationMember({ role: "owner" });
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
@@ -223,7 +240,7 @@ describe("API integration: avatar routes", () => {
   });
 
   it("rejects bytes that do not match the declared image type", async () => {
-    const member = await createWorkspaceMember({ role: "owner" });
+    const member = await createOrganizationMember({ role: "owner" });
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
@@ -240,7 +257,7 @@ describe("API integration: avatar routes", () => {
   });
 
   it("replaces the previous avatar and retires its URL", async () => {
-    const member = await createWorkspaceMember({ role: "owner" });
+    const member = await createOrganizationMember({ role: "owner" });
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
@@ -277,7 +294,7 @@ describe("API integration: avatar routes", () => {
   });
 
   it("deletes the avatar of the current user", async () => {
-    const member = await createWorkspaceMember({ role: "owner" });
+    const member = await createOrganizationMember({ role: "owner" });
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 

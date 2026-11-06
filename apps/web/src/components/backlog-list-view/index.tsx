@@ -397,12 +397,10 @@ function BacklogListView({
             {isSelectMode && tasks.length > 0 && (
               <Checkbox
                 aria-label={`Select all ${title} tickets`}
-                checked={
-                  tasks.every((task) => selectedTaskIds.has(task.id))
-                    ? true
-                    : tasks.some((task) => selectedTaskIds.has(task.id))
-                      ? "indeterminate"
-                      : false
+                checked={tasks.every((task) => selectedTaskIds.has(task.id))}
+                indeterminate={
+                  tasks.some((task) => selectedTaskIds.has(task.id)) &&
+                  !tasks.every((task) => selectedTaskIds.has(task.id))
                 }
                 onCheckedChange={(checked) => {
                   const sectionIds = new Set(tasks.map((task) => task.id));

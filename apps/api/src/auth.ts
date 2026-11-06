@@ -37,6 +37,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import db, { schema } from "./database";
 import { publishEvent } from "./events";
 import { decodeJwtPayload, syncOidcTeams } from "./oidc-team-sync/service";
+import { deleteAccountData } from "./user/controllers/delete-account-data";
 import { checkOrganizationName } from "./utils/check-organization-name";
 import {
   checkRegistrationAllowed,
@@ -352,6 +353,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            workEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: false,
+            },
           },
         },
         member: {
@@ -507,7 +514,6 @@ export const auth = betterAuth({
           {
             inviterEmail: data.inviter.user.email,
             inviterName: data.inviter.user.name,
-            locale,
             organizationName: data.organization.name,
             invitationLink: inviteLink,
             to: data.email,

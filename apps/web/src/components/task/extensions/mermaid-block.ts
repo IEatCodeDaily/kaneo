@@ -7,7 +7,7 @@ import DOMPurify from "dompurify";
 import debounce from "@/lib/debounce";
 import { i18n } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
-import { isDarkTheme, SHIKI_CODEBLOCK_REFRESH_META } from "./shiki-code-block";
+import { SHIKI_CODEBLOCK_REFRESH_META } from "./shiki-code-block";
 
 const MERMAID_LANGUAGE = "mermaid";
 const MERMAID_REFRESH_META = "mermaid-refresh";
@@ -175,7 +175,7 @@ function createPreviewElement(state: RenderState | null) {
 }
 
 function getDecorations(doc: ProseMirrorNode, scheduler: Scheduler) {
-  const dark = isDarkTheme();
+  const dark = document.documentElement.classList.contains("dark");
   const decorations: Decoration[] = [];
 
   scheduler.reset();

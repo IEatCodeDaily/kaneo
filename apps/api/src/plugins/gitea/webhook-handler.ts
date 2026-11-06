@@ -36,7 +36,7 @@ export async function handleGiteaWebhookRequest(
       eq(repoTable.name, name),
     ),
   });
-  if (!repo || !repo.isActive) {
+  if (!repo?.isActive) {
     // A 2xx outcome avoids endless provider retries for repos not managed here.
     return { success: true };
   }

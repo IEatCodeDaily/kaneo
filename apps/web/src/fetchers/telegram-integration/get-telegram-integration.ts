@@ -23,7 +23,7 @@ export type TelegramIntegration = {
 
 async function getTelegramIntegration(boardId: string) {
   const response = await fetch(
-    getApiUrl(`/telegram-integration/board/${boardSlug}`),
+    getApiUrl(`/telegram-integration/board/${boardId}`),
     {
       credentials: "include",
     },
