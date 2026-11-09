@@ -150,7 +150,7 @@ export function NavRepos() {
         </SidebarMenu>
       </SidebarGroup>
 
-      <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
+      <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-0.5 p-2 pt-1">
         <div className="flex h-7 items-center">
           <SidebarGroupLabel
             className="h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground"
@@ -217,7 +217,7 @@ export function NavRepos() {
                     <ContextMenuTrigger asChild>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          className="h-8 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
+                          className="h-7 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
                           isActive={isCurrentRepo(repo.id)}
                           onClick={() => openRepo(repo.id)}
                           {...intentPrefetchHandlers(() =>
@@ -227,8 +227,13 @@ export function NavRepos() {
                         >
                           {/* #171: repos show an icon in the expanded rail too. */}
                           <RepoAvatar className="me-2" repo={repo} />
-                          <span className="truncate">{repo.name}</span>
-                          <span className="ml-auto flex items-center gap-1.5 text-[11px] text-sidebar-foreground/70">
+                          {/* min-w-0: without it the flex item refuses to shrink
+                              below its text width and pushes the counts out of
+                              the button on long repo names. */}
+                          <span className="min-w-0 flex-1 truncate">
+                            {repo.name}
+                          </span>
+                          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[11px] text-sidebar-foreground/70 tabular-nums">
                             <span className="flex items-center gap-0.5">
                               <CircleDot className="h-3 w-3" />
                               {repo.openIssueCount}

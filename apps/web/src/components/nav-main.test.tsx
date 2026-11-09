@@ -163,7 +163,7 @@ describe("NavMain compact personal group", () => {
     expect(
       screen.getByRole("button", { name: "navigation:sidebar.inbox" })
         .className,
-    ).toContain("h-7");
+    ).toContain("h-6");
     expect(screen.getByTestId("inbox-count-column").className).toContain("w-5");
     expect(screen.getByTestId("recent-chevron-column").className).toContain(
       "w-5",
