@@ -73,8 +73,8 @@ export function UserAvatar() {
               through transparent avatars as a halo (dark mode report). */}
           <Avatar className={`h-8 w-8 ${user.image ? "" : tone}`}>
             {user.image ? (
-            <AvatarImage src={user.image} alt={user.name || ""} />
-          ) : null}
+              <AvatarImage src={user.image} alt={user.name || ""} />
+            ) : null}
             <AvatarFallback
               className={cn(
                 "text-xs font-medium border border-border/30",
@@ -89,10 +89,12 @@ export function UserAvatar() {
       <DropdownMenuContent className="w-52 p-0" side="bottom" align="start">
         <div className="px-2.5 py-2">
           <div className="flex items-center gap-2 text-left text-sm">
-            <Avatar className={`h-7 w-7 rounded-full ${user.image ? "" : tone}`}>
+            <Avatar
+              className={`h-7 w-7 rounded-full ${user.image ? "" : tone}`}
+            >
               {user.image ? (
-            <AvatarImage src={user.image} alt={user.name || ""} />
-          ) : null}
+                <AvatarImage src={user.image} alt={user.name || ""} />
+              ) : null}
               <AvatarFallback
                 className={cn(
                   "rounded-full border border-border/30",
