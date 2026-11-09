@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/cn";
@@ -37,23 +37,27 @@ export default function ResourceSettingsShell({
     ? activeSegment
     : tabs[0].segment;
   const firstId = items[0]?.id;
+  const { pathname } = useLocation();
+  const onBareSection = pathname.replace(/\/+$/, "") === base;
+  const firstTab = tabs[0].segment;
 
   // The bare section URL lands on the first resource instead of an empty pane.
+  // Only on that exact URL: while navigating away this shell still renders
+  // with the new pathname, and redirecting then traps the user here.
   useEffect(() => {
-    if (!activeId && firstId)
-      void navigate({
-        to: `${base}/${firstId}/${tabs[0].segment}`,
-        replace: true,
-      });
-  }, [activeId, firstId, base, navigate, tabs]);
+    if (onBareSection && !activeId && firstId)
+      void navigate({ to: `${base}/${firstId}/${firstTab}`, replace: true });
+  }, [onBareSection, activeId, firstId, base, navigate, firstTab]);
 
   const active = items.find((item) => item.id === activeId);
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 md:flex-row md:gap-0">
+      {/* Sticky: this list sits inside the settings pane's scroller, so
+          without it the list scrolls away with long settings pages. */}
       <nav
         aria-label={title}
-        className="hidden shrink-0 flex-col gap-0.5 overflow-y-auto md:flex md:w-56 md:border-r md:border-border md:pr-3"
+        className="hidden shrink-0 flex-col gap-0.5 overflow-y-auto md:sticky md:top-0 md:flex md:max-h-[calc(100dvh-10rem)] md:w-56 md:self-start md:pr-3"
       >
         <p className="flex items-center gap-2 px-2 pb-2 font-semibold text-sm">
           <Icon className="size-4 text-muted-foreground" aria-hidden />
@@ -99,7 +103,7 @@ export default function ResourceSettingsShell({
         ))}
       </select>
 
-      <div className="flex w-full min-w-0 flex-1 flex-col gap-4 md:pl-6">
+      <div className="flex w-full min-w-0 flex-1 flex-col gap-4 md:border-border md:border-l md:pl-6">
         {active ? (
           <>
             <h2 className="font-semibold text-lg">{active.label}</h2>

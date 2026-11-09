@@ -42,7 +42,14 @@
 		},
 		"flaggedCount": "{{count}} flagged ticket",
 		"flaggedCount_other": "{{count}} flagged tickets",
-		"flagged": "Flagged"
+		"flagged": "Flagged",
+		"count_one": "{{count}} ticket",
+		"loadedCount_one": "{{loaded}} loaded ticket",
+		"loadedCount_other": "{{loaded}} loaded tickets",
+		"shownOfLoaded": "{{shown}} of {{loaded}} loaded",
+		"statusOfShown": "Status of {{count}} shown",
+		"emptyFiltered": "No tickets match these filters.",
+		"loadedCount": "{{loaded}} loaded tickets"
 	},
 	"auth": {
 		"signIn": {
@@ -1597,7 +1604,8 @@
 			"display": "Display",
 			"allTypes": "All types",
 			"allRoles": "All roles",
-			"searchMembers": "Search name or email"
+			"searchMembers": "Search name or email",
+			"integrations": "Integrations"
 		},
 		"organizationMembers": {
 			"description": "People and agents with access to this organization."
@@ -2869,6 +2877,24 @@
 		},
 		"repoVisibility": {
 			"title": "Visibility"
+		},
+		"integrations": {
+			"title": "Integrations",
+			"subtitle": "Connect this organization to the tools your team already uses.",
+			"statusOn": "On",
+			"statusOff": "Off",
+			"statusNotSetUp": "Not set up",
+			"teamsDescription": "Show this organization’s tickets in Microsoft Teams: sign in from the Kaneo tab, preview pasted ticket links, and search tickets from chat. Teams only shows tickets the person can already see in Kaneo.",
+			"teamsToggle": "Allow Microsoft Teams",
+			"teamsCapability": {
+				"tab": "Teams tab sign-in",
+				"linkPreviews": "Link previews and search",
+				"openInTeams": "Open tickets in Teams"
+			},
+			"ready": "Ready",
+			"notConfigured": "Not configured on this instance",
+			"teamsSetupHint": "An instance administrator must register the Kaneo Teams app first (TEAMS_SSO_* and TEAMS_BOT_APP_ID).",
+			"updateError": "Could not update the integration"
 		}
 	},
 	"invitations": {
@@ -3028,7 +3054,24 @@
 		"flaggedCount": "{{count}} flagged",
 		"unreadCount": "{{count}} unread",
 		"dismiss": "Dismiss",
-		"clearGroup": "Clear group"
+		"clearGroup": "Clear group",
+		"filterType": "Update type",
+		"filterBoard": "Board",
+		"count_one": "{{count}} update",
+		"shownOfLoaded_one": "{{shown}} of {{count}} update",
+		"shownOfLoaded_other": "{{shown}} of {{count}} updates",
+		"clearShown_one": "Clear {{count}} shown",
+		"clearShown_other": "Clear {{count}} shown",
+		"clearShownTitle_one": "Clear {{count}} shown update?",
+		"clearShownTitle_other": "Clear {{count}} shown updates?",
+		"clearShownDescription_one": "This permanently removes the update shown in this view. Flagged updates stay until resolved. You can't undo this.",
+		"clearShownDescription_other": "This permanently removes the {{count}} updates shown in this view. Flagged updates stay until resolved. You can't undo this.",
+		"filteredBy": "Filtered by",
+		"emptyFiltered": "No updates match these filters.",
+		"clearShown": "Clear {{count}} shown",
+		"clearShownTitle": "Clear {{count}} shown updates?",
+		"clearShownDescription": "This permanently removes the {{count}} updates shown in this view. Flagged updates stay until resolved. You can't undo this.",
+		"shownOfLoaded": "{{shown}} of {{count}} updates"
 	},
 	"organization": {
 		"boards": {
@@ -3216,14 +3259,18 @@
 			"nameLabel": "Agent name",
 			"namePlaceholder": "e.g. Release bot",
 			"create": "Create agent",
-			"expiryHint": "Keys expire automatically after {{days}} days. Revoke one at any time.",
 			"secretWarning": "Copy this secret now. It will not be shown again.",
 			"copy": "Copy",
 			"agentBadge": "Agent",
-			"agentMeta": "Expires {{date}} · access follows organization role",
 			"revoke": "Revoke agent",
 			"createError": "Could not create agent",
-			"deleteError": "Could not delete agent"
+			"deleteError": "Could not delete agent",
+			"tokenHint": "Tokens do not expire. Reissue one to rotate it; the previous token stops working immediately.",
+			"tokenMeta": "Token {{start}}… issued {{date}} · access follows organization role",
+			"noToken": "No active token",
+			"issue": "Issue token",
+			"reissue": "Reissue token",
+			"reissueError": "Could not reissue token"
 		},
 		"membersTable": {
 			"removeMember": "Remove Member",

@@ -1,10 +1,11 @@
 import { getApiUrl } from "@/fetchers/get-api-url";
 
+/** An agent identity; its token is separate and can be reissued. */
 export type Agent = {
   id: string;
   name: string;
-  expiresAt: string;
-  permissions: Record<string, string[]>;
+  createdAt: string;
+  token: { id: string; start: string | null; createdAt: string } | null;
 };
 
 export default async function getAgents(organizationId: string) {

@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InboxComponent } from "./inbox";
@@ -315,6 +316,68 @@ describe("InboxComponent granular clearing", () => {
     render(<InboxComponent />);
     fireEvent.click(screen.getByRole("button", { name: "inbox:clearRead" }));
     expect(mocks.deleteNotifications).toHaveBeenCalledWith(["read"]);
+  });
+
+  it("clears read updates only from the filtered board", async () => {
+    mocks.notifications = [
+      notification("shown", "board-1", "task-1"),
+      notification("hidden", "board-2", "task-2"),
+    ];
+    render(<InboxComponent />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.filter" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "inbox:filterBoard" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitemcheckbox", { name: "Board board-1" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "inbox:clearRead" }));
+    expect(mocks.deleteNotifications).toHaveBeenCalledWith(["shown"]);
+  });
+
+  it("clear shown under Mentions deletes only displayed mentions, never flags", async () => {
+    mocks.notifications = [
+      { ...notification("mention", "board-1", "task-1"), type: "task_mention" },
+      notification("other", "board-1", "task-2"),
+      {
+        ...notification("flag", "board-1", "task-3"),
+        type: "task_flag_raised",
+      },
+    ];
+    render(<InboxComponent />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "inbox:filter.mentions" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: 'inbox:clearShown:{"count":1}' }),
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    // The dialog's close wrapper and its button share the label; click the
+    // inner button.
+    fireEvent.click(
+      within(dialog)
+        .getAllByRole("button", { name: 'inbox:clearShown:{"count":1}' })
+        .at(-1) as HTMLElement,
+    );
+    expect(mocks.deleteNotifications).toHaveBeenCalledExactlyOnceWith([
+      "mention",
+    ]);
+  });
+
+  it("clear read under Unread has nothing to clear", () => {
+    mocks.notifications = [
+      notification("read", "board-1", "task-1"),
+      { ...notification("unread", "board-1", "task-2"), isRead: false },
+    ];
+    render(<InboxComponent />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "inbox:filter.unread" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "inbox:clearRead" }),
+    ).toBeDisabled();
   });
 
   it("dismisses every event in a folded ticket row", () => {

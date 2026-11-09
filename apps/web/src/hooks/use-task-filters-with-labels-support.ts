@@ -173,6 +173,106 @@ function normalizeFilters(raw: unknown): BoardFilters {
   return normalized;
 }
 
+/** Fields the board filters read; My Tickets rows map onto the same shape. */
+export type FilterableTask = Pick<
+  Task,
+  "status" | "priority" | "userId" | "dueDate" | "labels"
+>;
+
+/**
+ * The board filter predicate, shared so every ticket list (board, list,
+ * My Tickets) filters identically.
+ */
+export function matchesTaskFilters(
+  task: FilterableTask,
+  filters: BoardFilters,
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+): boolean {
+  if (
+    filters.status &&
+    filters.status.length > 0 &&
+    !filters.status.includes(task.status)
+  ) {
+    return false;
+  }
+
+  if (
+    filters.priority &&
+    filters.priority.length > 0 &&
+    !filters.priority.includes(task.priority ?? "")
+  ) {
+    return false;
+  }
+
+  if (
+    filters.assignee &&
+    filters.assignee.length > 0 &&
+    !filters.assignee.includes(task.userId ?? "")
+  ) {
+    return false;
+  }
+
+  if (filters.dueDate && filters.dueDate.length > 0) {
+    const today = new Date();
+    const taskDate = task.dueDate ? new Date(task.dueDate) : null;
+
+    const matchesAnyDueDate = filters.dueDate.some((dueDateFilter) => {
+      if (dueDateFilter === DUE_DATE_FILTER_VALUES.noDueDate) {
+        return !task.dueDate;
+      }
+
+      if (!taskDate) {
+        return false;
+      }
+
+      switch (dueDateFilter) {
+        case DUE_DATE_FILTER_VALUES.dueThisWeek: {
+          const weekStart = startOfWeek(today, { weekStartsOn });
+          const weekEnd = endOfWeek(today, { weekStartsOn });
+          return isWithinInterval(taskDate, {
+            start: weekStart,
+            end: weekEnd,
+          });
+        }
+        case DUE_DATE_FILTER_VALUES.dueNextWeek: {
+          const nextWeekStart = startOfWeek(addWeeks(today, 1), {
+            weekStartsOn,
+          });
+          const nextWeekEnd = endOfWeek(addWeeks(today, 1), {
+            weekStartsOn,
+          });
+          return isWithinInterval(taskDate, {
+            start: nextWeekStart,
+            end: nextWeekEnd,
+          });
+        }
+        default:
+          return false;
+      }
+    });
+
+    if (!matchesAnyDueDate) {
+      return false;
+    }
+  }
+
+  // Label filtering
+  if (filters.labels && filters.labels.length > 0) {
+    const taskLabelIds = (task.labels ?? []).map((label) => label.id);
+
+    // Check if task has at least one of the selected labels
+    const hasMatchingLabel = filters.labels.some((labelId) =>
+      taskLabelIds.includes(labelId),
+    );
+
+    if (!hasMatchingLabel) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function useTaskFiltersWithLabelsSupport(
   board: BoardWithTasks | null | undefined,
   boardId?: string,
@@ -241,89 +341,7 @@ export function useTaskFiltersWithLabelsSupport(
           }
         }
 
-        if (
-          filters.status &&
-          filters.status.length > 0 &&
-          !filters.status.includes(task.status)
-        ) {
-          return false;
-        }
-
-        if (
-          filters.priority &&
-          filters.priority.length > 0 &&
-          !filters.priority.includes(task.priority ?? "")
-        ) {
-          return false;
-        }
-
-        if (
-          filters.assignee &&
-          filters.assignee.length > 0 &&
-          !filters.assignee.includes(task.userId ?? "")
-        ) {
-          return false;
-        }
-
-        if (filters.dueDate && filters.dueDate.length > 0) {
-          const today = new Date();
-          const taskDate = task.dueDate ? new Date(task.dueDate) : null;
-
-          const matchesAnyDueDate = filters.dueDate.some((dueDateFilter) => {
-            if (dueDateFilter === DUE_DATE_FILTER_VALUES.noDueDate) {
-              return !task.dueDate;
-            }
-
-            if (!taskDate) {
-              return false;
-            }
-
-            switch (dueDateFilter) {
-              case DUE_DATE_FILTER_VALUES.dueThisWeek: {
-                const weekStart = startOfWeek(today, { weekStartsOn });
-                const weekEnd = endOfWeek(today, { weekStartsOn });
-                return isWithinInterval(taskDate, {
-                  start: weekStart,
-                  end: weekEnd,
-                });
-              }
-              case DUE_DATE_FILTER_VALUES.dueNextWeek: {
-                const nextWeekStart = startOfWeek(addWeeks(today, 1), {
-                  weekStartsOn,
-                });
-                const nextWeekEnd = endOfWeek(addWeeks(today, 1), {
-                  weekStartsOn,
-                });
-                return isWithinInterval(taskDate, {
-                  start: nextWeekStart,
-                  end: nextWeekEnd,
-                });
-              }
-              default:
-                return false;
-            }
-          });
-
-          if (!matchesAnyDueDate) {
-            return false;
-          }
-        }
-
-        // Label filtering
-        if (filters.labels && filters.labels.length > 0) {
-          const taskLabelIds = (task.labels ?? []).map((label) => label.id);
-
-          // Check if task has at least one of the selected labels
-          const hasMatchingLabel = filters.labels.some((labelId) =>
-            taskLabelIds.includes(labelId),
-          );
-
-          if (!hasMatchingLabel) {
-            return false;
-          }
-        }
-
-        return true;
+        return matchesTaskFilters(task, filters, weekStartsOn);
       });
     },
     [filters, textQuery, weekStartsOn],

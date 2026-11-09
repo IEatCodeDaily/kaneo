@@ -1,5 +1,6 @@
 import { config } from "dotenv-mono";
 import { isGithubSsoConfigured } from "./github-sso-env";
+import { teamsSsoConfigFromEnv } from "./teams-sso";
 
 config();
 
@@ -38,6 +39,17 @@ function getSettings() {
     disableLoginForm: process.env.DISABLE_LOGIN_FORM === "true",
     customOAuthAutoLogin: process.env.CUSTOM_OAUTH_AUTO_LOGIN === "true",
     customOAuthLogoutUrl: process.env.CUSTOM_OAUTH_LOGOUT_URL || null,
+    /** Microsoft Teams capabilities this instance is set up for. */
+    // Same env checks as teamsUnfurlConfigFromEnv, which can't be imported
+    // here (it pulls in the database and auth).
+    teams: {
+      tab: teamsSsoConfigFromEnv() !== null,
+      linkPreviews:
+        Boolean(process.env.TEAMS_BOT_APP_ID?.trim()) &&
+        Boolean(process.env.TEAMS_SSO_TENANT_ID?.trim()) &&
+        Boolean(process.env.KANEO_CLIENT_URL?.trim()),
+      openInTeams: Boolean(process.env.TEAMS_APP_ID?.trim()),
+    },
   };
 }
 

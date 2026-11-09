@@ -7,7 +7,7 @@ import {
   Flag,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
 import PageTitle from "@/components/page-title";
@@ -17,9 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resolveLabelColor } from "@/constants/label-colors";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import useInfiniteMyTasks from "@/hooks/queries/task/use-infinite-my-tasks";
 import { useLocalDay } from "@/hooks/use-local-day";
+import {
+  matchesTaskFilters,
+  useTaskFiltersWithLabelsSupport,
+} from "@/hooks/use-task-filters-with-labels-support";
 import { getColumnIcon } from "@/lib/column";
 import {
   groupMyTasks,
@@ -32,6 +38,10 @@ import {
 } from "@/lib/my-tasks-view";
 import { getPriorityIcon } from "@/lib/priority";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+
+// The filter menu is board-sized; load it on demand so My Tickets (which
+// lives in the entry chunk) does not grow the first-load bundle.
+const BoardToolbar = lazy(() => import("@/components/board/board-toolbar"));
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks",
@@ -86,6 +96,18 @@ export function MyTasksComponent() {
   const setGroup = (group: MyTasksGroup) =>
     saveDisplay(displayKey, { sort, group });
   const [dueFilter, setDueFilter] = useState<"overdue" | "soon" | null>(null);
+  const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
+  // Same Filter control and predicate as the board, persisted per user + org.
+  const {
+    filters,
+    updateFilter,
+    updateLabelFilter,
+    clearFilters,
+    hasActiveFilters,
+  } = useTaskFiltersWithLabelsSupport(null, `my-tickets:${displayKey}`);
+  const { data: members } = useGetActiveOrganizationMembers(organizationId);
+  const { data: organizationLabels = [] } =
+    useGetLabelsByOrganization(organizationId);
   const [collapsedBoards, setCollapsedBoards] = useState<Set<string>>(
     new Set(),
   );
@@ -111,9 +133,32 @@ export function MyTasksComponent() {
   }));
   // Flagged is a client-side filter over the already-fetched page: cheap, and
   // it keeps the flag state visible in the count without another round trip.
-  const relationFiltered: MyTask[] = flaggedOnly
-    ? allTasks.filter((task) => task.flagged)
-    : allTasks;
+  const relationFiltered: MyTask[] = allTasks.filter(
+    (task) =>
+      (!flaggedOnly || task.flagged) &&
+      matchesTaskFilters(
+        { ...task, userId: task.assigneeId ?? null },
+        filters,
+        weekStartsOn,
+      ),
+  );
+  // Tickets span boards, so the status options are the statuses present in
+  // the loaded tickets (one entry per status slug).
+  const statusColumns = [
+    ...new Map(
+      allTasks
+        .filter((task) => task.status)
+        .map((task) => [
+          task.status as string,
+          {
+            id: task.status as string,
+            name: task.columnName ?? (task.status as string),
+            isFinal: task.isFinal,
+            icon: task.columnIcon,
+          },
+        ]),
+    ).values(),
+  ];
   const tasks = sortMyTasks(
     relationFiltered.filter(
       (task) =>
@@ -127,167 +172,219 @@ export function MyTasksComponent() {
     sort,
   );
   const groupedTasks = groupMyTasks(tasks, group, new Date(day));
+  const locallyFiltered =
+    hasActiveFilters || flaggedOnly || dueFilter !== null || search !== "";
+  // Say what the number counts: shown of loaded, with "+" while more pages
+  // exist (the API is paginated, so loaded is not a total).
+  const loadedLabel = `${allTasks.length}${hasNextPage ? "+" : ""}`;
+  const countLabel = locallyFiltered
+    ? t("myTasks:shownOfLoaded", { shown: tasks.length, loaded: loadedLabel })
+    : t("myTasks:loadedCount", { count: allTasks.length, loaded: loadedLabel });
+  const clearLocalFilters = () => {
+    clearFilters();
+    setFlaggedOnly(false);
+    setDueFilter(null);
+    setSearch("");
+  };
   const statuses = summarizeTicketStatuses(tasks);
 
   return (
     <OrganizationLayout title={t("myTasks:title")}>
       <PageTitle title={t("myTasks:title")} />
       <div className="flex h-full flex-col overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/80 px-4 py-3">
-          <h1 className="mr-2 font-medium text-sm">{t("myTasks:title")}</h1>
-
-          <div className="flex items-center gap-1">
-            {RELATIONS.map(({ value, labelKey }) => (
-              <Button
-                key={value}
-                type="button"
-                size="xs"
-                variant={relation === value ? "secondary" : "ghost"}
-                aria-pressed={relation === value}
-                onClick={() => setRelation(value)}
-                className="min-h-11 min-w-11 rounded-md px-3 text-xs sm:min-h-8"
-              >
-                {t(labelKey)}
-              </Button>
-            ))}
+        {/* Two deliberate rows. Row 1: what you are looking at (title,
+            relation, how many, how it is shown). Row 2: how it is narrowed.
+            Phones scroll each row sideways instead of wrapping into a wall. */}
+        <div className="flex flex-col gap-2 border-b border-border/80 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="sr-only mr-2 font-medium text-sm sm:not-sr-only">
+              {t("myTasks:title")}
+            </h1>
+            <div className="-my-1 flex min-w-0 items-center gap-1 overflow-x-auto py-1 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)]">
+              {RELATIONS.map(({ value, labelKey }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  size="xs"
+                  variant={relation === value ? "secondary" : "ghost"}
+                  aria-pressed={relation === value}
+                  onClick={() => setRelation(value)}
+                  className="min-h-11 min-w-11 shrink-0 rounded-md px-3 aria-pressed:shadow-[inset_0_0_0_1px_var(--border)] sm:min-h-8"
+                >
+                  {t(labelKey)}
+                </Button>
+              ))}
+            </div>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <Loader2
+                aria-hidden
+                className={`size-3.5 animate-spin text-muted-foreground ${
+                  isFetching ? "" : "invisible"
+                }`}
+              />
+              <span className="hidden whitespace-nowrap text-muted-foreground text-xs tabular-nums sm:inline">
+                {countLabel}
+              </span>
+              <details className="relative">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border border-input px-2.5 text-xs hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring sm:min-h-8">
+                  {t("settings:navigation.display", {
+                    defaultValue: "Display",
+                  })}
+                </summary>
+                <div className="absolute right-0 z-20 mt-2 flex w-64 flex-col gap-3 rounded-lg border bg-popover p-4 shadow-lg">
+                  <select
+                    aria-label="Sort tickets"
+                    value={sort}
+                    onChange={(event) =>
+                      setSort(event.target.value as MyTasksSort)
+                    }
+                    className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+                  >
+                    <option value="updated">Recently updated</option>
+                    <option value="created">Created date</option>
+                    <option value="dueDate">Due date</option>
+                    <option value="priority">Priority</option>
+                    <option value="title">Title</option>
+                    <option value="number">Ticket number</option>
+                  </select>
+                  <select
+                    aria-label="Group tickets"
+                    value={group}
+                    onChange={(event) =>
+                      setGroup(event.target.value as MyTasksGroup)
+                    }
+                    className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+                  >
+                    <option value="board">Board</option>
+                    <option value="none">None</option>
+                    <option value="status">Status</option>
+                    <option value="priority">Priority</option>
+                    <option value="label">Label</option>
+                    <option value="dueDate">Due date</option>
+                    <option value="assignee">Assignee</option>
+                    <option value="milestone">Milestone</option>
+                  </select>
+                </div>
+              </details>
+            </div>
           </div>
 
-          <Button
-            type="button"
-            size="xs"
-            variant={includeCompleted ? "secondary" : "outline"}
-            aria-pressed={includeCompleted}
-            onClick={() => setIncludeCompleted((previous) => !previous)}
-            className="min-h-11 gap-1.5 rounded-md px-3 text-xs sm:min-h-8"
-          >
-            {/* An explicit check mark, so the on/off state is legible without
-                relying on a subtle background shade alone. */}
-            <Check
-              aria-hidden
-              className={`size-3.5 ${
-                includeCompleted ? "opacity-100" : "opacity-30"
-              }`}
-            />
-            {t("myTasks:includeCompleted")}
-          </Button>
-
-          <Button
-            type="button"
-            size="xs"
-            variant={flaggedOnly ? "secondary" : "outline"}
-            aria-pressed={flaggedOnly}
-            onClick={() => setFlaggedOnly((previous) => !previous)}
-            className="min-h-11 gap-1.5 rounded-md px-3 text-xs sm:min-h-8"
-          >
-            <Flag
-              aria-hidden
-              className={`size-3.5 ${flaggedOnly ? "opacity-100" : "opacity-40"}`}
-            />
-            {t("myTasks:flagged")}
-          </Button>
-
-          {(["overdue", "soon"] as const).map((value) => (
-            <Button
-              key={value}
-              type="button"
-              size="sm"
-              variant={dueFilter === value ? "secondary" : "outline"}
-              aria-pressed={dueFilter === value}
-              onClick={() =>
-                setDueFilter((previous) => (previous === value ? null : value))
-              }
-              className="min-h-11 gap-1.5 sm:min-h-8"
-            >
-              <CalendarDays className="size-3.5" />
-              {t(
-                value === "overdue"
-                  ? "home:due.Overdue"
-                  : "home:due.Next 7 days",
-                {
-                  defaultValue: value === "overdue" ? "Overdue" : "Next 7 days",
-                },
-              )}
-            </Button>
-          ))}
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Filter tickets…"
-            aria-label="Filter tickets"
-            className="min-h-11 w-full text-xs sm:min-h-8 sm:w-44"
-          />
-          <details className="relative ml-auto">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md border px-3 text-xs sm:min-h-8">
-              {t("settings:navigation.display", { defaultValue: "Display" })}
-            </summary>
-            <div className="absolute right-0 z-20 mt-2 flex w-64 flex-col gap-3 rounded-lg border bg-popover p-4 shadow-lg">
-              <select
-                aria-label="Sort tickets"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as MyTasksSort)}
-                className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="-my-1 flex min-w-0 items-center gap-1.5 overflow-x-auto py-1 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)]">
+              {/* shrink-0: chips keep their width and the row scrolls. */}
+              <div className="shrink-0">
+                <Suspense fallback={null}>
+                  <BoardToolbar
+                    statusColumns={statusColumns}
+                    filters={filters}
+                    updateFilter={updateFilter}
+                    updateLabelFilter={updateLabelFilter}
+                    clearFilters={clearFilters}
+                    hasActiveFilters={hasActiveFilters}
+                    users={members}
+                    organizationLabels={organizationLabels}
+                    sort={{ field: "position", direction: "asc" }}
+                    onSortChange={() => {}}
+                    searchQuery=""
+                    onSearchQueryChange={() => {}}
+                    groupBy="none"
+                    onGroupByChange={() => {}}
+                    filtersOnly
+                  />
+                </Suspense>
+              </div>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                aria-pressed={includeCompleted}
+                onClick={() => setIncludeCompleted((previous) => !previous)}
+                className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
               >
-                <option value="updated">Recently updated</option>
-                <option value="created">Created date</option>
-                <option value="dueDate">Due date</option>
-                <option value="priority">Priority</option>
-                <option value="title">Title</option>
-                <option value="number">Ticket number</option>
-              </select>
-              <select
-                aria-label="Group tickets"
-                value={group}
-                onChange={(event) =>
-                  setGroup(event.target.value as MyTasksGroup)
-                }
-                className="min-h-11 rounded-md border bg-background px-2 text-xs sm:min-h-8"
+                <Check
+                  aria-hidden
+                  className={`size-3.5 ${includeCompleted ? "" : "opacity-30"}`}
+                />
+                {t("myTasks:includeCompleted")}
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                aria-pressed={flaggedOnly}
+                onClick={() => setFlaggedOnly((previous) => !previous)}
+                className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
               >
-                <option value="board">Board</option>
-                <option value="none">None</option>
-                <option value="status">Status</option>
-                <option value="priority">Priority</option>
-                <option value="label">Label</option>
-                <option value="dueDate">Due date</option>
-                <option value="assignee">Assignee</option>
-                <option value="milestone">Milestone</option>
-              </select>
+                <Flag aria-hidden className="size-3.5" />
+                {t("myTasks:flagged")}
+              </Button>
+              {(["overdue", "soon"] as const).map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  aria-pressed={dueFilter === value}
+                  onClick={() =>
+                    setDueFilter((previous) =>
+                      previous === value ? null : value,
+                    )
+                  }
+                  className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
+                >
+                  <CalendarDays aria-hidden className="size-3.5" />
+                  {t(
+                    value === "overdue"
+                      ? "home:due.Overdue"
+                      : "home:due.Next 7 days",
+                    {
+                      defaultValue:
+                        value === "overdue" ? "Overdue" : "Next 7 days",
+                    },
+                  )}
+                </Button>
+              ))}
             </div>
-          </details>
-
-          {isFetching ? (
-            <Loader2
-              aria-hidden
-              className="size-3.5 animate-spin text-muted-foreground"
-            />
-          ) : null}
-
-          <span className="ml-auto text-muted-foreground text-xs">
-            {t("myTasks:count", { count: tasks.length })}
-          </span>
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Filter tickets…"
+                aria-label="Filter tickets"
+                size="sm"
+                className="w-full sm:w-48 [&_[data-slot=input]]:h-[42px] [&_[data-slot=input]]:text-xs sm:[&_[data-slot=input]]:h-[30px]"
+              />
+              <span className="shrink-0 whitespace-nowrap text-muted-foreground text-xs tabular-nums sm:hidden">
+                {countLabel}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <section
-          className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-4 py-3 text-xs"
-          aria-label={t("myTasks:loadedSummary", { count: tasks.length })}
-        >
-          <span className="text-muted-foreground">
-            {t("myTasks:loadedSummary", { count: tasks.length })}
-          </span>
-          {statuses.map(({ slug, name, count, percent }) => (
-            <span
-              key={slug}
-              className="inline-flex items-center gap-1.5 tabular-nums"
-            >
-              {getColumnIcon(
-                slug,
-                tasks.find((task) => task.status === slug)?.isFinal ?? false,
-                tasks.find((task) => task.status === slug)?.columnIcon,
-              )}
-              {name || t("myTasks:noStatus")} <strong>{count}</strong>
-              <span className="text-muted-foreground">{percent}%</span>
+        {tasks.length > 0 ? (
+          <section
+            className="flex items-center gap-x-5 overflow-x-auto whitespace-nowrap border-b border-border px-4 py-2.5 text-xs sm:flex-wrap sm:gap-y-2"
+            aria-label={t("myTasks:statusOfShown", { count: tasks.length })}
+          >
+            <span className="text-muted-foreground">
+              {t("myTasks:statusOfShown", { count: tasks.length })}
             </span>
-          ))}
-        </section>
+            {statuses.map(({ slug, name, count, percent }) => (
+              <span
+                key={slug}
+                className="inline-flex shrink-0 items-center gap-1.5 tabular-nums"
+              >
+                {getColumnIcon(
+                  slug,
+                  tasks.find((task) => task.status === slug)?.isFinal ?? false,
+                  tasks.find((task) => task.status === slug)?.columnIcon,
+                )}
+                {name || t("myTasks:noStatus")} <strong>{count}</strong>
+                <span className="text-muted-foreground">{percent}%</span>
+              </span>
+            ))}
+          </section>
+        ) : null}
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {isError && (
             <div role="alert" className="mb-3 flex items-center gap-3 text-sm">
@@ -310,6 +407,21 @@ export function MyTasksComponent() {
             <p className="text-muted-foreground text-sm">
               {t("myTasks:loading")}
             </p>
+          ) : tasks.length === 0 && allTasks.length > 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <p className="text-muted-foreground text-sm">
+                {t("myTasks:emptyFiltered")}
+              </p>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className="min-h-11 px-3 text-xs sm:min-h-8"
+                onClick={clearLocalFilters}
+              >
+                {t("common:actions.clearAllFilters")}
+              </Button>
+            </div>
           ) : tasks.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               {t("myTasks:empty")}
@@ -345,8 +457,8 @@ export function MyTasksComponent() {
                             ? (boardTasks[0]?.columnName ?? groupName)
                             : groupName}
                       </span>
-                      <span className="text-muted-foreground/70 text-xs">
-                        {boardTasks.length} tickets
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {t("myTasks:count", { count: boardTasks.length })}
                       </span>
                       <ChevronDown
                         className={`ml-auto size-4 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`}
@@ -379,7 +491,7 @@ export function MyTasksComponent() {
                                 aria-current={
                                   openTaskId === task.id ? "true" : undefined
                                 }
-                                className="flex flex-wrap items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-sm hover:bg-muted/40 aria-[current=true]:bg-muted/60"
+                                className="flex flex-wrap items-center gap-2 border-l-2 border-l-transparent px-3 py-2 text-sm hover:bg-muted/40 aria-[current=true]:bg-muted/60 aria-[current=true]:ring-1 aria-[current=true]:ring-ring aria-[current=true]:ring-inset"
                                 // Flagged rows are tinted in the flag's own
                                 // colour (faint bg + a matching left accent),
                                 // so the flag reads at a glance.
@@ -396,7 +508,7 @@ export function MyTasksComponent() {
                               this column is fixed-width and clips instead of
                               wrapping into several ragged lines. */}
                                 <span
-                                  className="w-28 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
+                                  className="shrink-0 truncate font-mono text-[11px] text-muted-foreground sm:w-28"
                                   title={
                                     task.boardSlug
                                       ? `${task.boardSlug}-${task.number}`

@@ -20,6 +20,10 @@ describe("single settings sidebar", () => {
       "utf8",
     );
     expect(shell).toContain("<Outlet");
+    // Regression: the first-resource redirect must only fire on the bare
+    // section URL. It used to fire whenever no resource was active, which
+    // includes the render while navigating AWAY, trapping the user.
+    expect(shell).toMatch(/if \(onBareSection && !activeId && firstId\)/);
   });
   it("keeps the legacy agent destination inside canonical settings", () => {
     const source = readFileSync(root + "organization/agents.tsx", "utf8");

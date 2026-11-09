@@ -76,9 +76,35 @@
 						"No due date": {
 							"type": "string"
 						}
-					}
+					},
+					"required": [
+						"Overdue",
+						"Today",
+						"Next 7 days",
+						"Later",
+						"No due date"
+					]
 				}
-			}
+			},
+			"required": [
+				"title",
+				"subtitle",
+				"allTasks",
+				"week",
+				"partialTasks",
+				"upNext",
+				"noTasks",
+				"boards",
+				"allBoards",
+				"recent",
+				"recentScope",
+				"inbox",
+				"noActivity",
+				"loadError",
+				"loading",
+				"loadedOnly",
+				"due"
+			]
 		},
 		"myTasks": {
 			"type": "object",
@@ -144,9 +170,32 @@
 				},
 				"flagged": {
 					"type": "string"
+				},
+				"count_one": {
+					"type": "string"
+				},
+				"loadedCount_one": {
+					"type": "string"
+				},
+				"loadedCount_other": {
+					"type": "string"
+				},
+				"shownOfLoaded": {
+					"type": "string"
+				},
+				"statusOfShown": {
+					"type": "string"
+				},
+				"emptyFiltered": {
+					"type": "string"
+				},
+				"loadedCount": {
+					"type": "string"
 				}
 			},
 			"required": [
+				"loadedSummary",
+				"noStatus",
 				"title",
 				"loading",
 				"empty",
@@ -156,7 +205,14 @@
 				"relation",
 				"flaggedCount",
 				"flaggedCount_other",
-				"flagged"
+				"flagged",
+				"count_one",
+				"loadedCount_one",
+				"loadedCount_other",
+				"shownOfLoaded",
+				"statusOfShown",
+				"emptyFiltered",
+				"loadedCount"
 			]
 		},
 		"auth": {
@@ -5731,6 +5787,8 @@
 						"inbox",
 						"moreRepos",
 						"recent",
+						"soon",
+						"comingSoon",
 						"work",
 						"resources",
 						"cycles",
@@ -6006,6 +6064,7 @@
 						}
 					},
 					"required": [
+						"switchError",
 						"organizations",
 						"switching",
 						"addOrganization",
@@ -6369,10 +6428,18 @@
 								"createOrganization": {
 									"type": "string"
 								},
-								"switchOrganizationByNumber": { "type": "string" },
-								"inboxToggleRead": { "type": "string" },
-								"inboxReply": { "type": "string" },
-								"inboxNavigate": { "type": "string" },
+								"switchOrganizationByNumber": {
+									"type": "string"
+								},
+								"inboxToggleRead": {
+									"type": "string"
+								},
+								"inboxReply": {
+									"type": "string"
+								},
+								"inboxNavigate": {
+									"type": "string"
+								},
 								"nextTask": {
 									"type": "string"
 								},
@@ -6414,6 +6481,10 @@
 								"createProject",
 								"globalSearch",
 								"createOrganization",
+								"switchOrganizationByNumber",
+								"inboxToggleRead",
+								"inboxReply",
+								"inboxNavigate",
 								"nextTask",
 								"editorMention",
 								"openCommandPalette",
@@ -6484,6 +6555,62 @@
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
+				"navigation": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"boardsAndRepos": {
+							"type": "string"
+						},
+						"authentication": {
+							"type": "string"
+						},
+						"teams": {
+							"type": "string"
+						},
+						"visibility": {
+							"type": "string"
+						},
+						"templates": {
+							"type": "string"
+						},
+						"connections": {
+							"type": "string"
+						},
+						"features": {
+							"type": "string"
+						},
+						"display": {
+							"type": "string"
+						},
+						"allTypes": {
+							"type": "string"
+						},
+						"allRoles": {
+							"type": "string"
+						},
+						"searchMembers": {
+							"type": "string"
+						},
+						"integrations": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"boardsAndRepos",
+						"authentication",
+						"teams",
+						"visibility",
+						"templates",
+						"connections",
+						"features",
+						"display",
+						"allTypes",
+						"allRoles",
+						"searchMembers",
+						"integrations"
+					]
+				},
 				"organizationMembers": {
 					"type": "object",
 					"additionalProperties": false,
@@ -6491,7 +6618,10 @@
 						"description": {
 							"type": "string"
 						}
-					}
+					},
+					"required": [
+						"description"
+					]
 				},
 				"workflowEditor": {
 					"type": "object",
@@ -11629,7 +11759,8 @@
 						}
 					},
 					"required": [
-						"selectRepo"
+						"selectRepo",
+						"noRepos"
 					]
 				},
 				"repoVisibility": {
@@ -11644,45 +11775,83 @@
 						"title"
 					]
 				},
-				"navigation": {
+				"integrations": {
 					"type": "object",
 					"additionalProperties": false,
 					"properties": {
-						"allRoles": {
+						"title": {
 							"type": "string"
 						},
-						"allTypes": {
+						"subtitle": {
 							"type": "string"
 						},
-						"boardsAndRepos": { "type": "string" },
-						"authentication": {
+						"statusOn": {
 							"type": "string"
 						},
-						"connections": {
+						"statusOff": {
 							"type": "string"
 						},
-						"display": {
+						"statusNotSetUp": {
 							"type": "string"
 						},
-						"features": {
+						"teamsDescription": {
 							"type": "string"
 						},
-						"searchMembers": {
+						"teamsToggle": {
 							"type": "string"
 						},
-						"teams": {
+						"teamsCapability": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"tab": {
+									"type": "string"
+								},
+								"linkPreviews": {
+									"type": "string"
+								},
+								"openInTeams": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"tab",
+								"linkPreviews",
+								"openInTeams"
+							]
+						},
+						"ready": {
 							"type": "string"
 						},
-						"templates": {
+						"notConfigured": {
 							"type": "string"
 						},
-						"visibility": {
+						"teamsSetupHint": {
+							"type": "string"
+						},
+						"updateError": {
 							"type": "string"
 						}
-					}
+					},
+					"required": [
+						"title",
+						"subtitle",
+						"statusOn",
+						"statusOff",
+						"statusNotSetUp",
+						"teamsDescription",
+						"teamsToggle",
+						"teamsCapability",
+						"ready",
+						"notConfigured",
+						"teamsSetupHint",
+						"updateError"
+					]
 				}
 			},
 			"required": [
+				"navigation",
+				"organizationMembers",
 				"workflowEditor",
 				"githubIntegration",
 				"organizationGeneral",
@@ -11722,7 +11891,8 @@
 				"boardVisibility",
 				"externalLinks",
 				"repoSwitcher",
-				"repoVisibility"
+				"repoVisibility",
+				"integrations"
 			]
 		},
 		"invitations": {
@@ -12234,6 +12404,36 @@
 			"type": "object",
 			"additionalProperties": false,
 			"properties": {
+				"markRead": {
+					"type": "string"
+				},
+				"groups": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"flagged": {
+							"type": "string"
+						},
+						"today": {
+							"type": "string"
+						},
+						"yesterday": {
+							"type": "string"
+						},
+						"earlier": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"flagged",
+						"today",
+						"yesterday",
+						"earlier"
+					]
+				},
+				"otherOrganization": {
+					"type": "string"
+				},
 				"filter": {
 					"type": "object",
 					"additionalProperties": false,
@@ -12247,7 +12447,12 @@
 						"mentions": {
 							"type": "string"
 						}
-					}
+					},
+					"required": [
+						"all",
+						"unread",
+						"mentions"
+					]
 				},
 				"clearRead": {
 					"type": "string"
@@ -12261,8 +12466,12 @@
 				"preview": {
 					"type": "string"
 				},
-				"newSinceRead": { "type": "string" },
-				"openToResolveFlag": { "type": "string" },
+				"newSinceRead": {
+					"type": "string"
+				},
+				"openToResolveFlag": {
+					"type": "string"
+				},
 				"openTask": {
 					"type": "string"
 				},
@@ -12308,32 +12517,70 @@
 				"clearGroup": {
 					"type": "string"
 				},
-				"markRead": {
+				"filterType": {
 					"type": "string"
 				},
-				"otherOrganization": {
+				"filterBoard": {
 					"type": "string"
 				},
-				"groups": {
-					"type": "object",
-					"additionalProperties": false,
-					"properties": {
-						"flagged": {
-							"type": "string"
-						},
-						"today": {
-							"type": "string"
-						},
-						"yesterday": {
-							"type": "string"
-						},
-						"earlier": {
-							"type": "string"
-						}
-					}
+				"count_one": {
+					"type": "string"
+				},
+				"shownOfLoaded_one": {
+					"type": "string"
+				},
+				"shownOfLoaded_other": {
+					"type": "string"
+				},
+				"clearShown_one": {
+					"type": "string"
+				},
+				"clearShown_other": {
+					"type": "string"
+				},
+				"clearShownTitle_one": {
+					"type": "string"
+				},
+				"clearShownTitle_other": {
+					"type": "string"
+				},
+				"clearShownDescription_one": {
+					"type": "string"
+				},
+				"clearShownDescription_other": {
+					"type": "string"
+				},
+				"filteredBy": {
+					"type": "string"
+				},
+				"emptyFiltered": {
+					"type": "string"
+				},
+				"clearShown": {
+					"type": "string"
+				},
+				"clearShownTitle": {
+					"type": "string"
+				},
+				"clearShownDescription": {
+					"type": "string"
+				},
+				"shownOfLoaded": {
+					"type": "string"
 				}
 			},
 			"required": [
+				"markRead",
+				"groups",
+				"otherOrganization",
+				"filter",
+				"clearRead",
+				"markUnread",
+				"globalScope",
+				"preview",
+				"newSinceRead",
+				"openToResolveFlag",
+				"openTask",
 				"title",
 				"loading",
 				"empty",
@@ -12347,7 +12594,24 @@
 				"flaggedCount",
 				"unreadCount",
 				"dismiss",
-				"clearGroup"
+				"clearGroup",
+				"filterType",
+				"filterBoard",
+				"count_one",
+				"shownOfLoaded_one",
+				"shownOfLoaded_other",
+				"clearShown_one",
+				"clearShown_other",
+				"clearShownTitle_one",
+				"clearShownTitle_other",
+				"clearShownDescription_one",
+				"clearShownDescription_other",
+				"filteredBy",
+				"emptyFiltered",
+				"clearShown",
+				"clearShownTitle",
+				"clearShownDescription",
+				"shownOfLoaded"
 			]
 		},
 		"organization": {
@@ -12994,7 +13258,11 @@
 						"copyLink",
 						"linkLabel",
 						"copyFailed",
-						"pendingBadge"
+						"pendingBadge",
+						"expiredBadge",
+						"resend",
+						"resent",
+						"resendError"
 					]
 				},
 				"inviteModal": {
@@ -13099,9 +13367,6 @@
 						"create": {
 							"type": "string"
 						},
-						"expiryHint": {
-							"type": "string"
-						},
 						"secretWarning": {
 							"type": "string"
 						},
@@ -13109,9 +13374,6 @@
 							"type": "string"
 						},
 						"agentBadge": {
-							"type": "string"
-						},
-						"agentMeta": {
 							"type": "string"
 						},
 						"revoke": {
@@ -13122,6 +13384,24 @@
 						},
 						"deleteError": {
 							"type": "string"
+						},
+						"tokenHint": {
+							"type": "string"
+						},
+						"tokenMeta": {
+							"type": "string"
+						},
+						"noToken": {
+							"type": "string"
+						},
+						"issue": {
+							"type": "string"
+						},
+						"reissue": {
+							"type": "string"
+						},
+						"reissueError": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -13131,14 +13411,18 @@
 						"nameLabel",
 						"namePlaceholder",
 						"create",
-						"expiryHint",
 						"secretWarning",
 						"copy",
 						"agentBadge",
-						"agentMeta",
 						"revoke",
 						"createError",
-						"deleteError"
+						"deleteError",
+						"tokenHint",
+						"tokenMeta",
+						"noToken",
+						"issue",
+						"reissue",
+						"reissueError"
 					]
 				},
 				"membersTable": {
@@ -14331,6 +14615,7 @@
 		}
 	},
 	"required": [
+		"home",
 		"myTasks",
 		"auth",
 		"notifications",

@@ -28,5 +28,11 @@ describe("API integration: config", () => {
         "hasCustomOAuth",
       ].every((key) => typeof value[key] === "boolean"),
     );
+    // Teams capability flags are booleans only: no ids or secrets leak.
+    expect(payload.teams).toEqual({
+      tab: expect.any(Boolean),
+      linkPreviews: expect.any(Boolean),
+      openInTeams: expect.any(Boolean),
+    });
   });
 });

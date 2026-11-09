@@ -43,7 +43,7 @@ const ORGANIZATION_PAGES = [
   ["visibility", "settings:navigation.visibility", "Visibility"],
   ["labels", "settings:organizationLabels.title", "Labels"],
   ["templates", "settings:navigation.templates", "Templates"],
-  ["connections", "settings:navigation.connections", "Connections"],
+  ["integrations", "settings:navigation.integrations", "Integrations"],
   ["features", "settings:navigation.features", "Features"],
 ];
 const SECTIONS: SectionDefinition[] = [

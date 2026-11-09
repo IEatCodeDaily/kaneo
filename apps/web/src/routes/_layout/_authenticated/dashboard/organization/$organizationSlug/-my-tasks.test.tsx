@@ -22,6 +22,19 @@ vi.mock("@/components/task/task-details-sheet", () => ({
 vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "user-1" } }),
 }));
+vi.mock(
+  "@/hooks/queries/organization-members/use-get-active-organization-members",
+  () => ({
+    useGetActiveOrganizationMembers: () => ({ data: { members: [] } }),
+  }),
+);
+vi.mock("@/hooks/queries/label/use-get-labels-by-organization", () => ({
+  default: () => ({ data: [] }),
+}));
+// The shared board filter menu is covered by its own tests.
+vi.mock("@/components/board/board-toolbar", () => ({
+  default: () => <div data-testid="ticket-filter" />,
+}));
 vi.mock("@/hooks/queries/task/use-infinite-my-tasks", () => ({
   default: () => ({
     data: {

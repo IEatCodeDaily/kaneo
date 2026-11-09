@@ -3,11 +3,10 @@ import { getApiUrl } from "@/fetchers/get-api-url";
 export type CreateAgentPayload = {
   organizationId: string;
   name: string;
-  expiresAt: string;
   permissions: Record<string, string[]>;
 };
 
-/** The plaintext key is only ever returned here, at creation time. */
+/** The plaintext key is only ever returned here and on reissue. */
 export type CreatedAgent = { key: string };
 
 export default async function createAgent(payload: CreateAgentPayload) {

@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The real loader is replaced per-test; keep module import free of a live DB.
 const dbm = vi.hoisted(() => ({
   link: [] as Array<{ userId: string; banned?: boolean }>,
   task: null as unknown,
   privilege: "none",
-  org: [] as Array<{ name: string }>,
+  org: [] as Array<{ name?: string; teamsEnabled?: boolean }>,
 }));
 vi.mock("../../apps/api/src/database", () => ({
   default: {
@@ -351,6 +351,23 @@ describe("loadCardTask (access gate)", () => {
     assignee: { name: "Ann" },
     board: { slug: "it", name: "IT", organizationId: "org1" },
   };
+
+  beforeEach(() => {
+    // The task's organization has Teams enabled unless a test says otherwise.
+    dbm.org = [{ name: "Noovoleum", teamsEnabled: true }];
+  });
+
+  it("returns nothing when the organization has turned Teams off", async () => {
+    Object.assign(dbm, {
+      link: [{ userId: "u1" }],
+      task,
+      privilege: "manage",
+      org: [{ teamsEnabled: false }],
+    });
+    expect(
+      await loadCardTask({ taskId: TASK }, OID, config.clientUrl),
+    ).toBeNull();
+  });
 
   it("returns fields for a linked Teams user with view access, no description", async () => {
     Object.assign(dbm, { link: [{ userId: "u1" }], task, privilege: "view" });
