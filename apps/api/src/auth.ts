@@ -359,6 +359,12 @@ export const auth = betterAuth({
               required: false,
               defaultValue: false,
             },
+            teamsEnabled: {
+              type: "boolean",
+              input: true,
+              required: false,
+              defaultValue: true,
+            },
           },
         },
         member: {

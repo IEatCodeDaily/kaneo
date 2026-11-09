@@ -582,6 +582,20 @@
 			"when": 1793798984941,
 			"tag": "0079_reconcile_project_history",
 			"breakpoints": true
+		},
+		{
+			"idx": 80,
+			"version": "7",
+			"when": 1793798985941,
+			"tag": "0080_agent_tokens_never_expire",
+			"breakpoints": true
+		},
+		{
+			"idx": 81,
+			"version": "7",
+			"when": 1793798986941,
+			"tag": "0081_organization_teams_enabled",
+			"breakpoints": true
 		}
 	]
 }

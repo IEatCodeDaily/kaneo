@@ -317,6 +317,14 @@ export async function loadCardTask(
     with: { board: true, assignee: true },
   });
   if (!task) return null;
+  // Organization admins can turn Teams off (Settings > Organization >
+  // Integrations); search goes through here too, so both honour it.
+  const [organization] = await db
+    .select({ teamsEnabled: organizationTable.teamsEnabled })
+    .from(organizationTable)
+    .where(eq(organizationTable.id, task.board.organizationId))
+    .limit(1);
+  if (!organization?.teamsEnabled) return null;
   const privilege = await getResourcePrivilege({
     organizationId: task.board.organizationId,
     resourceType: "board",

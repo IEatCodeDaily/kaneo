@@ -11,6 +11,7 @@ type UpdateOrganizationRequest = {
   reposEnabled?: boolean;
   tablesEnabled?: boolean;
   workEnabled?: boolean;
+  teamsEnabled?: boolean;
 };
 
 function useUpdateOrganization() {
@@ -26,6 +27,7 @@ function useUpdateOrganization() {
       reposEnabled,
       tablesEnabled,
       workEnabled,
+      teamsEnabled,
     }: UpdateOrganizationRequest) => {
       const updateData: {
         name?: string;
@@ -36,6 +38,7 @@ function useUpdateOrganization() {
         reposEnabled?: boolean;
         tablesEnabled?: boolean;
         workEnabled?: boolean;
+        teamsEnabled?: boolean;
       } = {};
 
       if (name !== undefined) {
@@ -65,6 +68,9 @@ function useUpdateOrganization() {
       }
       if (workEnabled !== undefined) {
         updateData.workEnabled = workEnabled;
+      }
+      if (teamsEnabled !== undefined) {
+        updateData.teamsEnabled = teamsEnabled;
       }
 
       const { data, error } = await authClient.organization.update({

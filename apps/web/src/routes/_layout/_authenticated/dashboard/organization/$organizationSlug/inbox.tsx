@@ -1,5 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CheckCheck, Flag, Inbox as InboxIcon, Trash2 } from "lucide-react";
+import {
+  CheckCheck,
+  Filter,
+  Flag,
+  Inbox as InboxIcon,
+  ListX,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
@@ -18,6 +25,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import useDeleteNotification from "@/hooks/mutations/notification/use-delete-notification";
 import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useMarkNotificationAsUnread from "@/hooks/mutations/notification/use-mark-notification-as-unread";
@@ -86,6 +106,9 @@ export function InboxComponent() {
   const { data, isLoading, isError, refetch } = useGetNotifications();
   const [filter, setFilter] = useState<"all" | "unread" | "mentions">("all");
   const [showClearDialog, setShowClearDialog] = useState(false);
+  // Facets over the loaded updates: event kind and board, any-of within each.
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [boardFilter, setBoardFilter] = useState<string[]>([]);
 
   const { mutate: markAsRead } = useMarkNotificationAsRead();
   // KFL-329: granular clearing — one notification, or one board group — on top
@@ -93,22 +116,56 @@ export function InboxComponent() {
   const { mutate: deleteNotifications } = useDeleteNotification();
 
   const notifications: Notification[] = data ?? [];
-  // Flagged items are standing alerts, not "unread": they are excluded from the
-  // unread count and get their own counter.
-  const unreadCount = notifications.filter(
-    (n) => !n.isRead && !isFlaggedNotification(n),
-  ).length;
-  const flaggedCount = notifications.filter(isFlaggedNotification).length;
-  const visible = notifications.filter(
+  const boardOf = (n: Notification) => {
+    const data = getEventDataRecord(n.eventData);
+    return typeof data?.boardId === "string" ? data.boardId : "";
+  };
+  const typeOptions = [...new Set(notifications.map((n) => n.type))].sort();
+  const boardOptions = [
+    ...new Map(
+      notifications
+        .filter((n) => boardOf(n))
+        .map((n) => [
+          boardOf(n),
+          String(getEventDataRecord(n.eventData)?.boardName ?? boardOf(n)),
+        ]),
+    ),
+  ].sort((a, b) => a[1].localeCompare(b[1]));
+  const facetCount = typeFilter.length + boardFilter.length;
+  const toggle = (list: string[], value: string) =>
+    list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+  const faceted = notifications.filter(
+    (n) =>
+      (!typeFilter.length || typeFilter.includes(n.type)) &&
+      (!boardFilter.length || boardFilter.includes(boardOf(n))),
+  );
+  const visible = faceted.filter(
     (n) =>
       isFlaggedNotification(n) ||
       filter === "all" ||
       (filter === "unread" ? !n.isRead : n.type === "task_mention"),
   );
 
-  const readIds = notifications
-    .filter((n) => n.isRead && !isFlaggedNotification(n))
-    .map((n) => n.id);
+  // Every count and bulk action works on the SHOWN updates (tab + facets), so
+  // a filtered view never touches updates the user cannot see. Flagged items
+  // are standing alerts: never counted as unread, never cleared in bulk.
+  const actionable = visible.filter((n) => !isFlaggedNotification(n));
+  const unreadIds = actionable.filter((n) => !n.isRead).map((n) => n.id);
+  const readIds = actionable.filter((n) => n.isRead).map((n) => n.id);
+  const flaggedCount = visible.filter(isFlaggedNotification).length;
+  const isFiltered = facetCount > 0 || filter !== "all";
+  const facetNames = [
+    ...typeFilter.map((type) =>
+      t(`notifications:events.${type}.title`, {
+        defaultValue: type,
+        commenterName: "",
+        actorName: "",
+      }).trim(),
+    ),
+    ...boardFilter.map(
+      (id) => boardOptions.find(([optionId]) => optionId === id)?.[1] ?? id,
+    ),
+  ];
 
   const handleNotificationClick = useCallback(
     (notification: Notification) => {
@@ -156,10 +213,11 @@ export function InboxComponent() {
     navigate({ to: ".", search: {} });
   }, [navigate]);
 
+  // The ids are captured when the dialog opens, so a refetch while it is open
+  // cannot widen what gets deleted.
+  const [clearIds, setClearIds] = useState<string[]>([]);
   const handleClearAll = () => {
-    deleteNotifications(
-      notifications.filter((n) => !isFlaggedNotification(n)).map((n) => n.id),
-    );
+    deleteNotifications(clearIds);
     setShowClearDialog(false);
   };
 
@@ -169,12 +227,17 @@ export function InboxComponent() {
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-border/80 px-4 py-3">
           <h1 className="font-medium text-sm">{t("inbox:title")}</h1>
-          <span className="text-muted-foreground text-xs">
-            {t("inbox:count", { count: notifications.length })}
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {isFiltered
+              ? t("inbox:shownOfLoaded", {
+                  shown: visible.length,
+                  count: notifications.length,
+                })
+              : t("inbox:count", { count: notifications.length })}
           </span>
-          {unreadCount > 0 ? (
+          {unreadIds.length > 0 ? (
             <span className="rounded-full bg-info/15 px-1.5 py-0.5 font-medium text-info text-xs">
-              {t("inbox:unreadCount", { count: unreadCount })}
+              {t("inbox:unreadCount", { count: unreadIds.length })}
             </span>
           ) : null}
           {flaggedCount > 0 ? (
@@ -189,52 +252,153 @@ export function InboxComponent() {
                 key={value}
                 size="xs"
                 variant={filter === value ? "secondary" : "ghost"}
-                className="min-h-11 min-w-11 sm:min-h-8"
+                className="min-h-11 min-w-11 aria-pressed:shadow-[inset_0_0_0_1px_var(--border)] sm:min-h-8"
                 aria-pressed={filter === value}
                 onClick={() => setFilter(value)}
               >
                 {t(`inbox:filter.${value}`)}
               </Button>
             ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className={`min-h-11 gap-1.5 sm:min-h-8 ${
+                      facetCount
+                        ? "border-foreground/30 bg-accent text-foreground"
+                        : ""
+                    }`}
+                  />
+                }
+              >
+                <Filter className="size-3" aria-hidden />
+                {t("common:actions.filter")}
+                {facetCount ? (
+                  <span className="rounded-full bg-primary/15 px-1.5 text-[10px] tabular-nums">
+                    {facetCount}
+                  </span>
+                ) : null}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {/* A menu label must sit inside a group (Base UI error #31). */}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+                    {t("tasks:boardFilters.filterBy")}
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="h-8 min-h-11 text-sm sm:min-h-0">
+                    {t("inbox:filterType")}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                    {typeOptions.map((type) => (
+                      <DropdownMenuCheckboxItem
+                        key={type}
+                        className="min-h-11 sm:min-h-8"
+                        checked={typeFilter.includes(type)}
+                        onCheckedChange={() =>
+                          setTypeFilter((list) => toggle(list, type))
+                        }
+                      >
+                        {/* Event titles may interpolate an actor; the
+                            filter lists the kind, so drop the name. */}
+                        {t(`notifications:events.${type}.title`, {
+                          defaultValue: type,
+                          commenterName: "",
+                          actorName: "",
+                        }).trim()}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="h-8 min-h-11 text-sm sm:min-h-0">
+                    {t("inbox:filterBoard")}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                    {boardOptions.map(([id, name]) => (
+                      <DropdownMenuCheckboxItem
+                        key={id}
+                        className="min-h-11 sm:min-h-8"
+                        checked={boardFilter.includes(id)}
+                        onCheckedChange={() =>
+                          setBoardFilter((list) => toggle(list, id))
+                        }
+                      >
+                        {name}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                {facetCount ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="h-8 min-h-11 text-muted-foreground text-sm sm:min-h-0"
+                      onClick={() => {
+                        setTypeFilter([]);
+                        setBoardFilter([]);
+                      }}
+                    >
+                      {t("common:actions.clearAllFilters")}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* One recipe for every bulk action. Phones show icons only (the
+              label stays for assistive tech) so the row fits beside Filter. */}
+          <div className="ml-auto flex items-center gap-1.5">
             <Button
               size="xs"
               variant="outline"
-              className="min-h-11 min-w-11 sm:min-h-8"
+              className="min-h-11 min-w-11 gap-1.5 px-2 text-xs sm:min-h-8 sm:min-w-0"
+              aria-label={t("inbox:clearRead")}
               disabled={!readIds.length}
               onClick={() => deleteNotifications(readIds)}
             >
-              {t("inbox:clearRead")}
+              <ListX className="size-3.5" aria-hidden />
+              <span className="sr-only sm:not-sr-only">
+                {t("inbox:clearRead")}
+              </span>
             </Button>
-            {unreadCount > 0 ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="min-h-11 gap-1.5 text-xs sm:min-h-8"
-                onClick={() =>
-                  visible
-                    .filter((n) => !n.isRead && !isFlaggedNotification(n))
-                    .forEach((n) => {
-                      markAsRead(n.id);
-                    })
-                }
-              >
-                <CheckCheck className="size-3.5" />
+            <Button
+              size="xs"
+              variant="outline"
+              className="min-h-11 min-w-11 gap-1.5 px-2 text-xs sm:min-h-8 sm:min-w-0"
+              aria-label={t("common:actions.markAllRead")}
+              disabled={!unreadIds.length}
+              onClick={() =>
+                unreadIds.forEach((id) => {
+                  markAsRead(id);
+                })
+              }
+            >
+              <CheckCheck className="size-3.5" aria-hidden />
+              <span className="sr-only sm:not-sr-only">
                 {t("common:actions.markAllRead")}
-              </Button>
-            ) : null}
-            {notifications.length > 0 ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="min-h-11 gap-1.5 text-xs sm:min-h-8"
-                onClick={() => setShowClearDialog(true)}
-              >
-                <Trash2 className="size-3.5" />
-                {t("notifications:clearAll")}
-              </Button>
-            ) : null}
+              </span>
+            </Button>
+            <Button
+              size="xs"
+              variant="destructive-outline"
+              className="min-h-11 min-w-11 gap-1.5 px-2 text-xs sm:min-h-8 sm:min-w-0"
+              aria-label={t("inbox:clearShown", { count: actionable.length })}
+              disabled={!actionable.length}
+              onClick={() => {
+                setClearIds(actionable.map((n) => n.id));
+                setShowClearDialog(true);
+              }}
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              <span className="sr-only sm:not-sr-only">
+                {t("inbox:clearShown", { count: actionable.length })}
+              </span>
+            </Button>
           </div>
         </div>
 
@@ -278,11 +442,37 @@ export function InboxComponent() {
           }}
         >
           <div
-            className={`min-w-0 flex-1 overflow-y-auto px-4 py-3 ${preview ? "lg:max-w-[26rem] lg:border-r" : ""}`}
+            className={`min-w-0 flex-1 overflow-y-auto py-3 sm:px-4 ${preview ? "lg:max-w-[26rem] lg:border-r" : ""}`}
           >
-            <p className="mb-3 text-xs text-muted-foreground">
+            <p className="mb-3 px-4 text-muted-foreground text-xs sm:px-0">
               {t("inbox:globalScope")}
             </p>
+            {facetNames.length > 0 ? (
+              <p className="mb-3 flex flex-wrap items-center gap-1.5 px-4 text-xs sm:px-0">
+                <span className="text-muted-foreground">
+                  {t("inbox:filteredBy")}
+                </span>
+                {facetNames.map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-md border border-border bg-accent px-1.5 py-0.5 text-foreground"
+                  >
+                    {name}
+                  </span>
+                ))}
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  className="min-h-11 px-2 text-xs sm:min-h-6"
+                  onClick={() => {
+                    setTypeFilter([]);
+                    setBoardFilter([]);
+                  }}
+                >
+                  {t("common:actions.clearAllFilters")}
+                </Button>
+              </p>
+            ) : null}
             {isError && (
               <div role="alert" className="mb-3 flex gap-3 text-sm">
                 <span>{t("home:loadError")}</span>
@@ -308,6 +498,24 @@ export function InboxComponent() {
                 <p className="text-muted-foreground/60 text-xs">
                   {t("notifications:emptySubtitle")}
                 </p>
+              </div>
+            ) : visible.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <p className="text-muted-foreground text-sm">
+                  {t("inbox:emptyFiltered")}
+                </p>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="min-h-11 px-3 text-xs sm:min-h-8"
+                  onClick={() => {
+                    setTypeFilter([]);
+                    setBoardFilter([]);
+                    setFilter("all");
+                  }}
+                >
+                  {t("common:actions.clearAllFilters")}
+                </Button>
               </div>
             ) : (
               <InboxTicketList
@@ -348,10 +556,10 @@ export function InboxComponent() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("notifications:clearDialogTitle")}
+              {t("inbox:clearShownTitle", { count: clearIds.length })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("notifications:clearDialogDescription")}
+              {t("inbox:clearShownDescription", { count: clearIds.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -362,7 +570,7 @@ export function InboxComponent() {
             </AlertDialogClose>
             <AlertDialogClose onClick={handleClearAll}>
               <Button variant="destructive" size="sm">
-                {t("common:actions.clearAll")}
+                {t("inbox:clearShown", { count: clearIds.length })}
               </Button>
             </AlertDialogClose>
           </AlertDialogFooter>

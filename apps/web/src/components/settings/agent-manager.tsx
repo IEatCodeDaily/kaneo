@@ -1,9 +1,10 @@
-import { Bot, Copy, Plus, Trash2 } from "lucide-react";
+import { Bot, Copy, KeyRound, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
 import useDeleteAgent from "@/hooks/mutations/agent/use-delete-agent";
+import useReissueAgentToken from "@/hooks/mutations/agent/use-reissue-agent-token";
 import useGetAgents from "@/hooks/queries/agent/use-get-agents";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { toast } from "@/lib/toast";
@@ -11,23 +12,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
-/**
- * The API requires every agent key to carry an expiry (max 365 days). That is a
- * security constraint, not a decision a human should have to make while filling
- * in a one-field form — the old UI exposed it as a `datetime-local` picker, so
- * creating an agent meant hand-picking a timestamp before the button unlocked.
- * We keep the constraint and pick a sane lifetime for the operator instead.
- */
-export const AGENT_KEY_LIFETIME_DAYS = 90;
-
 /** Matches the API's minimum name length so the button can't submit a 400. */
 const MIN_AGENT_NAME_LENGTH = 3;
-
-function expiryFromNow() {
-  return new Date(
-    Date.now() + AGENT_KEY_LIFETIME_DAYS * 24 * 60 * 60 * 1000,
-  ).toISOString();
-}
 
 export function AgentManager() {
   const { t } = useTranslation();
@@ -40,6 +26,7 @@ export function AgentManager() {
   const { data: agents = [] } = useGetAgents(organizationId);
   const createAgent = useCreateAgent(organizationId);
   const deleteAgent = useDeleteAgent(organizationId);
+  const reissueToken = useReissueAgentToken(organizationId);
 
   const trimmedName = name.trim();
   const canCreate =
@@ -53,7 +40,6 @@ export function AgentManager() {
       const created = await createAgent.mutateAsync({
         organizationId,
         name: trimmedName,
-        expiresAt: expiryFromNow(),
         // Kept for API-key record compatibility only. Agent authorization is
         // derived from the agent member's organization role, not this map.
         permissions: { board: ["read"] },
@@ -65,6 +51,19 @@ export function AgentManager() {
         error instanceof Error
           ? error.message
           : t("team:agentManager.createError"),
+      );
+    }
+  };
+
+  const reissue = async (id: string) => {
+    try {
+      const reissued = await reissueToken.mutateAsync(id);
+      setSecret(reissued.key);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("team:agentManager.reissueError"),
       );
     }
   };
@@ -128,9 +127,7 @@ export function AgentManager() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {t("team:agentManager.expiryHint", {
-              days: AGENT_KEY_LIFETIME_DAYS,
-            })}
+            {t("team:agentManager.tokenHint")}
           </p>
         </div>
       </div>
@@ -157,7 +154,7 @@ export function AgentManager() {
       {agents.map((agent) => (
         <div
           key={agent.id}
-          className="flex items-center justify-between gap-4 rounded-md border border-border p-4"
+          className="flex flex-col gap-3 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0 space-y-1">
             <span className="inline-flex items-center gap-2 text-sm font-medium">
@@ -167,21 +164,43 @@ export function AgentManager() {
                 {t("team:agentManager.agentBadge")}
               </Badge>
             </span>
-            <p className="text-xs text-muted-foreground">
-              {t("team:agentManager.agentMeta", {
-                date: new Date(agent.expiresAt).toLocaleDateString(),
-              })}
+            {/* The token is separate from the agent: it never expires and
+                can be reissued without losing the agent's role or history. */}
+            <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <KeyRound className="size-3" aria-hidden />
+              {agent.token
+                ? t("team:agentManager.tokenMeta", {
+                    start: agent.token.start ?? "",
+                    date: new Date(agent.token.createdAt).toLocaleDateString(),
+                  })
+                : t("team:agentManager.noToken")}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t("team:agentManager.revoke")}
-            onClick={() => remove(agent.id)}
-            disabled={deleteAgent.isPending}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11 sm:min-h-8"
+              onClick={() => reissue(agent.id)}
+              disabled={reissueToken.isPending}
+            >
+              <RefreshCw className="size-4" />
+              {t(
+                agent.token
+                  ? "team:agentManager.reissue"
+                  : "team:agentManager.issue",
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("team:agentManager.revoke")}
+              onClick={() => remove(agent.id)}
+              disabled={deleteAgent.isPending}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
         </div>
       ))}
     </div>

@@ -186,6 +186,8 @@ export const organizationTable = pgTable(
     reposEnabled: boolean("repos_enabled").default(false).notNull(),
     tablesEnabled: boolean("tables_enabled").default(false).notNull(),
     workEnabled: boolean("work_enabled").default(false).notNull(),
+    /** Microsoft Teams may show this organization's tickets (cards, search). */
+    teamsEnabled: boolean("teams_enabled").default(true).notNull(),
     /*
     Org-wide default member privilege for resources without an explicit
     user/team grant, when the resource itself doesn't set its own baseline

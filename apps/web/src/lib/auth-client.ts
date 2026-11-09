@@ -49,6 +49,7 @@ export const authClient = createAuthClient({
             reposEnabled: { type: "boolean", required: false },
             tablesEnabled: { type: "boolean", required: false },
             workEnabled: { type: "boolean", required: false },
+            teamsEnabled: { type: "boolean", required: false },
           },
         },
         team: {

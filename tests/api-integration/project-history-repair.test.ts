@@ -52,8 +52,10 @@ describe("complete Project migration history", () => {
     await db.execute(
       sql`ALTER TABLE project_ticket DROP CONSTRAINT project_ticket_project_milestone_project_id_fk`,
     );
+    // Rewind the ledger to just before 0079: drizzle only replays migrations
+    // newer than the newest ledger row, so later rows must go too.
     await db.execute(
-      sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at = 1793798984941`,
+      sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at >= 1793798984941`,
     );
     await migrate(db, { migrationsFolder: resolve("drizzle") });
     const existing = await db.select().from(schema.projectBoardTable);
@@ -75,7 +77,7 @@ describe("complete Project migration history", () => {
       sql`DROP TABLE project_board, project_repo, project_table_link`,
     );
     await db.execute(
-      sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at = 1793798984941`,
+      sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at >= 1793798984941`,
     );
     await migrate(db, { migrationsFolder: resolve("drizzle") });
     const repaired = await db.execute(

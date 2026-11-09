@@ -1,11 +1,12 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AGENT_KEY_LIFETIME_DAYS, AgentManager } from "./agent-manager";
+import { AgentManager } from "./agent-manager";
 
 afterEach(() => {
   cleanup();
   createMutate.mockClear();
   deleteMutate.mockClear();
+  reissueMutate.mockClear();
   agents.length = 0;
 });
 
@@ -17,12 +18,19 @@ const createMutate = vi.fn(
   async (_input: {
     organizationId: string;
     name: string;
-    expiresAt: string;
     permissions: Record<string, string[]>;
   }) => ({ key: "kaneo_agent_secret" }),
 );
 const deleteMutate = vi.fn(async () => undefined);
-const agents: Array<{ id: string; name: string; expiresAt: string }> = [];
+const reissueMutate = vi.fn(async (_id: string) => ({
+  key: "kaneo_agent_rotated",
+}));
+const agents: Array<{
+  id: string;
+  name: string;
+  createdAt: string;
+  token: { id: string; start: string | null; createdAt: string } | null;
+}> = [];
 
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
   default: () => ({ data: { id: "org-1" } }),
@@ -38,6 +46,10 @@ vi.mock("@/hooks/mutations/agent/use-create-agent", () => ({
 
 vi.mock("@/hooks/mutations/agent/use-delete-agent", () => ({
   default: () => ({ mutateAsync: deleteMutate, isPending: false }),
+}));
+
+vi.mock("@/hooks/mutations/agent/use-reissue-agent-token", () => ({
+  default: () => ({ mutateAsync: reissueMutate, isPending: false }),
 }));
 
 vi.mock("@/lib/toast", () => ({
@@ -63,27 +75,54 @@ describe("AgentManager", () => {
     expect(screen.getAllByRole("textbox")).toHaveLength(1);
   });
 
-  it("submits a server-valid expiry the user never had to enter", async () => {
+  it("creates a non-expiring agent: no expiry is sent", async () => {
     render(<AgentManager />);
 
     fireEvent.change(nameInput(), { target: { value: "Release bot" } });
     fireEvent.click(createButton());
     await vi.waitFor(() => expect(createMutate).toHaveBeenCalledTimes(1));
 
-    const payload = createMutate.mock.calls[0][0] as unknown as {
-      name: string;
-      expiresAt: string;
-      organizationId: string;
-    };
+    const payload = createMutate.mock.calls[0][0] as Record<string, unknown>;
     expect(payload.name).toBe("Release bot");
     expect(payload.organizationId).toBe("org-1");
+    expect(payload).not.toHaveProperty("expiresAt");
+  });
 
-    // The API rejects an expiry in the past or beyond 365 days.
-    const expiry = new Date(payload.expiresAt).getTime();
-    expect(Number.isNaN(expiry)).toBe(false);
-    expect(expiry).toBeGreaterThan(Date.now());
-    expect(expiry).toBeLessThanOrEqual(Date.now() + 365 * 86400000);
-    expect(AGENT_KEY_LIFETIME_DAYS).toBeLessThanOrEqual(365);
+  it("reissues an existing agent's token and reveals the new secret once", async () => {
+    agents.push({
+      id: "agent-1",
+      name: "Release bot",
+      createdAt: new Date().toISOString(),
+      token: {
+        id: "k1",
+        start: "kaneo_agent_abcd",
+        createdAt: new Date().toISOString(),
+      },
+    });
+    render(<AgentManager />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /team:agentManager.reissue/ }),
+    );
+    await vi.waitFor(() =>
+      expect(reissueMutate).toHaveBeenCalledWith("agent-1"),
+    );
+    await screen.findByText("kaneo_agent_rotated");
+  });
+
+  it("offers to issue a token for an agent whose token was removed", () => {
+    agents.push({
+      id: "agent-2",
+      name: "Idle bot",
+      createdAt: new Date().toISOString(),
+      token: null,
+    });
+    render(<AgentManager />);
+
+    expect(screen.getByText("team:agentManager.noToken")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /team:agentManager.issue/ }),
+    ).toBeInTheDocument();
   });
 
   it("keeps create disabled until the name meets the API minimum length", () => {
@@ -114,7 +153,12 @@ describe("AgentManager", () => {
     agents.push({
       id: "a1",
       name: "Release bot",
-      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      createdAt: new Date().toISOString(),
+      token: {
+        id: "k1",
+        start: "kaneo_agent_abcd",
+        createdAt: new Date().toISOString(),
+      },
     });
     render(<AgentManager />);
 
@@ -122,9 +166,7 @@ describe("AgentManager", () => {
     expect(
       screen.getByText("team:agentManager.description"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("team:agentManager.expiryHint"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("team:agentManager.tokenHint")).toBeInTheDocument();
     // Dot-separated keys are the bug signature: they never resolve because the
     // default namespace is `common`, so the raw key renders on screen.
     expect(screen.queryByText(/team\.agentManager/)).toBeNull();

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createId } from "@paralleldrive/cuid2";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
@@ -28,7 +28,6 @@ export const KNOWN_RESOURCES = [
   "milestone",
   "comment",
 ] as const;
-const MAX_EXPIRY_DAYS = 365;
 
 type AgentMetadata = {
   type: "agent";
@@ -99,6 +98,68 @@ export function validatePermissions(value: unknown): Record<string, string[]> {
   return result;
 }
 
+/*
+ * The agent (a user with role "agent" + an organization membership) and its
+ * token (an `apikey` row) are separate: the agent keeps its identity, role and
+ * history while its token is reissued or revoked. Tokens never expire; an
+ * admin rotates or revokes them explicitly.
+ */
+function agentKeyValues(
+  agentUserId: string,
+  organizationId: string,
+  createdBy: string,
+  name: string,
+  permissions: Record<string, string[]>,
+) {
+  const secret = `kaneo_agent_${randomBytes(32).toString("base64url")}`;
+  const now = new Date();
+  return {
+    secret,
+    values: {
+      id: createId(),
+      name,
+      start: secret.slice(0, 16),
+      referenceId: agentUserId,
+      key: createHash("sha256").update(secret).digest("base64url"),
+      enabled: true,
+      expiresAt: null,
+      createdAt: now,
+      updatedAt: now,
+      permissions: JSON.stringify(permissions),
+      metadata: JSON.stringify({
+        type: "agent",
+        organizationId,
+        createdBy,
+        agentUserId,
+      } satisfies AgentMetadata),
+    },
+  };
+}
+
+/** The agent user and the one organization it belongs to, or 404. */
+async function findAgent(agentUserId: string) {
+  const [row] = await db
+    .select({
+      id: schema.userTable.id,
+      name: schema.userTable.name,
+      organizationId: schema.organizationMemberTable.organizationId,
+    })
+    .from(schema.userTable)
+    .innerJoin(
+      schema.organizationMemberTable,
+      eq(schema.organizationMemberTable.userId, schema.userTable.id),
+    )
+    .where(
+      and(
+        eq(schema.userTable.id, agentUserId),
+        eq(schema.userTable.role, "agent"),
+      ),
+    )
+    .limit(1);
+  if (!row) throw new HTTPException(404, { message: "Agent not found" });
+  return row;
+}
+
 const agent = new Hono<{ Variables: { userId: string } }>();
 
 agent.get("/", async (c) => {
@@ -106,23 +167,55 @@ agent.get("/", async (c) => {
   if (!organizationId)
     throw new HTTPException(400, { message: "organizationId is required" });
   await requireAdmin(c.get("userId"), organizationId);
-  const rows = await db
-    .select()
-    .from(schema.apikeyTable)
-    .orderBy(desc(schema.apikeyTable.createdAt));
+  const agents = await db
+    .select({
+      id: schema.userTable.id,
+      name: schema.userTable.name,
+      createdAt: schema.userTable.createdAt,
+    })
+    .from(schema.userTable)
+    .innerJoin(
+      schema.organizationMemberTable,
+      eq(schema.organizationMemberTable.userId, schema.userTable.id),
+    )
+    .where(
+      and(
+        eq(schema.userTable.role, "agent"),
+        eq(schema.organizationMemberTable.organizationId, organizationId),
+      ),
+    )
+    .orderBy(desc(schema.userTable.createdAt));
+  const keys = agents.length
+    ? await db
+        .select()
+        .from(schema.apikeyTable)
+        .where(
+          inArray(
+            schema.apikeyTable.referenceId,
+            agents.map((a) => a.id),
+          ),
+        )
+        .orderBy(desc(schema.apikeyTable.createdAt))
+    : [];
   return c.json(
-    rows
-      .filter((row) => metadata(row)?.organizationId === organizationId)
-      .map((row) => ({
-        id: row.id,
-        name: row.name,
-        start: row.start,
-        enabled: row.enabled,
-        expiresAt: row.expiresAt,
-        createdAt: row.createdAt,
-        permissions: row.permissions ? JSON.parse(row.permissions) : {},
+    agents.map((a) => {
+      const key = keys.find(
+        (k) => k.referenceId === a.id && metadata(k) && k.enabled,
+      );
+      return {
+        id: a.id,
+        name: a.name,
+        createdAt: a.createdAt,
         type: "agent" as const,
-      })),
+        token: key
+          ? {
+              id: key.id,
+              start: key.start,
+              createdAt: key.createdAt,
+            }
+          : null,
+      };
+    }),
   );
 });
 
@@ -131,27 +224,23 @@ agent.post("/", async (c) => {
   const organizationId =
     typeof body.organizationId === "string" ? body.organizationId : "";
   const name = typeof body.name === "string" ? body.name.trim() : "";
-  const expiresAt =
-    typeof body.expiresAt === "string" ? new Date(body.expiresAt) : null;
   const userId = c.get("userId");
-  if (
-    !organizationId ||
-    name.length < 3 ||
-    !expiresAt ||
-    Number.isNaN(expiresAt.getTime()) ||
-    expiresAt <= new Date() ||
-    expiresAt.getTime() > Date.now() + MAX_EXPIRY_DAYS * 86400000
-  ) {
+  if (!organizationId || name.length < 3) {
     throw new HTTPException(400, {
-      message: "Name and an expiry within 365 days are required",
+      message: "Name (3+ characters) and organizationId are required",
     });
   }
   await requireAdmin(userId, organizationId);
   const permissions = validatePermissions(body.permissions);
-  const secret = `kaneo_agent_${randomBytes(32).toString("base64url")}`;
-  const now = new Date();
   const agentUserId = createId();
-  const created = await db.transaction(async (tx) => {
+  const { secret, values } = agentKeyValues(
+    agentUserId,
+    organizationId,
+    userId,
+    name,
+    permissions,
+  );
+  await db.transaction(async (tx) => {
     await tx.insert(schema.userTable).values({
       id: agentUserId,
       name,
@@ -164,64 +253,48 @@ agent.post("/", async (c) => {
       organizationId,
       userId: agentUserId,
       role: "member",
-      joinedAt: now,
+      joinedAt: values.createdAt,
     });
-    const [key] = await tx
-      .insert(schema.apikeyTable)
-      .values({
-        id: createId(),
-        name,
-        start: secret.slice(0, 16),
-        referenceId: agentUserId,
-        key: createHash("sha256").update(secret).digest("base64url"),
-        enabled: true,
-        expiresAt,
-        createdAt: now,
-        updatedAt: now,
-        permissions: JSON.stringify(permissions),
-        metadata: JSON.stringify({
-          type: "agent",
-          organizationId,
-          createdBy: userId,
-          agentUserId,
-        } satisfies AgentMetadata),
-      })
-      .returning();
-    return key;
+    await tx.insert(schema.apikeyTable).values(values);
   });
   return c.json(
-    {
-      id: created.id,
-      name,
-      key: secret,
-      start: created.start,
-      expiresAt,
-      permissions,
-      type: "agent",
-    },
+    { id: agentUserId, name, key: secret, start: values.start, type: "agent" },
     201,
   );
 });
 
-agent.delete("/:id", async (c) => {
-  const [row] = await db
-    .select()
-    .from(schema.apikeyTable)
-    .where(eq(schema.apikeyTable.id, c.req.param("id")))
-    .limit(1);
-  const agentMetadata = row && metadata(row);
-  if (!row || !agentMetadata)
-    throw new HTTPException(404, { message: "Agent not found" });
-  await requireAdmin(c.get("userId"), agentMetadata.organizationId);
+/** Issue a new token; any previous token for this agent stops working. */
+agent.post("/:id/token", async (c) => {
+  const found = await findAgent(c.req.param("id"));
+  const userId = c.get("userId");
+  await requireAdmin(userId, found.organizationId);
+  const { secret, values } = agentKeyValues(
+    found.id,
+    found.organizationId,
+    userId,
+    found.name,
+    // Kept for API-key record compatibility; agent access follows its role.
+    { board: ["read"] },
+  );
   await db.transaction(async (tx) => {
     await tx
       .delete(schema.apikeyTable)
-      .where(eq(schema.apikeyTable.id, row.id));
-    if (agentMetadata.agentUserId) {
-      await tx
-        .delete(schema.userTable)
-        .where(eq(schema.userTable.id, agentMetadata.agentUserId));
-    }
+      .where(eq(schema.apikeyTable.referenceId, found.id));
+    await tx.insert(schema.apikeyTable).values(values);
+  });
+  return c.json({ id: found.id, key: secret, start: values.start }, 201);
+});
+
+/** Remove the agent entirely: its tokens, then the user (membership cascades). */
+agent.delete("/:id", async (c) => {
+  const found = await findAgent(c.req.param("id"));
+  await requireAdmin(c.get("userId"), found.organizationId);
+  // Deleted explicitly: older databases lack the apikey -> user cascade.
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.apikeyTable)
+      .where(eq(schema.apikeyTable.referenceId, found.id));
+    await tx.delete(schema.userTable).where(eq(schema.userTable.id, found.id));
   });
   return c.json({ success: true });
 });
