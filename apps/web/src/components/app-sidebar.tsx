@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { BriefcaseBusiness, Library, Settings, Users,} from "lucide-react";
+import { BriefcaseBusiness, Library, Settings, Users } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
@@ -144,7 +144,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
         {workEnabled && mode === "work" ? <NavWork /> : <ResourceNavigation />}
       </SidebarContent>
-      <SidebarFooter>
+      {/* Tighter footer: the two identity actions sit close together. */}
+      <SidebarFooter className="gap-0 px-1 pb-1">
         <button
           type="button"
           aria-label="Members"
@@ -170,7 +171,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <Settings className="size-4" />
           <span>Settings</span>
         </button>
-        <div className="flex items-center gap-2" data-testid="sidebar-footer">
+        <div className="flex items-center gap-1" data-testid="sidebar-footer">
           <DropdownMenu
             open={organizationMenuOpen}
             onOpenChange={setOrganizationMenuOpen}
@@ -182,7 +183,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 aria-expanded={organizationMenuOpen}
                 className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               >
-                <Avatar className="size-7 rounded-md">
+                <Avatar className="size-7 rounded-full bg-sidebar-accent">
                   {/* An empty src renders a broken-image blob in dark mode;
                       fall straight to initials when no logo is set. */}
                   {organization?.logo ? (
