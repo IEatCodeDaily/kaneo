@@ -51,8 +51,10 @@ export default function ResourceSettingsShell({
 
   const active = items.find((item) => item.id === activeId);
 
+  // The row stretches to the settings pane's full height, so the divider
+  // runs top to bottom; the nav stays sticky.
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 md:flex-row md:gap-0">
+    <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 md:min-h-full md:flex-row md:gap-0">
       {/* Sticky: this list sits inside the settings pane's scroller, so
           without it the list scrolls away with long settings pages. */}
       <nav

@@ -20,6 +20,7 @@ import useGetConfig from "@/hooks/queries/config/use-get-config";
 import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-invitations";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -68,9 +69,18 @@ export function UserAvatar() {
           size="icon"
           className="size-11 rounded-full p-0 hover:bg-sidebar-accent/70 sm:size-8"
         >
-          <Avatar className={`h-8 w-8 ${tone}`}>
-            <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-            <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
+          {/* The tone tints initials only; behind a real picture it leaked
+              through transparent avatars as a halo (dark mode report). */}
+          <Avatar className={`h-8 w-8 ${user.image ? "" : tone}`}>
+            {user.image ? (
+            <AvatarImage src={user.image} alt={user.name || ""} />
+          ) : null}
+            <AvatarFallback
+              className={cn(
+                "text-xs font-medium border border-border/30",
+                user.image ? "bg-transparent" : tone,
+              )}
+            >
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -79,9 +89,16 @@ export function UserAvatar() {
       <DropdownMenuContent className="w-52 p-0" side="bottom" align="start">
         <div className="px-2.5 py-2">
           <div className="flex items-center gap-2 text-left text-sm">
-            <Avatar className={`h-7 w-7 rounded-full ${tone}`}>
-              <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-              <AvatarFallback className="rounded-full bg-transparent border border-border/30">
+            <Avatar className={`h-7 w-7 rounded-full ${user.image ? "" : tone}`}>
+              {user.image ? (
+            <AvatarImage src={user.image} alt={user.name || ""} />
+          ) : null}
+              <AvatarFallback
+                className={cn(
+                  "rounded-full border border-border/30",
+                  user.image ? "bg-transparent" : tone,
+                )}
+              >
                 {initials}
               </AvatarFallback>
             </Avatar>

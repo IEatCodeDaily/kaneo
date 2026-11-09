@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { BriefcaseBusiness, Library, Settings } from "lucide-react";
+import { BriefcaseBusiness, Library, Settings, Users,} from "lucide-react";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
@@ -147,6 +147,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <button
           type="button"
+          aria-label="Members"
+          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
+          onClick={() =>
+            organization &&
+            navigate({
+              to: `/dashboard/organization/${organization.slug}/members`,
+            })
+          }
+        >
+          <Users className="size-4" />
+          {!isCollapsed && <span>Members</span>}
+        </button>
+        <button
+          type="button"
           aria-label="Settings"
           className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
           onClick={() =>
@@ -169,10 +183,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               >
                 <Avatar className="size-7 rounded-md">
-                  <AvatarImage
-                    src={organization?.logo ?? ""}
-                    alt={organization?.name ?? ""}
-                  />
+                  {/* An empty src renders a broken-image blob in dark mode;
+                      fall straight to initials when no logo is set. */}
+                  {organization?.logo ? (
+                    <AvatarImage
+                      src={organization.logo}
+                      alt={organization?.name ?? ""}
+                    />
+                  ) : null}
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 {!isCollapsed && (
