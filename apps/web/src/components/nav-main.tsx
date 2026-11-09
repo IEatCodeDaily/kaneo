@@ -79,13 +79,13 @@ export function NavMain() {
     },
   ];
   return (
-    <SidebarGroup className="p-2 pb-0">
+    <SidebarGroup className="px-2 pb-0 pt-1">
       <SidebarGroupContent>
-        <SidebarMenu className="gap-0.5">
+        <SidebarMenu className="gap-0">
           {primary.map(({ label, icon: Icon, url, badge }) => (
             <SidebarMenuItem key={url}>
               <SidebarMenuButton
-                className="h-7 text-xs"
+                className="h-6 text-xs"
                 isActive={pathname === url}
                 onClick={() => navigate({ to: url })}
                 tooltip={label}
@@ -111,7 +111,7 @@ export function NavMain() {
                   <SidebarMenuButton
                     aria-expanded={recentOpen}
                     aria-label={t("navigation:sidebar.recent")}
-                    className="h-7 text-xs"
+                    className="h-6 text-xs"
                     onClick={() => setRecentOpen(!recentOpen)}
                   >
                     <Clock3 />
