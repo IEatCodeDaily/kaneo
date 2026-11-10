@@ -20,6 +20,7 @@ describe("resolveRecentPage", () => {
     ).toEqual({
       pathname: "/dashboard/organization/acme/board/delivery/backlog",
       label: "Delivery",
+      kind: "board",
     });
   });
 
@@ -33,6 +34,7 @@ describe("resolveRecentPage", () => {
     ).toEqual({
       pathname: "/dashboard/organization/acme/repo/repo-uuid/issues",
       label: "kaneo",
+      kind: "repo",
     });
   });
 
@@ -46,6 +48,7 @@ describe("resolveRecentPage", () => {
     ).toEqual({
       pathname: "/dashboard/organization/acme/projects/launch/tickets",
       label: "Launch",
+      kind: "project",
     });
   });
 

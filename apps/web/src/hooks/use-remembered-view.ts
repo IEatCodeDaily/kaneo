@@ -43,6 +43,20 @@ export function useRememberCurrentView() {
     if (boardView) setLastBoardView(boardView);
     const repoView = repoViewFromPathname(pathname);
     if (repoView) setLastRepoView(repoView);
+    // Ticket pages live outside the /organization/ segment, so record them
+    // directly; ticket-page.tsx later enriches the label with the title.
+    const ticketMatch = /^\/dashboard\/[^/]+\/tickets\/[^/?]+/.exec(pathname);
+    if (ticketMatch) {
+      const key = ticketMatch[0].split("/").pop() ?? "";
+      rememberRecentPage({
+        pathname: ticketMatch[0],
+        label: key,
+        detail: key,
+        kind: "ticket",
+        openedAt: Date.now(),
+      });
+      return;
+    }
     if (!organization) return;
     const page = resolveRecentPage(pathname, organization, {
       boards,
