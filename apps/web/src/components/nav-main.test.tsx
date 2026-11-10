@@ -7,6 +7,13 @@ let recentOpen = false;
 const setRecentOpen = vi.fn((open: boolean) => {
   recentOpen = open;
 });
+const recentPageLimit = 5;
+let mockRecentPages: {
+  pathname: string;
+  label: string;
+  openedAt: number;
+  detail?: string;
+}[] = [];
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => navigate,
   useLocation: () => ({ pathname: "/dashboard/organization/acme/inbox" }),
@@ -14,6 +21,23 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
+mockRecentPages = [
+  {
+    pathname: "/dashboard/organization/acme/board/delivery",
+    label: "Delivery",
+    openedAt: Date.now() - 60_000,
+  },
+  {
+    pathname: "/dashboard/organization/acme/projects/launch",
+    label: "Launch",
+    openedAt: Date.now() - 3_600_000,
+  },
+  {
+    pathname: "/dashboard/organization/acme/repo/api/code",
+    label: "Code",
+    openedAt: Date.now() - 86_400_000,
+  },
+];
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
   default: () => ({ data: { id: "org-1", slug: "acme" } }),
 }));
@@ -23,24 +47,8 @@ vi.mock("@/store/user-preferences", () => ({
       setRecentPageLimit,
       recentOpen,
       setRecentOpen,
-      recentPageLimit: 5,
-      recentPages: [
-        {
-          pathname: "/dashboard/organization/acme/board/delivery",
-          label: "Delivery",
-          openedAt: Date.now() - 60_000,
-        },
-        {
-          pathname: "/dashboard/organization/acme/projects/launch",
-          label: "Launch",
-          openedAt: Date.now() - 3_600_000,
-        },
-        {
-          pathname: "/dashboard/organization/acme/repo/api/code",
-          label: "Code",
-          openedAt: Date.now() - 86_400_000,
-        },
-      ],
+      recentPageLimit,
+      recentPages: mockRecentPages,
     }),
 }));
 vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
@@ -64,12 +72,28 @@ vi.mock("@/components/ui/context-menu", () => ({
   ContextMenuContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
+  ContextMenuGroup: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  ContextMenuItem: ({ children }: { children: React.ReactNode }) => (
+    <button type="button">{children}</button>
+  ),
+  ContextMenuLabel: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   ContextMenuRadioGroup: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
   ContextMenuRadioItem: ({ children }: { children: React.ReactNode }) => (
     <button type="button">{children}</button>
   ),
+  ContextMenuSeparator: () => <hr />,
+}));
+vi.mock("@/components/recent-pages-dialog", () => ({
+  RecentPagesDialog: () => null,
+}));
+vi.mock("@/lib/recent-page", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/recent-page")>()),
 }));
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarGroup: ({ children }: { children: React.ReactNode }) => (
@@ -139,6 +163,23 @@ afterEach(() => {
   cleanup();
   navigate.mockClear();
 });
+mockRecentPages = [
+  {
+    pathname: "/dashboard/organization/acme/board/delivery",
+    label: "Delivery",
+    openedAt: Date.now() - 60_000,
+  },
+  {
+    pathname: "/dashboard/organization/acme/projects/launch",
+    label: "Launch",
+    openedAt: Date.now() - 3_600_000,
+  },
+  {
+    pathname: "/dashboard/organization/acme/repo/api/code",
+    label: "Code",
+    openedAt: Date.now() - 86_400_000,
+  },
+];
 describe("NavMain compact personal group", () => {
   it("renders Inbox, My Tickets, and expandable Recent in one group", () => {
     const view = render(<NavMain />);
@@ -181,12 +222,34 @@ describe("NavMain compact personal group", () => {
     expect(delivery).toHaveTextContent("1m");
   });
 
-  it("offers persisted Recent limits from three through eight", () => {
+  it("offers persisted Recent limits from two through ten", () => {
     render(<NavMain />);
-    for (const limit of [3, 4, 5, 6, 7, 8]) {
+    for (const limit of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       expect(
         screen.getByRole("button", { name: String(limit) }),
       ).toBeInTheDocument();
     }
+    expect(
+      screen.getByText("navigation:sidebar.recentShowLatest"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("navigation:sidebar.recentViewAll"),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the Recent header visible when history is empty", () => {
+    mockRecentPages = [];
+    const view = render(<NavMain />);
+    expect(
+      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "navigation:sidebar.recent" }),
+    );
+    view.rerender(<NavMain />);
+    expect(
+      screen.getByText("navigation:sidebar.recentEmpty"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Delivery/ })).toBeNull();
   });
 });
