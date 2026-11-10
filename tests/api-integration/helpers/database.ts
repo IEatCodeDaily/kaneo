@@ -65,9 +65,27 @@ export async function ensureTestDatabaseMigrated() {
   if (!migrationPromise) {
     migrationPromise = (async () => {
       await ensureTestDatabaseExists();
-      await migrate(db, {
-        migrationsFolder,
-      });
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString) {
+        throw new Error("DATABASE_URL must be defined for integration tests");
+      }
+      // Session advisory lock on a dedicated connection serializes concurrent
+      // vitest workers: drizzle migrate on a fresh DB is not concurrency-safe
+      // (two workers raced into the same FK ALTER and one got 42710).
+      const lock = new Client({ connectionString });
+      await lock.connect();
+      try {
+        await lock.query("SELECT pg_advisory_lock(727411)");
+        try {
+          await migrate(db, {
+            migrationsFolder,
+          });
+        } finally {
+          await lock.query("SELECT pg_advisory_unlock(727411)");
+        }
+      } finally {
+        await lock.end();
+      }
     })();
   }
 

@@ -56,6 +56,9 @@ vi.mock("@/components/nav-repos", () => ({
 vi.mock("@/components/nav-tables", () => ({
   NavTables: () => <div data-testid="nav-tables" />,
 }));
+vi.mock("@/components/nav-dashboards", () => ({
+  NavDashboards: () => <div data-testid="nav-dashboards" />,
+}));
 vi.mock("@/components/team-view-selector", () => ({
   TeamViewSelector: () => <div data-testid="team-view-selector" />,
 }));

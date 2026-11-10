@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import db from "../../../database";
 import {
   boardTable,
@@ -120,6 +120,8 @@ async function listProjectResources(
             and(
               eq(dataTableTable.organizationId, organizationId),
               inArray(dataTableTable.id, visibleTableIds),
+              // Soft-deleted tables live in the trash, not in project links.
+              isNull(dataTableTable.deletedAt),
             ),
           )
       : Promise.resolve([]),

@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
+import { createDataTable } from "../../apps/api/src/data-table/controllers";
 import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
 import { getResourcePrivilege } from "../../apps/api/src/resource-access";
@@ -42,10 +43,11 @@ async function createTableFixture(organizationId: string) {
     .update(schema.organizationTable)
     .set({ tablesEnabled: true })
     .where(eq(schema.organizationTable.id, organizationId));
-  const [table] = await db
-    .insert(schema.dataTableTable)
-    .values({ organizationId, name: "Fixture table" })
-    .returning();
+  // Use the engine (not a raw metadata insert): the physical kaneo_tables row
+  // store must exist or every row/list route 500s.
+  const table = await createDataTable(organizationId, {
+    name: "Fixture table",
+  });
   return table;
 }
 

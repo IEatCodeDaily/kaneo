@@ -839,6 +839,8 @@ export const dataTableTable = pgTable(
     orgPrivilege: text("org_privilege", {
       enum: ["none", "view", "edit", "manage"],
     }),
+    // Soft delete: the physical kaneo_tables table survives until explicit purge.
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -867,6 +869,9 @@ export const dataTableFieldTable = pgTable(
     name: text("name").notNull(),
     position: integer("position").notNull().default(0),
     type: text("type").notNull().default("text"),
+    // Per-type options (choices, precision, currency code...); shape validated
+    // by the field registry in data-table/fields.ts, not by a DB constraint.
+    options: jsonb("options").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -878,20 +883,39 @@ export const dataTableFieldTable = pgTable(
       table.tableId,
       table.position,
     ),
-    check("data_table_field_type_check", sql`${table.type} = 'text'`),
   ],
 );
 
-export const dataTableRowTable = pgTable(
-  "data_table_row",
+export type DashboardPanelSpec = {
+  id: string;
+  title: string;
+  type: "stat" | "bar" | "line" | "area" | "pie" | "table";
+  /** 24-column grid width. */
+  span: 6 | 8 | 9 | 12 | 15 | 16 | 24;
+  query: {
+    tableId: string;
+    metric: { agg: "count" | "sum" | "avg" | "min" | "max"; fieldId?: string };
+    groupBy?: { fieldId: string; bucket?: "day" | "week" | "month" };
+    filters?: {
+      fieldId: string;
+      op: "eq" | "neq" | "in" | "lt" | "lte" | "gt" | "gte" | "isEmpty";
+      value?: unknown;
+    }[];
+    limit?: number;
+  };
+};
+
+export const dataTableDashboardTable = pgTable(
+  "data_table_dashboard",
   {
     id: text("id")
       .$defaultFn(() => createId())
       .primaryKey(),
-    tableId: text("table_id")
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => dataTableTable.id, { onDelete: "cascade" }),
-    position: integer("position").notNull().default(0),
+      .references(() => organizationTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    panels: jsonb("panels").$type<DashboardPanelSpec[]>().notNull().default([]),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -899,33 +923,25 @@ export const dataTableRowTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("data_table_row_table_position_idx").on(
-      table.tableId,
-      table.position,
-    ),
+    index("data_table_dashboard_organization_idx").on(table.organizationId),
   ],
 );
 
-export const dataTableCellTable = pgTable(
-  "data_table_cell",
+// DDL ledger for the runtime-managed kaneo_tables schema. No FK: the ledger
+// must survive explicit purges of data tables for auditing.
+export const dataTableDdlLogTable = pgTable(
+  "data_table_ddl_log",
   {
-    rowId: text("row_id")
-      .notNull()
-      .references(() => dataTableRowTable.id, { onDelete: "cascade" }),
-    fieldId: text("field_id")
-      .notNull()
-      .references(() => dataTableFieldTable.id, { onDelete: "cascade" }),
-    value: text("value"),
-    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "date" })
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    dataTableId: text("data_table_id").notNull(),
+    statement: text("statement").notNull(),
+    appliedAt: timestamp("applied_at", { withTimezone: true, mode: "date" })
       .defaultNow()
-      .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    unique("data_table_cell_row_field_unique").on(table.rowId, table.fieldId),
-    index("data_table_cell_field_idx").on(table.fieldId),
-  ],
+  (table) => [index("data_table_ddl_log_table_idx").on(table.dataTableId)],
 );
 
 export const columnTable = pgTable(

@@ -10,7 +10,7 @@ const html = readFileSync(join(dist, "index.html"), "utf8");
 const entry = html.match(/src="\/assets\/(index-[^"]+\.js)"/)?.[1];
 const jsBytes = readFileSync(join(dist, "assets", entry));
 const map = JSON.parse(
-  readFileSync(join(dist, "assets", entry + ".map"), "utf8"),
+  readFileSync(join(dist, "assets", `${entry}.map`), "utf8"),
 );
 
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

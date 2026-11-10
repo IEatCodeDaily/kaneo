@@ -7,9 +7,7 @@ import {
   boardTable,
   columnTable,
   commentTable,
-  dataTableCellTable,
   dataTableFieldTable,
-  dataTableRowTable,
   dataTableTable,
   externalLinkTable,
   githubIntegrationTable,
@@ -106,43 +104,16 @@ export const dataTableTableRelations = relations(
       references: [organizationTable.id],
     }),
     fields: many(dataTableFieldTable),
-    rows: many(dataTableRowTable),
     projectLinks: many(projectTableLinkTable),
   }),
 );
 
 export const dataTableFieldTableRelations = relations(
   dataTableFieldTable,
-  ({ one, many }) => ({
+  ({ one }) => ({
     table: one(dataTableTable, {
       fields: [dataTableFieldTable.tableId],
       references: [dataTableTable.id],
-    }),
-    cells: many(dataTableCellTable),
-  }),
-);
-
-export const dataTableRowTableRelations = relations(
-  dataTableRowTable,
-  ({ one, many }) => ({
-    table: one(dataTableTable, {
-      fields: [dataTableRowTable.tableId],
-      references: [dataTableTable.id],
-    }),
-    cells: many(dataTableCellTable),
-  }),
-);
-
-export const dataTableCellTableRelations = relations(
-  dataTableCellTable,
-  ({ one }) => ({
-    row: one(dataTableRowTable, {
-      fields: [dataTableCellTable.rowId],
-      references: [dataTableRowTable.id],
-    }),
-    field: one(dataTableFieldTable, {
-      fields: [dataTableCellTable.fieldId],
-      references: [dataTableFieldTable.id],
     }),
   }),
 );

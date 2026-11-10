@@ -26,12 +26,12 @@ describe("single settings sidebar", () => {
     expect(shell).toMatch(/if \(onBareSection && !activeId && firstId\)/);
   });
   it("keeps the legacy agent destination inside canonical settings", () => {
-    const source = readFileSync(root + "organization/agents.tsx", "utf8");
+    const source = readFileSync(`${root}organization/agents.tsx`, "utf8");
     expect(source).toContain('to: "/dashboard/settings/organization/members"');
     expect(source).not.toContain("params: { organizationSlug:");
   });
   it("keeps Teams in the settings shell instead of redirecting out", () => {
-    const source = readFileSync(root + "organization/teams.tsx", "utf8");
+    const source = readFileSync(`${root}organization/teams.tsx`, "utf8");
     expect(source).not.toContain("throw redirect");
     expect(source).toContain("component: TeamsManagement");
   });

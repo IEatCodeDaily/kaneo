@@ -8,10 +8,17 @@ import {
   deleteDataTableRow,
   getDataTable,
   getDataTables,
+  purgeDataTable,
+  restoreDataTable,
   updateDataTable,
   updateDataTableField,
   upsertDataTableCell,
 } from "@/fetchers/data-table/data-table";
+import type {
+  DataTable,
+  DataTableRow,
+  UpsertDataTableCellInput,
+} from "@/types/data-table";
 
 export const dataTableKeys = {
   all: ["data-tables"] as const,
@@ -36,20 +43,35 @@ export function useDataTable(organizationId: string, tableId: string) {
   });
 }
 
+function patchRow(
+  draft: DataTable | undefined,
+  rowId: string,
+  next: DataTableRow | ((row: DataTableRow) => DataTableRow),
+): DataTable | undefined {
+  if (!draft) return draft;
+  return {
+    ...draft,
+    rows: draft.rows.map((row) =>
+      row.id === rowId ? (typeof next === "function" ? next(row) : next) : row,
+    ),
+  };
+}
+
 export function useDataTableMutations(
   organizationId: string,
   tableId?: string,
 ) {
   const queryClient = useQueryClient();
+  const detailKey = tableId
+    ? dataTableKeys.detail(organizationId, tableId)
+    : null;
   const refreshList = () =>
     queryClient.invalidateQueries({
       queryKey: dataTableKeys.list(organizationId),
     });
   const refreshDetail = () =>
-    tableId
-      ? queryClient.invalidateQueries({
-          queryKey: dataTableKeys.detail(organizationId, tableId),
-        })
+    detailKey
+      ? queryClient.invalidateQueries({ queryKey: detailKey })
       : Promise.resolve();
   const refreshAll = async () => {
     await Promise.all([refreshList(), refreshDetail()]);
@@ -66,6 +88,14 @@ export function useDataTableMutations(
     }),
     deleteTable: useMutation({
       mutationFn: deleteDataTable,
+      onSuccess: refreshAll,
+    }),
+    restoreTable: useMutation({
+      mutationFn: restoreDataTable,
+      onSuccess: refreshAll,
+    }),
+    purgeTable: useMutation({
+      mutationFn: purgeDataTable,
       onSuccess: refreshList,
     }),
     createField: useMutation({
@@ -88,9 +118,41 @@ export function useDataTableMutations(
       mutationFn: deleteDataTableRow,
       onSuccess: refreshDetail,
     }),
+    // Optimistic: patch the cached row in place, no refetch per edit. The
+    // response row is the server truth; on failure the snapshot rolls back.
     upsertCell: useMutation({
       mutationFn: upsertDataTableCell,
-      onSuccess: refreshDetail,
+      onMutate: async ({ rowId, fieldId, value }: UpsertDataTableCellInput) => {
+        if (!detailKey) return;
+        await queryClient.cancelQueries({ queryKey: detailKey });
+        const previous = queryClient.getQueryData<DataTable>(detailKey);
+        queryClient.setQueryData<DataTable>(detailKey, (draft) =>
+          patchRow(draft, rowId, (row) => ({
+            ...row,
+            values: { ...row.values, [fieldId]: value },
+          })),
+        );
+        return { previous };
+      },
+      onSuccess: (row) => {
+        if (!detailKey) return;
+        // Merge values only: replacing the row would clobber another cell's
+        // in-flight optimistic value with stale server data.
+        queryClient.setQueryData<DataTable>(detailKey, (draft) =>
+          patchRow(draft, row.id, (cached) => ({
+            ...cached,
+            values: { ...cached.values, ...row.values },
+          })),
+        );
+      },
+      onError: (_error, _vars, context) => {
+        if (detailKey && context?.previous) {
+          queryClient.setQueryData(detailKey, context.previous);
+          // The snapshot predates any other in-flight cell's confirmed write;
+          // re-pull server truth so those writes are not visually lost.
+          queryClient.invalidateQueries({ queryKey: detailKey });
+        }
+      },
     }),
   };
 }

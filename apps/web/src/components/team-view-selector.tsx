@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, UsersRound } from "lucide-react";
+import { Check, ChevronDown, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/cn";
 import { useTeamViewStore } from "@/store/team-view";
 
 type TeamOption = {
@@ -50,13 +51,20 @@ export function TeamViewSelector() {
 
   const allLabel = t("navigation:teamView.all");
   const label = teamId ? (teamName ?? allLabel) : allLabel;
+  // A pinned team is a scope decision — keep it visually raised so the
+  // operator always sees they are looking at a slice, not the whole org.
+  const teamPinned = Boolean(teamId);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <SidebarMenuButton
-            className="group h-8 min-w-0 flex-1 rounded-md px-2 text-sidebar-foreground"
+            className={cn(
+              "group h-8 min-w-0 flex-1 rounded-md px-2 text-sidebar-foreground",
+              teamPinned &&
+                "border border-input bg-background font-medium shadow-xs/5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            )}
             size="default"
             tooltip={t("navigation:teamView.label")}
           />
@@ -64,7 +72,7 @@ export function TeamViewSelector() {
       >
         <UsersRound aria-hidden="true" className="size-3.5 shrink-0" />
         <span
-          className="truncate text-sm font-medium text-foreground"
+          className="truncate text-sm text-foreground"
           data-testid="team-view-selector-value"
         >
           {label}
@@ -76,6 +84,10 @@ export function TeamViewSelector() {
           className="h-7 text-sm"
           onClick={() => setTeamView(null, null)}
         >
+          <Check
+            aria-hidden="true"
+            className={cn("size-3.5", teamPinned ? "opacity-0" : "opacity-100")}
+          />
           {allLabel}
         </DropdownMenuItem>
         {(teams.data ?? []).map((team: TeamOption) => (
@@ -84,6 +96,13 @@ export function TeamViewSelector() {
             key={team.id}
             onClick={() => setTeamView(team.id, team.name)}
           >
+            <Check
+              aria-hidden="true"
+              className={cn(
+                "size-3.5",
+                teamId === team.id ? "opacity-100" : "opacity-0",
+              )}
+            />
             {team.name}
           </DropdownMenuItem>
         ))}

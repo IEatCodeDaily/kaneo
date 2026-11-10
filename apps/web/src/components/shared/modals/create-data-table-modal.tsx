@@ -19,12 +19,14 @@ type Props = {
   open: boolean;
   onClose: () => void;
   organizationId: string;
+  organizationSlug: string;
 };
 
 export default function CreateDataTableModal({
   open,
   onClose,
   organizationId,
+  organizationSlug,
 }: Props) {
   const [name, setName] = useState("");
   const { t } = useTranslation();
@@ -48,7 +50,7 @@ export default function CreateDataTableModal({
       close();
       navigate({
         to: "/dashboard/organization/$organizationSlug/table/$tableId",
-        params: { organizationSlug: organizationId, tableId: table.id },
+        params: { organizationSlug, tableId: table.id },
       });
     } catch (error) {
       toast.error(

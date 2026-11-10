@@ -10,6 +10,10 @@ export type RecentPage = {
   pathname: string;
   label: string;
   openedAt: number;
+  /** What kind of resource the entry points at; tickets carry a key badge. */
+  kind?: "board" | "repo" | "project" | "ticket";
+  /** Short secondary text, e.g. the ticket key "NEXUS-23". */
+  detail?: string;
 };
 type PersistedRecentPage = Omit<RecentPage, "openedAt"> & {
   openedAt?: number;
@@ -248,12 +252,12 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
             ...state.recentPages.filter(
               (recent) => recent.pathname !== page.pathname,
             ),
-          ].slice(0, 8),
+          ].slice(0, 50),
         })),
-      recentPageLimit: 5,
+      recentPageLimit: 10,
       setRecentPageLimit: (limit) =>
-        set({ recentPageLimit: Math.min(8, Math.max(3, limit)) }),
-      recentOpen: false,
+        set({ recentPageLimit: Math.min(50, Math.max(10, limit)) }),
+      recentOpen: true,
       setRecentOpen: (recentOpen) => set({ recentOpen }),
       hiddenProjectIds: [],
       setProjectSidebarVisibility: (userId, projectId, visible) =>
@@ -290,6 +294,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       onRehydrateStorage: () => (state) => {
         if (state && !isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);
+        }
+        if (state && state.recentPageLimit < 10) {
+          state.setRecentPageLimit(state.recentPageLimit);
         }
       },
     },

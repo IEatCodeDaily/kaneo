@@ -1,16 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
 import { BriefcaseBusiness, Library, Settings, Users } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
+import { NavDashboards } from "@/components/nav-dashboards";
 import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
 import { NavTables } from "@/components/nav-tables";
 import { NavWork } from "@/components/nav-work";
 import { OrganizationMenuSection } from "@/components/organization-switcher";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
-import { TeamViewSelector } from "@/components/team-view-selector";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -35,12 +35,21 @@ import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { cn } from "@/lib/cn";
 import Search from "./search";
 
+// Above-the-fold but code-heavy (teams query + menu); kept out of the entry
+// chunk with a same-size skeleton so the header never shifts.
+const TeamViewSelector = lazy(() =>
+  import("@/components/team-view-selector").then((m) => ({
+    default: m.TeamViewSelector,
+  })),
+);
+
 function ResourceNavigation() {
   return (
     <>
       <NavBoards />
       <NavRepos />
       <NavTables />
+      <NavDashboards />
     </>
   );
 }
@@ -104,7 +113,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         >
           {/* #96: the top is team scope + collapse only; the organization
               lives at the bottom with the account. */}
-          {!isCollapsed && <TeamViewSelector />}
+          {!isCollapsed && (
+            <Suspense
+              fallback={
+                <div className="h-8 min-w-0 flex-1 animate-pulse rounded-md bg-sidebar-accent/50" />
+              }
+            >
+              <TeamViewSelector />
+            </Suspense>
+          )}
           <SidebarTrigger
             className={cn("shrink-0", !isCollapsed && "ml-auto")}
             data-testid="sidebar-toggle"
@@ -115,11 +132,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         better-layout: groups must be separated by more than the rhythm
         inside them. Rows sit on gap-0.5 (2px) and menus on gap-1 (4px),
         so the group rail needs gap-3 (12px) for the grouping to read as
-        structure instead of noise.
+        structure instead of noise. The pinned cluster (search + primary
+        nav) is one unit: proximity beats sectioning for a toolbar, so it
+        uses intra-group spacing internally and the rail only separates it
+        from the real sections below.
       */}
       <SidebarContent className="gap-3 overflow-y-auto py-1">
-        <Search />
-        <NavMain />
+        {/* Search is a toolbar for the pinned cluster, not a peer section:
+            it shares NavMain's intra-group spacing; the rail gap still
+            separates this cluster from Boards/Repos/Tables below. */}
+        <div className="flex flex-col">
+          <Search />
+          <NavMain />
+        </div>
         {workEnabled && (
           <div className="mx-2 grid grid-cols-2 rounded-md bg-sidebar-accent p-0.5 text-xs">
             <button

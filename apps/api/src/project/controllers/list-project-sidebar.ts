@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import db from "../../database";
 import {
   boardTable,
@@ -106,6 +106,8 @@ export default async function listProjectSidebar(
             and(
               eq(dataTableTable.organizationId, organizationId),
               inArray(dataTableTable.id, tableIds),
+              // Soft-deleted tables live in the trash, not in project links.
+              isNull(dataTableTable.deletedAt),
             ),
           )
       : [],

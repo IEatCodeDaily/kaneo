@@ -51,7 +51,7 @@ export default function Search() {
    */
   if (isCollapsed) {
     return (
-      <SidebarGroup className="pb-1">
+      <SidebarGroup>
         <TooltipProvider>
           <div className="flex flex-col gap-1">
             <Tooltip>
@@ -103,7 +103,7 @@ export default function Search() {
   }
 
   return (
-    <SidebarGroup className="pb-1">
+    <SidebarGroup>
       <div className="flex gap-1">
         <button
           className="inline-flex h-8 w-full cursor-pointer rounded-md border border-input bg-background px-2 py-1.5 text-foreground text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

@@ -30,6 +30,7 @@ import column from "./column";
 import comment from "./comment";
 import config from "./config";
 import dataTable from "./data-table";
+import { reconcile as reconcileDataTables } from "./data-table/store";
 import db, { getDatabase, schema } from "./database";
 import { prepareDatabaseStartup } from "./database/prepare-database-startup";
 import { waitForDatabase } from "./database/wait-for-database";
@@ -1004,6 +1005,17 @@ export async function runStartupTasks() {
   // integrations during startup.
   await migrateColumns();
   await seedDefaultOrganizationRoles();
+
+  // Runtime DDL self-heal for the kaneo_tables schema (docs §9.2). Best-effort:
+  // a corrupt dynamic table must not take the whole API offline.
+  try {
+    const reports = await reconcileDataTables();
+    if (reports.length > 0) {
+      console.log(`🔧 Reconciled ${reports.length} data table(s)`);
+    }
+  } catch (error) {
+    console.error("⚠️ Data table reconcile failed:", error);
+  }
 
   initializePlugins();
   initializeScheduler();

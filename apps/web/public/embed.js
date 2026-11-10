@@ -10,11 +10,11 @@
   var ticketId = params.get("id");
   if (!ticketId) return;
 
-  fetch("/api/public-ticket-embed/" + encodeURIComponent(ticketId), {
+  fetch(`/api/public-ticket-embed/${encodeURIComponent(ticketId)}`, {
     headers: { Accept: "application/json" },
   })
     .then((res) => {
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     })
     .then((ticket) => {

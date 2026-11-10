@@ -1,11 +1,20 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { AlertCircle, Plus, Table2 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDataTables } from "@/hooks/data-table/use-data-tables";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
-import CreateDataTableModal from "./shared/modals/create-data-table-modal";
+import { cn } from "@/lib/cn";
+import { ensureTablesStrings } from "@/lib/i18n";
+
+// Pull the lazy tables/dashboards strings as early as possible.
+void ensureTablesStrings();
+
+const CreateDataTableModal = lazy(
+  () => import("./shared/modals/create-data-table-modal"),
+);
+
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -97,25 +106,35 @@ export function NavTables() {
                     navigate({
                       to: "/dashboard/organization/$organizationSlug/table/$tableId",
                       params: {
-                        organizationSlug: organization.id,
+                        organizationSlug: organization.slug,
                         tableId: table.id,
                       },
                     })
                   }
                 >
                   <Table2 className="size-4 text-sidebar-foreground/70" />
-                  <span className="truncate">{table.name}</span>
+                  <span
+                    className={cn(
+                      "truncate",
+                      table.deletedAt && "text-muted-foreground line-through",
+                    )}
+                  >
+                    {table.name}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-      <CreateDataTableModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        organizationId={organization.id}
-      />
+      <Suspense fallback={null}>
+        <CreateDataTableModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          organizationId={organization.id}
+          organizationSlug={organization.slug}
+        />
+      </Suspense>
     </>
   );
 }

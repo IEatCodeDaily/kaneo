@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TaskLayout from "@/components/common/task-layout";
@@ -15,6 +15,7 @@ import useGetBoard from "@/hooks/queries/board/use-get-board";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { getSharedShikiHighlighter } from "@/lib/shiki-highlighter";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 
 export default function TicketPage({
   boardId,
@@ -38,6 +39,25 @@ export default function TicketPage({
   });
   const { isLoading: activityLoading } = useGetActivitiesByTaskId(ticketId);
   const { data: organization } = useActiveOrganization();
+  const rememberRecentPage = useUserPreferencesStore(
+    (state) => state.rememberRecentPage,
+  );
+  const routePathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  useEffect(() => {
+    if (!ticket || !board) return;
+    const key = board.slug
+      ? `${board.slug.toUpperCase()}-${ticket.number}`
+      : `#${ticket.number}`;
+    rememberRecentPage({
+      pathname: routePathname,
+      label: ticket.title,
+      detail: key,
+      kind: "ticket",
+      openedAt: Date.now(),
+    });
+  }, [board, rememberRecentPage, routePathname, ticket]);
   const [shikiReady, setShikiReady] = useState(false);
 
   useEffect(() => {
