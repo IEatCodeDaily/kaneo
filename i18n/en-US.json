@@ -1471,7 +1471,8 @@
 		},
 		"teamView": {
 			"label": "Team view",
-			"all": "All"
+			"all": "All",
+			"teams": "Teams"
 		},
 		"organizationSwitcher": {
 			"switchError": "Could not switch organization",
