@@ -148,7 +148,9 @@ describe("AppSidebar work and footer structure", () => {
     expect(footer).not.toContainElement(
       screen.getByTestId("org-team-selector"),
     );
-    expect(footer).toContainElement(screen.getByRole("button", { name: "Members" }));
+    expect(footer).toContainElement(
+      screen.getByRole("button", { name: "Members" }),
+    );
     expect(footer).toContainElement(screen.getByTestId("user-avatar"));
   });
   it("pins search and primary nav above the scrolling resources", () => {

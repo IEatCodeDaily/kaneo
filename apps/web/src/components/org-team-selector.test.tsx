@@ -88,9 +88,13 @@ vi.mock("@/components/version-display", () => ({
   VersionDisplay: () => <div />,
 }));
 vi.mock("@/components/ui/avatar", () => ({
-  Avatar: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <span className={className}>{children}</span>
-  ),
+  Avatar: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => <span className={className}>{children}</span>,
   AvatarFallback: ({ children }: { children: React.ReactNode }) => (
     <span>{children}</span>
   ),
@@ -103,17 +107,31 @@ afterEach(() => cleanup());
 
 describe("OrgTeamSelector", () => {
   it("shows the org and active team rows in the trigger", () => {
-    render(<OrgTeamSelector open={false} onOpenChange={vi.fn()} onAddOrganization={vi.fn()} />);
+    render(
+      <OrgTeamSelector
+        open={false}
+        onOpenChange={vi.fn()}
+        onAddOrganization={vi.fn()}
+      />,
+    );
     // The org name appears in the trigger and (mocked-open) menu; both count.
     expect(screen.getAllByText("Acme").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("navigation:teamView.all").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("navigation:teamView.all").length,
+    ).toBeGreaterThan(0);
   });
 
   it("lists current-org teams first, then organizations - no Members or Settings", () => {
     render(
-      <OrgTeamSelector open onOpenChange={vi.fn()} onAddOrganization={vi.fn()} />,
+      <OrgTeamSelector
+        open
+        onOpenChange={vi.fn()}
+        onAddOrganization={vi.fn()}
+      />,
     );
-    const items = screen.getAllByRole("menuitem").map((item) => item.textContent);
+    const items = screen
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
     expect(items.some((text) => text?.includes("Engineering"))).toBe(true);
     expect(items.some((text) => text?.includes("Globex"))).toBe(true);
     const engIndex = items.findIndex((text) => text?.includes("Engineering"));

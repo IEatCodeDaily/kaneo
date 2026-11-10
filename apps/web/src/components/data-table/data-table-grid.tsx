@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowDown,
@@ -17,6 +18,7 @@ import {
   FieldTypeIcon,
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
+import { csvParse, csvSerialize } from "@/components/data-table/data-table-csv";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
 import {
   type ColumnSort,
@@ -65,8 +67,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getTableRowPage } from "@/fetchers/data-table/data-table";
-import { useDataTableMutations } from "@/hooks/data-table/use-data-tables";
+import {
+  createDataTableRow,
+  getTableRowPage,
+} from "@/fetchers/data-table/data-table";
+import {
+  dataTableKeys,
+  useDataTableMutations,
+} from "@/hooks/data-table/use-data-tables";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
@@ -75,6 +83,7 @@ import type {
   DataTableField,
   DataTableFieldType,
   DataTableRow,
+  SelectChoice,
 } from "@/types/data-table";
 
 type Props = {
@@ -452,6 +461,7 @@ function FilterChip({
 
 export function DataTableGrid({ table, organizationId, canEdit }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const {
     createRow,
     deleteRow: deleteRowMutation,
@@ -577,6 +587,114 @@ export function DataTableGrid({ table, organizationId, canEdit }: Props) {
       await createRow.mutateAsync({ organizationId, tableId: table.id });
     } catch {
       toast.error(t("navigation:tables.addRowError"));
+    }
+  };
+
+  // CSV round-trip: export the filtered view, import maps headers to fields
+  // by name and leans on the row endpoint's server-side coercion.
+  const [importProgress, setImportProgress] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const choicesById = useMemo(() => {
+    const map = new Map<string, SelectChoice>();
+    for (const field of fields) {
+      for (const choice of field.options?.choices ?? []) {
+        map.set(choice.id, choice);
+      }
+    }
+    return map;
+  }, [fields]);
+
+  const memberByName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const member of memberRows) {
+      const name = member.user.name || member.user.email;
+      if (name) map.set(name.toLowerCase(), member.userId || member.id);
+    }
+    return map;
+  }, [memberRows]);
+
+  const exportCsv = () => {
+    const csv = csvSerialize(fields, visibleRows, choicesById, memberByName);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${table.name}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCsv = async (file: File) => {
+    const byName = new Map(fields.map((field) => [field.name, field]));
+    const parsed = csvParse(await file.text());
+    const header = parsed[0] ?? [];
+    const columns = header
+      .map((name) => byName.get(name.trim()))
+      .filter((field): field is DataTableField => Boolean(field));
+    const dataRows = parsed
+      .slice(1)
+      .filter((cells) => cells.some((cell) => cell.trim() !== ""));
+    let done = 0;
+    try {
+      for (const cells of dataRows) {
+        const values: Record<string, unknown> = {};
+        columns.forEach((field, index) => {
+          const text = (cells[index] ?? "").trim();
+          if (text === "") return;
+          if (
+            field.type === "number" ||
+            field.type === "percent" ||
+            field.type === "currency"
+          ) {
+            const n = Number(text);
+            if (!Number.isNaN(n)) values[field.id] = n;
+          } else if (field.type === "checkbox") {
+            values[field.id] = ["true", "yes", "1"].includes(
+              text.toLowerCase(),
+            );
+          } else if (field.type === "select") {
+            const choice = field.options?.choices?.find(
+              (c) => c.label.toLowerCase() === text.toLowerCase(),
+            );
+            if (choice) values[field.id] = choice.id;
+          } else if (field.type === "multiselect") {
+            const ids = text
+              .split(",")
+              .map((label) => {
+                const choice = field.options?.choices?.find(
+                  (c) => c.label.toLowerCase() === label.trim().toLowerCase(),
+                );
+                return choice?.id;
+              })
+              .filter(Boolean);
+            if (ids.length > 0) values[field.id] = ids;
+          } else if (field.type === "user") {
+            const userId = memberByName.get(text.toLowerCase());
+            if (userId) values[field.id] = userId;
+          } else if (field.type === "json") {
+            try {
+              values[field.id] = JSON.parse(text);
+            } catch {
+              values[field.id] = text;
+            }
+          } else {
+            values[field.id] = text;
+          }
+        });
+        await createDataTableRow({ organizationId, tableId: table.id, values });
+        done += 1;
+        setImportProgress(
+          t("navigation:tables.importing", { done, total: dataRows.length }),
+        );
+      }
+      await queryClient.invalidateQueries({
+        queryKey: dataTableKeys.detail(organizationId, table.id),
+      });
+      toast.success(t("navigation:tables.importDone", { count: done }));
+    } catch {
+      toast.error(t("navigation:tables.importError", { done }));
+    } finally {
+      setImportProgress(null);
     }
   };
 
@@ -925,24 +1043,59 @@ export function DataTableGrid({ table, organizationId, canEdit }: Props) {
                     {t("navigation:tables.loadMore")}
                   </button>
                 )}
-                {canEdit && fields.length > 0 && (
+                {fields.length > 0 && (
                   <>
                     <button
                       type="button"
-                      className="flex items-center gap-1 font-medium text-primary hover:underline"
-                      onClick={addRow}
+                      className="flex items-center gap-1 hover:underline"
+                      onClick={exportCsv}
                     >
-                      <Plus className="size-3.5" />
-                      {t("navigation:tables.addRow")}
+                      {t("navigation:tables.exportCsv")}
                     </button>
                     <button
                       type="button"
-                      className="flex items-center gap-1 hover:underline"
-                      onClick={() => openDialog(null, null)}
+                      className="flex items-center gap-1 hover:underline disabled:opacity-60"
+                      disabled={importProgress !== null}
+                      onClick={() => fileInputRef.current?.click()}
                     >
-                      <Plus className="size-3.5" />
-                      {t("navigation:tables.addField")}
+                      {t("navigation:tables.importCsv")}
                     </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file) void importCsv(file);
+                      }}
+                    />
+                    {importProgress && (
+                      <span className="text-muted-foreground">
+                        {importProgress}
+                      </span>
+                    )}
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 font-medium text-primary hover:underline"
+                          onClick={addRow}
+                        >
+                          <Plus className="size-3.5" />
+                          {t("navigation:tables.addRow")}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 hover:underline"
+                          onClick={() => openDialog(null, null)}
+                        >
+                          <Plus className="size-3.5" />
+                          {t("navigation:tables.addField")}
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
