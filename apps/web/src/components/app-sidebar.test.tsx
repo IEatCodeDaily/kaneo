@@ -59,15 +59,21 @@ vi.mock("@/components/nav-tables", () => ({
 vi.mock("@/components/nav-dashboards", () => ({
   NavDashboards: () => <div data-testid="nav-dashboards" />,
 }));
-vi.mock("@/components/team-view-selector", () => ({
-  TeamViewSelector: () => <div data-testid="team-view-selector" />,
+vi.mock("@/components/org-team-selector", () => ({
+  OrgTeamSelector: (props: { open?: boolean }) => (
+    <div data-testid="org-team-selector">
+      <button
+        type="button"
+        data-testid="sidebar-organization-identity"
+        aria-expanded={props.open ?? false}
+      />
+    </div>
+  ),
 }));
 vi.mock("@/components/user-avatar", () => ({
   UserAvatar: () => <div data-testid="user-avatar" />,
 }));
-vi.mock("@/components/organization-switcher", () => ({
-  OrganizationMenuSection: () => <div data-testid="organization-selector" />,
-}));
+
 vi.mock("@/components/shared/modals/create-organization-modal", () => ({
   default: () => null,
 }));
@@ -131,20 +137,28 @@ describe("AppSidebar work and footer structure", () => {
       "true",
     );
   });
-  it("keeps the organization switcher in the footer and team scope in the header", () => {
+  it("merges organization and team selection in the header", () => {
     render(<AppSidebar />);
     const header = screen.getByRole("banner");
     const footer = screen.getByRole("contentinfo");
-    expect(header).toContainElement(screen.getByTestId("team-view-selector"));
-    expect(header).not.toContainElement(
+    expect(header).toContainElement(screen.getByTestId("org-team-selector"));
+    expect(header).toContainElement(
       screen.getByTestId("sidebar-organization-identity"),
     );
-    expect(footer).toContainElement(
-      screen.getByTestId("sidebar-organization-identity"),
+    expect(footer).not.toContainElement(
+      screen.getByTestId("org-team-selector"),
     );
-    expect(footer).toContainElement(
-      screen.getByTestId("organization-selector"),
-    );
+    expect(footer).toContainElement(screen.getByRole("button", { name: "Members" }));
+    expect(footer).toContainElement(screen.getByTestId("user-avatar"));
+  });
+  it("pins search and primary nav above the scrolling resources", () => {
+    render(<AppSidebar />);
+    const main = screen.getByRole("main");
+    const pinned = main.firstElementChild as HTMLElement;
+    expect(pinned.className).toContain("sticky");
+    expect(pinned.className).toContain("top-0");
+    expect(pinned.className).toContain("bg-sidebar");
+    expect(pinned).toContainElement(screen.getByTestId("nav-main"));
   });
   it("lays out the team selector and toggle horizontally", () => {
     render(<AppSidebar />);

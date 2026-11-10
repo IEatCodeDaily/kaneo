@@ -256,7 +256,7 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         })),
       recentPageLimit: 10,
       setRecentPageLimit: (limit) =>
-        set({ recentPageLimit: Math.min(50, Math.max(10, limit)) }),
+        set({ recentPageLimit: Math.min(10, Math.max(2, limit)) }),
       recentOpen: true,
       setRecentOpen: (recentOpen) => set({ recentOpen }),
       hiddenProjectIds: [],
@@ -295,7 +295,10 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         if (state && !isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);
         }
-        if (state && state.recentPageLimit < 10) {
+        if (
+          state &&
+          (state.recentPageLimit < 2 || state.recentPageLimit > 10)
+        ) {
           state.setRecentPageLimit(state.recentPageLimit);
         }
       },

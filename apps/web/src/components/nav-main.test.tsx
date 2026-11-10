@@ -222,9 +222,9 @@ describe("NavMain compact personal group", () => {
     expect(delivery).toHaveTextContent("1m");
   });
 
-  it("offers persisted Recent limits in steps of ten through fifty", () => {
+  it("offers persisted Recent limits from two through ten", () => {
     render(<NavMain />);
-    for (const limit of [10, 20, 30, 40, 50]) {
+    for (const limit of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       expect(
         screen.getByRole("button", { name: String(limit) }),
       ).toBeInTheDocument();

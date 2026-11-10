@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { BriefcaseBusiness, Library, Settings, Users } from "lucide-react";
 import type * as React from "react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { SidebarResizeHandle } from "@/components/common/sidebar-resize-handle";
 import { NavBoards } from "@/components/nav-boards";
 import { NavDashboards } from "@/components/nav-dashboards";
@@ -9,14 +9,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
 import { NavTables } from "@/components/nav-tables";
 import { NavWork } from "@/components/nav-work";
-import { OrganizationMenuSection } from "@/components/organization-switcher";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/menu";
 import {
   Sidebar,
   SidebarContent,
@@ -25,8 +18,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { OrgTeamSelector } from "@/components/org-team-selector";
 import { UserAvatar } from "@/components/user-avatar";
-import { VersionDisplay } from "@/components/version-display";
 import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -34,14 +27,6 @@ import { useRememberCurrentView } from "@/hooks/use-remembered-view";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { cn } from "@/lib/cn";
 import Search from "./search";
-
-// Above-the-fold but code-heavy (teams query + menu); kept out of the entry
-// chunk with a same-size skeleton so the header never shifts.
-const TeamViewSelector = lazy(() =>
-  import("@/components/team-view-selector").then((m) => ({
-    default: m.TeamViewSelector,
-  })),
-);
 
 function ResourceNavigation() {
   return (
@@ -68,13 +53,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         | undefined
     )?.workEnabled,
   );
-  const initials =
-    organization?.name
-      ?.split(/\s+/)
-      .slice(0, 2)
-      .map((part: string) => part[0])
-      .join("")
-      .toUpperCase() || "OR";
   const modeStorageKey = organization
     ? `kaneo:sidebar-mode:${organization.id}`
     : null;
@@ -111,17 +89,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="flex w-full flex-row items-center gap-1"
           data-testid="sidebar-header"
         >
-          {/* #96: the top is team scope + collapse only; the organization
-              lives at the bottom with the account. */}
-          {!isCollapsed && (
-            <Suspense
-              fallback={
-                <div className="h-8 min-w-0 flex-1 animate-pulse rounded-md bg-sidebar-accent/50" />
-              }
-            >
-              <TeamViewSelector />
-            </Suspense>
-          )}
+          <OrgTeamSelector
+            open={organizationMenuOpen}
+            onOpenChange={setOrganizationMenuOpen}
+            onAddOrganization={() => setCreateOpen(true)}
+          />
           <SidebarTrigger
             className={cn("shrink-0", !isCollapsed && "ml-auto")}
             data-testid="sidebar-toggle"
@@ -141,7 +113,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Search is a toolbar for the pinned cluster, not a peer section:
             it shares NavMain's intra-group spacing; the rail gap still
             separates this cluster from Boards/Repos/Tables below. */}
-        <div className="flex flex-col">
+        {/* Pinned cluster: search + primary nav stay fixed while the
+            resource sections scroll under them. bg-sidebar hides rows
+            scrolling past beneath the sticky block. */}
+        <div className="sticky top-0 z-10 flex flex-col bg-sidebar pb-1">
           <Search />
           <NavMain />
         </div>
@@ -197,42 +172,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <span>Settings</span>
         </button>
         <div className="flex items-center gap-1" data-testid="sidebar-footer">
-          <DropdownMenu
-            open={organizationMenuOpen}
-            onOpenChange={setOrganizationMenuOpen}
-          >
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                data-testid="sidebar-organization-identity"
-                aria-expanded={organizationMenuOpen}
-                className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-              >
-                <Avatar className="size-7 rounded-full bg-sidebar-accent">
-                  {/* An empty src renders a broken-image blob in dark mode;
-                      fall straight to initials when no logo is set. */}
-                  {organization?.logo ? (
-                    <AvatarImage
-                      src={organization.logo}
-                      alt={organization?.name ?? ""}
-                    />
-                  ) : null}
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                {!isCollapsed && (
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                    {organization?.name}
-                  </span>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-64">
-              <OrganizationMenuSection
-                onCreateOrganization={() => setCreateOpen(true)}
-              />
-              <VersionDisplay />
-            </DropdownMenuContent>
-          </DropdownMenu>
           {!isCollapsed && <UserAvatar />}
         </div>
       </SidebarFooter>
