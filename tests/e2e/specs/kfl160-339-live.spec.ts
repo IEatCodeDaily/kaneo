@@ -25,7 +25,7 @@ test("KFL-160/339: follow chip + three-group assignee picker", async ({
   const box = await follow.boundingBox();
   const border = await follow.evaluate(
     (el) =>
-      getComputedStyle(el).borderStyle + " " + getComputedStyle(el).borderWidth,
+      `${getComputedStyle(el).borderStyle} ${getComputedStyle(el).borderWidth}`,
   );
   console.log(
     `follow chip: label=${label.trim()} height=${box?.height} border=${border}`,

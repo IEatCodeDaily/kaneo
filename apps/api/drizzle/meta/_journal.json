@@ -596,6 +596,13 @@
 			"when": 1793798986941,
 			"tag": "0081_organization_teams_enabled",
 			"breakpoints": true
+		},
+		{
+			"idx": 82,
+			"version": "7",
+			"when": 1794245006167,
+			"tag": "0082_tables_pivot",
+			"breakpoints": true
 		}
 	]
 }

@@ -1,51 +1,89 @@
+export const DATA_TABLE_FIELD_TYPES = [
+  "text",
+  "longtext",
+  "number",
+  "percent",
+  "currency",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "checkbox",
+  "user",
+  "url",
+  "email",
+  "json",
+  "link",
+] as const;
+
+export type DataTableFieldType = (typeof DATA_TABLE_FIELD_TYPES)[number];
+
+export type SelectChoice = {
+  id: string;
+  label: string;
+  color: string;
+};
+
+/**
+ * Wire shape of `data_table_field.options`. One loose bag instead of a
+ * discriminated union: only the keys relevant to the field's type are read,
+ * and the API treats options as an opaque jsonb object.
+ */
+export type DataTableFieldOptions = {
+  choices?: SelectChoice[];
+  precision?: number;
+  min?: number;
+  max?: number;
+  code?: string;
+  allowTeams?: boolean;
+  targetTableId?: string;
+  required?: boolean;
+};
+
 export type DataTableField = {
   id: string;
   tableId: string;
   name: string;
-  type: "text";
+  type: DataTableFieldType;
+  options: DataTableFieldOptions | null;
   position: number;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-export type DataTableCell = {
-  id?: string;
-  rowId: string;
-  fieldId: string;
-  value: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type DataTableRow = {
   id: string;
-  tableId: string;
   position: number;
-  cells: DataTableCell[];
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  values: Record<string, unknown>;
 };
 
 export type DataTableSummary = {
   id: string;
   organizationId: string;
   name: string;
-  createdAt?: string;
-  updatedAt?: string;
+  icon: string | null;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type DataTable = DataTableSummary & {
   fields: DataTableField[];
   rows: DataTableRow[];
+  total: number;
 };
 
 export type CreateDataTableInput = {
   organizationId: string;
   name: string;
+  icon?: string;
 };
 
-export type UpdateDataTableInput = {
-  organizationId: string;
-  tableId: string;
-  name: string;
+export type UpdateDataTableInput = DataTableTarget & {
+  name?: string;
+  icon?: string;
 };
 
 export type DataTableTarget = {
@@ -53,18 +91,18 @@ export type DataTableTarget = {
   tableId: string;
 };
 
-export type CreateDataTableFieldInput = {
-  organizationId: string;
-  tableId: string;
+export type CreateDataTableFieldInput = DataTableTarget & {
   name: string;
-  type?: "text";
+  type: DataTableFieldType;
+  options?: DataTableFieldOptions;
+  position?: number;
 };
 
-export type UpdateDataTableFieldInput = {
-  organizationId: string;
-  tableId: string;
+export type UpdateDataTableFieldInput = DataTableTarget & {
   fieldId: string;
-  name: string;
+  name?: string;
+  type?: DataTableFieldType;
+  options?: DataTableFieldOptions | null;
 };
 
 export type DataTableFieldTarget = DataTableTarget & {
@@ -75,7 +113,11 @@ export type DataTableRowTarget = DataTableTarget & {
   rowId: string;
 };
 
+export type CreateDataTableRowInput = DataTableTarget & {
+  values?: Record<string, unknown>;
+};
+
 export type UpsertDataTableCellInput = DataTableRowTarget & {
   fieldId: string;
-  value: string;
+  value: unknown;
 };

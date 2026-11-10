@@ -43,6 +43,23 @@ export function getBrowserLocale(): string | null {
 
 const namespaces = Object.keys(defaultResources);
 
+/**
+ * The Tables + Dashboards strings ship in a separate lazy bundle
+ * (`@i18n/en-US-tables.json`): the entry-chunk budget forces the alpha-gated
+ * feature's copy out of the eager fallback bundle. Surfaces that render those
+ * strings call this once at module scope; i18next falls back to the raw key
+ * for the few ms before the bundle lands.
+ */
+let tablesStrings: Promise<void> | null = null;
+export function ensureTablesStrings(): Promise<void> {
+  tablesStrings ??= import(
+    /* webpackChunkName: "i18n-tables" */ "@i18n/lazy/en-US-tables.json"
+  ).then((m) => {
+    i18n.addResourceBundle("en-US", "navigation", m.default, true, true);
+  });
+  return tablesStrings;
+}
+
 // Init synchronously with the fallback language only. Bundling all twelve
 // locales up front put ~1 MB of JSON in the entry chunk for a user who reads
 // one language; the rest are fetched on demand by ensureLocale below.

@@ -57,6 +57,19 @@
 			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["apps/web/src/components/data-table/data-table-grid.tsx"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"useFocusableInteractive": "off",
+						"useSemanticElements": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double",

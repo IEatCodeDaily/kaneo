@@ -11,18 +11,27 @@ import {
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
-  addRow,
-  addTextField,
+  addFieldToTable,
+  addTableRow,
+  createDashboard,
   createDataTable,
-  deleteDataTable,
-  deleteRow,
-  deleteTextField,
+  deleteDashboard,
+  deleteTableField,
+  deleteTableRow,
+  getDashboard,
   getDataTable,
+  listDashboards,
   listDataTables,
-  updateCell,
+  purgeDataTable,
+  queryDataTable,
+  restoreDataTable,
+  softDeleteDataTable,
+  updateDashboard,
   updateDataTable,
-  updateTextField,
+  updateTableCell,
+  updateTableField,
 } from "./controllers";
+import { FIELD_TYPES } from "./fields";
 import { assertTablesEnabled } from "./require-tables-enabled";
 
 const idParams = v.object({ organizationId: v.string(), tableId: v.string() });
@@ -31,11 +40,51 @@ const writePermission = requireOrganizationPermission({
 });
 const nonEmptyName = v.pipe(v.string(), v.trim(), v.minLength(1));
 
+const metricSchema = v.object({
+  agg: v.picklist(["count", "sum", "avg", "min", "max"]),
+  fieldId: v.optional(v.string()),
+});
+const groupBySchema = v.object({
+  fieldId: v.string(),
+  bucket: v.optional(v.picklist(["day", "week", "month"])),
+});
+const filterSchema = v.object({
+  fieldId: v.string(),
+  op: v.picklist(["eq", "neq", "in", "lt", "lte", "gt", "gte", "isEmpty"]),
+  value: v.optional(v.unknown()),
+});
+const querySpecSchema = v.object({
+  metric: metricSchema,
+  groupBy: v.optional(groupBySchema),
+  // Caps keep generated SQL (and jsonb panels) bounded.
+  filters: v.optional(v.pipe(v.array(filterSchema), v.maxLength(50))),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(500)),
+  ),
+});
+
+const panelSchema = v.object({
+  id: v.pipe(v.string(), v.minLength(1)),
+  title: v.pipe(v.string(), v.minLength(1)),
+  type: v.picklist(["stat", "bar", "line", "area", "pie", "table"]),
+  span: v.picklist([6, 8, 9, 12, 15, 16, 24]),
+  query: v.object({
+    tableId: v.string(),
+    metric: metricSchema,
+    groupBy: v.optional(groupBySchema),
+    filters: v.optional(v.pipe(v.array(filterSchema), v.maxLength(50))),
+    limit: v.optional(
+      v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(500)),
+    ),
+  }),
+});
+
 /**
  * Org-default visibility: tables are governed by the same resource-privilege
  * lattice as boards and repos. Reads need view, row/field/cell writes need
- * edit, and table lifecycle (rename/delete) needs manage. Table creation stays
- * on the organization role permission — there is no resource to grade yet.
+ * edit, and table lifecycle (rename/delete/purge/restore) needs manage. Table
+ * creation stays on the organization role permission — there is no resource to
+ * grade yet.
  */
 function tablePrivilege(required: Exclude<ResourcePrivilege, "none">) {
   return createMiddleware<{ Variables: { userId: string } }>(
@@ -104,13 +153,89 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       ),
   )
   .get(
+    "/organization/:organizationId/dashboards",
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    async (c) =>
+      c.json(await listDashboards(c.req.valid("param").organizationId)),
+  )
+  .post(
+    "/organization/:organizationId/dashboards",
+    validator("param", v.object({ organizationId: v.string() })),
+    validator("json", v.object({ name: nonEmptyName })),
+    organizationAccess.fromParam("organizationId"),
+    writePermission,
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      return c.json(await createDashboard(organizationId, c.req.valid("json")));
+    },
+  )
+  .get(
+    "/organization/:organizationId/dashboards/:dashboardId",
+    validator(
+      "param",
+      v.object({ organizationId: v.string(), dashboardId: v.string() }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const { organizationId, dashboardId } = c.req.valid("param");
+      return c.json(await getDashboard(organizationId, dashboardId));
+    },
+  )
+  .put(
+    "/organization/:organizationId/dashboards/:dashboardId",
+    validator(
+      "param",
+      v.object({ organizationId: v.string(), dashboardId: v.string() }),
+    ),
+    validator(
+      "json",
+      v.object({
+        name: v.optional(nonEmptyName),
+        panels: v.optional(v.pipe(v.array(panelSchema), v.maxLength(100))),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    writePermission,
+    async (c) => {
+      const { organizationId, dashboardId } = c.req.valid("param");
+      return c.json(
+        await updateDashboard(organizationId, dashboardId, c.req.valid("json")),
+      );
+    },
+  )
+  .delete(
+    "/organization/:organizationId/dashboards/:dashboardId",
+    validator(
+      "param",
+      v.object({ organizationId: v.string(), dashboardId: v.string() }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    writePermission,
+    async (c) => {
+      const { organizationId, dashboardId } = c.req.valid("param");
+      return c.json(await deleteDashboard(organizationId, dashboardId));
+    },
+  )
+  .get(
     "/organization/:organizationId/:tableId",
     validator("param", idParams),
+    validator(
+      "query",
+      v.object({ offset: v.optional(v.pipe(v.string(), v.transform(Number))) }),
+    ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("view"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
-      return c.json(await getDataTable(organizationId, tableId));
+      const offset = c.req.valid("query").offset ?? 0;
+      return c.json(
+        await getDataTable(
+          organizationId,
+          tableId,
+          Number.isFinite(offset) && offset > 0 ? offset : 0,
+        ),
+      );
     },
   )
   .put(
@@ -139,7 +264,43 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
-      return c.json(await deleteDataTable(organizationId, tableId));
+      return c.json(await softDeleteDataTable(organizationId, tableId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/purge",
+    validator("param", idParams),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("manage"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(await purgeDataTable(organizationId, tableId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/restore",
+    validator("param", idParams),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("manage"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(await restoreDataTable(organizationId, tableId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/query",
+    validator("param", idParams),
+    validator("json", querySpecSchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await queryDataTable(organizationId, tableId, {
+          ...c.req.valid("json"),
+          limit: c.req.valid("json").limit ?? 200,
+        }),
+      );
     },
   )
   .post(
@@ -147,14 +308,19 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     validator("param", idParams),
     validator(
       "json",
-      v.object({ name: nonEmptyName, position: v.optional(v.number()) }),
+      v.object({
+        name: nonEmptyName,
+        type: v.picklist([...FIELD_TYPES]),
+        options: v.optional(v.unknown()),
+        position: v.optional(v.number()),
+      }),
     ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await addTextField(organizationId, tableId, c.req.valid("json")),
+        await addFieldToTable(organizationId, tableId, c.req.valid("json")),
       );
     },
   )
@@ -172,7 +338,8 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       "json",
       v.object({
         name: v.optional(nonEmptyName),
-        position: v.optional(v.number()),
+        options: v.optional(v.unknown()),
+        type: v.optional(v.picklist([...FIELD_TYPES])),
       }),
     ),
     organizationAccess.fromParam("organizationId"),
@@ -180,7 +347,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
       return c.json(
-        await updateTextField(
+        await updateTableField(
           organizationId,
           tableId,
           fieldId,
@@ -203,19 +370,24 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
-      return c.json(await deleteTextField(organizationId, tableId, fieldId));
+      return c.json(await deleteTableField(organizationId, tableId, fieldId));
     },
   )
   .post(
     "/organization/:organizationId/:tableId/rows",
     validator("param", idParams),
-    validator("json", v.object({ position: v.optional(v.number()) })),
+    validator(
+      "json",
+      v.object({
+        values: v.optional(v.record(v.string(), v.unknown())),
+      }),
+    ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await addRow(organizationId, tableId, c.req.valid("json").position),
+        await addTableRow(organizationId, tableId, c.req.valid("json").values),
       );
     },
   )
@@ -233,7 +405,8 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId } = c.req.valid("param");
-      return c.json(await deleteRow(organizationId, tableId, rowId));
+      await deleteTableRow(organizationId, tableId, rowId);
+      return c.json({ success: true });
     },
   )
   .put(
@@ -247,13 +420,13 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         fieldId: v.string(),
       }),
     ),
-    validator("json", v.object({ value: v.nullable(v.string()) })),
+    validator("json", v.object({ value: v.unknown() })),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId, fieldId } = c.req.valid("param");
       return c.json(
-        await updateCell(
+        await updateTableCell(
           organizationId,
           tableId,
           rowId,
