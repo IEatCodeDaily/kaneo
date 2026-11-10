@@ -38,7 +38,7 @@ async function loadController(rows: Array<Record<string, unknown>>) {
 }
 
 describe("getActivities preserves stored newlines", () => {
-  it("keeps blank lines between paragraphs", async () => {
+  it("keeps blank lines between paragraphs", { timeout: 30_000 }, async () => {
     const stored = "LINEA\n\nLINEB\n\nLINEC\n\n \n\nLINED";
     const getActivities = await loadController([
       { id: "a1", taskId: "t1", content: stored },

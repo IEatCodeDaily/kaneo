@@ -9,6 +9,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavRepos } from "@/components/nav-repos";
 import { NavTables } from "@/components/nav-tables";
 import { NavWork } from "@/components/nav-work";
+import { OrgTeamSelector } from "@/components/org-team-selector";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
 import {
   Sidebar,
@@ -18,7 +19,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { OrgTeamSelector } from "@/components/org-team-selector";
 import { UserAvatar } from "@/components/user-avatar";
 import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";

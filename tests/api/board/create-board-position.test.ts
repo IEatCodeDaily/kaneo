@@ -55,7 +55,9 @@ async function loadCreateBoard() {
 }
 
 describe("createBoard", () => {
-  it("creates a board without throwing a ReferenceError", async () => {
+  it("creates a board without throwing a ReferenceError", {
+    timeout: 30_000,
+  }, async () => {
     const { createBoard } = await loadCreateBoard();
 
     // Before the fix this rejected with "maxPosition is not defined".

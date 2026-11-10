@@ -5735,6 +5735,15 @@
 						"recent": {
 							"type": "string"
 						},
+						"recentEmpty": {
+							"type": "string"
+						},
+						"recentShowLatest": {
+							"type": "string"
+						},
+						"recentViewAll": {
+							"type": "string"
+						},
 						"soon": {
 							"type": "string"
 						},
@@ -5787,6 +5796,9 @@
 						"inbox",
 						"moreRepos",
 						"recent",
+						"recentEmpty",
+						"recentShowLatest",
+						"recentViewAll",
 						"soon",
 						"comingSoon",
 						"work",
@@ -6036,11 +6048,15 @@
 						},
 						"all": {
 							"type": "string"
+						},
+						"teams": {
+							"type": "string"
 						}
 					},
 					"required": [
 						"label",
-						"all"
+						"all",
+						"teams"
 					]
 				},
 				"organizationSwitcher": {

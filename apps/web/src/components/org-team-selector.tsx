@@ -233,10 +233,7 @@ export function OrgTeamSelector({
             <span className="flex-1">{allLabel}</span>
             <Check
               aria-hidden="true"
-              className={cn(
-                "size-4",
-                teamId ? "opacity-0" : "opacity-100",
-              )}
+              className={cn("size-4", teamId ? "opacity-0" : "opacity-100")}
             />
           </DropdownMenuItem>
           {(teams.data ?? []).map((team: TeamOption) => (

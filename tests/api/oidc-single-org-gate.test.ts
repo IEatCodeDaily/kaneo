@@ -35,7 +35,11 @@ describe("syncOidcTeams single-org gating", () => {
     delete process.env.SINGLE_ORG_MODE;
   });
 
-  it("does not touch the database in multi-org mode", async () => {
+  // The multi-org path asserts a negative (no db calls) and runs last on a
+  // shared runner — 5s flaked repeatedly under CI load.
+  it("does not touch the database in multi-org mode", {
+    timeout: 30_000,
+  }, async () => {
     const { service, select } = await loadService(false);
 
     await service.syncOidcTeams("user-1", { roles: ["admin"] });

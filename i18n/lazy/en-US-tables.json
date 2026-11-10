@@ -101,7 +101,12 @@
     "typeUrl": "URL",
     "typeEmail": "Email",
     "typeJson": "JSON",
-    "typeLink": "Link to table"
+    "typeLink": "Link to table",
+    "exportCsv": "Export CSV",
+    "importCsv": "Import CSV",
+    "importing": "Importing {done}/{total}…",
+    "importDone": "Imported {count} rows",
+    "importError": "Import stopped at row {done} — check the values"
   },
   "dashboards": {
     "title": "Dashboards",
