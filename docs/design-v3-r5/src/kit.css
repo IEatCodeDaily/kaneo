@@ -19,7 +19,7 @@ body[data-view="light"] .frame{color-scheme:light;
 --foreground:#18181b;--muted-foreground:#5f5f67;--faint-foreground:#66666e;
 --border:#e6e6e9;--input:#d3d3d8;--accent:rgba(0,0,0,.04);--secondary:rgba(0,0,0,.07);
 --primary-soft:rgba(94,106,210,.12);--primary-soft-foreground:#434fb3;--destructive-foreground:#b3261e;
---tone-gray:#57575f;--tone-blue:#004a5e;--tone-pink:#9e1f67;--tone-amber:#764f00;--tone-green:#166439;--tone-red:#a3221b;
+--tone-gray:#57575f;--tone-blue:#004264;--tone-pink:#9e1f67;--tone-amber:#764f00;--tone-green:#166439;--tone-red:#a3221b;
 --shadow-pop:0 12px 32px rgba(0,0,0,.14);--scrim:rgba(0,0,0,.2)}
 /* derived tokens: declared wherever a theme is set so they resolve against that theme */
 .stage,body[data-view="light"] .frame{
@@ -156,13 +156,13 @@ svg.i.md{width:16px;height:16px}
 .gh .c>.hm{display:none}
 .gh .c:hover,.gh .c.act{background:var(--row-hover);color:var(--foreground)}
 .gh .c.r>.tx{flex:0 1 auto}
-.gh .c:hover>.hm,.gh .c.act>.hm{display:block}
+.gh .c:hover>.hm,.gh .c.act>.hm{display:block;position:absolute;right:4px;background:inherit}
 .gh .add{justify-content:center;padding:0}
 .cb{width:14px;height:14px;border:1px solid var(--faint-foreground);border-radius:var(--radius-sm);display:none;place-items:center;color:var(--primary-foreground)}
 .cb svg{width:10px;height:10px;stroke-width:3;display:none}
 .gr:hover .rn,.gr.hov .rn{display:none}
 .gr:hover .cb,.gr.hov .cb{display:grid}
-.c1{position:sticky}.gr:hover .c1 .tx,.gr.hov .c1 .tx{margin-right:var(--open-clear)}.open{position:absolute;right:6px;top:4px;display:none;height:24px;padding:0 6px;gap:4px;align-items:center;border:1px solid var(--input);border-radius:var(--radius-sm);background:var(--card);color:var(--muted-foreground);font-size:12px;font-weight:500;flex:none}
+.c1{position:sticky}.gr:hover .c1 .tx,.gr.hov .c1 .tx{margin-right:var(--open-clear)}.open{position:absolute;right:6px;top:4px;display:none;height:24px;width:24px;padding:0;justify-content:center;gap:4px;align-items:center;border:1px solid var(--input);border-radius:var(--radius-sm);background:var(--card);color:var(--muted-foreground);font-size:12px;font-weight:500;flex:none}
 .open svg{width:12px;height:12px}
 .gr:hover .open,.gr.hov .open{display:inline-flex}
 .c.edit{position:relative;background:var(--card);box-shadow:inset 0 0 0 2px var(--primary);overflow:visible}

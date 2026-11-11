@@ -42,7 +42,7 @@ TICKET_CSS = """
 .kv>*{min-height:28px;display:flex;align-items:center;gap:6px;min-width:0}
 .kv .k{color:var(--muted-foreground);font-size:12px}
 .kv .wide{grid-column:2/3}
-.rx-f{height:32px;display:flex;align-items:center;gap:8px;margin-top:4px}
+.rx-f{height:32px;display:flex;align-items:center;gap:8px;margin-top:4px;padding-right:4px}
 .props{width:280px;flex:none;border-left:1px solid var(--border);background:var(--card);padding:var(--content-gutter);overflow:auto}
 .props{--label-col:96px}
 .tbody{flex:1;min-height:0;display:flex}
@@ -75,9 +75,9 @@ def resources(expanded, s):
         f'<section class="rs" data-s="{s}"><div class="rs-h">Resources<span class="cnt">{len(linked) + 1}</span><span class="grow"></span>'
         f'<button class="b sm ic" aria-label="Link GitHub resource">{I("link")}</button></div>'
         '<div class="rs-g">Pull requests</div>'
-        f'<div class="rr"><span class="slot"></span>{I("pr")}<span class="mono mut">kaneo #482</span><span class="tx">Line 2 checklist: gasket torque step</span>'
+        f'<div class="rr"><span class="slot"></span>{I("pr")}<span class="mono mut">kaneo #482</span><a class="tx" href="#">Line 2 checklist: gasket torque step</a>'
         '<span class="meta mut">Open</span>'
-        f'<span class="acts"><button class="b sm ic" aria-label="Open pull request" title="Open pull request">{I("expand")}</button><button class="b sm ic" aria-label="Unlink pull request">{I("x")}</button></span></div>'
+        f'<span class="acts"><button class="b sm ic" aria-label="Open pull request" title="Open pull request">{I("external")}</button><button class="b sm ic" aria-label="Unlink pull request">{I("x")}</button></span></div>'
         f'<div class="rs-g">Table rows · {len(linked)} in Pilot batch log</div>'
         + "".join(res_row(r, expanded and r is HERO) for r in linked)
         + f'<span class="anc" style="align-self:flex-start"><button class="b{" act" if s == "link" else ""}">{I("plus")}Link table row</button>{PICKER if s == "link" else ""}</span></section>'
@@ -135,7 +135,7 @@ DASH_CSS = """
 .hb .bar{height:8px;border-radius:var(--radius-sm);background:var(--t,var(--primary))}
 .hb .val{text-align:right;font-variant-numeric:tabular-nums}
 .lc{height:140px;display:block;width:100%}
-.lc-w{position:relative}.lc-y{position:absolute;left:0;transform:translateY(-100%);font-size:12px;line-height:16px;color:var(--faint-foreground)}.lc-x{display:flex;justify-content:space-between;font-size:12px;color:var(--faint-foreground);margin-top:4px}
+.lc-w{position:relative;padding-left:20px}.lc-y{position:absolute;left:0;transform:translateY(-100%);font-size:12px;line-height:16px;color:var(--faint-foreground)}.lc-x{padding-left:20px;display:flex;justify-content:space-between;font-size:12px;color:var(--faint-foreground);margin-top:4px}
 .tr .nm{display:flex;align-items:baseline;gap:8px;min-width:0}.tr{display:grid;grid-template-columns:minmax(0,1fr) 112px;align-items:center;gap:8px;height:28px;border-bottom:1px solid var(--border)}
 .tr:last-child{border-bottom:0}
 .tr .val{text-align:right;font-variant-numeric:tabular-nums}

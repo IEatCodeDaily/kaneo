@@ -93,6 +93,15 @@ PROBE = r"""
     const end = box(kids[kids.length - 1]).r, edge = box(r).r - parseFloat(getComputedStyle(r).paddingRight);
     if (edge - end > 8) out.push('list row trailing gap ' + Math.round(edge - end) + 'px');
   }
+  // 4k. a swapped row stays reachable by keyboard: something focusable outside its hidden actions
+  for (const r of root.querySelectorAll('.rr,.lr')) {
+    if (r.querySelector('.acts,.x') && !r.querySelector(':scope > a[href], :scope > button:not(.x)')) out.push('swapped row has no focusable element: ' + r.textContent.trim().slice(0, 32));
+  }
+  // 4l. chart y-labels sit in their gutter, never over the plot
+  for (const l of [...root.querySelectorAll('.lc-y')].filter(vis)) {
+    const s = l.parentElement.querySelector('svg');
+    if (s && box(l).r > box(s).x + 0.5) out.push('chart y-label over the plot: ' + l.textContent);
+  }
   // 4c. the edit caret shows only in the one cell that is in edit mode
   if ([...root.querySelectorAll('.caret')].filter(vis).length > 1) out.push('edit caret visible outside the edit cell');
   for (const k of [...root.querySelectorAll('.c.edit .caret')].filter(vis)) {

@@ -43,7 +43,7 @@ Names are the existing `index.css` variables wherever one exists. "New" means it
 | `--primary-soft` | accent 18% | accent 12% | `bg-primary-soft` | **new**. "A filter/sort/group is applied" tint |
 | `--primary-soft-foreground` | `#aab3f8` | `#434fb3` | `text-primary-soft-foreground` | **new** |
 | `--destructive-foreground` | `#f28b82` | `#b3261e` | `text-destructive-foreground` | retuned. Deliberately the same hue as `--tone-red` (ΔE_ok ≈ 0.03): a failed state and a destructive action both read "bad"; they never share a control |
-| `--tone-gray/blue/pink/amber/green/red` | `#9c9ca3 #4fc3dc #f07ab8 #e3b341 #56c288 #f0806a` | `#57575f #004a5e #9e1f67 #764f00 #166439 #a3221b` | `text-tone-*` | **new**. The only colours a status chip or avatar may use. All hues are OKLCH. No tone sits near the accent hue (275°): violet was replaced by pink (349°) and blue moved to cyan (≈215°, token name kept); every tone pair is ≥ 0.10 ΔE_ok apart (check.py) so a status chip never reads as "selected". Light tones pass 4.5:1 on their tint over a selected row |
+| `--tone-gray/blue/pink/amber/green/red` | `#9c9ca3 #4fc3dc #f07ab8 #e3b341 #56c288 #f0806a` | `#57575f #004264 #9e1f67 #764f00 #166439 #a3221b` | `text-tone-*` | **new**. The only colours a status chip or avatar may use. All hues are OKLCH. No tone sits near the accent hue (275°): violet was replaced by pink (349°) and blue moved to cyan (≈215°, token name kept); every tone pair is ≥ 0.10 ΔE_ok apart (check.py) so a status chip never reads as "selected". Light tones pass 4.5:1 on their tint over a selected row |
 | `--row-hover`, `--row-selected` | 4% foreground / 14% primary mixed into background | same formula | `bg-row-hover`, `bg-row-selected` | **new**. Opaque on purpose: sticky cells must not show through |
 
 Checked by `src/check.py` in both themes: every text token on every surface is at least 4.5:1 (worst case 4.64:1, faint text on popover, dark); white on `--primary` is 4.70:1; checkbox outline and focus ring are at least 3:1. Tinted surfaces are checked too: a chip or avatar is its tone on a 16% tint of itself, plus text on hover and selected rows; worst case 4.54:1 (faint text on a selected row, dark).
@@ -135,6 +135,7 @@ lucide, stroke 1.75. **14px** everywhere in chrome, including icon-only ghost bu
 | Active filter chip | `ActiveFilterChip` in `board/board-toolbar.tsx:121-146` | move to a shared file, 24px, reuse on Tables. Same chip on Boards |
 | Menu | `ui/menu.tsx` | 28px items, 14px icon column kept even for icon-less items, group labels 12px, destructive last after a separator |
 | Status chip | `ui/badge.tsx` | **the only chip**: 20px, dot + word, one of six tones. Replaces per-feature pills and `chipStyle` in `data-table-cells.tsx:80` |
+| PR state | `task/task-resources.tsx` | never a tone chip. Open: muted `GitPullRequest` + muted "Open"; merged: `GitMerge` in info + muted "Merged"; closed: muted. Row Open uses the external-link icon (opens GitHub) |
 | Key chip (KFL-412) | `ui/badge.tsx` `variant="outline"` | 20px, mono 12px |
 | Keycap | `ui/kbd.tsx` | 18px, 12px text |
 | Grid | `components/data-table/*` (keep virtualization, editors, CSV) | hairline cells, sticky header, sticky first two columns, sticky footer |
@@ -156,7 +157,7 @@ Do:
 3. Use 28px controls in chrome, 14px icons, 13px text, 12px for secondary.
 4. Show a count wherever rows are narrowed: "13 of 87 rows", "3 of 87 selected". If not all rows are loaded, say "of N loaded".
 5. Put rare actions (import, export, density, rename, delete) in the overflow menu.
-6. Reveal secondary actions on hover and on keyboard focus (`group-hover` plus `group-focus-within`). Two placements only: the grid's first cell **reserves** room on hover (`--open-clear`, the name ellipsizes); list rows **swap** their trailing meta (chip/state) for the actions in the same slot. Never reserve hidden space at rest.
+6. Reveal secondary actions on hover and on keyboard focus (`group-hover` plus `group-focus-within`). Two placements only: the grid's first cell **reserves** room on hover (`--open-clear`, the name ellipsizes); list rows **swap** their trailing meta (chip/state) for the actions in the same slot. Never reserve hidden space at rest. A swapped row must contain a focusable element outside its actions (its title link), because `display:none` actions are outside the tab order until the row has focus-within; never fall back to `opacity-0` (it reserves the space again).
 
 Don't:
 

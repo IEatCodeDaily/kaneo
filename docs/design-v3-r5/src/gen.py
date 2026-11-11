@@ -188,7 +188,7 @@ def sheet(nav=True):
         return f'<div class="fr"><div class="k">{I(icon)}{name}</div><div class="v"{demo}>{value}</div></div>'
 
     def lr(lead, title, tail):
-        return (f'<div class="lr">{lead}<span class="tx">{title}</span><span class="tail">{tail}</span>'
+        return (f'<div class="lr">{lead}<a class="tx" href="#">{title}</a><span class="tail">{tail}</span>'
                 f'<button class="b sm ic x" aria-label="Unlink">{I("x")}</button></div>')
 
     tickets = "".join(lr(tk(k), TICKETS[k][0], f'<span class="chip t-{TICKETS[k][2]}">{TICKETS[k][1]}</span>') for k in h["tickets"])
