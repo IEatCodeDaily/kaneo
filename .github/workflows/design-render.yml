@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      PKG: docs/design-v3-r5
+      PKG: docs/design-v3-r6
     # Browser + system deps come baked in; no apt step to break on mirror outages.
     container: mcr.microsoft.com/playwright/python:v1.49.1-noble
     steps:
