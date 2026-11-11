@@ -135,7 +135,7 @@ DASH_CSS = """
 .hb .bar{height:8px;border-radius:var(--radius-sm);background:var(--t,var(--primary))}
 .hb .val{text-align:right;font-variant-numeric:tabular-nums}
 .lc{height:140px;display:block;width:100%}
-.lc-w{position:relative;padding-left:20px}.lc-y{position:absolute;left:0;transform:translateY(-100%);font-size:12px;line-height:16px;color:var(--faint-foreground)}.lc-x{padding-left:20px;display:flex;justify-content:space-between;font-size:12px;color:var(--faint-foreground);margin-top:4px}
+.lc-w{position:relative;padding-left:16px}.lc-y{position:absolute;left:0;transform:translateY(-100%);font-size:12px;line-height:16px;color:var(--faint-foreground)}.lc-x{padding-left:16px;display:flex;justify-content:space-between;font-size:12px;color:var(--faint-foreground);margin-top:4px}
 .tr .nm{display:flex;align-items:baseline;gap:8px;min-width:0}.tr{display:grid;grid-template-columns:minmax(0,1fr) 112px;align-items:center;gap:8px;height:28px;border-bottom:1px solid var(--border)}
 .tr:last-child{border-bottom:0}
 .tr .val{text-align:right;font-variant-numeric:tabular-nums}
