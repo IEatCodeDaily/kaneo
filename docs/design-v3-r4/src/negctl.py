@@ -1,6 +1,6 @@
 """Negative control for render.py: plant known defects in a scratch copy and confirm the render pass fails on each.
 
-Run from docs/design-v3:  python3 -B src/negctl.py <scratch-dir>   then render that dir on the build host.
+Run from docs/design-v3:  python3 -B src/negctl.py <scratch-dir>   then render that dir (GitHub Actions or local render.py).
 Never touches the real files.
 """
 import pathlib

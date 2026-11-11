@@ -158,7 +158,7 @@ if receipt.exists():
     data = json.loads(receipt.read_text())
     for name in FILES:
         same = data.get("html_sha256", {}).get(name) == hashlib.sha256((OUT / name).read_bytes()).hexdigest()
-        check(same, f"{name}: png/ was rendered from different bytes (rerun src/render.sh on the build host)")
+        check(same, f"{name}: png/ was rendered from different bytes (re-render: push to design/render-*)")
     bad = sum(len(v["fails"]) for v in data.get("states", {}).values())
     check(len(data.get("states", {})) == 30 and bad == 0, f"png/receipt.json: {len(data.get('states', {}))} states, {bad} failed assertions")
 else:
