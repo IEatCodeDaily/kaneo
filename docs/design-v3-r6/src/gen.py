@@ -187,8 +187,8 @@ def sheet(nav=True):
     def fr(name, icon, value, demo=""):
         return f'<div class="fr"><div class="k">{I(icon)}{name}</div><div class="v"{demo}>{value}</div></div>'
 
-    def lr(lead, title, tail):
-        return (f'<div class="lr">{lead}<a class="tx" href="#">{title}</a><span class="tail">{tail}</span>'
+    def lr(lead, title, tail, keep=False, demo=""):
+        return (f'<div class="lr{" keep" if keep else ""}"{demo}>{lead}<a class="tx" href="#">{title}</a><span class="tail">{tail}</span>'
                 f'<button class="b sm ic x" aria-label="Unlink">{I("x")}</button></div>')
 
     tickets = "".join(lr(tk(k), TICKETS[k][0], f'<span class="chip t-{TICKETS[k][2]}">{TICKETS[k][1]}</span>') for k in h["tickets"])
@@ -207,7 +207,7 @@ def sheet(nav=True):
         f'<section class="sh-s"><h5>{I("ticket")}Linked tickets<span class="cnt">{len(h["tickets"])}</span></h5>{tickets}'
         f'<button class="b" style="align-self:flex-start">{I("plus")}Link ticket</button></section>'
         f'<section class="sh-s"><h5>{I("link")}Vendor quote<span class="cnt">1 row in Vendor quotes</span></h5>'
-        + lr(I("table"), "VQ-0031 · PT Resindo Kimia · Epoxy resin 200 kg", f'<span class="cnt">{rp(18_400_000)}</span>')
+        + lr(I("table"), "VQ-0031 · PT Resindo Kimia · Epoxy resin 200 kg", f'<span class="cnt">{rp(18_400_000)}</span>', keep=True, demo=' data-demo="sheet"')
         + f'<button class="b" style="align-self:flex-start">{I("plus")}Link row</button></section>'
         '<section class="sh-s"><h5>System</h5><div class="fl">'
         + fr("Row ID", "hash", f'<span class="mono">{h["id"]}</span><button class="b sm ic" aria-label="Copy row ID">{I("copy")}</button>')

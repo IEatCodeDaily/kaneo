@@ -80,6 +80,13 @@ PROBE = r"""
   for (const t of root.querySelectorAll('.gh .c > .tx')) {
     if (vis(t) && t.scrollWidth > t.clientWidth + 1) out.push('column header truncated: ' + t.textContent.trim());
   }
+  for (const m of [...root.querySelectorAll('.gh .c > .hm')].filter(vis)) {
+    const k = box(m);
+    for (const e of [...m.parentElement.children].filter(e => e !== m && vis(e))) {
+      const b = box(e);
+      if (b.x < k.r - 0.5 && b.r > k.x + 0.5) out.push('header menu chevron overlaps: ' + m.parentElement.textContent.trim());
+    }
+  }
   // 4g. hover overlays never sit on top of the text they belong to (row "Open" over the name)
   for (const o of root.querySelectorAll('.gr .open')) {
     if (!vis(o)) continue;
@@ -97,9 +104,14 @@ PROBE = r"""
   for (const s of [...root.querySelectorAll('.t44>svg,.sq>svg,.em-i>svg')].filter(vis)) {
     if (Math.round(box(s).w) !== 16) out.push('tile icon not 16px: ' + Math.round(box(s).w) + 'px in ' + (s.parentElement.getAttribute('aria-label') || s.parentElement.className));
   }
-  // 4k. a swapped row stays reachable by keyboard: something focusable outside its hidden actions
-  for (const r of root.querySelectorAll('.rr,.lr')) {
-    if (r.querySelector('.acts,.x') && !r.querySelector(':scope > a[href], :scope > button:not(.x)')) out.push('swapped row has no focusable element: ' + r.textContent.trim().slice(0, 32));
+  // 4k. a swapped row stays reachable by keyboard: focusing its title reveals its hidden actions
+  for (const r of [...root.querySelectorAll('.rr,.lr')].filter(vis)) {
+    const acts = r.querySelector(':scope > .acts, :scope > .x'); if (!acts) continue;
+    const t = r.querySelector(':scope > a[href], :scope > button:not(.x)');
+    if (!t) { out.push('swapped row has no focusable element: ' + r.textContent.trim().slice(0, 32)); continue; }
+    t.focus();
+    if (document.activeElement !== t || !vis(acts)) out.push('focus does not reveal row actions: ' + r.textContent.trim().slice(0, 32));
+    t.blur();
   }
   // 4l. chart y-labels sit in their gutter, never over the plot
   for (const l of [...root.querySelectorAll('.lc-y')].filter(vis)) {

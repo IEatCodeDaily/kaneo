@@ -156,7 +156,7 @@ svg.i.md{width:16px;height:16px}
 .gh .c>.hm{display:none}
 .gh .c:hover,.gh .c.act{background:var(--row-hover);color:var(--foreground)}
 .gh .c.r>.tx{flex:0 1 auto}
-.gh .c:hover>.hm,.gh .c.act>.hm{display:block;position:absolute;right:4px;background:inherit}
+.gh .c:hover>.hm,.gh .c.act>.hm{display:block}
 .gh .add{justify-content:center;padding:0}
 .cb{width:14px;height:14px;border:1px solid var(--faint-foreground);border-radius:var(--radius-sm);display:none;place-items:center;color:var(--primary-foreground)}
 .cb svg{width:10px;height:10px;stroke-width:3;display:none}
@@ -224,7 +224,7 @@ body[data-view="select"] .gr[data-sel] .cb svg{display:block}
 .lr .tx{flex:1}
 /* swapped rows: the title link is the row's focus target, full row height (>=24px target) */
 .rr a.tx,.lr a.tx{align-self:stretch;display:flex;align-items:center;min-width:0}
-.lr .tail{display:inline-flex;flex:none}.lr .x{display:none}.lr:hover .x,.lr:focus-within .x{display:inline-flex}.lr:hover>.tail,.lr:focus-within>.tail{display:none}
+.lr .tail{display:inline-flex;flex:none}.lr .x{display:none}.lr:hover .x,.lr.hov .x,.lr:focus-within .x{display:inline-flex}.lr:not(.keep):hover>.tail,.lr:not(.keep).hov>.tail,.lr:not(.keep):focus-within>.tail{display:none}
 body[data-view="select"] .gbody{padding-bottom:var(--bulk-clear)}
 .bulk{position:absolute;left:50%;bottom:48px;transform:translateX(-50%);z-index:8;height:40px;display:flex;align-items:center;gap:4px;padding:0 6px 0 12px;background:var(--popover);border:1px solid var(--input);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);white-space:nowrap}
 
