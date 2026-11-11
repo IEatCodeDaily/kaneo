@@ -55,7 +55,7 @@ def res_row(r, opened):
     demo = ' data-demo="list"' if r is linked[1] else ""
     line = (f'<div class="rr"{demo}><button class="b sm ic" aria-label="{"Collapse" if opened else "Expand"} fields">'
             f'{I("chevron-down" if opened else "chevron-right")}</button>{I("table")}{bname(r["name"])}{"" if opened else chip(r["stage"])}'
-            f'<span class="acts"><button class="b sm">{I("expand")}Open row</button><button class="b sm ic" aria-label="Unlink row">{I("x")}</button></span></div>')
+            f'<span class="acts"><button class="b sm">{I("expand")}Open</button><button class="b sm ic" aria-label="Unlink row">{I("x")}</button></span></div>')
     if not opened:
         return line
     return line + (
@@ -75,7 +75,8 @@ def resources(expanded, s):
         f'<button class="b sm ic" aria-label="Link GitHub resource">{I("link")}</button></div>'
         '<div class="rs-g">Pull requests</div>'
         f'<div class="rr">{I("pr")}<span class="mono mut">kaneo #482</span><span class="tx">Line 2 checklist: gasket torque step</span>'
-        '<span class="chip t-green">Open</span></div>'
+        '<span class="chip t-green">Open</span>'
+        f'<span class="acts"><button class="b sm">{I("expand")}Open</button><button class="b sm ic" aria-label="Unlink pull request">{I("x")}</button></span></div>'
         f'<div class="rs-g">Table rows · {len(linked)} in Pilot batch log</div>'
         + "".join(res_row(r, expanded and r is HERO) for r in linked)
         + f'<span class="anc" style="align-self:flex-start"><button class="b{" act" if s == "link" else ""}">{I("plus")}Link table row</button>{PICKER if s == "link" else ""}</span></section>'
