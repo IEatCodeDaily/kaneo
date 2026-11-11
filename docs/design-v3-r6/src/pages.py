@@ -312,6 +312,7 @@ PHONE_CSS = """
 .full .sh-b{padding:12px}
 .full .fr{grid-template-columns:112px minmax(0,1fr)}
 .full .fr .k,.full .fr .v{min-height:44px;height:auto}
+.full .fr .v{padding-block:0}
 .full .lr{min-height:44px}
 """
 
