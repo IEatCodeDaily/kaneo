@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches-ignore: ["design/render-*"]  # design mock renders have their own workflow
   pull_request:
 
 permissions:
