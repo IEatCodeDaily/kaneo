@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
       - run: pip install playwright==1.49.1 && python -m playwright install --with-deps chromium
       - name: Generate, check, render
-        working-directory: docs/design-v3-r3
+        working-directory: docs/design-v3-r4
         run: |
           python3 src/gen.py
           python3 src/render.py | tee render.log
@@ -26,6 +26,6 @@ jobs:
         with:
           name: design-png
           path: |
-            docs/design-v3-r3/png/
-            docs/design-v3-r3/*.html
-            docs/design-v3-r3/render.log
+            docs/design-v3-r4/png/
+            docs/design-v3-r4/*.html
+            docs/design-v3-r4/render.log
