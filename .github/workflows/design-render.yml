@@ -9,12 +9,10 @@ jobs:
   render:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    # Browser + system deps come baked in; no apt step to break on mirror outages.
+    container: mcr.microsoft.com/playwright/python:v1.49.1-noble
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install playwright==1.49.1 && python -m playwright install --with-deps chromium
       - name: Generate, check, render
         working-directory: docs/design-v3-r4
         run: |
