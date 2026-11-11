@@ -368,7 +368,7 @@ prow_sheet = (
     + f'</div><section class="sh-s"><h5>{I("ticket")}Linked tickets<span class="cnt">{len(h["tickets"])}</span></h5>'
     + "".join(f'<div class="lr">{tk(k)}<span class="tx">{TICKETS[k][0]}</span></div>' for k in h["tickets"])
     + f'<button class="b xl" style="align-self:flex-start;padding:0 8px">{I("plus")}Link ticket</button></section>'
-    + f'<section class="sh-s"><h5>System</h5><div class="fl">{pfr("Row ID", "hash", f'<span class="mono">{h["id"]}</span><button class="b ic t44" aria-label="Copy row ID">{I("copy")}</button>')}</div></section></div></div>'
+    + f'<section class="sh-s"><h5>System</h5><div class="fl">{pfr("Row ID", "hash", f'<span class="mono">{h["id"]}</span><button class="t44" aria-label="Copy row ID">{I("copy")}</button>')}</div></section></div></div>'
 )
 PV = "default menu row"
 phone = (
