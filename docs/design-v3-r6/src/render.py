@@ -82,9 +82,9 @@ PROBE = r"""
   }
   for (const m of [...root.querySelectorAll('.gh .c > .hm')].filter(vis)) {
     const k = box(m);
-    for (const e of [...m.parentElement.children].filter(e => e !== m && vis(e))) {
+    for (const e of [...m.parentElement.children].filter(e => e !== m && vis(e) && getComputedStyle(e).position !== 'absolute')) {
       const b = box(e);
-      if (b.x < k.r - 0.5 && b.r > k.x + 0.5) out.push('header menu chevron overlaps: ' + m.parentElement.textContent.trim());
+      if (b.x < k.r - 0.5 && b.r > k.x + 0.5) out.push('header menu chevron overlaps: ' + (m.parentElement.querySelector('.tx') || m.parentElement).textContent.trim());
     }
   }
   // 4g. hover overlays never sit on top of the text they belong to (row "Open" over the name)
