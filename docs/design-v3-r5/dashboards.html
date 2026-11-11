@@ -222,6 +222,8 @@ body[data-view="select"] .gr[data-sel] .cb svg{display:block}
 .sh-s h5{margin:0;height:24px;display:flex;align-items:center;gap:8px;font:500 12px/16px var(--font-sans);color:var(--muted-foreground)}
 .lr{min-height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border:1px solid var(--border);border-radius:var(--radius-md);min-width:0}
 .lr .tx{flex:1}
+/* swapped rows: the title link is the row's focus target, full row height (>=24px target) */
+.rr a.tx,.lr a.tx{align-self:stretch;display:flex;align-items:center;min-width:0}
 .lr .tail{display:inline-flex;flex:none}.lr .x{display:none}.lr:hover .x,.lr:focus-within .x{display:inline-flex}.lr:hover>.tail,.lr:focus-within>.tail{display:none}
 body[data-view="select"] .gbody{padding-bottom:var(--bulk-clear)}
 .bulk{position:absolute;left:50%;bottom:48px;transform:translateX(-50%);z-index:8;height:40px;display:flex;align-items:center;gap:4px;padding:0 6px 0 12px;background:var(--popover);border:1px solid var(--input);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);white-space:nowrap}
