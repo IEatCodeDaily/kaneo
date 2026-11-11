@@ -15,8 +15,7 @@ shutil.rmtree(dst, ignore_errors=True)
 (dst / "src").mkdir(parents=True)
 for f in here.glob("*.html"):
     shutil.copy(f, dst / f.name)
-for f in ("render.py", "render.sh"):
-    shutil.copy(here / "src" / f, dst / "src" / f)
+shutil.copy(here / "src" / "render.py", dst / "src" / "render.py")
 
 
 def plant(name, old, new):
