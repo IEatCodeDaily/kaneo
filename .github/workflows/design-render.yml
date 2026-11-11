@@ -1,0 +1,31 @@
+name: Design render
+# Renders docs/design-v3-*/ mockups headless and uploads the PNGs + geometry receipt.
+on:
+  push:
+    branches: ["design/render-*"]
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.49.1 && python -m playwright install --with-deps chromium
+      - name: Generate, check, render
+        working-directory: docs/design-v3-r3
+        run: |
+          python3 src/gen.py
+          python3 src/render.py | tee render.log
+          python3 src/check.py | tail -3
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-png
+          path: |
+            docs/design-v3-r3/png/
+            docs/design-v3-r3/*.html
+            docs/design-v3-r3/render.log
