@@ -138,7 +138,7 @@ lucide, stroke 1.75. **14px** next to 12–13px text, **16px** when the icon is 
 | Key chip (KFL-412) | `ui/badge.tsx` `variant="outline"` | 20px, mono 12px |
 | Keycap | `ui/kbd.tsx` | 18px, 12px text |
 | Grid | `components/data-table/*` (keep virtualization, editors, CSV) | hairline cells, sticky header, sticky first two columns, sticky footer |
-| Row hover affordances | `ui/checkbox.tsx`, `Button size="xs"` | row number becomes a checkbox; "Open" appears at the end of the first cell |
+| Row hover affordances | `ui/checkbox.tsx`, `Button size="xs"` | row number becomes a checkbox; an icon-only "Open row" button appears at the end of the first cell |
 | Bulk bar | `bulk-selection/bulk-toolbar.tsx` | reuse the ticket bulk bar: count, actions, destructive last, clear |
 | Row sheet | `ui/sheet.tsx` side right, pattern of `task/task-details-sheet.tsx` | 480px, 44px header, 132px label column |
 | Empty state | `ui/empty.tsx` | bordered 32px icon tile, 14px title, one sentence, outline actions |

@@ -45,7 +45,7 @@ The NocoDB grid page in the brief (`…/views/view-types/grid`) returned one int
 | NocoDB toolbar: Fields / Filter / Sort as compact buttons; popovers of stacked rows (field, operator, value, trash) with "+ Add filter" | Toolbar and the popovers (`#fields` `#filter` `#sort`) | [brief] |
 | NocoDB expanded record header: Previous / Next (following the view's filters and sort), Copy record URL, More options, Close | Row sheet header: same four controls, plus "Row 5 of 87" (`#sheet`) | [E] |
 | Notion: table pages open in **side peek** by default. NocoDB's expanded record is a **modal**, not a side panel as the brief says | Row detail is a right side sheet | [NV]; contradicts [brief] on NocoDB, see [E] |
-| NocoDB: hover the index column and click the expand icon | "Open" appears on hover at the end of the first cell (the index cell holds the checkbox) | [E], placement is ours |
+| NocoDB: hover the index column and click the expand icon | An expand icon ("Open row") appears on hover at the end of the first cell (the index cell holds the checkbox) | [E], placement is ours |
 | Notion: hover a row and tick the checkbox that appears; a menu then edits properties for the selected rows; header checkbox selects all | Hover checkbox, header checkbox, bulk bar with "Set field" | [NT] |
 | Notion: "+" next to the views adds a view; each view has its own settings | View tabs with "+" after the breadcrumb | [NV] |
 | Notion: a filter or sort is personal unless "Save for everyone" is chosen | Not drawn. It is open question 2 | [NV] |
@@ -106,7 +106,7 @@ Checked against `apps/api/src/data-table/index.ts` (routes), `fields.ts` and `ap
 | Check | Result | What it does not show |
 |---|---|---|
 | `python3 src/check.py` (static, local) | pass. Fails on planted violations: off-scale font size, radius, padding, raw colour, a unicode glyph, a hand-edited file | layout |
-| `src/render.py` on the build host (headless Chromium, 1344px and 440px viewports), run with `fxrun --pull png/ -- 'bash src/render.sh'` | 30 states rendered, 0 failed assertions | taste |
+| `src/render.py` on GitHub Actions (`.github/workflows/design-render.yml`, headless Chromium, 1344px and 440px viewports) | 30 states rendered, 0 failed assertions | taste |
 | Negative control: `src/negctl.py` plants 8 defects in a scratch copy | all 8 detected, run exits 1 | defect classes it does not plant |
 | Vision review of the PNGs | 29 of 30 states looked at at least once (`sidebar#rail` only through `#axis`); each fix was looked at again in the state it changed. After the last change (colour only: avatar tint and the light-theme chip colours) only `table#default` and `table#light` were looked at again | this was the author reviewing its own work |
 
@@ -116,11 +116,10 @@ Defects the render pass and the vision review found and that were fixed: keycap 
 
 Known and left as is:
 
-- The line chart has no y-axis labels (the peak is stated in the subtitle).
 - Owner avatars and stage chips draw from the same six tones, so a blue avatar can sit beside a blue "Mixing" chip and read as related. Not resolved.
 - The Add panel dialog shows title, type, source, metric, group by and width; per-panel filters exist in the type (`QuerySpec.filters`) and are not drawn.
 
-Still open: an independent reviewer has not seen this. No real app screen was rendered. The new token names (`text-ui`, `bg-primary-soft`, `text-faint-foreground`, `bg-row-hover`) are untested against Tailwind v4.
+Still open: no real app screen was rendered. The new token names (`text-ui`, `bg-primary-soft`, `text-faint-foreground`, `bg-row-hover`) are untested against Tailwind v4.
 
 ## Open questions for the owner
 

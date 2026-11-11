@@ -1,7 +1,7 @@
 """Render every state of every mock to png/ and assert rendered geometry.
 
-Needs Python Playwright + Chromium, so it runs on the build host, not on Terminus:
-    cd docs/design-v3 && fxrun --pull png/ -- 'bash src/render.sh'      (trailing slash: fxrun nests the dir without it)
+Needs Python Playwright + Chromium. Runs on GitHub Actions (.github/workflows/design-render.yml, push to design/render-*);
+locally: cd docs/design-v3-r4 && python3 src/gen.py && python3 src/render.py
 Reads only the generated *.html (no repo access needed). Exit 1 on any failed assertion.
 """
 import json
