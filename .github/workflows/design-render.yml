@@ -9,12 +9,14 @@ jobs:
   render:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      PKG: docs/design-v3-r5
     # Browser + system deps come baked in; no apt step to break on mirror outages.
     container: mcr.microsoft.com/playwright/python:v1.49.1-noble
     steps:
       - uses: actions/checkout@v6
       - name: Generate, check, render
-        working-directory: docs/design-v3-r4
+        working-directory: ${{ env.PKG }}
         shell: bash  # -eo pipefail: a render crash behind `| tee` must fail the job
         run: |
           PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install -q playwright==1.49.1
@@ -26,6 +28,6 @@ jobs:
         with:
           name: design-png
           path: |
-            docs/design-v3-r4/png/
-            docs/design-v3-r4/*.html
-            docs/design-v3-r4/render.log
+            ${{ env.PKG }}/png/
+            ${{ env.PKG }}/*.html
+            ${{ env.PKG }}/render.log
