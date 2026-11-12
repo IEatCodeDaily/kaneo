@@ -58,19 +58,28 @@ async function requireField(tableId: string, fieldId: string) {
   return field ?? notFound("Data table field");
 }
 
-async function listTableFields(tableId: string): Promise<StoreField[]> {
+/** Full field metadata rows (name, position, timestamps), known types only. */
+async function listTableFieldRows(tableId: string) {
   const fields = await db
     .select()
     .from(dataTableFieldTable)
     .where(eq(dataTableFieldTable.tableId, tableId))
     .orderBy(asc(dataTableFieldTable.position));
-  // Row `type` is a plain string, so a `field is StoreField` predicate is not
-  // assignable to the row type; map inside the guard branch instead.
-  return fields.flatMap((field): StoreField[] =>
-    isFieldType(field.type)
-      ? [{ id: field.id, type: field.type, options: field.options ?? null }]
-      : [],
+  // Row `type` is a plain string, so a type predicate is not assignable to
+  // the row type; narrow inside the guard branch instead.
+  return fields.flatMap((field) =>
+    isFieldType(field.type) ? [{ ...field, type: field.type }] : [],
   );
+}
+
+const toStoreField = (field: {
+  id: string;
+  type: FieldType;
+  options: Record<string, unknown> | null;
+}): StoreField => ({ id: field.id, type: field.type, options: field.options });
+
+async function listTableFields(tableId: string): Promise<StoreField[]> {
+  return (await listTableFieldRows(tableId)).map(toStoreField);
 }
 
 /** Validate an options payload against the registry schema for the type. */
@@ -125,7 +134,8 @@ export async function getDataTable(
 ) {
   // Soft-deleted tables still resolve here so the client can show a restore banner.
   const table = await requireTable(organizationId, tableId);
-  const fields = await listTableFields(tableId);
+  const fieldRows = await listTableFieldRows(tableId);
+  const fields = fieldRows.map(toStoreField);
   const { rows, total } = await store.listRows(
     db,
     tableId,
@@ -133,7 +143,7 @@ export async function getDataTable(
     1000,
     offset,
   );
-  return { ...table, fields, rows, total };
+  return { ...table, fields: fieldRows, rows, total };
 }
 
 export async function updateDataTable(
