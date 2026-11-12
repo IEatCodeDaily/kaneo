@@ -51,6 +51,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The API imports built workspace packages (@kaneo/permissions, @kaneo/email resolve to dist/)
+      # and the KFL-86 entry-chunk test reads apps/web/dist, so build first.
+      - name: Build workspace
+        run: pnpm build
       - name: Run unit tests with coverage gate
         run: pnpm --filter @kaneo/api test:coverage
 
