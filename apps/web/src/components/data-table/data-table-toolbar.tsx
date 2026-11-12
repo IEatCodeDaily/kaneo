@@ -624,9 +624,9 @@ function FilterValue({
       : [
           { id: "__empty__", label: t("navigation:tables.unassigned") },
           ...(field.type === "user"
-            ? Array.from(members.values()).map((m) => ({
-                id: m.userId || m.id,
-                label: m.user.name || m.user.email || m.id,
+            ? Array.from(members.entries()).map(([id, m]) => ({
+                id,
+                label: m.user.name || m.user.email || id,
               }))
             : (field.options?.choices ?? []).map((c) => ({
                 id: c.id,
