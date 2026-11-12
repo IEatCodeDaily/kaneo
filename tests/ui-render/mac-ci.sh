@@ -9,6 +9,7 @@ export PATH=/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/bin:/usr/local/bin
 export TZ=UTC  # GitHub runners are UTC; date tests assume it
 REF=$1; shift
 STEPS=(${@:-lint unit build web integration render})
+(( $# )) || STEPS=(lint unit build web integration render)
 cd ~/ci/kaneo
 # one run at a time: runs share this checkout
 until mkdir ~/ci/.lock 2>/dev/null; do sleep 5; done
