@@ -23,6 +23,7 @@ import {
   type DataTableFilter,
   type Density,
   defaultFilterFor,
+  filterIsActive,
 } from "@/components/data-table/data-table-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,8 @@ export function DataTableToolbar(props: Props) {
     rowsInView,
   } = props;
   const hiddenCount = fields.filter((f) => hidden.includes(f.id)).length;
+  // Draft rows without a value don't narrow anything, so they don't count.
+  const activeCount = filters.filter(filterIsActive).length;
   const sortField = sort ? fields.find((f) => f.id === sort.fieldId) : null;
 
   return (
@@ -215,8 +218,8 @@ export function DataTableToolbar(props: Props) {
             <ToolbarButton
               icon={<ListFilter className="size-3.5" />}
               label={t("common:actions.filter")}
-              applied={filters.length > 0}
-              badge={filters.length > 0 ? filters.length : undefined}
+              applied={activeCount > 0}
+              badge={activeCount > 0 ? activeCount : undefined}
             />
           }
         />

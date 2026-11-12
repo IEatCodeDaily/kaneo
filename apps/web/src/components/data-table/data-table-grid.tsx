@@ -184,20 +184,14 @@ function FieldHeader({
               aria-label={t("navigation:tables.fieldMenu", {
                 name: field.name,
               })}
-              className="group/head flex h-8 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
+              className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
             />
           }
         >
+          {/* Quantities right-align: icon + name + unit sit together over the digits. */}
+          {numeric && <span className="flex-1" />}
           <FieldTypeIcon type={field.type} />
-          {/* Labels may ellipsize while hovered/open; unit and sort arrow never hide. */}
-          <span
-            className={cn(
-              "min-w-0 truncate font-medium",
-              numeric && "flex-1 text-right",
-            )}
-          >
-            {field.name}
-          </span>
+          <span className="min-w-0 truncate font-medium">{field.name}</span>
           {unit && <span className="shrink-0">{unit}</span>}
           {!numeric && <span className="flex-1" />}
           {sorted &&
@@ -206,7 +200,11 @@ function FieldHeader({
             ) : (
               <ArrowDown className="size-3.5 shrink-0" />
             ))}
-          <ChevronDown className="hidden size-3.5 shrink-0 group-hover/head:block group-data-popup-open/head:block" />
+          {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
+              the name and digits never shift. */}
+          <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
+            <ChevronDown className="size-3.5" />
+          </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-52">
           {canEdit && (
@@ -846,7 +844,7 @@ export function DataTableGrid({
                           />
                         </div>
                       ))}
-                      {canEdit && <div />}
+                      {canEdit && <div className="border-b" />}
                     </div>
                   );
                 })}
