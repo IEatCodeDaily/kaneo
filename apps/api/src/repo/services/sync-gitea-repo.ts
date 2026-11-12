@@ -93,7 +93,15 @@ async function giteaGetAll(
   return out;
 }
 
-export async function syncGiteaRepo(repoId: string): Promise<{
+export function syncGiteaRepo(repoId: string): Promise<{
+  issues: number;
+  pullRequests: number;
+}> {
+  // Single-flight + dirty-flag trailing re-run: see repo-sync-flight.ts.
+  return runBoundedSync(repoId, async () => giteaSync(repoId));
+}
+
+async function giteaSync(repoId: string): Promise<{
   issues: number;
   pullRequests: number;
 }> {
@@ -242,39 +250,21 @@ export async function syncGiteaRepo(repoId: string): Promise<{
   return { issues: issueCount, pullRequests: prCount };
 }
 
-const syncsInFlight = new Map<
-  string,
-  Promise<{ issues: number; pullRequests: number }>
->();
-
 /**
- * Run at most one full mirror sync per repo at a time. Webhook bursts (and
- * the manual resync button) used to stack concurrent full paginations of
- * the same repo in memory until the heap OOM'd (IT-54); callers arriving
- * while a sync is running share it instead.
+ * Route a repo id to its provider sync. The single-flight and dirty-flag
+ * trailing re-run live in repo-sync-flight.ts, inside each provider's sync
+ * function, so every call path (webhooks, scheduler, manual resync, issue
+ * management) is bounded without going through this router.
  */
-export function syncRepo(repoId: string) {
-  const existing = syncsInFlight.get(repoId);
-  if (existing) return existing;
-  const run = (async () => {
-    const repo = await db.query.repoTable.findFirst({
-      where: eq(repoTable.id, repoId),
-    });
-    if (!repo) throw new Error("Repo not found");
+export async function syncRepo(repoId: string) {
+  const repo = await db.query.repoTable.findFirst({
+    where: eq(repoTable.id, repoId),
+  });
+  if (!repo) throw new Error("Repo not found");
 
-    if (repo.provider === "gitea") {
-      return syncGiteaRepo(repoId);
-    }
-    const { syncGitHubRepo } = await import("./sync-github-repo");
-    return syncGitHubRepo(repoId);
-  })();
-  syncsInFlight.set(repoId, run);
-  // Keep the map clean without introducing unhandled rejections: the
-  // caller owns `run`'s rejection, this chain only observes it.
-  run
-    .finally(() => {
-      if (syncsInFlight.get(repoId) === run) syncsInFlight.delete(repoId);
-    })
-    .catch(() => {});
-  return run;
+  if (repo.provider === "gitea") {
+    return syncGiteaRepo(repoId);
+  }
+  const { syncGitHubRepo } = await import("./sync-github-repo");
+  return syncGitHubRepo(repoId);
 }
