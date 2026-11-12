@@ -162,7 +162,7 @@ export default function TaskTitle({ taskId }: TaskTitleProps) {
               // rest, and the Properties sidebar cuts it off further. Expose the
               // full value as a tooltip rather than letting it silently vanish.
               title={field.value || undefined}
-              className="block h-auto min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 font-heading text-[2rem] leading-[1.15] font-semibold tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45"
+              className="block h-auto min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[2rem] leading-[1.15] font-semibold tracking-[-0.02em] text-foreground outline-none placeholder:text-foreground/45"
               onChange={(e) => {
                 field.onChange(e);
                 handleTitleChange(e.target.value);

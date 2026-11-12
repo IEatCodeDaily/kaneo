@@ -111,7 +111,7 @@ export function PublicTaskDetailModal({
 
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
             <div className="space-y-3">
-              <h2 className="pr-8 text-2xl font-heading font-semibold leading-tight text-foreground">
+              <h2 className="pr-8 text-2xl font-semibold leading-tight text-foreground">
                 {task.title}
               </h2>
 
@@ -172,7 +172,7 @@ export function PublicTaskDetailModal({
 
             {labels.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("publicBoard:taskDetail.labels")}
                 </h3>
                 <PublicTaskLabels labels={labels} />
@@ -181,7 +181,7 @@ export function PublicTaskDetailModal({
 
             {externalLinks.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("publicBoard:taskDetail.externalLinks")}
                 </h3>
 

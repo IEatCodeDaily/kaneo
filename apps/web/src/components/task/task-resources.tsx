@@ -542,7 +542,7 @@ export default function TaskResources({
                 have no Kaneo page and open on GitHub instead.
               */}
               <Link
-                className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary hover:underline"
+                className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary-soft-foreground hover:underline"
                 params={{
                   organizationId,
                   repoId: item.repoId,

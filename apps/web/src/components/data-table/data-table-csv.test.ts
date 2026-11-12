@@ -7,10 +7,48 @@ const choices = new Map([
 ]);
 
 const fields: DataTableField[] = [
-  { id: "f1", tableId: "t", name: "Batch", type: "text", options: null, position: 0, createdAt: "", updatedAt: "" },
-  { id: "f2", tableId: "t", name: "Stage", type: "select", options: { choices: [{ id: "c1", label: "Fermentation", color: "#f59e0b" }] }, position: 1, createdAt: "", updatedAt: "" },
-  { id: "f3", tableId: "t", name: "Cost", type: "currency", options: { code: "IDR" }, position: 2, createdAt: "", updatedAt: "" },
-  { id: "f4", tableId: "t", name: "Note, with comma", type: "text", options: null, position: 3, createdAt: "", updatedAt: "" },
+  {
+    id: "f1",
+    tableId: "t",
+    name: "Batch",
+    type: "text",
+    options: null,
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    id: "f2",
+    tableId: "t",
+    name: "Stage",
+    type: "select",
+    options: {
+      choices: [{ id: "c1", label: "Fermentation", color: "#f59e0b" }],
+    },
+    position: 1,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    id: "f3",
+    tableId: "t",
+    name: "Cost",
+    type: "currency",
+    options: { code: "IDR" },
+    position: 2,
+    createdAt: "",
+    updatedAt: "",
+  },
+  {
+    id: "f4",
+    tableId: "t",
+    name: "Note, with comma",
+    type: "text",
+    options: null,
+    position: 3,
+    createdAt: "",
+    updatedAt: "",
+  },
 ];
 
 describe("csvSerialize", () => {
@@ -47,7 +85,15 @@ describe("csvSerialize", () => {
     };
     const out = csvSerialize(
       [checkbox],
-      [{ id: "r", position: 0, createdAt: "", updatedAt: "", values: { f5: true } }],
+      [
+        {
+          id: "r",
+          position: 0,
+          createdAt: "",
+          updatedAt: "",
+          values: { f5: true },
+        },
+      ],
       choices,
       new Map(),
     );
@@ -77,15 +123,20 @@ describe("csvParse", () => {
   });
 
   it("round-trips through serialize", () => {
-    const out = csvSerialize(fields, [
-      {
-        id: "r1",
-        position: 0,
-        createdAt: "",
-        updatedAt: "",
-        values: { f1: "x,y", f2: "c1", f3: 1.5, f4: "a\nb" },
-      },
-    ], choices, new Map());
+    const out = csvSerialize(
+      fields,
+      [
+        {
+          id: "r1",
+          position: 0,
+          createdAt: "",
+          updatedAt: "",
+          values: { f1: "x,y", f2: "c1", f3: 1.5, f4: "a\nb" },
+        },
+      ],
+      choices,
+      new Map(),
+    );
     expect(csvParse(out)[1]).toEqual(["x,y", "Fermentation", "1.5", "a\nb"]);
   });
 });

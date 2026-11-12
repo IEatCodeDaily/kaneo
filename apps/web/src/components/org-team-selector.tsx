@@ -73,8 +73,9 @@ export function OrgTeamSelector({
   onAddOrganization: () => void;
 }) {
   const { t } = useTranslation();
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // On mobile the sheet is always expanded; `state` tracks the desktop preference.
+  const collapsed = state === "collapsed" && !isMobile;
   const { data: organization } = useActiveOrganization();
   const { data: organizations } = useGetOrganizations();
   const navigate = useNavigate();
@@ -175,10 +176,12 @@ export function OrgTeamSelector({
               // h-auto at both breakpoints: the size variant's h-11/md:h-7
               // otherwise clips the second (team) row.
               "h-auto md:h-auto min-w-0 flex-1 flex-col items-stretch gap-0.5 rounded-md px-2 py-1 text-sidebar-foreground",
-              collapsed && "items-center px-0 py-0",
+              // rail: header stacks vertically, so flex-1 would shrink the trigger to its padding
+              collapsed && "flex-none items-center justify-center p-0!",
             )}
             size="default"
             tooltip={organization?.name ?? ""}
+            aria-label={organization?.name}
           />
         }
       >
@@ -206,9 +209,11 @@ export function OrgTeamSelector({
             </span>
           </span>
         ) : (
-          <span className="relative shrink-0">
-            <OrgAvatar organization={organization} className="size-8" />
-            <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar">
+          // SidebarMenuButton hides non-svg children on the rail
+          // ([&>*:not(svg)]:hidden); `block!` keeps the org avatar visible there.
+          <span className="relative block! size-7 shrink-0">
+            <OrgAvatar organization={organization} className="size-7" />
+            <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar">
               <UsersRound aria-hidden="true" className="size-2.5" />
             </span>
           </span>

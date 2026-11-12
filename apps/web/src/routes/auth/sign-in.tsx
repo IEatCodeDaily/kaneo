@@ -331,7 +331,7 @@ function SignIn() {
                         : t("auth:signIn.continueWithGoogle")}
                     </Button>
                     {lastLoginMethod === "google" && (
-                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary font-medium bg-sidebar border border-primary/50">
+                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary-soft-foreground font-medium bg-sidebar border border-primary/50">
                         {t("auth:signIn.lastUsed")}
                       </span>
                     )}
@@ -355,7 +355,7 @@ function SignIn() {
                         : t("auth:signIn.continueWithGithub")}
                     </Button>
                     {lastLoginMethod === "github" && (
-                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary font-medium bg-sidebar border border-primary/50">
+                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary-soft-foreground font-medium bg-sidebar border border-primary/50">
                         {t("auth:signIn.lastUsed")}
                       </span>
                     )}
@@ -388,7 +388,7 @@ function SignIn() {
                         : t("auth:signIn.continueWithDiscord")}
                     </Button>
                     {lastLoginMethod === "discord" && (
-                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary font-medium bg-sidebar border border-primary/50">
+                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary-soft-foreground font-medium bg-sidebar border border-primary/50">
                         {t("auth:signIn.lastUsed")}
                       </span>
                     )}
@@ -412,7 +412,7 @@ function SignIn() {
                         : t("auth:signIn.continueWithOidc")}
                     </Button>
                     {lastLoginMethod === "custom" && (
-                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary font-medium bg-sidebar border border-primary/50">
+                      <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary-soft-foreground font-medium bg-sidebar border border-primary/50">
                         {t("auth:signIn.lastUsed")}
                       </span>
                     )}

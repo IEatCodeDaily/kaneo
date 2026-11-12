@@ -15,26 +15,29 @@ function luminance(hex: string) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-describe("Stellarc palette (#151)", () => {
-  it("uses the supplied dark tokens and keeps the viewport darker than the sidebar", () => {
-    expect(value(dark, "background")).toBe("#0a0a0b");
-    expect(value(dark, "sidebar")).toBe("#131315");
-    expect(value(dark, "border")).toBe("#262629");
-    expect(value(dark, "foreground")).toBe("#e6e6e6");
-    expect(value(dark, "muted-foreground")).toBe("#999a9c");
+// Design v3 (docs/plans/2026-11-12-design-v3-implementation.md) supersedes the #151 values and
+// inverts its sidebar rule: the sidebar is now the darkest surface in both themes.
+describe("Design v3 palette (supersedes #151)", () => {
+  it("uses the v3 dark tokens and keeps the sidebar darker than the viewport", () => {
+    expect(value(dark, "background")).toBe("#111113");
+    expect(value(dark, "sidebar")).toBe("#0b0b0d");
+    expect(value(dark, "border")).toBe("#242428");
+    expect(value(dark, "foreground")).toBe("#e8e8eb");
+    expect(value(dark, "muted-foreground")).toBe("#9c9ca3");
     const background = value(dark, "background");
     const sidebar = value(dark, "sidebar");
     expect(background).toBeDefined();
     expect(sidebar).toBeDefined();
     if (!background || !sidebar) throw new Error("Dark surface tokens missing");
-    expect(luminance(background)).toBeLessThan(luminance(sidebar));
+    expect(luminance(sidebar)).toBeLessThan(luminance(background));
   });
 
-  it("uses the supplied light viewport and elevated surface tokens", () => {
-    expect(value(css, "background")).toBe("#f6f6f7");
-    expect(value(css, "sidebar")).toBe("#ffffff");
-    expect(value(css, "border")).toBe("#e2e2e5");
-    expect(value(css, "foreground")).toBe("#171719");
-    expect(value(css, "muted-foreground")).toBe("#5d5d60");
+  it("uses the v3 light tokens and keeps the sidebar darker than the viewport", () => {
+    expect(value(css, "background")).toBe("#fafafb");
+    expect(value(css, "sidebar")).toBe("#efeff1");
+    expect(value(css, "border")).toBe("#e6e6e9");
+    expect(value(css, "foreground")).toBe("#18181b");
+    expect(value(css, "muted-foreground")).toBe("#5f5f67");
+    expect(luminance("#efeff1")).toBeLessThan(luminance("#fafafb"));
   });
 });

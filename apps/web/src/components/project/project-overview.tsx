@@ -33,7 +33,7 @@ export function ProjectOverview({
   return (
     <div className="space-y-6 p-4" data-testid="project-overview">
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-sm font-semibold text-muted-foreground">
           {t("projects:labels.summary")}
         </h2>
         <p className="mt-1">{project.summary}</p>
@@ -41,7 +41,7 @@ export function ProjectOverview({
 
       {project.description && (
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground">
+          <h2 className="text-sm font-semibold text-muted-foreground">
             {t("projects:labels.description")}
           </h2>
           <p className="mt-1 whitespace-pre-wrap">{project.description}</p>
@@ -49,7 +49,7 @@ export function ProjectOverview({
       )}
 
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-sm font-semibold text-muted-foreground">
           {t("projects:labels.successCriteria")}
         </h2>
         <p className="mt-1">
@@ -59,7 +59,7 @@ export function ProjectOverview({
 
       <section className="flex flex-wrap gap-6">
         <div>
-          <h2 className="text-sm font-medium text-muted-foreground">
+          <h2 className="text-sm font-semibold text-muted-foreground">
             {t("projects:labels.lifecycle")}
           </h2>
           <Badge className="mt-1">
@@ -67,7 +67,7 @@ export function ProjectOverview({
           </Badge>
         </div>
         <div>
-          <h2 className="text-sm font-medium text-muted-foreground">
+          <h2 className="text-sm font-semibold text-muted-foreground">
             {t("projects:labels.lead")}
           </h2>
           <p className="mt-1">
@@ -75,7 +75,7 @@ export function ProjectOverview({
           </p>
         </div>
         <div>
-          <h2 className="text-sm font-medium text-muted-foreground">
+          <h2 className="text-sm font-semibold text-muted-foreground">
             {t("projects:labels.targetDate")}
           </h2>
           <p className="mt-1">
@@ -87,7 +87,7 @@ export function ProjectOverview({
       </section>
 
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-sm font-semibold text-muted-foreground">
           {t("projects:progress.label")}
         </h2>
         <p className="mt-1 text-muted-foreground">
@@ -101,7 +101,7 @@ export function ProjectOverview({
       </section>
 
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-sm font-semibold text-muted-foreground">
           {t("projects:labels.latestHealth", "Latest health")}
         </h2>
         {latest ? (

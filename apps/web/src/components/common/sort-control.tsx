@@ -69,7 +69,7 @@ export default function SortControl({ sort, onSortChange }: SortControlProps) {
               type="button"
               className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium outline-none ring-0 ${
                 isActive
-                  ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15"
+                  ? "border-primary/30 bg-primary/10 text-primary-soft-foreground hover:bg-primary/15"
                   : "border-border bg-background text-foreground hover:bg-accent/60"
               }`}
             />

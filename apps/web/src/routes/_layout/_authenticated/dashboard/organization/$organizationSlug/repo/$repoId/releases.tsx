@@ -99,7 +99,7 @@ function RouteComponent() {
                   </p>
                 </div>
                 <a
-                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                  className="inline-flex items-center gap-1 text-sm text-primary-soft-foreground hover:underline"
                   href={release.url}
                   rel="noreferrer"
                   target="_blank"
@@ -119,7 +119,7 @@ function RouteComponent() {
                   </p>
                   {release.assets.map((asset) => (
                     <a
-                      className="flex items-center gap-2 py-1 text-sm hover:text-primary"
+                      className="flex items-center gap-2 py-1 text-sm hover:text-primary-soft-foreground"
                       href={asset.downloadUrl}
                       key={asset.id}
                     >

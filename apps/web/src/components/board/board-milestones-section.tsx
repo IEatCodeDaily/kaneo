@@ -127,7 +127,7 @@ export default function BoardMilestonesSection({
   return (
     <section className="flex flex-col gap-2" data-testid="board-milestones">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+        <h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
           {t("tasks:milestone.manage.title")}
         </h3>
         <Button

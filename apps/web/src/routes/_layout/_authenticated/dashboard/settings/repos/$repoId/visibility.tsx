@@ -51,7 +51,7 @@ function RepoVisibility() {
         {repo ? (
           <section className="space-y-3 rounded-lg border p-4">
             <div>
-              <h2 className="font-medium">Repository icon</h2>
+              <h2 className="font-semibold">Repository icon</h2>
               <p className="text-sm text-muted-foreground">
                 Choose a distinct icon for the sidebar. Repositories default to
                 their first letter.

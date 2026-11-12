@@ -96,7 +96,7 @@ export default function RepoIssueRelations({
           </span>
         ) : target.internal ? (
           <Link
-            className="min-w-0 flex-1 truncate text-sm hover:text-primary"
+            className="min-w-0 flex-1 truncate text-sm hover:text-primary-soft-foreground"
             data-testid={`relation-link-${item.number}`}
             params={target.params}
             to={target.to}
@@ -105,7 +105,7 @@ export default function RepoIssueRelations({
           </Link>
         ) : (
           <a
-            className="min-w-0 flex-1 truncate text-sm hover:text-primary"
+            className="min-w-0 flex-1 truncate text-sm hover:text-primary-soft-foreground"
             data-testid={`relation-link-${item.number}`}
             href={target.href ?? undefined}
             rel="noreferrer"

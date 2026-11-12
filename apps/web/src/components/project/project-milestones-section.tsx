@@ -61,7 +61,7 @@ export default function ProjectMilestonesSection({
   };
   return (
     <section className="space-y-3" data-testid="project-milestones">
-      <h2 className="text-sm font-medium text-muted-foreground">
+      <h2 className="text-sm font-semibold text-muted-foreground">
         {t("projects:milestones.title")}
       </h2>
       {canEdit && (

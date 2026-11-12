@@ -10,7 +10,7 @@ const source = readFileSync(
 // same mutation path as other flags, rather than making its state local-only.
 describe("organization Work feature", () => {
   it("renders its Alpha toggle and persists checked state", () => {
-    expect(source).toContain('<h2 className="font-medium">Work</h2>');
+    expect(source).toContain('<h2 className="font-semibold">Work</h2>');
     expect(source).toContain("Alpha");
     expect(source).toContain('aria-label="Enable Work"');
     expect(source).toContain("workEnabled: checked");

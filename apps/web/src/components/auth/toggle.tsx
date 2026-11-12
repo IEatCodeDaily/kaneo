@@ -19,7 +19,7 @@ export function AuthToggle({ message, linkText, linkTo }: AuthToggleProps) {
       {message}{" "}
       <Link
         to={linkTo}
-        className="underline underline-offset-4 hover:text-primary"
+        className="underline underline-offset-4 hover:text-primary-soft-foreground"
       >
         {linkText}
       </Link>

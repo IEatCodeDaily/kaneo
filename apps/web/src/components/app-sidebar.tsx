@@ -39,13 +39,14 @@ function ResourceNavigation() {
   );
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { toggleSidebar, state } = useSidebar();
+  const { toggleSidebar, state, isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"work" | "resources">("work");
   const [createOpen, setCreateOpen] = useState(false);
   const [organizationMenuOpen, setOrganizationMenuOpen] = useState(false);
-  const isCollapsed = state === "collapsed";
+  // On mobile the sheet is always expanded; `state` tracks the desktop preference.
+  const isCollapsed = state === "collapsed" && !isMobile;
   const workEnabled = Boolean(
     (
       organization as
@@ -84,9 +85,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="border-none pt-1.5"
       {...props}
     >
-      <SidebarHeader className="pt-1 pb-1.5">
+      <SidebarHeader
+        className={cn("pt-1 pb-1.5", isCollapsed && "items-center px-0")}
+      >
         <div
-          className="flex w-full flex-row items-center gap-1"
+          className={cn(
+            "flex w-full items-center gap-1",
+            isCollapsed ? "flex-col" : "flex-row",
+          )}
           data-testid="sidebar-header"
         >
           <OrgTeamSelector
@@ -145,11 +151,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {workEnabled && mode === "work" ? <NavWork /> : <ResourceNavigation />}
       </SidebarContent>
       {/* Tighter footer: the two identity actions sit close together. */}
-      <SidebarFooter className="gap-0 px-1 pb-1">
+      <SidebarFooter
+        className={cn("gap-0 px-1 pb-1", isCollapsed && "items-center px-0")}
+      >
         <button
           type="button"
           aria-label="Members"
-          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
+          className={cn(
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            isCollapsed
+              ? "size-7 justify-center"
+              : "min-h-11 w-full px-2 sm:min-h-8",
+          )}
           onClick={() =>
             organization &&
             navigate({
@@ -163,16 +176,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <button
           type="button"
           aria-label="Settings"
-          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
+          className={cn(
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            isCollapsed
+              ? "size-7 justify-center"
+              : "min-h-11 w-full px-2 sm:min-h-8",
+          )}
           onClick={() =>
             navigate({ to: "/dashboard/settings/account/information" })
           }
         >
           <Settings className="size-4" />
-          <span>Settings</span>
+          {!isCollapsed && <span>Settings</span>}
         </button>
-        <div className="flex items-center gap-1" data-testid="sidebar-footer">
-          {!isCollapsed && <UserAvatar />}
+        <div
+          className={cn("mt-1 flex", isCollapsed && "justify-center")}
+          data-testid="sidebar-footer"
+        >
+          <UserAvatar variant="row" collapsed={isCollapsed} />
         </div>
       </SidebarFooter>
       <CreateOrganizationModal

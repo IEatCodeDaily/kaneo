@@ -62,3 +62,23 @@ describe("UserAvatar account-only menu", () => {
     expect(screen.queryByText(/add organization/i)).toBeNull();
   });
 });
+
+describe("UserAvatar sidebar row (design v3 §4)", () => {
+  it("shows name and email in the expanded row and opens the same menu", () => {
+    render(<UserAvatar variant="row" />);
+    const trigger = screen.getByRole("button", { name: "Open profile menu" });
+    expect(trigger).toHaveTextContent("Ada");
+    expect(trigger).toHaveTextContent("ada@example.com");
+    expect(trigger.className).toContain("min-h-11");
+    expect(trigger.className).toContain("sm:min-h-8");
+    fireEvent.click(trigger);
+    expect(screen.getByTestId("user-menu-logout")).toBeInTheDocument();
+  });
+
+  it("collapses to a 28px avatar square on the rail, still reachable", () => {
+    render(<UserAvatar variant="row" collapsed />);
+    const trigger = screen.getByRole("button", { name: "Open profile menu" });
+    expect(trigger).not.toHaveTextContent("ada@example.com");
+    expect(trigger.className).toContain("size-7");
+  });
+});

@@ -106,7 +106,7 @@ function RouteComponent() {
                 <Eye aria-hidden="true" className="size-4" />
               </div>
               <div className="space-y-1">
-                <h2 className="font-medium">Organization-wide default</h2>
+                <h2 className="font-semibold">Organization-wide default</h2>
                 <p className="max-w-xl text-sm text-muted-foreground">
                   {data
                     ? PRIVILEGE_DESCRIPTIONS[data.defaultResourcePrivilege]

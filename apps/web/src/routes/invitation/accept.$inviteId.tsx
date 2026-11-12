@@ -110,7 +110,7 @@ function AcceptInvitation() {
         <PageTitle title={t("auth:invitation.pageTitleAccept")} />
         <AuthLayout title={t("auth:invitation.loadingTitle")}>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary-soft-foreground" />
           </div>
         </AuthLayout>
       </>
@@ -215,7 +215,7 @@ function AcceptInvitation() {
         <AuthLayout title={t("auth:invitation.pageTitleAccept")}>
           <div className="space-y-4 mt-4">
             <div className="flex items-center justify-center w-12 h-12 mx-auto bg-primary/10 rounded-full">
-              <Users className="w-6 h-6 text-primary" />
+              <Users className="w-6 h-6 text-primary-soft-foreground" />
             </div>
 
             <div className="space-y-3 text-center">
@@ -282,7 +282,7 @@ function AcceptInvitation() {
       <AuthLayout title={t("auth:invitation.youveBeenInvited")}>
         <div className="space-y-4 mt-4">
           <div className="flex items-center justify-center w-12 h-12 mx-auto bg-primary/10 rounded-full">
-            <Users className="w-6 h-6 text-primary" />
+            <Users className="w-6 h-6 text-primary-soft-foreground" />
           </div>
 
           <div className="space-y-3 text-center">

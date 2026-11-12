@@ -197,7 +197,7 @@ export function MyTasksComponent() {
             Phones scroll each row sideways instead of wrapping into a wall. */}
         <div className="flex flex-col gap-2 border-b border-border/80 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
-            <h1 className="sr-only mr-2 font-medium text-sm sm:not-sr-only">
+            <h1 className="sr-only mr-2 font-semibold text-sm sm:not-sr-only">
               {t("myTasks:title")}
             </h1>
             <div className="-my-1 flex min-w-0 items-center gap-1 overflow-x-auto py-1 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)]">

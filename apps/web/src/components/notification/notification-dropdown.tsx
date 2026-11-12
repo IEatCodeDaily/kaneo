@@ -393,7 +393,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
           <DropdownMenuContent align="end" className="w-88 p-0">
             <div className="overflow-hidden rounded-lg">
               <div className="flex h-10 items-center justify-between border-border/50 border-b pr-2 pl-3">
-                <h3 className="font-medium text-sm">
+                <h3 className="font-semibold text-sm">
                   {t("notifications:title")}
                 </h3>
                 {unreadNotifications.length > 0 && (

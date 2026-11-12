@@ -34,7 +34,7 @@ export default function InboxTicketList({
     <div className="divide-y divide-border/50">
       {groupInboxByTime(notifications).map((group) => (
         <section key={group.name}>
-          <h2 className="sticky top-0 z-10 flex items-center gap-2 bg-background px-4 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <h2 className="sticky top-0 z-10 flex items-center gap-2 bg-background px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t(`inbox:groups.${group.name}`)}
             <span>{group.tickets.length}</span>
           </h2>
