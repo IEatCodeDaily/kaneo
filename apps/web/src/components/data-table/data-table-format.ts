@@ -174,14 +174,32 @@ export function formatNumberValue(value: unknown, precision: number): string {
   });
 }
 
+/** Bare amount: the unit is shown once, in the field header (design v3 §1.5). */
 export function formatCurrencyValue(value: unknown, field: DataTableField) {
   const parsed = asNumber(value);
   if (parsed === null) return "";
-  const amount = parsed.toLocaleString(undefined, {
+  return parsed.toLocaleString(undefined, {
     maximumFractionDigits: fieldPrecision(field),
   });
+}
+
+/** Header unit for a currency field: the locale's narrow symbol ("Rp", "$"). */
+export function currencyUnit(field: DataTableField): string | null {
   const code = field.options?.code;
-  return code ? `${amount} ${code}` : amount;
+  if (field.type !== "currency" || !code) return null;
+  try {
+    return (
+      new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: code,
+        currencyDisplay: "narrowSymbol",
+      })
+        .formatToParts(0)
+        .find((part) => part.type === "currency")?.value ?? code
+    );
+  } catch {
+    return code;
+  }
 }
 
 // ── validation (editors refuse to commit while invalid) ────────────────────
@@ -420,8 +438,8 @@ export function sortRows(
 
 export type Density = "compact" | "comfortable";
 export const DENSITY_ROW_HEIGHT: Record<Density, number> = {
-  compact: 36,
-  comfortable: 44,
+  compact: 32,
+  comfortable: 40,
 };
 
 const DENSITY_KEY = "kaneo-table-density";
@@ -441,6 +459,41 @@ export function writeDensity(value: Density): void {
   } catch {
     // Storage can be unavailable in hardened/private contexts; state works.
   }
+}
+
+// ── hidden fields (per table, per browser: view state stays local) ─────────
+
+const hiddenKey = (tableId: string) => `kaneo-table-hidden:${tableId}`;
+
+export function readHiddenFields(tableId: string): string[] {
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(hiddenKey(tableId)) ?? "[]",
+    );
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeHiddenFields(tableId: string, ids: string[]): void {
+  try {
+    window.localStorage.setItem(hiddenKey(tableId), JSON.stringify(ids));
+  } catch {
+    // Storage can be unavailable; the in-memory state still works.
+  }
+}
+
+/** A filter only narrows rows once it has a value; empty rows stay inert. */
+export function filterIsActive(filter: DataTableFilter): boolean {
+  if ("contains" in filter) return filter.contains.trim() !== "";
+  if ("min" in filter)
+    return filter.min.trim() !== "" || filter.max.trim() !== "";
+  if ("from" in filter) return filter.from !== "" || filter.to !== "";
+  if ("checked" in filter) return filter.checked !== "any";
+  return filter.choiceId !== "";
 }
 
 // ── misc ───────────────────────────────────────────────────────────────────
