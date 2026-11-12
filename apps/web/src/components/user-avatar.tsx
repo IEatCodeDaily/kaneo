@@ -88,7 +88,9 @@ export function UserAvatar({
             aria-label="Open profile menu"
             className={cn(
               "flex w-full min-w-0 cursor-pointer items-center rounded-md text-left outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-popup-open:bg-sidebar-accent",
-              collapsed ? "size-7 justify-center" : "h-10 gap-1.5 px-1",
+              collapsed
+                ? "size-7 justify-center"
+                : "min-h-11 w-full gap-1.5 px-1 sm:min-h-8",
             )}
           >
             <Avatar className={cn("size-5 shrink-0", !user.image && tone)}>

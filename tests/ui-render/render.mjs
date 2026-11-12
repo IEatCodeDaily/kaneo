@@ -189,6 +189,78 @@ for (const [theme, tag, viewport, scale] of [
   }
 }
 
+// Phone sheet with a collapsed desktop preference: chrome must be expanded
+// (`state` tracks the desktop preference; isMobile overrides it — review fix b).
+{
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    storageState: state,
+    reducedMotion: "reduce",
+    colorScheme: "dark",
+    hasTouch: true,
+  });
+  await ctx.addInitScript(() => {
+    const k = "user-preferences";
+    const cur = JSON.parse(
+      localStorage.getItem(k) ?? '{"state":{},"version":0}',
+    );
+    cur.state = { ...cur.state, theme: "dark", sidebarDefaultOpen: false };
+    localStorage.setItem(k, JSON.stringify(cur));
+  });
+  const page = await ctx.newPage();
+  const fails = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  await page.goto(BASE + (pages.table ?? Object.values(pages)[0]), {
+    waitUntil: "networkidle",
+  });
+  await page.waitForTimeout(1200);
+  try {
+    await page
+      .getByTestId("mobile-sidebar-toggle")
+      .first()
+      .click({ force: true });
+    await page.waitForTimeout(600);
+  } catch (e) {
+    fails.push(`open sheet failed: ${String(e).split("\n")[0]}`);
+  }
+  const m = await page.evaluate(() => {
+    const q = (sel) => document.querySelector(sel);
+    const btn = (name) =>
+      [...document.querySelectorAll("button")].find(
+        (b) => b.getAttribute("aria-label") === name,
+      );
+    const members = btn("Members");
+    const account = btn("Open profile menu");
+    const rect = (el) => el?.getBoundingClientRect();
+    const r = rect(members);
+    const a = rect(account);
+    return {
+      members_label_visible: !!members?.innerText.includes("Members"),
+      members_h: r ? Math.round(r.height) : null,
+      account_label_visible: !!account?.innerText.trim(),
+      account_h: a ? Math.round(a.height) : null,
+      org_aria: q(
+        '[data-testid="sidebar-organization-identity"]',
+      )?.getAttribute("aria-label"),
+    };
+  });
+  if (!m.members_label_visible)
+    fails.push(
+      "mobile sheet shows collapsed chrome (Members is a bare square)",
+    );
+  if (!m.account_label_visible)
+    fails.push("account row has no visible name in the mobile sheet");
+  if (m.members_h !== null && m.members_h < 40)
+    fails.push(`Members touch target ${m.members_h}px, want >=44 coarse`);
+  const shot = "sheet-phone--phone-dark.png";
+  await page.screenshot({ path: join(OUT, shot) });
+  checks[shot] = { fails, ...m };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+  );
+  await ctx.close();
+}
+
 // Interaction states on the table page (dark desktop): account menu open, collapsed rail.
 for (const [shot, prefs, act] of [
   [
@@ -265,6 +337,100 @@ for (const [shot, prefs, act] of [
     `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
   );
   await ctx.close();
+}
+
+// Table interaction states (dark desktop), design v3 S2.
+const TABLE_STATES = [
+  [
+    "table-fields",
+    async (p) => p.getByRole("button", { name: /^Fields/ }).click(),
+  ],
+  [
+    "table-filter",
+    async (p) => {
+      await p.getByRole("button", { name: /^Filter/ }).click();
+      await p.getByRole("button", { name: "Add filter" }).click();
+    },
+  ],
+  ["table-sort", async (p) => p.getByRole("button", { name: /^Sort/ }).click()],
+  [
+    "table-more",
+    async (p) => p.getByRole("button", { name: "Table options" }).click(),
+  ],
+  [
+    "table-field",
+    async (p) => p.getByRole("button", { name: "Cost field menu" }).click(),
+  ],
+  [
+    "table-noresult",
+    async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
+  ],
+];
+if (pages.table) {
+  for (const [name, act] of TABLE_STATES) {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: "dark",
+    });
+    await ctx.addInitScript(() => {
+      const k = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(k) ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: "dark" };
+      localStorage.setItem(k, JSON.stringify(cur));
+    });
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    try {
+      await act(page);
+      await page.waitForTimeout(500);
+    } catch (e) {
+      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    // scaffold geometry: 44px header, 40px toolbar, 32px rows (DS §1.4)
+    const m = await page.evaluate(() => {
+      const h = (sel) => {
+        const el = document.querySelector(sel);
+        return el ? Math.round(el.getBoundingClientRect().height) : null;
+      };
+      return {
+        header_h: h("header"),
+        toolbar_h: h('[data-slot="layout-toolbar"]'),
+        row_h: h('[role="grid"] [role="row"][aria-rowindex]'),
+        heads: [...document.querySelectorAll('[role="columnheader"]')].map(
+          (e) =>
+            `${e.innerText.trim()}|${e.querySelector("button")?.getAttribute("aria-label") ?? ""}`,
+        ),
+        toolbar_font: (() => {
+          const b = document.querySelector(
+            '[data-slot="layout-toolbar"] button',
+          );
+          return b ? getComputedStyle(b).fontSize : null;
+        })(),
+      };
+    });
+    if (!m.heads.some((x) => x.startsWith("Batch")))
+      fails.push("field names missing from header");
+    if (m.header_h !== 44) fails.push(`header ${m.header_h}px, want 44`);
+    if (m.toolbar_font !== "13px")
+      fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
+    if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
+    if (name !== "table-noresult" && m.row_h !== 32)
+      fails.push(`row ${m.row_h}px, want 32`);
+    const shot = `${name}--desktop-dark.png`;
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails, ...m };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
 }
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
