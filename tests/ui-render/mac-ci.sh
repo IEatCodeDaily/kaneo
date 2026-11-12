@@ -41,7 +41,7 @@ for s in $STEPS; do case $s in
   unit)  step unit 'pnpm build >/dev/null && pnpm --filter @kaneo/api test:coverage' ;;
   build) step build 'pnpm build' ;;
   size)  step size 'pnpm build >/dev/null 2>&1; ls -l apps/web/dist/assets/index-*.js | sort -k5 -n | tail -1' ;;
-  web)   step web-types 'cd apps/web && pnpm exec tsc --noEmit -p tsconfig.app.json; echo "errors $(pnpm exec tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS")"'
+  web)   step web-types 'pnpm build >/dev/null 2>&1; cd apps/web && pnpm exec tsc --noEmit -p tsconfig.app.json; echo "errors $(pnpm exec tsc --noEmit -p tsconfig.app.json 2>&1 | grep -c "error TS")"'
          step web-unit 'cd apps/web && pnpm exec vitest run' ;;
   integration) step integration 'pg_up kaneo_test postgres && NODE_ENV=test AUTH_SECRET=test-secret-with-at-least-32-chars DISABLE_GUEST_ACCESS=false \
       KANEO_API_URL=http://localhost:1337 KANEO_CLIENT_URL=http://localhost:5173 \
