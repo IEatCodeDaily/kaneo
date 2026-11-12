@@ -1,0 +1,85 @@
+name: UI render
+# Builds the real kaneo image, runs it against Postgres, seeds through the API and screenshots real pages
+# (tests/ui-render/render.py). Also runs the web typecheck + web unit suite, which ci.yml does not.
+on:
+  push:
+    branches: ["stellarc/design-v3-*"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20.20.2
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build workspace packages the web app imports
+        run: pnpm turbo build --filter=@kaneo/web^...
+      - name: Web typecheck (tsconfig.app.json)
+        working-directory: apps/web
+        run: pnpm exec tsc --noEmit -p tsconfig.app.json | tee ../../web-types.log; echo "errors $(grep -c 'error TS' ../../web-types.log)"
+        continue-on-error: true
+      - name: Web unit tests
+        working-directory: apps/web
+        run: pnpm exec vitest run
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-types
+          path: web-types.log
+
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: kaneo
+          POSTGRES_USER: kaneo
+          POSTGRES_PASSWORD: kaneo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U kaneo -d kaneo" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - name: Build kaneo image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile.kaneo
+          load: true
+          tags: kaneo:render
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Run kaneo
+        run: |
+          docker run -d --name kaneo --network host \
+            -e DATABASE_URL=postgresql://kaneo:kaneo@127.0.0.1:5432/kaneo \
+            -e AUTH_SECRET=render-secret-with-at-least-32-characters \
+            -e KANEO_API_URL=http://localhost:5173/api -e KANEO_CLIENT_URL=http://localhost:5173 \
+            -e DISABLE_GUEST_ACCESS=true kaneo:render
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.49.1 && python -m playwright install --with-deps chromium
+      - name: Seed and render
+        run: python3 tests/ui-render/render.py
+        env:
+          OUT: shots
+      - if: always()
+        run: docker logs kaneo 2>&1 | tail -80
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-shots
+          path: shots/
