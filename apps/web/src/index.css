@@ -110,10 +110,25 @@ input:-webkit-autofill:active {
   --color-background: var(--background);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* design v3 §1.6: three radii, pinned (no calc chain). xl kept as lg until the S8 sweep removes it. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  /* design v3 §1.5: dense UI body text */
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.125rem;
+  --color-faint-foreground: var(--faint-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-row-hover: var(--row-hover);
+  --color-row-selected: var(--row-selected);
+  --color-tone-gray: var(--tone-gray);
+  --color-tone-blue: var(--tone-blue);
+  --color-tone-pink: var(--tone-pink);
+  --color-tone-amber: var(--tone-amber);
+  --color-tone-green: var(--tone-green);
+  --color-tone-red: var(--tone-red);
   @keyframes skeleton {
     to {
       background-position: -200% 0;
@@ -156,27 +171,30 @@ input:-webkit-autofill:active {
    * now a faint tint of the foreground, matching `--sidebar-accent`.
    * Components that genuinely want the inverse fill use `--primary`.
    */
-  --accent: --alpha(var(--color-black) / 6%);
-  --accent-foreground: #171719;
-  --background: #f6f6f7;
-  --border: #e2e2e5;
+  --accent: --alpha(var(--color-black) / 4%);
+  --accent-foreground: #18181b;
+  --background: #fafafb;
+  --border: #e6e6e9;
   --card: #ffffff;
-  --card-foreground: #171719;
+  --card-foreground: #18181b;
   --destructive: #fca5a5;
-  --destructive-foreground: #b91c1c;
-  --foreground: #171719;
+  --destructive-foreground: #b3261e;
+  --foreground: #18181b;
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
-  --input: --alpha(var(--color-black) / 10%);
+  --input: #d3d3d8;
   --muted: --alpha(var(--color-black) / 4%);
-  --muted-foreground: #5d5d60;
+  --muted-foreground: #5f5f67;
+  --faint-foreground: #66666e;
   --popover: #ffffff;
-  --popover-foreground: #171719;
-  --primary: #2a2a2e;
+  --popover-foreground: #18181b;
+  --primary: #5e6ad2;
   --primary-foreground: #ffffff;
-  --ring: var(--color-neutral-400);
-  --secondary: --alpha(var(--color-black) / 4%);
-  --secondary-foreground: #171719;
+  --primary-soft: color-mix(in srgb, #5e6ad2 12%, transparent);
+  --primary-soft-foreground: #434fb3;
+  --ring: var(--primary);
+  --secondary: --alpha(var(--color-black) / 7%);
+  --secondary-foreground: #18181b;
   --success: #86efac;
   --success-foreground: #15803d;
   --warning: #fcd34d;
@@ -186,17 +204,27 @@ input:-webkit-autofill:active {
   --chart-3: var(--color-cyan-900);
   --chart-4: var(--color-amber-400);
   --chart-5: var(--color-amber-500);
-  --sidebar: #ffffff;
-  --sidebar-foreground: #5d5d60;
-  --sidebar-primary: #2a2a2e;
+  --sidebar: #efeff1;
+  --sidebar-foreground: #5f5f67;
+  --sidebar-primary: #5e6ad2;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: --alpha(var(--color-black) / 4%);
-  --sidebar-accent-foreground: #171719;
-  --sidebar-border: #e2e2e5;
-  --sidebar-ring: var(--color-neutral-400);
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e6e6e9;
+  --sidebar-ring: var(--primary);
   --code: var(--color-white);
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-black) / 4%);
+  /* design v3 §1.1 status tones (light), each ≥ 0.10 ΔE_ok from the others and from the accent */
+  --tone-gray: #57575f;
+  --tone-blue: #004264;
+  --tone-pink: #9e1f67;
+  --tone-amber: #764f00;
+  --tone-green: #166439;
+  --tone-red: #a3221b;
+  /* opaque on purpose: sticky cells must not show content through */
+  --row-hover: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  --row-selected: color-mix(in srgb, var(--primary) 14%, var(--background));
 
   /*
    * Declares the theme to the CSS engine, not just to our own tokens. Third
@@ -208,27 +236,30 @@ input:-webkit-autofill:active {
 }
 
 .dark {
-  --accent: --alpha(var(--color-white) / 6%);
-  --accent-foreground: #e6e6e6;
-  --background: #0a0a0b;
-  --border: #262629;
-  --card: #131315;
-  --card-foreground: #e6e6e6;
+  --accent: --alpha(var(--color-white) / 5%);
+  --accent-foreground: #e8e8eb;
+  --background: #111113;
+  --border: #242428;
+  --card: #17171a;
+  --card-foreground: #e8e8eb;
   --destructive: #fca5a5;
-  --destructive-foreground: #fca5a5;
-  --foreground: #e6e6e6;
+  --destructive-foreground: #f28b82;
+  --foreground: #e8e8eb;
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-400);
-  --input: --alpha(var(--color-white) / 8%);
+  --input: #34343a;
   --muted: --alpha(var(--color-white) / 4%);
-  --muted-foreground: #999a9c;
-  --popover: #131315;
-  --popover-foreground: #e6e6e6;
-  --primary: #c9c9c9;
-  --primary-foreground: #0a0a0b;
-  --ring: var(--color-neutral-500);
-  --secondary: --alpha(var(--color-white) / 4%);
-  --secondary-foreground: #e6e6e6;
+  --muted-foreground: #9c9ca3;
+  --faint-foreground: #85858d;
+  --popover: #1c1c20;
+  --popover-foreground: #e8e8eb;
+  --primary: #5e6ad2;
+  --primary-foreground: #ffffff;
+  --primary-soft: color-mix(in srgb, #5e6ad2 18%, transparent);
+  --primary-soft-foreground: #aab3f8;
+  --ring: var(--primary);
+  --secondary: --alpha(var(--color-white) / 9%);
+  --secondary-foreground: #e8e8eb;
   --success: #86efac;
   --success-foreground: #86efac;
   --warning: #fcd34d;
@@ -238,17 +269,25 @@ input:-webkit-autofill:active {
   --chart-3: var(--color-amber-500);
   --chart-4: var(--color-purple-500);
   --chart-5: var(--color-rose-500);
-  --sidebar: #131315;
-  --sidebar-foreground: #999a9c;
-  --sidebar-primary: #c9c9c9;
-  --sidebar-primary-foreground: #0a0a0b;
+  --sidebar: #0b0b0d;
+  --sidebar-foreground: #9c9ca3;
+  --sidebar-primary: #5e6ad2;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: --alpha(var(--color-white) / 4%);
-  --sidebar-accent-foreground: #e6e6e6;
-  --sidebar-border: #262629;
-  --sidebar-ring: var(--color-neutral-400);
+  --sidebar-accent-foreground: #e8e8eb;
+  --sidebar-border: #242428;
+  --sidebar-ring: var(--primary);
   --code: color-mix(in srgb, var(--background) 98%, var(--color-white));
   --code-foreground: var(--foreground);
   --code-highlight: --alpha(var(--color-white) / 4%);
+  --tone-gray: #9c9ca3;
+  --tone-blue: #4fc3dc;
+  --tone-pink: #f07ab8;
+  --tone-amber: #e3b341;
+  --tone-green: #56c288;
+  --tone-red: #f0806a;
+  --row-hover: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  --row-selected: color-mix(in srgb, var(--primary) 14%, var(--background));
 
   /*
    * Required for third-party components that theme via `light-dark()`.
@@ -273,7 +312,7 @@ input:-webkit-autofill:active {
   h4,
   h5,
   h6 {
-    @apply font-heading font-semibold tracking-tight;
+    @apply font-sans font-semibold tracking-tight;
   }
 
   * {

@@ -32,7 +32,8 @@ function LayoutHeader({ children, className }: HeaderProps) {
   return (
     <header
       className={cn(
-        "flex h-10 shrink-0 gap-2 transition-[width,height] ease-in-out group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-8 border-b border-border bg-card p-2",
+        // design v3 §1.4: 44px, never shrinks with the sidebar state.
+        "flex h-11 shrink-0 items-center gap-2 border-b border-border px-3",
         className,
       )}
     >
@@ -42,6 +43,26 @@ function LayoutHeader({ children, className }: HeaderProps) {
       />
       {children}
     </header>
+  );
+}
+
+type ToolbarProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+// design v3 §1.4: one 40px row under the header; owns height, gutter and gap.
+function LayoutToolbar({ children, className }: ToolbarProps) {
+  return (
+    <div
+      className={cn(
+        "flex h-10 shrink-0 items-center gap-1 border-b border-border px-3",
+        className,
+      )}
+      data-slot="layout-toolbar"
+    >
+      {children}
+    </div>
   );
 }
 
@@ -83,7 +104,7 @@ function Layout({ children, className }: LayoutProps) {
         <AppSidebar />
         <SidebarInset
           className={cn(
-            "flex min-w-0 flex-1 flex-col bg-background md:m-2 md:h-[calc(100svh-1rem)] md:overflow-auto md:rounded-xl md:border md:border-border/80 md:shadow-sm/5",
+            "flex min-w-0 flex-1 flex-col bg-background md:m-2 md:h-[calc(100svh-1rem)] md:overflow-auto md:rounded-lg md:border md:border-border",
             className,
           )}
         >
@@ -97,6 +118,7 @@ function Layout({ children, className }: LayoutProps) {
 }
 
 Layout.Header = LayoutHeader;
+Layout.Toolbar = LayoutToolbar;
 Layout.Content = LayoutContent;
 
 export default Layout;
