@@ -15,7 +15,9 @@ until mkdir ~/ci/.lock 2>/dev/null; do sleep 5; done
 PGDATA=~/ci/pgdata; PGPORT=55432
 cleanup() { pkill -f kaneo-ci-api 2>/dev/null; pkill -f "vite preview" 2>/dev/null; pg_ctl -D $PGDATA -m fast stop >/dev/null 2>&1; rmdir ~/ci/.lock; }
 trap cleanup EXIT
-git fetch -q origin "$REF" && git checkout -q --detach FETCH_HEAD && git clean -qfdx -e node_modules -e '**/node_modules'
+git reset -q --hard && git fetch -q origin "$REF" && git checkout -q --detach FETCH_HEAD && git clean -qfdx -e node_modules -e '**/node_modules'
+# HARNESS=<ref>: overlay tests/ui-render from another ref, to render "before" screens of a ref that predates the harness
+[[ -n ${HARNESS:-} ]] && git fetch -q origin "$HARNESS" && git checkout -q FETCH_HEAD -- tests/ui-render
 SHA=$(git rev-parse --short HEAD)
 R=~/ci/receipts/$SHA; mkdir -p $R; : > $R/summary.txt
 corepack enable pnpm >/dev/null 2>&1 || true
@@ -26,7 +28,7 @@ step() { local name=$1; shift; local t0=$SECONDS
 
 # fresh database per call: drop + recreate keeps runs independent
 pg_up() { local db=$1 user=$2
-  [[ -d $PGDATA ]] || initdb -q -U postgres -A trust -D $PGDATA
+  [[ -d $PGDATA ]] || initdb -U postgres -A trust -D $PGDATA >/dev/null
   pg_ctl -D $PGDATA status >/dev/null 2>&1 || pg_ctl -D $PGDATA -o "-p $PGPORT -k /tmp" -l ~/ci/pg.log -w start >/dev/null
   psql -q -h /tmp -p $PGPORT -U postgres -c "DROP DATABASE IF EXISTS $db WITH (FORCE)" \
     -c "DO \$\$BEGIN CREATE ROLE $user LOGIN SUPERUSER; EXCEPTION WHEN duplicate_object THEN NULL; END\$\$" \
