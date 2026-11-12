@@ -29,7 +29,7 @@ vi.stubGlobal(
 
 // input-otp schedules 2–6s re-measure timers on mount; a late one firing after
 // jsdom teardown throws "window is not defined". Cancel what this file armed.
-const armed = new Set<ReturnType<typeof realSetTimeout>>();
+const cancels: (() => void)[] = [];
 const realSetTimeout = globalThis.setTimeout;
 vi.stubGlobal("setTimeout", ((
   fn: () => void,
@@ -37,11 +37,11 @@ vi.stubGlobal("setTimeout", ((
   ...args: unknown[]
 ) => {
   const id = realSetTimeout(fn, ms, ...args);
-  armed.add(id);
+  cancels.push(() => clearTimeout(id));
   return id;
 }) as typeof setTimeout);
 afterAll(() => {
-  for (const id of armed) clearTimeout(id);
+  for (const cancel of cancels) cancel();
 });
 
 const emailOtp = vi.fn();
