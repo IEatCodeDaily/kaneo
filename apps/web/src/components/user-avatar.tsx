@@ -146,7 +146,12 @@ export function UserAvatar({
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-60 p-0"
+        className={cn(
+          "p-0",
+          variant === "row" && !collapsed
+            ? "w-(--anchor-width) min-w-52"
+            : "w-60",
+        )}
         side={variant === "row" && collapsed ? "right" : "top"}
         align="start"
       >

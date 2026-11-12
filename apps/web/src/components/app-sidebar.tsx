@@ -86,7 +86,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     >
       <SidebarHeader className="pt-1 pb-1.5">
         <div
-          className="flex w-full flex-row items-center gap-1"
+          className={cn(
+            "flex w-full items-center gap-1",
+            isCollapsed ? "flex-col" : "flex-row",
+          )}
           data-testid="sidebar-header"
         >
           <OrgTeamSelector
@@ -169,7 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           }
         >
           <Settings className="size-4" />
-          <span>Settings</span>
+          {!isCollapsed && <span>Settings</span>}
         </button>
         <div
           className={cn("mt-1 flex", isCollapsed && "justify-center")}

@@ -228,13 +228,26 @@ for (const [shot, prefs, act] of [
   const m = await page.evaluate(() => {
     const b = document.querySelector('[aria-label="Open profile menu"]');
     const r = b?.getBoundingClientRect();
+    // rail axis (design v3 §4): centre x of every visible control in the collapsed sidebar
+    const rail = document.querySelector(
+      '[data-state="collapsed"] [data-sidebar="sidebar"]',
+    );
+    const xs = rail
+      ? [...rail.querySelectorAll("button, a")]
+          .map((el) => el.getBoundingClientRect())
+          .filter((q) => q.width > 0 && q.height > 0)
+          .map((q) => Math.round(q.left + q.width / 2))
+      : [];
     return {
       account_trigger: r
         ? `${Math.round(r.width)}x${Math.round(r.height)}`
         : null,
+      rail_axis: xs.length ? [...new Set(xs)].sort((a, b) => a - b) : undefined,
     };
   });
   if (!m.account_trigger) fails.push("account trigger missing");
+  if (m.rail_axis && m.rail_axis.at(-1) - m.rail_axis[0] > 2)
+    fails.push(`rail controls off one axis: centres ${m.rail_axis.join(",")}`);
   await page.screenshot({ path: join(OUT, shot) });
   checks[shot] = { fails, ...m };
   console.log(
