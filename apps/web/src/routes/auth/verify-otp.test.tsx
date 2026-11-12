@@ -6,7 +6,15 @@ import {
   waitFor,
 } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { Route } from "./verify-otp";
 
 // The OTP input measures itself on mount, which jsdom cannot do.
@@ -18,6 +26,23 @@ vi.stubGlobal(
     disconnect() {}
   },
 );
+
+// input-otp schedules 2–6s re-measure timers on mount; a late one firing after
+// jsdom teardown throws "window is not defined". Cancel what this file armed.
+const armed = new Set<ReturnType<typeof setTimeout>>();
+const realSetTimeout = globalThis.setTimeout;
+vi.stubGlobal("setTimeout", ((
+  fn: () => void,
+  ms?: number,
+  ...args: unknown[]
+) => {
+  const id = realSetTimeout(fn, ms, ...args);
+  armed.add(id);
+  return id;
+}) as typeof setTimeout);
+afterAll(() => {
+  for (const id of armed) clearTimeout(id);
+});
 
 const emailOtp = vi.fn();
 const push = vi.fn();
