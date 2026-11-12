@@ -6,9 +6,9 @@ import {
   repoTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
-import { runBoundedSync } from "./repo-sync-flight";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
 import { resolveInstallationId } from "../controllers/manage-github-repo";
+import { runBoundedSync } from "./repo-sync-flight";
 
 /**
  * Mirror a GitHub repository's issues and pull requests into repo_issue /
