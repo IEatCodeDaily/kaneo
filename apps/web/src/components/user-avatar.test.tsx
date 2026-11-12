@@ -69,7 +69,8 @@ describe("UserAvatar sidebar row (design v3 §4)", () => {
     const trigger = screen.getByRole("button", { name: "Open profile menu" });
     expect(trigger).toHaveTextContent("Ada");
     expect(trigger).toHaveTextContent("ada@example.com");
-    expect(trigger.className).toContain("h-10");
+    expect(trigger.className).toContain("min-h-11");
+    expect(trigger.className).toContain("sm:min-h-8");
     fireEvent.click(trigger);
     expect(screen.getByTestId("user-menu-logout")).toBeInTheDocument();
   });
