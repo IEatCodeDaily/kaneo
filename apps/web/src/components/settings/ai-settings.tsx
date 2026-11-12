@@ -82,7 +82,7 @@ export function AiSettings() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h2 className="font-medium">AI chat</h2>
+                <h2 className="font-semibold">AI chat</h2>
                 <span className="rounded-full border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-warning">
                   Alpha
                 </span>
@@ -112,7 +112,7 @@ export function AiSettings() {
 
       <section className="space-y-4 rounded-xl border border-border bg-background p-4">
         <div className="space-y-1">
-          <h2 className="font-medium">Provider</h2>
+          <h2 className="font-semibold">Provider</h2>
           <p className="text-sm text-muted-foreground">
             OpenAI-compatible endpoint. Leave blank to use this instance's
             configured provider. The key is encrypted and never shown again.

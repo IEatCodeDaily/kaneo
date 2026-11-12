@@ -28,7 +28,7 @@ export function PublicKanbanView({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {getColumnIcon(column.id, column.isFinal, column.icon)}
-                      <h3 className="font-medium text-foreground">
+                      <h3 className="font-semibold text-foreground">
                         {column.name}
                       </h3>
                       <span className="text-sm text-muted-foreground">

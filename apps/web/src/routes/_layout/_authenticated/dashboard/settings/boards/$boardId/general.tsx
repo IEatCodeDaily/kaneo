@@ -343,7 +343,7 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-md font-medium">
+            <h2 className="text-md font-semibold">
               {t("settings:boardGeneral.boardInfoTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -541,7 +541,7 @@ function RouteComponent() {
             text inputs. Saves immediately on change via a dedicated mutation. */}
         <div className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-md font-medium">Default Assignee</h2>
+            <h2 className="text-md font-semibold">Default Assignee</h2>
             <p className="text-xs text-muted-foreground">
               New tickets on this board are automatically assigned to this
               member or team when no assignee is chosen manually.
@@ -585,7 +585,7 @@ function RouteComponent() {
         {canDelete && (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-md font-medium">
+              <h2 className="text-md font-semibold">
                 {t("settings:boardGeneral.dangerZone")}
               </h2>
               <p className="text-xs text-muted-foreground">

@@ -191,7 +191,7 @@ function TimelineTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("font-medium text-sm", className)}
+      className={cn("font-semibold text-sm", className)}
       data-slot="timeline-title"
       {...props}
     />

@@ -61,7 +61,7 @@ export function RepoDescriptionEditor({
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-medium">Description</h3>
+          <h3 className="text-sm font-semibold">Description</h3>
           <Button onClick={startEditing} size="sm" variant="outline">
             Edit
           </Button>
@@ -79,7 +79,7 @@ export function RepoDescriptionEditor({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium">Description</h3>
+      <h3 className="text-sm font-semibold">Description</h3>
       <CommentEditor
         autoFocus
         onCancelShortcut={cancel}

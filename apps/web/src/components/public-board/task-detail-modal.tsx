@@ -172,7 +172,7 @@ export function PublicTaskDetailModal({
 
             {labels.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("publicBoard:taskDetail.labels")}
                 </h3>
                 <PublicTaskLabels labels={labels} />
@@ -181,7 +181,7 @@ export function PublicTaskDetailModal({
 
             {externalLinks.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("publicBoard:taskDetail.externalLinks")}
                 </h3>
 

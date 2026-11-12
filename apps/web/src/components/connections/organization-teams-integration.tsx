@@ -62,7 +62,7 @@ export function OrganizationTeamsIntegration() {
           </span>
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-medium">Microsoft Teams</h2>
+              <h2 className="font-semibold">Microsoft Teams</h2>
               <Badge variant={available ? "success" : "secondary"} size="sm">
                 {t(
                   available

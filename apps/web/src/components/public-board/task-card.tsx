@@ -95,7 +95,7 @@ export function PublicTaskCard({
 
       <div className="mb-3">
         <h3
-          className="font-medium text-foreground text-sm leading-relaxed overflow-hidden break-words"
+          className="font-semibold text-foreground text-sm leading-relaxed overflow-hidden break-words"
           style={{
             display: "-webkit-box",
             WebkitLineClamp: 3,

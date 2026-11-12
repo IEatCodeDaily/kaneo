@@ -52,7 +52,7 @@ export default function WorkflowEditor({ boardId }: WorkflowEditorProps) {
   ) => (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h3 className="text-sm font-medium">
+        <h3 className="text-sm font-semibold">
           {t(`settings:workflowEditor.${headingKey}`)}
         </h3>
         <p className="text-xs text-muted-foreground">

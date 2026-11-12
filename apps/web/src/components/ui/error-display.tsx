@@ -61,7 +61,7 @@ export function ErrorDisplay({
         <CardContent className="space-y-4">
           {troubleshootingSteps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-foreground">
+              <h4 className="text-sm font-semibold text-foreground">
                 {t("common:error.troubleshooting")}
               </h4>
               <ul className="text-xs text-muted-foreground space-y-1">

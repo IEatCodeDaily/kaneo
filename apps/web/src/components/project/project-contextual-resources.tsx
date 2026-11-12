@@ -41,7 +41,7 @@ export function ProjectContextualResources({
   return (
     <section data-testid="project-contextual-resources">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-muted-foreground">
+        <h2 className="text-sm font-semibold text-muted-foreground">
           {t("projects:resources.title")}
         </h2>
         {canEdit && (

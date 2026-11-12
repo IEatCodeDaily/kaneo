@@ -142,7 +142,7 @@ export default function BoardPropertiesPanel({
         className="flex flex-col gap-2"
         data-testid="board-properties-members"
       >
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+        <h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
           {t("organization:boards.properties.members")}
         </h3>
         {members.length === 0 ? (

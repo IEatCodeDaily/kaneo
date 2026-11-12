@@ -84,7 +84,7 @@ export function TrashPage({ organizationId }: { organizationId: string }) {
       <PageTitle title={t("trash:title")} />
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border/80 px-4 py-3">
-          <h1 className="font-medium text-sm">{t("trash:title")}</h1>
+          <h1 className="font-semibold text-sm">{t("trash:title")}</h1>
           <span className="ml-auto text-muted-foreground text-xs">
             {t("trash:count", { count: tasks.length })}
           </span>
@@ -101,7 +101,7 @@ export function TrashPage({ organizationId }: { organizationId: string }) {
             <div className="flex flex-col gap-4">
               {Array.from(groups.entries()).map(([boardId, group]) => (
                 <section className="flex flex-col gap-1.5" key={boardId}>
-                  <h2 className="font-medium text-muted-foreground text-xs uppercase">
+                  <h2 className="font-semibold text-muted-foreground text-xs uppercase">
                     {group.name}
                   </h2>
                   <ul className="flex flex-col divide-y divide-border/60 rounded-md border border-border/80">

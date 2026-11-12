@@ -123,7 +123,7 @@ function ChannelCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="font-medium">{title}</h3>
+          <h3 className="font-semibold">{title}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         {headerRight}
@@ -584,7 +584,7 @@ export function NotificationPreferencesSettings() {
     <div className="space-y-8">
       <div className="flex flex-col gap-5 rounded-md border bg-sidebar p-4">
         <div className="flex flex-col gap-1">
-          <h2 className="font-medium">
+          <h2 className="font-semibold">
             {t("settings:notificationsPage.eventPreferencesTitle")}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -1188,7 +1188,7 @@ export function NotificationPreferencesSettings() {
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <h3 className="font-medium">
+          <h3 className="font-semibold">
             {t("settings:notificationsPage.organizationRulesTitle")}
           </h3>
           <p className="text-sm text-muted-foreground">

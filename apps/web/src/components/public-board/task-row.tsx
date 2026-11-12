@@ -41,7 +41,7 @@ export function PublicTaskRow({
           {boardSlug}-{task.number}
         </div>
         <div className="flex flex-col gap-1 flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-foreground truncate">
+          <h3 className="text-sm font-semibold text-foreground truncate">
             {task.title}
           </h3>
           {labels.length > 0 && <PublicTaskLabels labels={labels} />}

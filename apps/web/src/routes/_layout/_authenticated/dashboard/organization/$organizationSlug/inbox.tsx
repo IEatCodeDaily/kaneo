@@ -226,7 +226,7 @@ export function InboxComponent() {
       <PageTitle title={t("inbox:title")} />
       <div className="flex h-full flex-col overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-border/80 px-4 py-3">
-          <h1 className="font-medium text-sm">{t("inbox:title")}</h1>
+          <h1 className="font-semibold text-sm">{t("inbox:title")}</h1>
           <span className="text-muted-foreground text-xs tabular-nums">
             {isFiltered
               ? t("inbox:shownOfLoaded", {

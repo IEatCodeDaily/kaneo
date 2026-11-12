@@ -263,7 +263,7 @@ function RouteComponent() {
         <div className="space-y-6">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-md font-medium">
+              <h2 className="text-md font-semibold">
                 {t("settings:organizationRoles.sectionTitle")}
               </h2>
               <p className="text-xs text-muted-foreground">
