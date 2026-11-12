@@ -36,7 +36,7 @@ function ListNestHint() {
                 "inline-flex max-w-[20rem] items-center gap-1.5 rounded border border-transparent px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors",
                 armed && "border-ring/40 bg-accent/60 text-foreground",
                 preview?.valid &&
-                  "border-primary/60 bg-primary/10 text-primary",
+                  "border-primary/60 bg-primary/10 text-primary-soft-foreground",
                 preview &&
                   !preview.valid &&
                   "border-destructive/50 bg-destructive/10 text-destructive",

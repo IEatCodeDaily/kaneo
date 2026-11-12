@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -86,5 +86,31 @@ describe("design v3 tokens", () => {
     expect(theme).toContain("--radius-sm: 4px;");
     expect(theme).toContain("--radius-md: 6px;");
     expect(theme).toContain("--radius-lg: 10px;");
+  });
+
+  // #5e6ad2 as text is 3.81:1 on the dark card, under the 4.5:1 floor; accent-coloured
+  // text must use text-primary-soft-foreground (6.7:1 light, 9.0:1 dark).
+  it("uses no bare text-primary in app source", () => {
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (
+          /\.tsx?$/.test(entry.name) &&
+          !/\.test\.tsx?$/.test(entry.name)
+        ) {
+          if (
+            /(?<![\w:-])(?:[\w-]+:)*text-primary(?![\w/-])/.test(
+              readFileSync(full, "utf8"),
+            )
+          )
+            offenders.push(path.relative(srcRoot, full));
+        }
+      }
+    };
+    const srcRoot = path.resolve(__dirname, "..");
+    walk(srcRoot);
+    expect(offenders).toEqual([]);
   });
 });

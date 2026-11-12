@@ -108,7 +108,7 @@ export function ProfileSetupFlow() {
       <div className="bg-card/50 backdrop-blur-xl rounded-xl border border-border/50 p-6 shadow-xl shadow-background/20">
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="h-6 w-6 text-primary" />
+            <User className="h-6 w-6 text-primary-soft-foreground" />
           </div>
           <h1 className="text-xl font-semibold text-foreground mb-2">
             {t("auth:profileSetup.completeTitle")}

@@ -181,7 +181,7 @@ function ProviderButton({
         {isLoading ? loadingLabel : label}
       </Button>
       {isLastUsed && (
-        <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary font-medium bg-sidebar border border-primary/50">
+        <span className="absolute rounded-md -top-3 right-1 px-1.5 text-xs text-primary-soft-foreground font-medium bg-sidebar border border-primary/50">
           {t("auth:signIn.lastUsed")}
         </span>
       )}

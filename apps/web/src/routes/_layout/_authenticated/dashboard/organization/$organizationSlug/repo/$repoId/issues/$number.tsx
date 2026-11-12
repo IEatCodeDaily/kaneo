@@ -85,7 +85,7 @@ function RouteComponent() {
                   <span>{formatDateMedium(issue.externalCreatedAt)}</span>
                 )}
                 <a
-                  className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  className="ml-auto inline-flex items-center gap-1 text-xs text-primary-soft-foreground hover:underline"
                   href={issue.url}
                   rel="noreferrer"
                   target="_blank"

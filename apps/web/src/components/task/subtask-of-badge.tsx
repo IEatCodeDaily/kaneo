@@ -38,7 +38,7 @@ export default function SubtaskOfBadge({
       <CornerDownRight className="size-3 shrink-0" />
       Subtask of{" "}
       <Link
-        className="shrink-0 font-medium hover:text-primary hover:underline"
+        className="shrink-0 font-medium hover:text-primary-soft-foreground hover:underline"
         onClick={(event) => event.stopPropagation()}
         params={{
           organizationSlug: organizationId,

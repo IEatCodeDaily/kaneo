@@ -66,7 +66,7 @@ export default function CreateDashboardModal({
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
       <DialogContent className="max-w-md">
         <DialogHeader className="gap-2">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary-soft-foreground">
             <ChartPie className="size-5" />
           </div>
           <DialogTitle>{t("navigation:dashboards.createTitle")}</DialogTitle>

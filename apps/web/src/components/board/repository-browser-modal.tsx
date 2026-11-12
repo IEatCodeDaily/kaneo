@@ -260,7 +260,7 @@ export function RepositoryBrowserModal({
 
                         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                           {selectedRepository === repository.full_name && (
-                            <Check className="w-4 h-4 text-primary" />
+                            <Check className="w-4 h-4 text-primary-soft-foreground" />
                           )}
                           <Button
                             variant="ghost"

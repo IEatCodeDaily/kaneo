@@ -44,7 +44,9 @@ export default function CircularProgress({
           strokeDashoffset={offset}
           strokeLinecap="round"
           className={
-            completed === total ? "text-success-foreground" : "text-primary"
+            completed === total
+              ? "text-success-foreground"
+              : "text-primary-soft-foreground"
           }
           style={{ transition: "stroke-dashoffset 0.4s ease" }}
         />

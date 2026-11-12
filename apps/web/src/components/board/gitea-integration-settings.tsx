@@ -508,7 +508,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
                     href={repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 transition-colors"
+                    className="text-primary-soft-foreground hover:text-primary/80 transition-colors"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </a>

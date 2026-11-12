@@ -857,7 +857,7 @@ export default function BoardsTimeline({
                                         title={`${task.title} · ${format(taskStart, "MMM d")}${taskEnd > taskStart ? ` → ${format(taskEnd, "MMM d, yyyy")}` : ""}`}
                                       >
                                         {taskSpan > 2 && (
-                                          <span className="truncate text-[10px] font-medium text-primary">
+                                          <span className="truncate text-[10px] font-medium text-primary-soft-foreground">
                                             {format(taskStart, "MMM d")}
                                             {taskEnd > taskStart
                                               ? ` – ${format(taskEnd, "MMM d")}`

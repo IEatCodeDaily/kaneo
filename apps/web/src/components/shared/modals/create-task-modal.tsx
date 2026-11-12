@@ -1684,7 +1684,7 @@ function CreateTaskModal({
                     type="checkbox"
                     checked={createMore}
                     onChange={(e) => setCreateMore(e.target.checked)}
-                    className="rounded border-border bg-background text-primary focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
+                    className="rounded border-border bg-background text-primary-soft-foreground focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
                   />
                   {t("common:modals.createTask.createMore")}
                 </label>

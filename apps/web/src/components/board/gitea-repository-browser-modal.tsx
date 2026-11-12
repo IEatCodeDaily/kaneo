@@ -156,7 +156,7 @@ export function GiteaRepositoryBrowserModal({
                       href={repo.html_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-md p-2 text-primary hover:bg-muted/80 transition-colors"
+                      className="rounded-md p-2 text-primary-soft-foreground hover:bg-muted/80 transition-colors"
                     >
                       <ExternalLink className="size-3.5" />
                     </a>

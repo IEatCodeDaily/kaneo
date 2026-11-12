@@ -224,7 +224,7 @@ function FieldHeader({
         aria-label={sortTitle}
         className={cn(
           "shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent",
-          sorted && "text-primary",
+          sorted && "text-primary-soft-foreground",
         )}
         onClick={() => onSortChange(field.id)}
       >
@@ -1019,7 +1019,7 @@ export function DataTableGrid({ table, organizationId, canEdit }: Props) {
                 {allRows.length < table.total && (
                   <button
                     type="button"
-                    className="font-medium text-primary hover:underline disabled:opacity-60"
+                    className="font-medium text-primary-soft-foreground hover:underline disabled:opacity-60"
                     disabled={loadingMore}
                     onClick={async () => {
                       setLoadingMore(true);
@@ -1080,7 +1080,7 @@ export function DataTableGrid({ table, organizationId, canEdit }: Props) {
                       <>
                         <button
                           type="button"
-                          className="flex items-center gap-1 font-medium text-primary hover:underline"
+                          className="flex items-center gap-1 font-medium text-primary-soft-foreground hover:underline"
                           onClick={addRow}
                         >
                           <Plus className="size-3.5" />

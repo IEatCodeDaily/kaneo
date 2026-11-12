@@ -150,7 +150,7 @@ function UserHoverName({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <span className="cursor-pointer font-medium text-foreground transition-colors hover:text-primary">
+        <span className="cursor-pointer font-medium text-foreground transition-colors hover:text-primary-soft-foreground">
           {user.user.name}
         </span>
       </HoverCardTrigger>

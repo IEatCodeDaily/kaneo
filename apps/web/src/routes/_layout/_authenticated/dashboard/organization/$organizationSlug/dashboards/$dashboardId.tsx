@@ -180,7 +180,7 @@ function DashboardDetailRoute() {
       <div className="flex h-full min-h-0 flex-col gap-5 overflow-y-auto p-4 sm:p-6">
         <PageTitle title={dashboard.name} hideAppName />
         <header className="flex shrink-0 items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary-soft-foreground">
             <ChartPie className="size-5" />
           </div>
           <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold tracking-tight">
@@ -241,7 +241,7 @@ function DashboardDetailRoute() {
         {panels.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/20 p-8 text-center">
             <div>
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-soft-foreground">
                 <ChartPie className="size-6" />
               </div>
               <h2 className="font-semibold">
