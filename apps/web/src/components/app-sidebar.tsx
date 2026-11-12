@@ -39,13 +39,14 @@ function ResourceNavigation() {
   );
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { toggleSidebar, state } = useSidebar();
+  const { toggleSidebar, state, isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"work" | "resources">("work");
   const [createOpen, setCreateOpen] = useState(false);
   const [organizationMenuOpen, setOrganizationMenuOpen] = useState(false);
-  const isCollapsed = state === "collapsed";
+  // On mobile the sheet is always expanded; `state` tracks the desktop preference.
+  const isCollapsed = state === "collapsed" && !isMobile;
   const workEnabled = Boolean(
     (
       organization as

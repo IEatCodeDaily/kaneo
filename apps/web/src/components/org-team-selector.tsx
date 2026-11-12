@@ -73,8 +73,9 @@ export function OrgTeamSelector({
   onAddOrganization: () => void;
 }) {
   const { t } = useTranslation();
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // On mobile the sheet is always expanded; `state` tracks the desktop preference.
+  const collapsed = state === "collapsed" && !isMobile;
   const { data: organization } = useActiveOrganization();
   const { data: organizations } = useGetOrganizations();
   const navigate = useNavigate();
@@ -180,6 +181,7 @@ export function OrgTeamSelector({
             )}
             size="default"
             tooltip={organization?.name ?? ""}
+            aria-label={organization?.name}
           />
         }
       >

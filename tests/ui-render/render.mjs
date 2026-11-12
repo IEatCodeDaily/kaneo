@@ -177,6 +177,8 @@ for (const [theme, tag, viewport, scale] of [
     });
     if (m.dark !== (theme === "dark"))
       fails.push(`theme not applied (dark=${m.dark})`);
+    if (m.header_h !== null && m.header_h !== 44)
+      fails.push(`header ${m.header_h}px, want 44`);
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m, url: page.url() };

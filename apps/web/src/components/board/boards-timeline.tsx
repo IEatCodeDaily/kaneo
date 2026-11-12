@@ -742,7 +742,7 @@ export default function BoardsTimeline({
                                       title={`${sectionLabel} · ${format(sectionStart, "MMM d")}${sectionEnd > sectionStart ? ` → ${format(sectionEnd, "MMM d, yyyy")}` : ""}`}
                                     >
                                       {sectionSpan > 3 && (
-                                        <span className="truncate px-1.5 text-[10px] font-medium text-primary/80">
+                                        <span className="truncate px-1.5 text-[10px] font-medium text-primary-soft-foreground">
                                           {format(sectionStart, "MMM d")}
                                           {sectionEnd > sectionStart
                                             ? ` – ${format(sectionEnd, "MMM d")}`

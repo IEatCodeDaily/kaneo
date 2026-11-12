@@ -101,7 +101,11 @@ describe("design v3 tokens", () => {
           !/\.test\.tsx?$/.test(entry.name)
         ) {
           if (
-            /(?<![\w:-])(?:[\w-]+:)*text-primary(?![\w/-])/.test(
+            // text-primary as accent text keeps 3.81:1 on the dark card. Catch
+            // bare, opacity-twin (`text-primary/80`) and arbitrary-variant
+            // (`]:text-primary`) forms; `-soft-foreground`/`-foreground` pass
+            // via the `(?!-)` guard.
+            /(?<![\w-])text-primary(?!-)(?:\/[\d.]+)?(?![\w-])/.test(
               readFileSync(full, "utf8"),
             )
           )

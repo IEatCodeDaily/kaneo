@@ -314,7 +314,7 @@ export function GitHubIntegrationSettings({ boardId }: { boardId: string }) {
                   href={`https://github.com/${integration.repositoryOwner}/${integration.repositoryName}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary-soft-foreground hover:text-primary/80 transition-colors"
+                  className="text-primary-soft-foreground hover:text-primary-soft-foreground/80 transition-colors"
                 >
                   <ExternalLink className="w-3 h-3" />
                 </a>

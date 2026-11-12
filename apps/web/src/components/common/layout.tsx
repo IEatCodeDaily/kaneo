@@ -97,7 +97,6 @@ function Layout({ children, className }: LayoutProps) {
         style={
           {
             "--sidebar-width": sidebarWidth ?? "calc(var(--spacing) * 60)",
-            "--header-height": "calc(var(--spacing) * 12)",
           } as React.CSSProperties
         }
       >
