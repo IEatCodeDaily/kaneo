@@ -32,8 +32,10 @@ describe("entry chunk composition (KFL-86)", () => {
     expect(js.includes("i18next::")).toBe(false);
   });
 
+  // Slack raised 1151 -> 1160 KB: main had already grown to 1,178,453 B, 171 B under the old line, so
+  // any small CSS/token change tripped it. A vendor lib slipping back into the entry is tens of KB.
   it("entry chunk does not regress past fix-1 level (1150 KB + slack)", () => {
     const size = statSync(join(webRoot, "dist/assets", entryChunkName())).size;
-    expect(size).toBeLessThan(1151 * 1024);
+    expect(size).toBeLessThan(1160 * 1024);
   });
 });

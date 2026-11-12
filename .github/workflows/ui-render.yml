@@ -68,12 +68,16 @@ jobs:
             -e AUTH_SECRET=render-secret-with-at-least-32-characters \
             -e KANEO_API_URL=http://localhost:5173/api -e KANEO_CLIENT_URL=http://localhost:5173 \
             -e DISABLE_GUEST_ACCESS=true kaneo:render
-      - uses: actions/setup-python@v5
+      - uses: pnpm/action-setup@v6
         with:
-          python-version: "3.12"
-      - run: pip install playwright==1.49.1 && python -m playwright install --with-deps chromium
+          version: 10.32.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20.20.2
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
       - name: Seed and render
-        run: python3 tests/ui-render/render.py
+        run: node tests/ui-render/render.mjs
         env:
           OUT: shots
       - if: always()
