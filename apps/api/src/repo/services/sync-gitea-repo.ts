@@ -242,15 +242,39 @@ export async function syncGiteaRepo(repoId: string): Promise<{
   return { issues: issueCount, pullRequests: prCount };
 }
 
-export async function syncRepo(repoId: string) {
-  const repo = await db.query.repoTable.findFirst({
-    where: eq(repoTable.id, repoId),
-  });
-  if (!repo) throw new Error("Repo not found");
+const syncsInFlight = new Map<
+  string,
+  Promise<{ issues: number; pullRequests: number }>
+>();
 
-  if (repo.provider === "gitea") {
-    return syncGiteaRepo(repoId);
-  }
-  const { syncGitHubRepo } = await import("./sync-github-repo");
-  return syncGitHubRepo(repoId);
+/**
+ * Run at most one full mirror sync per repo at a time. Webhook bursts (and
+ * the manual resync button) used to stack concurrent full paginations of
+ * the same repo in memory until the heap OOM'd (IT-54); callers arriving
+ * while a sync is running share it instead.
+ */
+export function syncRepo(repoId: string) {
+  const existing = syncsInFlight.get(repoId);
+  if (existing) return existing;
+  const run = (async () => {
+    const repo = await db.query.repoTable.findFirst({
+      where: eq(repoTable.id, repoId),
+    });
+    if (!repo) throw new Error("Repo not found");
+
+    if (repo.provider === "gitea") {
+      return syncGiteaRepo(repoId);
+    }
+    const { syncGitHubRepo } = await import("./sync-github-repo");
+    return syncGitHubRepo(repoId);
+  })();
+  syncsInFlight.set(repoId, run);
+  // Keep the map clean without introducing unhandled rejections: the
+  // caller owns `run`'s rejection, this chain only observes it.
+  run
+    .finally(() => {
+      if (syncsInFlight.get(repoId) === run) syncsInFlight.delete(repoId);
+    })
+    .catch(() => {});
+  return run;
 }
