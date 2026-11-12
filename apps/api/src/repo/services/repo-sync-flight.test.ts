@@ -26,10 +26,12 @@ describe("runBoundedSync", () => {
   });
 
   it("starts a fresh sync after the previous one settles with no joiners", async () => {
-    const run = vi.fn(async (): Promise<Result> => ({
-      issues: 0,
-      pullRequests: 0,
-    }));
+    const run = vi.fn(
+      async (): Promise<Result> => ({
+        issues: 0,
+        pullRequests: 0,
+      }),
+    );
     await expect(runBoundedSync("repo-fresh", run)).resolves.toEqual({
       issues: 0,
       pullRequests: 0,
@@ -47,10 +49,12 @@ describe("runBoundedSync", () => {
     });
     await expect(runBoundedSync("repo-fail", failing)).rejects.toThrow("boom");
 
-    const ok = vi.fn(async (): Promise<Result> => ({
-      issues: 3,
-      pullRequests: 4,
-    }));
+    const ok = vi.fn(
+      async (): Promise<Result> => ({
+        issues: 3,
+        pullRequests: 4,
+      }),
+    );
     await expect(runBoundedSync("repo-fail", ok)).resolves.toEqual({
       issues: 3,
       pullRequests: 4,
@@ -77,10 +81,12 @@ describe("runBoundedSync", () => {
           releaseA = resolve;
         }),
     );
-    const runB = vi.fn(async (): Promise<Result> => ({
-      issues: 2,
-      pullRequests: 2,
-    }));
+    const runB = vi.fn(
+      async (): Promise<Result> => ({
+        issues: 2,
+        pullRequests: 2,
+      }),
+    );
 
     const a = runBoundedSync("repo-a", runA);
     const b = runBoundedSync("repo-b", runB);
