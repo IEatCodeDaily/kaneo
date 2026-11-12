@@ -128,7 +128,10 @@ export function DataTableToolbar(props: Props) {
     canEdit,
     rowsInView,
   } = props;
-  const hiddenCount = fields.filter((f) => hidden.includes(f.id)).length;
+  // The primary field is always visible, so it never counts as hidden.
+  const hiddenCount = fields.filter(
+    (f, i) => i > 0 && hidden.includes(f.id),
+  ).length;
   // Draft rows without a value don't narrow anything, so they don't count.
   const activeCount = filters.filter(filterIsActive).length;
   const sortField = sort ? fields.find((f) => f.id === sort.fieldId) : null;
@@ -162,7 +165,7 @@ export function DataTableToolbar(props: Props) {
             {fields.map((field, index) => {
               // The first field names the row; it can't be hidden.
               const locked = index === 0;
-              const visible = !hidden.includes(field.id);
+              const visible = locked || !hidden.includes(field.id);
               return (
                 <div
                   key={field.id}
@@ -625,6 +628,7 @@ function FilterValue({
           { id: "false", label: t("navigation:dashboards.no") },
         ]
       : [
+          { id: "__any__", label: t("navigation:tables.anyValue") },
           { id: "__empty__", label: t("navigation:tables.unassigned") },
           ...(field.type === "user"
             ? Array.from(members.entries()).map(([id, m]) => ({
@@ -641,7 +645,7 @@ function FilterValue({
     <Select
       value={value || null}
       onValueChange={(next) => {
-        const v = String(next ?? "");
+        const v = next === "__any__" ? "" : String(next ?? "");
         onChange(
           "checked" in filter
             ? { ...filter, checked: v === "true" || v === "false" ? v : "any" }

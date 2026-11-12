@@ -269,6 +269,7 @@ function DataTableRoute() {
           }
         >
           <DataTableGrid
+            key={table.id}
             table={table}
             organizationId={organizationId}
             canEdit={canEdit && !isDeleted}

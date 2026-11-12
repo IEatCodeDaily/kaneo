@@ -443,7 +443,7 @@ export function DataTableGrid({
   }, [memberRows]);
 
   const exportCsv = () => {
-    const csv = csvSerialize(fields, visibleRows, choicesById, memberByName);
+    const csv = csvSerialize(allFields, visibleRows, choicesById, memberByName);
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -551,6 +551,7 @@ export function DataTableGrid({
         tableId: table.id,
         fieldId: field.id,
       });
+      setFilters((current) => current.filter((f) => f.fieldId !== field.id));
     } catch {
       toast.error(t("navigation:tables.deleteFieldError"));
     }
@@ -675,11 +676,10 @@ export function DataTableGrid({
           </Empty>
         ) : (
           <div
-            role="grid"
-            aria-rowcount={visibleRows.length}
             className="flex min-h-full flex-col"
             style={{ minWidth: totalWidth }}
           >
+            <div role="grid" aria-rowcount={visibleRows.length + 1}>
             <div
               role="row"
               className="sticky top-0 z-20 grid bg-background"
@@ -850,6 +850,7 @@ export function DataTableGrid({
                 })}
               </div>
             )}
+            </div>
 
             {canEdit && visibleRows.length > 0 && (
               <button
