@@ -175,7 +175,8 @@ export function OrgTeamSelector({
               // h-auto at both breakpoints: the size variant's h-11/md:h-7
               // otherwise clips the second (team) row.
               "h-auto md:h-auto min-w-0 flex-1 flex-col items-stretch gap-0.5 rounded-md px-2 py-1 text-sidebar-foreground",
-              collapsed && "items-center px-0 py-0",
+              // rail: header stacks vertically, so flex-1 would shrink the trigger to its padding
+              collapsed && "flex-none items-center px-0 py-0",
             )}
             size="default"
             tooltip={organization?.name ?? ""}
