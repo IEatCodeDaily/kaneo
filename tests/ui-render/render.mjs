@@ -186,6 +186,62 @@ for (const [theme, tag, viewport, scale] of [
     await ctx.close();
   }
 }
+
+// Interaction states on the table page (dark desktop): account menu open, collapsed rail.
+for (const [shot, prefs, act] of [
+  [
+    "account-menu--desktop-dark.png",
+    {},
+    async (page) => {
+      await page.getByRole("button", { name: "Open profile menu" }).click();
+      await page.waitForTimeout(400);
+    },
+  ],
+  ["rail--desktop-dark.png", { sidebarDefaultOpen: false }, async () => {}],
+]) {
+  const ctx = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    storageState: state,
+    reducedMotion: "reduce",
+    colorScheme: "dark",
+  });
+  await ctx.addInitScript((p) => {
+    const k = "user-preferences";
+    const cur = JSON.parse(
+      localStorage.getItem(k) ?? '{"state":{},"version":0}',
+    );
+    cur.state = { ...cur.state, theme: "dark", ...p };
+    localStorage.setItem(k, JSON.stringify(cur));
+  }, prefs);
+  const page = await ctx.newPage();
+  const fails = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  await page.goto(BASE + (pages.table ?? Object.values(pages)[0]), {
+    waitUntil: "networkidle",
+  });
+  await page.waitForTimeout(1200);
+  try {
+    await act(page);
+  } catch (e) {
+    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+  }
+  const m = await page.evaluate(() => {
+    const b = document.querySelector('[aria-label="Open profile menu"]');
+    const r = b?.getBoundingClientRect();
+    return {
+      account_trigger: r
+        ? `${Math.round(r.width)}x${Math.round(r.height)}`
+        : null,
+    };
+  });
+  if (!m.account_trigger) fails.push("account trigger missing");
+  await page.screenshot({ path: join(OUT, shot) });
+  checks[shot] = { fails, ...m };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+  );
+  await ctx.close();
+}
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
 const bad = Object.values(checks).reduce((n, c) => n + c.fails.length, 0);

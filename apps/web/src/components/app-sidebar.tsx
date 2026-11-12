@@ -171,8 +171,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <Settings className="size-4" />
           <span>Settings</span>
         </button>
-        <div className="flex items-center gap-1" data-testid="sidebar-footer">
-          {!isCollapsed && <UserAvatar />}
+        <div
+          className={cn("mt-1 flex", isCollapsed && "justify-center")}
+          data-testid="sidebar-footer"
+        >
+          <UserAvatar variant="row" collapsed={isCollapsed} />
         </div>
       </SidebarFooter>
       <CreateOrganizationModal

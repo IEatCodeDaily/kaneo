@@ -1,6 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Keyboard, LogOut, Mail, Shield, Trash2 } from "lucide-react";
+import {
+  ChevronsUpDown,
+  Keyboard,
+  LogOut,
+  Mail,
+  Shield,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { openKeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
@@ -25,7 +32,19 @@ import { getInitials } from "@/lib/get-initials";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
 
-export function UserAvatar() {
+/**
+ * Account menu trigger.
+ * - "row" (sidebar, design v3 §4): 40px row with 20px avatar, name, email and chevrons;
+ *   `collapsed` shrinks it to the avatar in a 28px square so the menu stays reachable on the rail.
+ * - "avatar" (mobile FAB): the round avatar button.
+ */
+export function UserAvatar({
+  variant = "avatar",
+  collapsed = false,
+}: {
+  variant?: "avatar" | "row";
+  collapsed?: boolean;
+} = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: config } = useGetConfig();
@@ -63,30 +82,74 @@ export function UserAvatar() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          aria-label="Open profile menu"
-          variant="ghost"
-          size="icon"
-          className="size-11 rounded-full p-0 hover:bg-sidebar-accent/70 sm:size-8"
-        >
-          {/* The tone tints initials only; behind a real picture it leaked
-              through transparent avatars as a halo (dark mode report). */}
-          <Avatar className={`h-8 w-8 ${user.image ? "" : tone}`}>
-            {user.image ? (
-              <AvatarImage src={user.image} alt={user.name || ""} />
-            ) : null}
-            <AvatarFallback
-              className={cn(
-                "text-xs font-medium border border-border/30",
-                user.image ? "bg-transparent" : tone,
-              )}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+        {variant === "row" ? (
+          <button
+            type="button"
+            aria-label="Open profile menu"
+            className={cn(
+              "flex w-full min-w-0 cursor-pointer items-center rounded-md text-left outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-popup-open:bg-sidebar-accent",
+              collapsed ? "size-7 justify-center" : "h-10 gap-1.5 px-1",
+            )}
+          >
+            <Avatar className={cn("size-5 shrink-0", !user.image && tone)}>
+              {user.image ? (
+                <AvatarImage src={user.image} alt={user.name || ""} />
+              ) : null}
+              <AvatarFallback
+                className={cn(
+                  "text-[10px] font-medium",
+                  user.image ? "bg-transparent" : tone,
+                )}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <>
+                <span className="grid min-w-0 flex-1 leading-tight">
+                  <span className="truncate text-ui font-medium text-sidebar-foreground">
+                    {user.name || t("navigation:userMenu.unnamedUser")}
+                  </span>
+                  {user.email && (
+                    <span className="truncate text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
+                  )}
+                </span>
+                <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+              </>
+            )}
+          </button>
+        ) : (
+          <Button
+            aria-label="Open profile menu"
+            variant="ghost"
+            size="icon"
+            className="size-11 rounded-full p-0 hover:bg-sidebar-accent/70 sm:size-8"
+          >
+            {/* The tone tints initials only; behind a real picture it leaked
+                through transparent avatars as a halo (dark mode report). */}
+            <Avatar className={`h-8 w-8 ${user.image ? "" : tone}`}>
+              {user.image ? (
+                <AvatarImage src={user.image} alt={user.name || ""} />
+              ) : null}
+              <AvatarFallback
+                className={cn(
+                  "text-xs font-medium border border-border/30",
+                  user.image ? "bg-transparent" : tone,
+                )}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-52 p-0" side="bottom" align="start">
+      <DropdownMenuContent
+        className="w-60 p-0"
+        side={variant === "row" && collapsed ? "right" : "top"}
+        align="start"
+      >
         <div className="px-2.5 py-2">
           <div className="flex items-center gap-2 text-left text-sm">
             <Avatar
