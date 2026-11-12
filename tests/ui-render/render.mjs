@@ -37,6 +37,11 @@ async function seed(api) {
     password: "render-password-123",
     name: "Ayu Saraswati",
   });
+  // the first user is promoted to admin after insert; sign in again so the session carries the role
+  await post("/auth/sign-in/email", {
+    email: "render@local.test",
+    password: "render-password-123",
+  });
   const org = await post("/auth/organization/create", {
     name: "Noovoleum",
     slug: "noov",

@@ -47,7 +47,8 @@ for s in $STEPS; do case $s in
       DATABASE_URL=postgresql://postgres@localhost:$PGPORT/kaneo_test pnpm test:integration' ;;
   render)
     step pw 'pnpm exec playwright install chromium'
-    step render-build 'pnpm build'
+    # prod build bakes KANEO_API_URL placeholders (the docker entrypoint swaps them); set real URLs instead
+    step render-build 'VITE_API_URL=/api VITE_CLIENT_URL=http://localhost:5173 pnpm build'
     step render 'pg_up kaneo kaneo && cd apps/api && \
       (exec -a kaneo-ci-api env DATABASE_URL=postgresql://kaneo@localhost:$PGPORT/kaneo AUTH_SECRET=render-secret-with-at-least-32-characters \
         KANEO_API_URL=http://localhost:5173/api KANEO_CLIENT_URL=http://localhost:5173 node dist/index.js > $R/api.log 2>&1 &) && \
