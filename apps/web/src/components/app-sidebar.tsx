@@ -84,7 +84,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="border-none pt-1.5"
       {...props}
     >
-      <SidebarHeader className="pt-1 pb-1.5">
+      <SidebarHeader
+        className={cn("pt-1 pb-1.5", isCollapsed && "items-center px-0")}
+      >
         <div
           className={cn(
             "flex w-full items-center gap-1",
@@ -148,11 +150,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {workEnabled && mode === "work" ? <NavWork /> : <ResourceNavigation />}
       </SidebarContent>
       {/* Tighter footer: the two identity actions sit close together. */}
-      <SidebarFooter className="gap-0 px-1 pb-1">
+      <SidebarFooter
+        className={cn("gap-0 px-1 pb-1", isCollapsed && "items-center px-0")}
+      >
         <button
           type="button"
           aria-label="Members"
-          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
+          className={cn(
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            isCollapsed
+              ? "size-7 justify-center"
+              : "min-h-11 w-full px-2 sm:min-h-8",
+          )}
           onClick={() =>
             organization &&
             navigate({
@@ -166,7 +175,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <button
           type="button"
           aria-label="Settings"
-          className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 sm:min-h-8"
+          className={cn(
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            isCollapsed
+              ? "size-7 justify-center"
+              : "min-h-11 w-full px-2 sm:min-h-8",
+          )}
           onClick={() =>
             navigate({ to: "/dashboard/settings/account/information" })
           }

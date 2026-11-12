@@ -4,6 +4,8 @@
 set -u
 export PATH=/opt/homebrew/opt/postgresql@16/bin:/opt/homebrew/bin:/usr/local/bin:$PATH TZ=UTC
 OUT=$1; mkdir -p $OUT; cd ~/ci/kaneo
+# REBUILD=1: rebuild the web bundle first (after scp'ing edited sources over the checkout)
+[[ -n ${REBUILD:-} ]] && (cd apps/web && VITE_API_URL=/api VITE_CLIENT_URL=http://localhost:5173 pnpm exec vite build > $OUT/web-build.log 2>&1 || { echo "web build failed"; exit 1; })
 PGDATA=~/ci/pgdata; PGPORT=55432
 pkill -f kaneo-ci-api; pkill -f "vite preview"; sleep 1
 pg_ctl -D $PGDATA status >/dev/null 2>&1 || pg_ctl -D $PGDATA -o "-p $PGPORT -k /tmp" -l ~/ci/pg.log -w start >/dev/null

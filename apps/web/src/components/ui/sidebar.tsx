@@ -418,7 +418,11 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      className={cn(
+        // rail: centre controls on the rail axis (design v3 §4)
+        "relative flex w-full min-w-0 flex-col p-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0",
+        className,
+      )}
       data-sidebar="group"
       data-slot="sidebar-group"
       {...props}
@@ -489,7 +493,10 @@ function SidebarGroupContent({
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
-      className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+      className={cn(
+        "flex w-full min-w-0 flex-col gap-1 group-data-[collapsible=icon]:items-center",
+        className,
+      )}
       data-sidebar="menu"
       data-slot="sidebar-menu"
       {...props}

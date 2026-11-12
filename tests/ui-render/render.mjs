@@ -238,11 +238,20 @@ for (const [shot, prefs, act] of [
           .filter((q) => q.width > 0 && q.height > 0)
           .map((q) => Math.round(q.left + q.width / 2))
       : [];
+    const offAxis = rail
+      ? [...rail.querySelectorAll("button, a")]
+          .filter((el) => el.getBoundingClientRect().width > 0)
+          .map((el) => {
+            const q = el.getBoundingClientRect();
+            return `${Math.round(q.left + q.width / 2)}:${Math.round(q.width)}x${Math.round(q.height)}:${el.getAttribute("aria-label") ?? el.getAttribute("data-testid") ?? el.textContent?.trim().slice(0, 12)}`;
+          })
+      : [];
     return {
       account_trigger: r
         ? `${Math.round(r.width)}x${Math.round(r.height)}`
         : null,
       rail_axis: xs.length ? [...new Set(xs)].sort((a, b) => a - b) : undefined,
+      rail_controls: offAxis.length ? offAxis : undefined,
     };
   });
   if (!m.account_trigger) fails.push("account trigger missing");
