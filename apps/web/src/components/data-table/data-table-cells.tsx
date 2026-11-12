@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlignLeft,
+  Banknote,
   Braces,
   Calendar,
   CalendarClock,
   Check,
-  CircleDollarSign,
   CircleDot,
   CircleUser,
   ExternalLink,
@@ -49,7 +49,7 @@ const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   longtext: AlignLeft,
   number: Hash,
   percent: Percent,
-  currency: CircleDollarSign,
+  currency: Banknote,
   date: Calendar,
   datetime: CalendarClock,
   select: CircleDot,

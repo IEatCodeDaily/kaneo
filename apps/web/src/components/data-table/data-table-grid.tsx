@@ -102,12 +102,11 @@ type Props = {
   onDelete: () => void;
 };
 
+// Quantities right-align (header and cell) so digits line up; dates don't.
 const NUMERIC_CELL_TYPES: DataTableFieldType[] = [
   "number",
   "percent",
   "currency",
-  "date",
-  "datetime",
 ];
 
 function FieldHeader({
@@ -847,7 +846,7 @@ export function DataTableGrid({
                           />
                         </div>
                       ))}
-                      {canEdit && <div className="border-b" />}
+                      {canEdit && <div />}
                     </div>
                   );
                 })}
@@ -857,11 +856,22 @@ export function DataTableGrid({
             {canEdit && visibleRows.length > 0 && (
               <button
                 type="button"
-                className="sticky left-0 flex h-8 w-fit shrink-0 items-center gap-1.5 px-3 text-ui text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                className="flex h-8 shrink-0 items-center border-b text-ui text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                style={{ width: totalWidth }}
                 onClick={addRow}
               >
-                <Plus className="size-3.5" />
-                {t("navigation:tables.newRow")}
+                <span
+                  className="sticky left-0 flex justify-center"
+                  style={{ width: ROW_NUMBER_COLUMN_WIDTH }}
+                >
+                  <Plus className="size-3.5" />
+                </span>
+                <span
+                  className="sticky px-2"
+                  style={{ left: ROW_NUMBER_COLUMN_WIDTH }}
+                >
+                  {t("navigation:tables.newRow")}
+                </span>
               </button>
             )}
             <span className="flex-1" />

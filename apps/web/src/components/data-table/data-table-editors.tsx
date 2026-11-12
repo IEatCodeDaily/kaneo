@@ -478,6 +478,10 @@ export function DataTableCellContent({
   const { t } = useTranslation();
   const value = row.values[field.id];
   const canInlineEdit = INPUT_EDIT_TYPES.includes(field.type);
+  const numericAlign =
+    field.type === "number" ||
+    field.type === "percent" ||
+    field.type === "currency";
 
   if (field.type === "checkbox") {
     return (
@@ -557,6 +561,8 @@ export function DataTableCellContent({
       type="button"
       className={cn(
         "min-w-0 flex-1 cursor-pointer text-left",
+        // Numbers end on the right edge, under their header unit (DS §1.5).
+        numericAlign && "text-right tabular-nums",
         "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
       )}
       onClick={onEditStart}
@@ -565,6 +571,13 @@ export function DataTableCellContent({
       {view}
     </button>
   ) : (
-    <div className="min-w-0 flex-1">{view}</div>
+    <div
+      className={cn(
+        "min-w-0 flex-1",
+        numericAlign && "text-right tabular-nums",
+      )}
+    >
+      {view}
+    </div>
   );
 }
