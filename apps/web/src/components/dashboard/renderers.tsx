@@ -134,8 +134,36 @@ function TimeSeriesPanel({
   const gridValues = [30, 60, 90].map(
     (y) => ((LINE_BOTTOM - y) / (LINE_BOTTOM - LINE_TOP)) * max,
   );
+  // Y-label gutter sized from the widest label (design v3 S5), so the plot
+  // area starts where the numbers end instead of a fixed guess.
+  const yLabels = [max, ...gridValues].map((value) =>
+    value.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+  );
+  const yGutter =
+    Math.max(...yLabels.map((label) => label.length)) * 5.4 + 8;
   return (
     <div className="flex flex-1 flex-col justify-center">
+      <div className="flex items-stretch">
+      <div
+        className="relative h-[130px] shrink-0 text-right text-muted-foreground"
+        style={{ width: yGutter, fontSize: 8.5 }}
+      >
+        {[30, 60, 90].map((y, index) => (
+          <span
+            key={`y-${y}`}
+            className="absolute -translate-y-1/2 tabular-nums"
+            style={{ top: y - 2, right: 4 }}
+          >
+            {yLabels[index + 1]}
+          </span>
+        ))}
+        <span
+          className="absolute -translate-y-1/2 tabular-nums"
+          style={{ top: LINE_BOTTOM - 2, right: 4 }}
+        >
+          {yLabels[0] === yLabels[1] ? "" : "0"}
+        </span>
+      </div>
       <svg
         aria-hidden="true"
         viewBox={`0 0 ${LINE_W} ${LINE_H}`}
@@ -176,14 +204,8 @@ function TimeSeriesPanel({
             </text>
           ))}
         </g>
-        <g className="fill-muted-foreground" fontSize={8}>
-          {gridValues.map((value, index) => (
-            <text key={`grid-${value}`} x={2} y={33 + index * 30}>
-              {Math.round(value)}
-            </text>
-          ))}
-        </g>
-      </svg>
+              </svg>
+      </div>
       <span className="sr-only">
         {spec.title}:{" "}
         {rows.map((row) => `${row.text} = ${row.value}`).join(", ")}

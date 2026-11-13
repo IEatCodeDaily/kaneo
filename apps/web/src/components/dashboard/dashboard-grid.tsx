@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 export function DashboardGrid({ children }: { children: ReactNode }) {
   return (
     <div
-      className="dashboards-grid grid gap-4"
+      className="dashboards-grid grid gap-3"
       style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
     >
       <style>

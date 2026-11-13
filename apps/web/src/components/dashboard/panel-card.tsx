@@ -75,31 +75,32 @@ export function PanelCard({
   const Renderer = RENDERERS[spec.type];
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-3 rounded-xl border bg-card p-4">
+    <div className="group flex h-full min-w-0 flex-col gap-3 rounded-lg border bg-card p-3">
       <div className="flex items-center gap-2">
         <b className="min-w-0 flex-1 truncate text-sm font-semibold">
           {spec.title}
         </b>
         {canEdit ? (
-          <>
+          // Edit/more on hover (design: panels stay quiet until pointed at).
+          <span className="flex items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
             <Button
               variant="ghost"
-              size="xs"
+              size="icon-xs"
               aria-label={t("navigation:dashboards.editPanel")}
               onClick={() => onEdit(spec)}
             >
-              <Pencil />
+              <Pencil className="size-3.5" />
             </Button>
             <Button
               variant="ghost"
-              size="xs"
+              size="icon-xs"
               aria-label={t("navigation:dashboards.deletePanel")}
-              className="text-destructive"
+              className="text-destructive-foreground"
               onClick={() => onDelete(spec)}
             >
-              <Trash2 />
+              <Trash2 className="size-3.5" />
             </Button>
-          </>
+          </span>
         ) : null}
       </div>
       <p className="truncate text-xs text-muted-foreground">
