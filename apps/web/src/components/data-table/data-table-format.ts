@@ -567,7 +567,7 @@ export function groupRows(
   }
   const groups = [...buckets.entries()].map(([key, groupRows]) => ({
     key,
-    label: labelFor ? (labelFor(key) || key) : key,
+    label: labelFor ? labelFor(key) || key : key,
     rows: groupRows,
   }));
   return groups.sort((a, b) => {
