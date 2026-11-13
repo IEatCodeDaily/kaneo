@@ -584,7 +584,11 @@ export function DataTableGrid({
       return visibleRows.map((row) => ({ kind: "row", row }) as GridItem);
     }
     const items: GridItem[] = [];
-    for (const group of groupRows(groupField, visibleRows, groupLabel)) {
+    for (const group of groupRows(
+      groupField,
+      visibleRows,
+      (key) => groupLabel(groupField, key),
+    )) {
       const collapsed = collapsedGroups.has(group.key);
       items.push({ kind: "group", key: group.key, rows: group.rows });
       if (!collapsed) {
@@ -594,7 +598,7 @@ export function DataTableGrid({
       }
     }
     return items;
-  }, [groupField, visibleRows, collapsedGroups]);
+  }, [groupField, visibleRows, collapsedGroups, groupLabel]);
 
   const renderedRows = useMemo(
     () =>
