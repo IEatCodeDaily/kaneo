@@ -499,7 +499,6 @@ async function requireOrgTask(organizationId: string, taskId: string) {
 
 /** Primary-cell text for the link preview/title. */
 async function primaryValueOf(
-  organizationId: string,
   tableId: string,
   rowId: string,
 ): Promise<string | null> {
@@ -540,7 +539,7 @@ export async function linkRowToTask(
     .from(organizationTable)
     .where(eq(organizationTable.id, organizationId));
   const clientUrl = process.env.KANEO_CLIENT_URL ?? "http://localhost:5173";
-  const title = await primaryValueOf(organizationId, tableId, rowId);
+  const title = await primaryValueOf(tableId, rowId);
   await db.insert(externalLinkTable).values({
     taskId,
     integrationId: null,

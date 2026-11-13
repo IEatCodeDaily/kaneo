@@ -501,6 +501,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
   )
   .get(
     "/organization/:organizationId/rows-for-ticket",
+    validator("param", v.object({ organizationId: v.string() })),
     validator("query", v.object({ taskId: v.string() })),
     organizationAccess.fromTaskId("taskId"),
     async (c) => {

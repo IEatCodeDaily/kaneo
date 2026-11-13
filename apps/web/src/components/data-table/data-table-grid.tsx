@@ -506,6 +506,8 @@ export function DataTableGrid({
     rowId: string;
     fieldId: string;
   } | null>(null);
+  // Row sheet (S4): the primary cell opens it; prev/next walk the view.
+  const [sheetRowId, setSheetRowId] = useState<string | null>(null);
   const [dialogField, setDialogField] = useState<DataTableField | null>(null);
   const [dialogType, setDialogType] = useState<DataTableFieldType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
