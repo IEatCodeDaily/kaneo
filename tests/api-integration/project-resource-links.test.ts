@@ -658,7 +658,10 @@ describe("API integration: project resource links", () => {
     });
 
     function waitForEvent<T>(eventType: string): Promise<T> {
-      const { promise, resolve } = Promise.withResolvers<T>();
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((r) => {
+        resolve = r;
+      });
       subscribeToEvent<T>(eventType, async (data) => resolve(data));
       return promise;
     }

@@ -91,10 +91,11 @@ async function addTicket(app: MountedApp, projectId: string, taskId: string) {
 }
 
 function waitForProjectUpdate() {
-  const { promise, resolve } = Promise.withResolvers<{
-    organizationId: string;
-    projectId: string;
-  }>();
+  type ProjectUpdate = { organizationId: string; projectId: string };
+  let resolve!: (value: ProjectUpdate) => void;
+  const promise = new Promise<ProjectUpdate>((r) => {
+    resolve = r;
+  });
   subscribeToEvent("project.updated", async (data) =>
     resolve(data as { organizationId: string; projectId: string }),
   );
