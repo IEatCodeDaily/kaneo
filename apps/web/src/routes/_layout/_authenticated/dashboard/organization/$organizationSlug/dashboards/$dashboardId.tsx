@@ -54,10 +54,12 @@ import type { DashboardPanelSpec } from "@/types/dashboards";
 
 /** Breadcrumb resource switcher: current dashboard, other dashboards. */
 function DashboardCrumbSelect({
+  organizationId,
   organizationSlug,
   dashboardId,
   name,
 }: {
+  organizationId: string;
   organizationSlug: string;
   dashboardId: string;
   name: string;
@@ -213,6 +215,7 @@ function DashboardDetailRoute() {
         </span>
         {dashboard ? (
           <DashboardCrumbSelect
+            organizationId={organizationId}
             organizationSlug={organizationSlug}
             dashboardId={dashboardId}
             name={dashboard.name}
