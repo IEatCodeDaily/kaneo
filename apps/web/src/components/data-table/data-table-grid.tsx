@@ -1531,7 +1531,7 @@ export function DataTableGrid({
         open={sheetRowId !== null}
         onOpenChange={(next) => !next && setSheetRowId(null)}
         table={table}
-        row={visibleRows.find((row) => row.id === sheetRowId) ?? null}
+        row={rows.find((row) => row.id === sheetRowId) ?? null}
         fields={fields}
         members={members}
         canEdit={canEdit}
