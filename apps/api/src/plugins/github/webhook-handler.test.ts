@@ -13,11 +13,12 @@ vi.mock("../../repo/services/webhook-sync", () => ({
   syncGitHubWebhookPayload: mocks.syncGitHubWebhookPayload,
   syncGiteaWebhookPayload: vi.fn(),
 }));
-// auth.ts reads the module's `schema` export at load time; keep it real.
-vi.mock("../../database", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../database")>()),
-  default: { query: {} },
+// Cut the import chain at github-delegation (→ auth.ts → whole route tree):
+// this suite only exercises mirror gating.
+vi.mock("../../github-delegation", () => ({
+  getUsableDelegatedToken: vi.fn(),
 }));
+vi.mock("../../database", () => ({ default: { query: {} } }));
 
 import { handleGitHubWebhook } from "./webhook-handler";
 
