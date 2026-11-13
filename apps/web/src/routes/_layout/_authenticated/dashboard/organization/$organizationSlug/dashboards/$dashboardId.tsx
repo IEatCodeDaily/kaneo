@@ -402,5 +402,3 @@ function DashboardDetailRoute() {
     </Layout>
   );
 }
-  );
-}
