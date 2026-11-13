@@ -1273,6 +1273,7 @@ export function DataTableGrid({
                               field={field}
                               members={members}
                               canEdit={canEdit}
+                              asPrimary={fieldIndex === 0}
                               isEditing={
                                 editing?.rowId === row.id &&
                                 editing?.fieldId === field.id
@@ -1548,6 +1549,12 @@ export function DataTableGrid({
             if (index < 0 || index >= visibleRows.length - 1) return current;
             return visibleRows[index + 1].id;
           })
+        }
+        hasPrev={visibleRows.findIndex((row) => row.id === sheetRowId) > 0}
+        hasNext={
+          visibleRows.findIndex((row) => row.id === sheetRowId) >= 0 &&
+          visibleRows.findIndex((row) => row.id === sheetRowId) <
+            visibleRows.length - 1
         }
       />
 

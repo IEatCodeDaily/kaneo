@@ -84,11 +84,18 @@ export function TableRowResources({
 
   useEffect(() => {
     if (!organizationId) return;
+    let cancelled = false;
     getDataTables(organizationId)
-      .then((all) =>
-        setTables(all.filter((candidate) => candidate.deletedAt === null)),
-      )
-      .catch(() => setTables([]));
+      .then((all) => {
+        if (cancelled) return;
+        setTables(all.filter((candidate) => candidate.deletedAt === null));
+      })
+      .catch(() => {
+        if (!cancelled) setTables([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [organizationId]);
 
   useEffect(() => {

@@ -36,6 +36,8 @@ export function RowSheet({
   onCommit,
   onPrev,
   onNext,
+  hasPrev,
+  hasNext,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,12 +49,19 @@ export function RowSheet({
   onCommit: (row: DataTableRow, field: DataTableField, value: unknown) => void;
   onPrev: () => void;
   onNext: () => void;
+  hasPrev: boolean;
+  hasNext: boolean;
 }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<{
     fieldId: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  // Switching rows drops any open editor and its draft: TableCellInput seeds
+  // its draft once, so a stale editor would write row N's text into N+1.
+  useEffect(() => {
+    setEditing(null);
+  }, [row?.id]);
 
   const tickets = useQuery({
     queryKey: ["row-tickets", row?.id],
@@ -86,6 +95,7 @@ export function RowSheet({
               variant="ghost"
               size="icon-sm"
               aria-label={t("navigation:tables.prevRow")}
+              disabled={!hasPrev}
               onClick={onPrev}
             >
               <ChevronLeft className="size-4" />
@@ -94,6 +104,7 @@ export function RowSheet({
               variant="ghost"
               size="icon-sm"
               aria-label={t("navigation:tables.nextRow")}
+              disabled={!hasNext}
               onClick={onNext}
             >
               <ChevronRight className="size-4" />
@@ -144,7 +155,14 @@ export function RowSheet({
                   isEditing={editing?.fieldId === field.id}
                   onEditStart={() => setEditing({ fieldId: field.id })}
                   onEditEnd={() => setEditing(null)}
-                  onCommit={(value) => onCommit(row, field, value)}
+                  onCommit={(value) => {
+                    // Clear the sheet's editing state here: the grid's
+                    // commitCell clears only its own. Without this (plus the
+                    // row-switch reset below) row N's draft could be
+                    // committed into row N+1 via prev/next.
+                    setEditing(null);
+                    onCommit(row, field, value);
+                  }}
                 />
               </div>
             </div>

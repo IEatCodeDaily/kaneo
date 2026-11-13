@@ -453,8 +453,8 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("view"),
     async (c) => {
-      const { rowId } = c.req.valid("param");
-      return c.json(await getRowTickets(rowId));
+      const { organizationId, tableId, rowId } = c.req.valid("param");
+      return c.json(await getRowTickets(organizationId, tableId, rowId));
     },
   )
   .post(
@@ -507,7 +507,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId } = c.req.valid("param");
       const { taskId } = c.req.valid("query");
-      return c.json(await listRowsForTask(organizationId, taskId));
+      return c.json(await listRowsForTask(organizationId, taskId, c.get("userId")));
     },
   );
 

@@ -1,7 +1,8 @@
-import { and, asc, eq, isNull, max } from "drizzle-orm";
+import { and, asc, eq, isNull, max, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
+import { listAccessibleResourceIds } from "../resource-access";
 import {
   boardTable,
   type DashboardPanelSpec,
@@ -457,7 +458,16 @@ export async function deleteDashboard(
 
 const TABLE_ROW_RESOURCE = "table_row";
 
-export async function getRowTickets(rowId: string) {
+export async function getRowTickets(
+  organizationId: string,
+  tableId: string,
+  rowId: string,
+) {
+  // The row must live in the param table: without this, a forged rowId from
+  // another org leaks its ticket list through a table the caller can view.
+  const fields = (await listTableFieldRows(tableId)).map(toStoreField);
+  const row = await store.getRowById(db, tableId, fields, rowId);
+  if (!row) notFound("Row");
   const links = await db
     .select({
       id: externalLinkTable.id,
@@ -469,10 +479,13 @@ export async function getRowTickets(rowId: string) {
     })
     .from(externalLinkTable)
     .innerJoin(taskTable, eq(taskTable.id, externalLinkTable.taskId))
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
     .where(
       and(
         eq(externalLinkTable.externalId, rowId),
         eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+        eq(boardTable.organizationId, organizationId),
+        isNull(taskTable.deletedAt),
       ),
     );
   return links.map((link) => ({
@@ -509,11 +522,9 @@ async function primaryValueOf(
 ): Promise<string | null> {
   const fieldRows = await listTableFieldRows(tableId);
   const fields = fieldRows.map(toStoreField);
-  if (fields.length === 0) return null;
-  const { rows } = await store.listRows(db, tableId, fields, 1000, 0);
-  const row = rows.find((candidate) => candidate.id === rowId);
+  const row = await store.getRowById(db, tableId, fields, rowId);
   if (!row) notFound("Row");
-  const value = row.values[fields[0].id];
+  const value = fields.length > 0 ? row.values[fields[0].id] : null;
   if (value === null || value === undefined || value === "") return null;
   return String(value);
 }
@@ -543,7 +554,10 @@ export async function linkRowToTask(
     .select({ slug: organizationTable.slug })
     .from(organizationTable)
     .where(eq(organizationTable.id, organizationId));
-  const clientUrl = process.env.KANEO_CLIENT_URL ?? "http://localhost:5173";
+  // Fail closed: an unset client URL must never persist a localhost link
+  // into external_link (the sheet renders these as hrefs).
+  const clientUrl = process.env.KANEO_CLIENT_URL;
+  if (!clientUrl) badRequest("KANEO_CLIENT_URL is not configured");
   const title = await primaryValueOf(tableId, rowId);
   await db.insert(externalLinkTable).values({
     taskId,
@@ -572,12 +586,19 @@ export async function unlinkRowTask(
         eq(externalLinkTable.taskId, taskId),
         eq(externalLinkTable.externalId, rowId),
         eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+        // Only the param table's link may be unlinked — otherwise edit
+        // privilege on table B could unlink a row that lives in table A.
+        sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
       ),
     );
   return { success: true as const };
 }
 
-export async function listRowsForTask(organizationId: string, taskId: string) {
+export async function listRowsForTask(
+  organizationId: string,
+  taskId: string,
+  userId: string,
+) {
   await requireOrgTask(organizationId, taskId);
   const links = await db
     .select({
@@ -613,12 +634,23 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
     ids.add(link.externalId);
     byTable.set(tableId, ids);
   }
+  // A table the caller cannot view must not leak its name or row content
+  // through a task's resources section — same lattice as the list route.
+  const viewableIds = new Set(
+    await listAccessibleResourceIds({
+      organizationId,
+      resourceType: "table",
+      userId,
+      resourceIds: [...byTable.keys()],
+    }),
+  );
   const tables: {
     tableId: string;
     tableName: string;
     rows: { id: string; primary: string | null }[];
   }[] = [];
   for (const [tableId, ids] of byTable) {
+    if (!viewableIds.has(tableId)) continue;
     const table = await db
       .select({ name: dataTableTable.name })
       .from(dataTableTable)
@@ -626,14 +658,16 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
     if (!table[0]) continue;
     const fieldRows = await listTableFieldRows(tableId);
     const fields = fieldRows.map(toStoreField);
-    const { rows } = await store.listRows(db, tableId, fields, 1000, 0);
-    const wanted = rows
-      .filter((row) => ids.has(row.id))
-      .map((row) => ({
+    const wanted: { id: string; primary: string | null }[] = [];
+    for (const rowId of ids) {
+      const row = await store.getRowById(db, tableId, fields, rowId);
+      if (!row) continue;
+      wanted.push({
         id: row.id,
         primary:
           fields.length > 0 ? String(row.values[fields[0].id] ?? "") : null,
-      }));
+      });
+    }
     tables.push({
       tableId,
       tableName: table[0].name || names.get(tableId) || "Table",
