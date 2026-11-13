@@ -191,7 +191,9 @@
 		"bulkDeleteTitle_one": "Delete {{count}} row?",
 		"bulkDeleteTitle_other": "Delete {{count}} rows?",
 		"bulkDeleteConfirm_one": "This permanently deletes {{count}} row. This cannot be undone.",
-		"bulkDeleteConfirm_other": "This permanently deletes {{count}} rows. This cannot be undone."
+		"bulkDeleteConfirm_other": "This permanently deletes {{count}} rows. This cannot be undone.",
+		"bulkDeleteTitle": "Delete {{count}} rows?",
+		"bulkDeleteConfirm": "This permanently deletes {{count}} rows. This cannot be undone."
 	},
 	"dashboards": {
 		"title": "Dashboards",

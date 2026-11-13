@@ -566,7 +566,8 @@ export function DataTableGrid({
       return key === "true"
         ? t("navigation:dashboards.yes")
         : t("navigation:dashboards.no");
-    if (field.type === "select") return choicesById.get(key)?.label ?? key;
+    if (field.type === "select")
+      return choicesById.get(key)?.label ?? key;
     if (field.type === "user") {
       const member = members.get(key);
       return member?.user.name || member?.user.email || key;
@@ -598,10 +599,7 @@ export function DataTableGrid({
   const renderedRows = useMemo(
     () =>
       gridItems
-        .filter(
-          (item): item is Extract<GridItem, { kind: "row" }> =>
-            item.kind === "row",
-        )
+        .filter((item): item is Extract<GridItem, { kind: "row" }> => item.kind === "row")
         .map((item) => item.row),
     [gridItems],
   );
@@ -995,10 +993,7 @@ export function DataTableGrid({
                   className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
                 >
                   <Checkbox
-                    checked={
-                      renderedRows.length > 0 &&
-                      renderedRows.every((row) => selected.has(row.id))
-                    }
+                    checked={renderedRows.length > 0 && renderedRows.every((row) => selected.has(row.id))}
                     aria-label={t("navigation:tables.selectAllRows")}
                     className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
                     onCheckedChange={(next) =>
@@ -1162,7 +1157,8 @@ export function DataTableGrid({
                                   key={field.id}
                                   className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
                                 >
-                                  {field.name}{" "}
+                                  {field.name}
+                                  {" "}
                                   {summarize(
                                     summaryFns[field.id] ?? "none",
                                     field,
@@ -1493,7 +1489,11 @@ export function DataTableGrid({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+            <Button
+              variant="outline"
+              size="sm"
+              render={<AlertDialogClose />}
+            >
               {t("navigation:tables.cancel")}
             </Button>
             <Button
