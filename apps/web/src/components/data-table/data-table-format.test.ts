@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { DataTableField } from "@/types/data-table";
-import type { DataTableRow } from "@/types/data-table";
+import type { DataTableField, DataTableRow } from "@/types/data-table";
 import {
   currencyUnit,
   filterIsActive,
@@ -139,7 +138,11 @@ describe("groupRows", () => {
 
 describe("summarize", () => {
   it("sums numeric columns", () => {
-    const rows = [row("a", { c: 2 }), row("b", { c: 3 }), row("x", { c: null })];
+    const rows = [
+      row("a", { c: 2 }),
+      row("b", { c: 3 }),
+      row("x", { c: null }),
+    ];
     expect(summarize("sum", field({ id: "c", type: "number" }), rows)).toBe(
       "5",
     );
@@ -157,9 +160,9 @@ describe("summarize", () => {
     expect(summarize("filled", field({ id: "n", type: "text" }), rows)).toBe(
       "1/3",
     );
-    expect(summarize("checked", field({ id: "d", type: "checkbox" }), rows)).toBe(
-      "1/3",
-    );
+    expect(
+      summarize("checked", field({ id: "d", type: "checkbox" }), rows),
+    ).toBe("1/3");
   });
 
   it("is null when off or nothing matches", () => {

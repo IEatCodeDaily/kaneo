@@ -183,7 +183,10 @@
 		"summary_max": "Max",
 		"summary_filled": "Filled",
 		"summary_empty": "Empty",
-		"summary_checked": "Checked"
+		"summary_checked": "Checked",
+		"bulkApplied": "Updated {{count}} rows",
+		"bulkDeleted": "Deleted {{count}} rows",
+		"bulkError": "Stopped after {{done}} of {{count}} rows"
 	},
 	"dashboards": {
 		"title": "Dashboards",

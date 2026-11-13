@@ -377,10 +377,12 @@ const TABLE_STATES = [
     async (p) => {
       await p.getByRole("button", { name: /^Group/ }).click();
       await p.waitForTimeout(300);
-      await p.getByRole("menuitemradio", { name: "Stage" }).or(
-        p.getByRole("option", { name: "Stage" }),
-      ).first().click();
-      await p.waitForTimeout(500);
+      await p.getByRole("combobox").first().click();
+      await p.waitForTimeout(300);
+      await p.getByRole("option", { name: "Stage" }).click();
+      await p.waitForTimeout(300);
+      await p.keyboard.press("Escape");
+      await p.waitForTimeout(400);
     },
   ],
 ];
