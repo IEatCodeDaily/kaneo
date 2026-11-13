@@ -28,7 +28,7 @@ const RULES = [
   ],
 ];
 
-const skip = (dir, entry) =>
+const skip = (entry) =>
   entry.name === "ui" ||
   entry.name.startsWith("node_modules") ||
   /\.(test|spec)\.[tj]sx?$/.test(entry.name);
@@ -36,14 +36,16 @@ const skip = (dir, entry) =>
 const offenders = [];
 const walk = (dir, rootLabel) => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (skip(dir, entry)) continue;
+    if (skip(entry)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full, rootLabel);
     else if (/\.[tj]sx?$/.test(entry.name)) {
       const text = readFileSync(full, "utf8");
       for (const [rule, pattern] of RULES) {
         if (pattern.test(text)) {
-          offenders.push(`${rootLabel}:${path.relative(process.cwd(), full)} — ${rule}`);
+          offenders.push(
+            `${rootLabel}:${path.relative(process.cwd(), full)} — ${rule}`,
+          );
         }
       }
     }
