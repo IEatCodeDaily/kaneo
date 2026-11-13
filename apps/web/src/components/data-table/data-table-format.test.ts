@@ -58,7 +58,9 @@ describe("filterIsActive", () => {
 
 describe("currencyUnit", () => {
   it("returns the narrow symbol for known codes", () => {
-    const unit = currencyUnit(field({ type: "currency", options: { code: "USD" } }));
+    const unit = currencyUnit(
+      field({ type: "currency", options: { code: "USD" } }),
+    );
     expect(unit).toBeTypeOf("string");
     expect(unit?.length).toBeGreaterThan(0);
     expect(unit).not.toBe("USD");

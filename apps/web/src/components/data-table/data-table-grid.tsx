@@ -680,176 +680,178 @@ export function DataTableGrid({
             style={{ minWidth: totalWidth }}
           >
             <div role="grid" aria-rowcount={visibleRows.length + 1}>
-            <div
-              role="row"
-              className="sticky top-0 z-20 grid bg-background"
-              style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
-            >
               <div
-                role="columnheader"
-                aria-label={t("navigation:tables.rowNumber")}
-                className="sticky left-0 z-10 border-r border-b bg-background"
-              />
-              {fields.map((field, index) => (
-                <FieldHeader
-                  key={field.id}
-                  field={field}
-                  stickyLeft={index === 0 ? ROW_NUMBER_COLUMN_WIDTH : null}
-                  sort={sort}
-                  onSort={setSort}
-                  canEdit={canEdit}
-                  canHide={index > 0}
-                  organizationId={organizationId}
-                  tableId={table.id}
-                  onEditOptions={(target, presetType) =>
-                    openDialog(target, presetType)
-                  }
-                  onFilter={(target) =>
-                    setFilters((current) => [
-                      ...current,
-                      defaultFilterFor(target),
-                    ])
-                  }
-                  onHide={(target) => changeHidden([...hidden, target.id])}
-                  onDeleted={setFieldToDelete}
-                />
-              ))}
-              {canEdit && (
-                <div role="columnheader" className="border-b bg-background">
-                  <button
-                    type="button"
-                    aria-label={t("navigation:tables.addField")}
-                    title={t("navigation:tables.addField")}
-                    className="flex size-full items-center justify-center text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                    onClick={() => openDialog(null, null)}
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {visibleRows.length === 0 ? (
-              <Empty className="flex-none py-12">
-                <EmptyHeader>
-                  <EmptyTitle className="text-sm">
-                    {filtersActive
-                      ? t("navigation:tables.noMatches")
-                      : t("navigation:tables.noRowsTitle")}
-                  </EmptyTitle>
-                  <EmptyDescription>
-                    {filtersActive
-                      ? t("navigation:tables.noMatchesHint")
-                      : t("navigation:tables.noRows")}
-                  </EmptyDescription>
-                </EmptyHeader>
-                {filtersActive ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearch("");
-                      setFilters([]);
-                    }}
-                  >
-                    {t("common:actions.clearAllFilters")}
-                  </Button>
-                ) : (
-                  canEdit && (
-                    <Button variant="outline" size="sm" onClick={addRow}>
-                      <Plus className="size-3.5" />
-                      {t("navigation:tables.newRow")}
-                    </Button>
-                  )
-                )}
-              </Empty>
-            ) : (
-              <div
-                style={{
-                  height: virtualizer.getTotalSize(),
-                  position: "relative",
-                }}
+                role="row"
+                className="sticky top-0 z-20 grid bg-background"
+                style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
               >
-                {virtualizer.getVirtualItems().map((item) => {
-                  const row = visibleRows[item.index];
-                  const rowIndex = item.index;
-                  return (
-                    <div
-                      key={row.id}
-                      role="row"
-                      aria-rowindex={rowIndex + 2}
-                      className="group absolute left-0 grid bg-background hover:bg-row-hover"
-                      style={{
-                        height: rowHeight,
-                        // top, not transform: transform would trap the sticky
-                        // cells inside the row box and break horizontal stick.
-                        top: item.start,
-                        gridTemplateColumns: gridTemplate,
-                        width: totalWidth,
+                <div
+                  role="columnheader"
+                  aria-label={t("navigation:tables.rowNumber")}
+                  className="sticky left-0 z-10 border-r border-b bg-background"
+                />
+                {fields.map((field, index) => (
+                  <FieldHeader
+                    key={field.id}
+                    field={field}
+                    stickyLeft={index === 0 ? ROW_NUMBER_COLUMN_WIDTH : null}
+                    sort={sort}
+                    onSort={setSort}
+                    canEdit={canEdit}
+                    canHide={index > 0}
+                    organizationId={organizationId}
+                    tableId={table.id}
+                    onEditOptions={(target, presetType) =>
+                      openDialog(target, presetType)
+                    }
+                    onFilter={(target) =>
+                      setFilters((current) => [
+                        ...current,
+                        defaultFilterFor(target),
+                      ])
+                    }
+                    onHide={(target) => changeHidden([...hidden, target.id])}
+                    onDeleted={setFieldToDelete}
+                  />
+                ))}
+                {canEdit && (
+                  <div role="columnheader" className="border-b bg-background">
+                    <button
+                      type="button"
+                      aria-label={t("navigation:tables.addField")}
+                      title={t("navigation:tables.addField")}
+                      className="flex size-full items-center justify-center text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                      onClick={() => openDialog(null, null)}
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {visibleRows.length === 0 ? (
+                <Empty className="flex-none py-12">
+                  <EmptyHeader>
+                    <EmptyTitle className="text-sm">
+                      {filtersActive
+                        ? t("navigation:tables.noMatches")
+                        : t("navigation:tables.noRowsTitle")}
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      {filtersActive
+                        ? t("navigation:tables.noMatchesHint")
+                        : t("navigation:tables.noRows")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  {filtersActive ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearch("");
+                        setFilters([]);
                       }}
                     >
+                      {t("common:actions.clearAllFilters")}
+                    </Button>
+                  ) : (
+                    canEdit && (
+                      <Button variant="outline" size="sm" onClick={addRow}>
+                        <Plus className="size-3.5" />
+                        {t("navigation:tables.newRow")}
+                      </Button>
+                    )
+                  )}
+                </Empty>
+              ) : (
+                <div
+                  style={{
+                    height: virtualizer.getTotalSize(),
+                    position: "relative",
+                  }}
+                >
+                  {virtualizer.getVirtualItems().map((item) => {
+                    const row = visibleRows[item.index];
+                    const rowIndex = item.index;
+                    return (
                       <div
-                        role="rowheader"
-                        className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs tabular-nums text-muted-foreground group-hover:bg-row-hover"
+                        key={row.id}
+                        role="row"
+                        aria-rowindex={rowIndex + 2}
+                        className="group absolute left-0 grid bg-background hover:bg-row-hover"
+                        style={{
+                          height: rowHeight,
+                          // top, not transform: transform would trap the sticky
+                          // cells inside the row box and break horizontal stick.
+                          top: item.start,
+                          gridTemplateColumns: gridTemplate,
+                          width: totalWidth,
+                        }}
                       >
-                        <span className="group-focus-within:hidden group-hover:hidden">
-                          {rowIndex + 1}
-                        </span>
-                        {canEdit && (
-                          <button
-                            type="button"
-                            aria-label={t("navigation:tables.deleteRow")}
-                            title={t("navigation:tables.deleteRow")}
-                            className="hidden size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive-foreground group-focus-within:flex group-hover:flex"
-                            onClick={() => setRowToDelete(row)}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      {fields.map((field, fieldIndex) => (
                         <div
-                          key={field.id}
-                          role="gridcell"
-                          aria-label={t("navigation:tables.cellAria", {
-                            field: field.name,
-                            row: rowIndex + 1,
-                          })}
-                          className={cn(
-                            "flex min-w-0 items-center gap-1.5 border-r border-b bg-background px-2 text-ui group-hover:bg-row-hover",
-                            NUMERIC_CELL_TYPES.includes(field.type) &&
-                              "justify-end",
-                            fieldIndex === 0 && "sticky z-[5] font-medium",
-                          )}
-                          style={
-                            fieldIndex === 0
-                              ? { left: ROW_NUMBER_COLUMN_WIDTH }
-                              : undefined
-                          }
+                          role="rowheader"
+                          className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs tabular-nums text-muted-foreground group-hover:bg-row-hover"
                         >
-                          <DataTableCellContent
-                            row={row}
-                            field={field}
-                            members={members}
-                            canEdit={canEdit}
-                            isEditing={
-                              editing?.rowId === row.id &&
-                              editing?.fieldId === field.id
-                            }
-                            onEditStart={() =>
-                              setEditing({ rowId: row.id, fieldId: field.id })
-                            }
-                            onEditEnd={() => setEditing(null)}
-                            onCommit={(value) => commitCell(row, field, value)}
-                          />
+                          <span className="group-focus-within:hidden group-hover:hidden">
+                            {rowIndex + 1}
+                          </span>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              aria-label={t("navigation:tables.deleteRow")}
+                              title={t("navigation:tables.deleteRow")}
+                              className="hidden size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive-foreground group-focus-within:flex group-hover:flex"
+                              onClick={() => setRowToDelete(row)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
                         </div>
-                      ))}
-                      {canEdit && <div className="border-b" />}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                        {fields.map((field, fieldIndex) => (
+                          <div
+                            key={field.id}
+                            role="gridcell"
+                            aria-label={t("navigation:tables.cellAria", {
+                              field: field.name,
+                              row: rowIndex + 1,
+                            })}
+                            className={cn(
+                              "flex min-w-0 items-center gap-1.5 border-r border-b bg-background px-2 text-ui group-hover:bg-row-hover",
+                              NUMERIC_CELL_TYPES.includes(field.type) &&
+                                "justify-end",
+                              fieldIndex === 0 && "sticky z-[5] font-medium",
+                            )}
+                            style={
+                              fieldIndex === 0
+                                ? { left: ROW_NUMBER_COLUMN_WIDTH }
+                                : undefined
+                            }
+                          >
+                            <DataTableCellContent
+                              row={row}
+                              field={field}
+                              members={members}
+                              canEdit={canEdit}
+                              isEditing={
+                                editing?.rowId === row.id &&
+                                editing?.fieldId === field.id
+                              }
+                              onEditStart={() =>
+                                setEditing({ rowId: row.id, fieldId: field.id })
+                              }
+                              onEditEnd={() => setEditing(null)}
+                              onCommit={(value) =>
+                                commitCell(row, field, value)
+                              }
+                            />
+                          </div>
+                        ))}
+                        {canEdit && <div className="border-b" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {canEdit && visibleRows.length > 0 && (
