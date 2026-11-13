@@ -627,6 +627,7 @@ export function summarize(
     case "min":
     case "max": {
       const nums = values
+        .filter((v) => v !== null && v !== undefined && v !== "")
         .map((v) => (typeof v === "number" ? v : Number(v)))
         .filter((n) => !Number.isNaN(n));
       if (nums.length === 0) return null;

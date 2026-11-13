@@ -25,6 +25,7 @@ import {
   type Density,
   defaultFilterFor,
   filterIsActive,
+  isGroupable,
 } from "@/components/data-table/data-table-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/cn";
-import { isGroupable } from "@/components/data-table/data-table-format";
 import type { DataTableField } from "@/types/data-table";
 
 /**

@@ -434,8 +434,9 @@ if (pages.table) {
           return b ? getComputedStyle(b).fontSize : null;
         })(),
         bulk: !!document.body.innerText.match(/\d+ selected/),
-        groups: [...document.querySelectorAll('button[aria-label*="group" i]')]
-          .filter((b) => b.getAttribute("aria-expanded") !== null).length,
+        groups: [
+          ...document.querySelectorAll('button[aria-label*="group" i]'),
+        ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
     if (!m.heads.some((x) => x.startsWith("Batch")))
