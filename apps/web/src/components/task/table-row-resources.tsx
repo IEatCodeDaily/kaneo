@@ -68,6 +68,7 @@ export function TableRowResources({
   const detail = useDataTable(
     organizationId,
     pickerOpen && pickTableId ? pickTableId : "",
+  );
   const rows = detail;
 
   const link = useMutation({
