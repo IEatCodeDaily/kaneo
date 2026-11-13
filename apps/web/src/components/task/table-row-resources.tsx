@@ -19,10 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getDataTable,
-  getDataTables,
-} from "@/fetchers/data-table/data-table";
+import { getDataTable, getDataTables } from "@/fetchers/data-table/data-table";
 import {
   getRowsForTask,
   linkRowToTask,

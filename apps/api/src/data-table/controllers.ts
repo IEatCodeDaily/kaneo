@@ -3,10 +3,10 @@ import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
 import {
+  boardTable,
   type DashboardPanelSpec,
   dataTableDashboardTable,
   dataTableFieldTable,
-  boardTable,
   dataTableTable,
   externalLinkTable,
   organizationTable,
@@ -492,7 +492,12 @@ async function requireOrgTask(organizationId: string, taskId: string) {
     .select({ id: taskTable.id })
     .from(taskTable)
     .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
-    .where(and(eq(taskTable.id, taskId), eq(boardTable.organizationId, organizationId)));
+    .where(
+      and(
+        eq(taskTable.id, taskId),
+        eq(boardTable.organizationId, organizationId),
+      ),
+    );
   if (!task) notFound("Task");
   return task;
 }
@@ -593,7 +598,10 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
     let tableId = "";
     try {
       const meta = link.metadata
-        ? (JSON.parse(link.metadata) as { tableId?: string; tableName?: string })
+        ? (JSON.parse(link.metadata) as {
+            tableId?: string;
+            tableName?: string;
+          })
         : {};
       tableId = meta.tableId ?? "";
       if (meta.tableName) names.set(tableId, meta.tableName);
@@ -624,9 +632,7 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
       .map((row) => ({
         id: row.id,
         primary:
-          fields.length > 0
-            ? String(row.values[fields[0].id] ?? "")
-            : null,
+          fields.length > 0 ? String(row.values[fields[0].id] ?? "") : null,
       }));
     result.push({
       tableId,
