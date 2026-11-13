@@ -23,6 +23,10 @@ import { DataTableCellContent } from "@/components/data-table/data-table-editors
 import {
   type ColumnSort,
   currencyUnit,
+  defaultSummaryFn,
+  groupRows,
+  groupValue,
+  isGroupable,
   type DataTableFilter,
   DENSITY_ROW_HEIGHT,
   type Density,
@@ -36,6 +40,9 @@ import {
   readHiddenFields,
   rowMatchesFilters,
   rowMatchesSearch,
+  type SummaryFn,
+  summarize,
+  supportsSummary,
   sortedFields,
   sortedRows,
   sortRows,
@@ -57,6 +64,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Empty,
   EmptyDescription,
@@ -72,6 +80,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
@@ -79,6 +88,15 @@ import {
   createDataTableRow,
   getTableRowPage,
 } from "@/fetchers/data-table/data-table";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FieldSelect } from "@/components/data-table/data-table-toolbar";
 import {
   dataTableKeys,
   useDataTableMutations,
@@ -279,6 +297,120 @@ function FieldHeader({
   );
 }
 
+const GROUP_HEADER_HEIGHT = 36;
+
+const SUMMARY_FNS = [
+  "none",
+  "sum",
+  "avg",
+  "min",
+  "max",
+  "filled",
+  "empty",
+  "checked",
+] as const;
+
+/** Minimal per-type value editor for bulk set (S3 bulk bar). */
+function BulkSetField({
+  fields,
+  members,
+  disabled,
+  onApply,
+}: {
+  fields: DataTableField[];
+  members: Map<string, MemberOption>;
+  disabled: boolean;
+  onApply: (field: DataTableField, value: unknown) => void;
+}) {
+  const { t } = useTranslation();
+  const editable = fields.filter(
+    (field) => !["longtext", "link", "json"].includes(field.type),
+  );
+  const [fieldId, setFieldId] = useState<string | null>(
+    editable[0]?.id ?? null,
+  );
+  const [value, setValue] = useState<string>("");
+  const field = editable.find((f) => f.id === fieldId);
+
+  const apply = () => {
+    if (!field) return;
+    let parsed: unknown = value;
+    if (field.type === "checkbox") parsed = value === "true";
+    else if (["number", "percent", "currency"].includes(field.type)) {
+      const n = Number(value);
+      if (Number.isNaN(n)) return;
+      parsed = n;
+    } else if (value === "") parsed = null;
+    onApply(field, parsed);
+    setValue("");
+  };
+
+  if (!field) return null;
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      <span className="hidden text-muted-foreground sm:contents">
+        {t("navigation:tables.setField")}
+      </span>
+      <FieldSelect fields={editable} value={field.id} placeholder="" onChange={(id) => { setFieldId(id); setValue(""); }} />
+      {field.type === "select" ? (
+        <Select value={value || null} onValueChange={(v) => setValue(String(v ?? ""))}>
+          <SelectTrigger size="sm" className="w-40 min-w-0">
+            <SelectValue placeholder={t("navigation:tables.selectChoice")} />
+          </SelectTrigger>
+          <SelectContent>
+            {(field.options?.choices ?? []).map((choice) => (
+              <SelectItem key={choice.id} value={choice.id}>
+                {choice.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : field.type === "user" ? (
+        <Select value={value || null} onValueChange={(v) => setValue(String(v ?? ""))}>
+          <SelectTrigger size="sm" className="w-40 min-w-0">
+            <SelectValue placeholder={t("navigation:tables.selectChoice")} />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from(members.entries()).map(([id, m]) => (
+              <SelectItem key={id} value={id}>
+                {m.user.name || m.user.email || id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input
+          size="sm"
+          className="w-36 min-w-0"
+          value={value}
+          type={
+            field.type === "checkbox"
+              ? "text"
+              : ["number", "percent", "currency"].includes(field.type)
+                ? "number"
+                : field.type === "date" || field.type === "datetime"
+                  ? "date"
+                  : "text"
+          }
+          placeholder={
+            field.type === "checkbox" ? "true / false" : undefined
+          }
+          aria-label={t("navigation:tables.bulkValue", { field: field.name })}
+          onChange={(event) => setValue(event.target.value)}
+        />
+      )}
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={disabled || (value === "" && field.type !== "checkbox")}
+        onClick={apply}
+      >
+        {t("navigation:tables.apply")}
+      </Button>
+    </span>
+  );
+}
+
 export function DataTableGrid({
   table,
   organizationId,
@@ -330,6 +462,12 @@ export function DataTableGrid({
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<DataTableFilter[]>([]);
   const [sort, setSort] = useState<ColumnSort | null>(null);
+  const [groupFieldId, setGroupFieldId] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [summaryFns, setSummaryFns] = useState<Record<string, SummaryFn>>({});
   const [density, setDensity] = useState<Density>(() => readDensity());
   const [hidden, setHidden] = useState<string[]>(() =>
     readHiddenFields(table.id),
@@ -350,11 +488,20 @@ export function DataTableGrid({
   const [dialogField, setDialogField] = useState<DataTableField | null>(null);
   const [dialogType, setDialogType] = useState<DataTableFieldType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<DataTableRow | null>(null);
   const [fieldToDelete, setFieldToDelete] = useState<DataTableField | null>(
     null,
   );
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Summaries are selection-scoped: with rows picked, they describe the
+  // selection, not the whole view.
+  const scopeRows = useMemo(
+    () =>
+      selected.size > 0
+        ? visibleRows.filter((row) => selected.has(row.id))
+        : visibleRows,
+    [visibleRows, selected],
+  );
 
   const activeFilters = useMemo(
     () => filters.filter(filterIsActive),
@@ -376,11 +523,39 @@ export function DataTableGrid({
 
   const rowHeight = DENSITY_ROW_HEIGHT[density];
   const scrollRef = useRef<HTMLDivElement>(null);
+  const groupField =
+    groupFieldId != null ? fieldsById.get(groupFieldId) : undefined;
+
+  // Flat render list: group headers (collapsible) + their rows, or plain rows.
+  type GridItem =
+    | { kind: "group"; key: string; rows: DataTableRow[] }
+    | { kind: "row"; row: DataTableRow };
+  const gridItems = useMemo<GridItem[]>(() => {
+    if (!groupField) {
+      return visibleRows.map((row) => ({ kind: "row", row }) as GridItem);
+    }
+    const items: GridItem[] = [];
+    for (const group of groupRows(groupField, visibleRows)) {
+      const collapsed = collapsedGroups.has(group.key);
+      items.push({ kind: "group", key: group.key, rows: group.rows });
+      if (!collapsed) {
+        for (const row of group.rows) {
+          items.push({ kind: "row", row });
+        }
+      }
+    }
+    return items;
+  }, [groupField, visibleRows, collapsedGroups]);
+
   const virtualizer = useVirtualizer({
-    count: visibleRows.length,
+    count: gridItems.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => rowHeight,
-    getItemKey: (index) => visibleRows[index]?.id ?? index,
+    estimateSize: (index) =>
+      gridItems[index]?.kind === "group" ? GROUP_HEADER_HEIGHT : rowHeight,
+    getItemKey: (index) => {
+      const item = gridItems[index];
+      return item ? (item.kind === "row" ? item.row.id : `group:${item.key}`) : index;
+    },
     overscan: 8,
   });
   // Fixed row heights change with density; drop the size cache so the new
@@ -410,12 +585,21 @@ export function DataTableGrid({
     }
   };
 
-  const addRow = async () => {
+  const addRow = async (presetValues?: Record<string, unknown>) => {
     try {
-      await createRow.mutateAsync({ organizationId, tableId: table.id });
+      await createRow.mutateAsync({
+        organizationId,
+        tableId: table.id,
+        values: presetValues,
+      });
     } catch {
       toast.error(t("navigation:tables.addRowError"));
     }
+  };
+
+  const addRowInGroup = async (field: DataTableField, key: string) => {
+    const value = groupValue(field, key);
+    await addRow(value === null ? undefined : { [field.id]: value });
   };
 
   // CSV round-trip: export the filtered view, import maps headers to fields
@@ -526,18 +710,46 @@ export function DataTableGrid({
     }
   };
 
-  const confirmDeleteRow = async () => {
-    if (!rowToDelete) return;
-    const row = rowToDelete;
-    setRowToDelete(null);
+  // Bulk mutations loop the single-row endpoints: fine at page sizes (<=1000).
+  // ponytail: swap for a real bulk endpoint if tables outgrow that.
+  const bulkSetField = async (field: DataTableField, value: unknown) => {
+    let done = 0;
     try {
-      await deleteRowMutation.mutateAsync({
-        organizationId,
-        tableId: table.id,
-        rowId: row.id,
-      });
+      for (const rowId of selected) {
+        await upsertCell.mutateAsync({
+          organizationId,
+          tableId: table.id,
+          rowId,
+          fieldId: field.id,
+          value,
+        });
+        done += 1;
+      }
+      setSelected(new Set());
+      toast.success(t("navigation:tables.bulkApplied", { count: done }));
     } catch {
-      toast.error(t("navigation:tables.deleteRowError"));
+      toast.error(
+        t("navigation:tables.bulkError", { done, count: selected.size }),
+      );
+    }
+  };
+
+  const bulkDeleteRows = async () => {
+    const count = selected.size;
+    let done = 0;
+    try {
+      for (const rowId of selected) {
+        await deleteRowMutation.mutateAsync({
+          organizationId,
+          tableId: table.id,
+          rowId,
+        });
+        done += 1;
+      }
+      setSelected(new Set());
+      toast.success(t("navigation:tables.bulkDeleted", { count: done }));
+    } catch {
+      toast.error(t("navigation:tables.bulkError", { done, count }));
     }
   };
 
@@ -600,6 +812,23 @@ export function DataTableGrid({
             setDensity(next);
             writeDensity(next);
           }}
+          groupFieldId={groupFieldId}
+          onGroupChange={(fieldId) => {
+            setGroupFieldId(fieldId);
+            setCollapsedGroups(new Set());
+          }}
+          summariesActive={Object.values(summaryFns).some((fn) => fn !== "none")}
+          onSummariesToggle={() =>
+            setSummaryFns((current) => {
+              const on = Object.values(current).some((fn) => fn !== "none");
+              if (on) return {};
+              const next: Record<string, SummaryFn> = {};
+              for (const field of fields) {
+                if (supportsSummary(field)) next[field.id] = defaultSummaryFn(field);
+              }
+              return next;
+            })
+          }
           canEdit={canEdit}
           rowsInView={visibleRows.length}
           onAddRow={addRow}
@@ -688,8 +917,24 @@ export function DataTableGrid({
                 <div
                   role="columnheader"
                   aria-label={t("navigation:tables.rowNumber")}
-                  className="sticky left-0 z-10 border-r border-b bg-background"
-                />
+                  className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
+                >
+                  <Checkbox
+                    checked={
+                      visibleRows.length > 0 &&
+                      visibleRows.every((row) => selected.has(row.id))
+                    }
+                    aria-label={t("navigation:tables.selectAllRows")}
+                    className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
+                    onCheckedChange={(next) =>
+                      setSelected(
+                        next
+                          ? new Set(visibleRows.map((row) => row.id))
+                          : new Set(),
+                      )
+                    }
+                  />
+                </div>
                 {fields.map((field, index) => (
                   <FieldHeader
                     key={field.id}
@@ -771,14 +1016,92 @@ export function DataTableGrid({
                   }}
                 >
                   {virtualizer.getVirtualItems().map((item) => {
-                    const row = visibleRows[item.index];
+                    const entry = gridItems[item.index];
+                    if (!entry) return null;
+                    if (entry.kind === "group") {
+                      const gf = groupField;
+                      if (!gf) return null;
+                      const collapsed = collapsedGroups.has(entry.key);
+                      const label =
+                        entry.key === ""
+                          ? t("navigation:tables.unassigned")
+                          : entry.key;
+                      return (
+                        <div
+                          key={`group:${entry.key}`}
+                          role="row"
+                          className="group absolute left-0 grid bg-background"
+                          style={{
+                            height: GROUP_HEADER_HEIGHT,
+                            top: item.start,
+                            gridTemplateColumns: gridTemplate,
+                            width: totalWidth,
+                          }}
+                        >
+                          <div
+                            className="flex items-center gap-2 border-b border-r bg-secondary/50 ps-2 pe-2 text-xs"
+                            style={{ gridColumn: "1 / -1" }}
+                          >
+                            <button
+                              type="button"
+                              aria-expanded={!collapsed}
+                              aria-label={t("navigation:tables.toggleGroup", {
+                                group: label,
+                              })}
+                              className="flex min-w-0 items-center gap-1.5 rounded-md py-1 text-left font-medium outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                              onClick={() =>
+                                setCollapsedGroups((current) => {
+                                  const next = new Set(current);
+                                  if (next.has(entry.key)) {
+                                    next.delete(entry.key);
+                                  } else {
+                                    next.add(entry.key);
+                                  }
+                                  return next;
+                                })
+                              }
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 shrink-0 transition-transform",
+                                  collapsed && "-rotate-90",
+                                )}
+                              />
+                              <span className="truncate">{label}</span>
+                              <span className="shrink-0 tabular-nums text-muted-foreground">
+                                {entry.rows.length}
+                              </span>
+                            </button>
+                            <span className="flex-1" />
+                            {canEdit && (
+                              <button
+                                type="button"
+                                className="hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:flex"
+                                onClick={() => addRowInGroup(gf, entry.key)}
+                              >
+                                <Plus className="size-3.5" />
+                                {t("navigation:tables.newRowIn", {
+                                  group: label,
+                                })}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    const row = entry.row;
                     const rowIndex = item.index;
+                    const isSelected = selected.has(row.id);
                     return (
                       <div
                         key={row.id}
                         role="row"
                         aria-rowindex={rowIndex + 2}
-                        className="group absolute left-0 grid bg-background hover:bg-row-hover"
+                        aria-selected={isSelected || undefined}
+                        className={cn(
+                          "group absolute left-0 grid bg-background hover:bg-row-hover",
+                          isSelected && "bg-row-selected hover:bg-row-selected",
+                        )}
                         style={{
                           height: rowHeight,
                           // top, not transform: transform would trap the sticky
@@ -792,20 +1115,24 @@ export function DataTableGrid({
                           role="rowheader"
                           className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs tabular-nums text-muted-foreground group-hover:bg-row-hover"
                         >
-                          <span className="group-focus-within:hidden group-hover:hidden">
-                            {rowIndex + 1}
-                          </span>
-                          {canEdit && (
-                            <button
-                              type="button"
-                              aria-label={t("navigation:tables.deleteRow")}
-                              title={t("navigation:tables.deleteRow")}
-                              className="hidden size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive-foreground group-focus-within:flex group-hover:flex"
-                              onClick={() => setRowToDelete(row)}
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
-                          )}
+                          <Checkbox
+                            checked={isSelected}
+                            aria-label={t("navigation:tables.selectRow", {
+                              row: rowIndex + 1,
+                            })}
+                            className={cn(
+                              "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                              isSelected && "opacity-100",
+                            )}
+                            onCheckedChange={(next) =>
+                              setSelected((current) => {
+                                const next2 = new Set(current);
+                                if (next) next2.add(row.id);
+                                else next2.delete(row.id);
+                                return next2;
+                              })
+                            }
+                          />
                         </div>
                         {fields.map((field, fieldIndex) => (
                           <div
@@ -816,7 +1143,7 @@ export function DataTableGrid({
                               row: rowIndex + 1,
                             })}
                             className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-r border-b bg-background px-2 text-ui group-hover:bg-row-hover",
+                              "flex min-w-0 items-center gap-1.5 border-r border-b bg-background px-2 text-ui group-hover:bg-row-hover aria-selected:bg-row-selected",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
                               fieldIndex === 0 && "sticky z-[5] font-medium",
@@ -877,7 +1204,98 @@ export function DataTableGrid({
             )}
             <span className="flex-1" />
 
-            {/* Sticky footer: honest count (DS rule 4). */}
+            {/* Per-field footer summaries (S3): sticky above the footer, off by
+                default, selection-scoped. Each cell picks its function. */}
+            {Object.values(summaryFns).some((fn) => fn !== "none") &&
+              visibleRows.length > 0 && (
+                <div
+                  className="sticky bottom-8 left-0 z-10 grid bg-background"
+                  style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
+                >
+                  <div className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background" />
+                  {fields.map((field) => {
+                    const fn = summaryFns[field.id] ?? "none";
+                    const text = summarize(fn, field, scopeRows);
+                    return (
+                      <div
+                        key={field.id}
+                        className={cn(
+                          "flex min-w-0 items-center border-r border-b bg-background px-2 text-xs text-muted-foreground",
+                          NUMERIC_CELL_TYPES.includes(field.type) && "justify-end",
+                        )}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <button
+                                type="button"
+                                className="w-full truncate text-left tabular-nums outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={t("navigation:tables.summaryMenu", {
+                                  field: field.name,
+                                })}
+                              >
+                                {text ?? "—"}
+                              </button>
+                            }
+                          >
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="min-w-40">
+                            {SUMMARY_FNS.map((option) => (
+                              <DropdownMenuCheckboxItem
+                                key={option}
+                                checked={fn === option}
+                                onCheckedChange={() =>
+                                  setSummaryFns((current) => ({
+                                    ...current,
+                                    [field.id]: option,
+                                  }))
+                                }
+                              >
+                                {t(`navigation:tables.summary_${option}`)}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+            {/* Footer: honest count (DS rule 4) — swaps to the bulk bar while
+                rows are selected (S3). */}
+            {selected.size > 0 ? (
+              <div className="sticky bottom-0 left-0 z-20 flex h-8 shrink-0 items-center gap-2 border-t bg-background px-3 text-xs">
+                <span className="font-medium tabular-nums">
+                  {t("navigation:tables.bulkSelected", { count: selected.size })}
+                </span>
+                <BulkSetField
+                  fields={fields.filter((field) => field.type !== "checkbox" || true)}
+                  members={members}
+                  disabled={bulkBusy}
+                  onApply={(field, value) => bulkSetField(field, value)}
+                />
+                <span className="flex-1" />
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  disabled={bulkBusy}
+                  className="text-destructive-foreground hover:text-destructive-foreground"
+                  onClick={() => bulkDeleteRows()}
+                >
+                  <Trash2 className="size-3.5" />
+                  {t("navigation:tables.bulkDelete")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  disabled={bulkBusy}
+                  onClick={() => setSelected(new Set())}
+                >
+                  {t("common:actions.clear")}
+                </Button>
+              </div>
+            ) : (
             <div className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground">
               <span className="tabular-nums">
                 {narrowed ? (
@@ -938,6 +1356,7 @@ export function DataTableGrid({
               )}
               {importProgress && <span>{importProgress}</span>}
             </div>
+            )}
           </div>
         )}
       </div>
@@ -950,30 +1369,6 @@ export function DataTableGrid({
         field={dialogField}
         initialType={dialogType}
       />
-
-      <AlertDialog
-        open={rowToDelete !== null}
-        onOpenChange={(open) => !open && setRowToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("navigation:tables.deleteRow")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("navigation:tables.deleteRowConfirm")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
-              {t("navigation:tables.cancel")}
-            </Button>
-            <Button size="sm" onClick={confirmDeleteRow}>
-              {t("navigation:tables.deleteRow")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AlertDialog
         open={fieldToDelete !== null}

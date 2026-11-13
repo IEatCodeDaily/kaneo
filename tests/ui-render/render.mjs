@@ -365,6 +365,24 @@ const TABLE_STATES = [
     "table-noresult",
     async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
   ],
+  [
+    "table-select",
+    async (p) => {
+      await p.getByRole("checkbox", { name: "Select row 1" }).click();
+      await p.waitForTimeout(300);
+    },
+  ],
+  [
+    "table-group",
+    async (p) => {
+      await p.getByRole("button", { name: /^Group/ }).click();
+      await p.waitForTimeout(300);
+      await p.getByRole("menuitemradio", { name: "Stage" }).or(
+        p.getByRole("option", { name: "Stage" }),
+      ).first().click();
+      await p.waitForTimeout(500);
+    },
+  ],
 ];
 if (pages.table) {
   for (const [name, act] of TABLE_STATES) {
@@ -413,6 +431,9 @@ if (pages.table) {
           );
           return b ? getComputedStyle(b).fontSize : null;
         })(),
+        bulk: !!document.body.innerText.match(/\d+ selected/),
+        groups: [...document.querySelectorAll('button[aria-label*="group" i]')]
+          .filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
     if (!m.heads.some((x) => x.startsWith("Batch")))
@@ -423,6 +444,10 @@ if (pages.table) {
     if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
     if (name !== "table-noresult" && m.row_h !== 32)
       fails.push(`row ${m.row_h}px, want 32`);
+    if (name === "table-select" && !m.bulk)
+      fails.push("bulk bar missing after row select");
+    if (name === "table-group" && m.groups < 1)
+      fails.push("no group headers after grouping");
     const shot = `${name}--desktop-dark.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m };
