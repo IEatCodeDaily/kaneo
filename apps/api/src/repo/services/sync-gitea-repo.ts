@@ -6,6 +6,7 @@ import {
   repoTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { runBoundedSync } from "./repo-sync-flight";
 
 /**
  * Mirror a Gitea repository's issues and pull requests into repo_issue /
