@@ -26,7 +26,6 @@ import {
   defaultSummaryFn,
   groupRows,
   groupValue,
-  isGroupable,
   type DataTableFilter,
   DENSITY_ROW_HEIGHT,
   type Density,
@@ -493,16 +492,6 @@ export function DataTableGrid({
   );
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Summaries are selection-scoped: with rows picked, they describe the
-  // selection, not the whole view.
-  const scopeRows = useMemo(
-    () =>
-      selected.size > 0
-        ? visibleRows.filter((row) => selected.has(row.id))
-        : visibleRows,
-    [visibleRows, selected],
-  );
-
   const activeFilters = useMemo(
     () => filters.filter(filterIsActive),
     [filters],
@@ -519,6 +508,16 @@ export function DataTableGrid({
         sort,
       ),
     [allRows, allFields, fieldsById, search, activeFilters, sort],
+  );
+
+  // Summaries are selection-scoped: with rows picked, they describe the
+  // selection, not the whole view.
+  const scopeRows = useMemo(
+    () =>
+      selected.size > 0
+        ? visibleRows.filter((row) => selected.has(row.id))
+        : visibleRows,
+    [visibleRows, selected],
   );
 
   const rowHeight = DENSITY_ROW_HEIGHT[density];
@@ -712,6 +711,8 @@ export function DataTableGrid({
 
   // Bulk mutations loop the single-row endpoints: fine at page sizes (<=1000).
   // ponytail: swap for a real bulk endpoint if tables outgrow that.
+  const bulkBusy =
+    upsertCell.isPending || deleteRowMutation.isPending;
   const bulkSetField = async (field: DataTableField, value: unknown) => {
     let done = 0;
     try {
@@ -1001,7 +1002,11 @@ export function DataTableGrid({
                     </Button>
                   ) : (
                     canEdit && (
-                      <Button variant="outline" size="sm" onClick={addRow}>
+                      <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addRow()}
+                    >
                         <Plus className="size-3.5" />
                         {t("navigation:tables.newRow")}
                       </Button>
@@ -1186,7 +1191,7 @@ export function DataTableGrid({
                 type="button"
                 className="flex h-8 shrink-0 items-center border-b text-ui text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 style={{ width: totalWidth }}
-                onClick={addRow}
+                onClick={() => addRow()}
               >
                 <span
                   className="sticky left-0 flex justify-center"
