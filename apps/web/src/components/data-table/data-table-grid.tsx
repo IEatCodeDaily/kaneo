@@ -522,6 +522,18 @@ export function DataTableGrid({
     [allRows, allFields, fieldsById, search, activeFilters, sort],
   );
 
+  // Selection never outlives the view: rows filtered/searched/sorted out (or
+  // removed) are dropped, so bulk actions can't touch invisible rows.
+  useEffect(() => {
+    setSelected((current) => {
+      if (current.size === 0) return current;
+      const next = new Set(
+        [...current].filter((id) => visibleRows.some((row) => row.id === id)),
+      );
+      return next.size === current.size ? current : next;
+    });
+  }, [visibleRows]);
+
   // Summaries are selection-scoped: with rows picked, they describe the
   // selection, not the whole view.
   const scopeRows = useMemo(
