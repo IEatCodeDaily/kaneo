@@ -146,9 +146,13 @@ describe("summarize", () => {
     expect(summarize("sum", field({ id: "c", type: "number" }), rows)).toBe(
       "5",
     );
-    expect(summarize("avg", field({ id: "c", type: "number" }), rows)).toBe(
-      "2.5",
-    );
+    expect(
+      summarize(
+        "avg",
+        field({ id: "c", type: "number", options: { precision: 2 } }),
+        rows,
+      ),
+    ).toBe("2.5");
   });
 
   it("counts filled and checked", () => {

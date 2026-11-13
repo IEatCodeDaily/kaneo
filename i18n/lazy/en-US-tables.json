@@ -186,7 +186,8 @@
 		"summary_checked": "Checked",
 		"bulkApplied": "Updated {{count}} rows",
 		"bulkDeleted": "Deleted {{count}} rows",
-		"bulkError": "Stopped after {{done}} of {{count}} rows"
+		"bulkError": "Stopped after {{done}} of {{count}} rows",
+		"bulkSelected": "{{count}} selected"
 	},
 	"dashboards": {
 		"title": "Dashboards",

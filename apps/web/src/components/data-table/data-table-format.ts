@@ -530,7 +530,11 @@ export function optionsForType(
 
 // ── grouping (single level, client-side; S3) ───────────────────────────────
 
-export type FieldRowGroup = { key: string; label: string; rows: DataTableRow[] };
+export type FieldRowGroup = {
+  key: string;
+  label: string;
+  rows: DataTableRow[];
+};
 
 /** True when the field's values are sensible as group buckets. */
 export function isGroupable(field: DataTableField): boolean {

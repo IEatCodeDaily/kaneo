@@ -23,33 +23,34 @@ import { DataTableCellContent } from "@/components/data-table/data-table-editors
 import {
   type ColumnSort,
   currencyUnit,
-  defaultSummaryFn,
-  groupRows,
-  groupValue,
   type DataTableFilter,
   DENSITY_ROW_HEIGHT,
   type Density,
   defaultFilterFor,
+  defaultSummaryFn,
   EDITABLE_FIELD_TYPES,
   FIELD_TYPE_LABEL_KEYS,
   fieldWidth,
   filterIsActive,
+  groupRows,
+  groupValue,
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
   readHiddenFields,
   rowMatchesFilters,
   rowMatchesSearch,
   type SummaryFn,
-  summarize,
-  supportsSummary,
   sortedFields,
   sortedRows,
   sortRows,
+  summarize,
+  supportsSummary,
   writeDensity,
   writeHiddenFields,
 } from "@/components/data-table/data-table-format";
 import {
   DataTableToolbar,
+  FieldSelect,
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
@@ -71,23 +72,19 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
-  DropdownMenuCheckboxItem,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import {
-  createDataTableRow,
-  getTableRowPage,
-} from "@/fetchers/data-table/data-table";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -95,7 +92,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FieldSelect } from "@/components/data-table/data-table-toolbar";
+import {
+  createDataTableRow,
+  getTableRowPage,
+} from "@/fetchers/data-table/data-table";
 import {
   dataTableKeys,
   useDataTableMutations,
@@ -350,9 +350,20 @@ function BulkSetField({
       <span className="hidden text-muted-foreground sm:contents">
         {t("navigation:tables.setField")}
       </span>
-      <FieldSelect fields={editable} value={field.id} placeholder="" onChange={(id) => { setFieldId(id); setValue(""); }} />
+      <FieldSelect
+        fields={editable}
+        value={field.id}
+        placeholder=""
+        onChange={(id) => {
+          setFieldId(id);
+          setValue("");
+        }}
+      />
       {field.type === "select" ? (
-        <Select value={value || null} onValueChange={(v) => setValue(String(v ?? ""))}>
+        <Select
+          value={value || null}
+          onValueChange={(v) => setValue(String(v ?? ""))}
+        >
           <SelectTrigger size="sm" className="w-40 min-w-0">
             <SelectValue placeholder={t("navigation:tables.selectChoice")} />
           </SelectTrigger>
@@ -365,7 +376,10 @@ function BulkSetField({
           </SelectContent>
         </Select>
       ) : field.type === "user" ? (
-        <Select value={value || null} onValueChange={(v) => setValue(String(v ?? ""))}>
+        <Select
+          value={value || null}
+          onValueChange={(v) => setValue(String(v ?? ""))}
+        >
           <SelectTrigger size="sm" className="w-40 min-w-0">
             <SelectValue placeholder={t("navigation:tables.selectChoice")} />
           </SelectTrigger>
@@ -391,9 +405,7 @@ function BulkSetField({
                   ? "date"
                   : "text"
           }
-          placeholder={
-            field.type === "checkbox" ? "true / false" : undefined
-          }
+          placeholder={field.type === "checkbox" ? "true / false" : undefined}
           aria-label={t("navigation:tables.bulkValue", { field: field.name })}
           onChange={(event) => setValue(event.target.value)}
         />
@@ -553,7 +565,11 @@ export function DataTableGrid({
       gridItems[index]?.kind === "group" ? GROUP_HEADER_HEIGHT : rowHeight,
     getItemKey: (index) => {
       const item = gridItems[index];
-      return item ? (item.kind === "row" ? item.row.id : `group:${item.key}`) : index;
+      return item
+        ? item.kind === "row"
+          ? item.row.id
+          : `group:${item.key}`
+        : index;
     },
     overscan: 8,
   });
@@ -711,8 +727,7 @@ export function DataTableGrid({
 
   // Bulk mutations loop the single-row endpoints: fine at page sizes (<=1000).
   // ponytail: swap for a real bulk endpoint if tables outgrow that.
-  const bulkBusy =
-    upsertCell.isPending || deleteRowMutation.isPending;
+  const bulkBusy = upsertCell.isPending || deleteRowMutation.isPending;
   const bulkSetField = async (field: DataTableField, value: unknown) => {
     let done = 0;
     try {
@@ -818,14 +833,17 @@ export function DataTableGrid({
             setGroupFieldId(fieldId);
             setCollapsedGroups(new Set());
           }}
-          summariesActive={Object.values(summaryFns).some((fn) => fn !== "none")}
+          summariesActive={Object.values(summaryFns).some(
+            (fn) => fn !== "none",
+          )}
           onSummariesToggle={() =>
             setSummaryFns((current) => {
               const on = Object.values(current).some((fn) => fn !== "none");
               if (on) return {};
               const next: Record<string, SummaryFn> = {};
               for (const field of fields) {
-                if (supportsSummary(field)) next[field.id] = defaultSummaryFn(field);
+                if (supportsSummary(field))
+                  next[field.id] = defaultSummaryFn(field);
               }
               return next;
             })
@@ -1003,10 +1021,10 @@ export function DataTableGrid({
                   ) : (
                     canEdit && (
                       <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addRow()}
-                    >
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addRow()}
+                      >
                         <Plus className="size-3.5" />
                         {t("navigation:tables.newRow")}
                       </Button>
@@ -1215,7 +1233,10 @@ export function DataTableGrid({
               visibleRows.length > 0 && (
                 <div
                   className="sticky bottom-8 left-0 z-10 grid bg-background"
-                  style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
+                  style={{
+                    gridTemplateColumns: gridTemplate,
+                    width: totalWidth,
+                  }}
                 >
                   <div className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background" />
                   {fields.map((field) => {
@@ -1226,7 +1247,8 @@ export function DataTableGrid({
                         key={field.id}
                         className={cn(
                           "flex min-w-0 items-center border-r border-b bg-background px-2 text-xs text-muted-foreground",
-                          NUMERIC_CELL_TYPES.includes(field.type) && "justify-end",
+                          NUMERIC_CELL_TYPES.includes(field.type) &&
+                            "justify-end",
                         )}
                       >
                         <DropdownMenu>
@@ -1242,9 +1264,11 @@ export function DataTableGrid({
                                 {text ?? "—"}
                               </button>
                             }
+                          ></DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="start"
+                            className="min-w-40"
                           >
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="min-w-40">
                             {SUMMARY_FNS.map((option) => (
                               <DropdownMenuCheckboxItem
                                 key={option}
@@ -1272,10 +1296,14 @@ export function DataTableGrid({
             {selected.size > 0 ? (
               <div className="sticky bottom-0 left-0 z-20 flex h-8 shrink-0 items-center gap-2 border-t bg-background px-3 text-xs">
                 <span className="font-medium tabular-nums">
-                  {t("navigation:tables.bulkSelected", { count: selected.size })}
+                  {t("navigation:tables.bulkSelected", {
+                    count: selected.size,
+                  })}
                 </span>
                 <BulkSetField
-                  fields={fields.filter((field) => field.type !== "checkbox" || true)}
+                  fields={fields.filter(
+                    (field) => field.type !== "checkbox" || true,
+                  )}
                   members={members}
                   disabled={bulkBusy}
                   onApply={(field, value) => bulkSetField(field, value)}
@@ -1301,66 +1329,66 @@ export function DataTableGrid({
                 </Button>
               </div>
             ) : (
-            <div className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground">
-              <span className="tabular-nums">
-                {narrowed ? (
-                  <Trans
-                    i18nKey={
-                      allLoaded
-                        ? "navigation:tables.rowsOfTotal"
-                        : "navigation:tables.rowsOfLoaded"
-                    }
-                    values={{
-                      shown: visibleRows.length,
-                      total: allLoaded ? table.total : allRows.length,
+              <div className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground">
+                <span className="tabular-nums">
+                  {narrowed ? (
+                    <Trans
+                      i18nKey={
+                        allLoaded
+                          ? "navigation:tables.rowsOfTotal"
+                          : "navigation:tables.rowsOfLoaded"
+                      }
+                      values={{
+                        shown: visibleRows.length,
+                        total: allLoaded ? table.total : allRows.length,
+                      }}
+                      components={{
+                        b: <span className="font-medium text-foreground" />,
+                      }}
+                    />
+                  ) : (
+                    <Trans
+                      i18nKey={
+                        allLoaded
+                          ? "navigation:tables.rowsTotal"
+                          : "navigation:tables.rowsLoaded"
+                      }
+                      values={{ count: allRows.length, total: table.total }}
+                      components={{
+                        b: <span className="font-medium text-foreground" />,
+                      }}
+                    />
+                  )}
+                </span>
+                {!allLoaded && (
+                  <button
+                    type="button"
+                    className="font-medium text-primary-soft-foreground hover:underline disabled:opacity-60"
+                    disabled={loadingMore}
+                    onClick={async () => {
+                      setLoadingMore(true);
+                      try {
+                        const page = await getTableRowPage(
+                          table.id,
+                          organizationId,
+                          allRows.length,
+                        );
+                        setAppendedRows((current) => [
+                          ...current,
+                          ...page.rows.filter(
+                            (row) => !allRows.some((r) => r.id === row.id),
+                          ),
+                        ]);
+                      } finally {
+                        setLoadingMore(false);
+                      }
                     }}
-                    components={{
-                      b: <span className="font-medium text-foreground" />,
-                    }}
-                  />
-                ) : (
-                  <Trans
-                    i18nKey={
-                      allLoaded
-                        ? "navigation:tables.rowsTotal"
-                        : "navigation:tables.rowsLoaded"
-                    }
-                    values={{ count: allRows.length, total: table.total }}
-                    components={{
-                      b: <span className="font-medium text-foreground" />,
-                    }}
-                  />
+                  >
+                    {t("navigation:tables.loadMore")}
+                  </button>
                 )}
-              </span>
-              {!allLoaded && (
-                <button
-                  type="button"
-                  className="font-medium text-primary-soft-foreground hover:underline disabled:opacity-60"
-                  disabled={loadingMore}
-                  onClick={async () => {
-                    setLoadingMore(true);
-                    try {
-                      const page = await getTableRowPage(
-                        table.id,
-                        organizationId,
-                        allRows.length,
-                      );
-                      setAppendedRows((current) => [
-                        ...current,
-                        ...page.rows.filter(
-                          (row) => !allRows.some((r) => r.id === row.id),
-                        ),
-                      ]);
-                    } finally {
-                      setLoadingMore(false);
-                    }
-                  }}
-                >
-                  {t("navigation:tables.loadMore")}
-                </button>
-              )}
-              {importProgress && <span>{importProgress}</span>}
-            </div>
+                {importProgress && <span>{importProgress}</span>}
+              </div>
             )}
           </div>
         )}
