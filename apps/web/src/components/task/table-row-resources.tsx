@@ -20,13 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getDataTable, getDataTables } from "@/fetchers/data-table/data-table";
-import type { DataTable } from "@/types/data-table";
 import {
   getRowsForTask,
   linkRowToTask,
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
 import { toast } from "@/lib/toast";
+import type { DataTable } from "@/types/data-table";
 
 type Group = {
   tableId: string;

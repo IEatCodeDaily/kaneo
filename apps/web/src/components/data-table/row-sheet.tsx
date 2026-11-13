@@ -1,10 +1,10 @@
-import { Link2, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Check, ChevronLeft, ChevronRight, Copy, Link2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { MemberOption } from "@/components/data-table/data-table-cells";
 import { FieldTypeIcon } from "@/components/data-table/data-table-cells";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
-import type { MemberOption } from "@/components/data-table/data-table-cells";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/sheet";
 import { getRowTickets } from "@/fetchers/data-table/row-links";
 import { cn } from "@/lib/cn";
-import type { DataTable, DataTableField, DataTableRow } from "@/types/data-table";
+import type {
+  DataTable,
+  DataTableField,
+  DataTableRow,
+} from "@/types/data-table";
 
 /**
  * 480px row sheet (design v3 S4): one row's fields stacked, Row ID copy,
