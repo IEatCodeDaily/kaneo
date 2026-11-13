@@ -53,7 +53,12 @@ export function RowSheet({
   const tickets = useQuery({
     queryKey: ["row-tickets", row?.id],
     enabled: open && row !== null,
-    queryFn: () => getRowTickets({ organizationId: table.organizationId, tableId: table.id, rowId: row.id }),
+    queryFn: () =>
+      getRowTickets({
+        organizationId: table.organizationId,
+        tableId: table.id,
+        rowId: row?.id ?? "",
+      }),
   });
 
   if (!row) return null;

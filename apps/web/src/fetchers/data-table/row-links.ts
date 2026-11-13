@@ -1,4 +1,4 @@
-import getApiUrl from "@/fetchers/get-api-url";
+import { getApiUrl } from "@/fetchers/get-api-url";
 
 const tablePath = ({
   organizationId,

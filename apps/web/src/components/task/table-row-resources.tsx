@@ -25,8 +25,10 @@ import {
   linkRowToTask,
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
-import { getTableRowPage } from "@/fetchers/data-table/data-table";
-import { useDataTables } from "@/hooks/data-table/use-data-tables";
+import {
+  useDataTable,
+  useDataTables,
+} from "@/hooks/data-table/use-data-tables";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
@@ -62,11 +64,9 @@ export function TableRowResources({
   const { canUpdateBoards } = useOrganizationPermission();
   const editable = canEdit && canUpdateBoards();
 
-  const rows = useQuery({
-    queryKey: ["table-rows-for-picker", pickTableId],
-    enabled: pickerOpen && pickTableId !== null,
-    queryFn: () => getTableRowPage(pickTableId, organizationId, 0),
-  });
+  // The detail endpoint carries fields + rows; the list endpoint has no fields.
+  const detail = useDataTable(organizationId, pickerOpen ? pickTableId : "");
+  const rows = detail;
 
   const link = useMutation({
     mutationFn: async () => {
@@ -102,13 +102,12 @@ export function TableRowResources({
     onError: () => toast.error(t("navigation:tables.unlinkRowError")),
   });
 
-  const table = tables.find((candidate) => candidate.id === pickTableId);
   const candidates = (rows.data?.rows ?? []).filter(
     (row) =>
       !search ||
       JSON.stringify(row.values).toLowerCase().includes(search.toLowerCase()),
   );
-  const primaryField = table?.fields[0];
+  const primaryField = rows.data?.fields[0];
 
   return (
     <div className="flex flex-col gap-0.5" data-slot="task-table-rows">
