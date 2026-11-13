@@ -21,8 +21,12 @@ import {
   getDashboard,
   getDataTable,
   listDashboards,
+  getRowTickets,
+  linkRowToTask,
   listDataTables,
+  listRowsForTask,
   purgeDataTable,
+  unlinkRowTask,
   queryDataTable,
   restoreDataTable,
   softDeleteDataTable,
@@ -425,7 +429,76 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId, fieldId } = c.req.valid("param");
+
+  .get(
+    "/organization/:organizationId/:tableId/rows/:rowId/tickets",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        rowId: v.string(),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { rowId } = c.req.valid("param");
+      return c.json(await getRowTickets(rowId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/rows/:rowId/tickets",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        rowId: v.string(),
+      }),
+    ),
+    validator("query", v.object({ taskId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, rowId } = c.req.valid("param");
+      const { taskId } = c.req.valid("query");
       return c.json(
+        await linkRowToTask(organizationId, tableId, rowId, taskId),
+      );
+    },
+  )
+  .delete(
+    "/organization/:organizationId/:tableId/rows/:rowId/tickets",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        rowId: v.string(),
+      }),
+    ),
+    validator("query", v.object({ taskId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, rowId } = c.req.valid("param");
+      const { taskId } = c.req.valid("query");
+      return c.json(
+        await unlinkRowTask(organizationId, tableId, rowId, taskId),
+      );
+    },
+  )
+  .get(
+    "/organization/:organizationId/rows-for-ticket",
+    validator("query", v.object({ taskId: v.string() })),
+    organizationAccess.fromTaskId("taskId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      const { taskId } = c.req.valid("query");
+      return c.json(await listRowsForTask(organizationId, taskId));
+    },
+  )      return c.json(
         await updateTableCell(
           organizationId,
           tableId,

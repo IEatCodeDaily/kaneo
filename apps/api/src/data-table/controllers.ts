@@ -6,7 +6,11 @@ import {
   type DashboardPanelSpec,
   dataTableDashboardTable,
   dataTableFieldTable,
+  boardTable,
   dataTableTable,
+  externalLinkTable,
+  organizationTable,
+  taskTable,
 } from "../database/schema";
 import { type FieldType, fieldOptionsSchema, isFieldType } from "./fields";
 import type { StoreField } from "./store";
@@ -443,4 +447,193 @@ export async function deleteDashboard(
     .delete(dataTableDashboardTable)
     .where(eq(dataTableDashboardTable.id, dashboardId));
   return { success: true as const };
+}
+
+// ── row ↔ task links (S4) ──────────────────────────────────────────────────
+// Rows link to tickets through the task resources table (resource type
+// "table_row"): the reverse lookup is then an indexed query, and the ticket
+// side reuses the existing resources UI. Deliberately no "linkticket" field
+// type — ponytail: add one if rows need in-grid ticket columns.
+
+const TABLE_ROW_RESOURCE = "table_row";
+
+export async function getRowTickets(rowId: string) {
+  const links = await db
+    .select({
+      id: externalLinkTable.id,
+      taskId: externalLinkTable.taskId,
+      url: externalLinkTable.url,
+      title: externalLinkTable.title,
+      taskTitle: taskTable.title,
+      taskStatus: taskTable.status,
+    })
+    .from(externalLinkTable)
+    .innerJoin(taskTable, eq(taskTable.id, externalLinkTable.taskId))
+    .where(
+      and(
+        eq(externalLinkTable.externalId, rowId),
+        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+      ),
+    );
+  return links.map((link) => ({
+    id: link.id,
+    taskId: link.taskId,
+    url: link.url,
+    title: link.title,
+    taskTitle: link.taskTitle,
+    taskStatus: link.taskStatus,
+  }));
+}
+
+async function requireOrgTask(organizationId: string, taskId: string) {
+  // A task hangs off a board; its organization comes through that join (the
+  // same path the organization-access middleware uses).
+  const [task] = await db
+    .select({ id: taskTable.id })
+    .from(taskTable)
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
+    .where(and(eq(taskTable.id, taskId), eq(boardTable.organizationId, organizationId)));
+  if (!task) notFound("Task");
+  return task;
+}
+
+/** Primary-cell text for the link preview/title. */
+async function primaryValueOf(
+  organizationId: string,
+  tableId: string,
+  rowId: string,
+): Promise<string | null> {
+  const fieldRows = await listTableFieldRows(tableId);
+  const fields = fieldRows.map(toStoreField);
+  if (fields.length === 0) return null;
+  const { rows } = await store.listRows(db, tableId, fields, 1000, 0);
+  const row = rows.find((candidate) => candidate.id === rowId);
+  if (!row) notFound("Row");
+  const value = row.values[fields[0].id];
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+}
+
+export async function linkRowToTask(
+  organizationId: string,
+  tableId: string,
+  rowId: string,
+  taskId: string,
+) {
+  await requireOrgTask(organizationId, taskId);
+  const table = await requireTable(organizationId, tableId);
+  const existing = await db
+    .select({ id: externalLinkTable.id })
+    .from(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.externalId, rowId),
+        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+      ),
+    );
+  if (existing.length > 0) {
+    return { success: true as const, alreadyLinked: true as const };
+  }
+  const [org] = await db
+    .select({ slug: organizationTable.slug })
+    .from(organizationTable)
+    .where(eq(organizationTable.id, organizationId));
+  const clientUrl = process.env.KANEO_CLIENT_URL ?? "http://localhost:5173";
+  const title = await primaryValueOf(organizationId, tableId, rowId);
+  await db.insert(externalLinkTable).values({
+    taskId,
+    integrationId: null,
+    externalId: rowId,
+    resourceType: TABLE_ROW_RESOURCE,
+    url: `${clientUrl}/dashboard/organization/${org?.slug}/table/${tableId}`,
+    title: title ?? table.name,
+    metadata: JSON.stringify({ tableId, tableName: table.name }),
+  });
+  return { success: true as const, alreadyLinked: false as const };
+}
+
+export async function unlinkRowTask(
+  organizationId: string,
+  tableId: string,
+  rowId: string,
+  taskId: string,
+) {
+  await requireOrgTask(organizationId, taskId);
+  await requireTable(organizationId, tableId);
+  await db
+    .delete(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.externalId, rowId),
+        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+      ),
+    );
+  return { success: true as const };
+}
+
+export async function listRowsForTask(organizationId: string, taskId: string) {
+  await requireOrgTask(organizationId, taskId);
+  const links = await db
+    .select({
+      id: externalLinkTable.id,
+      externalId: externalLinkTable.externalId,
+      metadata: externalLinkTable.metadata,
+    })
+    .from(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+      ),
+    );
+  const byTable = new Map<string, Set<string>>();
+  const names = new Map<string, string>();
+  for (const link of links) {
+    let tableId = "";
+    try {
+      const meta = link.metadata
+        ? (JSON.parse(link.metadata) as { tableId?: string; tableName?: string })
+        : {};
+      tableId = meta.tableId ?? "";
+      if (meta.tableName) names.set(tableId, meta.tableName);
+    } catch {
+      tableId = "";
+    }
+    if (!tableId) continue;
+    const ids = byTable.get(tableId) ?? new Set<string>();
+    ids.add(link.externalId);
+    byTable.set(tableId, ids);
+  }
+  const result: {
+    tableId: string;
+    tableName: string;
+    rows: { id: string; primary: string | null }[];
+  }[] = [];
+  for (const [tableId, ids] of byTable) {
+    const table = await db
+      .select({ name: dataTableTable.name })
+      .from(dataTableTable)
+      .where(eq(dataTableTable.id, tableId));
+    if (!table[0]) continue;
+    const fieldRows = await listTableFieldRows(tableId);
+    const fields = fieldRows.map(toStoreField);
+    const { rows } = await store.listRows(db, tableId, fields, 1000, 0);
+    const wanted = rows
+      .filter((row) => ids.has(row.id))
+      .map((row) => ({
+        id: row.id,
+        primary:
+          fields.length > 0
+            ? String(row.values[fields[0].id] ?? "")
+            : null,
+      }));
+    result.push({
+      tableId,
+      tableName: table[0].name || names.get(tableId) || "Table",
+      rows: wanted,
+    });
+  }
+  return result;
 }

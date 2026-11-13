@@ -53,6 +53,7 @@ import {
   FieldSelect,
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
+import { RowSheet } from "@/components/data-table/row-sheet";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import {
   AlertDialog,
@@ -1274,9 +1275,16 @@ export function DataTableGrid({
                                 editing?.rowId === row.id &&
                                 editing?.fieldId === field.id
                               }
-                              onEditStart={() =>
-                                setEditing({ rowId: row.id, fieldId: field.id })
-                              }
+                              onEditStart={() => {
+                                if (fieldIndex === 0) {
+                                  setSheetRowId(row.id);
+                                  return;
+                                }
+                                setEditing({
+                                  rowId: row.id,
+                                  fieldId: field.id,
+                                });
+                              }}
                               onEditEnd={() => setEditing(null)}
                               onCommit={(value) =>
                                 commitCell(row, field, value)
@@ -1516,6 +1524,30 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <RowSheet
+        open={sheetRowId !== null}
+        onOpenChange={(next) => !next && setSheetRowId(null)}
+        table={table}
+        row={visibleRows.find((row) => row.id === sheetRowId) ?? null}
+        fields={fields}
+        members={members}
+        canEdit={canEdit}
+        onCommit={(row, field, value) => commitCell(row, field, value)}
+        onPrev={() =>
+          setSheetRowId((current) => {
+            const index = visibleRows.findIndex((row) => row.id === current);
+            if (index <= 0) return current;
+            return visibleRows[index - 1].id;
+          })
+        }
+        onNext={() =>
+          setSheetRowId((current) => {
+            const index = visibleRows.findIndex((row) => row.id === current);
+            if (index < 0 || index >= visibleRows.length - 1) return current;
+            return visibleRows[index + 1].id;
+          })
+        }
+      />
 
       <FieldOptionsDialog
         organizationId={organizationId}

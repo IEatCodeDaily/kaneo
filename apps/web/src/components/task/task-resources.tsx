@@ -61,6 +61,7 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
+import { TableRowResources } from "./table-row-resources";
 import { extractDescriptionResources } from "./description-resources";
 import ResourcePickerRow from "./resource-picker-row";
 import { ResourceSyncBadge } from "./resource-sync-badge";
@@ -1059,6 +1060,12 @@ export default function TaskResources({
           </div>
         </CommandDialogPopup>
       </CommandDialog>
+
+      <TableRowResources
+        canEdit={canEdit}
+        organizationId={organizationId}
+        taskId={taskId}
+      />
     </section>
   );
 }

@@ -193,7 +193,19 @@
 		"bulkDeleteConfirm_one": "This permanently deletes {{count}} row. This cannot be undone.",
 		"bulkDeleteConfirm_other": "This permanently deletes {{count}} rows. This cannot be undone.",
 		"bulkDeleteTitle": "Delete {{count}} rows?",
-		"bulkDeleteConfirm": "This permanently deletes {{count}} rows. This cannot be undone."
+		"bulkDeleteConfirm": "This permanently deletes {{count}} rows. This cannot be undone.",
+		"tableRowsSection": "Table rows",
+		"linkTableRow": "Link table row",
+		"pickTable": "Pick a table",
+		"unlinkTableRow": "Unlink table row",
+		"linkRowError": "Failed to link the row",
+		"unlinkRowError": "Failed to unlink the row",
+		"rowSheetTitle": "Row details",
+		"prevRow": "Previous row",
+		"nextRow": "Next row",
+		"copyRowId": "Copy row ID",
+		"linkedTickets": "Linked tickets",
+		"noLinkedTickets": "No tickets linked."
 	},
 	"dashboards": {
 		"title": "Dashboards",
