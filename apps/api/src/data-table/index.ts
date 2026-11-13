@@ -507,7 +507,9 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId } = c.req.valid("param");
       const { taskId } = c.req.valid("query");
-      return c.json(await listRowsForTask(organizationId, taskId, c.get("userId")));
+      return c.json(
+        await listRowsForTask(organizationId, taskId, c.get("userId")),
+      );
     },
   );
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronLeft, ChevronRight, Copy, Link2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import { FieldTypeIcon } from "@/components/data-table/data-table-cells";
@@ -88,7 +88,7 @@ export function RowSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[480px] sm:max-w-[480px] p-0">
+      <SheetContent side="right" className="w-[480px] sm:max-w-[480px] p-0">
         <SheetHeader className="border-b px-4 py-3">
           <div className="flex items-center gap-1">
             <Button

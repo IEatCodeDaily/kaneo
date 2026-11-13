@@ -2,7 +2,6 @@ import { and, asc, eq, isNull, max, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
-import { listAccessibleResourceIds } from "../resource-access";
 import {
   boardTable,
   type DashboardPanelSpec,
@@ -13,6 +12,7 @@ import {
   organizationTable,
   taskTable,
 } from "../database/schema";
+import { listAccessibleResourceIds } from "../resource-access";
 import { type FieldType, fieldOptionsSchema, isFieldType } from "./fields";
 import type { StoreField } from "./store";
 import * as store from "./store";
@@ -579,18 +579,16 @@ export async function unlinkRowTask(
 ) {
   await requireOrgTask(organizationId, taskId);
   await requireTable(organizationId, tableId);
-  await db
-    .delete(externalLinkTable)
-    .where(
-      and(
-        eq(externalLinkTable.taskId, taskId),
-        eq(externalLinkTable.externalId, rowId),
-        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
-        // Only the param table's link may be unlinked — otherwise edit
-        // privilege on table B could unlink a row that lives in table A.
-        sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
-      ),
-    );
+  await db.delete(externalLinkTable).where(
+    and(
+      eq(externalLinkTable.taskId, taskId),
+      eq(externalLinkTable.externalId, rowId),
+      eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+      // Only the param table's link may be unlinked — otherwise edit
+      // privilege on table B could unlink a row that lives in table A.
+      sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
+    ),
+  );
   return { success: true as const };
 }
 
