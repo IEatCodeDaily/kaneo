@@ -26,7 +26,6 @@ import {
   linkRowToTask,
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
-import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 
 type Group = {
@@ -51,8 +50,8 @@ export function TableRowResources({
   canEdit: boolean;
 }) {
   const { t } = useTranslation();
+  const [tables, setTablesState] = useState<Group[]>([]);
   const [organizationSlug, setOrganizationSlug] = useState("");
-  const [groups, setGroups] = useState<Group[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickTableId, setPickTableId] = useState<string | null>(null);
   const [pickRowId, setPickRowId] = useState<string | null>(null);
@@ -63,8 +62,7 @@ export function TableRowResources({
   >([]);
   const [busy, setBusy] = useState(false);
 
-  const { canUpdateBoards } = useOrganizationPermission();
-  const editable = canEdit && canUpdateBoards();
+  const editable = canEdit;
 
   useEffect(() => {
     if (!taskId || !organizationId) return;
@@ -72,7 +70,7 @@ export function TableRowResources({
     getRowsForTask({ organizationId, taskId })
       .then((data) => {
         if (cancelled) return;
-        setGroups(data.tables);
+        setTablesState(data.tables);
         setOrganizationSlug(data.organizationSlug);
       })
       .catch(() => {
@@ -114,7 +112,7 @@ export function TableRowResources({
   const reload = () => {
     getRowsForTask({ organizationId, taskId })
       .then((data) => {
-        setGroups(data.tables);
+        setTablesState(data.tables);
         setOrganizationSlug(data.organizationSlug);
       })
       .catch(() => {});
@@ -189,7 +187,7 @@ export function TableRowResources({
         )}
       </div>
 
-      {groups.map((group) => (
+      {tablesState.map((group) => (
         <div key={group.tableId} className="flex flex-col gap-0.5">
           <span className="px-2 text-xs text-muted-foreground">
             {group.tableName}
