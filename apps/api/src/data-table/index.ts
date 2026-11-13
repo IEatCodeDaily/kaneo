@@ -508,7 +508,6 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       const { taskId } = c.req.valid("query");
       return c.json(await listRowsForTask(organizationId, taskId));
     },
-  )
   );
 
 export default dataTable;
