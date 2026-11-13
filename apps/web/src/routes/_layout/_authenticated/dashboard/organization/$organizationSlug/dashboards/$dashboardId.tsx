@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Layout from "@/components/common/layout";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
+import Layout from "@/components/common/layout";
 import {
   DashboardGrid,
   GridPanel,
@@ -235,7 +235,10 @@ function DashboardDetailRoute() {
           <span className="h-4 w-56 animate-pulse rounded-sm bg-muted" />
         </Layout.Toolbar>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
+          <div
+            className="grid gap-3"
+            style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
+          >
             {["a", "b", "c", "d"].map((id) => (
               <div
                 key={id}
