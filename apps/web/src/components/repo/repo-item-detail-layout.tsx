@@ -354,7 +354,7 @@ export function RepoItemAuthor({
     >
       <Avatar className={cn("size-6", getAvatarTone(login))}>
         {avatarUrl && <AvatarImage src={avatarUrl} />}
-        <AvatarFallback className="bg-transparent text-[9px]">
+        <AvatarFallback className="bg-transparent text-xs">
           {login.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

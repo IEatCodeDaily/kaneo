@@ -114,7 +114,7 @@ export function NavMain() {
                   <span className="flex-1">
                     {t("navigation:sidebar.recent")}
                   </span>
-                  <span className="w-5 text-right text-[10px] tabular-nums">
+                  <span className="w-5 text-right text-xs tabular-nums">
                     {recentPages.length > 0
                       ? Math.min(recentPages.length, recentPageLimit)
                       : null}
@@ -128,7 +128,7 @@ export function NavMain() {
                 </SidebarMenuButton>
                 {recentOpen &&
                   (recentPages.length === 0 ? (
-                    <p className="px-2 py-1 text-[11px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+                    <p className="px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
                       {t("navigation:sidebar.recentEmpty")}
                     </p>
                   ) : (
@@ -145,14 +145,14 @@ export function NavMain() {
                             key={page.pathname}
                           >
                             <SidebarMenuSubButton
-                              className="h-6 text-[11px]"
+                              className="h-6 text-xs"
                               onClick={() => navigate({ to: page.pathname })}
                             >
                               <span className="min-w-0 flex-1 truncate">
                                 {page.label}
                               </span>
                               {page.detail ? (
-                                <span className="max-w-20 shrink-0 truncate rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                                <span className="max-w-20 shrink-0 truncate rounded bg-muted px-1 text-xs text-muted-foreground">
                                   {page.detail}
                                 </span>
                               ) : null}

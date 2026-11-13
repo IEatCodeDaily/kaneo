@@ -266,7 +266,7 @@ export default function BoardMilestonesSection({
                 />
               ) : milestone.dueDate ? (
                 <p
-                  className="mt-1.5 text-[11px] text-muted-foreground"
+                  className="mt-1.5 text-xs text-muted-foreground"
                   data-testid={`board-milestone-due-${milestone.id}`}
                 >
                   {t("tasks:milestone.manage.dueDate")}:{" "}
@@ -282,7 +282,7 @@ export default function BoardMilestonesSection({
                     data-testid={`board-milestone-status-${milestone.id}-${status}`}
                     onClick={() => void handleStatusChange(milestone, status)}
                     className={cn(
-                      "rounded px-1.5 py-0.5 text-[10px] capitalize",
+                      "rounded px-1.5 py-0.5 text-xs capitalize",
                       milestone.status === status
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground",
@@ -294,7 +294,7 @@ export default function BoardMilestonesSection({
               </div>
 
               {/* Task-derived range and progress coexist with the explicit due date. */}
-              <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span data-testid={`board-milestone-range-${milestone.id}`}>
                   {formatRange(
                     progress.startDate,

@@ -172,12 +172,12 @@ export default function BoardPropertiesPanel({
                       className={`h-6 w-6 ${getAvatarTone(member.userId, member.user?.email)}`}
                     >
                       <AvatarImage src={member.user?.image ?? undefined} />
-                      <AvatarFallback className="bg-transparent text-[10px]">
+                      <AvatarFallback className="bg-transparent text-xs">
                         {getInitials(label)}
                       </AvatarFallback>
                     </Avatar>
                     <span className="truncate text-xs">{label}</span>
-                    <span className="ml-auto shrink-0 text-[10px] text-muted-foreground capitalize">
+                    <span className="ml-auto shrink-0 text-xs text-muted-foreground capitalize">
                       {member.role ?? ""}
                     </span>
                   </li>

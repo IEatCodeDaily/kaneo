@@ -99,7 +99,7 @@ export function UserAvatar({
               ) : null}
               <AvatarFallback
                 className={cn(
-                  "text-[10px] font-medium",
+                  "text-xs font-medium",
                   user.image ? "bg-transparent" : tone,
                 )}
               >
@@ -198,7 +198,7 @@ export function UserAvatar({
             <Mail className="size-3.5" />
             {t("navigation:sidebar.invitations")}
             {invitations.length > 0 && (
-              <span className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-border/60 px-1 text-[11px] font-medium text-muted-foreground">
+              <span className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-sm border border-border/60 px-1 text-xs font-medium text-muted-foreground">
                 {invitations.length}
               </span>
             )}

@@ -612,7 +612,7 @@ function TeamCard({
                       className={`size-7 ${getAvatarTone(member?.userId, member?.user.email)}`}
                     >
                       <AvatarImage src={member?.user.image ?? ""} />
-                      <AvatarFallback className="bg-transparent text-[10px]">
+                      <AvatarFallback className="bg-transparent text-xs">
                         {getInitials(member?.user.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -621,7 +621,7 @@ function TeamCard({
                         {member?.user.name ?? "Organization member"}
                         {inherited ? (
                           <span
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-muted/60 px-1.5 py-0.5 text-xs font-normal text-muted-foreground"
                             data-testid="member-via-subteam"
                             title={`Included in this team from sub-team "${entry.viaTeamName}"`}
                           >

@@ -185,7 +185,7 @@ export default function BoardAccessAvatars({
                             ) : null}
                             <AvatarFallback
                               className={cn(
-                                "text-[10px]",
+                                "text-xs",
                                 entry.kind === "member" && "bg-transparent",
                               )}
                             >
@@ -207,7 +207,7 @@ export default function BoardAccessAvatars({
                       }
                     />
                     <TooltipContent>
-                      <span className="text-[10px]">
+                      <span className="text-xs">
                         {entry.detail
                           ? `${entry.name} · ${entry.detail}`
                           : entry.name}
@@ -218,7 +218,7 @@ export default function BoardAccessAvatars({
                 {overflow > 0 && (
                   <span
                     data-testid="board-access-avatar-overflow"
-                    className="-ml-1.5 flex size-6 items-center justify-center rounded-full border border-background bg-muted text-[10px] font-medium text-muted-foreground ring-1 ring-border"
+                    className="-ml-1.5 flex size-6 items-center justify-center rounded-full border border-background bg-muted text-xs font-medium text-muted-foreground ring-1 ring-border"
                   >
                     +{overflow}
                   </span>
@@ -250,7 +250,7 @@ export default function BoardAccessAvatars({
                   ) : null}
                   <AvatarFallback
                     className={cn(
-                      "text-[9px]",
+                      "text-xs",
                       entry.kind === "member" && "bg-transparent",
                     )}
                   >
@@ -265,12 +265,12 @@ export default function BoardAccessAvatars({
                   {entry.name}
                 </span>
                 {entry.userId && presentUserIds.includes(entry.userId) ? (
-                  <span className="text-[10px] text-success-foreground">
+                  <span className="text-xs text-success-foreground">
                     {t("tasks:access.viewing")}
                   </span>
                 ) : null}
                 {/* The access type is the point of the list — always shown. */}
-                <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground capitalize">
+                <span className="shrink-0 rounded bg-muted px-1.5 py-px text-xs text-muted-foreground capitalize">
                   {entry.detail || t("tasks:access.member")}
                 </span>
               </li>

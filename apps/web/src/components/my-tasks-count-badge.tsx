@@ -42,7 +42,7 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
            * pairing it with the amber-500 background would be unreadable.
            * A near-black foreground is the legible pairing on amber.
            */
-          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 font-semibold text-[10px] text-neutral-950 leading-none"
+          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 font-semibold text-xs text-neutral-950 leading-none"
           data-testid="my-tasks-flagged-badge"
         >
           {flaggedCount > 99 ? "99+" : flaggedCount}
@@ -52,7 +52,7 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
         <span
           aria-label={t("myTasks:count", { count: assignedCount })}
           role="status"
-          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-[10px] text-sidebar-primary-foreground leading-none"
+          className="flex h-4 min-w-4 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-xs text-sidebar-primary-foreground leading-none"
           data-testid="my-tasks-count-badge"
         >
           {assignedCount > 99 ? "99+" : assignedCount}

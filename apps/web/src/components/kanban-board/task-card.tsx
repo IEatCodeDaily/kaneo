@@ -205,7 +205,7 @@ export const TaskCardContent = memo(function TaskCardContent({
               }}
             >
               {(showTaskNumbers || task.milestoneName) && (
-                <div className="mb-2 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground/90">
+                <div className="mb-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground/90">
                   {showTaskNumbers ? (
                     <span className="shrink-0 font-mono">
                       {boardSlug}-{task.number}
@@ -271,7 +271,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                 <TaskResourceIndicators task={task} />
                 <TodoProgressBadge description={task.description} />
                 {showPriority && (
-                  <span className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground">
                     {getPriorityIcon(task.priority ?? "")}
                   </span>
                 )}
@@ -296,7 +296,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                           e.stopPropagation();
                           window.open(pullRequests[0].url, "_blank");
                         }}
-                        className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground"
+                        className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
                       >
                         {getPRInfo(pullRequests[0]).icon}
                         <span>#{pullRequests[0].externalId}</span>
@@ -346,7 +346,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-[10px] font-medium text-muted-foreground"
+                            className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
                           >
                             <GitPullRequest
                               className={`h-3 w-3 ${iconColor}`}
@@ -380,7 +380,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                                   onClick={() => window.open(pr.url, "_blank")}
                                   className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded transition-colors"
                                 >
-                                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                     {prInfo.icon}
                                     <span>
                                       {repoName}#{pr.externalId}
@@ -389,7 +389,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                                   <p className="text-xs leading-tight line-clamp-2 mt-0.5">
                                     {pr.title || t("tasks:pr.label")}
                                   </p>
-                                  <span className="text-[10px] text-muted-foreground">
+                                  <span className="text-xs text-muted-foreground">
                                     {prInfo.status}
                                   </span>
                                 </button>

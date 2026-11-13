@@ -308,7 +308,7 @@ export default function TaskPropertiesSidebar({
                           src={assignee?.user?.image ?? ""}
                           alt={assignee?.user?.name || ""}
                         />
-                        <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
+                        <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
                           {getInitials(
                             assignee?.user?.name || task.assigneeName,
                           )}
@@ -319,7 +319,7 @@ export default function TaskPropertiesSidebar({
                         className="w-[16px] h-[16px] rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0"
                         title={t("tasks:popover.assignee.unassigned")}
                       >
-                        <span className="text-[8px] font-medium">?</span>
+                        <span className="text-xs font-medium">?</span>
                       </div>
                     )}
                     <span className="text-xs font-semibold truncate max-w-[100px]">
@@ -519,7 +519,7 @@ export default function TaskPropertiesSidebar({
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}
@@ -530,7 +530,7 @@ export default function TaskPropertiesSidebar({
                           className="w-[16px] h-[16px] rounded-full bg-muted border border-border flex items-center justify-center shrink-0"
                           title={t("tasks:popover.assignee.unassigned")}
                         >
-                          <span className="text-[8px] font-medium">?</span>
+                          <span className="text-xs font-medium">?</span>
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
@@ -733,7 +733,7 @@ export default function TaskPropertiesSidebar({
                             src={assignee?.user?.image ?? ""}
                             alt={assignee?.user?.name || ""}
                           />
-                          <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
+                          <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30 shrink-0 h-[16px] w-[16px]">
                             {getInitials(
                               assignee?.user?.name || task.assigneeName,
                             )}
@@ -744,7 +744,7 @@ export default function TaskPropertiesSidebar({
                           className="w-[16px] h-[16px] rounded-full bg-muted border border-border flex items-center justify-center shrink-0"
                           title={t("tasks:popover.assignee.unassigned")}
                         >
-                          <span className="text-[8px] font-medium">?</span>
+                          <span className="text-xs font-medium">?</span>
                         </div>
                       )}
                       <span className="text-xs font-semibold truncate max-w-[100px]">
@@ -838,7 +838,7 @@ export default function TaskPropertiesSidebar({
                     <Badge
                       variant="outline"
                       className={cn(
-                        "flex cursor-pointer items-center gap-1 px-1.5 py-0.5 text-[10px] transition-colors hover:bg-accent/50",
+                        "flex cursor-pointer items-center gap-1 px-1.5 py-0.5 text-xs transition-colors hover:bg-accent/50",
                         isRepoLabel(label.source) && "opacity-60",
                       )}
                       data-label-source={labelSourceAttribute(label.source)}

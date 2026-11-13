@@ -302,7 +302,7 @@ function RouteComponent() {
           {weekdayLabels.map((label) => (
             <div
               key={label}
-              className="px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+              className="px-2 py-1.5 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground"
             >
               {label}
             </div>
@@ -332,7 +332,7 @@ function RouteComponent() {
                 <div className="flex items-center justify-between">
                   <span
                     className={cn(
-                      "flex size-5 items-center justify-center rounded-full text-[11px] font-medium",
+                      "flex size-5 items-center justify-center rounded-full text-xs font-medium",
                       isToday(day) && "bg-primary text-primary-foreground",
                       outsideMonth && !isToday(day) && "text-muted-foreground",
                     )}
@@ -340,7 +340,7 @@ function RouteComponent() {
                     {format(day, "d")}
                   </span>
                   {dayTasks.length > 2 ? (
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {dayTasks.length}
                     </span>
                   ) : null}
@@ -360,7 +360,7 @@ function RouteComponent() {
                       className={cn(
                         // No w-full: width must come from the flex stretch so the
                         // negative margins below actually widen the band.
-                        "flex h-[18px] items-center gap-1 border-y px-1 text-left text-[11px] leading-tight text-foreground transition-colors",
+                        "flex h-[18px] items-center gap-1 border-y px-1 text-left text-xs leading-tight text-foreground transition-colors",
                         colors.fill,
                         colors.border,
                         // Bleed over the cell's padding (7px) and the right cell
@@ -383,7 +383,7 @@ function RouteComponent() {
                 })}
 
                 {dayTasks.length > 3 ? (
-                  <p className="px-1 text-[10px] text-muted-foreground">
+                  <p className="px-1 text-xs text-muted-foreground">
                     {t("tasks:calendar.more", { count: dayTasks.length - 3 })}
                   </p>
                 ) : null}

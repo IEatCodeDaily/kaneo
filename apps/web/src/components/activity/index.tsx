@@ -193,7 +193,7 @@ function ActorAvatar({
       className={`size-6 ${getAvatarTone(user?.user?.id, user?.user?.email)}`}
     >
       <AvatarImage src={user?.user?.image ?? ""} alt={fallbackName} />
-      <AvatarFallback className="bg-transparent text-[11px] font-medium">
+      <AvatarFallback className="bg-transparent text-xs font-medium">
         {getInitials(fallbackName)}
       </AvatarFallback>
     </Avatar>

@@ -19,7 +19,7 @@ import type {
 function CheckSlot({ checked }: { checked: boolean }) {
   return (
     <span
-      className={`inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border ${
+      className={`inline-flex size-4 shrink-0 items-center justify-center rounded-sm border ${
         checked
           ? "border-primary bg-primary text-primary-foreground"
           : "border-input bg-background"
@@ -120,7 +120,7 @@ export default function TaskViewControls({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+            <DropdownMenuLabel className="text-xs uppercase tracking-wide">
               {t("tasks:sort.by")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -178,7 +178,7 @@ export default function TaskViewControls({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+            <DropdownMenuLabel className="text-xs uppercase tracking-wide">
               {t("tasks:group.by")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -211,7 +211,7 @@ export default function TaskViewControls({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+            <DropdownMenuLabel className="text-xs uppercase tracking-wide">
               {t("tasks:display.show")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

@@ -225,7 +225,7 @@ function MembersTable({
                         src={member.user.image ?? ""}
                         alt={member.user.name ?? ""}
                       />
-                      <AvatarFallback className="bg-transparent text-[11px] font-medium">
+                      <AvatarFallback className="bg-transparent text-xs font-medium">
                         {getInitials(member.user.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -351,7 +351,7 @@ function MembersTable({
                       <Badge
                         variant="outline"
                         size="sm"
-                        className="font-mono text-[9px] uppercase tracking-wider"
+                        className="font-mono text-xs uppercase tracking-wider"
                       >
                         {invitation.expiresAt &&
                         new Date(invitation.expiresAt).getTime() < Date.now()

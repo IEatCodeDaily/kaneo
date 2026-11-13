@@ -100,7 +100,7 @@ type BoardToolbarProps = {
 function CheckSlot({ checked }: { checked: boolean }) {
   return (
     <span
-      className={`inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border ${
+      className={`inline-flex size-4 shrink-0 items-center justify-center rounded-sm border ${
         checked
           ? "border-primary bg-primary text-primary-foreground"
           : "border-input bg-background"
@@ -223,7 +223,7 @@ export default function BoardToolbar({
           src={member?.user?.image ?? ""}
           alt={member?.user?.name || ""}
         />
-        <AvatarFallback className="bg-transparent border border-border/30 text-[9px] font-medium">
+        <AvatarFallback className="bg-transparent border border-border/30 text-xs font-medium">
           {getInitials(member?.user?.name)}
         </AvatarFallback>
       </Avatar>
@@ -335,7 +335,7 @@ export default function BoardToolbar({
                 align="start"
               >
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+                  <DropdownMenuLabel className="text-xs uppercase tracking-wide">
                     {t("tasks:boardFilters.filterBy")}
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -477,7 +477,7 @@ export default function BoardToolbar({
                                 src={member.user?.image ?? ""}
                                 alt={member.user?.name || ""}
                               />
-                              <AvatarFallback className="bg-transparent border border-border/30 text-[10px] font-medium">
+                              <AvatarFallback className="bg-transparent border border-border/30 text-xs font-medium">
                                 {getInitials(member.user?.name)}
                               </AvatarFallback>
                             </Avatar>
