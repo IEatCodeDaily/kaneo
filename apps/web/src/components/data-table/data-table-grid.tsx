@@ -560,6 +560,16 @@ export function DataTableGrid({
 
   // Bucket keys are raw ids (choice ids, member ids); headers show resolved
   // labels and groups sort by them.
+  const choicesById = useMemo(() => {
+    const map = new Map<string, SelectChoice>();
+    for (const field of allFields) {
+      for (const choice of field.options?.choices ?? []) {
+        map.set(choice.id, choice);
+      }
+    }
+    return map;
+  }, [allFields]);
+
   const groupLabel = useCallback(
     (field: DataTableField, key: string): string => {
       if (key === "") return t("navigation:tables.unassigned");
@@ -675,15 +685,6 @@ export function DataTableGrid({
   const [importProgress, setImportProgress] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const choicesById = useMemo(() => {
-    const map = new Map<string, SelectChoice>();
-    for (const field of allFields) {
-      for (const choice of field.options?.choices ?? []) {
-        map.set(choice.id, choice);
-      }
-    }
-    return map;
-  }, [allFields]);
 
   const memberByName = useMemo(() => {
     const map = new Map<string, string>();
