@@ -94,6 +94,7 @@ import {
 } from "@/components/ui/select";
 import {
   createDataTableRow,
+  deleteDataTableRow,
   getTableRowPage,
 } from "@/fetchers/data-table/data-table";
 import {
@@ -334,8 +335,11 @@ function BulkSetField({
   const apply = () => {
     if (!field) return;
     let parsed: unknown = value;
-    if (field.type === "checkbox") parsed = value === "true";
-    else if (["number", "percent", "currency"].includes(field.type)) {
+    if (field.type === "checkbox") {
+      // Only an explicit true/false applies; anything else is ignored.
+      if (value !== "true" && value !== "false") return;
+      parsed = value === "true";
+    } else if (["number", "percent", "currency"].includes(field.type)) {
       const n = Number(value);
       if (Number.isNaN(n)) return;
       parsed = n;
@@ -413,7 +417,12 @@ function BulkSetField({
       <Button
         size="sm"
         variant="outline"
-        disabled={disabled || (value === "" && field.type !== "checkbox")}
+        disabled={
+          disabled ||
+          (field.type === "checkbox"
+            ? value !== "true" && value !== "false"
+            : value === "")
+        }
         onClick={apply}
       >
         {t("navigation:tables.apply")}
@@ -549,6 +558,23 @@ export function DataTableGrid({
   const groupField =
     groupFieldId != null ? fieldsById.get(groupFieldId) : undefined;
 
+  // Bucket keys are raw ids (choice ids, member ids); headers show resolved
+  // labels and groups sort by them.
+  const groupLabel = (field: DataTableField, key: string): string => {
+    if (key === "") return t("navigation:tables.unassigned");
+    if (field.type === "checkbox")
+      return key === "true"
+        ? t("navigation:dashboards.yes")
+        : t("navigation:dashboards.no");
+    if (field.type === "select")
+      return choicesById.get(key)?.label ?? key;
+    if (field.type === "user") {
+      const member = members.get(key);
+      return member?.user.name || member?.user.email || key;
+    }
+    return key;
+  };
+
   // Flat render list: group headers (collapsible) + their rows, or plain rows.
   type GridItem =
     | { kind: "group"; key: string; rows: DataTableRow[] }
@@ -558,7 +584,7 @@ export function DataTableGrid({
       return visibleRows.map((row) => ({ kind: "row", row }) as GridItem);
     }
     const items: GridItem[] = [];
-    for (const group of groupRows(groupField, visibleRows)) {
+    for (const group of groupRows(groupField, visibleRows, groupLabel)) {
       const collapsed = collapsedGroups.has(group.key);
       items.push({ kind: "group", key: group.key, rows: group.rows });
       if (!collapsed) {
@@ -569,6 +595,14 @@ export function DataTableGrid({
     }
     return items;
   }, [groupField, visibleRows, collapsedGroups]);
+
+  const renderedRows = useMemo(
+    () =>
+      gridItems
+        .filter((item): item is Extract<GridItem, { kind: "row" }> => item.kind === "row")
+        .map((item) => item.row),
+    [gridItems],
+  );
 
   const virtualizer = useVirtualizer({
     count: gridItems.length,
@@ -762,24 +796,26 @@ export function DataTableGrid({
     }
   };
 
-  const bulkDeleteRows = async () => {
-    const count = selected.size;
+  const bulkDeleteRows = async (ids: string[]) => {
+    const count = ids.length;
     let done = 0;
     try {
-      for (const rowId of selected) {
-        await deleteRowMutation.mutateAsync({
-          organizationId,
-          tableId: table.id,
-          rowId,
-        });
+      for (const rowId of ids) {
+        await deleteDataTableRow({ organizationId, tableId: table.id, rowId });
         done += 1;
       }
+      // One refresh for the whole batch, not one per row.
+      queryClient.invalidateQueries({
+        queryKey: dataTableKeys.detail(organizationId, table.id),
+      });
       setSelected(new Set());
       toast.success(t("navigation:tables.bulkDeleted", { count: done }));
     } catch {
       toast.error(t("navigation:tables.bulkError", { done, count }));
     }
   };
+
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
 
   const confirmDeleteField = async () => {
     if (!fieldToDelete) return;
@@ -792,6 +828,12 @@ export function DataTableGrid({
         fieldId: field.id,
       });
       setFilters((current) => current.filter((f) => f.fieldId !== field.id));
+      setGroupFieldId((current) => (current === field.id ? null : current));
+      setCollapsedGroups(new Set());
+      setSummaryFns((current) => {
+        const { [field.id]: _dropped, ...rest } = current;
+        return rest;
+      });
     } catch {
       toast.error(t("navigation:tables.deleteFieldError"));
     }
@@ -951,16 +993,13 @@ export function DataTableGrid({
                   className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
                 >
                   <Checkbox
-                    checked={
-                      visibleRows.length > 0 &&
-                      visibleRows.every((row) => selected.has(row.id))
-                    }
+                    checked={renderedRows.length > 0 && renderedRows.every((row) => selected.has(row.id))}
                     aria-label={t("navigation:tables.selectAllRows")}
                     className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
                     onCheckedChange={(next) =>
                       setSelected(
                         next
-                          ? new Set(visibleRows.map((row) => row.id))
+                          ? new Set(renderedRows.map((row) => row.id))
                           : new Set(),
                       )
                     }
@@ -1057,10 +1096,7 @@ export function DataTableGrid({
                       const gf = groupField;
                       if (!gf) return null;
                       const collapsed = collapsedGroups.has(entry.key);
-                      const label =
-                        entry.key === ""
-                          ? t("navigation:tables.unassigned")
-                          : entry.key;
+                      const label = groupLabel(gf, entry.key);
                       return (
                         <div
                           key={`group:${entry.key}`}
@@ -1074,6 +1110,7 @@ export function DataTableGrid({
                           }}
                         >
                           <div
+                            role="rowheader"
                             className="flex items-center gap-2 border-b border-r bg-secondary/50 ps-2 pe-2 text-xs"
                             style={{ gridColumn: "1 / -1" }}
                           >
@@ -1107,6 +1144,28 @@ export function DataTableGrid({
                                 {entry.rows.length}
                               </span>
                             </button>
+                            {/* Per-group aggregates for columns with a
+                                summary function (design: count + same
+                                aggregates). */}
+                            {fields
+                              .filter(
+                                (field) =>
+                                  (summaryFns[field.id] ?? "none") !== "none",
+                              )
+                              .map((field) => (
+                                <span
+                                  key={field.id}
+                                  className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
+                                >
+                                  {field.name}
+                                  {" "}
+                                  {summarize(
+                                    summaryFns[field.id] ?? "none",
+                                    field,
+                                    entry.rows,
+                                  ) ?? "—"}
+                                </span>
+                              ))}
                             <span className="flex-1" />
                             {canEdit && (
                               <button
@@ -1148,7 +1207,12 @@ export function DataTableGrid({
                       >
                         <div
                           role="rowheader"
-                          className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs tabular-nums text-muted-foreground group-hover:bg-row-hover"
+                          className={cn(
+                            "sticky left-0 z-10 flex items-center justify-center border-r border-b text-xs tabular-nums text-muted-foreground",
+                            isSelected
+                              ? "bg-row-selected group-hover:bg-row-selected"
+                              : "bg-background group-hover:bg-row-hover",
+                          )}
                         >
                           <Checkbox
                             checked={isSelected}
@@ -1178,7 +1242,10 @@ export function DataTableGrid({
                               row: rowIndex + 1,
                             })}
                             className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-r border-b bg-background px-2 text-ui group-hover:bg-row-hover aria-selected:bg-row-selected",
+                              "flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
+                              isSelected
+                                ? "bg-row-selected group-hover:bg-row-selected"
+                                : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
                               fieldIndex === 0 && "sticky z-[5] font-medium",
@@ -1313,9 +1380,7 @@ export function DataTableGrid({
                   })}
                 </span>
                 <BulkSetField
-                  fields={fields.filter(
-                    (field) => field.type !== "checkbox" || true,
-                  )}
+                  fields={fields}
                   members={members}
                   disabled={bulkBusy}
                   onApply={(field, value) => bulkSetField(field, value)}
@@ -1326,7 +1391,7 @@ export function DataTableGrid({
                   size="xs"
                   disabled={bulkBusy}
                   className="text-destructive-foreground hover:text-destructive-foreground"
-                  onClick={() => bulkDeleteRows()}
+                  onClick={() => setBulkDeleteIds([...selected])}
                 >
                   <Trash2 className="size-3.5" />
                   {t("navigation:tables.bulkDelete")}
@@ -1405,6 +1470,47 @@ export function DataTableGrid({
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={bulkDeleteIds.length > 0}
+        onOpenChange={(open) => !open && setBulkDeleteIds([])}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("navigation:tables.bulkDeleteTitle", {
+                count: bulkDeleteIds.length,
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("navigation:tables.bulkDeleteConfirm", {
+                count: bulkDeleteIds.length,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              render={<AlertDialogClose />}
+            >
+              {t("navigation:tables.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={bulkBusy}
+              onClick={async () => {
+                const ids = bulkDeleteIds;
+                setBulkDeleteIds([]);
+                await bulkDeleteRows(ids);
+              }}
+            >
+              {t("navigation:tables.bulkDelete")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <FieldOptionsDialog
         organizationId={organizationId}

@@ -434,6 +434,19 @@ if (pages.table) {
           return b ? getComputedStyle(b).fontSize : null;
         })(),
         bulk: !!document.body.innerText.match(/\d+ selected/),
+        selected_cell_bg: (() => {
+          const selected = document.querySelector(
+            '[role="row"][aria-selected="true"] [role="gridcell"]',
+          );
+          const plain = document.querySelector(
+            '[role="row"]:not([aria-selected]) [role="gridcell"]',
+          );
+          if (!selected || !plain) return null;
+          return {
+            selected: getComputedStyle(selected).backgroundColor,
+            plain: getComputedStyle(plain).backgroundColor,
+          };
+        })(),
         groups: [
           ...document.querySelectorAll('button[aria-label*="group" i]'),
         ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
@@ -449,6 +462,12 @@ if (pages.table) {
       fails.push(`row ${m.row_h}px, want 32`);
     if (name === "table-select" && !m.bulk)
       fails.push("bulk bar missing after row select");
+    if (
+      name === "table-select" &&
+      m.selected_cell_bg &&
+      m.selected_cell_bg.selected === m.selected_cell_bg.plain
+    )
+      fails.push("selected row cells are not tinted");
     if (name === "table-group" && m.groups < 1)
       fails.push("no group headers after grouping");
     const shot = `${name}--desktop-dark.png`;

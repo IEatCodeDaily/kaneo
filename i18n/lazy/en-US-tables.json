@@ -187,7 +187,11 @@
 		"bulkApplied": "Updated {{count}} rows",
 		"bulkDeleted": "Deleted {{count}} rows",
 		"bulkError": "Stopped after {{done}} of {{count}} rows",
-		"bulkSelected": "{{count}} selected"
+		"bulkSelected": "{{count}} selected",
+		"bulkDeleteTitle_one": "Delete {{count}} row?",
+		"bulkDeleteTitle_other": "Delete {{count}} rows?",
+		"bulkDeleteConfirm_one": "This permanently deletes {{count}} row. This cannot be undone.",
+		"bulkDeleteConfirm_other": "This permanently deletes {{count}} rows. This cannot be undone."
 	},
 	"dashboards": {
 		"title": "Dashboards",

@@ -549,12 +549,14 @@ export function groupKey(field: DataTableField, value: unknown): string {
 }
 
 /**
- * Rows grouped by one field, groups sorted by key with the empty bucket last.
- * Pure: labels and ordering for display are the caller's job.
+ * Rows grouped by one field, groups sorted by resolved label with the empty
+ * bucket last. `labelFor` resolves raw bucket keys (choice/user ids) into
+ * display labels; sorting follows the label so buckets read in order.
  */
 export function groupRows(
   field: DataTableField,
   rows: DataTableRow[],
+  labelFor?: (key: string) => string,
 ): FieldRowGroup[] {
   const buckets = new Map<string, DataTableRow[]>();
   for (const row of rows) {
@@ -563,13 +565,16 @@ export function groupRows(
     if (list) list.push(row);
     else buckets.set(key, [row]);
   }
-  return [...buckets.entries()]
-    .sort(([a], [b]) => {
-      if (a === "") return 1;
-      if (b === "") return -1;
-      return a < b ? -1 : a > b ? 1 : 0;
-    })
-    .map(([key, groupRows]) => ({ key, label: key, rows: groupRows }));
+  const groups = [...buckets.entries()].map(([key, groupRows]) => ({
+    key,
+    label: labelFor ? (labelFor(key) || key) : key,
+    rows: groupRows,
+  }));
+  return groups.sort((a, b) => {
+    if (a.key === "") return 1;
+    if (b.key === "") return -1;
+    return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+  });
 }
 
 /** Value a new row gets from "New row in <group>" for this bucket. */
