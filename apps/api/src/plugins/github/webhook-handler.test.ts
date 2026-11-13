@@ -13,11 +13,28 @@ vi.mock("../../repo/services/webhook-sync", () => ({
   syncGitHubWebhookPayload: mocks.syncGitHubWebhookPayload,
   syncGiteaWebhookPayload: vi.fn(),
 }));
-// Cut the import chain at github-delegation (→ auth.ts → whole route tree):
-// this suite only exercises mirror gating.
-vi.mock("../../github-delegation", () => ({
-  getUsableDelegatedToken: vi.fn(),
+// This suite only exercises mirror gating: stub the per-event handlers so
+// their import graph (→ github-delegation → auth.ts → route tree) stays out.
+vi.mock("./webhooks/issue-closed", () => ({ handleIssueClosed: vi.fn() }));
+vi.mock("./webhooks/issue-comment-created", () => ({
+  handleIssueCommentCreated: vi.fn(),
 }));
+vi.mock("./webhooks/issue-deleted", () => ({ handleIssueDeleted: vi.fn() }));
+vi.mock("./webhooks/issue-edited", () => ({ handleIssueEdited: vi.fn() }));
+vi.mock("./webhooks/issue-labeled", () => ({ handleIssueLabeled: vi.fn() }));
+vi.mock("./webhooks/issue-opened", () => ({ handleIssueOpened: vi.fn() }));
+vi.mock("./webhooks/issue-reopened", () => ({ handleIssueReopened: vi.fn() }));
+vi.mock("./webhooks/issue-transferred", () => ({
+  handleIssueTransferred: vi.fn(),
+}));
+vi.mock("./webhooks/label-created", () => ({ handleLabelCreated: vi.fn() }));
+vi.mock("./webhooks/pull-request-closed", () => ({
+  handlePullRequestClosed: vi.fn(),
+}));
+vi.mock("./webhooks/pull-request-opened", () => ({
+  handlePullRequestOpened: vi.fn(),
+}));
+vi.mock("./webhooks/push", () => ({ handlePush: vi.fn() }));
 vi.mock("../../database", () => ({ default: { query: {} } }));
 
 import { handleGitHubWebhook } from "./webhook-handler";
