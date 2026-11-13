@@ -50,7 +50,7 @@ export function TableRowResources({
   canEdit: boolean;
 }) {
   const { t } = useTranslation();
-  const [tables, setTablesState] = useState<Group[]>([]);
+  const [linkedTables, setLinkedTables] = useState<Group[]>([]);
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickTableId, setPickTableId] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export function TableRowResources({
     getRowsForTask({ organizationId, taskId })
       .then((data) => {
         if (cancelled) return;
-        setTablesState(data.tables);
+        setLinkedTables(data.tables);
         setOrganizationSlug(data.organizationSlug);
       })
       .catch(() => {
@@ -112,7 +112,7 @@ export function TableRowResources({
   const reload = () => {
     getRowsForTask({ organizationId, taskId })
       .then((data) => {
-        setTablesState(data.tables);
+        setLinkedTables(data.tables);
         setOrganizationSlug(data.organizationSlug);
       })
       .catch(() => {});
@@ -187,7 +187,7 @@ export function TableRowResources({
         )}
       </div>
 
-      {tablesState.map((group) => (
+      {linkedTables.map((group) => (
         <div key={group.tableId} className="flex flex-col gap-0.5">
           <span className="px-2 text-xs text-muted-foreground">
             {group.tableName}
