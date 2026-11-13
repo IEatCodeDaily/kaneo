@@ -429,7 +429,17 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId, fieldId } = c.req.valid("param");
-
+      return c.json(
+        await updateTableCell(
+          organizationId,
+          tableId,
+          rowId,
+          fieldId,
+          c.req.valid("json").value,
+        ),
+      );
+    },
+  )
   .get(
     "/organization/:organizationId/:tableId/rows/:rowId/tickets",
     validator(
@@ -498,16 +508,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       const { taskId } = c.req.valid("query");
       return c.json(await listRowsForTask(organizationId, taskId));
     },
-  )      return c.json(
-        await updateTableCell(
-          organizationId,
-          tableId,
-          rowId,
-          fieldId,
-          c.req.valid("json").value,
-        ),
-      );
-    },
+  )
   );
 
 export default dataTable;
