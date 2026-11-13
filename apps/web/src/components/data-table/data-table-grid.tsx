@@ -11,7 +11,13 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
 import {
@@ -560,7 +566,7 @@ export function DataTableGrid({
 
   // Bucket keys are raw ids (choice ids, member ids); headers show resolved
   // labels and groups sort by them.
-  const groupLabel = (field: DataTableField, key: string): string => {
+  const groupLabel = useCallback((field: DataTableField, key: string): string => {
     if (key === "") return t("navigation:tables.unassigned");
     if (field.type === "checkbox")
       return key === "true"
@@ -573,7 +579,7 @@ export function DataTableGrid({
       return member?.user.name || member?.user.email || key;
     }
     return key;
-  };
+  }, [t, choicesById, members]);
 
   // Flat render list: group headers (collapsible) + their rows, or plain rows.
   type GridItem =
