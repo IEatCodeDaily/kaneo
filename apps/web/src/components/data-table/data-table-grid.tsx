@@ -11,13 +11,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
 import {
@@ -566,20 +560,22 @@ export function DataTableGrid({
 
   // Bucket keys are raw ids (choice ids, member ids); headers show resolved
   // labels and groups sort by them.
-  const groupLabel = useCallback((field: DataTableField, key: string): string => {
-    if (key === "") return t("navigation:tables.unassigned");
-    if (field.type === "checkbox")
-      return key === "true"
-        ? t("navigation:dashboards.yes")
-        : t("navigation:dashboards.no");
-    if (field.type === "select")
-      return choicesById.get(key)?.label ?? key;
-    if (field.type === "user") {
-      const member = members.get(key);
-      return member?.user.name || member?.user.email || key;
-    }
-    return key;
-  }, [t, choicesById, members]);
+  const groupLabel = useCallback(
+    (field: DataTableField, key: string): string => {
+      if (key === "") return t("navigation:tables.unassigned");
+      if (field.type === "checkbox")
+        return key === "true"
+          ? t("navigation:dashboards.yes")
+          : t("navigation:dashboards.no");
+      if (field.type === "select") return choicesById.get(key)?.label ?? key;
+      if (field.type === "user") {
+        const member = members.get(key);
+        return member?.user.name || member?.user.email || key;
+      }
+      return key;
+    },
+    [t, choicesById, members],
+  );
 
   // Flat render list: group headers (collapsible) + their rows, or plain rows.
   type GridItem =
@@ -590,10 +586,8 @@ export function DataTableGrid({
       return visibleRows.map((row) => ({ kind: "row", row }) as GridItem);
     }
     const items: GridItem[] = [];
-    for (const group of groupRows(
-      groupField,
-      visibleRows,
-      (key) => groupLabel(groupField, key),
+    for (const group of groupRows(groupField, visibleRows, (key) =>
+      groupLabel(groupField, key),
     )) {
       const collapsed = collapsedGroups.has(group.key);
       items.push({ kind: "group", key: group.key, rows: group.rows });
@@ -609,7 +603,10 @@ export function DataTableGrid({
   const renderedRows = useMemo(
     () =>
       gridItems
-        .filter((item): item is Extract<GridItem, { kind: "row" }> => item.kind === "row")
+        .filter(
+          (item): item is Extract<GridItem, { kind: "row" }> =>
+            item.kind === "row",
+        )
         .map((item) => item.row),
     [gridItems],
   );
@@ -1003,7 +1000,10 @@ export function DataTableGrid({
                   className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
                 >
                   <Checkbox
-                    checked={renderedRows.length > 0 && renderedRows.every((row) => selected.has(row.id))}
+                    checked={
+                      renderedRows.length > 0 &&
+                      renderedRows.every((row) => selected.has(row.id))
+                    }
                     aria-label={t("navigation:tables.selectAllRows")}
                     className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
                     onCheckedChange={(next) =>
@@ -1167,8 +1167,7 @@ export function DataTableGrid({
                                   key={field.id}
                                   className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
                                 >
-                                  {field.name}
-                                  {" "}
+                                  {field.name}{" "}
                                   {summarize(
                                     summaryFns[field.id] ?? "none",
                                     field,
@@ -1499,11 +1498,7 @@ export function DataTableGrid({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              render={<AlertDialogClose />}
-            >
+            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
               {t("navigation:tables.cancel")}
             </Button>
             <Button
