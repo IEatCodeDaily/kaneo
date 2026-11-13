@@ -87,7 +87,10 @@ export function RowSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[480px] sm:max-w-[480px] p-0">
+      <SheetContent
+        side="right"
+        className="w-full sm:w-[480px] sm:max-w-[480px] p-0"
+      >
         <SheetHeader className="border-b px-4 py-3">
           <div className="flex items-center gap-1">
             <Button
