@@ -65,7 +65,9 @@ export function TableRowResources({
   const editable = canEdit && canUpdateBoards();
 
   // The detail endpoint carries fields + rows; the list endpoint has no fields.
-  const detail = useDataTable(organizationId, pickerOpen ? pickTableId : "");
+  const detail = useDataTable(
+    organizationId,
+    pickerOpen && pickTableId ? pickTableId : "",
   const rows = detail;
 
   const link = useMutation({
