@@ -88,6 +88,6 @@ export const getRowsForTask = ({
   organizationId: string;
   taskId: string;
 }) =>
-  request<TableRowGroup[]>(
+  request<TableRowGroup>(
     `/data-table/organization/${encodeURIComponent(organizationId)}/rows-for-ticket?taskId=${encodeURIComponent(taskId)}`,
   );
