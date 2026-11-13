@@ -1264,7 +1264,7 @@ export function DataTableGrid({
                                 {text ?? "—"}
                               </button>
                             }
-                          ></DropdownMenuTrigger>
+                          />
                           <DropdownMenuContent
                             align="start"
                             className="min-w-40"
