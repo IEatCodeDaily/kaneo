@@ -13,7 +13,11 @@ vi.mock("../../repo/services/webhook-sync", () => ({
   syncGitHubWebhookPayload: mocks.syncGitHubWebhookPayload,
   syncGiteaWebhookPayload: vi.fn(),
 }));
-vi.mock("../../database", () => ({ default: { query: {} } }));
+// auth.ts reads the module's `schema` export at load time; keep it real.
+vi.mock("../../database", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../database")>()),
+  default: { query: {} },
+}));
 
 import { handleGitHubWebhook } from "./webhook-handler";
 
