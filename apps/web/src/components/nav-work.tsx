@@ -41,7 +41,7 @@ export function NavWork() {
                     better-accessibility: unavailability must not be carried
                     by opacity alone. This badge is the redundant cue.
                   */}
-                  <span className="rounded-sm bg-sidebar-accent px-1 text-[9px] text-sidebar-accent-foreground uppercase tracking-wide">
+                  <span className="rounded-sm bg-sidebar-accent px-1 text-xs text-sidebar-accent-foreground uppercase tracking-wide">
                     {t("navigation:sidebar.soon")}
                   </span>
                 </SidebarMenuButton>

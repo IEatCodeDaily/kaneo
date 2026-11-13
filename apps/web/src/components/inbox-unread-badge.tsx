@@ -19,7 +19,7 @@ function InboxUnreadBadge() {
     <span
       aria-label={t("inbox:unreadCount", { count: unreadCount })}
       role="status"
-      className="ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-[10px] text-sidebar-primary-foreground leading-none"
+      className="ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-xs text-sidebar-primary-foreground leading-none"
       data-testid="inbox-unread-badge"
     >
       {unreadCount > 99 ? "99+" : unreadCount}

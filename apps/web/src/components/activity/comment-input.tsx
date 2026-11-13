@@ -176,13 +176,13 @@ export default function CommentInput({ taskId }: CommentInputProps) {
           {hasDraft && (
             <div className="flex min-w-0 items-center gap-1.5">
               <span
-                className="text-[11px] text-muted-foreground"
+                className="text-xs text-muted-foreground"
                 data-testid="comment-draft-status"
               >
                 {t("activity:comment.draftSaved")}
               </span>
               <Button
-                className="h-auto px-1 py-0 text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-auto px-1 py-0 text-xs text-muted-foreground hover:text-foreground"
                 data-testid="comment-draft-delete"
                 onClick={handleDeleteDraft}
                 size="xs"

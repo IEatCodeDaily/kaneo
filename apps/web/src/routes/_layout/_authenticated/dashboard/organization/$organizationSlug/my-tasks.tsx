@@ -508,7 +508,7 @@ export function MyTasksComponent() {
                               this column is fixed-width and clips instead of
                               wrapping into several ragged lines. */}
                                 <span
-                                  className="shrink-0 truncate font-mono text-[11px] text-muted-foreground sm:w-28"
+                                  className="shrink-0 truncate font-mono text-xs text-muted-foreground sm:w-28"
                                   title={
                                     task.boardSlug
                                       ? `${task.boardSlug}-${task.number}`
@@ -594,7 +594,7 @@ export function MyTasksComponent() {
                                     return (
                                       <span
                                         key={label.id}
-                                        className="shrink-0 rounded-full border px-1.5 py-0.5 text-[10px]"
+                                        className="shrink-0 rounded-full border px-1.5 py-0.5 text-xs"
                                         style={{
                                           color: colors,
                                           borderColor: colors,
@@ -620,7 +620,7 @@ export function MyTasksComponent() {
                                 ) : null}
                                 {task.flagged ? (
                                   <span
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-[10px] uppercase tracking-wide"
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-xs uppercase tracking-wide"
                                     title={flagLabel}
                                     style={{
                                       color: flagColor,

@@ -51,7 +51,7 @@ export function NavHiddenItems({
             className={`size-3.5 transition-transform ${expanded ? "rotate-90" : ""}`}
           />
           <span>{label}</span>
-          <span className="ml-auto text-[11px] text-sidebar-foreground/60">
+          <span className="ml-auto text-xs text-sidebar-foreground/60">
             {items.length}
           </span>
         </SidebarMenuButton>

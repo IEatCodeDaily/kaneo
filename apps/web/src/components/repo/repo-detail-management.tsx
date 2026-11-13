@@ -303,7 +303,7 @@ export function RepoIssueSidebar({
                 assignees.map((login) => (
                   <span className="flex items-center gap-1 text-xs" key={login}>
                     <Avatar className={`size-4 ${getAvatarTone(login)}`}>
-                      <AvatarFallback className="bg-transparent text-[7px]">
+                      <AvatarFallback className="bg-transparent text-xs">
                         {login.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -336,7 +336,7 @@ export function RepoIssueSidebar({
                   <span className="flex items-center gap-2">
                     <Avatar className={`size-5 ${getAvatarTone(user.login)}`}>
                       <AvatarImage alt={user.login} src={user.avatarUrl} />
-                      <AvatarFallback className="bg-transparent text-[8px]">
+                      <AvatarFallback className="bg-transparent text-xs">
                         {user.login.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

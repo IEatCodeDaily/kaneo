@@ -58,7 +58,7 @@ export function PublicTaskRow({
                 src={task.assigneeImage ?? ""}
                 alt={task.assigneeName ?? ""}
               />
-              <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
+              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                 {getInitials(task.assigneeName)}
               </AvatarFallback>
             </Avatar>
@@ -77,7 +77,7 @@ export function PublicTaskRow({
         )}
 
         {task.priority && (
-          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-[10px] font-medium text-muted-foreground">
+          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-xs font-medium text-muted-foreground">
             {getPriorityIcon(task.priority)}
           </div>
         )}

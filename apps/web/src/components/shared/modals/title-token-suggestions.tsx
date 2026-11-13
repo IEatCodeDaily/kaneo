@@ -186,7 +186,7 @@ export function TitleTokenSuggestions({
           : { visibility: "hidden" }
       }
     >
-      <div className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
+      <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
         {t(KIND_LABEL[token.kind])}
       </div>
       {matches.map((option, index) => (
@@ -271,7 +271,7 @@ export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
        * #72 (round 5): the title input now carries pb-0, so the hint sits
        * directly under the text without a negative pull fighting the padding.
        */
-      className={`!mt-1 px-0.5 text-[10px] leading-none text-muted-foreground/50 ${
+      className={`!mt-1 px-0.5 text-xs leading-none text-muted-foreground/50 ${
         hidden ? "invisible" : ""
       }`}
       data-testid={hidden ? "title-token-hint-hidden" : "title-token-hint"}

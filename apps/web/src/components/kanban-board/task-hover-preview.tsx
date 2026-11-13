@@ -83,7 +83,7 @@ function TaskHoverPreview({
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="flex flex-col gap-2">
-          <div className="font-mono text-[10px] text-muted-foreground/90">
+          <div className="font-mono text-xs text-muted-foreground/90">
             {boardSlug ? `${boardSlug}-${task.number}` : `#${task.number}`}
           </div>
 
@@ -101,7 +101,7 @@ function TaskHoverPreview({
                   <>
                     <Avatar className={`h-4 w-4 ${getAvatarTone(task.userId)}`}>
                       <AvatarImage src={assigneeImage ?? ""} alt="" />
-                      <AvatarFallback className="bg-transparent text-[8px]">
+                      <AvatarFallback className="bg-transparent text-xs">
                         {getInitials(assigneeName)}
                       </AvatarFallback>
                     </Avatar>
@@ -144,7 +144,7 @@ function TaskHoverPreview({
                   labels.map((label) => (
                     <span
                       key={label.id}
-                      className="rounded border border-border/70 bg-muted/55 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                      className="rounded border border-border/70 bg-muted/55 px-1.5 py-0.5 text-xs text-muted-foreground"
                     >
                       {label.name}
                     </span>

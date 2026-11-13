@@ -38,7 +38,7 @@ const TEXT_INPUT_TYPES = ["text", "longtext", "url", "email"];
 
 function EditorError({ message }: { message: string }) {
   return (
-    <span className="pointer-events-none absolute -bottom-4 left-0 z-10 whitespace-nowrap text-[10px] text-destructive">
+    <span className="pointer-events-none absolute -bottom-4 left-0 z-10 whitespace-nowrap text-xs text-destructive">
       {message}
     </span>
   );

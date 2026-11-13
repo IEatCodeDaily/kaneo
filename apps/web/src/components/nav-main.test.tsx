@@ -218,7 +218,7 @@ describe("NavMain compact personal group", () => {
     view.rerender(<NavMain />);
     const delivery = screen.getByRole("button", { name: /Delivery/ });
     expect(delivery.className).toContain("h-6");
-    expect(delivery.className).toContain("text-[11px]");
+    expect(delivery.className).toContain("text-xs");
     expect(delivery).toHaveTextContent("1m");
   });
 

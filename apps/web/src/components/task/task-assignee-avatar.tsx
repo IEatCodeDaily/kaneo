@@ -88,7 +88,7 @@ export function TaskAssigneeAvatar({
       title={label}
       data-testid="task-assignee-unassigned"
     >
-      <span className="text-[10px] font-medium text-muted-foreground">?</span>
+      <span className="text-xs font-medium text-muted-foreground">?</span>
     </div>
   );
 }

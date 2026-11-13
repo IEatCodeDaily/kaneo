@@ -70,7 +70,7 @@ export function PublicTaskCard({
       onClick={handleClick}
       aria-label={`View details for ticket ${task.title}`}
     >
-      <div className="text-[10px] font-mono text-muted-foreground mb-2">
+      <div className="text-xs font-mono text-muted-foreground mb-2">
         {boardSlug}-{task.number}
       </div>
 
@@ -83,11 +83,11 @@ export function PublicTaskCard({
               src={task.assigneeImage ?? ""}
               alt={task.assigneeName ?? ""}
             />
-            <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
+            <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
               {getInitials(task.assigneeName)}
             </AvatarFallback>
           </Avatar>
-          <span className="text-[10px] text-muted-foreground font-medium truncate">
+          <span className="text-xs text-muted-foreground font-medium truncate">
             {task.assigneeName}
           </span>
         </div>
@@ -116,7 +116,7 @@ export function PublicTaskCard({
 
       <div className="flex items-center gap-2">
         {task.priority && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-[10px] font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-xs font-medium text-muted-foreground">
             {getPriorityIcon(task.priority ?? "")}
           </span>
         )}
