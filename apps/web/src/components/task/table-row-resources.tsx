@@ -26,7 +26,6 @@ import {
   linkRowToTask,
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 
@@ -52,6 +51,7 @@ export function TableRowResources({
   canEdit: boolean;
 }) {
   const { t } = useTranslation();
+  const [organizationSlug, setOrganizationSlug] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickTableId, setPickTableId] = useState<string | null>(null);
@@ -63,8 +63,6 @@ export function TableRowResources({
   >([]);
   const [busy, setBusy] = useState(false);
 
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationSlug = activeOrganization?.slug ?? "";
   const { canUpdateBoards } = useOrganizationPermission();
   const editable = canEdit && canUpdateBoards();
 
@@ -73,7 +71,9 @@ export function TableRowResources({
     let cancelled = false;
     getRowsForTask({ organizationId, taskId })
       .then((data) => {
-        if (!cancelled) setGroups(data);
+        if (cancelled) return;
+        setGroups(data.tables);
+        setOrganizationSlug(data.organizationSlug);
       })
       .catch(() => {
         // An empty section is the honest fallback; list failures here are not
@@ -113,7 +113,10 @@ export function TableRowResources({
 
   const reload = () => {
     getRowsForTask({ organizationId, taskId })
-      .then(setGroups)
+      .then((data) => {
+        setGroups(data.tables);
+        setOrganizationSlug(data.organizationSlug);
+      })
       .catch(() => {});
   };
 

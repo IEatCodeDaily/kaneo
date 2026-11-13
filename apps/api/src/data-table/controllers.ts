@@ -613,7 +613,7 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
     ids.add(link.externalId);
     byTable.set(tableId, ids);
   }
-  const result: {
+  const tables: {
     tableId: string;
     tableName: string;
     rows: { id: string; primary: string | null }[];
@@ -634,11 +634,15 @@ export async function listRowsForTask(organizationId: string, taskId: string) {
         primary:
           fields.length > 0 ? String(row.values[fields[0].id] ?? "") : null,
       }));
-    result.push({
+    tables.push({
       tableId,
       tableName: table[0].name || names.get(tableId) || "Table",
       rows: wanted,
     });
   }
-  return result;
+  const [org] = await db
+    .select({ slug: organizationTable.slug })
+    .from(organizationTable)
+    .where(eq(organizationTable.id, organizationId));
+  return { organizationSlug: org?.slug ?? "", tables };
 }

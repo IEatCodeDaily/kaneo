@@ -73,9 +73,12 @@ export const unlinkRowTask = ({
   );
 
 export type TableRowGroup = {
-  tableId: string;
-  tableName: string;
-  rows: { id: string; primary: string | null }[];
+  organizationSlug: string;
+  tables: {
+    tableId: string;
+    tableName: string;
+    rows: { id: string; primary: string | null }[];
+  }[];
 };
 
 export const getRowsForTask = ({
