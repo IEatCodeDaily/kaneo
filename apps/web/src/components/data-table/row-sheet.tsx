@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronLeft, ChevronRight, Copy, Link2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import { FieldTypeIcon } from "@/components/data-table/data-table-cells";
@@ -53,15 +53,14 @@ export function RowSheet({
   hasNext: boolean;
 }) {
   const { t } = useTranslation();
+  // Editing is scoped to the current row: TableCellInput seeds its draft
+  // once, so an editor left open across prev/next would write row N's text
+  // into row N+1. Row-scoping unmounts it on every row switch instead.
   const [editing, setEditing] = useState<{
+    rowId: string;
     fieldId: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
-  // Switching rows drops any open editor and its draft: TableCellInput seeds
-  // its draft once, so a stale editor would write row N's text into N+1.
-  useEffect(() => {
-    setEditing(null);
-  }, [row?.id]);
 
   const tickets = useQuery({
     queryKey: ["row-tickets", row?.id],
@@ -152,8 +151,14 @@ export function RowSheet({
                   field={field}
                   members={members}
                   canEdit={canEdit}
-                  isEditing={editing?.fieldId === field.id}
-                  onEditStart={() => setEditing({ fieldId: field.id })}
+                  isEditing={
+                    editing !== null &&
+                    editing.rowId === row.id &&
+                    editing.fieldId === field.id
+                  }
+                  onEditStart={() =>
+                    setEditing({ rowId: row.id, fieldId: field.id })
+                  }
                   onEditEnd={() => setEditing(null)}
                   onCommit={(value) => {
                     // Clear the sheet's editing state here: the grid's

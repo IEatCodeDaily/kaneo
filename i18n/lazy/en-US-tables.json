@@ -57,7 +57,7 @@
 		"fieldType": "Field type",
 		"changeType": "Change field type",
 		"openRow": "Open row",
-    "editField": "Edit field",
+		"editField": "Edit field",
 		"fieldOptions": "Field options for {{name}}",
 		"choices": "Choices",
 		"addChoice": "Add choice",
