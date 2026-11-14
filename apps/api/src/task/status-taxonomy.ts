@@ -45,6 +45,12 @@ export const CLOSED_STATUS_TYPES: readonly StatusType[] = [
   "duplicate",
 ];
 
+/** Types that live on the Backlog page (off-board) by default. */
+export const BACKLOG_STATUS_TYPES: readonly StatusType[] = [
+  "triage",
+  "backlog",
+];
+
 export function isStatusType(value: unknown): value is StatusType {
   return (
     typeof value === "string" &&
