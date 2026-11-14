@@ -72,7 +72,13 @@ export function csvSerialize(
       fields
         .map((field) =>
           csvCell(
-            cellText(field, row.values[field.id], choices, memberNames, tickets),
+            cellText(
+              field,
+              row.values[field.id],
+              choices,
+              memberNames,
+              tickets,
+            ),
           ),
         )
         .join(","),

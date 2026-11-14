@@ -473,7 +473,6 @@ export function DataTableGrid({
   );
   const rows = useMemo(() => sortedRows(table.rows), [table.rows]);
 
-
   // Row pages fetched through Load-more; reset when a different table loads.
   const [appendedRows, setAppendedRows] = useState<DataTableRow[]>([]);
   const [appendedTickets, setAppendedTickets] = useState<

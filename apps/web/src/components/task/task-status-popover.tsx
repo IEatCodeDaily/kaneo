@@ -219,7 +219,9 @@ export default function TaskStatusPopover({
                   className="w-full justify-start gap-2 h-8 px-2 rounded-none first:rounded-t-md"
                   onClick={() => handleStatusChange(status.value)}
                 >
-                  {getColumnIcon(status.value, status.isFinal, status.icon)}
+                  {typeof status.icon === "object" && status.icon !== null
+                    ? status.icon
+                    : getColumnIcon(status.value, status.isFinal, status.icon)}
                   <span className="text-sm">
                     {getStatusDisplayLabel(status.value, status.label)}
                   </span>

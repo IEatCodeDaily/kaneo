@@ -15,7 +15,6 @@ import type {
   DataTableRow,
 } from "@/types/data-table";
 import { DataTableCellView, type MemberOption } from "./data-table-cells";
-import { TicketCellPicker } from "./ticket-cell";
 import {
   asString,
   asStringArray,
@@ -26,6 +25,7 @@ import {
   isValidUrl,
   parseJsonValue,
 } from "./data-table-format";
+import { TicketCellPicker } from "./ticket-cell";
 
 type EditorProps = {
   field: DataTableField;

@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Ticket,
   AlignLeft,
   Banknote,
   Braces,
@@ -16,6 +15,7 @@ import {
   Mail,
   Percent,
   Square,
+  Ticket,
   Type,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -27,7 +27,6 @@ import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import type { DataTableField, SelectChoice } from "@/types/data-table";
-import { TicketCellView } from "./ticket-cell";
 import {
   asBool,
   asNumber,
@@ -40,6 +39,7 @@ import {
   formatDateValue,
   formatNumberValue,
 } from "./data-table-format";
+import { TicketCellView } from "./ticket-cell";
 
 export type MemberOption = {
   id: string;

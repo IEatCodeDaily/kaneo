@@ -419,7 +419,14 @@ export async function updateTableCell(
   requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
   await assertTicketValues(organizationId, fields, { [fieldId]: value });
-  const row = await store.updateCell(db, tableId, fields, rowId, fieldId, value);
+  const row = await store.updateCell(
+    db,
+    tableId,
+    fields,
+    rowId,
+    fieldId,
+    value,
+  );
   const tickets = await ticketsForRows(organizationId, fields, [row]);
   return { ...row, tickets };
 }
