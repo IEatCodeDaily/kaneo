@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { shortcuts } from "@/constants/shortcuts";
+import { pickStatusByType } from "@/constants/task-statuses";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -136,6 +137,10 @@ function RouteComponent() {
     return {
       ...filteredBoard,
       plannedTasks: sortTasks(filteredBoard.plannedTasks || [], sort),
+      backlogColumns: (filteredBoard.backlogColumns ?? []).map((column) => ({
+        ...column,
+        tasks: sortTasks(column.tasks, sort),
+      })),
       archivedTasks: sortTasks(filteredBoard.archivedTasks || [], sort),
     };
   }, [filteredBoard, sort]);
@@ -151,10 +156,11 @@ function RouteComponent() {
     ...(board?.plannedTasks ?? []),
     ...(board?.archivedTasks ?? []),
   ].filter((task) => selectedTaskIds.has(task.id));
+  // "Move to board" lands on the board's unstarted status (seeded To Do
+  // unless the board replaced it), else its first open lane.
   const todoColumn =
-    board?.columns?.find(
-      (column) => column.slug === "to-do" || column.name === "To Do",
-    ) ?? board?.columns?.find((column) => !column.isFinal);
+    pickStatusByType(board?.columns ?? [], "unstarted") ??
+    board?.columns?.find((column) => !column.isFinal);
 
   const confirmBulkMove = async () => {
     if (bulkMovePending) return;

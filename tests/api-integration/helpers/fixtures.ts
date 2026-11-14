@@ -79,7 +79,8 @@ export async function createBoardFixture({
         slug: col.slug,
         position: col.position,
         isFinal: col.isFinal,
-        statusType: "statusType" in col ? col.statusType : null,
+        statusType: col.statusType,
+        showOnBoard: col.showOnBoard,
       })
       .returning();
     if (inserted) {
@@ -96,8 +97,20 @@ export async function createBoardFixture({
   const inReview = columnsBySlug.get("in-review");
   const done = columnsBySlug.get("done");
   const canceled = columnsBySlug.get("canceled");
+  const planned = columnsBySlug.get("planned");
+  const triage = columnsBySlug.get("triage");
+  const duplicate = columnsBySlug.get("duplicate");
 
-  if (!todo || !inProgress || !inReview || !done || !canceled) {
+  if (
+    !todo ||
+    !inProgress ||
+    !inReview ||
+    !done ||
+    !canceled ||
+    !planned ||
+    !triage ||
+    !duplicate
+  ) {
     throw new Error("Failed to seed default board columns");
   }
 
@@ -109,6 +122,9 @@ export async function createBoardFixture({
       inReview,
       done,
       canceled,
+      planned,
+      triage,
+      duplicate,
     },
   };
 }

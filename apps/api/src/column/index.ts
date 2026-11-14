@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
+import { STATUS_TYPES } from "../task/status-taxonomy";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import createColumn from "./controllers/create-column";
@@ -59,22 +60,24 @@ const column = new Hono<{
         name: v.string(),
         icon: v.optional(v.string()),
         color: v.optional(v.string()),
-        isFinal: v.optional(v.boolean()),
-        statusType: v.optional(v.nullable(v.string())),
+        // Required unless the name slugs to a seeded status (e.g. "Done").
+        statusType: v.optional(v.picklist(STATUS_TYPES)),
+        showOnBoard: v.optional(v.boolean()),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
     requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { boardId } = c.req.valid("param");
-      const { name, icon, color, isFinal, statusType } = c.req.valid("json");
+      const { name, icon, color, statusType, showOnBoard } =
+        c.req.valid("json");
       const result = await createColumn({
         boardId,
         name,
         icon,
         color,
-        isFinal,
         statusType,
+        showOnBoard,
       });
       return c.json(result);
     },
@@ -137,8 +140,8 @@ const column = new Hono<{
         name: v.optional(v.string()),
         icon: v.optional(v.nullable(v.string())),
         color: v.optional(v.nullable(v.string())),
-        isFinal: v.optional(v.boolean()),
-        statusType: v.optional(v.nullable(v.string())),
+        statusType: v.optional(v.picklist(STATUS_TYPES)),
+        showOnBoard: v.optional(v.boolean()),
       }),
     ),
     organizationAccess.fromColumn("id"),

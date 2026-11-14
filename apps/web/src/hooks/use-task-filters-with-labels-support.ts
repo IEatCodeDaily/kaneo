@@ -359,6 +359,11 @@ export function useTaskFiltersWithLabelsSupport(
           ...column,
           tasks: filterTasks(column.tasks),
         })) ?? [],
+      backlogColumns:
+        board.backlogColumns?.map((column) => ({
+          ...column,
+          tasks: filterTasks(column.tasks),
+        })) ?? [],
     };
   }, [board, filterTasks]);
 

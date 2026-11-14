@@ -1,11 +1,13 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable } from "../../database/schema";
 import {
-  BACKLOG_STATUS_SLUGS,
+  BACKLOG_STATUS_TYPES,
   isClosedStatusType,
+  isStatusType,
   STATUS_TYPE_BY_SLUG,
+  STATUS_TYPES,
 } from "../../task/status-taxonomy";
 
 export function toSlug(name: string): string {
@@ -24,59 +26,55 @@ async function createColumn({
   name,
   icon,
   color,
-  isFinal,
   statusType,
+  showOnBoard,
 }: {
   boardId: string;
   name: string;
   icon?: string;
   color?: string;
-  isFinal?: boolean;
-  statusType?: string | null;
+  statusType?: string;
+  showOnBoard?: boolean;
 }) {
   const slug = toSlug(name);
 
   if (!slug) {
     throw new HTTPException(400, {
-      message: "Column name must contain at least one alphanumeric character",
+      message: "Status name must contain at least one alphanumeric character",
     });
   }
 
-  // Only the backlog statuses are reserved: they have their own surface, so a
-  // board column with their slug would double-render tickets. Closed statuses
-  // (done/canceled/duplicate) are ALLOWED as columns — that is how a board
-  // backs its Canceled status with a visible lane.
-  if ((BACKLOG_STATUS_SLUGS as readonly string[]).includes(slug)) {
-    throw new HTTPException(409, {
-      message: `Column slug "${slug}" is reserved for backlog statuses`,
+  // A seeded slug implies its type; anything else must name one explicitly.
+  const resolvedStatusType = statusType ?? STATUS_TYPE_BY_SLUG[slug];
+  if (!isStatusType(resolvedStatusType)) {
+    throw new HTTPException(400, {
+      message: `statusType is required. Valid types: ${STATUS_TYPES.join(", ")}`,
     });
   }
-
-  // Unknown slugs (custom columns) start unclassified; the board can pick a
-  // type in the Status settings afterwards.
-  const resolvedStatusType = statusType ?? STATUS_TYPE_BY_SLUG[slug] ?? null;
-  const resolvedIsFinal =
-    isClosedStatusType(resolvedStatusType) || isFinal === true;
 
   const existing = await db
     .select({ id: columnTable.id })
     .from(columnTable)
-    .where(
-      sql`${columnTable.boardId} = ${boardId} AND ${columnTable.slug} = ${slug}`,
-    );
+    .where(and(eq(columnTable.boardId, boardId), eq(columnTable.slug, slug)));
 
   if (existing.length > 0) {
     throw new HTTPException(409, {
-      message: `Column with slug "${slug}" already exists in this board`,
+      message: `A status with slug "${slug}" already exists in this board`,
     });
   }
 
+  // Positions are per type: a new status goes to the end of its type group.
   const [maxPos] = await db
     .select({
       maxPosition: sql<number>`COALESCE(MAX(${columnTable.position}), -1)`,
     })
     .from(columnTable)
-    .where(eq(columnTable.boardId, boardId));
+    .where(
+      and(
+        eq(columnTable.boardId, boardId),
+        eq(columnTable.statusType, resolvedStatusType),
+      ),
+    );
 
   const position = (maxPos?.maxPosition ?? -1) + 1;
 
@@ -89,13 +87,18 @@ async function createColumn({
       position,
       icon: icon || null,
       color: color || null,
-      isFinal: resolvedIsFinal,
+      isFinal: isClosedStatusType(resolvedStatusType),
       statusType: resolvedStatusType,
+      showOnBoard:
+        showOnBoard ??
+        !(BACKLOG_STATUS_TYPES as readonly string[]).includes(
+          resolvedStatusType,
+        ),
     })
     .returning();
 
   if (!created) {
-    throw new HTTPException(500, { message: "Failed to create column" });
+    throw new HTTPException(500, { message: "Failed to create status" });
   }
 
   return created;

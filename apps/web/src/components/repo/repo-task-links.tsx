@@ -44,6 +44,14 @@ import { toast } from "@/lib/toast";
 import type { RepoTaskLink } from "@/types/repo";
 import LinkTicketCandidateRow from "./link-ticket-candidate-row";
 
+type StatusPayload = {
+  name?: string;
+  slug?: string;
+  icon?: string | null;
+  isFinal?: boolean;
+  tasks?: unknown;
+};
+
 type Props = {
   organizationId: string;
   repoId: string;
@@ -105,15 +113,9 @@ export default function RepoTaskLinks({
     for (const [index, board] of (boards ?? []).entries()) {
       const payload = taskQueries[index]?.data as
         | {
-            columns?: Array<{
-              name?: string;
-              slug?: string;
-              icon?: string | null;
-              isFinal?: boolean;
-              tasks?: unknown;
-            }>;
+            columns?: StatusPayload[];
+            backlogColumns?: StatusPayload[];
             archivedTasks?: unknown;
-            plannedTasks?: unknown;
           }
         | undefined;
       const buckets: Array<{
@@ -123,7 +125,11 @@ export default function RepoTaskLinks({
         statusIcon: string | null;
         statusIsFinal: boolean;
       }> = [
-        ...(payload?.columns ?? []).map((column) => ({
+        // Every status is a board row: lanes + off-board statuses.
+        ...[
+          ...(payload?.columns ?? []),
+          ...(payload?.backlogColumns ?? []),
+        ].map((column) => ({
           tasks: column?.tasks,
           status: column?.slug ?? "",
           statusName: column?.name ?? column?.slug ?? "",
@@ -134,13 +140,6 @@ export default function RepoTaskLinks({
           tasks: payload?.archivedTasks,
           status: "archived",
           statusName: "Archived",
-          statusIcon: null,
-          statusIsFinal: false,
-        },
-        {
-          tasks: payload?.plannedTasks,
-          status: "planned",
-          statusName: "Planned",
           statusIcon: null,
           statusIsFinal: false,
         },

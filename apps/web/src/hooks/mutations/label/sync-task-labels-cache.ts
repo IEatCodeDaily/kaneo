@@ -33,6 +33,12 @@ export function updateTaskLabelsInBoard(
         updateTaskLabels(task, taskId, updater),
       ),
     })),
+    backlogColumns: (board.backlogColumns ?? []).map((column) => ({
+      ...column,
+      tasks: column.tasks.map((task) =>
+        updateTaskLabels(task, taskId, updater),
+      ),
+    })),
     plannedTasks: board.plannedTasks.map((task) =>
       updateTaskLabels(task, taskId, updater),
     ),

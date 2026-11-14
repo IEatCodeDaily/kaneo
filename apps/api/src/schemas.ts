@@ -20,10 +20,6 @@ export const boardSchema = v.object({
   isPublic: v.nullable(v.boolean()),
   archivedAt: v.nullable(v.date()),
   subtaskDepthLimit: v.number(),
-  /** #226: persisted order for regular task status choices. */
-  taskStatusOrder: v.array(v.string()),
-  /** #226: persisted Backlog order; Triage defaults above Planned. */
-  backlogStatusOrder: v.array(v.string()),
 });
 
 export const taskSchema = v.object({

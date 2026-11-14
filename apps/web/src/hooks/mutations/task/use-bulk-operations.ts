@@ -81,12 +81,20 @@ export function useBulkOperations() {
     onSuccess: invalidateCommon,
   });
 
+  // The caller passes the board's backlog-type status (it is a board row,
+  // renamable/replaceable per board), never a hardcoded slug.
   const bulkMoveToBacklog = useMutation({
-    mutationFn: async (taskIds: string[]) => {
+    mutationFn: async ({
+      taskIds,
+      status,
+    }: {
+      taskIds: string[];
+      status: string;
+    }) => {
       await bulkOperation({
         taskIds,
         operation: "updateStatus",
-        value: "planned",
+        value: status,
       });
     },
     onSuccess: invalidateCommon,

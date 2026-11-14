@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ShortcutNumber } from "@/components/ui/shortcut-number";
-import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
+import { groupStatusesForPicker } from "@/constants/task-statuses";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
@@ -31,13 +31,16 @@ export default function SubtaskStatusPopover({
 }: SubtaskStatusPopoverProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const { data: columns = [] } = useGetColumns(boardId);
-  const statusOptions = columns.map((col) => ({
-    value: col.slug,
-    label: col.name,
-    icon: col.icon,
-    isFinal: col.isFinal,
-  }));
+  const { data: columns } = useGetColumns(boardId);
+  // Every status is a board row: the picker is exactly the board's statuses.
+  const sections = useMemo(
+    () => groupStatusesForPicker(columns ?? []),
+    [columns],
+  );
+  const statusOptions = useMemo(
+    () => sections.flatMap((section) => section.statuses),
+    [sections],
+  );
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
@@ -72,7 +75,7 @@ export default function SubtaskStatusPopover({
   const shortcutOptions = useMemo(
     () =>
       statusOptions.map((status) => ({
-        onSelect: () => handleStatusChange(status.value),
+        onSelect: () => handleStatusChange(status.slug),
       })),
     [handleStatusChange, statusOptions],
   );
@@ -84,46 +87,37 @@ export default function SubtaskStatusPopover({
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-48 p-0" align="start">
-        <div>
-          {statusOptions.map((status, index) => (
-            <Button
-              key={status.value}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 h-8 px-2 rounded-none"
-              onClick={() => handleStatusChange(status.value)}
-            >
-              {getColumnIcon(status.value, status.isFinal, status.icon)}
-              <span className="text-sm">
-                {getStatusDisplayLabel(status.value, status.label)}
-              </span>
-              {currentStatus === status.value ? (
-                <Check className="ml-auto h-4 w-4" />
-              ) : (
-                <ShortcutNumber number={index + 1} />
-              )}
-            </Button>
-          ))}
-          <div className="my-1 h-px bg-border" />
-          {NON_COLUMN_STATUS_DEFINITIONS.map((status) => (
-            <Button
-              key={status.slug}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
-              onClick={() => handleStatusChange(status.slug)}
-            >
-              {getColumnIcon(status.slug, status.isClosed)}
-              <span className="text-sm">
-                {t(`tasks:status.${status.slug}`, {
-                  defaultValue: status.name,
-                })}
-              </span>
-              {currentStatus === status.slug && (
-                <Check className="ml-auto h-4 w-4" />
-              )}
-            </Button>
+      <PopoverContent className="w-52 p-0" align="start">
+        <div className="py-1">
+          {sections.map((section, sectionIndex) => (
+            <Fragment key={section.id}>
+              {sectionIndex > 0 && <div className="my-1 h-px bg-border" />}
+              <div className="px-2 pt-1 pb-0.5 text-xs font-medium text-muted-foreground">
+                {t(`tasks:status.sections.${section.id}`)}
+              </div>
+              {section.statuses.map((status) => {
+                const shortcutIndex = statusOptions.indexOf(status) + 1;
+                return (
+                  <Button
+                    key={status.slug}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-full justify-start gap-2 rounded-none px-2"
+                    onClick={() => handleStatusChange(status.slug)}
+                  >
+                    {getColumnIcon(status.slug, status.isFinal, status.icon)}
+                    <span className="text-sm">
+                      {getStatusDisplayLabel(status.slug, status.name)}
+                    </span>
+                    {currentStatus === status.slug ? (
+                      <Check className="ml-auto h-4 w-4" />
+                    ) : (
+                      <ShortcutNumber number={shortcutIndex} />
+                    )}
+                  </Button>
+                );
+              })}
+            </Fragment>
           ))}
         </div>
       </PopoverContent>

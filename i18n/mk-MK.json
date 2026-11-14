@@ -2219,7 +2219,6 @@
 			"toastRenamed": "Колоната е преименувана",
 			"loading": "Се вчитуваат колони...",
 			"toastUpdateError": "Неуспешно ажурирање на колона",
-			"newColumnPlaceholder": "Име на нова колона...",
 			"add": "Додади",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Колоната е избришана",

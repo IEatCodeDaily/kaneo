@@ -74,31 +74,25 @@ describe("API integration: board creation", () => {
 
     const columns = await db.query.columnTable.findMany({
       where: eq(schema.columnTable.boardId, payload.id),
-      orderBy: (column, { asc }) => [asc(column.position)],
     });
+    const bySlug = Object.fromEntries(
+      columns.map((column) => [
+        column.slug,
+        [column.statusType, column.isFinal, column.showOnBoard],
+      ]),
+    );
 
-    expect(columns).toHaveLength(5);
-    expect(columns.map((column) => column.slug)).toEqual([
-      "to-do",
-      "in-progress",
-      "in-review",
-      "done",
-      "canceled",
-    ]);
-    expect(columns.map((column) => column.isFinal)).toEqual([
-      false,
-      false,
-      false,
-      true,
-      true,
-    ]);
-    expect(columns.map((column) => column.statusType)).toEqual([
-      "unstarted",
-      "started",
-      "started",
-      "completed",
-      "canceled",
-    ]);
+    // Every status is a seeded row — Triage, Planned and Duplicate included.
+    expect(bySlug).toEqual({
+      triage: ["triage", false, false],
+      planned: ["backlog", false, false],
+      "to-do": ["unstarted", false, true],
+      "in-progress": ["started", false, true],
+      "in-review": ["started", false, true],
+      done: ["completed", true, true],
+      canceled: ["canceled", true, true],
+      duplicate: ["duplicate", true, false],
+    });
   });
 
   it("rejects board creation for users outside the organization", async () => {

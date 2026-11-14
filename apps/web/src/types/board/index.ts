@@ -14,15 +14,22 @@ type TasksApiResponse = InferResponseType<
 
 type BoardWithTasksRaw = TasksApiResponse["data"];
 
+type StatusBucket = Omit<BoardWithTasksRaw["columns"][number], "tasks"> & {
+  tasks: Task[];
+};
+
+/**
+ * Every status is a board row. `columns` are the statuses shown on the board
+ * (Kanban lanes); `backlogColumns` are the rest — the Backlog page's sections
+ * (Triage, Planned, Duplicate by default). `plannedTasks` is every off-board
+ * ticket flattened, for views that union "all tickets".
+ */
 export type BoardWithTasks = Omit<
   BoardWithTasksRaw,
-  "archivedTasks" | "columns" | "plannedTasks"
+  "archivedTasks" | "columns" | "backlogColumns" | "plannedTasks"
 > & {
   archivedTasks: Task[];
-  columns: Array<
-    Omit<BoardWithTasksRaw["columns"][number], "tasks"> & {
-      tasks: Task[];
-    }
-  >;
+  columns: StatusBucket[];
+  backlogColumns: StatusBucket[];
   plannedTasks: Task[];
 };

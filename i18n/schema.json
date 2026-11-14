@@ -3389,6 +3389,9 @@
 						},
 						"noTasksInSection": {
 							"type": "string"
+						},
+						"selectAllInSection": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -3409,7 +3412,8 @@
 						"moveAllSuccess",
 						"noTasksToMove",
 						"moveAllDialogTitle",
-						"noTasksInSection"
+						"noTasksInSection",
+						"selectAllInSection"
 					]
 				},
 				"labels": {
@@ -4653,6 +4657,26 @@
 						},
 						"duplicate": {
 							"type": "string"
+						},
+						"sections": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"backlog": {
+									"type": "string"
+								},
+								"active": {
+									"type": "string"
+								},
+								"closed": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"backlog",
+								"active",
+								"closed"
+							]
 						}
 					},
 					"required": [
@@ -4665,7 +4689,8 @@
 						"done",
 						"triage",
 						"canceled",
-						"duplicate"
+						"duplicate",
+						"sections"
 					]
 				},
 				"attachment": {
@@ -4963,9 +4988,6 @@
 						},
 						"archiveSuccess": {
 							"type": "string"
-						},
-						"changeStatusOther": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -4998,8 +5020,7 @@
 						"deleteConfirm",
 						"assignError",
 						"archive",
-						"archiveSuccess",
-						"changeStatusOther"
+						"archiveSuccess"
 					]
 				},
 				"boardClearSearch": {
@@ -10761,9 +10782,6 @@
 						"toastUpdateError": {
 							"type": "string"
 						},
-						"newColumnPlaceholder": {
-							"type": "string"
-						},
 						"add": {
 							"type": "string"
 						},
@@ -10783,9 +10801,6 @@
 							"type": "string"
 						},
 						"statusTypeTooltip": {
-							"type": "string"
-						},
-						"typeNone": {
 							"type": "string"
 						},
 						"typeBacklog": {
@@ -10811,6 +10826,33 @@
 						},
 						"toastTypeUpdated": {
 							"type": "string"
+						},
+						"addStatus": {
+							"type": "string"
+						},
+						"newStatusPlaceholder": {
+							"type": "string"
+						},
+						"statusNameAria": {
+							"type": "string"
+						},
+						"deleteStatusAria": {
+							"type": "string"
+						},
+						"closesTicket": {
+							"type": "string"
+						},
+						"showOnBoardAria": {
+							"type": "string"
+						},
+						"shownOnBoard": {
+							"type": "string"
+						},
+						"hiddenFromBoard": {
+							"type": "string"
+						},
+						"toastVisibilityUpdated": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -10821,7 +10863,6 @@
 						"toastRenamed",
 						"loading",
 						"toastUpdateError",
-						"newColumnPlaceholder",
 						"add",
 						"pickIconTitle",
 						"toastDeleted",
@@ -10829,7 +10870,6 @@
 						"toastDeleteError",
 						"statusTypeAria",
 						"statusTypeTooltip",
-						"typeNone",
 						"typeBacklog",
 						"typeTriage",
 						"typeUnstarted",
@@ -10837,7 +10877,16 @@
 						"typeCompleted",
 						"typeCanceled",
 						"typeDuplicate",
-						"toastTypeUpdated"
+						"toastTypeUpdated",
+						"addStatus",
+						"newStatusPlaceholder",
+						"statusNameAria",
+						"deleteStatusAria",
+						"closesTicket",
+						"showOnBoardAria",
+						"shownOnBoard",
+						"hiddenFromBoard",
+						"toastVisibilityUpdated"
 					]
 				},
 				"preferences": {

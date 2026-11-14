@@ -6,13 +6,17 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   ContextMenuCheckboxItem,
   ContextMenuContent,
+  ContextMenuGroup,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
-import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
+import {
+  groupStatusesForPicker,
+  pickStatusByType,
+} from "@/constants/task-statuses";
 import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
@@ -29,7 +33,7 @@ import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { generateLink } from "@/lib/generate-link";
 import { getInitials } from "@/lib/get-initials";
-import { getPriorityLabel } from "@/lib/i18n/domain";
+import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -64,21 +68,10 @@ export default function TaskCardContextMenuContent({
   const { t } = useTranslation();
   const { board } = useBoardStore();
   const { data: organization } = useActiveOrganization();
+  // Every status is a board row: the menu is exactly the board's statuses.
   const { data: columnsData = [] } = useGetColumns(taskCardContext.boardId);
-  const columns =
-    board?.columns && board.columns.length > 0
-      ? board.columns.map((col) => ({
-          slug: col.id,
-          name: col.name,
-          icon: col.icon,
-          isFinal: col.isFinal,
-        }))
-      : columnsData.map((col) => ({
-          slug: col.slug,
-          name: col.name,
-          icon: col.icon,
-          isFinal: col.isFinal,
-        }));
+  const statusSections = groupStatusesForPicker(columnsData);
+  const backlogStatus = pickStatusByType(columnsData, "backlog");
   const { data: organizationMembers } = useGetActiveOrganizationMembers(
     taskCardContext.worskpaceId,
   );
@@ -200,34 +193,22 @@ export default function TaskCardContextMenuContent({
             <span>{t("tasks:status.label")}</span>
           </ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-48">
-            {columns.map((col) => (
-              <ContextMenuCheckboxItem
-                key={col.slug}
-                checked={task.status === col.slug}
-                onCheckedChange={() => handleChange("status", col.slug)}
-                closeOnClick
-                className="[&_svg]:text-muted-foreground"
-              >
-                {getColumnIcon(col.slug, col.isFinal, col.icon)}
-                <span>{col.name}</span>
-              </ContextMenuCheckboxItem>
-            ))}
-            <ContextMenuSeparator />
-            {NON_COLUMN_STATUS_DEFINITIONS.map((status) => (
-              <ContextMenuCheckboxItem
-                key={status.slug}
-                checked={task.status === status.slug}
-                onCheckedChange={() => handleChange("status", status.slug)}
-                closeOnClick
-                className="[&_svg]:text-muted-foreground"
-              >
-                {getColumnIcon(status.slug, status.isClosed)}
-                <span>
-                  {t(`tasks:status.${status.slug}`, {
-                    defaultValue: status.name,
-                  })}
-                </span>
-              </ContextMenuCheckboxItem>
+            {statusSections.map((section, sectionIndex) => (
+              <ContextMenuGroup key={section.id}>
+                {sectionIndex > 0 && <ContextMenuSeparator />}
+                {section.statuses.map((col) => (
+                  <ContextMenuCheckboxItem
+                    key={col.slug}
+                    checked={task.status === col.slug}
+                    onCheckedChange={() => handleChange("status", col.slug)}
+                    closeOnClick
+                    className="[&_svg]:text-muted-foreground"
+                  >
+                    {getColumnIcon(col.slug, col.isFinal, col.icon)}
+                    <span>{getStatusDisplayLabel(col.slug, col.name)}</span>
+                  </ContextMenuCheckboxItem>
+                ))}
+              </ContextMenuGroup>
             ))}
           </ContextMenuSubContent>
         </ContextMenuSub>
@@ -367,9 +348,13 @@ export default function TaskCardContextMenuContent({
             </span>
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={() => handleChange("status", "planned")}>
-            <span>{t("tasks:actions.markAsPlanned")}</span>
-          </ContextMenuItem>
+          {backlogStatus && (
+            <ContextMenuItem
+              onClick={() => handleChange("status", backlogStatus.slug)}
+            >
+              <span>{t("tasks:actions.markAsPlanned")}</span>
+            </ContextMenuItem>
+          )}
 
           {onUnlink && (
             <>

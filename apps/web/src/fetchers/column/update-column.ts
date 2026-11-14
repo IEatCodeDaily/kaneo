@@ -1,4 +1,5 @@
 import { client } from "@kaneo/libs";
+import type { StatusType } from "@/constants/task-statuses";
 
 async function updateColumn(
   id: string,
@@ -6,8 +7,8 @@ async function updateColumn(
     name?: string;
     icon?: string | null;
     color?: string | null;
-    isFinal?: boolean;
-    statusType?: string | null;
+    statusType?: StatusType;
+    showOnBoard?: boolean;
   },
 ) {
   const response = await client.column[":id"].$put({

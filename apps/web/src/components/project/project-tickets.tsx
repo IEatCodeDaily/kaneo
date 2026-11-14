@@ -9,7 +9,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TASK_STATUS_SLUGS } from "@/constants/task-statuses";
+import { DEFAULT_STATUS_NAMES } from "@/constants/task-statuses";
 import type { ProjectTicket } from "@/fetchers/project/get-project-tickets";
 import ProjectTicketRow from "./project-ticket-row";
 import {
@@ -338,7 +338,9 @@ function ProjectTicketBoard({
 }) {
   const { t } = useTranslation();
   const groups = canonicalStatusGroups(tickets);
-  const canonicalStatuses = TASK_STATUS_SLUGS;
+  // A project spans boards, so it groups by the seeded statuses every board
+  // has; custom statuses fall into "Other".
+  const canonicalStatuses = Object.keys(DEFAULT_STATUS_NAMES);
   const canonical = new Set<string>(canonicalStatuses);
   const other = tickets.filter((ticket) => !canonical.has(ticket.status));
   return (

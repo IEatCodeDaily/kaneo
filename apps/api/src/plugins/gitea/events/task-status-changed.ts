@@ -1,4 +1,4 @@
-import { isClosedStatus } from "../../../task/status-taxonomy";
+import { isStatusClosed } from "../../../task/validate-task-fields";
 import {
   findExternalLinksByTask,
   updateExternalLink,
@@ -40,8 +40,11 @@ export async function handleTaskStatusChanged(
       `status:${event.newStatus}`,
     ]);
 
-    const wasClosed = isClosedStatus(event.oldStatus);
-    const isClosed = isClosedStatus(event.newStatus);
+    // Closed = the status row's is_final, so custom closed statuses count.
+    const [wasClosed, isClosed] = await Promise.all([
+      isStatusClosed(event.boardId, event.oldStatus),
+      isStatusClosed(event.boardId, event.newStatus),
+    ]);
 
     // #226: terminal-to-terminal transitions only change labels; they must not
     // spuriously close/reopen the upstream issue.

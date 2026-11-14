@@ -1,8 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { columnTable } from "../database/schema";
-import { NON_COLUMN_STATUS_SLUGS, STATUS_SLUGS } from "./status-taxonomy";
+import {
+  compareStatuses,
+  pickStatusByType,
+  type StatusType,
+} from "./status-taxonomy";
 
 export const VALID_PRIORITIES = [
   "no-priority",
@@ -12,16 +16,6 @@ export const VALID_PRIORITIES = [
   "urgent",
 ] as const;
 
-/**
- * #226: statuses that exist without a Kanban `column` row — the backlog states
- * (Planned, Triage) plus the terminal Canceled/Duplicate outcomes.
- *
- * Was `["planned", "archived"]`. `archived` is gone because archival is now
- * `task.archived_at` and orthogonal to status: an archived ticket keeps its real
- * workflow status (see migration 0062 and `status-taxonomy.ts`).
- */
-export const VIRTUAL_STATUSES = NON_COLUMN_STATUS_SLUGS;
-
 export function assertValidPriority(priority: string): void {
   if (!(VALID_PRIORITIES as readonly string[]).includes(priority)) {
     throw new HTTPException(400, {
@@ -30,17 +24,25 @@ export function assertValidPriority(priority: string): void {
   }
 }
 
-export async function getValidTaskStatuses(boardId: string): Promise<string[]> {
-  const columns = await db
-    .select({ slug: columnTable.slug })
+/** A board's statuses in display order (type rank, then position). */
+export async function getBoardStatuses(boardId: string) {
+  const rows = await db
+    .select({
+      id: columnTable.id,
+      slug: columnTable.slug,
+      statusType: columnTable.statusType,
+      position: columnTable.position,
+      isFinal: columnTable.isFinal,
+    })
     .from(columnTable)
     .where(eq(columnTable.boardId, boardId))
     .orderBy(asc(columnTable.position));
+  return rows.sort(compareStatuses);
+}
 
-  // The fixed taxonomy is always valid (e.g. legacy `in-review` rows stay
-  // writable on boards that no longer seed that column); custom column slugs
-  // add board-specific statuses on top.
-  return [...STATUS_SLUGS, ...columns.map((c) => c.slug)];
+/** Every status is a board row: the valid statuses are the board's slugs. */
+export async function getValidTaskStatuses(boardId: string): Promise<string[]> {
+  return (await getBoardStatuses(boardId)).map((status) => status.slug);
 }
 
 export async function assertValidTaskStatus(
@@ -56,16 +58,46 @@ export async function assertValidTaskStatus(
   }
 }
 
+/**
+ * The board's status for a type — the seeded slug when present, else the
+ * first row of that type. Replaces every hardcoded fallback slug. Every board
+ * keeps ≥1 row per type (delete/re-type guards), so this only misses on a
+ * board created outside the API; callers fall back to their old literal then.
+ */
+export async function resolveStatusByType(
+  boardId: string,
+  statusType: StatusType,
+): Promise<string | undefined> {
+  return pickStatusByType(await getBoardStatuses(boardId), statusType)?.slug;
+}
+
+/**
+ * Whether a status closes a ticket on this board — its row's `is_final`.
+ * Never a slug list: a custom closed status ("Won't fix") must count.
+ */
+export async function isStatusClosed(
+  boardId: string,
+  slug: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ isFinal: columnTable.isFinal })
+    .from(columnTable)
+    .where(and(eq(columnTable.boardId, boardId), eq(columnTable.slug, slug)))
+    .limit(1);
+  return row?.isFinal === true;
+}
+
 export function coerceStatus(
   status: string,
   validStatuses: string[],
+  fallbackStatus: string,
 ): { status: string; warning?: string } {
   if (validStatuses.includes(status)) {
     return { status };
   }
   return {
-    status: "planned",
-    warning: `Unknown status "${status}" mapped to "planned"`,
+    status: fallbackStatus,
+    warning: `Unknown status "${status}" mapped to "${fallbackStatus}"`,
   };
 }
 

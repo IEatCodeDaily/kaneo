@@ -234,9 +234,9 @@ describe("API integration: task creation", () => {
     );
   });
 
-  it("creates tasks without a column when the status has no matching board column", async () => {
+  it("backs a Planned ticket with its status row — every status is a board row", async () => {
     const member = await createOrganizationMember();
-    const { board } = await createBoardFixture({
+    const { board, columns } = await createBoardFixture({
       organizationId: member.organization.id,
     });
 
@@ -249,8 +249,8 @@ describe("API integration: task creation", () => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        title: "Future status task",
-        description: "Status does not map to a seeded column",
+        title: "Planned task",
+        description: "Planned is a seeded status row now",
         priority: "low",
         status: "planned",
       }),
@@ -266,7 +266,7 @@ describe("API integration: task creation", () => {
 
     expect(payload).toMatchObject({
       status: "planned",
-      columnId: null,
+      columnId: columns.planned.id,
       position: 1,
     });
 
@@ -277,7 +277,7 @@ describe("API integration: task creation", () => {
     expect(persistedTask).toMatchObject({
       id: payload.id,
       status: "planned",
-      columnId: null,
+      columnId: columns.planned.id,
       position: 1,
     });
   });

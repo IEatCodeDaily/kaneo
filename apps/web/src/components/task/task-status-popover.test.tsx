@@ -54,21 +54,43 @@ const task: Task = {
   boardId: "board-1",
 };
 
+/*
+  Every status is a board row. Custom names (not the seeded defaults) render
+  verbatim, so assertions key on them without depending on i18n.
+*/
+const row = (
+  slug: string,
+  name: string,
+  statusType: string,
+  position = 0,
+  isFinal = false,
+) => ({
+  id: `col-${slug}`,
+  slug,
+  name,
+  icon: null,
+  isFinal,
+  statusType,
+  position,
+});
+
+const BOARD = [
+  row("done", "Shipped", "completed", 0, true),
+  row("to-do", "Ready", "unstarted"),
+  row("planned", "Later", "backlog"),
+  row("canceled", "Dropped", "canceled", 0, true),
+  row("wont-fix", "Won't fix", "canceled", 1, true),
+  row("triage", "Inbox", "triage"),
+];
+
+const loaded = (data: unknown) => ({ data, isLoading: false, isError: false });
+
+const openPicker = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Status" }));
+
 describe("TaskStatusPopover", () => {
   it("uses the same dropdown in controlled create mode without updating a task", async () => {
-    useGetColumns.mockReturnValue({
-      data: [
-        {
-          id: "column-1",
-          slug: "to-do",
-          name: "Ready",
-          icon: null,
-          isFinal: false,
-        },
-      ],
-      isLoading: false,
-      isError: false,
-    });
+    useGetColumns.mockReturnValue(loaded(BOARD));
     const onChange = vi.fn();
     updateTaskStatus.mockClear();
 
@@ -77,9 +99,7 @@ describe("TaskStatusPopover", () => {
     );
 
     fireEvent.click(screen.getByTestId("task-status-trigger"));
-    fireEvent.click(
-      await screen.findByRole("button", { name: /tasks:status.planned/ }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: /Later/ }));
 
     expect(useGetColumns).toHaveBeenCalledWith("board-1");
     expect(onChange).toHaveBeenCalledWith("planned");
@@ -87,11 +107,7 @@ describe("TaskStatusPopover", () => {
   });
 
   it("shows a faint circle when controlled create mode has no status", () => {
-    useGetColumns.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isError: false,
-    });
+    useGetColumns.mockReturnValue(loaded([]));
 
     render(<TaskStatusPopover boardId="board-1" onChange={vi.fn()} />);
 
@@ -104,19 +120,7 @@ describe("TaskStatusPopover", () => {
   });
 
   it("loads status options for the task board without relying on board state", async () => {
-    useGetColumns.mockReturnValue({
-      data: [
-        {
-          id: "column-1",
-          slug: "to-do",
-          name: "Ready",
-          icon: null,
-          isFinal: false,
-        },
-      ],
-      isLoading: false,
-      isError: false,
-    });
+    useGetColumns.mockReturnValue(loaded(BOARD));
 
     render(
       <TaskStatusPopover task={task}>
@@ -127,7 +131,7 @@ describe("TaskStatusPopover", () => {
     expect(useGetColumns).toHaveBeenCalledWith("board-1");
     expect(screen.queryByRole("button", { name: /Ready/ })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Status" }));
+    openPicker();
 
     expect(await screen.findByRole("button", { name: /Ready/ })).toBeVisible();
   });
@@ -145,7 +149,7 @@ describe("TaskStatusPopover", () => {
       </TaskStatusPopover>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Status" }));
+    openPicker();
 
     expect(await screen.findByText("common:empty.loading")).toBeVisible();
   });
@@ -163,72 +167,48 @@ describe("TaskStatusPopover", () => {
       </TaskStatusPopover>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Status" }));
+    openPicker();
 
     expect(await screen.findByText("common:error.title")).toBeVisible();
   });
 
-  describe("backlog and archive actions", () => {
-    const columns = [
-      {
-        id: "column-1",
-        slug: "to-do",
-        name: "Ready",
-        icon: null,
-        isFinal: false,
-      },
-    ];
-
-    it("offers them below a divider, separated from the board columns", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
+  describe("status model", () => {
+    it("lists exactly the board's statuses, grouped Backlog / Active / Closed", async () => {
+      useGetColumns.mockReturnValue(loaded(BOARD));
 
       render(
         <TaskStatusPopover task={task}>
           <Button>Status</Button>
         </TaskStatusPopover>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+      openPicker();
 
-      const backlog = await screen.findByRole("button", {
-        name: /tasks:status.planned/,
-      });
-      const archive = screen.getByRole("button", {
-        name: /tasks:actions.archive/,
-      });
-      const divider = screen.getByTestId("status-divider");
-      const archiveDivider = screen.getByTestId("archive-divider");
-      const column = screen.getByRole("button", { name: /Ready/ });
-
-      // Order matters: statuses, then the divider, then the non-column
-      // statuses, then Archive in its OWN section (it is not a status — #226).
-      expect(
-        column.compareDocumentPosition(divider) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-      expect(
-        divider.compareDocumentPosition(backlog) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-      expect(
-        backlog.compareDocumentPosition(archiveDivider) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-      expect(
-        archiveDivider.compareDocumentPosition(archive) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
+      const order = [
+        await screen.findByTestId("status-section-backlog"),
+        screen.getByRole("button", { name: /Inbox/ }),
+        screen.getByRole("button", { name: /Later/ }),
+        screen.getByTestId("status-section-active"),
+        screen.getByRole("button", { name: /Ready/ }),
+        screen.getByTestId("status-section-closed"),
+        screen.getByRole("button", { name: /Shipped/ }),
+        screen.getByRole("button", { name: /Dropped/ }),
+        screen.getByRole("button", { name: /Won't fix/ }),
+        screen.getByTestId("archive-divider"),
+        screen.getByTestId("task-archive-action"),
+      ];
+      for (let i = 1; i < order.length; i++) {
+        expect(
+          order[i - 1].compareDocumentPosition(order[i]) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          `element ${i} out of order`,
+        ).toBeTruthy();
+      }
+      // Nothing hardcoded: a status the board does not have is not offered.
+      expect(screen.queryByRole("button", { name: /duplicate/i })).toBeNull();
     });
 
-    it("offers the explicit Canceled status below the divider", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
+    it("sets a custom closed status like any other", async () => {
+      useGetColumns.mockReturnValue(loaded(BOARD));
       updateTaskStatus.mockClear();
 
       render(
@@ -236,45 +216,16 @@ describe("TaskStatusPopover", () => {
           <Button>Status</Button>
         </TaskStatusPopover>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
-      fireEvent.click(
-        await screen.findByRole("button", { name: /tasks:status.canceled/ }),
-      );
+      openPicker();
+      fireEvent.click(await screen.findByRole("button", { name: /Won't fix/ }));
 
       expect(updateTaskStatus).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "task-1", status: "canceled" }),
-      );
-    });
-
-    it("moves the task to the planned status the Backlog view reads", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
-      updateTaskStatus.mockClear();
-
-      render(
-        <TaskStatusPopover task={task}>
-          <Button>Status</Button>
-        </TaskStatusPopover>,
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
-      fireEvent.click(
-        await screen.findByRole("button", { name: /tasks:status.planned/ }),
-      );
-
-      expect(updateTaskStatus).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "task-1", status: "planned" }),
+        expect.objectContaining({ id: "task-1", status: "wont-fix" }),
       );
     });
 
     it("archives via archived_at and never as a status", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
+      useGetColumns.mockReturnValue(loaded(BOARD));
       updateTaskStatus.mockClear();
       setTaskArchived.mockClear();
       setTaskArchived.mockResolvedValue({});
@@ -284,32 +235,23 @@ describe("TaskStatusPopover", () => {
           <Button>Status</Button>
         </TaskStatusPopover>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+      openPicker();
       fireEvent.click(
         await screen.findByRole("button", { name: /tasks:actions.archive/ }),
       );
 
       /*
-        #226: archival is orthogonal to status. This test previously asserted
-        `status: "archived"`, which is exactly the defect — migration 0062 dropped
-        "archived" from the vocabulary, so that call 400s with
-        `Invalid status "archived"`.
+        #226: archival is orthogonal to status — migration 0062 dropped
+        "archived" from the vocabulary, so a status write of it 400s.
       */
       expect(setTaskArchived).toHaveBeenCalledWith(
         expect.objectContaining({ taskId: "task-1", archived: true }),
       );
       expect(updateTaskStatus).not.toHaveBeenCalled();
-      expect(JSON.stringify(setTaskArchived.mock.calls)).not.toContain(
-        '"archived":"archived"',
-      );
     });
 
     it("offers unarchive for an already archived task", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
+      useGetColumns.mockReturnValue(loaded(BOARD));
       setTaskArchived.mockClear();
       setTaskArchived.mockResolvedValue({});
 
@@ -320,7 +262,7 @@ describe("TaskStatusPopover", () => {
           <Button>Status</Button>
         </TaskStatusPopover>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+      openPicker();
       fireEvent.click(
         await screen.findByRole("button", { name: /tasks:actions.unarchive/ }),
       );
@@ -328,29 +270,6 @@ describe("TaskStatusPopover", () => {
       expect(setTaskArchived).toHaveBeenCalledWith(
         expect.objectContaining({ taskId: "task-1", archived: false }),
       );
-    });
-
-    it("keeps the archive action out of the status option list", async () => {
-      useGetColumns.mockReturnValue({
-        data: columns,
-        isLoading: false,
-        isError: false,
-      });
-
-      render(
-        <TaskStatusPopover task={task}>
-          <Button>Status</Button>
-        </TaskStatusPopover>,
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Status" }));
-
-      // archive is an action, not a selectable status: it must not be rendered
-      // as one of the status buttons the shortcut list indexes
-      const archive = await screen.findByTestId("task-archive-action");
-      expect(archive).toBeVisible();
-      expect(
-        screen.queryByRole("button", { name: /tasks:status.archived/ }),
-      ).toBeNull();
     });
   });
 });

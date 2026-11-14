@@ -7,6 +7,7 @@ import {
   coercePriority,
   coerceStatus,
   getValidTaskStatuses,
+  resolveStatusByType,
 } from "../validate-task-fields";
 import claimTaskNumbers from "./claim-task-numbers";
 
@@ -40,6 +41,8 @@ async function importTasks(
       ? (await claimTaskNumbers(boardId, tasksToImport.length)) - 1
       : 0;
   const validStatuses = await getValidTaskStatuses(boardId);
+  const fallbackStatus =
+    (await resolveStatusByType(boardId, "backlog")) ?? "planned";
 
   const results = [];
 
@@ -48,6 +51,7 @@ async function importTasks(
       const { status, warning: statusWarning } = coerceStatus(
         taskData.status,
         validStatuses,
+        fallbackStatus,
       );
       const { priority, warning: priorityWarning } = coercePriority(
         taskData.priority || "low",

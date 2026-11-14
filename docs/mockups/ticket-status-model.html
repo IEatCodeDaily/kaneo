@@ -1,0 +1,123 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Kaneo — ticket status model</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262a33;--fg:#e6e8ec;--mute:#8a909c;--faint:#5b616d;--acc:#6e8bff;
+--t-tri:#c084fc;--t-bkl:#94a3b8;--t-uns:#cbd5e1;--t-sta:#f5b94a;--t-com:#4ade80;--t-can:#f87171;--t-dup:#a3a3a3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:13px/18px Inter,system-ui,sans-serif;padding:20px}
+h1{font-size:16px;margin:0 0 4px}h2{font-size:13px;margin:0 0 10px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.sub{color:var(--mute);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.tri{background:var(--t-tri)}.bkl{background:var(--t-bkl)}.uns{background:var(--t-uns)}.sta{background:var(--t-sta)}.com{background:var(--t-com)}.can{background:var(--t-can)}.dup{background:var(--t-dup)}
+.ring{background:transparent;border:2px dashed currentColor}
+.tg{display:flex;align-items:center;justify-content:space-between;margin:12px 0 4px;color:var(--mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.tg:first-of-type{margin-top:0}
+.tg .pct{color:var(--faint);font-weight:500;text-transform:none;letter-spacing:0}
+.row{display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:6px;margin-bottom:4px;background:#12151b}
+.row .grip{color:var(--faint);cursor:grab;font-size:10px;letter-spacing:-2px}.row .nm,.row .slug,.lane h3,.tk{white-space:nowrap}.row .nm{flex:1}.row .slug{color:var(--faint);font:11px ui-monospace,monospace}
+.row .menu{color:var(--faint)}
+.add{color:var(--acc);font-size:12px;padding:2px 8px;cursor:pointer}
+.closed{font-size:10px;color:var(--t-com);border:1px solid #23462f;border-radius:4px;padding:0 4px}
+.closed.c{color:var(--t-can);border-color:#4a2626}.closed.d{color:var(--t-dup);border-color:#3a3a3a}
+.pop{background:#12151b;border:1px solid var(--line);border-radius:8px;padding:4px;width:240px}
+.pop input{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--fg);padding:6px 8px;font:inherit;outline:0}
+.pi{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;border-radius:4px}.pi.sel{background:#1e2330}
+.pi .k{margin-left:auto;color:var(--faint);font-size:11px}
+.ph{padding:6px 8px 2px;color:var(--faint);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.sep{height:1px;background:var(--line);margin:4px 0}
+.sec{border:1px solid var(--line);border-radius:6px;margin-bottom:8px;overflow:hidden}
+.sh{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#12151b;font-weight:600}
+.sh .n{color:var(--faint);font-weight:500}.sh .chev{color:var(--faint)}
+.tk{display:flex;gap:8px;padding:5px 10px 5px 28px;border-top:1px solid var(--line);color:#c9ccd3}
+.tk .id{color:var(--faint);font:11px ui-monospace,monospace;width:60px;flex:none}.tk{overflow:hidden;text-overflow:ellipsis}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;color:var(--mute);font-size:12px}
+.legend span{display:flex;align-items:center;gap:6px}
+.note{color:var(--mute);font-size:12px;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.new{outline:1px dashed var(--acc);outline-offset:2px}
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:14px}
+.lane{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;min-height:70px}
+.lane h3{margin:0 0 6px;font-size:12px;display:flex;align-items:center;gap:6px}.lane h3 i{color:var(--faint);font-style:normal;font-weight:500}
+.c1{background:#12151b;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:11px;color:#c9ccd3;margin-bottom:4px}
+</style></head><body>
+<h1>Ticket status model — every status is a board row, typed</h1>
+<div class="sub">One list per board. Type decides where a status shows and whether it closes the ticket. Labels unchanged; <b>dashed outline = new vs today</b>.</div>
+
+<div class="grid">
+ <div class="card">
+  <h2>① Board settings → Status</h2>
+  <div class="tg"><span>Triage</span><span class="pct">Backlog page · open</span></div>
+  <div class="row new"><span class="grip">::</span><span class="dot tri"></span><span class="nm">Triage</span><span class="slug">triage</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Backlog</span><span class="pct">Backlog page · open</span></div>
+  <div class="row new"><span class="grip">::</span><span class="dot bkl"></span><span class="nm">Planned</span><span class="slug">planned</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Unstarted</span><span class="pct">Board lane · open</span></div>
+  <div class="row"><span class="grip">::</span><span class="dot uns"></span><span class="nm">To Do</span><span class="slug">to-do</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Started</span><span class="pct">Board lane · open</span></div>
+  <div class="row"><span class="grip">::</span><span class="dot sta"></span><span class="nm">In Progress</span><span class="slug">in-progress</span><span class="menu">•••</span></div>
+  <div class="row"><span class="grip">::</span><span class="dot sta"></span><span class="nm">In Review</span><span class="slug">in-review</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Completed</span><span class="pct">Board lane · <span class="closed">closes</span></span></div>
+  <div class="row"><span class="grip">::</span><span class="dot com"></span><span class="nm">Done</span><span class="slug">done</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Canceled</span><span class="pct">Board lane · <span class="closed c">closes</span></span></div>
+  <div class="row"><span class="grip">::</span><span class="dot can"></span><span class="nm">Canceled</span><span class="slug">canceled</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="tg"><span>Duplicate</span><span class="pct">Board lane · <span class="closed d">closes</span></span></div>
+  <div class="row new"><span class="grip">::</span><span class="dot dup"></span><span class="nm">Duplicate</span><span class="slug">duplicate</span><span class="menu">•••</span></div>
+  <div class="add">+ Add status</div>
+  <div class="note">Type is set by which group a status sits in. To change it, drag the row to another group or use ⋯ → Change type. The last status of a type can't be deleted. The "None" type and the hard-coded statuses are gone.</div>
+ </div>
+
+ <div class="card">
+  <h2>② Status picker (ticket, card menu, bulk)</h2>
+  <div class="pop">
+   <input placeholder="Change status…">
+   <div class="ph">Backlog</div>
+   <div class="pi"><span class="dot tri"></span>Triage<span class="k">1</span></div>
+   <div class="pi"><span class="dot bkl"></span>Planned<span class="k">2</span></div>
+   <div class="ph">Active</div>
+   <div class="pi sel"><span class="dot uns"></span>To Do<span class="k">3</span></div>
+   <div class="pi"><span class="dot sta"></span>In Progress<span class="k">4</span></div>
+   <div class="pi"><span class="dot sta"></span>In Review<span class="k">5</span></div>
+   <div class="ph">Closed</div>
+   <div class="pi"><span class="dot com"></span>Done<span class="k">6</span></div>
+   <div class="pi"><span class="dot can"></span>Canceled<span class="k">7</span></div>
+   <div class="pi"><span class="dot dup"></span>Duplicate<span class="k">8</span></div>
+   <div class="sep"></div>
+   <div class="pi" style="color:var(--mute)">Archive</div>
+  </div>
+  <div class="note">The picker shows exactly the board's statuses, in Status-settings order, so custom statuses appear automatically. Archive is still its own section because it isn't a status.</div>
+ </div>
+
+ <div class="card">
+  <h2>③ Backlog page</h2>
+  <div class="sec new"><div class="sh"><span class="chev">▾</span><span class="dot tri"></span>Triage<span class="n">0</span></div>
+   <div class="tk" style="color:var(--faint)">Drop tickets here</div></div>
+  <div class="sec"><div class="sh"><span class="chev">▾</span><span class="dot bkl"></span>Planned<span class="n">19</span></div>
+   <div class="tk"><span class="id">KFL-412</span>Line 3 sensor recalibration</div>
+   <div class="tk"><span class="id">KFL-398</span>Supplier onboarding form</div>
+   <div class="tk"><span class="id">KFL-377</span>Spare-parts reorder threshold</div></div>
+  <div class="sec"><div class="sh"><span class="chev">▸</span>Archived<span class="n">8</span></div></div>
+  <div class="note">There is one section per Triage- or Backlog-type status, including custom ones such as "Icebox". Dropping a ticket into a section sets that status. Archived works as it does today.</div>
+ </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h2>④ Board (kanban): lanes = Unstarted → Duplicate statuses</h2>
+ <div class="lanes">
+  <div class="lane"><h3><span class="dot uns"></span>To Do <i>155</i></h3><div class="c1">QC retry policy…</div></div>
+  <div class="lane"><h3><span class="dot sta"></span>In Progress <i>11</i></h3><div class="c1">Filter housing leak…</div></div>
+  <div class="lane"><h3><span class="dot sta"></span>In Review <i>30</i></h3><div class="c1">Gasket torque…</div></div>
+  <div class="lane"><h3><span class="dot com"></span>Done <i>236</i></h3><div class="c1">Supplier audit…</div></div>
+  <div class="lane"><h3><span class="dot can"></span>Canceled <i>1</i></h3><div class="c1">Warranty claim…</div></div>
+  <div class="lane new"><h3><span class="dot dup"></span>Duplicate <i>0</i></h3></div>
+ </div>
+ <div class="legend">
+  <span><i class="dot tri"></i>Triage</span><span><i class="dot bkl"></i>Backlog</span><span><i class="dot uns"></i>Unstarted</span><span><i class="dot sta"></i>Started</span><span><i class="dot com"></i>Completed</span><span><i class="dot can"></i>Canceled</span><span><i class="dot dup"></i>Duplicate</span>
+ </div>
+ <div class="note">Live counts on entelechia, all 13 boards: 236 Done · 155 To Do · 30 In Review · 19 Planned (currently not backed by any status row) · 11 In Progress · 1 Canceled · 0 Triage · 0 Duplicate.</div>
+</div>
+</body></html>

@@ -82,6 +82,7 @@ async function seedFollowerOnOtherBoard() {
       name: "To Do",
       slug: "to-do",
       position: 0,
+      statusType: "unstarted",
     })
     .returning();
 
@@ -193,6 +194,7 @@ describe("outbound sync for tasks following an issue from another board", () => 
         name: "To Do",
         slug: "to-do",
         position: 0,
+        statusType: "unstarted",
       })
       .returning();
 
