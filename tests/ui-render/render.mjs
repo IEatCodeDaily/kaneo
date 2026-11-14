@@ -365,6 +365,26 @@ const TABLE_STATES = [
     "table-noresult",
     async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
   ],
+  [
+    "table-select",
+    async (p) => {
+      await p.getByRole("checkbox", { name: "Select row 1" }).click();
+      await p.waitForTimeout(300);
+    },
+  ],
+  [
+    "table-group",
+    async (p) => {
+      await p.getByRole("button", { name: /^Group/ }).click();
+      await p.waitForTimeout(300);
+      await p.getByRole("combobox").first().click();
+      await p.waitForTimeout(300);
+      await p.getByRole("option", { name: "Stage" }).click();
+      await p.waitForTimeout(300);
+      await p.keyboard.press("Escape");
+      await p.waitForTimeout(400);
+    },
+  ],
 ];
 if (pages.table) {
   for (const [name, act] of TABLE_STATES) {
@@ -413,6 +433,23 @@ if (pages.table) {
           );
           return b ? getComputedStyle(b).fontSize : null;
         })(),
+        bulk: !!document.body.innerText.match(/\d+ selected/),
+        selected_cell_bg: (() => {
+          const selected = document.querySelector(
+            '[role="row"][aria-selected="true"] [role="gridcell"]',
+          );
+          const plain = document.querySelector(
+            '[role="row"]:not([aria-selected]) [role="gridcell"]',
+          );
+          if (!selected || !plain) return null;
+          return {
+            selected: getComputedStyle(selected).backgroundColor,
+            plain: getComputedStyle(plain).backgroundColor,
+          };
+        })(),
+        groups: [
+          ...document.querySelectorAll('button[aria-label*="group" i]'),
+        ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
     if (!m.heads.some((x) => x.startsWith("Batch")))
@@ -423,6 +460,16 @@ if (pages.table) {
     if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
     if (name !== "table-noresult" && m.row_h !== 32)
       fails.push(`row ${m.row_h}px, want 32`);
+    if (name === "table-select" && !m.bulk)
+      fails.push("bulk bar missing after row select");
+    if (
+      name === "table-select" &&
+      m.selected_cell_bg &&
+      m.selected_cell_bg.selected === m.selected_cell_bg.plain
+    )
+      fails.push("selected row cells are not tinted");
+    if (name === "table-group" && m.groups < 1)
+      fails.push("no group headers after grouping");
     const shot = `${name}--desktop-dark.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m };

@@ -527,3 +527,128 @@ export function optionsForType(
   }
   return base;
 }
+
+// ── grouping (single level, client-side; S3) ───────────────────────────────
+
+export type FieldRowGroup = {
+  key: string;
+  label: string;
+  rows: DataTableRow[];
+};
+
+/** True when the field's values are sensible as group buckets. */
+export function isGroupable(field: DataTableField): boolean {
+  return ["select", "user", "checkbox", "text", "number"].includes(field.type);
+}
+
+/** Raw bucket key for a row value; null/undefined/"" share the empty bucket. */
+export function groupKey(field: DataTableField, value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  if (field.type === "checkbox") return value ? "true" : "false";
+  return String(value);
+}
+
+/**
+ * Rows grouped by one field, groups sorted by resolved label with the empty
+ * bucket last. `labelFor` resolves raw bucket keys (choice/user ids) into
+ * display labels; sorting follows the label so buckets read in order.
+ */
+export function groupRows(
+  field: DataTableField,
+  rows: DataTableRow[],
+  labelFor?: (key: string) => string,
+): FieldRowGroup[] {
+  const buckets = new Map<string, DataTableRow[]>();
+  for (const row of rows) {
+    const key = groupKey(field, row.values[field.id]);
+    const list = buckets.get(key);
+    if (list) list.push(row);
+    else buckets.set(key, [row]);
+  }
+  const groups = [...buckets.entries()].map(([key, groupRows]) => ({
+    key,
+    label: labelFor ? labelFor(key) || key : key,
+    rows: groupRows,
+  }));
+  return groups.sort((a, b) => {
+    if (a.key === "") return 1;
+    if (b.key === "") return -1;
+    return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+  });
+}
+
+/** Value a new row gets from "New row in <group>" for this bucket. */
+export function groupValue(field: DataTableField, key: string): unknown {
+  if (key === "") return null;
+  if (field.type === "checkbox") return key === "true";
+  if (field.type === "number") {
+    const n = Number(key);
+    return Number.isNaN(n) ? null : n;
+  }
+  return key;
+}
+
+// ── footer summaries (NocoDB-style function set; S3) ───────────────────────
+
+export type SummaryFn =
+  | "none"
+  | "sum"
+  | "avg"
+  | "min"
+  | "max"
+  | "filled"
+  | "empty"
+  | "checked";
+
+/** Sensible default once summaries are switched on for a column. */
+export function defaultSummaryFn(field: DataTableField): SummaryFn {
+  if (["number", "percent", "currency"].includes(field.type)) return "sum";
+  if (field.type === "checkbox") return "checked";
+  return "filled";
+}
+
+/** Columns a summary makes sense for; others show none. */
+export function supportsSummary(field: DataTableField): boolean {
+  return !["longtext", "datetime"].includes(field.type);
+}
+
+/** Formatted summary over rows, or null when there is nothing to show. */
+export function summarize(
+  fn: SummaryFn,
+  field: DataTableField,
+  rows: DataTableRow[],
+): string | null {
+  if (fn === "none" || rows.length === 0) return null;
+  const precision = fieldPrecision(field);
+  const fmt = (n: number) =>
+    n.toLocaleString(undefined, { maximumFractionDigits: precision });
+  const values = rows.map((row) => row.values[field.id]);
+  const filled = values.filter(
+    (v) => v !== null && v !== undefined && v !== "" && v !== false,
+  );
+  switch (fn) {
+    case "sum":
+    case "avg":
+    case "min":
+    case "max": {
+      const nums = values
+        .filter((v) => v !== null && v !== undefined && v !== "")
+        .map((v) => (typeof v === "number" ? v : Number(v)))
+        .filter((n) => !Number.isNaN(n));
+      if (nums.length === 0) return null;
+      if (fn === "sum") return fmt(nums.reduce((a, b) => a + b, 0));
+      if (fn === "avg")
+        return fmt(nums.reduce((a, b) => a + b, 0) / nums.length);
+      if (fn === "min") return fmt(Math.min(...nums));
+      return fmt(Math.max(...nums));
+    }
+    case "filled":
+      return `${filled.length}/${rows.length}`;
+    case "empty":
+      return `${rows.length - filled.length}/${rows.length}`;
+    case "checked":
+      return `${values.filter((v) => v === true).length}/${rows.length}`;
+    default:
+      return null;
+  }
+}

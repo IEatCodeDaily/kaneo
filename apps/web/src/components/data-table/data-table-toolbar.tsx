@@ -6,6 +6,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Rows3,
   Search,
   SlidersHorizontal,
   Trash2,
@@ -24,6 +25,7 @@ import {
   type Density,
   defaultFilterFor,
   filterIsActive,
+  isGroupable,
 } from "@/components/data-table/data-table-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +108,10 @@ type Props = {
   onSearchChange: (value: string) => void;
   density: Density;
   onDensityChange: (density: Density) => void;
+  groupFieldId: string | null;
+  onGroupChange: (fieldId: string | null) => void;
+  summariesActive: boolean;
+  onSummariesToggle: () => void;
   canEdit: boolean;
   rowsInView: number;
   onAddRow: () => void;
@@ -127,7 +133,10 @@ export function DataTableToolbar(props: Props) {
     density,
     canEdit,
     rowsInView,
+    groupFieldId,
+    summariesActive,
   } = props;
+  const groupableFields = fields.filter(isGroupable);
   // The primary field is always visible, so it never counts as hidden.
   const hiddenCount = fields.filter(
     (f, i) => i > 0 && hidden.includes(f.id),
@@ -303,6 +312,47 @@ export function DataTableToolbar(props: Props) {
         </PopoverContent>
       </Popover>
 
+      {/* Group (single level; S3) */}
+      <Popover>
+        <PopoverTrigger
+          render={
+            <ToolbarButton
+              icon={<Rows3 className="size-3.5" />}
+              label={t("navigation:tables.group")}
+              applied={groupFieldId !== null}
+              badge={groupFieldId ? 1 : undefined}
+            />
+          }
+        />
+        <PopoverContent align="start" className="w-70 p-0">
+          <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
+            {t("navigation:tables.groupBy")}
+          </p>
+          <div className="flex items-center gap-1 px-2 pb-2">
+            <FieldSelect
+              fields={groupableFields}
+              value={groupFieldId ?? ""}
+              placeholder={t("navigation:tables.pickField")}
+              onChange={(fieldId) => props.onGroupChange(fieldId)}
+            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!groupFieldId}
+              aria-label={t("navigation:tables.clearGroup")}
+              onClick={() => props.onGroupChange(null)}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+          {groupableFields.length === 0 && (
+            <p className="px-3 pb-2 text-xs text-muted-foreground">
+              {t("navigation:tables.noGroupableFields")}
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
+
       <span className="flex-1" />
 
       <div className="flex h-7 w-50 items-center gap-1.5 rounded-md border border-input px-2">
@@ -376,6 +426,14 @@ export function DataTableToolbar(props: Props) {
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuCheckboxItem
+              checked={summariesActive}
+              onCheckedChange={props.onSummariesToggle}
+            >
+              {t("navigation:tables.fieldSummaries")}
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuGroup>
           {canEdit && (
             <>
               <DropdownMenuSeparator />
@@ -410,7 +468,7 @@ export function DataTableToolbar(props: Props) {
   );
 }
 
-function FieldSelect({
+export function FieldSelect({
   fields,
   value,
   placeholder,
