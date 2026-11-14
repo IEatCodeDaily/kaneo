@@ -128,7 +128,9 @@ export function NavMain() {
                 </SidebarMenuButton>
                 {recentOpen &&
                   (recentPages.length === 0 ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">                      {t("navigation:sidebar.recentEmpty")}
+                    <p className="px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                      {" "}
+                      {t("navigation:sidebar.recentEmpty")}
                     </p>
                   ) : (
                     <SidebarMenuSub>
