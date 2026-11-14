@@ -2,7 +2,6 @@ import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import db from "../../database";
 import { boardTable } from "../../database/schema";
 import { listAccessibleResourceIds } from "../../resource-access";
-import { isClosedStatus } from "../../task/status-taxonomy";
 
 async function getBoards(
   organizationId: string,
@@ -29,6 +28,7 @@ async function getBoards(
     ],
     with: {
       tasks: true,
+      columns: { columns: { slug: true, isFinal: true } },
     },
   });
 
@@ -53,8 +53,12 @@ async function getBoards(
       */
       const activeTasks = board.tasks.filter((task) => task.archivedAt == null);
       const totalTasks = activeTasks.length;
+      // Closed = the status row's is_final (custom closed statuses count too).
+      const closedSlugs = new Set(
+        board.columns.filter((col) => col.isFinal).map((col) => col.slug),
+      );
       const completedTasks = activeTasks.filter((task) =>
-        isClosedStatus(task.status),
+        closedSlugs.has(task.status),
       ).length;
       const completionPercentage =
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -96,7 +100,6 @@ async function getBoards(
         },
         archivedTasks: [],
         plannedTasks: [],
-        triageTasks: [],
         columns: [],
       };
     });

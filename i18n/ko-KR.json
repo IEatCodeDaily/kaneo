@@ -2219,7 +2219,6 @@
 			"toastRenamed": "컬럼 이름이 변경되었습니다",
 			"loading": "컬럼 로딩 중...",
 			"toastUpdateError": "컬럼 업데이트에 실패했습니다",
-			"newColumnPlaceholder": "새 컬럼 이름...",
 			"add": "추가",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "컬럼이 삭제되었습니다",

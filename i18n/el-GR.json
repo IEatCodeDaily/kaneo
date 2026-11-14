@@ -2219,7 +2219,6 @@
 			"toastRenamed": "Η στήλη μετονομάστηκε",
 			"loading": "Φόρτωση στηλών...",
 			"toastUpdateError": "Αποτυχία ενημέρωσης στήλης",
-			"newColumnPlaceholder": "Όνομα νέας στήλης...",
 			"add": "Προσθήκη",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Η στήλη διαγράφηκε",

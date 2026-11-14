@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { DEFAULT_PROJECT_COLUMNS as DEFAULT_COLUMNS } from "../board/controllers/create-board";
 import db from "../database";
 import {
   boardTable,
@@ -7,44 +8,6 @@ import {
   taskTable,
   workflowRuleTable,
 } from "../database/schema";
-
-const DEFAULT_COLUMNS = [
-  {
-    name: "To Do",
-    slug: "to-do",
-    position: 0,
-    isFinal: false,
-    statusType: "unstarted",
-  },
-  {
-    name: "In Progress",
-    slug: "in-progress",
-    position: 1,
-    isFinal: false,
-    statusType: "started",
-  },
-  {
-    name: "In Review",
-    slug: "in-review",
-    position: 2,
-    isFinal: false,
-    statusType: "started",
-  },
-  {
-    name: "Done",
-    slug: "done",
-    position: 3,
-    isFinal: true,
-    statusType: "completed",
-  },
-  {
-    name: "Canceled",
-    slug: "canceled",
-    position: 4,
-    isFinal: true,
-    statusType: "canceled",
-  },
-];
 
 const EVENT_MAPPING: Record<string, string> = {
   onBranchPush: "branch_push",
@@ -92,8 +55,8 @@ export async function migrateColumns() {
             slug: defaultColumn.slug,
             position: defaultColumn.position,
             isFinal: defaultColumn.isFinal,
-            statusType:
-              "statusType" in defaultColumn ? defaultColumn.statusType : null,
+            statusType: defaultColumn.statusType,
+            showOnBoard: defaultColumn.showOnBoard,
           })
           .returning({ id: columnTable.id, slug: columnTable.slug });
 

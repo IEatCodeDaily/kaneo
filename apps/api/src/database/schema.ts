@@ -492,28 +492,6 @@ export const boardTable = pgTable(
     orgPrivilege: text("org_privilege", {
       enum: ["none", "view", "edit", "manage"],
     }),
-    /**
-     * #226: per-board ordering for statuses shown in regular Task surfaces.
-     * JSON is intentional: this is a small ordered list of global, append-only
-     * slugs, not board-owned status definitions. Missing future statuses are
-     * appended canonically by readers, so configured boards never hide them.
-     */
-    taskStatusOrder: jsonb("task_status_order")
-      .$type<string[]>()
-      .default([
-        "to-do",
-        "in-progress",
-        "in-review",
-        "done",
-        "canceled",
-        "duplicate",
-      ])
-      .notNull(),
-    /** #226: Triage defaults above Planned, exactly as specified. */
-    backlogStatusOrder: jsonb("backlog_status_order")
-      .$type<string[]>()
-      .default(["triage", "planned"])
-      .notNull(),
     // #95: how deep nested subtasks may go on this board. DB enforces 1..4 via
     // board_subtask_depth_limit_range; 4 is both the default and the ceiling.
     subtaskDepthLimit: integer("subtask_depth_limit").notNull().default(4),
@@ -963,20 +941,26 @@ export const columnTable = pgTable(
     color: text("color"),
     isFinal: boolean("is_final").default(false).notNull(),
     /**
-     * The status TYPE (2026-11 owner direction): backlog, triage, unstarted,
-     * started, completed, canceled or duplicate. Null = unclassified. Closed
-     * types (completed/canceled/duplicate) imply `isFinal`; `isFinal` stays
-     * the closed-semantics flag every consumer reads (progress, reminders, My
-     * Tasks) and is kept in sync on writes.
+     * The status TYPE: triage, backlog, unstarted, started, completed, canceled
+     * or duplicate (CHECK in migration 0084). Decides where the status shows
+     * and whether it closes a ticket. `isFinal` = closed type, kept in sync on
+     * every write — it stays the flag SQL consumers read (progress, reminders,
+     * My Tasks).
      */
-    statusType: text("status_type"),
+    statusType: text("status_type").notNull(),
+    /** Render as a Kanban lane. Off by default for backlog types + Duplicate. */
+    showOnBoard: boolean("show_on_board").default(true).notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("column_boardId_idx").on(table.boardId)],
+  (table) => [
+    index("column_boardId_idx").on(table.boardId),
+    // One status per slug per board: task.status joins to its row by slug.
+    uniqueIndex("column_board_slug_unique").on(table.boardId, table.slug),
+  ],
 );
 
 export const workflowRuleTable = pgTable(

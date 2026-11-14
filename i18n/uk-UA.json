@@ -2231,7 +2231,6 @@
 			"toastRenamed": "Колонку перейменовано",
 			"loading": "Завантаження колонок...",
 			"toastUpdateError": "Не вдалося оновити колонку",
-			"newColumnPlaceholder": "Назва нової колонки...",
 			"add": "Додати",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Колонку видалено",

@@ -16,10 +16,8 @@ describe("updateTaskLabelsInBoard", () => {
       defaultAssigneeId: null,
       defaultAssigneeTeamId: null,
       orgPrivilege: null,
-      taskStatusOrder: [],
-      backlogStatusOrder: [],
       subtaskDepthLimit: 3,
-      triageTasks: [],
+      backlogColumns: [],
       columns: [
         {
           id: "todo",
@@ -108,10 +106,8 @@ describe("updateTaskLabelsInBoard", () => {
       defaultAssigneeId: null,
       defaultAssigneeTeamId: null,
       orgPrivilege: null,
-      taskStatusOrder: [],
-      backlogStatusOrder: [],
       subtaskDepthLimit: 3,
-      triageTasks: [],
+      backlogColumns: [],
       columns: [],
       plannedTasks: [
         {

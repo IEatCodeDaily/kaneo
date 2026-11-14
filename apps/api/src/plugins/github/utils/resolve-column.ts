@@ -1,20 +1,25 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import db from "../../../database";
-import { columnTable, workflowRuleTable } from "../../../database/schema";
+import { workflowRuleTable } from "../../../database/schema";
+import {
+  pickStatusByType,
+  STATUS_TYPE_BY_SLUG,
+} from "../../../task/status-taxonomy";
+import { getBoardStatuses } from "../../../task/validate-task-fields";
 
+/**
+ * The status a forge event moves a ticket to: the board's workflow rule for
+ * the event, else `fallbackStatus` when the board has it, else the board's
+ * status of the fallback's TYPE (a board that replaced "done" with "Shipped"
+ * still closes), else the board's first status.
+ */
 export async function resolveTargetStatus(
   boardId: string,
   eventType: string,
   fallbackStatus: string,
+  integrationType: "github" | "gitea" = "github",
 ): Promise<string> {
-  const boardColumns = await db
-    .select({
-      id: columnTable.id,
-      slug: columnTable.slug,
-    })
-    .from(columnTable)
-    .where(eq(columnTable.boardId, boardId))
-    .orderBy(asc(columnTable.position));
+  const boardColumns = await getBoardStatuses(boardId);
 
   if (boardColumns.length === 0) {
     return fallbackStatus;
@@ -23,7 +28,7 @@ export async function resolveTargetStatus(
   const rule = await db.query.workflowRuleTable.findFirst({
     where: and(
       eq(workflowRuleTable.boardId, boardId),
-      eq(workflowRuleTable.integrationType, "github"),
+      eq(workflowRuleTable.integrationType, integrationType),
       eq(workflowRuleTable.eventType, eventType),
     ),
   });
@@ -37,12 +42,14 @@ export async function resolveTargetStatus(
     }
   }
 
-  const fallbackColumn = boardColumns.find(
-    (column) => column.slug === fallbackStatus,
-  );
-  if (fallbackColumn) {
-    return fallbackColumn.slug;
+  if (boardColumns.some((column) => column.slug === fallbackStatus)) {
+    return fallbackStatus;
   }
 
-  return boardColumns[0]?.slug ?? fallbackStatus;
+  const fallbackType = STATUS_TYPE_BY_SLUG[fallbackStatus];
+  const byType = fallbackType
+    ? pickStatusByType(boardColumns, fallbackType)
+    : undefined;
+
+  return byType?.slug ?? boardColumns[0]?.slug ?? fallbackStatus;
 }

@@ -1,164 +1,110 @@
-import {
-  Ban,
-  Check,
-  Circle,
-  CircleDot,
-  Copy,
-  Inbox,
-  Search,
-} from "lucide-react";
-
 /**
- * #226: display copy of the persisted task status taxonomy.
+ * Web copy of the ticket status model (API source of truth:
+ * `apps/api/src/task/status-taxonomy.ts`).
  *
- * The API's source of truth is `apps/api/src/task/status-taxonomy.ts`; this copy
- * carries React icon components, so it cannot live in the API module. The API
- * contract test pins the stored slugs; the web component tests pin that every
- * same slug renders here. If you append a status, update BOTH copies together.
+ * Every status is a board row (`GET /column/:boardId`), typed by `statusType`.
+ * Nothing here is a status list — pickers, settings and the Backlog page read
+ * the board's rows. This file only knows the seven TYPES and the default slugs
+ * (for display-label i18n of seeded statuses).
  *
  * Archive is DELIBERATELY absent: archival is `task.archived_at`, orthogonal to
  * status. An archived ticket retains whatever status it had.
  */
-export const TASK_STATUS_DEFINITIONS = [
-  {
-    slug: "to-do",
-    name: "To Do",
-    group: "unstarted",
-    icon: Circle,
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "in-progress",
-    name: "In Progress",
-    group: "started",
-    icon: CircleDot,
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "in-review",
-    name: "In Review",
-    group: "started",
-    icon: Search,
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "done",
-    name: "Done",
-    group: "finished",
-    icon: Check,
-    isClosed: true,
-    isBacklog: false,
-  },
-  // Ticket: "Triage is similar to Planned. by default it's above planned."
-  {
-    slug: "triage",
-    name: "Triage",
-    group: "backlog",
-    icon: Inbox,
-    isClosed: false,
-    isBacklog: true,
-  },
-  {
-    slug: "planned",
-    name: "Planned",
-    group: "backlog",
-    icon: Circle,
-    isClosed: false,
-    isBacklog: true,
-  },
-  {
-    slug: "canceled",
-    name: "Canceled",
-    group: "cancelled",
-    icon: Ban,
-    isClosed: true,
-    isBacklog: false,
-  },
-  {
-    slug: "duplicate",
-    name: "Duplicate",
-    group: "duplicate",
-    icon: Copy,
-    isClosed: true,
-    isBacklog: false,
-  },
+
+/** Status types, in display rank (= board/picker/settings order). */
+export const STATUS_TYPES = [
+  "triage",
+  "backlog",
+  "unstarted",
+  "started",
+  "completed",
+  "canceled",
+  "duplicate",
 ] as const;
 
-export type TaskStatusSlug = (typeof TASK_STATUS_DEFINITIONS)[number]["slug"];
-export type TaskStatusGroup = (typeof TASK_STATUS_DEFINITIONS)[number]["group"];
+export type StatusType = (typeof STATUS_TYPES)[number];
 
-export const TASK_STATUS_SLUGS = TASK_STATUS_DEFINITIONS.map(
-  (status) => status.slug,
-);
+/** Picker section a type belongs to. */
+export const STATUS_TYPE_SECTION: Record<
+  StatusType,
+  "backlog" | "active" | "closed"
+> = {
+  triage: "backlog",
+  backlog: "backlog",
+  unstarted: "active",
+  started: "active",
+  completed: "closed",
+  canceled: "closed",
+  duplicate: "closed",
+};
 
-export const BACKLOG_STATUS_DEFINITIONS = TASK_STATUS_DEFINITIONS.filter(
-  (status) => status.isBacklog,
-);
+/** Seeded slugs whose label is translated (custom statuses show their name). */
+export const DEFAULT_STATUS_NAMES: Record<string, string> = {
+  triage: "Triage",
+  planned: "Planned",
+  "to-do": "To Do",
+  "in-progress": "In Progress",
+  "in-review": "In Review",
+  done: "Done",
+  canceled: "Canceled",
+  duplicate: "Duplicate",
+};
 
-export const NON_BACKLOG_STATUS_DEFINITIONS = TASK_STATUS_DEFINITIONS.filter(
-  (status) => !status.isBacklog,
-);
+/** Seeded slug for each type — preferred target of "Move to Backlog" etc. */
+export const DEFAULT_SLUG_BY_TYPE: Record<StatusType, string> = {
+  triage: "triage",
+  backlog: "planned",
+  unstarted: "to-do",
+  started: "in-progress",
+  completed: "done",
+  canceled: "canceled",
+  duplicate: "duplicate",
+};
 
-export const CLOSED_TASK_STATUS_SLUGS = TASK_STATUS_DEFINITIONS.filter(
-  (status) => status.isClosed,
-).map((status) => status.slug);
-
-export function getTaskStatusDefinition(slug: string) {
-  return TASK_STATUS_DEFINITIONS.find((status) => status.slug === slug);
+function rank(statusType: string | null | undefined) {
+  const index = (STATUS_TYPES as readonly string[]).indexOf(statusType ?? "");
+  return index === -1 ? STATUS_TYPES.length : index;
 }
 
-export function isClosedTaskStatus(slug: string) {
-  return getTaskStatusDefinition(slug)?.isClosed === true;
-}
-
-export function isBacklogTaskStatus(slug: string) {
-  return getTaskStatusDefinition(slug)?.isBacklog === true;
-}
-
-/** Apply board-specific order without ever dropping newly-added statuses. */
-export function applyTaskStatusOrder<T extends { slug: string }>(
-  definitions: readonly T[],
-  configuredOrder: readonly string[] | null | undefined,
-): T[] {
-  if (!configuredOrder?.length) return [...definitions];
-
-  const bySlug = new Map(
-    definitions.map((definition) => [definition.slug, definition]),
+/** Display order: type rank, then position within the type. */
+export function sortStatuses<
+  T extends { statusType?: string | null; position?: number },
+>(statuses: readonly T[]): T[] {
+  return [...statuses].sort(
+    (a, b) =>
+      rank(a.statusType) - rank(b.statusType) ||
+      (a.position ?? 0) - (b.position ?? 0),
   );
-  const ordered: T[] = [];
-
-  for (const slug of configuredOrder) {
-    const definition = bySlug.get(slug);
-    if (definition) {
-      ordered.push(definition);
-      bySlug.delete(slug);
-    }
-  }
-
-  return [...ordered, ...bySlug.values()];
 }
 
 /**
- * Backward-compatible alias for old consumers. These are the four Kanban lanes,
- * not the full vocabulary. Existing slugs/semantics are frozen.
+ * A board's statuses grouped into picker sections (Backlog / Active / Closed),
+ * empty sections dropped, rows in display order.
  */
-export const DEFAULT_COLUMNS = TASK_STATUS_DEFINITIONS.filter(
-  (status) =>
-    status.slug === "to-do" ||
-    status.slug === "in-progress" ||
-    status.slug === "in-review" ||
-    status.slug === "done",
-).map(({ slug, name, icon }) => ({ id: slug, name, icon }));
+export function groupStatusesForPicker<
+  T extends { statusType?: string | null; position?: number },
+>(statuses: readonly T[]) {
+  const sections = [
+    { id: "backlog" as const, statuses: [] as T[] },
+    { id: "active" as const, statuses: [] as T[] },
+    { id: "closed" as const, statuses: [] as T[] },
+  ];
+  for (const status of sortStatuses(statuses)) {
+    const id = STATUS_TYPE_SECTION[status.statusType as StatusType] ?? "active";
+    sections.find((section) => section.id === id)?.statuses.push(status);
+  }
+  return sections.filter((section) => section.statuses.length > 0);
+}
 
-/**
- * Statuses that have no board column by default — Backlog, Triage, Canceled,
- * Duplicate. Every status picker offers these below a divider so Cancelled
- * (and the rest of the vocabulary) is explicitly settable everywhere, not just
- * through a board column.
- */
-export const NON_COLUMN_STATUS_DEFINITIONS = TASK_STATUS_DEFINITIONS.filter(
-  (status) => !DEFAULT_COLUMNS.some((column) => column.id === status.slug),
-);
+/** The board's status for a type: seeded slug when present, else the first. */
+export function pickStatusByType<
+  T extends { slug: string; statusType?: string | null; position?: number },
+>(statuses: readonly T[], statusType: StatusType): T | undefined {
+  const ofType = sortStatuses(
+    statuses.filter((status) => status.statusType === statusType),
+  );
+  return (
+    ofType.find((status) => status.slug === DEFAULT_SLUG_BY_TYPE[statusType]) ??
+    ofType[0]
+  );
+}

@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/popover";
 import { resolveLabelColor } from "@/constants/label-colors";
 import { shortcuts } from "@/constants/shortcuts";
+import { pickStatusByType } from "@/constants/task-statuses";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useAssignMilestoneToTask from "@/hooks/mutations/milestone/use-assign-milestone-to-task";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
@@ -213,7 +214,7 @@ function normalizeTask(
 function CreateTaskModal({
   open,
   onClose,
-  status,
+  status: statusProp,
   boardId,
   initialParentTaskId = null,
 }: CreateTaskModalProps) {
@@ -418,6 +419,15 @@ function CreateTaskModal({
   );
   const { data: templateColumns = [] } = useGetColumns(resolvedBoardId);
   const [templateStatus, setTemplateStatus] = useState<string | null>(null);
+  /*
+    Backlog entry points (Backlog page, palette, sidebar) pass the seeded
+    backlog slug "planned". A board may have renamed/replaced it, so resolve
+    it to the board's backlog-type status — one place, every caller.
+  */
+  const status =
+    statusProp === "planned"
+      ? (pickStatusByType(templateColumns, "backlog")?.slug ?? statusProp)
+      : statusProp;
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -564,10 +574,8 @@ function CreateTaskModal({
           }
         }
 
-        if (task.status === "planned" || task.status === "archived") {
-          return;
-        }
-
+        // Off-board statuses (Triage, Planned, …) are refetched with the
+        // board; only lanes are patched in place.
         const targetColumn = draft.columns?.find(
           (column) => column.id === task.status,
         );
@@ -613,7 +621,9 @@ function CreateTaskModal({
       return null;
     }
 
-    const draftStatus = "planned";
+    // Image-upload drafts park in the board's backlog status until submit.
+    const draftStatus =
+      pickStatusByType(templateColumns, "backlog")?.slug ?? "planned";
     const draftPromise = createTask({
       title: title.trim() || t("common:modals.createTask.untitledTask"),
       description: formatTaskMarkdown(description),
@@ -652,6 +662,7 @@ function CreateTaskModal({
     dueDate,
     priority,
     resolvedBoardId,
+    templateColumns,
     title,
     t,
   ]);
@@ -661,7 +672,12 @@ function CreateTaskModal({
     if (!title.trim() || !resolvedBoardId || !organization?.id) return;
 
     try {
-      const taskStatus = templateStatus ?? status ?? "to-do";
+      // Unset = the API's default (the board's unstarted status).
+      const taskStatus =
+        templateStatus ??
+        status ??
+        pickStatusByType(templateColumns, "unstarted")?.slug ??
+        "to-do";
       didSubmitRef.current = true;
 
       const savedTask = draftTask

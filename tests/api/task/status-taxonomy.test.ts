@@ -1,178 +1,137 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyStatusOrder,
-  BACKLOG_STATUS_SLUGS,
-  CLOSED_STATUS_SLUGS,
-  isBacklogStatus,
-  isClosedStatus,
+  CLOSED_STATUS_TYPES,
+  compareStatuses,
+  DEFAULT_SLUG_BY_TYPE,
+  DEFAULT_STATUSES,
   isClosedStatusType,
-  isKnownStatus,
-  NON_COLUMN_STATUS_SLUGS,
-  STATUS_DEFINITIONS,
-  STATUS_SLUGS,
+  isStatusType,
+  pickStatusByType,
   STATUS_TYPE_BY_SLUG,
+  STATUS_TYPES,
 } from "../../../apps/api/src/task/status-taxonomy";
 
 /**
- * #226 CONTRACT TEST for the task status vocabulary.
+ * CONTRACT TEST for the ticket status model.
  *
- * Status slugs are stored in `task.status` on ~1,741 live rows, so they are a
- * persistence contract. Renaming or re-pointing one silently rewrites the
- * meaning of every row already saved with it — no migration, no error, no diff.
- * These tests exist to make that failure loud instead of silent.
+ * Slugs are stored in `task.status` on live rows, so seeded slugs are a
+ * persistence contract: renaming or re-pointing one silently rewrites the
+ * meaning of every row already saved with it.
  */
 
-/**
- * Slugs that existed BEFORE #226 and must never move or change meaning.
- * Verified against the live database at implementation time:
- *   to-do 1549, done 172, planned 13, in-progress 4, in-review 1
- */
 const FROZEN_SLUGS = [
   "to-do",
   "in-progress",
   "in-review",
   "done",
   "planned",
+  "triage",
+  "canceled",
+  "duplicate",
 ] as const;
 
-describe("status taxonomy persistence contract", () => {
-  it("still contains every pre-existing slug", () => {
-    for (const slug of FROZEN_SLUGS) {
-      expect(STATUS_SLUGS).toContain(slug);
+describe("status types (owner direction)", () => {
+  it("are exactly the seven owner types, in display rank", () => {
+    expect(STATUS_TYPES).toEqual([
+      "triage",
+      "backlog",
+      "unstarted",
+      "started",
+      "completed",
+      "canceled",
+      "duplicate",
+    ]);
+  });
+
+  it("close a ticket only for completed, canceled and duplicate", () => {
+    expect(CLOSED_STATUS_TYPES).toEqual(["completed", "canceled", "duplicate"]);
+    for (const type of STATUS_TYPES) {
+      expect(isClosedStatusType(type)).toBe(
+        (CLOSED_STATUS_TYPES as readonly string[]).includes(type),
+      );
     }
-  });
-
-  it("keeps every slug unique", () => {
-    expect(new Set(STATUS_SLUGS).size).toBe(STATUS_SLUGS.length);
-  });
-
-  it("keeps the pre-existing slugs' closed/backlog semantics unchanged", () => {
-    // Re-pointing any of these would reclassify already-stored rows.
-    expect(isClosedStatus("to-do")).toBe(false);
-    expect(isClosedStatus("in-progress")).toBe(false);
-    expect(isClosedStatus("in-review")).toBe(false);
-    expect(isClosedStatus("done")).toBe(true);
-    expect(isClosedStatus("planned")).toBe(false);
-
-    expect(isBacklogStatus("planned")).toBe(true);
-    expect(isBacklogStatus("to-do")).toBe(false);
-    expect(isBacklogStatus("done")).toBe(false);
-  });
-
-  it("does NOT treat archived as a status", () => {
-    /*
-      The ticket correction: "Archive is a separate status to hide it from all
-      views. Archived item retains its status." Archival is `task.archived_at`
-      (migration 0062). If `archived` ever reappears here, archiving would again
-      destroy the ticket's real workflow state.
-    */
-    expect(STATUS_SLUGS).not.toContain("archived");
-    expect(isKnownStatus("archived")).toBe(false);
-  });
-});
-
-describe("#226 appended statuses", () => {
-  it("adds Triage, Canceled and Duplicate", () => {
-    expect(STATUS_SLUGS).toContain("triage");
-    expect(STATUS_SLUGS).toContain("canceled");
-    expect(STATUS_SLUGS).toContain("duplicate");
-  });
-
-  it("groups them as the ticket specifies", () => {
-    const bySlug = new Map(STATUS_DEFINITIONS.map((d) => [d.slug, d]));
-    expect(bySlug.get("triage")?.group).toBe("backlog");
-    expect(bySlug.get("canceled")?.group).toBe("cancelled");
-    expect(bySlug.get("duplicate")?.group).toBe("duplicate");
-
-    // Unstarted / Started / Finished, verbatim from the ticket.
-    expect(bySlug.get("to-do")?.group).toBe("unstarted");
-    expect(bySlug.get("in-progress")?.group).toBe("started");
-    expect(bySlug.get("in-review")?.group).toBe("started");
-    expect(bySlug.get("done")?.group).toBe("finished");
-  });
-
-  it("puts Triage ABOVE Planned by default", () => {
-    // "Triage is similar to Planned. by default it's above planned."
-    expect(BACKLOG_STATUS_SLUGS).toEqual(["triage", "planned"]);
-  });
-
-  it("treats Canceled and Duplicate as closed but NOT backlog", () => {
-    expect(CLOSED_STATUS_SLUGS).toContain("canceled");
-    expect(CLOSED_STATUS_SLUGS).toContain("duplicate");
-    expect(isBacklogStatus("canceled")).toBe(false);
-    expect(isBacklogStatus("duplicate")).toBe(false);
-  });
-
-  it("carries the 2026-11 status TYPES (owner direction)", () => {
-    // Labels do NOT change (To Do / In Progress / Done / Planned stay). The
-    // owner's list — Backlog, Triage, Unstarted, Started, Completed, Canceled,
-    // Duplicate — classifies the TYPE of a board column, not its name.
-    const names = new Map(STATUS_DEFINITIONS.map((d) => [d.slug, d.name]));
-    expect(names.get("planned")).toBe("Planned");
-    expect(names.get("triage")).toBe("Triage");
-    expect(names.get("to-do")).toBe("To Do");
-    expect(names.get("in-progress")).toBe("In Progress");
-    expect(names.get("done")).toBe("Done");
-    expect(names.get("canceled")).toBe("Canceled");
-    expect(names.get("duplicate")).toBe("Duplicate");
-  });
-
-  it("maps every taxonomy slug to its status TYPE", () => {
-    // Backlog, Triage, Unstarted, Started, Completed, Canceled, Duplicate —
-    // verbatim from the ticket; closed types imply a final column.
-    expect(STATUS_TYPE_BY_SLUG.planned).toBe("backlog");
-    expect(STATUS_TYPE_BY_SLUG.triage).toBe("triage");
-    expect(STATUS_TYPE_BY_SLUG["to-do"]).toBe("unstarted");
-    expect(STATUS_TYPE_BY_SLUG["in-progress"]).toBe("started");
-    expect(STATUS_TYPE_BY_SLUG["in-review"]).toBe("started");
-    expect(STATUS_TYPE_BY_SLUG.done).toBe("completed");
-    expect(STATUS_TYPE_BY_SLUG.canceled).toBe("canceled");
-    expect(STATUS_TYPE_BY_SLUG.duplicate).toBe("duplicate");
-    expect(isClosedStatusType("completed")).toBe(true);
-    expect(isClosedStatusType("canceled")).toBe(true);
-    expect(isClosedStatusType("duplicate")).toBe(true);
-    expect(isClosedStatusType("started")).toBe(false);
-    expect(isClosedStatusType("backlog")).toBe(false);
     expect(isClosedStatusType(null)).toBe(false);
   });
 
-  it("exposes non-column statuses so validation accepts them without a column row", () => {
-    for (const slug of ["planned", "triage", "canceled", "duplicate"]) {
-      expect(NON_COLUMN_STATUS_SLUGS).toContain(slug);
-    }
-    // Kanban statuses DO have column rows and must not be in this list.
-    for (const slug of ["to-do", "in-progress", "in-review", "done"]) {
-      expect(NON_COLUMN_STATUS_SLUGS).not.toContain(slug);
-    }
+  it("rejects anything that is not a type", () => {
+    expect(isStatusType("none")).toBe(false);
+    expect(isStatusType("archived")).toBe(false);
+    expect(isStatusType(null)).toBe(false);
+    expect(isStatusType("backlog")).toBe(true);
   });
 });
 
-describe("applyStatusOrder", () => {
-  it("orders by the board configuration", () => {
-    expect(applyStatusOrder(["a", "b", "c"], ["c", "a", "b"])).toEqual([
-      "c",
-      "a",
-      "b",
+describe("default statuses", () => {
+  it("seed every frozen slug, once", () => {
+    const slugs = DEFAULT_STATUSES.map((status) => status.slug);
+    expect([...slugs].sort()).toEqual([...FROZEN_SLUGS].sort());
+  });
+
+  it("keep their labels (labels never change)", () => {
+    const names = Object.fromEntries(
+      DEFAULT_STATUSES.map((status) => [status.slug, status.name]),
+    );
+    expect(names).toEqual({
+      triage: "Triage",
+      planned: "Planned",
+      "to-do": "To Do",
+      "in-progress": "In Progress",
+      "in-review": "In Review",
+      done: "Done",
+      canceled: "Canceled",
+      duplicate: "Duplicate",
+    });
+  });
+
+  it("cover every type, so by-type fallbacks always resolve", () => {
+    const types = new Set(DEFAULT_STATUSES.map((status) => status.statusType));
+    expect([...types].sort()).toEqual([...STATUS_TYPES].sort());
+    for (const type of STATUS_TYPES) {
+      expect(STATUS_TYPE_BY_SLUG[DEFAULT_SLUG_BY_TYPE[type]]).toBe(type);
+    }
+  });
+
+  it("show backlog types and Duplicate off-board, the rest on the board", () => {
+    const shown = DEFAULT_STATUSES.filter((s) => s.showOnBoard).map(
+      (s) => s.slug,
+    );
+    expect(shown).toEqual([
+      "to-do",
+      "in-progress",
+      "in-review",
+      "done",
+      "canceled",
     ]);
   });
 
-  it("keeps unconfigured statuses instead of dropping them", () => {
-    // A partially configured board must still show every status.
-    expect(applyStatusOrder(["a", "b", "c"], ["c"])).toEqual(["c", "a", "b"]);
+  it("never treat archived as a status", () => {
+    expect(DEFAULT_STATUSES.map((s) => s.slug)).not.toContain("archived");
   });
+});
 
-  it("ignores configured slugs that are not present", () => {
-    expect(applyStatusOrder(["a", "b"], ["zzz", "b", "a"])).toEqual(["b", "a"]);
-  });
+describe("ordering + by-type fallback", () => {
+  const rows = [
+    { slug: "done", statusType: "completed", position: 0 },
+    { slug: "shipped", statusType: "completed", position: 1 },
+    { slug: "to-do", statusType: "unstarted", position: 0 },
+    { slug: "icebox", statusType: "backlog", position: 1 },
+    { slug: "planned", statusType: "backlog", position: 0 },
+  ];
 
-  /** NEGATIVE CONTROLS: no configuration must not reorder anything. */
-  it("falls back to canonical order when no configuration exists", () => {
-    expect(applyStatusOrder(["a", "b", "c"], null)).toEqual(["a", "b", "c"]);
-    expect(applyStatusOrder(["a", "b", "c"], undefined)).toEqual([
-      "a",
-      "b",
-      "c",
+  it("sorts by type rank, then position within the type", () => {
+    expect([...rows].sort(compareStatuses).map((r) => r.slug)).toEqual([
+      "planned",
+      "icebox",
+      "to-do",
+      "done",
+      "shipped",
     ]);
-    expect(applyStatusOrder(["a", "b", "c"], [])).toEqual(["a", "b", "c"]);
+  });
+
+  it("prefers the seeded slug, else the first status of the type", () => {
+    expect(pickStatusByType(rows, "completed")?.slug).toBe("done");
+    const withoutDone = rows.filter((r) => r.slug !== "done");
+    expect(pickStatusByType(withoutDone, "completed")?.slug).toBe("shipped");
+    expect(pickStatusByType(rows, "duplicate")).toBeUndefined();
   });
 });

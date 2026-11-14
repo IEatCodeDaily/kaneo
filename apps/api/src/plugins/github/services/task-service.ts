@@ -6,18 +6,12 @@ import {
   integrationTable,
   taskTable,
 } from "../../../database/schema";
-import {
-  isClosedStatus,
-  NON_COLUMN_STATUS_SLUGS,
-} from "../../../task/status-taxonomy";
 
 export type TaskRow = InferSelectModel<typeof taskTable>;
 
 export type UpdateTaskStatusResult =
   | { applied: false }
   | { applied: true; before: TaskRow; after: TaskRow };
-
-const NON_COLUMN_STATUSES = new Set(NON_COLUMN_STATUS_SLUGS);
 
 export async function findTaskByNumber(boardId: string, taskNumber: number) {
   return db.query.taskTable.findFirst({
@@ -46,8 +40,6 @@ export async function updateTaskStatus(
     return { applied: false };
   }
 
-  let columnId: string | null = null;
-
   const column = await db.query.columnTable.findFirst({
     where: and(
       eq(columnTable.boardId, task.boardId),
@@ -55,18 +47,16 @@ export async function updateTaskStatus(
     ),
   });
 
-  if (column) {
-    columnId = column.id;
-  } else if (!NON_COLUMN_STATUSES.has(newStatus)) {
+  if (!column) {
     console.warn(
-      `[GitHub] Skipping status update for task ${taskId}: column "${newStatus}" not found in board ${task.boardId}`,
+      `[GitHub] Skipping status update for task ${taskId}: status "${newStatus}" not found in board ${task.boardId}`,
     );
     return { applied: false };
   }
 
   await db
     .update(taskTable)
-    .set({ status: newStatus, columnId })
+    .set({ status: newStatus, columnId: column.id })
     .where(eq(taskTable.id, taskId));
 
   const after = await db.query.taskTable.findFirst({
@@ -109,11 +99,7 @@ export async function isTaskInFinalState(task: {
     ),
   });
 
-  if (columnByStatus) {
-    return columnByStatus.isFinal;
-  }
-
-  return isClosedStatus(task.status);
+  return columnByStatus?.isFinal === true;
 }
 
 export async function getIntegrationWithBoard(integrationId: string) {

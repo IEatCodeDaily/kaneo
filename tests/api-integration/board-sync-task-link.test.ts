@@ -50,7 +50,13 @@ async function seed() {
 
   const [column] = await db
     .insert(schema.columnTable)
-    .values({ boardId: board.id, name: "To Do", slug: "to-do", position: 0 })
+    .values({
+      boardId: board.id,
+      name: "To Do",
+      slug: "to-do",
+      position: 0,
+      statusType: "unstarted",
+    })
     .returning();
 
   const owner = "kaneo-test";

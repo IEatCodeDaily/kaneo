@@ -1,5 +1,5 @@
 import i18n from "i18next";
-import { DEFAULT_COLUMNS } from "@/constants/columns";
+import { DEFAULT_STATUS_NAMES } from "@/constants/task-statuses";
 
 export function getStatusLabel(status: string) {
   return i18n.t(`tasks:status.${status}`, {
@@ -8,9 +8,7 @@ export function getStatusLabel(status: string) {
 }
 
 export function getStatusDisplayLabel(status: string, columnName?: string) {
-  const defaultName = DEFAULT_COLUMNS.find(
-    (column) => column.id === status,
-  )?.name;
+  const defaultName = DEFAULT_STATUS_NAMES[status];
 
   if (columnName) {
     if (defaultName && columnName === defaultName) {

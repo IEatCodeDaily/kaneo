@@ -1844,7 +1844,6 @@
 			"toastRenamed": "Coluna renomeada",
 			"loading": "Carregando colunas...",
 			"toastUpdateError": "Falha ao atualizar coluna",
-			"newColumnPlaceholder": "Nome da nova coluna...",
 			"add": "Adicionar",
 			"pickIconTitle": "Escolher ícone da coluna",
 			"toastDeleted": "Coluna excluída",

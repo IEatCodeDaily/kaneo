@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ARCHIVED_SECTION,
   backlogSectionOf,
   isArchived,
   sectionCrossPayload,
@@ -18,7 +19,7 @@ import {
  * they fail if that logic regresses -- not a local re-model of it.
  */
 
-// mirrors apps/api/src/task/status-taxonomy.ts -- "archived" is deliberately absent
+// the seeded statuses -- "archived" is deliberately absent
 const VALID_STATUSES = [
   "to-do",
   "in-progress",
@@ -40,36 +41,18 @@ describe("archived is not a status", () => {
   it("archiving a Done ticket keeps it Done", () => {
     const payload = sectionCrossPayload({
       task: { status: "done" },
-      targetSection: "archived",
+      targetSection: ARCHIVED_SECTION,
     });
 
     expect(payload.archived).toBe(true);
     expect(payload.status).toBe("done");
-    expect(payload.status).not.toBe("archived");
-    expect(VALID_STATUSES).toContain(payload.status);
-  });
-
-  it("never emits a status outside the valid vocabulary", () => {
-    for (const status of VALID_STATUSES) {
-      for (const targetSection of ["archived", "planned"] as const) {
-        const payload = sectionCrossPayload({
-          task: { status, archivedAt: ARCHIVED_AT },
-          targetSection,
-        });
-        expect(
-          VALID_STATUSES,
-          `${status} -> ${targetSection} produced ${payload.status}`,
-        ).toContain(payload.status);
-        expect(payload.status).not.toBe("archived");
-      }
-    }
   });
 
   it("archiving preserves every status unchanged", () => {
     for (const status of VALID_STATUSES) {
       const payload = sectionCrossPayload({
         task: { status },
-        targetSection: "archived",
+        targetSection: ARCHIVED_SECTION,
       });
       expect(payload.status, `archiving must not rewrite ${status}`).toBe(
         status,
@@ -77,39 +60,31 @@ describe("archived is not a status", () => {
     }
   });
 
-  it("unarchiving into Planned adopts the planned status", () => {
-    const payload = sectionCrossPayload({
-      task: { status: "done", archivedAt: ARCHIVED_AT },
-      targetSection: "planned",
-    });
-
-    expect(payload.archived).toBe(false);
-    expect(payload.status).toBe("planned");
+  it("dropping into a status section adopts that status and unarchives", () => {
+    for (const target of ["planned", "triage", "icebox"]) {
+      const payload = sectionCrossPayload({
+        task: { status: "done", archivedAt: ARCHIVED_AT },
+        targetSection: target,
+      });
+      expect(payload).toEqual({ archived: false, status: target });
+    }
   });
 });
 
 describe("backlog section membership", () => {
-  it("uses archivedAt, not status", () => {
-    // the exact case the old `status === "planned"` test got wrong: an archived
-    // ticket whose status is NOT "planned" was classified as planned
+  it("archived wins over status", () => {
     expect(backlogSectionOf({ status: "done", archivedAt: ARCHIVED_AT })).toBe(
-      "archived",
+      ARCHIVED_SECTION,
     );
-  });
-
-  it("classifies an archived planned ticket as archived", () => {
     expect(
       backlogSectionOf({ status: "planned", archivedAt: ARCHIVED_AT }),
-    ).toBe("archived");
+    ).toBe(ARCHIVED_SECTION);
   });
 
-  it("treats a planned, unarchived ticket as planned", () => {
+  it("an unarchived ticket sits in its own status section", () => {
     expect(backlogSectionOf({ status: "planned" })).toBe("planned");
-  });
-
-  it("treats null archivedAt as not archived", () => {
-    expect(backlogSectionOf({ status: "done", archivedAt: null })).toBe(
-      "planned",
+    expect(backlogSectionOf({ status: "triage", archivedAt: null })).toBe(
+      "triage",
     );
     expect(isArchived({ status: "done", archivedAt: null })).toBe(false);
   });
@@ -118,10 +93,10 @@ describe("backlog section membership", () => {
     for (const status of VALID_STATUSES) {
       expect(isArchived({ status, archivedAt: ARCHIVED_AT })).toBe(true);
       expect(backlogSectionOf({ status, archivedAt: ARCHIVED_AT })).toBe(
-        "archived",
+        ARCHIVED_SECTION,
       );
       expect(isArchived({ status })).toBe(false);
-      expect(backlogSectionOf({ status })).toBe("planned");
+      expect(backlogSectionOf({ status })).toBe(status);
     }
   });
 });
