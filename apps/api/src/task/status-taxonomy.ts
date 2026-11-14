@@ -28,6 +28,15 @@
  *                                      it's above planned."
  *   Cancelled: Canceled
  *   Duplicate: Duplicate
+ *
+ * ## Display vocabulary (2026-11 owner direction)
+ *
+ * Labels DO NOT change (To Do / In Progress / In Review / Done / Planned stay).
+ * The owner's list — Backlog, Triage, Unstarted, Started, Completed, Canceled,
+ * Duplicate — classifies the TYPE of a status (board column), not its name.
+ * In Review is not in that list: it stays a valid slug (rows/boards referencing
+ * it keep working) but is no longer seeded onto new boards — legacy surface
+ * only, typed as `started`.
  */
 
 /** Where a status sits in the product's information architecture. */
@@ -205,3 +214,46 @@ export function applyStatusOrder(
 
   return [...ordered, ...slugs.filter((slug) => !seen.has(slug))];
 }
+
+/**
+ * Status TYPES (2026-11 owner direction). Labels of statuses do not change;
+ * every board column carries one of these classifications, chosen in the
+ * board's Status settings. Closed types (completed, canceled, duplicate) make
+ * a column final; the others are open work types. Null = unclassified.
+ */
+export const STATUS_TYPES = [
+  "backlog",
+  "triage",
+  "unstarted",
+  "started",
+  "completed",
+  "canceled",
+  "duplicate",
+] as const;
+
+export type StatusType = (typeof STATUS_TYPES)[number];
+
+export const CLOSED_STATUS_TYPES: readonly StatusType[] = [
+  "completed",
+  "canceled",
+  "duplicate",
+];
+
+export function isClosedStatusType(statusType: string | null): boolean {
+  return (
+    statusType !== null &&
+    (CLOSED_STATUS_TYPES as readonly string[]).includes(statusType)
+  );
+}
+
+/** Default type for a column whose slug is a taxonomy status. */
+export const STATUS_TYPE_BY_SLUG: Record<string, StatusType> = {
+  planned: "backlog",
+  triage: "triage",
+  "to-do": "unstarted",
+  "in-progress": "started",
+  "in-review": "started",
+  done: "completed",
+  canceled: "canceled",
+  duplicate: "duplicate",
+};

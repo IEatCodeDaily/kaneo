@@ -152,3 +152,13 @@ export const DEFAULT_COLUMNS = TASK_STATUS_DEFINITIONS.filter(
     status.slug === "in-review" ||
     status.slug === "done",
 ).map(({ slug, name, icon }) => ({ id: slug, name, icon }));
+
+/**
+ * Statuses that have no board column by default — Backlog, Triage, Canceled,
+ * Duplicate. Every status picker offers these below a divider so Cancelled
+ * (and the rest of the vocabulary) is explicitly settable everywhere, not just
+ * through a board column.
+ */
+export const NON_COLUMN_STATUS_DEFINITIONS = TASK_STATUS_DEFINITIONS.filter(
+  (status) => !DEFAULT_COLUMNS.some((column) => column.id === status.slug),
+);

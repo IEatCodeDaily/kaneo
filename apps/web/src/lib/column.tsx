@@ -10,6 +10,9 @@ const COLUMN_ICON_COLORS: Record<string, string> = {
   done: "text-emerald-600 dark:text-emerald-400",
   archived: "text-violet-600 dark:text-violet-400",
   planned: "text-rose-600 dark:text-rose-400",
+  triage: "text-orange-600 dark:text-orange-400",
+  canceled: "text-red-600 dark:text-red-400",
+  duplicate: "text-zinc-600 dark:text-zinc-400",
 };
 
 /**

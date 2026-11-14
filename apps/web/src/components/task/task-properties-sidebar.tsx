@@ -12,7 +12,6 @@ import {
   Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import TaskFlagSection from "@/components/flag/task-flag-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,6 @@ import TaskMovePopover from "./task-move-popover";
 import TaskPriorityPopover from "./task-priority-popover";
 import TaskStartDatePopover from "./task-start-date-popover";
 import TaskStatusPopover from "./task-status-popover";
-import TaskTopbarMilestone from "./task-topbar-milestone";
 
 type TaskPropertiesSidebarProps = {
   taskId: string | undefined;
@@ -145,30 +143,6 @@ export default function TaskPropertiesSidebar({
     navigator.clipboard.writeText(branchName);
     toast.message(t("tasks:properties.copyTaskBranch"));
   };
-
-  // Milestone and flag are ticket properties, so they sit with status,
-  // priority and dates instead of in the header.
-  const milestoneAndFlag = (chip: boolean) =>
-    taskId ? (
-      <>
-        <div
-          className={cn(chip && "rounded-md border border-border")}
-          data-testid="task-property-milestone"
-        >
-          <TaskTopbarMilestone taskId={taskId} boardId={boardId} />
-        </div>
-        <div
-          className={cn(chip && "rounded-md border border-border")}
-          data-testid="task-property-flag"
-        >
-          <TaskFlagSection
-            taskId={taskId}
-            boardId={boardId}
-            organizationId={organizationId}
-          />
-        </div>
-      </>
-    ) : null;
 
   return (
     <div className={className} data-slot="task-properties-sidebar">
@@ -386,7 +360,6 @@ export default function TaskPropertiesSidebar({
                   </Button>
                 </TaskDueDatePopover>
               )}
-              {milestoneAndFlag(true)}
               {/* KFL-339: personal notification subscription, never gated on edit rights. */}
             </div>
           </div>
@@ -598,7 +571,6 @@ export default function TaskPropertiesSidebar({
                     </Button>
                   </TaskDueDatePopover>
                 )}
-                {milestoneAndFlag(true)}
                 {/* KFL-339: personal notification subscription. */}
               </div>
             </div>
@@ -812,7 +784,6 @@ export default function TaskPropertiesSidebar({
                     </Button>
                   </TaskDueDatePopover>
                 )}
-                {milestoneAndFlag(false)}
               </div>
             </div>
           </>

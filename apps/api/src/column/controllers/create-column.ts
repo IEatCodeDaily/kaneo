@@ -2,7 +2,11 @@ import { eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable } from "../../database/schema";
-import { VIRTUAL_STATUSES } from "../../task/validate-task-fields";
+import {
+  BACKLOG_STATUS_SLUGS,
+  isClosedStatusType,
+  STATUS_TYPE_BY_SLUG,
+} from "../../task/status-taxonomy";
 
 export function toSlug(name: string): string {
   const slug = name
@@ -21,12 +25,14 @@ async function createColumn({
   icon,
   color,
   isFinal,
+  statusType,
 }: {
   boardId: string;
   name: string;
   icon?: string;
   color?: string;
   isFinal?: boolean;
+  statusType?: string | null;
 }) {
   const slug = toSlug(name);
 
@@ -36,11 +42,21 @@ async function createColumn({
     });
   }
 
-  if ((VIRTUAL_STATUSES as readonly string[]).includes(slug)) {
+  // Only the backlog statuses are reserved: they have their own surface, so a
+  // board column with their slug would double-render tickets. Closed statuses
+  // (done/canceled/duplicate) are ALLOWED as columns — that is how a board
+  // backs its Canceled status with a visible lane.
+  if ((BACKLOG_STATUS_SLUGS as readonly string[]).includes(slug)) {
     throw new HTTPException(409, {
-      message: `Column slug "${slug}" is reserved for virtual task statuses`,
+      message: `Column slug "${slug}" is reserved for backlog statuses`,
     });
   }
+
+  // Unknown slugs (custom columns) start unclassified; the board can pick a
+  // type in the Status settings afterwards.
+  const resolvedStatusType = statusType ?? STATUS_TYPE_BY_SLUG[slug] ?? null;
+  const resolvedIsFinal =
+    isClosedStatusType(resolvedStatusType) || isFinal === true;
 
   const existing = await db
     .select({ id: columnTable.id })
@@ -73,7 +89,8 @@ async function createColumn({
       position,
       icon: icon || null,
       color: color || null,
-      isFinal: isFinal ?? false,
+      isFinal: resolvedIsFinal,
+      statusType: resolvedStatusType,
     })
     .returning();
 

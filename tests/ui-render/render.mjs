@@ -62,6 +62,8 @@ async function seed(api) {
     ["QC retry policy for failed batches", "to-do", "medium"],
     ["Gasket torque checklist", "in-review", "low"],
     ["Supplier audit notes", "done", "no-priority"],
+    // A ticket parked in the seeded Canceled lane: exercises the closed lane.
+    ["Warranty claim intake", "canceled", "medium"],
   ])
     await post(`/task/${board.id}`, {
       title,
@@ -123,6 +125,9 @@ let pages = {
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
   settings: "/dashboard/settings/account/authentication",
+  // 2026-11 status vocabulary: the board's Status settings (renamed from
+  // Columns) with the status-type selector.
+  workflow: `/dashboard/settings/boards/${board.id}/workflow`,
 };
 if (PAGES.length)
   pages = Object.fromEntries(
@@ -541,6 +546,52 @@ if (pages.table) {
   );
   await ctx.close();
 }
+
+// 2026-11 status vocabulary: the ticket status popover open on the board,
+// showing the non-column statuses (Planned, Triage, Canceled, Duplicate)
+// below the divider — Canceled is now explicitly settable everywhere.
+{
+  const ctx = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    storageState: state,
+    reducedMotion: "reduce",
+    colorScheme: "dark",
+  });
+  const page = await ctx.newPage();
+  const fails = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  await page.goto(BASE + (pages.board ?? Object.values(pages)[0]), {
+    waitUntil: "networkidle",
+  });
+  await page.waitForTimeout(1200);
+  try {
+    await page.getByText("QC retry policy for failed batches").first().click();
+    await page.getByTestId("task-status-trigger").click();
+    await page.getByTestId("status-divider").waitFor({ timeout: 5000 });
+  } catch (e) {
+    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+  }
+  const m = await page.evaluate(() => {
+    const text = document.body.innerText;
+    return {
+      canceled: text.includes("Canceled"),
+      duplicate: text.includes("Duplicate"),
+      planned: text.includes("Planned"),
+      triage: text.includes("Triage"),
+    };
+  });
+  for (const key of ["canceled", "duplicate", "planned", "triage"]) {
+    if (m[key] !== true) fails.push(`${key} missing from open popover`);
+  }
+  const shot = "status-popover--desktop-dark.png";
+  await page.screenshot({ path: join(OUT, shot) });
+  checks[shot] = { fails, ...m };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+  );
+  await ctx.close();
+}
+
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
 const bad = Object.values(checks).reduce((n, c) => n + c.fails.length, 0);

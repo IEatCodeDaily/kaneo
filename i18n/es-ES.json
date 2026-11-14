@@ -2194,23 +2194,16 @@
 			"toastIconUpdated": "Column icon updated",
 			"toastCreated": "Columna creada",
 			"toastRenameError": "Error al actualizar la columna",
-			"on": "Activado",
 			"searchIconsPlaceholder": "Search icons...",
 			"toastRenamed": "Columna renombrada",
 			"loading": "Cargando columnas...",
 			"toastUpdateError": "Error al actualizar la columna",
-			"off": "Desactivado",
 			"newColumnPlaceholder": "Nombre de la nueva columna...",
-			"doneColumn": "Columna finalizada",
 			"add": "Añadir",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Columna eliminada",
-			"doneColumnTooltip": "Tratar esta como una columna finalizada",
 			"toastCreateError": "Error al crear la columna",
-			"toastDeleteError": "Error al eliminar la columna",
-			"toastFinalOff": "Marca de columna final eliminada",
-			"toastFinalOn": "Columna marcada como final",
-			"markDoneAria": "Marcar columna {{name}} como finalizada"
+			"toastDeleteError": "Error al eliminar la columna"
 		},
 		"telegramIntegration": {
 			"validation": {

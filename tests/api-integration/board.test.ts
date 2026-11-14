@@ -77,18 +77,27 @@ describe("API integration: board creation", () => {
       orderBy: (column, { asc }) => [asc(column.position)],
     });
 
-    expect(columns).toHaveLength(4);
+    expect(columns).toHaveLength(5);
     expect(columns.map((column) => column.slug)).toEqual([
       "to-do",
       "in-progress",
       "in-review",
       "done",
+      "canceled",
     ]);
     expect(columns.map((column) => column.isFinal)).toEqual([
       false,
       false,
       false,
       true,
+      true,
+    ]);
+    expect(columns.map((column) => column.statusType)).toEqual([
+      "unstarted",
+      "started",
+      "started",
+      "completed",
+      "canceled",
     ]);
   });
 

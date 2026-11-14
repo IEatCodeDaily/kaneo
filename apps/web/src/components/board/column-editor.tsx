@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import columnIcons, {
   DEFAULT_COLUMN_ICON_NAMES,
 } from "@/constants/column-icons";
@@ -83,14 +89,14 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
     }
   };
 
-  const handleToggleFinal = async (id: string, isFinal: boolean) => {
+  const handleUpdateStatusType = async (id: string, type: string) => {
     try {
-      await updateColumn({ id, boardId, data: { isFinal } });
-      toast.success(
-        isFinal
-          ? t("settings:columnEditor.toastFinalOn")
-          : t("settings:columnEditor.toastFinalOff"),
-      );
+      await updateColumn({
+        id,
+        boardId,
+        data: { statusType: type === "none" ? null : type },
+      });
+      toast.success(t("settings:columnEditor.toastTypeUpdated"));
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -297,37 +303,54 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
               }}
             />
             <div className="flex items-center gap-1.5 shrink-0">
-              <div
-                className="flex items-center gap-2"
-                title={t("settings:columnEditor.doneColumnTooltip")}
+              <Select
+                value={col.statusType ?? (col.isFinal ? "completed" : "none")}
+                onValueChange={
+                  canEdit
+                    ? (type) => {
+                        void handleUpdateStatusType(col.id, type ?? "none");
+                      }
+                    : undefined
+                }
+                disabled={!canEdit}
               >
-                {col.isFinal ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
-                ) : (
-                  <Circle className="w-3.5 h-3.5 text-muted-foreground" />
-                )}
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {t("settings:columnEditor.doneColumn")}
-                </span>
-                <Switch
-                  checked={col.isFinal}
-                  onCheckedChange={
-                    canEdit
-                      ? (checked) => handleToggleFinal(col.id, checked)
-                      : undefined
-                  }
-                  disabled={!canEdit}
-                  aria-label={t("settings:columnEditor.markDoneAria", {
+                <SelectTrigger
+                  aria-label={t("settings:columnEditor.statusTypeAria", {
                     name: col.name,
                   })}
-                  className="scale-75"
-                />
-                <span className="text-xs text-muted-foreground w-8">
-                  {col.isFinal
-                    ? t("settings:columnEditor.on")
-                    : t("settings:columnEditor.off")}
-                </span>
-              </div>
+                  title={t("settings:columnEditor.statusTypeTooltip")}
+                  size="sm"
+                  className="h-8 w-[130px] text-xs"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    {t("settings:columnEditor.typeNone")}
+                  </SelectItem>
+                  <SelectItem value="backlog">
+                    {t("settings:columnEditor.typeBacklog")}
+                  </SelectItem>
+                  <SelectItem value="triage">
+                    {t("settings:columnEditor.typeTriage")}
+                  </SelectItem>
+                  <SelectItem value="unstarted">
+                    {t("settings:columnEditor.typeUnstarted")}
+                  </SelectItem>
+                  <SelectItem value="started">
+                    {t("settings:columnEditor.typeStarted")}
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    {t("settings:columnEditor.typeCompleted")}
+                  </SelectItem>
+                  <SelectItem value="canceled">
+                    {t("settings:columnEditor.typeCanceled")}
+                  </SelectItem>
+                  <SelectItem value="duplicate">
+                    {t("settings:columnEditor.typeDuplicate")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               {canEdit && (
                 <Button
                   variant="ghost"

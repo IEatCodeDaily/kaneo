@@ -24,8 +24,10 @@ function columnIdFor(columns: Columns, status: string): string | null {
       return columns.inReview.id;
     case "done":
       return columns.done.id;
+    case "canceled":
+      return columns.canceled.id;
     default:
-      // triage / planned / canceled / duplicate have no column row.
+      // triage / planned / duplicate have no column row.
       return null;
   }
 }

@@ -90,16 +90,11 @@ vi.mock("./task-description-history", () => ({ default: () => null }));
 vi.mock("./task-subtasks", () => ({ default: () => null }));
 vi.mock("./task-relations", () => ({ default: () => null }));
 vi.mock("./task-resources", () => ({ default: () => null }));
-// The milestone now lives in the properties bar; stand that bar in with the
-// real milestone control so a header copy would still be counted twice.
-vi.mock("./task-properties-sidebar", async () => {
-  const { default: Milestone } = await import("./task-topbar-milestone");
-  return {
-    default: ({ taskId, boardId }: { taskId: string; boardId: string }) => (
-      <Milestone taskId={taskId} boardId={boardId} />
-    ),
-  };
-});
+// Milestone now lives in the header (TaskTopbarControls); the properties bar
+// must not render a second copy, so stand the bar in empty — the real topbar
+// supplies the milestone and any reintroduced sidebar copy would fail the
+// once-only count.
+vi.mock("./task-properties-sidebar", () => ({ default: () => null }));
 vi.mock("./task-template-menu", () => ({ default: () => null }));
 vi.mock("./task-synced-issue-property", () => ({ default: () => null }));
 vi.mock("@/components/flag/task-flag-section", () => ({ default: () => null }));

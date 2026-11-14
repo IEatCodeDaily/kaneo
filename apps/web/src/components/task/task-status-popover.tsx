@@ -1,4 +1,4 @@
-import { Archive, Check, Circle, CircleDashed } from "lucide-react";
+import { Archive, Check, Circle } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ShortcutNumber } from "@/components/ui/shortcut-number";
+import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
 import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
@@ -26,6 +27,18 @@ type TaskStatusPopoverProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * A settable status: a board column, or one of the non-column statuses.
+ * `icon` is an icon NAME for columns and a rendered element for the
+ * non-column statuses (they have no column row to carry a configured icon).
+ */
+type StatusOption = {
+  value: string;
+  label: string;
+  icon: string | React.ReactElement | null;
+  isFinal: boolean;
+};
+
 export default function TaskStatusPopover({
   task,
   boardId,
@@ -40,7 +53,7 @@ export default function TaskStatusPopover({
     isLoading,
     isError,
   } = useGetColumns(task?.boardId ?? boardId ?? "");
-  const statusOptions = useMemo(
+  const statusOptions: StatusOption[] = useMemo(
     () =>
       (columns ?? []).map((col) => ({
         value: col.slug,
@@ -55,14 +68,12 @@ export default function TaskStatusPopover({
   const { canManageTasks } = useOrganizationPermission();
   const canEdit = canManageTasks();
   const currentStatus = task?.status ?? value;
-  const selectedOption = statusOptions.find(
-    (status) => status.value === currentStatus,
-  );
 
   /**
-   * `planned` IS a real status (the one the Backlog view reads), it just has no
-   * board column, so it is offered below a divider instead of in the column
-   * list.
+   * The statuses that have no board column by default (Backlog, Triage,
+   * Canceled, Duplicate) are real, valid statuses — they are offered below a
+   * divider instead of in the column list, so Canceled is explicitly settable
+   * even on a board that has no Canceled lane.
    *
    * #226: Archive is deliberately NOT here. Archival is orthogonal to status —
    * it writes `task.archived_at` and leaves the workflow status intact — so it
@@ -70,13 +81,22 @@ export default function TaskStatusPopover({
    * `status: "archived"` fails validation ("archived" is not a status) and would
    * destroy the ticket's real state.
    */
-  const virtualActions = [
-    {
-      value: "planned",
-      label: t("tasks:actions.moveToBacklog"),
-      icon: <CircleDashed className="size-4 text-muted-foreground" />,
-    },
-  ];
+  const virtualActions: StatusOption[] = useMemo(
+    () =>
+      NON_COLUMN_STATUS_DEFINITIONS.map((status) => ({
+        value: status.slug,
+        label: t(`tasks:status.${status.slug}`, {
+          defaultValue: status.name,
+        }),
+        icon: getColumnIcon(status.slug, status.isClosed),
+        isFinal: status.isClosed,
+      })),
+    [t],
+  );
+
+  const selectedOption =
+    statusOptions.find((status) => status.value === currentStatus) ??
+    virtualActions.find((status) => status.value === currentStatus);
 
   const isArchived = Boolean(task?.archivedAt);
 
@@ -153,7 +173,9 @@ export default function TaskStatusPopover({
                 {getColumnIcon(
                   selectedOption.value,
                   selectedOption.isFinal,
-                  selectedOption.icon,
+                  typeof selectedOption.icon === "string"
+                    ? selectedOption.icon
+                    : null,
                 )}
                 {isArchived && (
                   <Archive
@@ -227,22 +249,31 @@ export default function TaskStatusPopover({
                   )}
                 </Button>
               ))}
+              {/* Archive is not a status (#226): it hides the ticket via
+                  archived_at, so it gets its own section below the status
+                  list instead of sitting with the status types. */}
               {task && (
-                <Button
-                  data-testid="task-archive-action"
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
-                  onClick={handleArchiveToggle}
-                >
-                  <Archive className="size-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {isArchived
-                      ? t("tasks:actions.unarchive")
-                      : t("tasks:actions.archive")}
-                  </span>
-                  {isArchived && <Check className="ml-auto h-4 w-4" />}
-                </Button>
+                <>
+                  <div
+                    className="my-1 h-px bg-border"
+                    data-testid="archive-divider"
+                  />
+                  <Button
+                    data-testid="task-archive-action"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
+                    onClick={handleArchiveToggle}
+                  >
+                    <Archive className="size-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {isArchived
+                        ? t("tasks:actions.unarchive")
+                        : t("tasks:actions.archive")}
+                    </span>
+                    {isArchived && <Check className="ml-auto h-4 w-4" />}
+                  </Button>
+                </>
               )}
             </>
           )}

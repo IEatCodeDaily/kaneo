@@ -9,10 +9,41 @@ import {
 } from "../database/schema";
 
 const DEFAULT_COLUMNS = [
-  { name: "To Do", slug: "to-do", position: 0, isFinal: false },
-  { name: "In Progress", slug: "in-progress", position: 1, isFinal: false },
-  { name: "In Review", slug: "in-review", position: 2, isFinal: false },
-  { name: "Done", slug: "done", position: 3, isFinal: true },
+  {
+    name: "To Do",
+    slug: "to-do",
+    position: 0,
+    isFinal: false,
+    statusType: "unstarted",
+  },
+  {
+    name: "In Progress",
+    slug: "in-progress",
+    position: 1,
+    isFinal: false,
+    statusType: "started",
+  },
+  {
+    name: "In Review",
+    slug: "in-review",
+    position: 2,
+    isFinal: false,
+    statusType: "started",
+  },
+  {
+    name: "Done",
+    slug: "done",
+    position: 3,
+    isFinal: true,
+    statusType: "completed",
+  },
+  {
+    name: "Canceled",
+    slug: "canceled",
+    position: 4,
+    isFinal: true,
+    statusType: "canceled",
+  },
 ];
 
 const EVENT_MAPPING: Record<string, string> = {
@@ -61,6 +92,8 @@ export async function migrateColumns() {
             slug: defaultColumn.slug,
             position: defaultColumn.position,
             isFinal: defaultColumn.isFinal,
+            statusType:
+              "statusType" in defaultColumn ? defaultColumn.statusType : null,
           })
           .returning({ id: columnTable.id, slug: columnTable.slug });
 
