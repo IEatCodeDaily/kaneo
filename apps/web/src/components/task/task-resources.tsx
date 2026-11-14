@@ -64,6 +64,7 @@ import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 import { extractDescriptionResources } from "./description-resources";
 import ResourcePickerRow from "./resource-picker-row";
 import { ResourceSyncBadge } from "./resource-sync-badge";
+import { TableRowResources } from "./table-row-resources";
 import { selectResourceAutoLinks } from "./task-resource-links";
 
 type ResourceType = "issues" | "pull-requests";
@@ -1059,6 +1060,12 @@ export default function TaskResources({
           </div>
         </CommandDialogPopup>
       </CommandDialog>
+
+      <TableRowResources
+        canEdit={canEdit}
+        organizationId={organizationId}
+        taskId={taskId}
+      />
     </section>
   );
 }

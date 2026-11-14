@@ -422,6 +422,23 @@ function toRow(
   };
 }
 
+export async function getRowById(
+  executor: Executor,
+  tableId: string,
+  fields: StoreField[],
+  rowId: string,
+): Promise<TableRow | null> {
+  // Single-row lookup — the 1000-row scan this replaces was both a ceiling
+  // (rows past position 1000 were unreachable) and a perf smell.
+  const result = await executor.execute(
+    sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))}
+        FROM ${tableRef(tableId)}
+        WHERE id = ${rowId}`,
+  );
+  const record = result.rows[0];
+  return record ? toRow(record, fields) : null;
+}
+
 export async function insertRow(
   executor: Executor,
   tableId: string,

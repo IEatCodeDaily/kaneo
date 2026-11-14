@@ -339,6 +339,146 @@ for (const [shot, prefs, act] of [
   await ctx.close();
 }
 
+// Table interaction states (dark desktop), design v3 S2.
+const TABLE_STATES = [
+  [
+    "table-fields",
+    async (p) => p.getByRole("button", { name: /^Fields/ }).click(),
+  ],
+  [
+    "table-filter",
+    async (p) => {
+      await p.getByRole("button", { name: /^Filter/ }).click();
+      await p.getByRole("button", { name: "Add filter" }).click();
+    },
+  ],
+  ["table-sort", async (p) => p.getByRole("button", { name: /^Sort/ }).click()],
+  [
+    "table-more",
+    async (p) => p.getByRole("button", { name: "Table options" }).click(),
+  ],
+  [
+    "table-field",
+    async (p) => p.getByRole("button", { name: "Cost field menu" }).click(),
+  ],
+  [
+    "table-noresult",
+    async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
+  ],
+  [
+    "table-select",
+    async (p) => {
+      await p.getByRole("checkbox", { name: "Select row 1" }).click();
+      await p.waitForTimeout(300);
+    },
+  ],
+  [
+    "table-group",
+    async (p) => {
+      await p.getByRole("button", { name: /^Group/ }).click();
+      await p.waitForTimeout(300);
+      await p.getByRole("combobox").first().click();
+      await p.waitForTimeout(300);
+      await p.getByRole("option", { name: "Stage" }).click();
+      await p.waitForTimeout(300);
+      await p.keyboard.press("Escape");
+      await p.waitForTimeout(400);
+    },
+  ],
+];
+if (pages.table) {
+  for (const [name, act] of TABLE_STATES) {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: "dark",
+    });
+    await ctx.addInitScript(() => {
+      const k = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(k) ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: "dark" };
+      localStorage.setItem(k, JSON.stringify(cur));
+    });
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    try {
+      await act(page);
+      await page.waitForTimeout(500);
+    } catch (e) {
+      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    // scaffold geometry: 44px header, 40px toolbar, 32px rows (DS §1.4)
+    const m = await page.evaluate(() => {
+      const h = (sel) => {
+        const el = document.querySelector(sel);
+        return el ? Math.round(el.getBoundingClientRect().height) : null;
+      };
+      return {
+        header_h: h("header"),
+        toolbar_h: h('[data-slot="layout-toolbar"]'),
+        row_h: h('[role="grid"] [role="row"][aria-rowindex]'),
+        heads: [...document.querySelectorAll('[role="columnheader"]')].map(
+          (e) =>
+            `${e.innerText.trim()}|${e.querySelector("button")?.getAttribute("aria-label") ?? ""}`,
+        ),
+        toolbar_font: (() => {
+          const b = document.querySelector(
+            '[data-slot="layout-toolbar"] button',
+          );
+          return b ? getComputedStyle(b).fontSize : null;
+        })(),
+        bulk: !!document.body.innerText.match(/\d+ selected/),
+        selected_cell_bg: (() => {
+          const selected = document.querySelector(
+            '[role="row"][aria-selected="true"] [role="gridcell"]',
+          );
+          const plain = document.querySelector(
+            '[role="row"]:not([aria-selected]) [role="gridcell"]',
+          );
+          if (!selected || !plain) return null;
+          return {
+            selected: getComputedStyle(selected).backgroundColor,
+            plain: getComputedStyle(plain).backgroundColor,
+          };
+        })(),
+        groups: [
+          ...document.querySelectorAll('button[aria-label*="group" i]'),
+        ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
+      };
+    });
+    if (!m.heads.some((x) => x.startsWith("Batch")))
+      fails.push("field names missing from header");
+    if (m.header_h !== 44) fails.push(`header ${m.header_h}px, want 44`);
+    if (m.toolbar_font !== "13px")
+      fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
+    if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
+    if (name !== "table-noresult" && m.row_h !== 32)
+      fails.push(`row ${m.row_h}px, want 32`);
+    if (name === "table-select" && !m.bulk)
+      fails.push("bulk bar missing after row select");
+    if (
+      name === "table-select" &&
+      m.selected_cell_bg &&
+      m.selected_cell_bg.selected === m.selected_cell_bg.plain
+    )
+      fails.push("selected row cells are not tinted");
+    if (name === "table-group" && m.groups < 1)
+      fails.push("no group headers after grouping");
+    const shot = `${name}--desktop-dark.png`;
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails, ...m };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+}
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
 const bad = Object.values(checks).reduce((n, c) => n + c.fails.length, 0);

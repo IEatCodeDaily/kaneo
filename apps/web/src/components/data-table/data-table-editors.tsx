@@ -462,6 +462,7 @@ export function DataTableCellContent({
   members,
   canEdit,
   isEditing,
+  asPrimary = false,
   onEditStart,
   onEditEnd,
   onCommit,
@@ -471,6 +472,8 @@ export function DataTableCellContent({
   members: Map<string, MemberOption>;
   canEdit: boolean;
   isEditing: boolean;
+  /** Field 0: clicking opens the row sheet — for viewers and every type. */
+  asPrimary?: boolean;
   onEditStart: () => void;
   onEditEnd: () => void;
   onCommit: (value: unknown) => void;
@@ -478,15 +481,35 @@ export function DataTableCellContent({
   const { t } = useTranslation();
   const value = row.values[field.id];
   const canInlineEdit = INPUT_EDIT_TYPES.includes(field.type);
+  const numericAlign =
+    field.type === "number" ||
+    field.type === "percent" ||
+    field.type === "currency";
 
   if (field.type === "checkbox") {
-    return (
+    const view = (
       <DataTableCellView
         field={field}
         value={value}
         members={members}
-        onToggleCheckbox={canEdit ? (checked) => onCommit(checked) : undefined}
+        onToggleCheckbox={
+          canEdit && !asPrimary ? (checked) => onCommit(checked) : undefined
+        }
       />
+    );
+    // The primary cell opens the sheet (its toggle lives there); other
+    // checkbox cells toggle inline for editors.
+    return asPrimary ? (
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+        onClick={onEditStart}
+        title={t("navigation:tables.openRow")}
+      >
+        {view}
+      </button>
+    ) : (
+      view
     );
   }
 
@@ -516,6 +539,18 @@ export function DataTableCellContent({
   );
 
   if (field.type === "select") {
+    if (asPrimary) {
+      return (
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+          onClick={onEditStart}
+          title={t("navigation:tables.openRow")}
+        >
+          {view}
+        </button>
+      );
+    }
     return (
       <SelectCellPicker
         field={field}
@@ -528,6 +563,18 @@ export function DataTableCellContent({
     );
   }
   if (field.type === "multiselect") {
+    if (asPrimary) {
+      return (
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+          onClick={onEditStart}
+          title={t("navigation:tables.openRow")}
+        >
+          {view}
+        </button>
+      );
+    }
     return (
       <MultiSelectCellPicker
         field={field}
@@ -537,6 +584,18 @@ export function DataTableCellContent({
       >
         {view}
       </MultiSelectCellPicker>
+    );
+  }
+  if (field.type === "user" && asPrimary) {
+    return (
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+        onClick={onEditStart}
+        title={t("navigation:tables.openRow")}
+      >
+        {view}
+      </button>
     );
   }
   if (field.type === "user") {
@@ -557,14 +616,40 @@ export function DataTableCellContent({
       type="button"
       className={cn(
         "min-w-0 flex-1 cursor-pointer text-left",
+        // Numbers end on the right edge, under their header unit (DS §1.5).
+        numericAlign && "text-right tabular-nums",
         "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
       )}
       onClick={onEditStart}
-      title={t("navigation:tables.editField")}
+      title={
+        asPrimary
+          ? t("navigation:tables.openRow")
+          : t("navigation:tables.editField")
+      }
+    >
+      {view}
+    </button>
+  ) : asPrimary ? (
+    <button
+      type="button"
+      className={cn(
+        "min-w-0 flex-1 cursor-pointer text-left",
+        numericAlign && "text-right tabular-nums",
+        "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+      )}
+      onClick={onEditStart}
+      title={t("navigation:tables.openRow")}
     >
       {view}
     </button>
   ) : (
-    <div className="min-w-0 flex-1">{view}</div>
+    <div
+      className={cn(
+        "min-w-0 flex-1",
+        numericAlign && "text-right tabular-nums",
+      )}
+    >
+      {view}
+    </div>
   );
 }
