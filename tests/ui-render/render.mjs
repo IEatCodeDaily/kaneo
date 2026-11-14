@@ -598,6 +598,7 @@ if (pages.table) {
         ),
       };
     });
+    await page.waitForTimeout(600); // let the popup's open transition settle
     await page.screenshot({
       path: join(OUT, "status-popover--desktop-dark.png"),
     });
@@ -636,6 +637,8 @@ if (pages.table) {
       path: join(OUT, "status-backlog--desktop-dark.png"),
     });
 
+    // Settings scroll inside an inner panel: a tall viewport shows all 7 groups.
+    await page.setViewportSize({ width: 1440, height: 2000 });
     await page.goto(BASE + `/dashboard/settings/boards/${board.id}/workflow`, {
       waitUntil: "networkidle",
     });
@@ -647,7 +650,6 @@ if (pages.table) {
     );
     await page.screenshot({
       path: join(OUT, "status-settings--desktop-dark.png"),
-      fullPage: true,
     });
   } catch (e) {
     fails.push(
