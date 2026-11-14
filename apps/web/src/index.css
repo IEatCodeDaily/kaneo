@@ -100,6 +100,9 @@ input:-webkit-autofill:active {
   --color-info: var(--info);
   --color-foreground: var(--foreground);
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Solid destructive fill under white text. --destructive is a light tint
+     that colours TEXT (9.9:1 on dark) — white on it is 1.9:1; this is 5.5:1. */
+  --color-destructive-solid: #c4302b;
   --color-destructive: var(--destructive);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
