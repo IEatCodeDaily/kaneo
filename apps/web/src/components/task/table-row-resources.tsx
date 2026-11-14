@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Table2, Unlink } from "lucide-react";
+import { Plus, Table2, Unlink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -37,7 +37,6 @@ import {
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
 import getActiveOrganizationMembers from "@/fetchers/organization-member/get-active-organization-members";
-import { cn } from "@/lib/cn";
 import { ensureTablesStrings } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
 import type {
@@ -252,10 +251,9 @@ export function TableRowResources({
   if (tables.length === 0 && linkedTables.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-0.5" data-slot="task-table-rows">
+    <div className="mt-3 flex flex-col gap-0.5" data-slot="task-table-rows">
       <div className="flex items-center justify-between gap-2 px-2">
-        <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Table2 className="size-3.5" />
+        <span className="text-xs font-medium text-muted-foreground">
           {t("navigation:tables.includedIn")}
         </span>
         {editable && (
@@ -264,7 +262,7 @@ export function TableRowResources({
             size="icon-xs"
             variant="ghost"
           >
-            <Table2 className="size-3.5" />
+            <Plus className="size-3.5" />
             <span className="sr-only">
               {t("navigation:tables.linkTableRow")}
             </span>
@@ -321,43 +319,47 @@ export function TableRowResources({
                     </Button>
                   )}
                 </div>
-                {rest.map((field) => (
-                  <div
-                    key={field.id}
-                    className="flex min-h-7 items-center gap-2 rounded-md pr-2 pl-7 hover:bg-accent/40"
-                  >
-                    <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                      <FieldTypeIcon type={field.type} />
-                      <span className="truncate">{field.name}</span>
-                    </span>
+                {rest
+                  // A ticket cell holding only this ticket just echoes the page.
+                  .filter(
+                    (field) =>
+                      !(
+                        field.type === "ticket" &&
+                        JSON.stringify(row.values[field.id]) ===
+                          JSON.stringify([taskId])
+                      ),
+                  )
+                  .map((field) => (
                     <div
-                      className={cn(
-                        "flex min-h-7 min-w-0 flex-1 items-center text-ui",
-                        ["number", "percent", "currency"].includes(
-                          field.type,
-                        ) && "justify-end",
-                      )}
+                      key={field.id}
+                      className="flex min-h-7 items-center gap-2 rounded-md pr-2 pl-7 hover:bg-accent/40"
                     >
-                      <DataTableCellContent
-                        row={row}
-                        field={field}
-                        members={members}
-                        canEdit={editable && group.canEdit}
-                        isEditing={
-                          editing?.rowId === row.id &&
-                          editing.fieldId === field.id
-                        }
-                        onEditStart={() =>
-                          setEditing({ rowId: row.id, fieldId: field.id })
-                        }
-                        onEditEnd={() => setEditing(null)}
-                        onCommit={(value) =>
-                          commitCell(group, row, field, value)
-                        }
-                      />
+                      <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <FieldTypeIcon type={field.type} />
+                        <span className="truncate">{field.name}</span>
+                      </span>
+                      {/* Key/value list: every value starts on one column, numbers too. */}
+                      <div className="flex min-h-7 min-w-0 flex-1 items-center text-ui *:text-left!">
+                        <DataTableCellContent
+                          row={row}
+                          field={field}
+                          members={members}
+                          canEdit={editable && group.canEdit}
+                          isEditing={
+                            editing?.rowId === row.id &&
+                            editing.fieldId === field.id
+                          }
+                          onEditStart={() =>
+                            setEditing({ rowId: row.id, fieldId: field.id })
+                          }
+                          onEditEnd={() => setEditing(null)}
+                          onCommit={(value) =>
+                            commitCell(group, row, field, value)
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </TicketLookupContext.Provider>
           );

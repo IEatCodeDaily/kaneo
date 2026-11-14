@@ -540,7 +540,6 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         await unlinkRowTask(organizationId, tableId, rowId, taskId),
       );
     },
-  )
-;
+  );
 
 export default dataTable;
