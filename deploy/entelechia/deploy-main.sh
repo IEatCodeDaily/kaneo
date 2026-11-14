@@ -107,20 +107,22 @@ point_units_at() {
   done
   systemctl --user daemon-reload
 }
-healthy() {
+healthy() { # url
   for _ in $(seq 1 120); do
-    curl -fsS --max-time 2 http://127.0.0.1:1337/api/health >/dev/null && return 0
+    curl -fsS --max-time 2 "$1" >/dev/null && return 0
     sleep 2
   done
   return 1
 }
+API=http://127.0.0.1:1337/api/health
+WEB=http://127.0.0.1:5173/
 
 point_units_at "$NEW"
 systemctl --user restart kaneo-dev-api
-if ! healthy; then
+if ! healthy "$API"; then
   point_units_at "$LIVE"
   systemctl --user restart "${UNITS[@]}"
-  healthy || true
+  healthy "$API" || true
   fail "API unhealthy on ${SHA:0:8}; rolled back to $(basename "$LIVE")"
 fi
 systemctl --user restart kaneo-dev-web
@@ -128,8 +130,8 @@ systemctl --user restart kaneo-dev-web
 for u in "${UNITS[@]}"; do
   [ "$(systemctl --user show "$u" -p WorkingDirectory --value)" = "$NEW" ] || fail "$u not on $NEW"
 done
-sleep 5
-served=$(curl -fsS --max-time 10 http://127.0.0.1:5173/ | grep -o 'index-[A-Za-z0-9_-]*\.js' | head -1)
+healthy "$WEB" || fail "web not serving after restart"
+served=$(curl -fsS --max-time 10 "$WEB" | grep -o 'index-[A-Za-z0-9_-]*\.js' | head -1)
 [ -f "$NEW/apps/web/dist/assets/$served" ] || fail "web serves $served, not the new build"
 
 trap - ERR
