@@ -732,6 +732,12 @@ export function DataTableGrid({
 
   const importCsv = async (file: File) => {
     const byName = new Map(allFields.map((field) => [field.name, field]));
+    // Ticket cells export as keys; resolve them back through the lookup.
+    // ponytail: only tickets already linked somewhere in this table resolve;
+    // a key lookup endpoint if imports need arbitrary tickets.
+    const ticketIdByKey = new Map(
+      Object.values(ticketLookup.tickets).map((ref) => [ref.key, ref.id]),
+    );
     const parsed = csvParse(await file.text());
     const header = parsed[0] ?? [];
     const columns = header
@@ -783,6 +789,15 @@ export function DataTableGrid({
             } catch {
               values[field.id] = text;
             }
+          } else if (field.type === "ticket") {
+            const ids = text
+              .split(",")
+              .map((key) => ticketIdByKey.get(key.trim().toUpperCase()))
+              .filter(Boolean);
+            if (ids.length > 0) values[field.id] = ids;
+          } else if (field.type === "link") {
+            // Exported as display text; there is no id to recover. Skipping
+            // beats a 400 that drops the whole row.
           } else {
             values[field.id] = text;
           }

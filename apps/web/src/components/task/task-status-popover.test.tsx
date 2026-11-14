@@ -97,7 +97,7 @@ describe("TaskStatusPopover", () => {
 
     expect(
       screen.getByTestId("task-status-trigger").querySelector("svg"),
-    ).toHaveClass("text-muted-foreground/60");
+    ).toHaveClass("text-faint-foreground");
     expect(screen.getByTestId("task-status-trigger")).toHaveTextContent(
       "tasks:status.label",
     );
