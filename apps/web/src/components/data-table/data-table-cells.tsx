@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Ticket,
   AlignLeft,
   Banknote,
   Braces,
@@ -26,6 +27,7 @@ import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import type { DataTableField, SelectChoice } from "@/types/data-table";
+import { TicketCellView } from "./ticket-cell";
 import {
   asBool,
   asNumber,
@@ -60,6 +62,7 @@ const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   email: Mail,
   json: Braces,
   link: Link2,
+  ticket: Ticket,
 };
 
 export function FieldTypeIcon({
@@ -284,6 +287,12 @@ export function DataTableCellView({
     }
     case "json":
       return <JsonCell value={value} />;
+    case "ticket":
+      return asStringArray(value).length === 0 ? (
+        <EmptyValue />
+      ) : (
+        <TicketCellView value={value} />
+      );
     case "link": {
       const ids = asStringArray(value);
       if (ids.length === 0) return <EmptyValue />;

@@ -17,6 +17,7 @@ export const FIELD_TYPES = [
   "email",
   "json",
   "link",
+  "ticket",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
@@ -41,6 +42,9 @@ const PG_TYPES = {
   multiselect: "jsonb",
   json: "jsonb",
   link: "jsonb",
+  // Task ids; ownership is checked against the org in the controller, which
+  // has the org context coerceValue lacks.
+  ticket: "jsonb",
 } as const satisfies Record<FieldType, string>;
 
 export type PgType = (typeof PG_TYPES)[FieldType];
@@ -248,11 +252,12 @@ export function coerceValue(field: CoercibleField, value: unknown): unknown {
       }
       return value;
     case "link":
+    case "ticket":
       if (
         !Array.isArray(value) ||
         value.some((item) => typeof item !== "string")
       ) {
-        badRequest("link fields require an array of row ids");
+        badRequest(`${field.type} fields require an array of ids`);
       }
       return value;
     default: {

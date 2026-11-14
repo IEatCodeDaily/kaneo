@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, max, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
@@ -87,6 +87,89 @@ async function listTableFields(tableId: string): Promise<StoreField[]> {
   return (await listTableFieldRows(tableId)).map(toStoreField);
 }
 
+// ── ticket fields ─────────────────────────────────────────────────────────
+// A ticket cell stores task ids. coerceValue checks the shape; ownership
+// (live task in THIS org) needs the org, so it is checked here.
+
+export type TicketRef = {
+  id: string;
+  key: string;
+  title: string;
+  status: string;
+  boardSlug: string;
+};
+
+async function ticketRefs(
+  organizationId: string,
+  ids: string[],
+): Promise<TicketRef[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select({
+      id: taskTable.id,
+      number: taskTable.number,
+      title: taskTable.title,
+      status: taskTable.status,
+      boardSlug: boardTable.slug,
+    })
+    .from(taskTable)
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
+    .where(
+      and(
+        inArray(taskTable.id, ids),
+        eq(boardTable.organizationId, organizationId),
+        isNull(taskTable.deletedAt),
+      ),
+    );
+  return rows.map((row) => ({
+    id: row.id,
+    key: `${row.boardSlug.toUpperCase()}-${row.number ?? "?"}`,
+    title: row.title,
+    status: row.status,
+    boardSlug: row.boardSlug,
+  }));
+}
+
+async function assertTicketValues(
+  organizationId: string,
+  fields: StoreField[],
+  values: Record<string, unknown>,
+) {
+  for (const field of fields) {
+    if (field.type !== "ticket") continue;
+    const value = values[field.id];
+    if (!Array.isArray(value) || value.length === 0) continue;
+    const ids = [...new Set(value.filter((id) => typeof id === "string"))];
+    const found = await ticketRefs(organizationId, ids);
+    if (found.length !== ids.length) {
+      badRequest("Ticket not found in this organization");
+    }
+  }
+}
+
+/** Ticket lookup for every ticket cell in a page of rows (one query). */
+async function ticketsForRows(
+  organizationId: string,
+  fields: StoreField[],
+  rows: { values: Record<string, unknown> }[],
+): Promise<Record<string, TicketRef>> {
+  const ticketFieldIds = fields
+    .filter((field) => field.type === "ticket")
+    .map((field) => field.id);
+  if (ticketFieldIds.length === 0) return {};
+  const ids = new Set<string>();
+  for (const row of rows) {
+    for (const fieldId of ticketFieldIds) {
+      const value = row.values[fieldId];
+      if (Array.isArray(value)) {
+        for (const id of value) if (typeof id === "string") ids.add(id);
+      }
+    }
+  }
+  const refs = await ticketRefs(organizationId, [...ids]);
+  return Object.fromEntries(refs.map((ref) => [ref.id, ref]));
+}
+
 /** Validate an options payload against the registry schema for the type. */
 function parseFieldOptions(
   type: FieldType,
@@ -148,7 +231,8 @@ export async function getDataTable(
     1000,
     offset,
   );
-  return { ...table, fields: fieldRows, rows, total };
+  const tickets = await ticketsForRows(organizationId, fields, rows);
+  return { ...table, fields: fieldRows, rows, total, tickets };
 }
 
 export async function updateDataTable(
@@ -321,6 +405,7 @@ export async function addTableRow(
 ) {
   const table = requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
+  await assertTicketValues(organizationId, fields, values ?? {});
   return store.insertRow(db, table.id, fields, values ?? {});
 }
 
@@ -333,7 +418,10 @@ export async function updateTableCell(
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
-  return store.updateCell(db, tableId, fields, rowId, fieldId, value);
+  await assertTicketValues(organizationId, fields, { [fieldId]: value });
+  const row = await store.updateCell(db, tableId, fields, rowId, fieldId, value);
+  const tickets = await ticketsForRows(organizationId, fields, [row]);
+  return { ...row, tickets };
 }
 
 export async function deleteTableRow(

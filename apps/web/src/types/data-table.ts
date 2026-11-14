@@ -14,6 +14,7 @@ export const DATA_TABLE_FIELD_TYPES = [
   "email",
   "json",
   "link",
+  "ticket",
 ] as const;
 
 export type DataTableFieldType = (typeof DATA_TABLE_FIELD_TYPES)[number];
@@ -69,10 +70,20 @@ export type DataTableSummary = {
   updatedAt: string;
 };
 
+/** Resolved ticket for a ticket cell (the API ships these beside rows). */
+export type TicketRef = {
+  id: string;
+  key: string;
+  title: string;
+  status: string;
+  boardSlug: string;
+};
+
 export type DataTable = DataTableSummary & {
   fields: DataTableField[];
   rows: DataTableRow[];
   total: number;
+  tickets?: Record<string, TicketRef>;
 };
 
 export type CreateDataTableInput = {

@@ -10,6 +10,7 @@ import type {
   DataTableRowTarget,
   DataTableSummary,
   DataTableTarget,
+  TicketRef,
   UpdateDataTableFieldInput,
   UpdateDataTableInput,
   UpsertDataTableCellInput,
@@ -174,7 +175,7 @@ export const upsertDataTableCell = ({
   fieldId,
   value,
 }: UpsertDataTableCellInput) =>
-  request<DataTableRow>(
+  request<DataTableRow & { tickets?: Record<string, TicketRef> }>(
     `${tablePath({ organizationId, tableId })}/rows/${encodeURIComponent(rowId)}/cells/${encodeURIComponent(fieldId)}`,
     { method: "PUT", body: JSON.stringify({ value }) },
   );

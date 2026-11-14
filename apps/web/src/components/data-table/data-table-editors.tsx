@@ -15,6 +15,7 @@ import type {
   DataTableRow,
 } from "@/types/data-table";
 import { DataTableCellView, type MemberOption } from "./data-table-cells";
+import { TicketCellPicker } from "./ticket-cell";
 import {
   asString,
   asStringArray,
@@ -584,6 +585,13 @@ export function DataTableCellContent({
       >
         {view}
       </MultiSelectCellPicker>
+    );
+  }
+  if (field.type === "ticket" && !asPrimary) {
+    return (
+      <TicketCellPicker value={value} canEdit={canEdit} onCommit={onCommit}>
+        {view}
+      </TicketCellPicker>
     );
   }
   if (field.type === "user" && asPrimary) {

@@ -5,7 +5,10 @@ import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
-import { createOrganizationMember } from "./helpers/fixtures";
+import {
+  createBoardFixture,
+  createOrganizationMember,
+} from "./helpers/fixtures";
 
 async function physicalTableName(tableId: string) {
   const result = await db.execute(
@@ -446,6 +449,77 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         { name: "Amount", position: expect.any(Number) },
         { name: "Done", position: expect.any(Number) },
       ]);
+    });
+  });
+
+  describe("ticket field", () => {
+    async function seedTask(organizationId: string, title: string) {
+      const { board, columns } = await createBoardFixture({
+        organizationId,
+        slug: "kfl",
+      });
+      const [task] = await db
+        .insert(schema.taskTable)
+        .values({
+          boardId: board.id,
+          columnId: columns.todo.id,
+          title,
+          status: "to-do",
+          priority: "medium",
+          number: 7,
+          position: 1,
+        })
+        .returning();
+      return task;
+    }
+
+    it("links same-org tickets, rejects foreign ones, and ships the lookup", async () => {
+      const table = await createTableViaApi(app, member.organization.id, "Ops");
+      const { field } = await createFieldViaApi(
+        app,
+        member.organization.id,
+        table.id,
+        { name: "Tickets", type: "ticket" },
+      );
+      expect(field?.type).toBe("ticket");
+      const own = await seedTask(member.organization.id, "Fix the pump");
+      const other = await createOrganizationMember();
+      const foreign = await seedTask(other.organization.id, "Not yours");
+
+      const row = await addRowViaApi(app, member.organization.id, table.id);
+      const cellPath = (rowId: string) =>
+        `/api/data-table/organization/${member.organization.id}/${table.id}/rows/${rowId}/cells/${field?.id}`;
+      const put = (rowId: string, value: unknown) =>
+        app.request(cellPath(rowId), {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ value }),
+        });
+
+      // A ticket from another organization must never be linkable.
+      expect((await put(row.id, [foreign.id])).status).toBe(400);
+      expect((await put(row.id, ["not-a-task"])).status).toBe(400);
+
+      const ok = await put(row.id, [own.id]);
+      expect(ok.status).toBe(200);
+      const written = (await ok.json()) as {
+        tickets: Record<string, { key: string; title: string }>;
+      };
+      expect(written.tickets[own.id]).toMatchObject({
+        key: "KFL-7",
+        title: "Fix the pump",
+      });
+
+      const detail = await app.request(
+        `/api/data-table/organization/${member.organization.id}/${table.id}`,
+      );
+      const body = (await detail.json()) as {
+        rows: { values: Record<string, unknown> }[];
+        tickets: Record<string, { key: string }>;
+      };
+      expect(body.rows[0].values[field?.id ?? ""]).toEqual([own.id]);
+      expect(body.tickets[own.id]?.key).toBe("KFL-7");
+      expect(body.tickets[foreign.id]).toBeUndefined();
     });
   });
 

@@ -22,6 +22,7 @@ export const EDITABLE_FIELD_TYPES: DataTableFieldType[] = [
   "url",
   "email",
   "json",
+  "ticket",
 ];
 
 export const FIELD_TYPE_LABEL_KEYS: Record<DataTableFieldType, string> = {
@@ -40,6 +41,7 @@ export const FIELD_TYPE_LABEL_KEYS: Record<DataTableFieldType, string> = {
   email: "navigation:tables.typeEmail",
   json: "navigation:tables.typeJson",
   link: "navigation:tables.typeLink",
+  ticket: "navigation:tables.typeTicket",
 };
 
 export const ROW_NUMBER_COLUMN_WIDTH = 44;
@@ -60,6 +62,7 @@ const FIELD_WIDTHS: Record<DataTableFieldType, number> = {
   email: 200,
   json: 220,
   link: 110,
+  ticket: 260,
 };
 
 export const fieldWidth = (type: DataTableFieldType) => FIELD_WIDTHS[type];
@@ -292,6 +295,7 @@ export function defaultFilterFor(field: DataTableField): DataTableFilter {
       case "select":
       case "multiselect":
       case "user":
+      case "ticket":
         return { fieldId: field.id, choiceId: "" };
       default:
         return { fieldId: field.id, contains: "" };
@@ -346,7 +350,8 @@ function filterMatches(
       if (choiceId === "__empty__") return asString(raw) === "";
       return asString(raw) === choiceId;
     }
-    case "multiselect": {
+    case "multiselect":
+    case "ticket": {
       const { choiceId } = filter as { choiceId: string };
       if (choiceId === "") return true;
       const selected = asStringArray(raw);

@@ -191,6 +191,8 @@ export async function addField(
 function castExpression(from: FieldType, to: FieldType, col: string): string {
   const fromPg = pgTypeFor(from);
   const toPg = pgTypeFor(to);
+  // Ticket ids are not interchangeable with choice/row ids sharing jsonb.
+  if (from !== to && (from === "ticket" || to === "ticket")) return "NULL";
   if (fromPg === toPg) return col;
   // date <-> timestamptz cast natively.
   if (

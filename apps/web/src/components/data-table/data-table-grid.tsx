@@ -55,6 +55,7 @@ import {
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
+import { TicketLookupContext } from "@/components/data-table/ticket-cell";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -111,11 +112,13 @@ import type {
   DataTableFieldType,
   DataTableRow,
   SelectChoice,
+  TicketRef,
 } from "@/types/data-table";
 
 type Props = {
   table: DataTable;
   organizationId: string;
+  organizationSlug: string;
   canEdit: boolean;
   onRename: () => void;
   onDelete: () => void;
@@ -326,7 +329,7 @@ function BulkSetField({
 }) {
   const { t } = useTranslation();
   const editable = fields.filter(
-    (field) => !["longtext", "link", "json"].includes(field.type),
+    (field) => !["longtext", "link", "json", "ticket"].includes(field.type),
   );
   const [fieldId, setFieldId] = useState<string | null>(
     editable[0]?.id ?? null,
@@ -436,6 +439,7 @@ function BulkSetField({
 export function DataTableGrid({
   table,
   organizationId,
+  organizationSlug,
   canEdit,
   onRename,
   onDelete,
@@ -469,13 +473,26 @@ export function DataTableGrid({
   );
   const rows = useMemo(() => sortedRows(table.rows), [table.rows]);
 
+
   // Row pages fetched through Load-more; reset when a different table loads.
   const [appendedRows, setAppendedRows] = useState<DataTableRow[]>([]);
+  const [appendedTickets, setAppendedTickets] = useState<
+    Record<string, TicketRef>
+  >({});
   const [loadedTableId, setLoadedTableId] = useState(table.id);
   if (loadedTableId !== table.id) {
     setLoadedTableId(table.id);
     setAppendedRows([]);
+    setAppendedTickets({});
   }
+  const ticketLookup = useMemo(
+    () => ({
+      organizationId,
+      organizationSlug,
+      tickets: { ...appendedTickets, ...table.tickets },
+    }),
+    [organizationId, organizationSlug, appendedTickets, table.tickets],
+  );
   const allRows = useMemo(
     () => [...rows, ...appendedRows],
     [rows, appendedRows],
@@ -699,7 +716,13 @@ export function DataTableGrid({
   }, [memberRows]);
 
   const exportCsv = () => {
-    const csv = csvSerialize(allFields, visibleRows, choicesById, memberByName);
+    const csv = csvSerialize(
+      allFields,
+      visibleRows,
+      choicesById,
+      memberByName,
+      ticketLookup.tickets,
+    );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -875,7 +898,7 @@ export function DataTableGrid({
     trailing;
 
   return (
-    <>
+    <TicketLookupContext.Provider value={ticketLookup}>
       <Layout.Toolbar>
         <DataTableToolbar
           fields={allFields}
@@ -1477,6 +1500,13 @@ export function DataTableGrid({
                             (row) => !allRows.some((r) => r.id === row.id),
                           ),
                         ]);
+                        if (page.tickets) {
+                          const pageTickets = page.tickets;
+                          setAppendedTickets((current) => ({
+                            ...current,
+                            ...pageTickets,
+                          }));
+                        }
                       } finally {
                         setLoadingMore(false);
                       }
@@ -1593,6 +1623,6 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </TicketLookupContext.Provider>
   );
 }
