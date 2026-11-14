@@ -32,24 +32,30 @@ export const TicketLookupContext = createContext<TicketContextValue>({
   tickets: {},
 });
 
+/**
+ * Only the KEY navigates to the ticket; the rest of the chip is inert so a
+ * click there falls through to the cell's picker (swap / unlink).
+ */
 function TicketChip({ ticket }: { ticket: TicketRef }) {
   const { organizationSlug } = useContext(TicketLookupContext);
   return (
-    <Link
-      to="/dashboard/$organizationSlug/tickets/$ticketKey"
-      params={{ organizationSlug, ticketKey: ticket.key }}
-      onClick={(event) => event.stopPropagation()}
+    <span
       title={ticket.title}
-      className="inline-flex h-5 min-w-0 max-w-full items-center gap-1.5 rounded-sm border px-1.5 text-xs hover:bg-accent"
+      className="inline-flex h-5 min-w-0 max-w-full items-center gap-1.5 rounded-sm border px-1.5 text-xs"
     >
       <span className="shrink-0 [&_svg]:size-3">
         {getColumnIcon(ticket.status)}
       </span>
-      <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground">
+      <Link
+        to="/dashboard/$organizationSlug/tickets/$ticketKey"
+        params={{ organizationSlug, ticketKey: ticket.key }}
+        onClick={(event) => event.stopPropagation()}
+        className="shrink-0 whitespace-nowrap font-mono text-muted-foreground hover:text-foreground hover:underline"
+      >
         {ticket.key}
-      </span>
+      </Link>
       <span className="truncate">{ticket.title}</span>
-    </Link>
+    </span>
   );
 }
 

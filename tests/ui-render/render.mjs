@@ -390,7 +390,8 @@ const TABLE_STATES = [
     // Ticket picker: current link listed first + selected, newest options below.
     "table-ticket-picker",
     async (p) => {
-      await p.getByRole("button", { name: "Link tickets" }).first().click();
+      // Clicking the chip title opens the picker; only the key navigates.
+      await p.getByText("Supplier audit notes").first().click();
       await p.waitForTimeout(600);
     },
   ],
@@ -399,7 +400,7 @@ const TABLE_STATES = [
     "table-change-type",
     async (p) => {
       await p.getByRole("button", { name: "Tickets field menu" }).click();
-      await p.getByRole("menuitem", { name: "Change type" }).click();
+      await p.getByRole("menuitem", { name: "Change field type" }).click();
       await p.getByRole("menuitem", { name: "Text", exact: true }).click();
       await p.waitForTimeout(300);
     },
@@ -505,11 +506,13 @@ if (pages.table) {
       if (picker.selected !== 1 || picker.options < 2)
         fails.push(`ticket picker ${JSON.stringify(picker)}`);
     }
-    if (
-      name === "table-change-type" &&
-      !(await page.getByRole("alertdialog").innerText()).includes("cleared")
-    )
-      fails.push("change-type warning missing");
+    if (name === "table-change-type") {
+      const text = await page
+        .getByRole("alertdialog")
+        .innerText({ timeout: 3000 })
+        .catch(() => "");
+      if (!text.includes("cleared")) fails.push("change-type warning missing");
+    }
     if (
       name === "table-select" &&
       m.selected_cell_bg &&
