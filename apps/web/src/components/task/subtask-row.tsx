@@ -99,7 +99,7 @@ export default function SubtaskRow({
                 {/* Task number, so a subtask can be referenced without opening
                     it. Fixed width keeps titles aligned down the list. */}
                 {task.number != null && (
-                  <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
                     #{task.number}
                   </span>
                 )}
@@ -137,7 +137,7 @@ export default function SubtaskRow({
                       src={assignee?.user?.image ?? ""}
                       alt={assignee?.user?.name || ""}
                     />
-                    <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30">
+                    <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                       {getInitials(assignee?.user?.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -146,7 +146,7 @@ export default function SubtaskRow({
                     className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-border/70"
                     title={t("tasks:popover.assignee.unassigned")}
                   >
-                    <span className="text-[9px] font-medium text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       ?
                     </span>
                   </div>

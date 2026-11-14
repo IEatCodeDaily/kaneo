@@ -276,7 +276,7 @@ export function InboxComponent() {
                 <Filter className="size-3" aria-hidden />
                 {t("common:actions.filter")}
                 {facetCount ? (
-                  <span className="rounded-full bg-primary/15 px-1.5 text-[10px] tabular-nums">
+                  <span className="rounded-full bg-primary/15 px-1.5 text-xs tabular-nums">
                     {facetCount}
                   </span>
                 ) : null}
@@ -284,7 +284,7 @@ export function InboxComponent() {
               <DropdownMenuContent align="start" className="w-56">
                 {/* A menu label must sit inside a group (Base UI error #31). */}
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+                  <DropdownMenuLabel className="text-xs uppercase tracking-wide">
                     {t("tasks:boardFilters.filterBy")}
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>

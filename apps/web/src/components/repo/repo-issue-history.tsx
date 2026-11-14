@@ -93,7 +93,7 @@ function Actor({ actor }: { actor?: RepoIssueGithubActor }) {
     <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
       <Avatar className={`size-5 ${getAvatarTone(actor?.login)}`}>
         <AvatarImage alt={login} src={actor?.avatar_url ?? undefined} />
-        <AvatarFallback className="bg-transparent text-[8px]">
+        <AvatarFallback className="bg-transparent text-xs">
           {login.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

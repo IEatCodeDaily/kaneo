@@ -374,7 +374,8 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-md font-semibold">
+            <h2 className="text-sm font-semibold">
+              {" "}
               {t("settings:organizationGeneral.organizationInfoTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -573,7 +574,8 @@ function RouteComponent() {
         {isOwner ? (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-md font-semibold">
+              <h2 className="text-sm font-semibold">
+                {" "}
                 {t("settings:organizationGeneral.transferOwnership.title", {
                   defaultValue: "Transfer ownership",
                 })}
@@ -667,7 +669,8 @@ function RouteComponent() {
         {canDelete && (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h2 className="text-md font-semibold">
+              <h2 className="text-sm font-semibold">
+                {" "}
                 {t("settings:organizationGeneral.dangerZone")}
               </h2>
               <p className="text-xs text-muted-foreground">

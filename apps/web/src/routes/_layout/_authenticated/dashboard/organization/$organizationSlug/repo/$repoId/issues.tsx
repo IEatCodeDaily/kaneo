@@ -128,7 +128,7 @@ function RouteComponent() {
                                 {issue.authorAvatarUrl && (
                                   <AvatarImage src={issue.authorAvatarUrl} />
                                 )}
-                                <AvatarFallback className="bg-transparent text-[8px]">
+                                <AvatarFallback className="bg-transparent text-xs">
                                   {issue.authorLogin.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>

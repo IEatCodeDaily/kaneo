@@ -398,7 +398,7 @@ export default function TaskRelations({
         <CollapsibleContent>
           {Object.entries(groupedRelations).map(([type, items]) => (
             <div key={type} className="mt-1.5">
-              <span className="text-[11px] text-muted-foreground/70 px-2">
+              <span className="text-xs text-muted-foreground/70 px-2">
                 {t(`tasks:relations.types.${type}`, {
                   defaultValue: type.replace(/_/g, " "),
                 })}
@@ -444,7 +444,7 @@ export default function TaskRelations({
                               {item.task.title}
                             </span>
                             {item.task.boardId !== boardId && (
-                              <span className="text-[10px] font-mono text-muted-foreground/70">
+                              <span className="text-xs font-mono text-muted-foreground/70">
                                 {boardNameById.get(item.task.boardId) ??
                                   t("tasks:relations.otherBoard")}
                               </span>
@@ -467,7 +467,7 @@ export default function TaskRelations({
                                     src={assignee?.user?.image ?? ""}
                                     alt={assignee?.user?.name || ""}
                                   />
-                                  <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30">
+                                  <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                                     {getInitials(assignee?.user?.name)}
                                   </AvatarFallback>
                                 </Avatar>
@@ -476,7 +476,7 @@ export default function TaskRelations({
                                   className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-border/70"
                                   title={t("tasks:popover.assignee.unassigned")}
                                 >
-                                  <span className="text-[9px] font-medium text-muted-foreground">
+                                  <span className="text-xs font-medium text-muted-foreground">
                                     ?
                                   </span>
                                 </div>

@@ -316,7 +316,7 @@ export default function BoardsTimeline({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-[11px] uppercase tracking-wide">
+                <DropdownMenuLabel className="text-xs uppercase tracking-wide">
                   {t("tasks:boardFilters.subjects.status", {
                     defaultValue: "Status",
                   })}
@@ -406,10 +406,10 @@ export default function BoardsTimeline({
                     key={cell.key}
                     style={{ gridColumn: `span ${cell.span}` }}
                   >
-                    <div className="truncate text-[11px] font-medium">
+                    <div className="truncate text-xs font-medium">
                       {cell.label}
                     </div>
-                    <div className="truncate text-[10px] text-muted-foreground">
+                    <div className="truncate text-xs text-muted-foreground">
                       {cell.sublabel}
                     </div>
                   </div>
@@ -538,7 +538,7 @@ export default function BoardsTimeline({
                           />
                           {/* Sits above the completion fill, so it needs full
                         foreground contrast rather than muted. */}
-                          <span className="relative truncate text-[11px] font-semibold text-foreground">
+                          <span className="relative truncate text-xs font-semibold text-foreground">
                             {total > 0
                               ? t("organization:boards.timeline.barLabel", {
                                   defaultValue:
@@ -742,7 +742,8 @@ export default function BoardsTimeline({
                                       title={`${sectionLabel} · ${format(sectionStart, "MMM d")}${sectionEnd > sectionStart ? ` → ${format(sectionEnd, "MMM d, yyyy")}` : ""}`}
                                     >
                                       {sectionSpan > 3 && (
-                                        <span className="truncate px-1.5 text-[10px] font-medium text-primary-soft-foreground">
+                                        <span className="truncate px-1.5 text-xs font-medium text-primary-soft-foreground">
+                                          {" "}
                                           {format(sectionStart, "MMM d")}
                                           {sectionEnd > sectionStart
                                             ? ` – ${format(sectionEnd, "MMM d")}`
@@ -827,7 +828,7 @@ export default function BoardsTimeline({
                                       <span className="truncate">
                                         {task.title}
                                       </span>
-                                      <span className="ml-2 shrink-0 tabular-nums text-[10px] text-muted-foreground/70">
+                                      <span className="ml-2 shrink-0 tabular-nums text-xs text-muted-foreground/70">
                                         {format(taskStart, "MMM d")}
                                         {taskEnd > taskStart
                                           ? ` – ${format(taskEnd, "MMM d")}`
@@ -857,7 +858,8 @@ export default function BoardsTimeline({
                                         title={`${task.title} · ${format(taskStart, "MMM d")}${taskEnd > taskStart ? ` → ${format(taskEnd, "MMM d, yyyy")}` : ""}`}
                                       >
                                         {taskSpan > 2 && (
-                                          <span className="truncate text-[10px] font-medium text-primary-soft-foreground">
+                                          <span className="truncate text-xs font-medium text-primary-soft-foreground">
+                                            {" "}
                                             {format(taskStart, "MMM d")}
                                             {taskEnd > taskStart
                                               ? ` – ${format(taskEnd, "MMM d")}`

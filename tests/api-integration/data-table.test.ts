@@ -435,11 +435,17 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const payload = (await detail.json()) as {
         rows: unknown[];
         total: number;
-        fields: { id: string }[];
+        fields: { id: string; name: string; position: number }[];
       };
       expect(payload.total).toBe(1);
       expect(payload.rows).toHaveLength(1);
-      expect(payload.fields).toHaveLength(2);
+      // The client renders headers from these: name and position must ship.
+      expect(
+        payload.fields.map(({ name, position }) => ({ name, position })),
+      ).toEqual([
+        { name: "Amount", position: expect.any(Number) },
+        { name: "Done", position: expect.any(Number) },
+      ]);
     });
   });
 

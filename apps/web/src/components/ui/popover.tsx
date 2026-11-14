@@ -3,6 +3,7 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import * as React from "react";
 
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 
 const PopoverCreateHandle = PopoverPrimitive.createHandle;
@@ -51,13 +52,21 @@ function PopoverPopup({
   tooltipStyle?: boolean;
   anchor?: PopoverPrimitive.Positioner.Props["anchor"];
 }) {
+  // Phone (S7): dock every popover as a bottom sheet — Base UI pins the
+  // positioner with inline styles, and !important utilities override those
+  // (inline styles lose to !important rules).
+  const isMobile = useIsMobile();
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="z-50 h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) transition-[top,left,right,bottom,transform] data-instant:transition-none"
+        className={cn(
+          "z-50 h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) transition-[top,left,right,bottom,transform] data-instant:transition-none",
+          isMobile &&
+            "fixed! inset-x-0! bottom-0! top-auto! h-auto! max-w-none! w-full! transform-none!",
+        )}
         data-slot="popover-positioner"
         side={side}
         sideOffset={sideOffset}
@@ -68,6 +77,9 @@ function PopoverPopup({
             tooltipStyle &&
               "w-fit text-balance rounded-md text-xs shadow-md/5 before:rounded-[calc(var(--radius-md)-1px)]",
             className,
+            // Last so caller widths (w-72 etc.) lose to the sheet on phone.
+            isMobile &&
+              "max-h-[70dvh] w-full! max-w-none! rounded-b-none rounded-t-lg border-x-0 border-b-0",
           )}
           data-slot="popover-popup"
           {...props}

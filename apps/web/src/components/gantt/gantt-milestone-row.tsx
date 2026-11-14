@@ -91,7 +91,7 @@ export function GanttMilestoneRow({
             <span className="min-w-0 flex-1 truncate text-xs font-semibold">
               {milestone.name}
             </span>
-            <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
               {milestone.percentComplete}% · {milestone.completedCount}/{count}
             </span>
           </button>

@@ -134,56 +134,77 @@ function TimeSeriesPanel({
   const gridValues = [30, 60, 90].map(
     (y) => ((LINE_BOTTOM - y) / (LINE_BOTTOM - LINE_TOP)) * max,
   );
+  // Y-label gutter sized from the widest label (design v3 S5), so the plot
+  // area starts where the numbers end instead of a fixed guess.
+  const yLabels = [max, ...gridValues].map((value) =>
+    value.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+  );
+  const yGutter = Math.max(...yLabels.map((label) => label.length)) * 5.4 + 8;
   return (
     <div className="flex flex-1 flex-col justify-center">
-      <svg
-        aria-hidden="true"
-        viewBox={`0 0 ${LINE_W} ${LINE_H}`}
-        width="100%"
-        height={130}
-        preserveAspectRatio="none"
-      >
-        <g className="stroke-border" strokeWidth={1}>
-          <line x1={0} y1={30} x2={LINE_W} y2={30} />
-          <line x1={0} y1={60} x2={LINE_W} y2={60} />
-          <line x1={0} y1={90} x2={LINE_W} y2={90} />
-        </g>
-        {area ? (
-          <polyline
-            fill={color}
-            fillOpacity={0.1}
-            stroke="none"
-            points={`${line} ${points[points.length - 1]?.x ?? 10},${LINE_BOTTOM} ${points[0]?.x ?? 10},${LINE_BOTTOM}`}
-          />
-        ) : null}
-        <polyline fill="none" stroke={color} strokeWidth={2} points={line} />
-        <g fill={color}>
-          {points.map((p) => (
-            <circle key={`${p.x},${p.y}`} cx={p.x} cy={p.y} r={2.5} />
-          ))}
-        </g>
-        <g className="fill-muted-foreground" fontSize={8.5}>
-          {labelIdx.map((index) => (
-            <text
-              key={`label-${index}`}
-              x={Math.min(
-                Math.max((points[index]?.x ?? 6) - 4, 2),
-                LINE_W - 24,
-              )}
-              y={116}
+      <div className="flex items-stretch">
+        <div
+          className="relative h-[130px] shrink-0 text-right text-muted-foreground"
+          style={{ width: yGutter, fontSize: 8.5 }}
+        >
+          {[30, 60, 90].map((y, index) => (
+            <span
+              key={`y-${y}`}
+              className="absolute -translate-y-1/2 tabular-nums"
+              style={{ top: y - 2, right: 4 }}
             >
-              {rows[index]?.text}
-            </text>
+              {yLabels[index + 1]}
+            </span>
           ))}
-        </g>
-        <g className="fill-muted-foreground" fontSize={8}>
-          {gridValues.map((value, index) => (
-            <text key={`grid-${value}`} x={2} y={33 + index * 30}>
-              {Math.round(value)}
-            </text>
-          ))}
-        </g>
-      </svg>
+          <span
+            className="absolute -translate-y-1/2 tabular-nums"
+            style={{ top: LINE_BOTTOM - 2, right: 4 }}
+          >
+            {yLabels[0] === yLabels[1] ? "" : "0"}
+          </span>
+        </div>
+        <svg
+          aria-hidden="true"
+          viewBox={`0 0 ${LINE_W} ${LINE_H}`}
+          width="100%"
+          height={130}
+          preserveAspectRatio="none"
+        >
+          <g className="stroke-border" strokeWidth={1}>
+            <line x1={0} y1={30} x2={LINE_W} y2={30} />
+            <line x1={0} y1={60} x2={LINE_W} y2={60} />
+            <line x1={0} y1={90} x2={LINE_W} y2={90} />
+          </g>
+          {area ? (
+            <polyline
+              fill={color}
+              fillOpacity={0.1}
+              stroke="none"
+              points={`${line} ${points[points.length - 1]?.x ?? 10},${LINE_BOTTOM} ${points[0]?.x ?? 10},${LINE_BOTTOM}`}
+            />
+          ) : null}
+          <polyline fill="none" stroke={color} strokeWidth={2} points={line} />
+          <g fill={color}>
+            {points.map((p) => (
+              <circle key={`${p.x},${p.y}`} cx={p.x} cy={p.y} r={2.5} />
+            ))}
+          </g>
+          <g className="fill-muted-foreground" fontSize={8.5}>
+            {labelIdx.map((index) => (
+              <text
+                key={`label-${index}`}
+                x={Math.min(
+                  Math.max((points[index]?.x ?? 6) - 4, 2),
+                  LINE_W - 24,
+                )}
+                y={116}
+              >
+                {rows[index]?.text}
+              </text>
+            ))}
+          </g>
+        </svg>
+      </div>
       <span className="sr-only">
         {spec.title}:{" "}
         {rows.map((row) => `${row.text} = ${row.value}`).join(", ")}

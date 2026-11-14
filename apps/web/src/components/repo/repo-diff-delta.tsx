@@ -31,7 +31,7 @@ export default function RepoDiffDelta({
   return (
     <span
       className={cn(
-        "flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] tabular-nums",
+        "flex items-center gap-1.5 whitespace-nowrap font-mono text-xs tabular-nums",
         className,
       )}
       data-slot="repo-diff-delta"

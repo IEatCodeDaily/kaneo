@@ -32,7 +32,7 @@ export default function RepoLabelList({
 
         return (
           <span
-            className="inline-flex h-4 max-w-[8rem] items-center truncate rounded-sm border px-1 text-[10px] font-medium text-muted-foreground"
+            className="inline-flex h-4 max-w-[8rem] items-center truncate rounded-sm border px-1 text-xs font-medium text-muted-foreground"
             key={label.name}
             style={
               color
@@ -48,7 +48,7 @@ export default function RepoLabelList({
         );
       })}
       {remaining > 0 && (
-        <span className="shrink-0 text-[10px] text-muted-foreground">
+        <span className="shrink-0 text-xs text-muted-foreground">
           +{remaining}
         </span>
       )}

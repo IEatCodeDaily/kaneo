@@ -44,7 +44,7 @@ function Author({
     <span className="flex items-center gap-1.5 font-medium">
       <Avatar className={`size-5 ${getAvatarTone(login)}`}>
         {avatarUrl && <AvatarImage src={avatarUrl} />}
-        <AvatarFallback className="bg-transparent text-[9px]">
+        <AvatarFallback className="bg-transparent text-xs">
           {(login ?? "?").slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>

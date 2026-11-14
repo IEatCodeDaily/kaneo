@@ -263,7 +263,8 @@ function RouteComponent() {
         <div className="space-y-6">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-md font-semibold">
+              <h2 className="text-sm font-semibold">
+                {" "}
                 {t("settings:organizationRoles.sectionTitle")}
               </h2>
               <p className="text-xs text-muted-foreground">
@@ -391,7 +392,7 @@ function RouteComponent() {
                                   {roleLabel}
                                 </p>
                                 {isDefault && (
-                                  <span className="text-[10px] uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  <span className="text-xs uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                                     {t(
                                       "settings:organizationRoles.defaultBadge",
                                     )}

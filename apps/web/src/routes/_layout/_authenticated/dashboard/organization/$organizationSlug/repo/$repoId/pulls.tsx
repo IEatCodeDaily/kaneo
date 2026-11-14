@@ -138,7 +138,7 @@ function RouteComponent() {
                                     src={pullRequest.authorAvatarUrl}
                                   />
                                 )}
-                                <AvatarFallback className="bg-transparent text-[8px]">
+                                <AvatarFallback className="bg-transparent text-xs">
                                   {pullRequest.authorLogin
                                     .slice(0, 2)
                                     .toUpperCase()}
@@ -148,7 +148,7 @@ function RouteComponent() {
                             </span>
                           )}
                           {pullRequest.headBranch && pullRequest.baseBranch && (
-                            <span className="font-mono text-[10px]">
+                            <span className="font-mono text-xs">
                               {pullRequest.headBranch} →{" "}
                               {pullRequest.baseBranch}
                             </span>

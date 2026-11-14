@@ -121,7 +121,7 @@ export function NavDashboards() {
                     <span className="min-w-0 flex-1 truncate">
                       {dashboard.name}
                     </span>
-                    <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                       {t("navigation:dashboards.panelsCount", {
                         count: detail?.panels.length ?? 0,
                       })}
