@@ -214,6 +214,7 @@ describe("useTaskFiltersWithLabelsSupport", () => {
         },
       ],
       plannedTasks: [],
+      backlogColumns: [],
       archivedTasks: [],
     };
 

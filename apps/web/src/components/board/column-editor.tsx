@@ -424,7 +424,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                     className="h-8 w-[118px] text-xs"
                   >
                     <SelectValue>
-                      {t(TYPE_LABEL_KEY[col.statusType])}
+                      {t(TYPE_LABEL_KEY[col.statusType as StatusType])}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>

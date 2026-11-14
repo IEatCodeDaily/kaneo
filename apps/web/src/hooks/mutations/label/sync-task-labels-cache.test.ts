@@ -70,6 +70,7 @@ describe("updateTaskLabelsInBoard", () => {
         },
       ],
       plannedTasks: [],
+      backlogColumns: [],
       archivedTasks: [],
     };
 
