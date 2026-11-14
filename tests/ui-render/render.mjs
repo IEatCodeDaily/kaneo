@@ -134,6 +134,8 @@ let pages = {
   board: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/board`,
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
+  // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
+  ticket: `/dashboard/${slug}/tickets/KFL-1`,
   settings: "/dashboard/settings/account/authentication",
   // Status model: Status settings grouped by type, and the Backlog page whose
   // sections are the board's off-board statuses.
@@ -198,6 +200,11 @@ for (const [theme, tag, viewport, scale] of [
     // The ticket column renders linked tickets as KEY chips, not raw ids.
     if (name === "table" && tag === "desktop" && !/\bKFL-\d+\b/.test(text))
       fails.push("ticket column rendered no KFL-n chip");
+    if (
+      name === "ticket" &&
+      !(text.includes("Included in") && text.includes("PB-1042"))
+    )
+      fails.push("ticket page shows no Included in row (PB-1042)");
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m, url: page.url() };
