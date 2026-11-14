@@ -18,7 +18,8 @@ describe("API integration: board statuses", () => {
   });
 
   async function setup() {
-    const member = await createOrganizationMember();
+    // Status settings need board:update — an org admin, not a plain member.
+    const member = await createOrganizationMember({ role: "admin" });
     const fixture = await createBoardFixture({
       organizationId: member.organization.id,
     });
