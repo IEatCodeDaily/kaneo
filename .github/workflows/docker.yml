@@ -1,4 +1,6 @@
-name: Build & publish images to GHCR
+name: Build & publish image to GHCR
+# Called by release.yml. Dispatch by hand only for a hotfix image off a tag (runbook §6).
+# Production runs the unified ghcr.io/<owner>/kaneo image only.
 
 on:
   workflow_call:
@@ -13,72 +15,59 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to tag the images (e.g., 1.0.0)'
+        description: "Version to tag the image (e.g., 2026.1114.2300)"
         required: true
         type: string
       latest:
-        description: 'Also tag as latest'
+        description: "Also tag as latest"
         required: false
         type: boolean
         default: false
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+permissions:
+  contents: read
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - dockerfile: ./Dockerfile.kaneo
-            image: ghcr.io/${{ github.repository_owner }}/kaneo
-          - dockerfile: ./apps/web/Dockerfile
-            image: ghcr.io/${{ github.repository_owner }}/web
-          - dockerfile: ./apps/api/Dockerfile
-            image: ghcr.io/${{ github.repository_owner }}/api
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          registry: ${{ env.REGISTRY }}
+          persist-credentials: false
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ matrix.image }}
+          images: ghcr.io/${{ github.repository_owner }}/kaneo
           tags: |
             type=raw,value=${{ inputs.version }}
             type=raw,value=latest,enable=${{ inputs.latest }}
 
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
+          file: ./Dockerfile.kaneo
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: KANEO_VERSION=${{ inputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,scope=release,mode=max

@@ -1,88 +1,110 @@
 name: CI
+# The merge gate for main. Required checks: lint, unit, web-checks, integration, render.
+# Also runs on every main commit: the entelechia deploy and the Release workflow both
+# require a green CI run on the exact sha.
+# Branch without a PR: Actions → CI → Run workflow (gh workflow run ci.yml --ref <branch>).
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # Supersede stale PR/branch runs; every main commit keeps its own run.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 10.32.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 20.20.2
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run Biome
+      - run: pnpm install --frozen-lockfile
+      - name: Biome
         run: pnpm exec biome ci .
+      - name: Design lint
+        run: node scripts/design-lint.mjs
+      - name: Workflow lint (actionlint + shellcheck)
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+      - name: Workflow security audit (zizmor)
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          advanced-security: false
+          version: 1.32.0
 
   unit:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 10.32.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 20.20.2
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # The API imports built workspace packages (@kaneo/permissions, @kaneo/email resolve to dist/)
-      # and the KFL-86 entry-chunk test reads apps/web/dist, so build first.
-      - name: Build workspace
-        run: pnpm build
-      - name: Run unit tests with coverage gate
-        run: pnpm --filter @kaneo/api test:coverage
-
-  build:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 10.32.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20.20.2
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
+      # Full monorepo build (this is also the build gate). The API imports built workspace
+      # packages (dist/) and the entry-chunk test reads apps/web/dist, so it precedes the tests.
       - name: Build monorepo
         run: pnpm build
+      - name: API unit tests (coverage floor)
+        run: pnpm --filter @kaneo/api test:coverage
+      - name: Workspace package tests
+        run: pnpm --filter "./packages/*" run --if-present test
+
+  # PRs only: fail on newly added dependencies with known high/critical advisories.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+
+  web-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 20.20.2
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build workspace packages the web app imports
+        run: pnpm turbo build --filter=@kaneo/web^...
+      - name: Web typecheck
+        run: pnpm --filter @kaneo/web typecheck
+      - name: Web unit tests
+        run: pnpm --filter @kaneo/web test
 
   integration:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16
@@ -105,41 +127,72 @@ jobs:
       KANEO_CLIENT_URL: http://localhost:5173
       DISABLE_GUEST_ACCESS: "false"
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           version: 10.32.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 20.20.2
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run API integration tests
+      - run: pnpm install --frozen-lockfile
+      - name: API integration tests
         run: pnpm test:integration
 
-  docker-build:
+  # Builds the real kaneo image (the Docker smoke test), runs it against Postgres, seeds it
+  # through the API and screenshots real pages (tests/ui-render/render.mjs). Artifact: ui-shots.
+  render:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: kaneo
+          POSTGRES_USER: kaneo
+          POSTGRES_PASSWORD: kaneo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U kaneo -d kaneo" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build kaneo image (smoke test)
-        uses: docker/build-push-action@v7
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build kaneo image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: ./Dockerfile.kaneo
-          platforms: linux/amd64
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          load: true
+          tags: kaneo:render
+          cache-from: type=gha,scope=render
+          cache-to: type=gha,scope=render,mode=max
+      - name: Run kaneo
+        run: |
+          docker run -d --name kaneo --network host \
+            -e DATABASE_URL=postgresql://kaneo:kaneo@127.0.0.1:5432/kaneo \
+            -e AUTH_SECRET=render-secret-with-at-least-32-characters \
+            -e KANEO_API_URL=http://localhost:5173/api -e KANEO_CLIENT_URL=http://localhost:5173 \
+            -e DISABLE_GUEST_ACCESS=true kaneo:render
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 20.20.2
+          cache: pnpm # zizmor: ignore[cache-poisoning] render image is loaded locally, never published
+      - run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
+      - name: Seed and render
+        run: node tests/ui-render/render.mjs
+        env:
+          OUT: shots
+      - if: always()
+        run: docker logs kaneo 2>&1 | tail -80
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ui-shots
+          path: shots/

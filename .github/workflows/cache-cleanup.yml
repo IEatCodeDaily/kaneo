@@ -1,0 +1,24 @@
+name: Cache cleanup
+# PR caches (pnpm store, buildkit layers) are only readable by that PR, so they are dead
+# weight once it closes. Purge them so main's caches stay under the 10 GB repo limit.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  purge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Delete this PR's caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: refs/pull/${{ github.event.pull_request.number }}/merge
+        run: |
+          gh cache list -R "$GITHUB_REPOSITORY" --ref "$REF" --limit 1000 --json id --jq '.[].id' |
+            xargs -r -n1 gh cache delete -R "$GITHUB_REPOSITORY"

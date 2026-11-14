@@ -71,16 +71,17 @@ feature branch ──PR──▶ main ──auto──▶ kaneo.entelechia.cloud
 
 1. **PR to `main`.** Push your branch, `gh pr create -R IEatCodeDaily/kaneo --base main`.
    Commits carry an `Authored-by: <Agent> (AI Assistant)` trailer. Main is PR-only:
-   no direct pushes; required checks are CI (`lint`, `unit`, `integration`, `build`,
-   `docker-build`) and UI render (`web-checks` = web typecheck + web suite, `render` =
-   seeded screenshots, artifact `ui-shots`); the branch must be up to date. Merge
-   with squash.
+   no direct pushes; required checks are the CI jobs `lint` (biome, design lint,
+   actionlint, zizmor), `unit` (full build + API coverage + package suites),
+   `web-checks` (web typecheck + web suite), `integration` and `render` (builds the
+   kaneo image and screenshots seeded pages, artifact `ui-shots`); the branch must be
+   up to date. Merge with squash.
 2. **Entelechia deploys itself.** Within ~5 min of CI passing on the new main
    commit, talos builds a clean checkout of it, backs up the DB, cuts over and
    health-checks (auto-rollback). The result is the `entelechia` commit status on
    the main commit. **Never deploy a branch or a worktree to entelechia by hand** —
-   no systemd drop-ins, no mirrors. To preview unmerged work, use the UI render
-   workflow's screenshots. Mechanism: `deploy/entelechia/`.
+   no systemd drop-ins, no mirrors. To preview unmerged work, use the CI `render`
+   job's screenshots (`gh workflow run ci.yml --ref <branch>` for a branch without a PR). Mechanism: `deploy/entelechia/`.
 3. **Stable release = manual.** The owner runs Actions → **Release** on `main`. It
    refuses a commit whose CI did not pass, stamps `YYYY.MMDD.HHmm` (WIB), pushes
    `ghcr.io/ieatcodedaily/kaneo:<version>` (+ `latest`), tags `v<version>` and

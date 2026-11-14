@@ -1,5 +1,5 @@
 // Design v3 S8: a CI grep over the app source that keeps the design system's
-// mechanical rules from regressing. Runs in ui-render.yml's web-checks job.
+// mechanical rules from regressing. Runs in ci.yml's lint job.
 // Excludes components/ui/** — the primitives own the tokens.
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
