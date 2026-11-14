@@ -423,7 +423,9 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                     size="sm"
                     className="h-8 w-[118px] text-xs"
                   >
-                    <SelectValue />
+                    <SelectValue>
+                      {t(TYPE_LABEL_KEY[col.statusType])}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_TYPES.map((option) => (
