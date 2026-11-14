@@ -59,7 +59,7 @@ export function TicketCellView({ value }: { value: unknown }) {
     .filter((ref): ref is TicketRef => Boolean(ref));
   if (refs.length === 0) return null;
   return (
-    <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+    <span className="flex w-full min-w-0 items-center gap-1 overflow-hidden">
       {refs.map((ref) => (
         <TicketChip key={ref.id} ticket={ref} />
       ))}

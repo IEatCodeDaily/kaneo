@@ -104,7 +104,7 @@ function SettingsLayout() {
           />
         </aside>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-background md:m-2 md:rounded-lg md:border md:border-border">
-          <header className="flex h-11 shrink-0 items-center border-b border-border px-3">
+          <header className="flex h-11 shrink-0 items-center border-b border-border px-4 md:px-8">
             <span className="text-ui font-medium">
               {t("navigation:page.settingsTitle")}
             </span>
