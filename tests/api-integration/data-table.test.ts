@@ -520,6 +520,29 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(body.rows[0].values[field?.id ?? ""]).toEqual([own.id]);
       expect(body.tickets[own.id]?.key).toBe("KFL-7");
       expect(body.tickets[foreign.id]).toBeUndefined();
+
+      // Duplicate ids collapse to one.
+      const dup = await put(row.id, [own.id, own.id]);
+      expect(
+        ((await dup.json()) as { values: Record<string, unknown> }).values[
+          field?.id ?? ""
+        ],
+      ).toEqual([own.id]);
+
+      // A linked ticket deleted later is grandfathered: the cell stays
+      // writable (the picker re-commits the whole array) and the dead id
+      // drops out of the lookup instead of leaking.
+      await db
+        .update(schema.taskTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(schema.taskTable.id, own.id));
+      expect((await put(row.id, [own.id])).status).toBe(200);
+      const after = (await (
+        await app.request(
+          `/api/data-table/organization/${member.organization.id}/${table.id}`,
+        )
+      ).json()) as { tickets: Record<string, unknown> };
+      expect(after.tickets[own.id]).toBeUndefined();
     });
   });
 

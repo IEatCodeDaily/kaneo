@@ -384,9 +384,15 @@ export function rowMatchesFilters(
 export function sortValue(
   row: DataTableRow,
   field: DataTableField,
+  tickets: Record<string, { key: string }> = {},
 ): string | number | null {
   const raw = row.values[field.id];
   switch (field.type) {
+    case "ticket": {
+      // Arrays fall through asString to "": sort by the first ticket key.
+      const first = asStringArray(raw)[0];
+      return first ? (tickets[first]?.key ?? null) : null;
+    }
     case "number":
     case "percent":
     case "currency":
@@ -417,14 +423,15 @@ export function sortRows(
   rows: DataTableRow[],
   fields: DataTableField[],
   sort: ColumnSort | null,
+  tickets: Record<string, { key: string }> = {},
 ): DataTableRow[] {
   if (!sort) return rows;
   const field = fields.find((item) => item.id === sort.fieldId);
   if (!field) return rows;
   const factor = sort.dir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
-    const left = sortValue(a, field);
-    const right = sortValue(b, field);
+    const left = sortValue(a, field, tickets);
+    const right = sortValue(b, field, tickets);
     if (left === null && right === null) return 0;
     if (left === null) return 1;
     if (right === null) return -1;

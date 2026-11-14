@@ -547,8 +547,17 @@ export function DataTableGrid({
         ),
         allFields,
         sort,
+        ticketLookup.tickets,
       ),
-    [allRows, allFields, fieldsById, search, activeFilters, sort],
+    [
+      allRows,
+      allFields,
+      fieldsById,
+      search,
+      activeFilters,
+      sort,
+      ticketLookup.tickets,
+    ],
   );
 
   // Selection never outlives the view: rows filtered/searched/sorted out (or

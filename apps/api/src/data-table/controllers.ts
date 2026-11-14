@@ -134,12 +134,28 @@ async function assertTicketValues(
   organizationId: string,
   fields: StoreField[],
   values: Record<string, unknown>,
+  // Ids already in the cell are grandfathered: a ticket deleted after it was
+  // linked must not brick the cell (pickers commit the whole array, and a
+  // stale id renders nowhere, so the user could never remove it).
+  existing: Record<string, unknown> = {},
 ) {
   for (const field of fields) {
     if (field.type !== "ticket") continue;
     const value = values[field.id];
     if (!Array.isArray(value) || value.length === 0) continue;
-    const ids = [...new Set(value.filter((id) => typeof id === "string"))];
+    const kept = new Set(
+      Array.isArray(existing[field.id])
+        ? (existing[field.id] as unknown[])
+        : [],
+    );
+    const ids = [
+      ...new Set(
+        value.filter(
+          (id): id is string => typeof id === "string" && !kept.has(id),
+        ),
+      ),
+    ];
+    if (ids.length === 0) continue;
     const found = await ticketRefs(organizationId, ids);
     if (found.length !== ids.length) {
       badRequest("Ticket not found in this organization");
@@ -418,7 +434,17 @@ export async function updateTableCell(
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
-  await assertTicketValues(organizationId, fields, { [fieldId]: value });
+  const field = fields.find((candidate) => candidate.id === fieldId);
+  const current =
+    field?.type === "ticket"
+      ? await store.getRowById(db, tableId, fields, rowId)
+      : null;
+  await assertTicketValues(
+    organizationId,
+    fields,
+    { [fieldId]: value },
+    current?.values,
+  );
   const row = await store.updateCell(
     db,
     tableId,

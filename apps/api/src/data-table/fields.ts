@@ -259,7 +259,8 @@ export function coerceValue(field: CoercibleField, value: unknown): unknown {
       ) {
         badRequest(`${field.type} fields require an array of ids`);
       }
-      return value;
+      // Duplicate ids would ship duplicate chips with colliding React keys.
+      return [...new Set(value as string[])];
     default: {
       const _exhaustive: never = field.type;
       badRequest(`Unsupported field type: ${String(_exhaustive)}`);
