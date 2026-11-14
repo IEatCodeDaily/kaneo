@@ -685,7 +685,7 @@ if (pages.table) {
 
     // Settings scroll inside an inner panel: a tall viewport shows all 7 groups.
     await page.setViewportSize({ width: 1440, height: 2000 });
-    await page.goto(BASE + `/dashboard/settings/boards/${board.id}/workflow`, {
+    await page.goto(`${BASE}/dashboard/settings/boards/${board.id}/workflow`, {
       waitUntil: "networkidle",
     });
     await page.waitForTimeout(1200);

@@ -163,6 +163,7 @@ describe("useTaskFiltersWithLabelsSupport", () => {
           name: "Todo",
           icon: null,
           isFinal: false,
+          statusType: "unstarted",
           tasks: [
             {
               id: "task-1",
@@ -214,7 +215,6 @@ describe("useTaskFiltersWithLabelsSupport", () => {
         },
       ],
       plannedTasks: [],
-      backlogColumns: [],
       archivedTasks: [],
     };
 
