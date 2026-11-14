@@ -88,7 +88,7 @@ export function ProjectResourceRow({
         </span>
       )}
       {link.note && (
-        <span className="w-full min-w-0 truncate text-xs text-muted-foreground/72 sm:w-auto">
+        <span className="w-full min-w-0 truncate text-xs text-faint-foreground sm:w-auto">
           {link.note}
         </span>
       )}

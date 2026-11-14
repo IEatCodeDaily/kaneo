@@ -2089,7 +2089,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
               <img
                 src={previewImage.src}
                 alt={previewImage.alt}
-                className="max-h-[85vh] max-w-[92vw] rounded-xl border border-white/12 bg-black/30 object-contain shadow-2xl"
+                className="max-h-[85vh] max-w-[92vw] rounded-lg border border-white/12 bg-black/30 object-contain shadow-2xl"
               />
             </div>
           )}

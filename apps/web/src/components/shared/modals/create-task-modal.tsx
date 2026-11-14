@@ -1641,7 +1641,7 @@ function CreateTaskModal({
                           <button
                             type="button"
                             onClick={() => setLabelsStep("select")}
-                            className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded"
+                            className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded-sm"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -1684,7 +1684,7 @@ function CreateTaskModal({
                     type="checkbox"
                     checked={createMore}
                     onChange={(e) => setCreateMore(e.target.checked)}
-                    className="rounded border-border bg-background text-primary-soft-foreground focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
+                    className="rounded-sm border-border bg-background text-primary-soft-foreground focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
                   />
                   {t("common:modals.createTask.createMore")}
                 </label>

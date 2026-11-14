@@ -115,6 +115,8 @@ input:-webkit-autofill:active {
   --radius-md: 6px;
   --radius-lg: 10px;
   --radius-xl: 10px;
+  --radius-2xl: 10px;
+  --radius-3xl: 10px;
   /* design v3 §1.5: dense UI body text */
   --text-ui: 0.8125rem;
   --text-ui--line-height: 1.125rem;

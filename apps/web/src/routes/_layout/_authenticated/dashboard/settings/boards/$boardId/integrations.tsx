@@ -38,7 +38,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:boardIntegrations.pageTitle")} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:boardIntegrations.title")}
           </h1>
           <p className="text-muted-foreground">
@@ -117,7 +117,7 @@ function IntegrationSection({
 }) {
   return (
     <Collapsible
-      className="rounded-xl border border-border bg-background"
+      className="rounded-lg border border-border bg-background"
       defaultOpen={defaultOpen}
     >
       <CollapsibleTrigger className="group flex w-full items-center justify-between gap-4 px-4 py-4 text-left">

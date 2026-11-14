@@ -68,7 +68,7 @@ export default function PersonalHome() {
                   day: "numeric",
                 }).format(new Date(day))}
               </p>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1 className="text-xl font-semibold tracking-tight">
                 {t("home:title")}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -96,7 +96,7 @@ export default function PersonalHome() {
                     weekday: "short",
                   }).format(date)}
                 </p>
-                <p className="mt-1 text-lg font-medium tabular-nums">
+                <p className="mt-1 text-sm font-medium tabular-nums">
                   {date.getDate()}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground tabular-nums">

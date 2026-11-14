@@ -57,6 +57,7 @@ async function seed(api) {
     icon: "Rocket",
     slug: "KFL",
   });
+  const tasks = [];
   for (const [title, status, priority] of [
     ["Filter housing leak on line 2", "in-progress", "high"],
     ["QC retry policy for failed batches", "to-do", "medium"],
@@ -65,12 +66,14 @@ async function seed(api) {
     // A ticket parked in the seeded Canceled lane: exercises the closed lane.
     ["Warranty claim intake", "canceled", "medium"],
   ])
-    await post(`/task/${board.id}`, {
-      title,
-      description: "seeded",
-      status,
-      priority,
-    });
+    tasks.push(
+      await post(`/task/${board.id}`, {
+        title,
+        description: "seeded",
+        status,
+        priority,
+      }),
+    );
   const tbl = await post(`/data-table/organization/${org.id}`, {
     name: "Pilot batch log",
   });
@@ -92,6 +95,8 @@ async function seed(api) {
     ["Cost", "currency", { code: "IDR" }],
     ["Start date", "date"],
     ["Note", "longtext"],
+    // Tickets as a real column: chips resolve key/title/status server-side.
+    ["Tickets", "ticket"],
   ])
     f[name] = await post(
       `/data-table/organization/${org.id}/${tbl.id}/fields`,
@@ -110,6 +115,7 @@ async function seed(api) {
         [f.Cost.id]: cost,
         [f["Start date"].id]: `2026-11-${String(10 - i).padStart(2, "0")}`,
         [f.Note.id]: i === 0 ? "Retest after gasket swap" : "",
+        [f.Tickets.id]: tasks[i] ? [tasks[i].id] : [],
       },
     });
   return { org, board, tbl };
@@ -184,6 +190,9 @@ for (const [theme, tag, viewport, scale] of [
       fails.push(`theme not applied (dark=${m.dark})`);
     if (m.header_h !== null && m.header_h !== 44)
       fails.push(`header ${m.header_h}px, want 44`);
+    // The ticket column renders linked tickets as KEY chips, not raw ids.
+    if (name === "table" && tag === "desktop" && !/\bKFL-\d+\b/.test(text))
+      fails.push("ticket column rendered no KFL-n chip");
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m, url: page.url() };

@@ -155,7 +155,7 @@ export default function TaskFlagPicker({
           onSubmit={handleSubmit}
           className="flex max-h-[min(28rem,70vh)] flex-col gap-2 overflow-y-auto p-3"
         >
-          <span className="text-xs font-medium text-foreground/70">
+          <span className="text-xs font-medium text-muted-foreground">
             {t("flags:dialog.type")}
           </span>
           <div
@@ -190,7 +190,7 @@ export default function TaskFlagPicker({
             })}
           </div>
 
-          <span className="mt-1 text-xs font-medium text-foreground/70">
+          <span className="mt-1 text-xs font-medium text-muted-foreground">
             {t("flags:dialog.targetUser")}
           </span>
           {/*
@@ -246,7 +246,7 @@ export default function TaskFlagPicker({
 
         {activeFlags.length > 0 && (
           <div className="flex flex-col gap-1.5 border-t border-border p-3">
-            <span className="text-xs font-medium text-foreground/70">
+            <span className="text-xs font-medium text-muted-foreground">
               {t("flags:dialog.activeTitle")}
             </span>
             {activeFlags.map((flag) => {

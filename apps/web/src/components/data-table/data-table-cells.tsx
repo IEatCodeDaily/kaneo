@@ -77,7 +77,7 @@ export function FieldTypeIcon({
 }
 
 function EmptyValue() {
-  return <span className="text-muted-foreground/60">—</span>;
+  return <span className="text-faint-foreground">—</span>;
 }
 
 function chipStyle(color: string): React.CSSProperties {

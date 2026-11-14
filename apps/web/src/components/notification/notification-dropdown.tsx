@@ -410,11 +410,11 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
               <div className="relative max-h-80 overflow-y-auto p-1">
                 {!hasNotifications ? (
                   <div className="flex flex-col items-center gap-1 py-10 text-center">
-                    <Bell className="mb-1 size-5 text-muted-foreground/40" />
+                    <Bell className="mb-1 size-5 text-faint-foreground" />
                     <p className="text-muted-foreground text-sm">
                       {t("notifications:emptyTitle")}
                     </p>
-                    <p className="text-muted-foreground/60 text-xs">
+                    <p className="text-faint-foreground text-xs">
                       {t("notifications:emptySubtitle")}
                     </p>
                   </div>
@@ -430,7 +430,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                         type="button"
                         aria-label={label}
                         title={label}
-                        className="ml-1 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
+                        className="ml-1 shrink-0 rounded-sm p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -460,7 +460,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                               >
                                 {getNotificationTitle(notification, t)}
                               </span>
-                              <span className="ml-auto shrink-0 text-xs text-muted-foreground/70">
+                              <span className="ml-auto shrink-0 text-xs text-faint-foreground">
                                 {formatRelativeTime(notification.createdAt)}
                               </span>
                               {!notification.isRead && (
@@ -478,7 +478,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                                 className={cn(
                                   "mt-0.5 line-clamp-1 text-xs transition-colors duration-150",
                                   notification.isRead
-                                    ? "text-muted-foreground/60"
+                                    ? "text-faint-foreground"
                                     : "text-muted-foreground",
                                 )}
                               >
@@ -520,7 +520,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                                     t,
                                   )}
                               </span>
-                              <span className="ml-auto shrink-0 text-xs text-muted-foreground/70">
+                              <span className="ml-auto shrink-0 text-xs text-faint-foreground">
                                 {formatRelativeTime(group.latestCreatedAt)}
                               </span>
                             </div>
@@ -552,7 +552,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                 <div className="border-border/50 border-t p-1">
                   <DropdownMenuItem
                     onClick={() => setShowClearDialog(true)}
-                    className="min-h-0 cursor-pointer justify-center rounded-md px-2 py-1 text-muted-foreground/70 text-xs sm:min-h-0 sm:text-xs data-highlighted:text-destructive"
+                    className="min-h-0 cursor-pointer justify-center rounded-md px-2 py-1 text-faint-foreground text-xs sm:min-h-0 sm:text-xs data-highlighted:text-destructive"
                   >
                     {t("notifications:clearAll")}
                   </DropdownMenuItem>

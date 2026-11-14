@@ -125,7 +125,7 @@ export default function TaskSyncedIssueProperty({
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="px-2 text-xs font-medium text-foreground/70">
+      <span className="px-2 text-xs font-medium text-muted-foreground">
         Synced issue
       </span>
       {link}

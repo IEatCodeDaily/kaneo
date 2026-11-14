@@ -510,7 +510,7 @@ export default function TaskResources({
   return (
     <section className="flex flex-col gap-1" data-slot="task-resources">
       <div className="flex items-center justify-between gap-2 px-2">
-        <span className="text-xs font-medium text-foreground/70">
+        <span className="text-xs font-medium text-muted-foreground">
           Resources
         </span>
         {canEdit && (
@@ -1051,9 +1051,7 @@ export default function TaskResources({
                       Pull requests
                     </button>
                   </div>
-                  <span className="text-muted-foreground/60">
-                    Select to link
-                  </span>
+                  <span className="text-faint-foreground">Select to link</span>
                 </CommandFooter>
               </Command>
             </div>

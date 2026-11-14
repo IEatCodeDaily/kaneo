@@ -144,7 +144,7 @@ export function TableCellInput({
           }
         }}
         className={cn(
-          "h-full w-full px-2.5 text-[13px]",
+          "h-full w-full px-2.5 text-ui",
           inputType === "number" && "text-right tabular-nums",
         )}
       />

@@ -130,7 +130,7 @@ export default function MilestonesView({
                         <li key={task.id}>
                           <button
                             type="button"
-                            className="group flex w-full items-center gap-2 rounded px-1.5 py-1 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="group flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-left hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             onClick={() => openTask(task.id)}
                           >
                             {task.number != null ? (
@@ -142,7 +142,7 @@ export default function MilestonesView({
                               {task.title}
                             </span>
                             <ChevronRight
-                              className="size-3.5 text-muted-foreground/70 transition-colors group-hover:text-foreground"
+                              className="size-3.5 text-faint-foreground transition-colors group-hover:text-foreground"
                               aria-hidden="true"
                             />
                           </button>

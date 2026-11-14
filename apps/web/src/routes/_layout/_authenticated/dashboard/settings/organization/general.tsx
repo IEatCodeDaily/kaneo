@@ -364,7 +364,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:organizationGeneral.pageTitle")} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:organizationGeneral.title")}
           </h1>
           <p className="text-muted-foreground">
@@ -484,7 +484,7 @@ function RouteComponent() {
                       )}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      <code className="rounded bg-muted px-2 py-1 text-xs">
+                      <code className="rounded-sm bg-muted px-2 py-1 text-xs">
                         {identityAliases?.organization.currentSlug ??
                           organization?.slug}
                         {" · "}
@@ -493,7 +493,7 @@ function RouteComponent() {
                       {identityAliases?.organization.aliases.map((alias) => (
                         <code
                           key={alias}
-                          className="rounded border border-border px-2 py-1 text-xs"
+                          className="rounded-sm border border-border px-2 py-1 text-xs"
                         >
                           {alias}
                         </code>
@@ -515,7 +515,7 @@ function RouteComponent() {
                             {board.boardName}
                           </span>
                           <div className="flex flex-wrap justify-end gap-2">
-                            <code className="rounded bg-muted px-2 py-1 text-xs">
+                            <code className="rounded-sm bg-muted px-2 py-1 text-xs">
                               {board.currentKey}
                               {" · "}
                               {t("settings:organizationGeneral.currentAlias")}
@@ -523,7 +523,7 @@ function RouteComponent() {
                             {board.aliases.map((alias) => (
                               <code
                                 key={alias}
-                                className="rounded border border-border px-2 py-1 text-xs"
+                                className="rounded-sm border border-border px-2 py-1 text-xs"
                               >
                                 {alias}
                               </code>

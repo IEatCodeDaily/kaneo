@@ -85,7 +85,7 @@ function RouteComponent() {
             </Empty>
           )}
           {data?.map((release) => (
-            <article className="rounded-xl border bg-card p-5" key={release.id}>
+            <article className="rounded-lg border bg-card p-5" key={release.id}>
               <div className="flex flex-wrap justify-between gap-3">
                 <div>
                   <h2 className="font-semibold">

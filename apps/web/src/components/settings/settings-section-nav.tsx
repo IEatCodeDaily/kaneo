@@ -89,13 +89,11 @@ function SectionHeader({
   return (
     <p
       className={cn(
-        "flex items-center gap-2 px-2 pb-1.5 font-semibold text-foreground text-sm",
+        "flex h-7 items-center gap-1.5 px-2 font-medium text-muted-foreground text-xs",
         className,
       )}
     >
-      <span className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden />
-      </span>
+      <Icon className="size-3.5" aria-hidden />
       {children}
     </p>
   );
@@ -134,14 +132,14 @@ export default function SettingsSectionNav({
       }}
       className="group/settings"
     >
-      <summary className="flex min-h-11 cursor-pointer items-center rounded-md border px-3 text-sm md:hidden">
+      <summary className="flex min-h-11 cursor-pointer items-center rounded-md border px-3 text-ui md:hidden">
         {t("navigation:page.settingsTitle")}
       </summary>
       <nav
         aria-label={t("navigation:page.settingsTitle")}
         className="flex max-h-[45vh] flex-col gap-0.5 overflow-y-auto md:max-h-none"
       >
-        <SectionHeader icon={Library} className="mt-3">
+        <SectionHeader icon={Library} className="mt-2">
           {t("settings:navigation.boardsAndRepos", {
             defaultValue: "Resources",
           })}
@@ -160,10 +158,10 @@ export default function SettingsSectionNav({
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled ? "true" : undefined}
               className={cn(
-                "flex min-h-11 w-full items-center gap-2 rounded-md py-1.5 pr-2 pl-8 text-left text-sm transition-colors sm:min-h-8",
+                "flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-ui transition-colors sm:min-h-7",
                 active
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                  ? "bg-secondary font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 disabled && "pointer-events-none opacity-50",
               )}
               data-active={active ? "true" : undefined}
@@ -176,7 +174,7 @@ export default function SettingsSectionNav({
               }}
               type="button"
             >
-              <Icon className="size-4 shrink-0" />
+              <Icon className="size-3.5 shrink-0" />
               <span className="truncate">
                 {t(section.labelKey, { defaultValue: section.fallbackLabel })}
               </span>
@@ -184,10 +182,7 @@ export default function SettingsSectionNav({
           );
         })}
         {(["account", "organization"] as const).map((section) => (
-          <div
-            key={section}
-            className="order-first mt-3 border-b border-border pb-3"
-          >
+          <div key={section} className="order-first mt-2">
             <SectionHeader icon={section === "account" ? User : Building2}>
               {t(
                 section === "account"
@@ -213,9 +208,9 @@ export default function SettingsSectionNav({
                     data-active={activeSection === section ? "true" : undefined}
                     onClick={() => onNavigate(to)}
                     className={cn(
-                      "flex min-h-11 w-full items-center rounded-md pr-2 pl-8 text-left text-sm hover:bg-accent hover:text-foreground sm:min-h-8",
+                      "flex min-h-11 w-full items-center rounded-md pr-2 pl-7 text-left text-ui hover:bg-accent hover:text-foreground sm:min-h-7",
                       pathname === to
-                        ? "bg-accent font-medium text-foreground"
+                        ? "bg-secondary font-medium text-foreground"
                         : "text-muted-foreground",
                     )}
                   >

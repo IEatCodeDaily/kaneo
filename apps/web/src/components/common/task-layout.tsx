@@ -69,7 +69,7 @@ export default function TaskLayout({
                 >
                   {board?.name || t("navigation:sidebar.boards")}
                 </button>
-                <span className="text-foreground/70 text-xs">/</span>
+                <span className="text-muted-foreground text-xs">/</span>
                 <TaskCrumbSelect
                   boardId={boardId}
                   taskId={taskId}

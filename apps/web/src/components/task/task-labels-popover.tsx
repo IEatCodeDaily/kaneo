@@ -352,7 +352,7 @@ export default function TaskLabelsPopover({
         <button
           type="button"
           onClick={() => setStep("select")}
-          className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded"
+          className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded-sm"
         >
           <X className="h-3 w-3" />
         </button>

@@ -236,16 +236,16 @@ export function GitHubIntegrationSettings({ boardId }: { boardId: string }) {
       <div className="space-y-4">
         <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
           <div className="space-y-4">
-            <div className="h-4 bg-muted rounded animate-pulse w-40" />
-            <div className="h-4 bg-muted rounded animate-pulse w-full" />
-            <div className="h-10 bg-muted rounded animate-pulse w-full" />
+            <div className="h-4 bg-muted rounded-sm animate-pulse w-40" />
+            <div className="h-4 bg-muted rounded-sm animate-pulse w-full" />
+            <div className="h-10 bg-muted rounded-sm animate-pulse w-full" />
           </div>
         </div>
         <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
           <div className="space-y-4">
-            <div className="h-4 bg-muted rounded animate-pulse w-40" />
-            <div className="h-10 bg-muted rounded animate-pulse w-full" />
-            <div className="h-10 bg-muted rounded animate-pulse w-full" />
+            <div className="h-4 bg-muted rounded-sm animate-pulse w-40" />
+            <div className="h-10 bg-muted rounded-sm animate-pulse w-full" />
+            <div className="h-10 bg-muted rounded-sm animate-pulse w-full" />
           </div>
         </div>
       </div>

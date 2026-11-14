@@ -168,7 +168,7 @@ const ColumnSection = memo(function ColumnSection({
                 childCount: node.children.length,
                 collapsed,
               })}
-              className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               data-testid="list-subtask-toggle"
               onClick={() => onToggleParent(node.task.id)}
               title={collapseToggleLabel({
@@ -301,7 +301,7 @@ const ColumnSection = memo(function ColumnSection({
               onClick={() => {
                 onAddTask();
               }}
-              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1 hover:bg-accent rounded-sm text-muted-foreground hover:text-foreground transition-colors"
               title={t("tasks:listView.addTask")}
             >
               <Plus className="w-3 h-3" />
@@ -311,7 +311,7 @@ const ColumnSection = memo(function ColumnSection({
               <button
                 type="button"
                 onClick={() => onArchive()}
-                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1 hover:bg-accent rounded-sm text-muted-foreground hover:text-foreground transition-colors"
                 title={t("tasks:listView.archiveAllTooltip")}
               >
                 <Archive className="w-3 h-3" />

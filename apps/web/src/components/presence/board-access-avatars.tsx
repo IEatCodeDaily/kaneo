@@ -270,7 +270,7 @@ export default function BoardAccessAvatars({
                   </span>
                 ) : null}
                 {/* The access type is the point of the list — always shown. */}
-                <span className="shrink-0 rounded bg-muted px-1.5 py-px text-xs text-muted-foreground capitalize">
+                <span className="shrink-0 rounded-sm bg-muted px-1.5 py-px text-xs text-muted-foreground capitalize">
                   {entry.detail || t("tasks:access.member")}
                 </span>
               </li>

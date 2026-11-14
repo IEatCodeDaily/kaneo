@@ -368,7 +368,7 @@ export default function CreateTaskTopbar({
                         {formatParentLabel(option)}
                       </span>
                       {option.boardSlug ? (
-                        <span className="ms-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                        <span className="ms-auto shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                           {option.boardSlug}
                         </span>
                       ) : null}

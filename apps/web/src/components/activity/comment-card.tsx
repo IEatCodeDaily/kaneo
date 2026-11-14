@@ -113,7 +113,7 @@ export default function CommentCard({
 
   return (
     <TooltipProvider>
-      <div className="group relative w-full rounded-xl border border-border/80 bg-card/60">
+      <div className="group relative w-full rounded-lg border border-border/80 bg-card/60">
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <HoverCard>
             <HoverCardTrigger>
@@ -124,7 +124,7 @@ export default function CommentCard({
                     {getInitials(user?.name)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-foreground/92 hover:text-foreground transition-colors">
+                <span className="text-sm font-medium text-foreground hover:text-foreground transition-colors">
                   {user?.name}
                 </span>
               </div>
@@ -174,7 +174,7 @@ export default function CommentCard({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="cursor-default text-xs text-muted-foreground/62 outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="cursor-default text-xs text-faint-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={fullTimestamp}
                 title={fullTimestamp}
               >
@@ -190,7 +190,7 @@ export default function CommentCard({
 
           {commentUrl && (
             <>
-              <span className="text-xs text-muted-foreground/40">·</span>
+              <span className="text-xs text-faint-foreground">·</span>
               <a
                 href={commentUrl}
                 target="_blank"

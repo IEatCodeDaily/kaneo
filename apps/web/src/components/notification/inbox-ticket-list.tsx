@@ -154,13 +154,13 @@ export default function InboxTicketList({
                           {getNotificationTitle(head, t)}
                         </span>
                         {ticket.notifications.length > 1 && (
-                          <span className="shrink-0 rounded bg-muted px-1.5">
+                          <span className="shrink-0 rounded-sm bg-muted px-1.5">
                             +{ticket.notifications.length - 1}
                           </span>
                         )}
                         {ticket.organizationId &&
                           ticket.organizationId !== organizationId && (
-                            <span className="shrink-0 rounded border px-1">
+                            <span className="shrink-0 rounded-sm border px-1">
                               {t("inbox:otherOrganization")}
                             </span>
                           )}

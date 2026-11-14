@@ -313,7 +313,7 @@ export function KeyboardShortcutsHelp() {
           <Trans
             i18nKey="navigation:keyboardShortcuts.footer"
             components={{
-              kbd: <kbd className="px-1.5 py-0.5 rounded bg-muted" />,
+              kbd: <kbd className="px-1.5 py-0.5 rounded-sm bg-muted" />,
             }}
           />
         </div>

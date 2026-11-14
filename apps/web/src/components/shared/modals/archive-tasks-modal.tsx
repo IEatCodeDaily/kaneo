@@ -35,17 +35,17 @@ export function ArchiveTasksModal({
         <div className="p-8">
           <div className="flex flex-col gap-6">
             <DialogHeader className="flex flex-row items-center gap-4 text-left space-y-0 p-0">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
                 <Archive className="h-6 w-6 text-primary-soft-foreground" />
               </div>
-              <DialogTitle className="text-2xl font-bold tracking-tight text-foreground leading-tight">
+              <DialogTitle className="text-sm font-semibold text-foreground">
                 Archive Tasks
               </DialogTitle>
             </DialogHeader>
 
-            <DialogDescription className="text-base text-muted-foreground leading-relaxed">
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
               Are you sure you want to archive {allLabel}
-              <span className="font-bold text-foreground mx-1">
+              <span className="font-semibold text-foreground mx-1">
                 {taskCount}
               </span>
               {taskLabel}? This will move them from the active board to your

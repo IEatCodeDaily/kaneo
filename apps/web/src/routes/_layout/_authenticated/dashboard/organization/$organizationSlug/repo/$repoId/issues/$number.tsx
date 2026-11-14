@@ -65,7 +65,7 @@ function RouteComponent() {
           header={
             <>
               <div className="flex min-w-0 items-start gap-2">
-                <h1 className="min-w-0 flex-1 text-xl font-semibold tracking-tight sm:text-2xl">
+                <h1 className="min-w-0 flex-1 text-xl font-semibold tracking-tight">
                   {issue.title}
                 </h1>
                 <RepoItemTitleAction

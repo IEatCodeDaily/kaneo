@@ -164,7 +164,7 @@ export function NavProjects() {
               tooltip="Projects"
             >
               <span className="flex-1">Projects</span>
-              <span className="rounded bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium uppercase">
+              <span className="rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium uppercase">
                 Alpha
               </span>
               <ChevronRight className="size-4" />

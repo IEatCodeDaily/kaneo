@@ -675,7 +675,7 @@ export default function TaskSubtasks({
                   </CommandList>
                 </CommandPanel>
                 <CommandFooter>
-                  <span className="text-muted-foreground/60">
+                  <span className="text-faint-foreground">
                     {t("tasks:subtasks.linkExistingHint")}
                   </span>
                 </CommandFooter>

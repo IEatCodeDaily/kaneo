@@ -59,7 +59,7 @@ function RouteComponent() {
       <PageTitle title="Authentication" />
       <div className="max-w-3xl space-y-8 pb-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Authentication</h1>
+          <h1 className="text-xl font-semibold">Authentication</h1>
           <p className="text-muted-foreground">
             Manage the identity providers you use to sign in and separate
             authorization for personal GitHub actions.
@@ -68,7 +68,7 @@ function RouteComponent() {
 
         <section className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold">Sign-in methods</h2>
+            <h2 className="text-sm font-semibold">Sign-in methods</h2>
             <p className="text-sm text-muted-foreground">
               Link any identity provider configured by this Kaneo installation.
               GitHub delegation below is separate and is never used to sign you
