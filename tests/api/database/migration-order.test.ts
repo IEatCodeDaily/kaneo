@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const journal = JSON.parse(
@@ -7,6 +7,29 @@ const journal = JSON.parse(
     "utf8",
   ),
 ) as { entries: { tag: string; when: number }[] };
+
+// drizzle applies a migration only if its journal `when` is newer than the last applied one,
+// so a hand-written entry with a stale `when` is silently skipped on existing databases
+// while a fresh CI database still applies it.
+describe("migration journal", () => {
+  const sqlTags = readdirSync(
+    new URL("../../../apps/api/drizzle/", import.meta.url),
+  )
+    .filter((f) => f.endsWith(".sql"))
+    .map((f) => f.slice(0, -4))
+    .sort();
+  const tags = journal.entries.map((entry) => entry.tag);
+
+  it("has exactly one entry per .sql file", () => {
+    expect([...tags].sort()).toEqual(sqlTags);
+    expect(new Set(tags).size).toBe(tags.length);
+  });
+
+  it("ends with the newest timestamp", () => {
+    const whens = journal.entries.map((entry) => entry.when);
+    expect(whens.at(-1)).toBe(Math.max(...whens));
+  });
+});
 
 describe("notification secret migration dependency", () => {
   it("creates notification preferences before cleaning their secrets", () => {
