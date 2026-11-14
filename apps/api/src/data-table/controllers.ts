@@ -1,4 +1,14 @@
-import { and, asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  max,
+  sql,
+} from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
@@ -96,8 +106,36 @@ export type TicketRef = {
   key: string;
   title: string;
   status: string;
+  boardId: string;
   boardSlug: string;
 };
+
+const ticketColumns = {
+  id: taskTable.id,
+  number: taskTable.number,
+  title: taskTable.title,
+  status: taskTable.status,
+  boardId: boardTable.id,
+  boardSlug: boardTable.slug,
+};
+
+function toTicketRef(row: {
+  id: string;
+  number: number | null;
+  title: string;
+  status: string;
+  boardId: string;
+  boardSlug: string;
+}): TicketRef {
+  return {
+    id: row.id,
+    key: `${row.boardSlug.toUpperCase()}-${row.number ?? "?"}`,
+    title: row.title,
+    status: row.status,
+    boardId: row.boardId,
+    boardSlug: row.boardSlug,
+  };
+}
 
 async function ticketRefs(
   organizationId: string,
@@ -105,13 +143,7 @@ async function ticketRefs(
 ): Promise<TicketRef[]> {
   if (ids.length === 0) return [];
   const rows = await db
-    .select({
-      id: taskTable.id,
-      number: taskTable.number,
-      title: taskTable.title,
-      status: taskTable.status,
-      boardSlug: boardTable.slug,
-    })
+    .select(ticketColumns)
     .from(taskTable)
     .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
     .where(
@@ -121,13 +153,35 @@ async function ticketRefs(
         isNull(taskTable.deletedAt),
       ),
     );
-  return rows.map((row) => ({
-    id: row.id,
-    key: `${row.boardSlug.toUpperCase()}-${row.number ?? "?"}`,
-    title: row.title,
-    status: row.status,
-    boardSlug: row.boardSlug,
-  }));
+  return rows.map(toTicketRef);
+}
+
+const allowedBoards = (field: StoreField) => {
+  const ids = field.options?.boardIds;
+  return Array.isArray(ids) && ids.length > 0 ? (ids as string[]) : null;
+};
+
+/** A ticket field's board restriction may only name this org's boards. */
+async function assertTicketBoards(
+  organizationId: string,
+  type: FieldType,
+  options: Record<string, unknown> | null | undefined,
+) {
+  if (type !== "ticket") return;
+  const boardIds = allowedBoards({ id: "", type, options });
+  if (!boardIds) return;
+  const found = await db
+    .select({ id: boardTable.id })
+    .from(boardTable)
+    .where(
+      and(
+        inArray(boardTable.id, boardIds),
+        eq(boardTable.organizationId, organizationId),
+      ),
+    );
+  if (found.length !== new Set(boardIds).size) {
+    badRequest("Board not found in this organization");
+  }
 }
 
 async function assertTicketValues(
@@ -160,6 +214,10 @@ async function assertTicketValues(
     if (found.length !== ids.length) {
       badRequest("Ticket not found in this organization");
     }
+    const boards = allowedBoards(field);
+    if (boards && found.some((ref) => !boards.includes(ref.boardId))) {
+      badRequest("Ticket is not on a board this field allows");
+    }
   }
 }
 
@@ -184,6 +242,68 @@ async function ticketsForRows(
   }
   const refs = await ticketRefs(organizationId, [...ids]);
   return Object.fromEntries(refs.map((ref) => [ref.id, ref]));
+}
+
+/**
+ * Picker options for one ticket field: live tickets on the boards the field
+ * allows (and the caller can see), newest first. An empty query browses.
+ */
+export async function listTicketOptions(
+  organizationId: string,
+  tableId: string,
+  fieldId: string,
+  userId: string,
+  query = "",
+): Promise<TicketRef[]> {
+  await requireTable(organizationId, tableId);
+  const field = await requireField(tableId, fieldId);
+  if (field.type !== "ticket") badRequest("Not a ticket field");
+  const restricted = allowedBoards({
+    id: field.id,
+    type: "ticket",
+    options: field.options,
+  });
+  const orgBoards = await db
+    .select({ id: boardTable.id })
+    .from(boardTable)
+    .where(
+      and(
+        eq(boardTable.organizationId, organizationId),
+        restricted ? inArray(boardTable.id, restricted) : undefined,
+      ),
+    );
+  const boardIds = await listAccessibleResourceIds({
+    organizationId,
+    resourceType: "board",
+    userId,
+    resourceIds: orgBoards.map((board) => board.id),
+  });
+  if (boardIds.length === 0) return [];
+  const q = query.trim();
+  const key = /^([a-z0-9-]+)-(\d+)$/i.exec(q);
+  const number = /^#?(\d+)$/.exec(q);
+  const match = key
+    ? and(ilike(boardTable.slug, key[1]), eq(taskTable.number, Number(key[2])))
+    : number
+      ? eq(taskTable.number, Number(number[1]))
+      : q
+        ? ilike(taskTable.title, `%${q.replace(/[%_\\]/g, "\\$&")}%`)
+        : undefined;
+  const rows = await db
+    .select(ticketColumns)
+    .from(taskTable)
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
+    .where(
+      and(
+        inArray(taskTable.boardId, boardIds),
+        isNull(taskTable.deletedAt),
+        match,
+      ),
+    )
+    .orderBy(desc(taskTable.createdAt))
+    // ponytail: newest 50; paging when a board outgrows a search-first picker.
+    .limit(50);
+  return rows.map(toTicketRef);
 }
 
 /** Validate an options payload against the registry schema for the type. */
@@ -325,6 +445,7 @@ export async function addFieldToTable(
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const options = parseFieldOptions(values.type, values.options);
+  await assertTicketBoards(organizationId, values.type, options);
   let position = values.position;
   if (position === undefined) {
     const [result] = await db
@@ -375,6 +496,7 @@ export async function updateTableField(
     values.options !== undefined
       ? parseFieldOptions(nextType ?? fromType, values.options)
       : undefined;
+  await assertTicketBoards(organizationId, nextType ?? fromType, options);
 
   return db.transaction(async (tx) => {
     if (nextType) {

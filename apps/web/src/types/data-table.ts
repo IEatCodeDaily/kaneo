@@ -38,6 +38,10 @@ export type DataTableFieldOptions = {
   code?: string;
   allowTeams?: boolean;
   targetTableId?: string;
+  /** ticket: restrict to these boards (absent/empty = any board). */
+  boardIds?: string[];
+  /** ticket: false = one ticket per cell (absent = many). */
+  multiple?: boolean;
   required?: boolean;
 };
 
@@ -76,6 +80,7 @@ export type TicketRef = {
   key: string;
   title: string;
   status: string;
+  boardId: string;
   boardSlug: string;
 };
 

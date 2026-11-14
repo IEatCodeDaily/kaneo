@@ -453,10 +453,14 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
   });
 
   describe("ticket field", () => {
-    async function seedTask(organizationId: string, title: string) {
+    async function seedTask(
+      organizationId: string,
+      title: string,
+      slug = "kfl",
+    ) {
       const { board, columns } = await createBoardFixture({
         organizationId,
-        slug: "kfl",
+        slug,
       });
       const [task] = await db
         .insert(schema.taskTable)
@@ -543,6 +547,56 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         )
       ).json()) as { tickets: Record<string, unknown> };
       expect(after.tickets[own.id]).toBeUndefined();
+    });
+
+    it("enforces board scope and single-ticket fields; options follow scope", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Scoped");
+      const ops = await seedTask(org, "Ops ticket", "ops");
+      const eng = await seedTask(org, "Eng ticket", "eng");
+      const other = await createOrganizationMember();
+      const foreignBoard = await seedTask(other.organization.id, "x", "zz");
+
+      // A foreign org's board can't be named in the scope.
+      const bad = await createFieldViaApi(app, org, table.id, {
+        name: "Bad",
+        type: "ticket",
+        options: { boardIds: [foreignBoard.boardId] },
+      });
+      expect(bad.response.status).toBe(400);
+
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Ops ticket",
+        type: "ticket",
+        options: { boardIds: [ops.boardId], multiple: false },
+      });
+      const row = await addRowViaApi(app, org, table.id);
+      const put = (value: unknown) =>
+        app.request(
+          `/api/data-table/organization/${org}/${table.id}/rows/${row.id}/cells/${field?.id}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ value }),
+          },
+        );
+      expect((await put([eng.id])).status).toBe(400); // off-scope board
+      expect((await put([ops.id, ops.id])).status).toBe(200); // dedupes to one
+      const ops2 = await seedTask(org, "Ops second", "ops2");
+      expect((await put([ops.id, ops2.id])).status).toBe(400); // single
+
+      const options = (await (
+        await app.request(
+          `/api/data-table/organization/${org}/${table.id}/fields/${field?.id}/tickets?q=`,
+        )
+      ).json()) as { id: string }[];
+      expect(options.map((o) => o.id)).toEqual([ops.id]);
+      const byKey = (await (
+        await app.request(
+          `/api/data-table/organization/${org}/${table.id}/fields/${field?.id}/tickets?q=OPS-7`,
+        )
+      ).json()) as { id: string }[];
+      expect(byKey.map((o) => o.id)).toEqual([ops.id]);
     });
   });
 

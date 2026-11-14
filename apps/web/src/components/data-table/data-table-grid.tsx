@@ -45,6 +45,7 @@ import {
   sortRows,
   summarize,
   supportsSummary,
+  typeChangeKeepsValues,
   writeDensity,
   writeHiddenFields,
 } from "@/components/data-table/data-table-format";
@@ -167,6 +168,9 @@ function FieldHeader({
   const unit = currencyUnit(field);
   const numeric = NUMERIC_CELL_TYPES.includes(field.type);
 
+  const [pendingType, setPendingType] = useState<DataTableFieldType | null>(
+    null,
+  );
   const changeType = async (next: DataTableFieldType) => {
     if (next === field.type) return;
     const needsEditor =
@@ -247,7 +251,7 @@ function FieldHeader({
                     ).map((type) => (
                       <DropdownMenuItem
                         key={type}
-                        onClick={() => changeType(type)}
+                        onClick={() => setPendingType(type)}
                       >
                         <FieldTypeIcon type={type} />
                         {t(FIELD_TYPE_LABEL_KEYS[type])}
@@ -298,6 +302,44 @@ function FieldHeader({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <AlertDialog
+        open={pendingType !== null}
+        onOpenChange={(open) => !open && setPendingType(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("navigation:tables.changeTypeTitle", {
+                name: field.name,
+                type: pendingType ? t(FIELD_TYPE_LABEL_KEYS[pendingType]) : "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                typeChangeKeepsValues(field.type, pendingType)
+                  ? "navigation:tables.changeTypeConvert"
+                  : "navigation:tables.changeTypeClears",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+              {t("navigation:tables.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                const next = pendingType;
+                setPendingType(null);
+                if (next) changeType(next);
+              }}
+            >
+              {t("navigation:tables.changeTypeConfirm")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -488,9 +530,16 @@ export function DataTableGrid({
     () => ({
       organizationId,
       organizationSlug,
+      tableId: table.id,
       tickets: { ...appendedTickets, ...table.tickets },
     }),
-    [organizationId, organizationSlug, appendedTickets, table.tickets],
+    [
+      organizationId,
+      organizationSlug,
+      table.id,
+      appendedTickets,
+      table.tickets,
+    ],
   );
   const allRows = useMemo(
     () => [...rows, ...appendedRows],

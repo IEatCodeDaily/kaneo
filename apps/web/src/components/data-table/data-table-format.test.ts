@@ -7,6 +7,7 @@ import {
   groupValue,
   readHiddenFields,
   summarize,
+  typeChangeKeepsValues,
   writeHiddenFields,
 } from "./data-table-format";
 
@@ -172,5 +173,18 @@ describe("summarize", () => {
   it("is null when off or nothing matches", () => {
     expect(summarize("none", field({}), [row("a", {})])).toBeNull();
     expect(summarize("sum", field({ id: "c", type: "number" }), [])).toBeNull();
+  });
+});
+
+describe("typeChangeKeepsValues (mirrors the API cast)", () => {
+  it("keeps values within a storage family and text<->number", () => {
+    expect(typeChangeKeepsValues("text", "email")).toBe(true);
+    expect(typeChangeKeepsValues("text", "number")).toBe(true);
+    expect(typeChangeKeepsValues("date", "datetime")).toBe(true);
+  });
+  it("clears across families and always for ticket", () => {
+    expect(typeChangeKeepsValues("checkbox", "text")).toBe(false);
+    expect(typeChangeKeepsValues("multiselect", "ticket")).toBe(false);
+    expect(typeChangeKeepsValues("ticket", "json")).toBe(false);
   });
 });

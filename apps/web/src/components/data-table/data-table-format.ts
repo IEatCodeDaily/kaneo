@@ -537,6 +537,10 @@ export function optionsForType(
   if (type === "link" && options?.targetTableId) {
     base.targetTableId = options.targetTableId;
   }
+  if (type === "ticket") {
+    if (options?.boardIds?.length) base.boardIds = [...options.boardIds];
+    if (options?.multiple === false) base.multiple = false;
+  }
   return base;
 }
 
@@ -663,4 +667,40 @@ export function summarize(
     default:
       return null;
   }
+}
+
+// Mirrors the API's castExpression (store.ts): which type changes carry any
+// values over. Used only to word the change-type warning honestly.
+const STORAGE: Record<DataTableFieldType, string> = {
+  text: "text",
+  longtext: "text",
+  url: "text",
+  email: "text",
+  select: "text",
+  user: "text",
+  number: "numeric",
+  percent: "numeric",
+  currency: "numeric",
+  date: "date",
+  datetime: "date",
+  checkbox: "boolean",
+  multiselect: "jsonb",
+  json: "jsonb",
+  link: "jsonb",
+  ticket: "ticket",
+};
+
+export function typeChangeKeepsValues(
+  from: DataTableFieldType,
+  to: DataTableFieldType | null,
+): boolean {
+  if (!to) return false;
+  const a = STORAGE[from];
+  const b = STORAGE[to];
+  if (a === "ticket" || b === "ticket") return false;
+  return (
+    a === b ||
+    (a === "text" && b === "numeric") ||
+    (a === "numeric" && b === "text")
+  );
 }

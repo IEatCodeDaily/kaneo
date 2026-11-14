@@ -118,6 +118,13 @@ const FIELD_OPTIONS: Partial<Record<FieldType, v.GenericSchema>> = {
   link: v.object({
     targetTableId: v.pipe(v.string(), v.minLength(1)),
   }),
+  // boardIds absent/empty = any board in the org; multiple absent = many.
+  ticket: v.object({
+    boardIds: v.optional(
+      v.pipe(v.array(v.pipe(v.string(), v.minLength(1))), v.maxLength(100)),
+    ),
+    multiple: v.optional(v.boolean()),
+  }),
 };
 
 export function fieldOptionsSchema(type: FieldType): v.GenericSchema {
@@ -259,8 +266,18 @@ export function coerceValue(field: CoercibleField, value: unknown): unknown {
       ) {
         badRequest(`${field.type} fields require an array of ids`);
       }
-      // Duplicate ids would ship duplicate chips with colliding React keys.
-      return [...new Set(value as string[])];
+      {
+        // Duplicate ids would ship duplicate chips with colliding React keys.
+        const ids = [...new Set(value as string[])];
+        if (
+          field.type === "ticket" &&
+          field.options?.multiple === false &&
+          ids.length > 1
+        ) {
+          badRequest("This field holds a single ticket");
+        }
+        return ids;
+      }
     default: {
       const _exhaustive: never = field.type;
       badRequest(`Unsupported field type: ${String(_exhaustive)}`);

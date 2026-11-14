@@ -25,6 +25,7 @@ import {
   listDashboards,
   listDataTables,
   listRowsForTask,
+  listTicketOptions,
   purgeDataTable,
   queryDataTable,
   restoreDataTable,
@@ -436,6 +437,32 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           rowId,
           fieldId,
           c.req.valid("json").value,
+        ),
+      );
+    },
+  )
+  .get(
+    "/organization/:organizationId/:tableId/fields/:fieldId/tickets",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        fieldId: v.string(),
+      }),
+    ),
+    validator("query", v.object({ q: v.optional(v.string()) })),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, fieldId } = c.req.valid("param");
+      return c.json(
+        await listTicketOptions(
+          organizationId,
+          tableId,
+          fieldId,
+          c.get("userId"),
+          c.req.valid("query").q,
         ),
       );
     },

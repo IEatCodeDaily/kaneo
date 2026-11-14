@@ -589,7 +589,12 @@ export function DataTableCellContent({
   }
   if (field.type === "ticket" && !asPrimary) {
     return (
-      <TicketCellPicker value={value} canEdit={canEdit} onCommit={onCommit}>
+      <TicketCellPicker
+        field={field}
+        value={value}
+        canEdit={canEdit}
+        onCommit={onCommit}
+      >
         {view}
       </TicketCellPicker>
     );

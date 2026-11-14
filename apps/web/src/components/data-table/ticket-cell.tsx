@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import globalSearch from "@/fetchers/search/global-search";
+import { getTicketOptions } from "@/fetchers/data-table/data-table";
 import { getColumnIcon } from "@/lib/column";
-import type { TicketRef } from "@/types/data-table";
+import type { DataTableField, TicketRef } from "@/types/data-table";
 import { asStringArray } from "./data-table-format";
 
 /**
@@ -21,12 +21,14 @@ import { asStringArray } from "./data-table-format";
 type TicketContextValue = {
   organizationSlug: string;
   organizationId: string;
+  tableId: string;
   tickets: Record<string, TicketRef>;
 };
 
 export const TicketLookupContext = createContext<TicketContextValue>({
   organizationSlug: "",
   organizationId: "",
+  tableId: "",
   tickets: {},
 });
 
@@ -67,63 +69,40 @@ export function TicketCellView({ value }: { value: unknown }) {
   );
 }
 
-type SearchHit = { id: string; key: string; title: string; status: string };
-
-/** Picker: search the org's tickets, toggle links. Commits on every pick. */
+/**
+ * Picker for one ticket field. Options come from the field's own endpoint, so
+ * the board restriction is enforced server-side; an empty query browses the
+ * newest tickets. Single-ticket fields swap on pick; many-ticket fields
+ * toggle, with the current links listed first (click to unlink).
+ */
 export function TicketCellPicker({
+  field,
   value,
   canEdit,
   onCommit,
   children,
 }: {
+  field: DataTableField;
   value: unknown;
   canEdit: boolean;
   onCommit: (value: unknown) => void;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const { organizationId, tickets } = useContext(TicketLookupContext);
+  const { organizationId, tableId, tickets } = useContext(TicketLookupContext);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [hits, setHits] = useState<TicketRef[]>([]);
   const selected = asStringArray(value);
+  const multiple = field.options?.multiple !== false;
 
   useEffect(() => {
-    if (!open || query.trim() === "") {
-      setHits([]);
-      return;
-    }
+    if (!open) return;
     let cancelled = false;
-    // ponytail: global search caps at 20 hits; a dedicated endpoint if users
-    // need to browse beyond a query.
     const handle = setTimeout(() => {
-      globalSearch({
-        q: query.trim(),
-        type: "tasks",
-        organizationId,
-        limit: 20,
-      })
-        .then((data) => {
-          if (cancelled) return;
-          // The route's response schema is loose; same cast as the palette.
-          const results = (data.results ?? []) as Array<{
-            id: string;
-            type: string;
-            title: string;
-            boardSlug?: string;
-            taskNumber?: number;
-            status?: string;
-          }>;
-          setHits(
-            results
-              .filter((r) => r.type === "task" && r.boardSlug)
-              .map((r) => ({
-                id: r.id,
-                key: `${(r.boardSlug ?? "").toUpperCase()}-${r.taskNumber ?? "?"}`,
-                title: r.title,
-                status: r.status ?? "",
-              })),
-          );
+      getTicketOptions({ organizationId, tableId }, field.id, query.trim())
+        .then((refs) => {
+          if (!cancelled) setHits(refs);
         })
         .catch(() => {
           if (!cancelled) setHits([]);
@@ -133,19 +112,55 @@ export function TicketCellPicker({
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [open, query, organizationId]);
+  }, [open, query, organizationId, tableId, field.id]);
 
   if (!canEdit) return <>{children}</>;
 
-  const toggle = (id: string) =>
+  const pick = (id: string) => {
+    if (!multiple) {
+      // Swap: the pick replaces whatever was there; re-picking clears.
+      onCommit(selected[0] === id ? [] : [id]);
+      setOpen(false);
+      return;
+    }
     onCommit(
       selected.includes(id)
         ? selected.filter((current) => current !== id)
         : [...selected, id],
     );
+  };
   const linked = selected
     .map((id) => tickets[id])
     .filter((ref): ref is TicketRef => Boolean(ref));
+  const options = hits.filter((hit) => !selected.includes(hit.id));
+
+  const row = (ref: TicketRef, isSelected: boolean) => (
+    <button
+      key={ref.id}
+      type="button"
+      role="option"
+      aria-selected={isSelected}
+      onClick={() => pick(ref.id)}
+      className="group/opt flex h-7 items-center gap-2 rounded-sm px-2 text-left text-ui hover:bg-accent aria-selected:bg-secondary"
+    >
+      <span className="shrink-0 [&_svg]:size-3">
+        {getColumnIcon(ref.status)}
+      </span>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">
+        {ref.key}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{ref.title}</span>
+      {isSelected &&
+        (multiple ? (
+          <X
+            className="size-3.5 shrink-0 text-muted-foreground"
+            aria-label={t("navigation:tables.unlinkTicket")}
+          />
+        ) : (
+          <Check className="size-3.5 shrink-0 text-muted-foreground" />
+        ))}
+    </button>
+  );
 
   return (
     <Popover
@@ -177,55 +192,34 @@ export function TicketCellPicker({
             aria-label={t("navigation:tables.searchTickets")}
           />
         </div>
-        {linked.length > 0 && (
-          <div className="mb-1 flex flex-col border-b pb-1">
-            {linked.map((ref) => (
-              <button
-                key={ref.id}
-                type="button"
-                onClick={() => toggle(ref.id)}
-                className="flex h-7 items-center gap-2 rounded-sm px-2 text-left text-ui hover:bg-accent"
-              >
-                <span className="font-mono text-xs text-muted-foreground">
-                  {ref.key}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{ref.title}</span>
-                <X
-                  className="size-3.5 text-muted-foreground"
-                  aria-label={t("navigation:tables.unlinkTicket")}
-                />
-              </button>
-            ))}
-          </div>
-        )}
-        <div role="listbox" className="flex max-h-64 flex-col overflow-y-auto">
-          {hits
-            .filter((hit) => !selected.includes(hit.id))
-            .map((hit) => (
-              <button
-                key={hit.id}
-                type="button"
-                role="option"
-                aria-selected={false}
-                onClick={() => toggle(hit.id)}
-                className="flex h-7 items-center gap-2 rounded-sm px-2 text-left text-ui hover:bg-accent"
-              >
-                <span className="[&_svg]:size-3">
-                  {getColumnIcon(hit.status)}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {hit.key}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{hit.title}</span>
-              </button>
-            ))}
+        <div
+          role="listbox"
+          aria-multiselectable={multiple || undefined}
+          className="flex max-h-72 flex-col overflow-y-auto"
+        >
+          {linked.map((ref) => row(ref, true))}
+
+          {options.length > 0 && linked.length > 0 && (
+            <hr className="my-1 border-border" />
+          )}
+          {options.map((ref) => row(ref, false))}
         </div>
-        {hits.length === 0 && (
+        {linked.length === 0 && options.length === 0 && (
           <p className="px-2 py-1 text-xs text-muted-foreground">
-            {query.trim() === ""
-              ? t("navigation:tables.typeToSearchTickets")
-              : t("navigation:tables.noTicketsFound")}
+            {t("navigation:tables.noTicketsFound")}
           </p>
+        )}
+        {!multiple && linked.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              onCommit([]);
+              setOpen(false);
+            }}
+            className="mt-1 flex h-7 w-full items-center rounded-sm border-t px-2 text-left text-ui text-muted-foreground hover:bg-accent"
+          >
+            {t("navigation:tables.clearTicket")}
+          </button>
         )}
       </PopoverContent>
     </Popover>
