@@ -160,7 +160,7 @@ export function AiChatBubble() {
     <div className="fixed bottom-5 right-5 z-50">
       {open ? (
         <section
-          className="relative flex max-h-[calc(100vh-2.5rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl max-sm:h-[calc(100vh-2.5rem)] max-sm:w-[calc(100vw-2rem)]"
+          className="relative flex max-h-[calc(100vh-2.5rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border bg-background shadow-2xl max-sm:h-[calc(100vh-2.5rem)] max-sm:w-[calc(100vw-2rem)]"
           aria-label="Organization AI assistant"
           data-testid="ai-chat-panel"
           style={{ width: size.width, height: size.height }}

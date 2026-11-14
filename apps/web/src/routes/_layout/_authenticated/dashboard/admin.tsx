@@ -594,7 +594,7 @@ function Metric({
       <CardContent className="flex items-center gap-4 p-5">
         <span className="text-muted-foreground">{icon}</span>
         <div>
-          <div className="text-2xl font-semibold">{value}</div>
+          <div className="text-2xl font-semibold tabular-nums">{value}</div>
           <div className="text-sm text-muted-foreground">{label}</div>
         </div>
       </CardContent>

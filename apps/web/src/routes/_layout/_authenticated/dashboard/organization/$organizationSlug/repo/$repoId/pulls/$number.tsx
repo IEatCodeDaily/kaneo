@@ -67,7 +67,7 @@ function RouteComponent() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-start gap-2">
-                    <h1 className="min-w-0 flex-1 text-xl font-semibold tracking-tight sm:text-2xl">
+                    <h1 className="min-w-0 flex-1 text-xl font-semibold tracking-tight">
                       {pullRequest.title}
                     </h1>
                     <RepoItemTitleAction

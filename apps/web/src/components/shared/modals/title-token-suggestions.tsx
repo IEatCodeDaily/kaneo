@@ -271,7 +271,7 @@ export function TitleTokenHint({ hidden = false }: { hidden?: boolean }) {
        * #72 (round 5): the title input now carries pb-0, so the hint sits
        * directly under the text without a negative pull fighting the padding.
        */
-      className={`!mt-1 px-0.5 text-xs leading-none text-muted-foreground/50 ${
+      className={`!mt-1 px-0.5 text-xs leading-none text-faint-foreground ${
         hidden ? "invisible" : ""
       }`}
       data-testid={hidden ? "title-token-hint-hidden" : "title-token-hint"}

@@ -54,7 +54,7 @@ export default function TaskDueDateBadge({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 rounded px-2 py-1 text-xs",
+        "flex items-center gap-1 rounded-sm px-2 py-1 text-xs",
         dueDateStatusColors[state],
         className,
       )}

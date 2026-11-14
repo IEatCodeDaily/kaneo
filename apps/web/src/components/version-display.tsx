@@ -7,7 +7,7 @@ export function VersionDisplay() {
   // the sidebar, not a footer element competing for attention.
   return (
     <a
-      className="px-1 text-xs leading-none text-muted-foreground/50 transition-colors duration-200 hover:text-muted-foreground group-data-[collapsible=icon]:hidden"
+      className="px-1 text-xs leading-none text-faint-foreground transition-colors duration-200 hover:text-muted-foreground group-data-[collapsible=icon]:hidden"
       data-testid="version-display"
       href={changelogUrl}
       rel="noopener noreferrer"

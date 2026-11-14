@@ -398,7 +398,7 @@ export default function TaskRelations({
         <CollapsibleContent>
           {Object.entries(groupedRelations).map(([type, items]) => (
             <div key={type} className="mt-1.5">
-              <span className="text-xs text-muted-foreground/70 px-2">
+              <span className="text-xs text-faint-foreground px-2">
                 {t(`tasks:relations.types.${type}`, {
                   defaultValue: type.replace(/_/g, " "),
                 })}
@@ -418,7 +418,7 @@ export default function TaskRelations({
                           >
                             <button
                               type="button"
-                              className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
+                              className="shrink-0 flex items-center justify-center rounded-sm p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
                             >
                               {getColumnIcon(
                                 item.task.status,
@@ -439,12 +439,12 @@ export default function TaskRelations({
                             }
                           >
                             <span
-                              className={`text-sm truncate block ${finalStatusSlugs.has(item.task.status) ? "line-through text-muted-foreground" : "text-foreground/90"}`}
+                              className={`text-sm truncate block ${finalStatusSlugs.has(item.task.status) ? "line-through text-muted-foreground" : "text-foreground"}`}
                             >
                               {item.task.title}
                             </span>
                             {item.task.boardId !== boardId && (
-                              <span className="text-xs font-mono text-muted-foreground/70">
+                              <span className="text-xs font-mono text-faint-foreground">
                                 {boardNameById.get(item.task.boardId) ??
                                   t("tasks:relations.otherBoard")}
                               </span>
@@ -457,7 +457,7 @@ export default function TaskRelations({
                           >
                             <button
                               type="button"
-                              className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
+                              className="shrink-0 flex items-center justify-center rounded-sm p-0.5 transition-colors outline-none"
                             >
                               {item.task.userId && assignee ? (
                                 <Avatar
@@ -632,7 +632,7 @@ export default function TaskRelations({
                       {t("tasks:relations.blockedBy")}
                     </button>
                   </div>
-                  <span className="text-muted-foreground/60">
+                  <span className="text-faint-foreground">
                     {t("tasks:relations.selectTask")}
                   </span>
                 </CommandFooter>

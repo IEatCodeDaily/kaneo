@@ -68,6 +68,7 @@ function makeColumn() {
     slug: "in-progress",
     icon: null,
     isFinal: false,
+    statusType: "started",
     tasks,
   };
 }

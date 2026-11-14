@@ -138,12 +138,17 @@ export function useDataTableMutations(
         if (!detailKey) return;
         // Merge values only: replacing the row would clobber another cell's
         // in-flight optimistic value with stale server data.
-        queryClient.setQueryData<DataTable>(detailKey, (draft) =>
-          patchRow(draft, row.id, (cached) => ({
+        queryClient.setQueryData<DataTable>(detailKey, (draft) => {
+          const patched = patchRow(draft, row.id, (cached) => ({
             ...cached,
             values: { ...cached.values, ...row.values },
-          })),
-        );
+          }));
+          // Ticket cells resolve through the table-level lookup; fold in the
+          // refs the write response carries for newly linked tickets.
+          return patched && row.tickets
+            ? { ...patched, tickets: { ...patched.tickets, ...row.tickets } }
+            : patched;
+        });
       },
       onError: (_error, _vars, context) => {
         if (detailKey && context?.previous) {

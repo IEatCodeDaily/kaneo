@@ -578,7 +578,7 @@ export default function TaskPropertiesSidebar({
             {/* Desktop: Title + stacked properties */}
             <div className="hidden lg:block">
               <div className="flex items-center justify-between px-3 py-2 border-b border-border lg:border-none">
-                <p className="text-sm font-medium text-foreground/70 flex-1">
+                <p className="text-sm font-medium text-muted-foreground flex-1">
                   {t("tasks:properties.title")}
                 </p>
                 <div className="flex">

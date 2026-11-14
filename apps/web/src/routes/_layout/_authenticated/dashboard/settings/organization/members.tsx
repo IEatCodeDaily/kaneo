@@ -28,7 +28,7 @@ function RouteComponent() {
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-semibold text-base">
+          <h2 className="font-semibold text-sm">
             {t("team:members.pageTitle")}
           </h2>
           <p className="text-muted-foreground text-sm">

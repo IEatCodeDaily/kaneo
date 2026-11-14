@@ -176,7 +176,7 @@ export function TableRowResources({
   return (
     <div className="flex flex-col gap-0.5" data-slot="task-table-rows">
       <div className="flex items-center justify-between gap-2 px-2">
-        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/70">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Table2 className="size-3.5" />
           {t("navigation:tables.tableRowsSection")}
         </span>

@@ -25,6 +25,7 @@ import {
   isValidUrl,
   parseJsonValue,
 } from "./data-table-format";
+import { TicketCellPicker } from "./ticket-cell";
 
 type EditorProps = {
   field: DataTableField;
@@ -143,7 +144,7 @@ export function TableCellInput({
           }
         }}
         className={cn(
-          "h-full w-full px-2.5 text-[13px]",
+          "h-full w-full px-2.5 text-ui",
           inputType === "number" && "text-right tabular-nums",
         )}
       />
@@ -584,6 +585,18 @@ export function DataTableCellContent({
       >
         {view}
       </MultiSelectCellPicker>
+    );
+  }
+  if (field.type === "ticket" && !asPrimary) {
+    return (
+      <TicketCellPicker
+        field={field}
+        value={value}
+        canEdit={canEdit}
+        onCommit={onCommit}
+      >
+        {view}
+      </TicketCellPicker>
     );
   }
   if (field.type === "user" && asPrimary) {

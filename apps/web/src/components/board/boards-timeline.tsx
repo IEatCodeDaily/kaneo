@@ -515,7 +515,7 @@ export default function BoardsTimeline({
                       >
                         <button
                           className={cn(
-                            "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded px-2.5",
+                            "relative z-[5] flex h-6 min-w-0 items-center gap-1.5 overflow-hidden rounded-sm px-2.5",
                             "bg-primary/25 ring-1 ring-inset ring-primary/40 hover:bg-primary/35",
                           )}
                           data-testid={`boards-timeline-bar-${board.id}`}
@@ -733,7 +733,7 @@ export default function BoardsTimeline({
                                     }}
                                   >
                                     <div
-                                      className="flex h-5 items-center overflow-hidden rounded bg-primary/15 ring-1 ring-inset ring-primary/30"
+                                      className="flex h-5 items-center overflow-hidden rounded-sm bg-primary/15 ring-1 ring-inset ring-primary/30"
                                       data-testid={`boards-timeline-section-bar-${sectionId}`}
                                       style={{
                                         gridColumn: `${Math.max(1, sectionStartIndex + 1)} / span ${Math.max(1, sectionSpan)}`,
@@ -828,7 +828,7 @@ export default function BoardsTimeline({
                                       <span className="truncate">
                                         {task.title}
                                       </span>
-                                      <span className="ml-2 shrink-0 tabular-nums text-xs text-muted-foreground/70">
+                                      <span className="ml-2 shrink-0 tabular-nums text-xs text-faint-foreground">
                                         {format(taskStart, "MMM d")}
                                         {taskEnd > taskStart
                                           ? ` – ${format(taskEnd, "MMM d")}`
@@ -849,7 +849,7 @@ export default function BoardsTimeline({
                                       }}
                                     >
                                       <div
-                                        className="flex h-4 items-center overflow-hidden rounded bg-primary/25 px-1 ring-1 ring-inset ring-primary/40"
+                                        className="flex h-4 items-center overflow-hidden rounded-sm bg-primary/25 px-1 ring-1 ring-inset ring-primary/40"
                                         data-testid={`boards-timeline-task-${board.id}-${task.id}`}
                                         style={{
                                           gridColumn: `${Math.max(1, taskStartIndex + 1)} / span ${Math.max(1, taskSpan)}`,

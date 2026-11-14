@@ -404,7 +404,7 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-10 bg-muted rounded animate-pulse w-full" />
+        <div className="h-10 bg-muted rounded-sm animate-pulse w-full" />
       </div>
     );
   }
@@ -565,14 +565,14 @@ export function GiteaIntegrationSettings({ boardId }: { boardId: string }) {
                   <p className="text-muted-foreground">
                     {t("settings:giteaIntegration.webhookHint")}
                   </p>
-                  <code className="block break-all rounded bg-muted px-2 py-1 text-xs">
+                  <code className="block break-all rounded-sm bg-muted px-2 py-1 text-xs">
                     {integration.webhookUrl}
                   </code>
                   <p className="text-muted-foreground mt-2">
                     {t("settings:giteaIntegration.webhookSecretLabel")}
                   </p>
                   <div className="flex items-start gap-2">
-                    <code className="block flex-1 break-all rounded bg-muted px-2 py-1 text-xs">
+                    <code className="block flex-1 break-all rounded-sm bg-muted px-2 py-1 text-xs">
                       {showWebhookSecret
                         ? integration.webhookSecret
                         : "••••••••••••••••••••••••••••••••"}

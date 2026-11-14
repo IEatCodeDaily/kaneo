@@ -162,7 +162,7 @@ export function BoardSkeleton() {
               className="h-full w-92 max-w-96 min-w-80 shrink-0 flex-1"
             >
               {/* Column chrome from kanban-board/column/index.tsx. */}
-              <div className="flex h-full min-h-0 w-full flex-col rounded-xl border border-border/70 bg-muted/40 shadow-xs/5 dark:bg-card/90">
+              <div className="flex h-full min-h-0 w-full flex-col rounded-lg border border-border/70 bg-muted/40 shadow-xs/5 dark:bg-card/90">
                 <div
                   data-testid="board-skeleton-column-header"
                   className="shrink-0 border-b border-border/60 px-3 py-2"
@@ -174,7 +174,7 @@ export function BoardSkeleton() {
                       <Skeleton className="h-4 w-4 rounded-full" />
                       <Skeleton
                         data-testid="board-skeleton-column-name"
-                        className={`h-4 ${column.nameWidth} rounded`}
+                        className={`h-4 ${column.nameWidth} rounded-sm`}
                       />
                       <Skeleton
                         data-testid="board-skeleton-column-count"
@@ -201,7 +201,7 @@ export function BoardSkeleton() {
 
                         <Skeleton
                           data-testid="board-skeleton-card-ref"
-                          className={`mb-1.5 h-2.5 ${card.ref} rounded`}
+                          className={`mb-1.5 h-2.5 ${card.ref} rounded-sm`}
                         />
 
                         <div className="mb-2.5 flex flex-col gap-1.5 pr-6">
@@ -209,7 +209,7 @@ export function BoardSkeleton() {
                             <Skeleton
                               key={line.id}
                               data-testid="board-skeleton-card-title-line"
-                              className={`h-3.5 ${line.width} rounded`}
+                              className={`h-3.5 ${line.width} rounded-sm`}
                             />
                           ))}
                         </div>
@@ -233,7 +233,7 @@ export function BoardSkeleton() {
                           {card.meta.map((chip) => (
                             <Skeleton
                               key={chip.id}
-                              className={`h-5 ${chip.width} rounded`}
+                              className={`h-5 ${chip.width} rounded-sm`}
                             />
                           ))}
                         </div>

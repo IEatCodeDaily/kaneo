@@ -272,6 +272,7 @@ function DataTableRoute() {
             key={table.id}
             table={table}
             organizationId={organizationId}
+            organizationSlug={organizationSlug}
             canEdit={canEdit && !isDeleted}
             onRename={() => {
               setDraftName(table.name);

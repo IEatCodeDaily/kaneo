@@ -65,7 +65,7 @@ export default function CreateDataTableModal({
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
       <DialogContent className="max-w-md">
         <DialogHeader className="gap-2">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary-soft-foreground">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary-soft-foreground">
             <Table2 className="size-5" />
           </div>
           <DialogTitle>{t("navigation:tables.createTitle")}</DialogTitle>

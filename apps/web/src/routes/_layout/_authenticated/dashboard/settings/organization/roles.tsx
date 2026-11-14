@@ -231,7 +231,7 @@ function RouteComponent() {
         <PageTitle title={t("settings:organizationRoles.pageTitle")} />
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold">
+            <h1 className="text-xl font-semibold">
               {t("settings:organizationRoles.title")}
             </h1>
             <p className="text-muted-foreground">
@@ -248,7 +248,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:organizationRoles.pageTitle")} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:organizationRoles.title")}
           </h1>
           <p className="text-muted-foreground">
@@ -392,7 +392,7 @@ function RouteComponent() {
                                   {roleLabel}
                                 </p>
                                 {isDefault && (
-                                  <span className="text-xs uppercase tracking-wide font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  <span className="text-xs uppercase tracking-wide font-medium px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">
                                     {t(
                                       "settings:organizationRoles.defaultBadge",
                                     )}

@@ -62,7 +62,7 @@ describe("field registry", () => {
         required: true,
       }).success,
     ).toBe(true);
-    expect(FIELD_TYPES).toHaveLength(15);
+    expect(FIELD_TYPES).toHaveLength(16);
   });
 });
 

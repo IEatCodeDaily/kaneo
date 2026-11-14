@@ -282,7 +282,7 @@ export default function BoardMilestonesSection({
                     data-testid={`board-milestone-status-${milestone.id}-${status}`}
                     onClick={() => void handleStatusChange(milestone, status)}
                     className={cn(
-                      "rounded px-1.5 py-0.5 text-xs capitalize",
+                      "rounded-sm px-1.5 py-0.5 text-xs capitalize",
                       milestone.status === status
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground",

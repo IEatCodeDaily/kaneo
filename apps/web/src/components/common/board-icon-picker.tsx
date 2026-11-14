@@ -86,7 +86,7 @@ function BoardIconPicker({
           variant="outline"
         >
           {triggerContent ?? (
-            <EntityIcon className="h-4 w-4 text-base" value={value} />
+            <EntityIcon className="h-4 w-4 text-sm" value={value} />
           )}
           {showValue && (
             <span className="truncate text-xs">{value || "Layout"}</span>
@@ -117,7 +117,7 @@ function BoardIconPicker({
               type="button"
               variant="ghost"
             >
-              <span className="text-base leading-none">{query}</span>
+              <span className="text-sm leading-none">{query}</span>
               {query}
             </Button>
           )}
@@ -130,7 +130,7 @@ function BoardIconPicker({
                       aria-label={emoji}
                       aria-pressed={value === emoji}
                       className={cn(
-                        "relative h-10 items-center justify-center rounded-md p-0 text-base leading-none",
+                        "relative h-10 items-center justify-center rounded-md p-0 text-sm leading-none",
                         value === emoji &&
                           "bg-sidebar-accent text-sidebar-accent-foreground",
                       )}

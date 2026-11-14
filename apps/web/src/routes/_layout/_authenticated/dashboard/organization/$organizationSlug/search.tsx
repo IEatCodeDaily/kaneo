@@ -91,7 +91,7 @@ function SearchComponent() {
                 placeholder={t("organization:search.placeholder")}
                 value={searchInput}
                 onChange={(e) => handleInputChange(e.target.value)}
-                className="pl-10 h-12 text-lg"
+                className="pl-10"
                 autoFocus
               />
               {showLoading && (
@@ -162,7 +162,7 @@ function SearchComponent() {
                       )}
 
                       {result.status && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded border border-border bg-muted/55 text-muted-foreground flex-shrink-0">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-sm border border-border bg-muted/55 text-muted-foreground flex-shrink-0">
                           {result.status}
                         </span>
                       )}
@@ -172,7 +172,7 @@ function SearchComponent() {
               ) : (
                 <div className="text-center py-12">
                   <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium mb-2">
+                  <p className="text-sm font-medium mb-2">
                     {t("organization:search.noResultsTitle")}
                   </p>
                   <p className="text-muted-foreground">

@@ -215,7 +215,7 @@ export function ColumnDropzone({
           <button
             aria-expanded={!collapsed}
             className={cn(
-              "flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground",
+              "flex items-center gap-1 self-start rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground",
               NESTED_INDENT[Math.min(depth, 3)],
             )}
             onClick={() =>
@@ -308,7 +308,7 @@ export function ColumnDropzone({
                   <button
                     aria-controls={regionId}
                     aria-expanded={!groupCollapsed}
-                    className="flex h-7 w-full items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2 text-left font-medium text-xs text-foreground/80 uppercase tracking-wide transition-colors hover:bg-muted hover:text-foreground"
+                    className="flex h-7 w-full items-center gap-1.5 rounded-md border border-border/70 bg-muted/40 px-2 text-left font-medium text-xs text-muted-foreground uppercase tracking-wide transition-colors hover:bg-muted hover:text-foreground"
                     data-slot="task-group-toggle"
                     onClick={() =>
                       setCollapsedTaskGroups((current) => {
@@ -327,7 +327,7 @@ export function ColumnDropzone({
                     )}
                     {groupIcon}
                     <span>{groupTitle}</span>
-                    <span className="ml-1.5 text-muted-foreground/70">
+                    <span className="ml-1.5 text-faint-foreground">
                       {group.tasks.length}
                     </span>
                   </button>

@@ -182,7 +182,7 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
         <DialogPopup className="w-full max-w-md">
           <div className="bg-card rounded-lg shadow-xl border border-border">
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <DialogTitle className="text-lg font-semibold text-foreground">
+              <DialogTitle className="text-sm font-semibold text-foreground">
                 {t("settings:tasksImportExport.dialogTitle")}
               </DialogTitle>
             </div>

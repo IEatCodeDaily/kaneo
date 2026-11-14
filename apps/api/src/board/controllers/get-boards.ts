@@ -100,6 +100,9 @@ async function getBoards(
         },
         archivedTasks: [],
         plannedTasks: [],
+        // #55 added backlogColumns to the board-with-tasks shape; the list
+        // payload carries it empty like the other task buckets.
+        backlogColumns: [],
         columns: [],
       };
     });

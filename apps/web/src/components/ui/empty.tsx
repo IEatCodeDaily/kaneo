@@ -84,7 +84,7 @@ function EmptyMedia({
 function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("font-semibold text-xl", className)}
+      className={cn("font-semibold text-sm", className)}
       data-slot="empty-title"
       {...props}
     />

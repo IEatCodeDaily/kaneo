@@ -21,7 +21,7 @@ export function PublicListView({ board, onTaskClick }: PublicListViewProps) {
                 <span className="flex [&_svg]:!h-5 [&_svg]:!w-5">
                   {getColumnIcon(column.id, column.isFinal, column.icon)}
                 </span>
-                <h3 className="font-semibold text-lg text-foreground">
+                <h3 className="font-semibold text-sm text-foreground">
                   {column.name}
                 </h3>
                 <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full font-medium">

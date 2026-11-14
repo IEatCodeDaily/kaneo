@@ -105,13 +105,13 @@ function RouteComponent() {
       <PageTitle title="Organization features" />
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Features</h1>
+          <h1 className="text-xl font-semibold">Features</h1>
           <p className="text-muted-foreground">
             Enable organization-wide product features that are still being
             rolled out.
           </p>
         </div>
-        <section className="rounded-xl border border-border bg-background">
+        <section className="rounded-lg border border-border bg-background">
           <div className="flex items-start justify-between gap-6 px-4 py-4">
             <div className="flex min-w-0 items-start gap-3">
               <div className="mt-0.5 text-muted-foreground">

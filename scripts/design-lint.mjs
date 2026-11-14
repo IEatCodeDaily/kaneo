@@ -12,9 +12,9 @@ const ROOTS = [
 // [rule, pattern, why]
 const RULES = [
   [
-    "sub-12px text",
-    /text-\[(?:[0-9]|1[01])(?:\.\d+)?px\]/,
-    "the floor is text-xs (12px); smaller text is unreadable and fails a11y",
+    "arbitrary text size",
+    /(?<![\w-])text-\[[\d.]+(?:px|rem|em)\]/,
+    "DESIGN-SYSTEM §1.5: sizes are tokens (text-xs floor 12px, text-ui, text-sm, text-xl, text-2xl)",
   ],
   [
     "text-md is not a Tailwind class",
@@ -25,6 +25,26 @@ const RULES = [
     "stray arbitrary radius",
     /rounded-\[\d+px\]/,
     "radii are tokens: rounded-sm/md/lg (4/6/10)",
+  ],
+  [
+    "off-scale radius",
+    /(?<![\w:/-])rounded(?:-[trblse]{1,2})?(?:-(?:xl|2xl|3xl))?(?=["'`\s])/,
+    "DESIGN-SYSTEM §1.6: rounded-sm/md/lg/full only",
+  ],
+  [
+    "off-scale text size",
+    /(?<![\w:/-])text-(?:lg|base|3xl|4xl|5xl)(?![\w/-])/,
+    "DESIGN-SYSTEM §1.5: text-xs/ui/sm, text-xl for page/ticket titles, text-2xl for stat values",
+  ],
+  [
+    "font-bold",
+    /(?<![\w:/-])font-bold(?![\w/-])/,
+    "weights are 400/500/600 (font-semibold for titles)",
+  ],
+  [
+    "opacity text colour",
+    /(?<![\w:/-])text-(?:muted-)?foreground\/\d+/,
+    "use text-muted-foreground or text-faint-foreground",
   ],
 ];
 

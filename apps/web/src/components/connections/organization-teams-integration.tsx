@@ -54,7 +54,7 @@ export function OrganizationTeamsIntegration() {
   ] as const;
 
   return (
-    <section className="rounded-xl border border-border bg-background">
+    <section className="rounded-lg border border-border bg-background">
       <div className="flex items-start justify-between gap-6 p-4">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">

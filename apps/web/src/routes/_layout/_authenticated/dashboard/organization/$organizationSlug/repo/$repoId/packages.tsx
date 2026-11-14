@@ -79,7 +79,7 @@ function RouteComponent() {
           )}
           {data?.map((pkg) => (
             <a
-              className="flex items-center gap-3 rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50"
+              className="flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50"
               href={pkg.url}
               key={pkg.id}
               rel="noreferrer"

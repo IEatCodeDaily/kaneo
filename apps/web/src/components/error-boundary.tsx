@@ -41,7 +41,7 @@ export function ErrorFallback({
         <AlertTriangle className="size-5 text-destructive-foreground" />
       </div>
       <div className="space-y-1">
-        <h2 className="font-semibold text-base text-foreground">{title}</h2>
+        <h2 className="font-semibold text-sm text-foreground">{title}</h2>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <pre className="max-h-32 w-full max-w-lg overflow-auto rounded-md bg-muted/60 px-3 py-2 text-left font-mono text-muted-foreground text-xs whitespace-pre-wrap">

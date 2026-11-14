@@ -108,7 +108,7 @@ export default function ResourceSettingsShell({
       <div className="flex w-full min-w-0 flex-1 flex-col gap-4 md:border-border md:border-l md:pl-6">
         {active ? (
           <>
-            <h2 className="font-semibold text-lg">{active.label}</h2>
+            <h2 className="font-semibold text-sm">{active.label}</h2>
             <nav
               aria-label={`${active.label} settings`}
               className="-mt-1 flex w-full min-w-0 max-w-full flex-wrap gap-x-1 border-b border-border md:flex-nowrap md:overflow-x-auto"

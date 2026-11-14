@@ -352,7 +352,7 @@ export function GanttTaskBar({
         <div
           style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
           className={cn(
-            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded border border-dashed bg-card px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
+            "pointer-events-auto relative mx-1 flex h-7 min-w-0 items-center overflow-hidden rounded-sm border border-dashed bg-card px-1.5 text-left text-xs font-medium leading-none text-muted-foreground",
             colors.border,
           )}
         >
@@ -379,14 +379,14 @@ export function GanttTaskBar({
       <div
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
         className={cn(
-          "group pointer-events-auto relative mx-1 flex h-7 min-w-0 items-stretch overflow-visible rounded border bg-background text-left text-xs font-medium leading-none text-foreground shadow-sm transition-colors",
+          "group pointer-events-auto relative mx-1 flex h-7 min-w-0 items-stretch overflow-visible rounded-sm border bg-background text-left text-xs font-medium leading-none text-foreground shadow-sm transition-colors",
           colors.border,
         )}
       >
         {/* Live date readout while dragging or resizing. dragDisplay is already
             the optimistic range, so this needs no extra state. */}
         {dragDisplay ? (
-          <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-xs font-medium tabular-nums text-popover-foreground shadow-md">
+          <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-sm border border-border bg-popover px-1.5 py-0.5 text-xs font-medium tabular-nums text-popover-foreground shadow-md">
             {format(displayStart, "MMM d")}
             {differenceInCalendarDays(displayEnd, displayStart) === 0
               ? ""

@@ -58,7 +58,7 @@ export function PublicPRBadge({ externalLinks }: PublicPRBadgeProps) {
               e.stopPropagation();
               window.open(pullRequests[0].url, "_blank");
             }}
-            className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border bg-sidebar text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
           >
             {getPRInfo(pullRequests[0]).icon}
             <span>#{pullRequests[0].externalId}</span>
@@ -73,7 +73,7 @@ export function PublicPRBadge({ externalLinks }: PublicPRBadgeProps) {
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {getPRInfo(pullRequests[0]).icon}
               <span>{getPRInfo(pullRequests[0]).status}</span>
-              <span className="text-muted-foreground/50">•</span>
+              <span className="text-faint-foreground">•</span>
               <span>#{pullRequests[0].externalId}</span>
             </div>
             <p className="text-sm font-medium leading-snug">
@@ -102,7 +102,7 @@ export function PublicPRBadge({ externalLinks }: PublicPRBadgeProps) {
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border bg-sidebar text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
           >
             <GitPullRequest className={`h-3 w-3 ${iconColor}`} />
             <span>{t("tasks:pr.count", { count: pullRequests.length })}</span>
@@ -123,7 +123,7 @@ export function PublicPRBadge({ externalLinks }: PublicPRBadgeProps) {
                 <button
                   type="button"
                   onClick={() => window.open(pr.url, "_blank")}
-                  className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded transition-colors"
+                  className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded-sm transition-colors"
                 >
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     {prInfo.icon}

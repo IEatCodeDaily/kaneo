@@ -74,7 +74,7 @@ export function AiSettings() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-border bg-background">
+      <section className="rounded-lg border border-border bg-background">
         <div className="flex items-start justify-between gap-6 px-4 py-4">
           <div className="flex min-w-0 items-start gap-3">
             <div className="mt-0.5 text-muted-foreground">
@@ -111,7 +111,7 @@ export function AiSettings() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-border bg-background p-4">
+      <section className="space-y-4 rounded-lg border border-border bg-background p-4">
         <div className="space-y-1">
           <h2 className="font-semibold">Provider</h2>
           <p className="text-sm text-muted-foreground">

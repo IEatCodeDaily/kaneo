@@ -330,7 +330,7 @@ const GanttRow = memo(function GanttRow({
                 type="button"
                 aria-expanded={!collapsed}
                 aria-label={collapsed ? "Expand subtasks" : "Collapse subtasks"}
-                className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted-foreground/10"
+                className="flex size-5 shrink-0 items-center justify-center rounded-sm hover:bg-muted-foreground/10"
                 onClick={() => onToggleCollapse(task.id)}
               >
                 {collapsed ? (
@@ -363,7 +363,7 @@ const GanttRow = memo(function GanttRow({
               {display.priority && task.priority ? (
                 <span
                   className={cn(
-                    "shrink-0 rounded px-1 py-px text-xs font-medium",
+                    "shrink-0 rounded-sm px-1 py-px text-xs font-medium",
                     task.priority === "urgent" && "text-destructive-foreground",
                     task.priority === "high" && "text-warning-foreground",
                     task.priority === "medium" && "text-warning-foreground/85",
@@ -379,7 +379,7 @@ const GanttRow = memo(function GanttRow({
                   : `${boardSlug}-${task.number}`}
               </span>
               {task.isForeign ? (
-                <span className="shrink-0 rounded border border-dashed border-border px-1 py-px text-xs text-muted-foreground">
+                <span className="shrink-0 rounded-sm border border-dashed border-border px-1 py-px text-xs text-muted-foreground">
                   {task.boardName}
                 </span>
               ) : null}
@@ -1451,7 +1451,7 @@ function RouteComponent() {
                           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {t("tasks:gantt.unscheduledGroup")}
                           </span>
-                          <span className="rounded bg-secondary px-1 py-px text-xs font-medium text-secondary-foreground">
+                          <span className="rounded-sm bg-secondary px-1 py-px text-xs font-medium text-secondary-foreground">
                             {unscheduledRows.length}
                           </span>
                         </span>

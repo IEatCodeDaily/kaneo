@@ -83,11 +83,11 @@ function TaskHoverPreview({
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="flex flex-col gap-2">
-          <div className="font-mono text-xs text-muted-foreground/90">
+          <div className="font-mono text-xs text-muted-foreground">
             {boardSlug ? `${boardSlug}-${task.number}` : `#${task.number}`}
           </div>
 
-          <p className="text-sm font-medium leading-snug text-foreground/95">
+          <p className="text-sm font-medium leading-snug text-foreground">
             {task.title}
           </p>
 
@@ -144,7 +144,7 @@ function TaskHoverPreview({
                   labels.map((label) => (
                     <span
                       key={label.id}
-                      className="rounded border border-border/70 bg-muted/55 px-1.5 py-0.5 text-xs text-muted-foreground"
+                      className="rounded-sm border border-border/70 bg-muted/55 px-1.5 py-0.5 text-xs text-muted-foreground"
                     >
                       {label.name}
                     </span>

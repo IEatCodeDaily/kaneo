@@ -10,6 +10,7 @@ import type {
   DataTableRowTarget,
   DataTableSummary,
   DataTableTarget,
+  TicketRef,
   UpdateDataTableFieldInput,
   UpdateDataTableInput,
   UpsertDataTableCellInput,
@@ -52,6 +53,16 @@ export const getTableRowPage = (
 ) =>
   request<DataTable>(
     `${base(organizationId)}/${encodeURIComponent(tableId)}?offset=${offset}`,
+  );
+
+/** Ticket picker options for one ticket field (board scope applied server-side). */
+export const getTicketOptions = (
+  { organizationId, tableId }: DataTableTarget,
+  fieldId: string,
+  q: string,
+) =>
+  request<TicketRef[]>(
+    `${tablePath({ organizationId, tableId })}/fields/${encodeURIComponent(fieldId)}/tickets?q=${encodeURIComponent(q)}`,
   );
 
 export const createDataTable = ({
@@ -174,7 +185,7 @@ export const upsertDataTableCell = ({
   fieldId,
   value,
 }: UpsertDataTableCellInput) =>
-  request<DataTableRow>(
+  request<DataTableRow & { tickets?: Record<string, TicketRef> }>(
     `${tablePath({ organizationId, tableId })}/rows/${encodeURIComponent(rowId)}/cells/${encodeURIComponent(fieldId)}`,
     { method: "PUT", body: JSON.stringify({ value }) },
   );

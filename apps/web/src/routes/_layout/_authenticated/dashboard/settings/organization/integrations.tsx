@@ -16,7 +16,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:integrations.title")} />
       <div className="max-w-3xl space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:integrations.title")}
           </h1>
           <p className="text-muted-foreground">

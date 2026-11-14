@@ -130,7 +130,7 @@ function RouteComponent() {
       <div className="mx-auto max-w-4xl space-y-8">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">Ticket templates</h1>
+            <h1 className="text-xl font-semibold">Ticket templates</h1>
             <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Beta
             </span>

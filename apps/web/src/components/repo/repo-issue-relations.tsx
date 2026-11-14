@@ -164,7 +164,7 @@ export default function RepoIssueRelations({
                 {filtered.length ? (
                   filtered.map((issue) => (
                     <button
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
                       key={issue.number}
                       onClick={() => add.mutate(issue.number)}
                       type="button"

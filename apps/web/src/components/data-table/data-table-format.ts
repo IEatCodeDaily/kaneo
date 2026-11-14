@@ -22,6 +22,7 @@ export const EDITABLE_FIELD_TYPES: DataTableFieldType[] = [
   "url",
   "email",
   "json",
+  "ticket",
 ];
 
 export const FIELD_TYPE_LABEL_KEYS: Record<DataTableFieldType, string> = {
@@ -40,6 +41,7 @@ export const FIELD_TYPE_LABEL_KEYS: Record<DataTableFieldType, string> = {
   email: "navigation:tables.typeEmail",
   json: "navigation:tables.typeJson",
   link: "navigation:tables.typeLink",
+  ticket: "navigation:tables.typeTicket",
 };
 
 export const ROW_NUMBER_COLUMN_WIDTH = 44;
@@ -60,6 +62,7 @@ const FIELD_WIDTHS: Record<DataTableFieldType, number> = {
   email: 200,
   json: 220,
   link: 110,
+  ticket: 260,
 };
 
 export const fieldWidth = (type: DataTableFieldType) => FIELD_WIDTHS[type];
@@ -292,6 +295,7 @@ export function defaultFilterFor(field: DataTableField): DataTableFilter {
       case "select":
       case "multiselect":
       case "user":
+      case "ticket":
         return { fieldId: field.id, choiceId: "" };
       default:
         return { fieldId: field.id, contains: "" };
@@ -346,7 +350,8 @@ function filterMatches(
       if (choiceId === "__empty__") return asString(raw) === "";
       return asString(raw) === choiceId;
     }
-    case "multiselect": {
+    case "multiselect":
+    case "ticket": {
       const { choiceId } = filter as { choiceId: string };
       if (choiceId === "") return true;
       const selected = asStringArray(raw);
@@ -379,9 +384,15 @@ export function rowMatchesFilters(
 export function sortValue(
   row: DataTableRow,
   field: DataTableField,
+  tickets: Record<string, { key: string }> = {},
 ): string | number | null {
   const raw = row.values[field.id];
   switch (field.type) {
+    case "ticket": {
+      // Arrays fall through asString to "": sort by the first ticket key.
+      const first = asStringArray(raw)[0];
+      return first ? (tickets[first]?.key ?? null) : null;
+    }
     case "number":
     case "percent":
     case "currency":
@@ -412,14 +423,15 @@ export function sortRows(
   rows: DataTableRow[],
   fields: DataTableField[],
   sort: ColumnSort | null,
+  tickets: Record<string, { key: string }> = {},
 ): DataTableRow[] {
   if (!sort) return rows;
   const field = fields.find((item) => item.id === sort.fieldId);
   if (!field) return rows;
   const factor = sort.dir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
-    const left = sortValue(a, field);
-    const right = sortValue(b, field);
+    const left = sortValue(a, field, tickets);
+    const right = sortValue(b, field, tickets);
     if (left === null && right === null) return 0;
     if (left === null) return 1;
     if (right === null) return -1;
@@ -524,6 +536,10 @@ export function optionsForType(
   if (type === "user" && options?.allowTeams) base.allowTeams = true;
   if (type === "link" && options?.targetTableId) {
     base.targetTableId = options.targetTableId;
+  }
+  if (type === "ticket") {
+    if (options?.boardIds?.length) base.boardIds = [...options.boardIds];
+    if (options?.multiple === false) base.multiple = false;
   }
   return base;
 }
@@ -651,4 +667,40 @@ export function summarize(
     default:
       return null;
   }
+}
+
+// Mirrors the API's castExpression (store.ts): which type changes carry any
+// values over. Used only to word the change-type warning honestly.
+const STORAGE: Record<DataTableFieldType, string> = {
+  text: "text",
+  longtext: "text",
+  url: "text",
+  email: "text",
+  select: "text",
+  user: "text",
+  number: "numeric",
+  percent: "numeric",
+  currency: "numeric",
+  date: "date",
+  datetime: "date",
+  checkbox: "boolean",
+  multiselect: "jsonb",
+  json: "jsonb",
+  link: "jsonb",
+  ticket: "ticket",
+};
+
+export function typeChangeKeepsValues(
+  from: DataTableFieldType,
+  to: DataTableFieldType | null,
+): boolean {
+  if (!to) return false;
+  const a = STORAGE[from];
+  const b = STORAGE[to];
+  if (a === "ticket" || b === "ticket") return false;
+  return (
+    a === b ||
+    (a === "text" && b === "numeric") ||
+    (a === "numeric" && b === "text")
+  );
 }

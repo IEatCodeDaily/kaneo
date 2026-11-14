@@ -369,7 +369,7 @@ function BacklogListView({
               <button
                 type="button"
                 onClick={() => setCreateInStatus(sectionId)}
-                className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1 hover:bg-accent rounded-sm text-muted-foreground hover:text-foreground transition-colors"
                 title={t("tasks:backlog.addTask")}
               >
                 <Plus className="w-3 h-3" />

@@ -165,7 +165,7 @@ export function GanttUnscheduledTrack({
       <button
         type="button"
         onClick={onOpenTask}
-        className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded border border-dashed border-border bg-card px-2 text-xs text-muted-foreground"
+        className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded-sm border border-dashed border-border bg-card px-2 text-xs text-muted-foreground"
       >
         {hint}
       </button>
@@ -205,10 +205,10 @@ export function GanttUnscheduledTrack({
               gridColumn: `${draftStartIndex + 1} / ${draftEndIndex + 2}`,
             }}
             className={cn(
-              "relative mx-1 my-1 flex items-center justify-center rounded border border-dashed border-primary/70 bg-primary/25",
+              "relative mx-1 my-1 flex items-center justify-center rounded-sm border border-dashed border-primary/70 bg-primary/25",
             )}
           >
-            <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-xs font-medium tabular-nums text-popover-foreground shadow-md">
+            <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-sm border border-border bg-popover px-1.5 py-0.5 text-xs font-medium tabular-nums text-popover-foreground shadow-md">
               {format(draft.start, "MMM d")}
               {draftDays > 1 ? ` → ${format(draft.end, "MMM d")}` : ""}
             </div>
@@ -220,7 +220,7 @@ export function GanttUnscheduledTrack({
           // The gesture is handled by the wrapper; this stays a real button so
           // the row remains keyboard reachable and screen-reader announced.
           onClick={onOpenTask}
-          className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded border border-dashed border-border bg-card px-2 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted"
+          className="sticky left-0 z-[1] my-1 ml-2 flex h-[calc(100%-0.5rem)] items-center rounded-sm border border-dashed border-border bg-card px-2 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted"
           style={{ width: "max-content" }}
         >
           {hint}

@@ -110,7 +110,7 @@ export default function TicketPage({
         <TaskDetailsSkeleton />
       ) : isError || !ticket ? (
         <div className="flex h-full flex-col items-center justify-center gap-4 px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-sm font-semibold">
             {t("tasks:common.taskNotFound")}
           </h1>
           <p className="text-muted-foreground max-w-md">

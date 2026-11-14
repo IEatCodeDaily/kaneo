@@ -20,7 +20,7 @@ export function FlagBadge({ flag }: FlagBadgeProps) {
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium"
+      className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-medium"
       style={{
         color,
         borderColor: color,

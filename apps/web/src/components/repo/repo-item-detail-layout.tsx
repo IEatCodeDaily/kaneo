@@ -369,7 +369,7 @@ export function RepoItemDetailSkeleton({ kind }: { kind: RepoItemKind }) {
       <Skeleton
         className={cn("mb-5 h-8", REPO_ITEM_COPY[kind].skeletonBackWidth)}
       />
-      <div className="rounded-xl border p-6">
+      <div className="rounded-lg border p-6">
         <Skeleton className="h-8 w-3/4" />
         <Skeleton className="mt-4 h-5 w-1/3" />
         <Skeleton className="mt-10 h-4 w-full" />
@@ -389,7 +389,7 @@ export function RepoItemNotFound({
   const copy = REPO_ITEM_COPY[kind];
   return (
     <main className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-2xl font-semibold">{copy.nounTitle} not found</h1>
+      <h1 className="text-sm font-semibold">{copy.nounTitle} not found</h1>
       <p className="max-w-md text-muted-foreground">
         This {copy.noun} may not exist or is no longer available.
       </p>

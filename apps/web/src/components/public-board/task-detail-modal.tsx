@@ -89,7 +89,7 @@ export function PublicTaskDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPopup className="w-full max-w-4xl max-h-[85vh] p-0">
-        <div className="bg-background border border-border rounded-xl flex flex-col max-h-[85vh] shadow-lg">
+        <div className="bg-background border border-border rounded-lg flex flex-col max-h-[85vh] shadow-lg">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/70 shrink-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <span className="text-sm font-medium text-muted-foreground shrink-0">
@@ -102,7 +102,7 @@ export function PublicTaskDetailModal({
               ) : null}
             </div>
             <DialogClose
-              className="shrink-0 p-1.5 hover:bg-muted rounded transition-colors"
+              className="shrink-0 p-1.5 hover:bg-muted rounded-sm transition-colors"
               render={<button type="button" />}
             >
               <X className="w-4 h-4 text-muted-foreground" />
@@ -111,7 +111,7 @@ export function PublicTaskDetailModal({
 
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
             <div className="space-y-3">
-              <h2 className="pr-8 text-2xl font-semibold leading-tight text-foreground">
+              <h2 className="pr-8 text-xl font-semibold leading-tight text-foreground">
                 {task.title}
               </h2>
 
