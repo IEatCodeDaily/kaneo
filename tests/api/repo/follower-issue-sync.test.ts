@@ -22,6 +22,11 @@ vi.mock("../../../apps/api/src/database", () => ({
   default: {
     select: (...args: unknown[]) => mockSelect(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
+    query: {
+      columnTable: {
+        findFirst: async () => ({ id: "col-done" }),
+      },
+    },
   },
 }));
 
@@ -93,7 +98,7 @@ describe("syncFollowerStatusForIssue (#2)", () => {
     });
 
     expect(updated).toEqual(["task-unsynced"]);
-    expect(setCaptured[0]).toEqual({ status: "done" });
+    expect(setCaptured[0]).toEqual({ status: "done", columnId: "col-done" });
 
     // The follower's own board decides the target column.
     expect(mockResolveTargetStatus).toHaveBeenCalledWith(

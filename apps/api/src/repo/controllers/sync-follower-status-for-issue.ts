@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import db from "../../database";
 import {
+  columnTable,
   repoIssueTable,
   repoTable,
   taskRepoItemLinkTable,
@@ -85,9 +86,17 @@ export async function syncFollowerStatusForIssue({
 
     if (follower.status === targetStatus) continue;
 
+    // Keep column_id in step with status (every status is a row).
+    const targetColumn = await db.query.columnTable.findFirst({
+      where: and(
+        eq(columnTable.boardId, follower.boardId),
+        eq(columnTable.slug, targetStatus),
+      ),
+    });
+
     const [after] = await db
       .update(taskTable)
-      .set({ status: targetStatus })
+      .set({ status: targetStatus, columnId: targetColumn?.id ?? null })
       .where(eq(taskTable.id, follower.taskId))
       .returning();
 

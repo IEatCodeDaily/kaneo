@@ -9,7 +9,10 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { parseMentionIds } from "../../utils/parse-mentions";
-import { assertValidTaskStatus } from "../validate-task-fields";
+import {
+  assertValidTaskStatus,
+  resolveStatusByType,
+} from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
 import ensureTaskFollowers from "./ensure-task-followers";
 import { notifyDescriptionMentions } from "./notify-description-mentions";
@@ -37,7 +40,8 @@ async function createTask({
   description?: string;
   priority?: string;
 }) {
-  const resolvedStatus = status || "to-do";
+  const resolvedStatus =
+    status || (await resolveStatusByType(boardId, "unstarted")) || "to-do";
   const resolvedPriority = priority || "no-priority";
 
   await assertValidTaskStatus(resolvedStatus, boardId);

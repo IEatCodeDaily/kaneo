@@ -828,7 +828,8 @@
 			"moveAllSuccess": "Moved {{count}} tickets to To Do",
 			"noTasksToMove": "No planned tickets to move",
 			"moveAllDialogTitle": "Move all planned tickets?",
-			"noTasksInSection": "No {{section}} tickets"
+			"noTasksInSection": "No {{section}} tickets",
+			"selectAllInSection": "Select all {{section}} tickets"
 		},
 		"labels": {
 			"label": "Labels",
@@ -1139,7 +1140,12 @@
 			"done": "Done",
 			"triage": "Triage",
 			"canceled": "Canceled",
-			"duplicate": "Duplicate"
+			"duplicate": "Duplicate",
+			"sections": {
+				"backlog": "Backlog",
+				"active": "Active",
+				"closed": "Closed"
+			}
 		},
 		"attachment": {
 			"fallbackName": "Attachment",
@@ -1221,8 +1227,7 @@
 			"deleteConfirm": "Delete {{count}} tickets? This action cannot be undone.",
 			"assignError": "Failed to assign tickets",
 			"archive": "Archive tickets",
-			"archiveSuccess": "{{count}} tickets archived",
-			"changeStatusOther": "Other statuses"
+			"archiveSuccess": "{{count}} tickets archived"
 		},
 		"boardClearSearch": "Clear search",
 		"gantt": {
@@ -2144,9 +2149,9 @@
 			"title": "Workflow",
 			"subtitle": "Configure board statuses and automation rules for this board.",
 			"columnsTitle": "Status",
-			"columnsDescription": "Manage the statuses that appear on your board. Drag to reorder and set each status type — Backlog, Triage, Unstarted, Started, Completed, Canceled, Duplicate.",
+			"columnsDescription": "Every status on this board, grouped by type. Add custom statuses to any type, drag to reorder within a type, and use the eye to choose whether a status is a board column or lives on the Backlog page.",
 			"automationTitle": "Automation Rules",
-			"automationDescription": "Map integration events to columns. When an event occurs, the linked ticket moves to the specified column."
+			"automationDescription": "Map integration events to statuses. When an event occurs, the linked ticket moves to the specified status."
 		},
 		"projectWorkflow": {
 			"pageTitle": "Workflow Settings",
@@ -2626,22 +2631,20 @@
 			}
 		},
 		"columnEditor": {
-			"toastIconUpdated": "Column icon updated",
-			"toastCreated": "Column created",
-			"toastRenameError": "Failed to update column",
+			"toastIconUpdated": "Status icon updated",
+			"toastCreated": "Status created",
+			"toastRenameError": "Failed to update status",
 			"searchIconsPlaceholder": "Search icons...",
-			"toastRenamed": "Column renamed",
-			"loading": "Loading columns...",
-			"toastUpdateError": "Failed to update column",
-			"newColumnPlaceholder": "New column name...",
+			"toastRenamed": "Status renamed",
+			"loading": "Loading statuses...",
+			"toastUpdateError": "Failed to update status",
 			"add": "Add",
-			"pickIconTitle": "Pick column icon",
-			"toastDeleted": "Column deleted",
-			"toastCreateError": "Failed to create column",
-			"toastDeleteError": "Failed to delete column",
+			"pickIconTitle": "Pick status icon",
+			"toastDeleted": "Status deleted",
+			"toastCreateError": "Failed to create status",
+			"toastDeleteError": "Failed to delete status",
 			"statusTypeAria": "Type of {{name}}",
 			"statusTypeTooltip": "Classify what this status means",
-			"typeNone": "None",
 			"typeBacklog": "Backlog",
 			"typeTriage": "Triage",
 			"typeUnstarted": "Unstarted",
@@ -2649,7 +2652,16 @@
 			"typeCompleted": "Completed",
 			"typeCanceled": "Canceled",
 			"typeDuplicate": "Duplicate",
-			"toastTypeUpdated": "Status type updated"
+			"toastTypeUpdated": "Status type updated",
+			"addStatus": "Add status",
+			"newStatusPlaceholder": "New {{type}} status name...",
+			"statusNameAria": "Status name",
+			"deleteStatusAria": "Delete {{name}}",
+			"closesTicket": "closes ticket",
+			"showOnBoardAria": "Show {{name}} on the board",
+			"shownOnBoard": "Shown as a board column — click to move it to the Backlog page",
+			"hiddenFromBoard": "On the Backlog page — click to show it as a board column",
+			"toastVisibilityUpdated": "Status visibility updated"
 		},
 		"preferences": "Preferences",
 		"organizationRoles": {

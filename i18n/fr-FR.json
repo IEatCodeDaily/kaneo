@@ -2219,7 +2219,6 @@
 			"toastRenamed": "Colonne renommée",
 			"loading": "Chargement des colonnes...",
 			"toastUpdateError": "Échec de la mise à jour de la colonne",
-			"newColumnPlaceholder": "Nouveau nom de colonne...",
 			"add": "Ajouter",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Colonne supprimée",

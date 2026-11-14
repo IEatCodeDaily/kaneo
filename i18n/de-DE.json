@@ -2220,7 +2220,6 @@
 			"toastRenamed": "Spalte umbenannt",
 			"loading": "Spalten werden geladen...",
 			"toastUpdateError": "Spalte konnte nicht aktualisiert werden",
-			"newColumnPlaceholder": "Neuer Spaltenname...",
 			"add": "Hinzufügen",
 			"pickIconTitle": "Spaltenicon auswählen",
 			"toastDeleted": "Spalte gelöscht",

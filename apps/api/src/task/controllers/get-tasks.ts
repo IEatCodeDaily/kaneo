@@ -29,6 +29,7 @@ import {
   userTable,
 } from "../../database/schema";
 import getTaskFlags from "../../flag/controllers/get-task-flags";
+import { compareStatuses } from "../status-taxonomy";
 
 /** Self-join alias: the parent side of a subtask relation. */
 const parentTask = alias(taskTable, "parent_task");
@@ -392,34 +393,44 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
 
   /*
     #226: archival is orthogonal to status. Archived tasks are excluded from
-    every Kanban column and from Planned — "Archived tickets isn't shown
-    anywhere other than Backlog dropdown" — while KEEPING their real status, so
-    an archived In Progress ticket is still In Progress when restored.
+    every status bucket — "Archived tickets isn't shown anywhere other than
+    Backlog dropdown" — while KEEPING their real status, so an archived In
+    Progress ticket is still In Progress when restored.
   */
   const isArchived = (task: { archivedAt?: Date | null }) =>
     task.archivedAt != null;
 
-  const columns = boardColumns.map((column) => ({
+  /*
+    Every status is a board row. Statuses shown on the board become Kanban
+    lanes (`columns`); the rest (Triage, Planned, Duplicate by default, or any
+    status a board hides) are the Backlog page's sections (`backlogColumns`).
+    Every non-archived ticket lands in exactly one of the two, so no ticket is
+    ever invisible.
+  */
+  const statusBucket = (column: (typeof boardColumns)[number]) => ({
     id: column.slug,
     slug: column.slug,
     name: column.name,
     icon: column.icon,
     isFinal: column.isFinal,
+    statusType: column.statusType,
     tasks: paginatedTasks
       .filter((task) => task.status === column.slug && !isArchived(task))
       .map(withRelations),
-  }));
+  });
+  const orderedColumns = [...boardColumns].sort(compareStatuses);
+  const columns = orderedColumns
+    .filter((column) => column.showOnBoard)
+    .map(statusBucket);
+  const backlogColumns = orderedColumns
+    .filter((column) => !column.showOnBoard)
+    .map(statusBucket);
 
   // The backlog's archived dropdown: the ONLY surface that shows these.
   const archivedTasks = paginatedTasks.filter(isArchived).map(withRelations);
 
-  const plannedTasks = paginatedTasks
-    .filter((task) => task.status === "planned" && !isArchived(task))
-    .map(withRelations);
-
-  const triageTasks = paginatedTasks
-    .filter((task) => task.status === "triage" && !isArchived(task))
-    .map(withRelations);
+  // Every off-board ticket, flat — for views that union "all tickets".
+  const plannedTasks = backlogColumns.flatMap((column) => column.tasks);
 
   return {
     data: {
@@ -433,15 +444,12 @@ async function getTasks(boardId: string, options: GetTasksOptions = {}) {
       defaultAssigneeId: board.defaultAssigneeId,
       defaultAssigneeTeamId: board.defaultAssigneeTeamId,
       orgPrivilege: board.orgPrivilege,
-      taskStatusOrder: board.taskStatusOrder,
-      backlogStatusOrder: board.backlogStatusOrder,
       subtaskDepthLimit: board.subtaskDepthLimit,
       columns,
+      backlogColumns,
 
       archivedTasks,
       plannedTasks,
-      // #226: Triage is a backlog section of its own, above Planned.
-      triageTasks,
     },
     pagination: usePagination
       ? {

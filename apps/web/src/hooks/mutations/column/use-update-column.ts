@@ -11,13 +11,7 @@ export function useUpdateColumn() {
     }: {
       id: string;
       boardId: string;
-      data: {
-        name?: string;
-        icon?: string | null;
-        color?: string | null;
-        isFinal?: boolean;
-        statusType?: string | null;
-      };
+      data: Parameters<typeof updateColumn>[1];
     }) => updateColumn(id, data),
     onSuccess: async (_, variables) => {
       await Promise.all([

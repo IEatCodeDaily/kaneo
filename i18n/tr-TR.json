@@ -2219,7 +2219,6 @@
 			"toastRenamed": "Sütun yeniden adlandırıldı",
 			"loading": "Sütunlar yükleniyor...",
 			"toastUpdateError": "Sütun güncellenemedi",
-			"newColumnPlaceholder": "Yeni sütun adı...",
 			"add": "Ekle",
 			"pickIconTitle": "Sütun simgesi seç",
 			"toastDeleted": "Sütun silindi",

@@ -39,8 +39,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { resolveLabelColor } from "@/constants/label-colors";
-import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
+import {
+  groupStatusesForPicker,
+  pickStatusByType,
+} from "@/constants/task-statuses";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
@@ -49,7 +53,7 @@ import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { getColumnIcon } from "@/lib/column";
 import { getInitials } from "@/lib/get-initials";
-import { getPriorityLabel } from "@/lib/i18n/domain";
+import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { toast } from "@/lib/toast";
 import useBoardStore from "@/store/board";
@@ -86,6 +90,8 @@ function BulkToolbar() {
     [],
   );
   const { board } = useBoardStore();
+  // Every status is a board row (Triage, Planned, Duplicate included).
+  const { data: boardStatuses } = useGetColumns(board?.id ?? "");
   const {
     bulkMoveToBacklog,
     bulkDelete,
@@ -162,7 +168,12 @@ function BulkToolbar() {
 
   const handleMoveToBacklog = useCallback(async () => {
     try {
-      await bulkMoveToBacklog(Array.from(selectedTaskIds));
+      const backlogStatus = pickStatusByType(boardStatuses ?? [], "backlog");
+      if (!backlogStatus) return;
+      await bulkMoveToBacklog({
+        taskIds: Array.from(selectedTaskIds),
+        status: backlogStatus.slug,
+      });
       toast.success(
         t("tasks:bulk.moveToBacklogSuccess", { count: selectedCount }),
       );
@@ -170,7 +181,14 @@ function BulkToolbar() {
     } catch (_error) {
       toast.error(t("tasks:bulk.moveToBacklogError"));
     }
-  }, [bulkMoveToBacklog, selectedTaskIds, selectedCount, clearSelection, t]);
+  }, [
+    boardStatuses,
+    bulkMoveToBacklog,
+    selectedTaskIds,
+    selectedCount,
+    clearSelection,
+    t,
+  ]);
 
   const handleBulkDelete = useCallback(async () => {
     if (!confirm(t("tasks:bulk.deleteConfirm", { count: selectedCount }))) {
@@ -324,32 +342,20 @@ function BulkToolbar() {
           },
         ],
       });
-      groups.push({
-        value: "status",
-        label: t("tasks:bulk.changeStatus"),
-        items: (board?.columns ?? []).map((col) => ({
-          value: `status-${col.id}`,
-          label: col.name,
-          icon: getColumnIcon(col.id, col.isFinal, col.icon),
-          onRun: () => {
-            void handleBulkChangeStatus(col.id);
-          },
-        })),
-      });
-      groups.push({
-        value: "status-other",
-        label: t("tasks:bulk.changeStatusOther"),
-        items: NON_COLUMN_STATUS_DEFINITIONS.map((status) => ({
-          value: `status-${status.slug}`,
-          label: t(`tasks:status.${status.slug}`, {
-            defaultValue: status.name,
-          }),
-          icon: getColumnIcon(status.slug, status.isClosed),
-          onRun: () => {
-            void handleBulkChangeStatus(status.slug);
-          },
-        })),
-      });
+      for (const section of groupStatusesForPicker(boardStatuses ?? [])) {
+        groups.push({
+          value: `status-${section.id}`,
+          label: `${t("tasks:bulk.changeStatus")} · ${t(`tasks:status.sections.${section.id}`)}`,
+          items: section.statuses.map((col) => ({
+            value: `status-${col.slug}`,
+            label: getStatusDisplayLabel(col.slug, col.name),
+            icon: getColumnIcon(col.slug, col.isFinal, col.icon),
+            onRun: () => {
+              void handleBulkChangeStatus(col.slug);
+            },
+          })),
+        });
+      }
     }
     if (canAssign) {
       groups.push({
@@ -424,7 +430,7 @@ function BulkToolbar() {
   }, [
     canEdit,
     canAssign,
-    board?.columns,
+    boardStatuses,
     organizationMembers?.members,
     uniqueLabels,
     handleBulkDelete,

@@ -876,7 +876,6 @@
 			"loading": "正在加载列…",
 			"pickIconTitle": "选择列图标",
 			"searchIconsPlaceholder": "搜索图标…",
-			"newColumnPlaceholder": "新列名称…",
 			"add": "添加"
 		},
 		"githubIntegration": {

@@ -2279,7 +2279,6 @@
 			"toastRenamed": "Колонка переименована",
 			"loading": "Загрузка колонок...",
 			"toastUpdateError": "Не удалось обновить колонку",
-			"newColumnPlaceholder": "Название новой колонки...",
 			"add": "Добавить",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Колонка удалена",

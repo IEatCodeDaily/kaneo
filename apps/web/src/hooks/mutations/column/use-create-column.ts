@@ -10,7 +10,7 @@ export function useCreateColumn() {
       data,
     }: {
       boardId: string;
-      data: { name: string; icon?: string; color?: string; isFinal?: boolean };
+      data: Parameters<typeof createColumn>[1];
     }) => createColumn(boardId, data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ refetchType: "all" });

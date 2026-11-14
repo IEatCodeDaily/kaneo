@@ -64,6 +64,10 @@ async function seed(api) {
     ["Supplier audit notes", "done", "no-priority"],
     // A ticket parked in the seeded Canceled lane: exercises the closed lane.
     ["Warranty claim intake", "canceled", "medium"],
+    // Off-board statuses are real rows now: these land on the Backlog page.
+    ["Spare-parts reorder threshold", "planned", "low"],
+    ["Customer report: odd pump noise", "triage", "high"],
+    ["Same as filter housing leak", "duplicate", "no-priority"],
   ])
     await post(`/task/${board.id}`, {
       title,
@@ -125,9 +129,10 @@ let pages = {
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
   settings: "/dashboard/settings/account/authentication",
-  // 2026-11 status vocabulary: the board's Status settings (renamed from
-  // Columns) with the status-type selector.
+  // Status model: Status settings grouped by type, and the Backlog page whose
+  // sections are the board's off-board statuses.
   workflow: `/dashboard/settings/boards/${board.id}/workflow`,
+  backlog: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/backlog`,
 };
 if (PAGES.length)
   pages = Object.fromEntries(
@@ -547,9 +552,10 @@ if (pages.table) {
   await ctx.close();
 }
 
-// 2026-11 status vocabulary: the ticket status popover open on the board,
-// showing the non-column statuses (Planned, Triage, Canceled, Duplicate)
-// below the divider — Canceled is now explicitly settable everywhere.
+// Ticket status model: every status is a typed board row. One context checks
+// the board (lanes = shown statuses only), the open picker (the board's full
+// status list, grouped), the Backlog page (sections = off-board statuses) and
+// Status settings (one group per type) — the model end to end.
 {
   const ctx = await browser.newContext({
     viewport: { width: 1440, height: 900 },
@@ -560,31 +566,116 @@ if (pages.table) {
   const page = await ctx.newPage();
   const fails = [];
   page.on("pageerror", (e) => fails.push(String(e)));
-  await page.goto(BASE + (pages.board ?? Object.values(pages)[0]), {
-    waitUntil: "networkidle",
-  });
-  await page.waitForTimeout(1200);
+  const boardPath = `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/board`;
+  const m = {};
   try {
+    await page.goto(BASE + boardPath, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    m.board_text_has_duplicate_ticket = await page
+      .getByText("Same as filter housing leak")
+      .count();
     await page.getByText("QC retry policy for failed batches").first().click();
     await page.getByTestId("task-status-trigger").click();
-    await page.getByTestId("status-divider").waitFor({ timeout: 5000 });
+    await page.getByTestId("status-section-closed").waitFor({ timeout: 5000 });
+    m.picker = await page.evaluate(() => {
+      const popup = document.querySelector('[data-slot="popover-popup"]');
+      const text = popup?.textContent ?? "";
+      return {
+        sections: ["backlog", "active", "closed"].filter((id) =>
+          popup?.querySelector(`[data-testid="status-section-${id}"]`),
+        ),
+        has: [
+          "Triage",
+          "Planned",
+          "To Do",
+          "In Review",
+          "Done",
+          "Canceled",
+          "Duplicate",
+        ].filter((label) => text.includes(label)),
+        archive: Boolean(
+          popup?.querySelector('[data-testid="task-archive-action"]'),
+        ),
+      };
+    });
+    await page.screenshot({
+      path: join(OUT, "status-popover--desktop-dark.png"),
+    });
   } catch (e) {
-    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    fails.push(`board/picker interaction failed: ${String(e).split("\n")[0]}`);
   }
-  const m = await page.evaluate(() => {
-    const text = document.body.innerText;
-    return {
-      canceled: text.includes("Canceled"),
-      duplicate: text.includes("Duplicate"),
-      planned: text.includes("Planned"),
-      triage: text.includes("Triage"),
-    };
-  });
-  for (const key of ["canceled", "duplicate", "planned", "triage"]) {
-    if (m[key] !== true) fails.push(`${key} missing from open popover`);
+  if (m.board_text_has_duplicate_ticket)
+    fails.push(
+      "Duplicate ticket rendered on the board (Duplicate is off-board by default)",
+    );
+  if (m.picker?.sections?.length !== 3)
+    fails.push(
+      `picker sections ${JSON.stringify(m.picker?.sections)}, want backlog/active/closed`,
+    );
+  if (m.picker?.has?.length !== 7)
+    fails.push(
+      `picker statuses ${JSON.stringify(m.picker?.has)}, want all 7 seeded labels`,
+    );
+  if (!m.picker?.archive)
+    fails.push("Archive action missing from its own section");
+
+  try {
+    await page.goto(BASE + boardPath.replace(/\/board$/, "/backlog"), {
+      waitUntil: "networkidle",
+    });
+    await page.waitForTimeout(1200);
+    m.backlog = await page.evaluate(() => ({
+      sections: [
+        ...document.querySelectorAll('[data-testid^="backlog-section-"]'),
+      ].map((el) =>
+        el.getAttribute("data-testid")?.replace("backlog-section-", ""),
+      ),
+      text: document.body.innerText.includes("Spare-parts reorder threshold"),
+    }));
+    await page.screenshot({
+      path: join(OUT, "status-backlog--desktop-dark.png"),
+    });
+
+    await page.goto(BASE + `/dashboard/settings/boards/${board.id}/workflow`, {
+      waitUntil: "networkidle",
+    });
+    await page.waitForTimeout(1200);
+    m.settings_groups = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-testid^="status-group-"]')].map(
+        (el) => el.getAttribute("data-testid")?.replace("status-group-", ""),
+      ),
+    );
+    await page.screenshot({
+      path: join(OUT, "status-settings--desktop-dark.png"),
+      fullPage: true,
+    });
+  } catch (e) {
+    fails.push(
+      `backlog/settings interaction failed: ${String(e).split("\n")[0]}`,
+    );
   }
-  const shot = "status-popover--desktop-dark.png";
-  await page.screenshot({ path: join(OUT, shot) });
+  const wantBacklog = ["triage", "planned", "duplicate", "archived"];
+  if (JSON.stringify(m.backlog?.sections) !== JSON.stringify(wantBacklog))
+    fails.push(
+      `backlog sections ${JSON.stringify(m.backlog?.sections)}, want ${JSON.stringify(wantBacklog)}`,
+    );
+  if (!m.backlog?.text)
+    fails.push("Planned ticket missing from the Backlog page");
+  const wantGroups = [
+    "triage",
+    "backlog",
+    "unstarted",
+    "started",
+    "completed",
+    "canceled",
+    "duplicate",
+  ];
+  if (JSON.stringify(m.settings_groups) !== JSON.stringify(wantGroups))
+    fails.push(
+      `settings groups ${JSON.stringify(m.settings_groups)}, want ${JSON.stringify(wantGroups)}`,
+    );
+
+  const shot = "status-model--desktop-dark.png";
   checks[shot] = { fails, ...m };
   console.log(
     `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,

@@ -3,7 +3,6 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
-import { VIRTUAL_STATUSES } from "../validate-task-fields";
 
 type TaskOrderUpdate = {
   id: string;
@@ -19,7 +18,6 @@ export function taskStatusColumnIds(
     statuses.set(column.id, column.id);
     statuses.set(column.slug, column.id);
   }
-  for (const status of VIRTUAL_STATUSES) statuses.set(status, null);
   return statuses;
 }
 

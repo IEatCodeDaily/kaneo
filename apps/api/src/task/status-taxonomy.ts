@@ -1,229 +1,34 @@
 /**
- * #226: the task status taxonomy.
+ * The ticket status model (2026-11, docs/plans/2026-11-14-ticket-status-model.md).
  *
- * ## Why this file exists
+ * ## One rule
  *
- * Status slugs are a PERSISTENCE CONTRACT — 1,741 rows already store them. So the
- * pre-existing slugs (`to-do`, `in-progress`, `in-review`, `done`, `planned`) are
- * frozen: never rename one, never re-point one at a different meaning. New states
- * are APPENDED. `status-taxonomy.test.ts` pins this and will fail if anyone
- * "tidies" it.
+ * A status is a `column` row on its board. Its `status_type` decides where it
+ * appears and how it behaves. There are no hardcoded statuses: Planned, Triage
+ * and Duplicate are seeded rows exactly like To Do and Done, so every board can
+ * rename, re-icon, hide, add to or reorder them.
  *
- * ## Archive is NOT a status (ticket correction)
+ * ## Slugs are a persistence contract
  *
- * > "correction, do not remove Archived. Archive is a separate status to hide it
- * > from all views. Archived item retains its status."
+ * `task.status` stores the row's slug. Seeded slugs (`to-do`, `in-progress`,
+ * `in-review`, `done`, `planned`, `triage`, `canceled`, `duplicate`) are frozen:
+ * never rename one, never re-point one at a different meaning.
  *
- * Archival previously overwrote `status` with `"archived"`, destroying the real
- * workflow state. It is now `task.archived_at` (migration 0062) — orthogonal to
- * status, so an archived ticket keeps being In Progress / Done / whatever.
- * `"archived"` therefore does NOT appear below.
+ * ## Labels never change (owner direction)
  *
- * ## Groups come from the ticket verbatim
+ * The seven TYPE names below are classifications, not display names. A board's
+ * backlog-type default is still labelled "Planned".
  *
- *   Unstarted: To Do
- *   Started:   In Progress, In Review
- *   Finished:  Done
- *   Backlog:   Planned, Triage      ← "Triage is similar to Planned. by default
- *                                      it's above planned."
- *   Cancelled: Canceled
- *   Duplicate: Duplicate
+ * ## Archive is NOT a status
  *
- * ## Display vocabulary (2026-11 owner direction)
- *
- * Labels DO NOT change (To Do / In Progress / In Review / Done / Planned stay).
- * The owner's list — Backlog, Triage, Unstarted, Started, Completed, Canceled,
- * Duplicate — classifies the TYPE of a status (board column), not its name.
- * In Review is not in that list: it stays a valid slug (rows/boards referencing
- * it keep working) but is no longer seeded onto new boards — legacy surface
- * only, typed as `started`.
+ * Archival is `task.archived_at` (migration 0062), orthogonal to status — an
+ * archived ticket keeps its real status. "archived" appears nowhere here.
  */
 
-/** Where a status sits in the product's information architecture. */
-export type StatusGroup =
-  | "unstarted"
-  | "started"
-  | "finished"
-  | "backlog"
-  | "cancelled"
-  | "duplicate";
-
-export type StatusDefinition = {
-  /** Stored in `task.status`. FROZEN for pre-existing values. */
-  slug: string;
-  /** Display name. Safe to change; the slug is the contract. */
-  name: string;
-  group: StatusGroup;
-  /**
-   * True when the status means "no longer active work" — Done, Canceled and
-   * Duplicate. Used for progress counts and due-date suppression: a canceled
-   * ticket must not be nagged about being overdue.
-   */
-  isClosed: boolean;
-  /**
-   * True when the status lives in the Backlog surface rather than on the Kanban
-   * board. Backlog statuses have no `column` row.
-   */
-  isBacklog: boolean;
-};
-
-/**
- * Canonical order. Within Backlog, Triage sits ABOVE Planned per the ticket.
- *
- * ⚠️ APPEND-ONLY. Do not reorder to change board layout — per-board ordering is
- * configurable (see `board.status_order`); this is only the default.
- */
-export const STATUS_DEFINITIONS: readonly StatusDefinition[] = [
-  // --- pre-existing slugs: frozen, do not rename or re-point ---
-  {
-    slug: "to-do",
-    name: "To Do",
-    group: "unstarted",
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "in-progress",
-    name: "In Progress",
-    group: "started",
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "in-review",
-    name: "In Review",
-    group: "started",
-    isClosed: false,
-    isBacklog: false,
-  },
-  {
-    slug: "done",
-    name: "Done",
-    group: "finished",
-    isClosed: true,
-    isBacklog: false,
-  },
-  /*
-    #226: "Triage is similar to Planned. by default it's above planned."
-    Triage is listed BEFORE planned so the default backlog order matches the
-    ticket. `planned` keeps its frozen slug and meaning; only ordering changed,
-    and ordering is not persisted per row.
-  */
-  {
-    slug: "triage",
-    name: "Triage",
-    group: "backlog",
-    isClosed: false,
-    isBacklog: true,
-  },
-  {
-    slug: "planned",
-    name: "Planned",
-    group: "backlog",
-    isClosed: false,
-    isBacklog: true,
-  },
-  // --- #226: terminal outcomes ---
-  {
-    slug: "canceled",
-    name: "Canceled",
-    group: "cancelled",
-    isClosed: true,
-    isBacklog: false,
-  },
-  {
-    slug: "duplicate",
-    name: "Duplicate",
-    group: "duplicate",
-    isClosed: true,
-    isBacklog: false,
-  },
-] as const;
-
-/** Every valid status slug, in canonical order. */
-export const STATUS_SLUGS: readonly string[] = STATUS_DEFINITIONS.map(
-  (definition) => definition.slug,
-);
-
-/**
- * Statuses that are NOT Kanban columns: the backlog states plus the terminal
- * Canceled/Duplicate outcomes. These have no `column` row, so validation has to
- * allow them explicitly.
- *
- * Replaces the old `VIRTUAL_STATUSES = ["planned", "archived"]`. `archived` is
- * gone from it because archival is no longer a status at all.
- */
-export const NON_COLUMN_STATUS_SLUGS: readonly string[] =
-  STATUS_DEFINITIONS.filter(
-    (definition) =>
-      definition.isBacklog ||
-      definition.group === "cancelled" ||
-      definition.group === "duplicate",
-  ).map((definition) => definition.slug);
-
-/** Backlog-only statuses, in canonical order (Triage above Planned). */
-export const BACKLOG_STATUS_SLUGS: readonly string[] =
-  STATUS_DEFINITIONS.filter((definition) => definition.isBacklog).map(
-    (definition) => definition.slug,
-  );
-
-/** Statuses meaning "not active work" — Done, Canceled, Duplicate. */
-export const CLOSED_STATUS_SLUGS: readonly string[] = STATUS_DEFINITIONS.filter(
-  (definition) => definition.isClosed,
-).map((definition) => definition.slug);
-
-const DEFINITION_BY_SLUG = new Map(
-  STATUS_DEFINITIONS.map((definition) => [definition.slug, definition]),
-);
-
-export function getStatusDefinition(
-  slug: string,
-): StatusDefinition | undefined {
-  return DEFINITION_BY_SLUG.get(slug);
-}
-
-export function isKnownStatus(slug: string): boolean {
-  return DEFINITION_BY_SLUG.has(slug);
-}
-
-export function isClosedStatus(slug: string): boolean {
-  return DEFINITION_BY_SLUG.get(slug)?.isClosed === true;
-}
-
-export function isBacklogStatus(slug: string): boolean {
-  return DEFINITION_BY_SLUG.get(slug)?.isBacklog === true;
-}
-
-/**
- * Apply a board's configured status order.
- *
- * Unknown slugs in the stored order are ignored (a status could be removed from
- * the vocabulary later), and any status missing from it keeps its canonical
- * position at the end — so a partially-configured board still shows every
- * status instead of silently dropping the ones nobody ordered yet.
- */
-export function applyStatusOrder(
-  slugs: readonly string[],
-  configuredOrder: readonly string[] | null | undefined,
-): string[] {
-  if (!configuredOrder?.length) return [...slugs];
-
-  const present = new Set(slugs);
-  const ordered = configuredOrder.filter((slug) => present.has(slug));
-  const seen = new Set(ordered);
-
-  return [...ordered, ...slugs.filter((slug) => !seen.has(slug))];
-}
-
-/**
- * Status TYPES (2026-11 owner direction). Labels of statuses do not change;
- * every board column carries one of these classifications, chosen in the
- * board's Status settings. Closed types (completed, canceled, duplicate) make
- * a column final; the others are open work types. Null = unclassified.
- */
+/** Status types, in display rank. The order here IS the board/picker order. */
 export const STATUS_TYPES = [
-  "backlog",
   "triage",
+  "backlog",
   "unstarted",
   "started",
   "completed",
@@ -233,11 +38,19 @@ export const STATUS_TYPES = [
 
 export type StatusType = (typeof STATUS_TYPES)[number];
 
+/** Types that close a ticket: progress, reminders, My Tasks, history seal. */
 export const CLOSED_STATUS_TYPES: readonly StatusType[] = [
   "completed",
   "canceled",
   "duplicate",
 ];
+
+export function isStatusType(value: unknown): value is StatusType {
+  return (
+    typeof value === "string" &&
+    (STATUS_TYPES as readonly string[]).includes(value)
+  );
+}
 
 export function isClosedStatusType(statusType: string | null): boolean {
   return (
@@ -246,14 +59,124 @@ export function isClosedStatusType(statusType: string | null): boolean {
   );
 }
 
-/** Default type for a column whose slug is a taxonomy status. */
-export const STATUS_TYPE_BY_SLUG: Record<string, StatusType> = {
-  planned: "backlog",
+/** Rank of a type in display order; unknown sorts last. */
+export function statusTypeRank(statusType: string | null): number {
+  const rank = (STATUS_TYPES as readonly string[]).indexOf(statusType ?? "");
+  return rank === -1 ? STATUS_TYPES.length : rank;
+}
+
+/**
+ * The statuses every board is seeded with. Positions are per type (order
+ * WITHIN a type group). `showOnBoard`: backlog types live on the Backlog page;
+ * Duplicate is picker-only (owner ruling) — boards can flip any of these.
+ */
+export const DEFAULT_STATUSES = [
+  {
+    name: "Triage",
+    slug: "triage",
+    statusType: "triage",
+    position: 0,
+    showOnBoard: false,
+  },
+  {
+    name: "Planned",
+    slug: "planned",
+    statusType: "backlog",
+    position: 0,
+    showOnBoard: false,
+  },
+  {
+    name: "To Do",
+    slug: "to-do",
+    statusType: "unstarted",
+    position: 0,
+    showOnBoard: true,
+  },
+  {
+    name: "In Progress",
+    slug: "in-progress",
+    statusType: "started",
+    position: 0,
+    showOnBoard: true,
+  },
+  {
+    name: "In Review",
+    slug: "in-review",
+    statusType: "started",
+    position: 1,
+    showOnBoard: true,
+  },
+  {
+    name: "Done",
+    slug: "done",
+    statusType: "completed",
+    position: 0,
+    showOnBoard: true,
+  },
+  {
+    name: "Canceled",
+    slug: "canceled",
+    statusType: "canceled",
+    position: 0,
+    showOnBoard: true,
+  },
+  {
+    name: "Duplicate",
+    slug: "duplicate",
+    statusType: "duplicate",
+    position: 0,
+    showOnBoard: false,
+  },
+] as const satisfies readonly {
+  name: string;
+  slug: string;
+  statusType: StatusType;
+  position: number;
+  showOnBoard: boolean;
+}[];
+
+/** Seeded slug for each type — the preferred target of by-type fallbacks. */
+export const DEFAULT_SLUG_BY_TYPE: Record<StatusType, string> = {
   triage: "triage",
-  "to-do": "unstarted",
-  "in-progress": "started",
-  "in-review": "started",
-  done: "completed",
+  backlog: "planned",
+  unstarted: "to-do",
+  started: "in-progress",
+  completed: "done",
   canceled: "canceled",
   duplicate: "duplicate",
 };
+
+/** Default type for a seeded slug (create-column default, tests). */
+export const STATUS_TYPE_BY_SLUG: Record<string, StatusType> =
+  Object.fromEntries(
+    DEFAULT_STATUSES.map((status) => [status.slug, status.statusType]),
+  );
+
+/** Sort comparator: type rank, then position within the type. */
+export function compareStatuses(
+  a: { statusType: string | null; position: number },
+  b: { statusType: string | null; position: number },
+): number {
+  return (
+    statusTypeRank(a.statusType) - statusTypeRank(b.statusType) ||
+    a.position - b.position
+  );
+}
+
+/**
+ * Pick the status a by-type fallback should land on: the type's seeded slug
+ * when the board still has it, else the first row of that type. Every former
+ * hardcoded fallback (`"to-do"`, `"planned"`, `"done"`) routes through here so
+ * a board that replaced a seeded status keeps working.
+ */
+export function pickStatusByType<
+  T extends { slug: string; statusType: string | null; position: number },
+>(statuses: readonly T[], statusType: StatusType): T | undefined {
+  const ofType = statuses
+    .filter((status) => status.statusType === statusType)
+    .sort(compareStatuses);
+  return (
+    ofType.find((status) => status.slug === DEFAULT_SLUG_BY_TYPE[statusType]) ??
+    ofType[0]
+  );
+}

@@ -11,22 +11,23 @@ import type Task from "@/types/task";
  *
  * These helpers are the single source of truth for the two rules that fixes it:
  *   1. an archived ticket KEEPS its real workflow status
- *   2. section membership is decided by `archivedAt`, never by status
+ *   2. section membership is decided by `archivedAt` first, never by a status
+ *      named "archived"
+ *
+ * Backlog sections are the board's off-board statuses (Triage, Planned, any
+ * custom backlog-type status — each a board row) plus Archived. A section id
+ * is therefore a status slug, or `"archived"`.
  */
 
-export type BacklogSection = "planned" | "archived";
+export const ARCHIVED_SECTION = "archived";
+
+export type BacklogSection = string;
 
 type ArchivableTask = Pick<Task, "status"> & { archivedAt?: string | null };
 
-/**
- * Which backlog section a row belongs to.
- *
- * The old code tested `task.status === "planned"`, which mis-classified every
- * archived ticket whose status was not literally "planned" (an archived Done
- * ticket looked like a Planned one) and moved the wrong row on drop.
- */
+/** Which backlog section a row belongs to: Archived wins over its status. */
 export function backlogSectionOf(task: ArchivableTask): BacklogSection {
-  return task.archivedAt ? "archived" : "planned";
+  return task.archivedAt ? ARCHIVED_SECTION : task.status;
 }
 
 export function isArchived(task: ArchivableTask): boolean {
@@ -37,8 +38,8 @@ export function isArchived(task: ArchivableTask): boolean {
  * What crossing a backlog section boundary must persist.
  *
  * Archiving toggles `archived_at` and leaves status alone, so a Done ticket is
- * still Done while archived. Leaving Archived for Planned is the one direction
- * that also sets a status, because Planned is a real status the ticket adopts.
+ * still Done while archived. Dropping into a status section sets that status
+ * (and unarchives) — the section IS a real status the ticket adopts.
  */
 export function sectionCrossPayload({
   task,
@@ -47,8 +48,8 @@ export function sectionCrossPayload({
   task: ArchivableTask;
   targetSection: BacklogSection;
 }): { archived: boolean; status: string } {
-  if (targetSection === "archived") {
+  if (targetSection === ARCHIVED_SECTION) {
     return { archived: true, status: task.status };
   }
-  return { archived: false, status: "planned" };
+  return { archived: false, status: targetSection };
 }

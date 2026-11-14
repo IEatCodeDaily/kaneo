@@ -14,8 +14,6 @@ async function updateBoard({
   description,
   isPublic,
   subtaskDepthLimit,
-  taskStatusOrder,
-  backlogStatusOrder,
   defaultAssigneeId,
   defaultAssigneeTeamId,
 }: UpdateBoardRequest) {
@@ -28,9 +26,6 @@ async function updateBoard({
   };
   if (subtaskDepthLimit !== undefined)
     json.subtaskDepthLimit = subtaskDepthLimit;
-  if (taskStatusOrder !== undefined) json.taskStatusOrder = taskStatusOrder;
-  if (backlogStatusOrder !== undefined)
-    json.backlogStatusOrder = backlogStatusOrder;
   if (defaultAssigneeId !== undefined)
     json.defaultAssigneeId = defaultAssigneeId;
   if (defaultAssigneeTeamId !== undefined)

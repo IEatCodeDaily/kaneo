@@ -54,9 +54,13 @@ async function seedBoard() {
     })
     .returning();
 
-  await db
-    .insert(schema.columnTable)
-    .values({ boardId: board.id, name: "To Do", slug: "to-do", position: 0 });
+  await db.insert(schema.columnTable).values({
+    boardId: board.id,
+    name: "To Do",
+    slug: "to-do",
+    position: 0,
+    statusType: "unstarted",
+  });
 
   return { user, organization, board };
 }

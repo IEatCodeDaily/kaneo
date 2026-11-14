@@ -768,7 +768,7 @@ export function registerMcpTools(
     "list_board_columns",
     {
       description:
-        "List a board's columns. The `slug` of a column is the exact value the `status` argument of create_task, update_task, update_task_status and move_task expects — call this before writing a status rather than guessing. Also returns `isFinal`, which marks columns that count as complete.",
+        "List a board's statuses (every status is a board row, including Triage, Planned and Duplicate). The `slug` of a status is the exact value the `status` argument of create_task, update_task, update_task_status and move_task expects — call this before writing a status rather than guessing. Each row also returns `statusType` (triage, backlog, unstarted, started, completed, canceled, duplicate), `isFinal` (closes the ticket) and `showOnBoard` (Kanban lane vs Backlog page).",
       inputSchema: z.object({ boardId: nonEmptyString }),
     },
     async (args) =>

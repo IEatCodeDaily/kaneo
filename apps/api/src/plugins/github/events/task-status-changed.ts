@@ -1,4 +1,4 @@
-import { isClosedStatus } from "../../../task/status-taxonomy";
+import { isStatusClosed } from "../../../task/validate-task-fields";
 import type { PluginContext, TaskStatusChangedEvent } from "../../types";
 import type { GitHubConfig } from "../config";
 import {
@@ -59,8 +59,11 @@ export async function handleTaskStatusChanged(
       [`status:${event.newStatus}`],
     );
 
-    const wasClosed = isClosedStatus(event.oldStatus);
-    const isClosed = isClosedStatus(event.newStatus);
+    // Closed = the status row's is_final, so custom closed statuses count.
+    const [wasClosed, isClosed] = await Promise.all([
+      isStatusClosed(event.boardId, event.oldStatus),
+      isStatusClosed(event.boardId, event.newStatus),
+    ]);
 
     // #226: Done, Canceled and Duplicate are all terminal outcomes. Moving
     // between terminal outcomes changes labels but must not toggle the issue.
