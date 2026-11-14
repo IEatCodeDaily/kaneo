@@ -4644,6 +4644,15 @@
 						},
 						"done": {
 							"type": "string"
+						},
+						"triage": {
+							"type": "string"
+						},
+						"canceled": {
+							"type": "string"
+						},
+						"duplicate": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -4653,7 +4662,10 @@
 						"in-progress",
 						"archived",
 						"in-review",
-						"done"
+						"done",
+						"triage",
+						"canceled",
+						"duplicate"
 					]
 				},
 				"attachment": {
@@ -4951,6 +4963,9 @@
 						},
 						"archiveSuccess": {
 							"type": "string"
+						},
+						"changeStatusOther": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -4983,7 +4998,8 @@
 						"deleteConfirm",
 						"assignError",
 						"archive",
-						"archiveSuccess"
+						"archiveSuccess",
+						"changeStatusOther"
 					]
 				},
 				"boardClearSearch": {
@@ -10733,9 +10749,6 @@
 						"toastRenameError": {
 							"type": "string"
 						},
-						"on": {
-							"type": "string"
-						},
 						"searchIconsPlaceholder": {
 							"type": "string"
 						},
@@ -10748,13 +10761,7 @@
 						"toastUpdateError": {
 							"type": "string"
 						},
-						"off": {
-							"type": "string"
-						},
 						"newColumnPlaceholder": {
-							"type": "string"
-						},
-						"doneColumn": {
 							"type": "string"
 						},
 						"add": {
@@ -10766,22 +10773,43 @@
 						"toastDeleted": {
 							"type": "string"
 						},
-						"doneColumnTooltip": {
-							"type": "string"
-						},
 						"toastCreateError": {
 							"type": "string"
 						},
 						"toastDeleteError": {
 							"type": "string"
 						},
-						"toastFinalOff": {
+						"statusTypeAria": {
 							"type": "string"
 						},
-						"toastFinalOn": {
+						"statusTypeTooltip": {
 							"type": "string"
 						},
-						"markDoneAria": {
+						"typeNone": {
+							"type": "string"
+						},
+						"typeBacklog": {
+							"type": "string"
+						},
+						"typeTriage": {
+							"type": "string"
+						},
+						"typeUnstarted": {
+							"type": "string"
+						},
+						"typeStarted": {
+							"type": "string"
+						},
+						"typeCompleted": {
+							"type": "string"
+						},
+						"typeCanceled": {
+							"type": "string"
+						},
+						"typeDuplicate": {
+							"type": "string"
+						},
+						"toastTypeUpdated": {
 							"type": "string"
 						}
 					},
@@ -10789,23 +10817,27 @@
 						"toastIconUpdated",
 						"toastCreated",
 						"toastRenameError",
-						"on",
 						"searchIconsPlaceholder",
 						"toastRenamed",
 						"loading",
 						"toastUpdateError",
-						"off",
 						"newColumnPlaceholder",
-						"doneColumn",
 						"add",
 						"pickIconTitle",
 						"toastDeleted",
-						"doneColumnTooltip",
 						"toastCreateError",
 						"toastDeleteError",
-						"toastFinalOff",
-						"toastFinalOn",
-						"markDoneAria"
+						"statusTypeAria",
+						"statusTypeTooltip",
+						"typeNone",
+						"typeBacklog",
+						"typeTriage",
+						"typeUnstarted",
+						"typeStarted",
+						"typeCompleted",
+						"typeCanceled",
+						"typeDuplicate",
+						"toastTypeUpdated"
 					]
 				},
 				"preferences": {

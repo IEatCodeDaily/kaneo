@@ -8,6 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ShortcutNumber } from "@/components/ui/shortcut-number";
+import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useNumberedShortcuts } from "@/hooks/use-numbered-shortcuts";
@@ -90,7 +91,7 @@ export default function SubtaskStatusPopover({
               key={status.value}
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 h-8 px-2 rounded-none first:rounded-t-md last:rounded-b-md"
+              className="w-full justify-start gap-2 h-8 px-2 rounded-none"
               onClick={() => handleStatusChange(status.value)}
             >
               {getColumnIcon(status.value, status.isFinal, status.icon)}
@@ -101,6 +102,26 @@ export default function SubtaskStatusPopover({
                 <Check className="ml-auto h-4 w-4" />
               ) : (
                 <ShortcutNumber number={index + 1} />
+              )}
+            </Button>
+          ))}
+          <div className="my-1 h-px bg-border" />
+          {NON_COLUMN_STATUS_DEFINITIONS.map((status) => (
+            <Button
+              key={status.slug}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 h-8 px-2 rounded-none last:rounded-b-md"
+              onClick={() => handleStatusChange(status.slug)}
+            >
+              {getColumnIcon(status.slug, status.isClosed)}
+              <span className="text-sm">
+                {t(`tasks:status.${status.slug}`, {
+                  defaultValue: status.name,
+                })}
+              </span>
+              {currentStatus === status.slug && (
+                <Check className="ml-auto h-4 w-4" />
               )}
             </Button>
           ))}

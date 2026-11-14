@@ -39,6 +39,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { resolveLabelColor } from "@/constants/label-colors";
+import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
 import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
@@ -332,6 +333,20 @@ function BulkToolbar() {
           icon: getColumnIcon(col.id, col.isFinal, col.icon),
           onRun: () => {
             void handleBulkChangeStatus(col.id);
+          },
+        })),
+      });
+      groups.push({
+        value: "status-other",
+        label: t("tasks:bulk.changeStatusOther"),
+        items: NON_COLUMN_STATUS_DEFINITIONS.map((status) => ({
+          value: `status-${status.slug}`,
+          label: t(`tasks:status.${status.slug}`, {
+            defaultValue: status.name,
+          }),
+          icon: getColumnIcon(status.slug, status.isClosed),
+          onRun: () => {
+            void handleBulkChangeStatus(status.slug);
           },
         })),
       });

@@ -16,6 +16,7 @@ export function useUpdateColumn() {
         icon?: string | null;
         color?: string | null;
         isFinal?: boolean;
+        statusType?: string | null;
       };
     }) => updateColumn(id, data),
     onSuccess: async (_, variables) => {

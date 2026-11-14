@@ -2,10 +2,42 @@ import db from "../../database";
 import { boardTable, columnTable } from "../../database/schema";
 
 export const DEFAULT_PROJECT_COLUMNS = [
-  { name: "To Do", slug: "to-do", position: 0, isFinal: false },
-  { name: "In Progress", slug: "in-progress", position: 1, isFinal: false },
-  { name: "In Review", slug: "in-review", position: 2, isFinal: false },
-  { name: "Done", slug: "done", position: 3, isFinal: true },
+  {
+    name: "To Do",
+    slug: "to-do",
+    position: 0,
+    isFinal: false,
+    statusType: "unstarted",
+  },
+  {
+    name: "In Progress",
+    slug: "in-progress",
+    position: 1,
+    isFinal: false,
+    statusType: "started",
+  },
+  {
+    name: "In Review",
+    slug: "in-review",
+    position: 2,
+    isFinal: false,
+    statusType: "started",
+  },
+  {
+    name: "Done",
+    slug: "done",
+    position: 3,
+    isFinal: true,
+    statusType: "completed",
+  },
+  // The explicit Canceled lane (2026-11 owner direction): closed, like Done.
+  {
+    name: "Canceled",
+    slug: "canceled",
+    position: 4,
+    isFinal: true,
+    statusType: "canceled",
+  },
 ] as const;
 
 async function createBoard(
@@ -45,6 +77,7 @@ async function createBoard(
           slug: col.slug,
           position: col.position,
           isFinal: col.isFinal,
+          ...("statusType" in col ? { statusType: col.statusType } : {}),
         });
       }
     }

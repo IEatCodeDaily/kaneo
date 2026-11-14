@@ -603,6 +603,13 @@
 			"when": 1794245006167,
 			"tag": "0082_tables_pivot",
 			"breakpoints": true
+		},
+		{
+			"idx": 83,
+			"version": "7",
+			"when": 1794580000000,
+			"tag": "0083_status_vocabulary",
+			"breakpoints": true
 		}
 	]
 }

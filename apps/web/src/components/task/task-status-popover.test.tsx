@@ -78,9 +78,7 @@ describe("TaskStatusPopover", () => {
 
     fireEvent.click(screen.getByTestId("task-status-trigger"));
     fireEvent.click(
-      await screen.findByRole("button", {
-        name: /tasks:actions.moveToBacklog/,
-      }),
+      await screen.findByRole("button", { name: /tasks:status.planned/ }),
     );
 
     expect(useGetColumns).toHaveBeenCalledWith("board-1");
@@ -196,16 +194,17 @@ describe("TaskStatusPopover", () => {
       fireEvent.click(screen.getByRole("button", { name: "Status" }));
 
       const backlog = await screen.findByRole("button", {
-        name: /tasks:actions.moveToBacklog/,
+        name: /tasks:status.planned/,
       });
       const archive = screen.getByRole("button", {
         name: /tasks:actions.archive/,
       });
       const divider = screen.getByTestId("status-divider");
+      const archiveDivider = screen.getByTestId("archive-divider");
       const column = screen.getByRole("button", { name: /Ready/ });
 
-      // Order matters: statuses, then the divider, then the two explicit
-      // actions. Presence alone would not catch them being mixed in.
+      // Order matters: statuses, then the divider, then the non-column
+      // statuses, then Archive in its OWN section (it is not a status — #226).
       expect(
         column.compareDocumentPosition(divider) &
           Node.DOCUMENT_POSITION_FOLLOWING,
@@ -215,9 +214,36 @@ describe("TaskStatusPopover", () => {
           Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
       expect(
-        backlog.compareDocumentPosition(archive) &
+        backlog.compareDocumentPosition(archiveDivider) &
           Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
+      expect(
+        archiveDivider.compareDocumentPosition(archive) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it("offers the explicit Canceled status below the divider", async () => {
+      useGetColumns.mockReturnValue({
+        data: columns,
+        isLoading: false,
+        isError: false,
+      });
+      updateTaskStatus.mockClear();
+
+      render(
+        <TaskStatusPopover task={task}>
+          <Button>Status</Button>
+        </TaskStatusPopover>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Status" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: /tasks:status.canceled/ }),
+      );
+
+      expect(updateTaskStatus).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "task-1", status: "canceled" }),
+      );
     });
 
     it("moves the task to the planned status the Backlog view reads", async () => {
@@ -235,9 +261,7 @@ describe("TaskStatusPopover", () => {
       );
       fireEvent.click(screen.getByRole("button", { name: "Status" }));
       fireEvent.click(
-        await screen.findByRole("button", {
-          name: /tasks:actions.moveToBacklog/,
-        }),
+        await screen.findByRole("button", { name: /tasks:status.planned/ }),
       );
 
       expect(updateTaskStatus).toHaveBeenCalledWith(

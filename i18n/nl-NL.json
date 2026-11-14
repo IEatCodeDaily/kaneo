@@ -2195,23 +2195,16 @@
 			"toastIconUpdated": "Column icon updated",
 			"toastCreated": "Kolom aangemaakt",
 			"toastRenameError": "Bijwerken kolom mislukt",
-			"on": "Aan",
 			"searchIconsPlaceholder": "Search icons...",
 			"toastRenamed": "Kolom hernoemd",
 			"loading": "Kolommen laden...",
 			"toastUpdateError": "Bijwerken kolom mislukt",
-			"off": "Uit",
 			"newColumnPlaceholder": "Nieuwe kolomnaam...",
-			"doneColumn": "Gereed-kolom",
 			"add": "Toevoegen",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Kolom verwijderd",
-			"doneColumnTooltip": "Behandel dit als een 'Gereed' kolom",
 			"toastCreateError": "Aanmaken kolom mislukt",
-			"toastDeleteError": "Verwijderen kolom mislukt",
-			"toastFinalOff": "Kolom niet meer gemarkeerd als voltooid-stadium",
-			"toastFinalOn": "Kolom gemarkeerd als voltooid-stadium",
-			"markDoneAria": "Markeer {{name}} als gereed-kolom"
+			"toastDeleteError": "Verwijderen kolom mislukt"
 		},
 		"telegramIntegration": {
 			"validation": {

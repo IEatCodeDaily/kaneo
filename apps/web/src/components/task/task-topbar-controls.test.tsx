@@ -18,7 +18,7 @@ import TaskTopbarControls from "./task-topbar-controls";
 afterEach(cleanup);
 
 describe("TaskTopbarControls", () => {
-  it("leaves milestone and flag to the properties bar", () => {
+  it("shows milestone and flag in the header (2026-11 owner direction)", () => {
     render(
       <TaskTopbarControls
         taskId="task-1"
@@ -27,11 +27,11 @@ describe("TaskTopbarControls", () => {
       />,
     );
     const controls = screen.getByTestId("task-topbar-controls");
-    expect(within(controls).queryByTestId("milestone-control")).toBeNull();
-    expect(within(controls).queryByTestId("flag-control")).toBeNull();
+    expect(within(controls).getByTestId("milestone-control")).toBeTruthy();
+    expect(within(controls).getByTestId("flag-control")).toBeTruthy();
   });
 
-  it("shows the synced issue in the header, not the status bar", () => {
+  it("shows the synced issue in the header, after milestone and flag", () => {
     render(
       <TaskTopbarControls
         taskId="task-1"

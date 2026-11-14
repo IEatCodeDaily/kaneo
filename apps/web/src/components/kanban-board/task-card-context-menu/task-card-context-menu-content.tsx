@@ -12,6 +12,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
+import { NON_COLUMN_STATUS_DEFINITIONS } from "@/constants/task-statuses";
 import { useSetTaskArchived } from "@/hooks/mutations/task/use-set-task-archived";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
@@ -209,6 +210,23 @@ export default function TaskCardContextMenuContent({
               >
                 {getColumnIcon(col.slug, col.isFinal, col.icon)}
                 <span>{col.name}</span>
+              </ContextMenuCheckboxItem>
+            ))}
+            <ContextMenuSeparator />
+            {NON_COLUMN_STATUS_DEFINITIONS.map((status) => (
+              <ContextMenuCheckboxItem
+                key={status.slug}
+                checked={task.status === status.slug}
+                onCheckedChange={() => handleChange("status", status.slug)}
+                closeOnClick
+                className="[&_svg]:text-muted-foreground"
+              >
+                {getColumnIcon(status.slug, status.isClosed)}
+                <span>
+                  {t(`tasks:status.${status.slug}`, {
+                    defaultValue: status.name,
+                  })}
+                </span>
               </ContextMenuCheckboxItem>
             ))}
           </ContextMenuSubContent>

@@ -1136,7 +1136,10 @@
 			"in-progress": "In Progress",
 			"archived": "Archived",
 			"in-review": "In Review",
-			"done": "Done"
+			"done": "Done",
+			"triage": "Triage",
+			"canceled": "Canceled",
+			"duplicate": "Duplicate"
 		},
 		"attachment": {
 			"fallbackName": "Attachment",
@@ -1218,7 +1221,8 @@
 			"deleteConfirm": "Delete {{count}} tickets? This action cannot be undone.",
 			"assignError": "Failed to assign tickets",
 			"archive": "Archive tickets",
-			"archiveSuccess": "{{count}} tickets archived"
+			"archiveSuccess": "{{count}} tickets archived",
+			"changeStatusOther": "Other statuses"
 		},
 		"boardClearSearch": "Clear search",
 		"gantt": {
@@ -2138,9 +2142,9 @@
 		"boardWorkflow": {
 			"pageTitle": "Workflow Settings",
 			"title": "Workflow",
-			"subtitle": "Configure board columns and automation rules for this board.",
-			"columnsTitle": "Columns",
-			"columnsDescription": "Manage the columns that appear on your board. Drag to reorder. Turn on \"Done column\" for stages that represent completed work.",
+			"subtitle": "Configure board statuses and automation rules for this board.",
+			"columnsTitle": "Status",
+			"columnsDescription": "Manage the statuses that appear on your board. Drag to reorder and set each status type — Backlog, Triage, Unstarted, Started, Completed, Canceled, Duplicate.",
 			"automationTitle": "Automation Rules",
 			"automationDescription": "Map integration events to columns. When an event occurs, the linked ticket moves to the specified column."
 		},
@@ -2625,23 +2629,27 @@
 			"toastIconUpdated": "Column icon updated",
 			"toastCreated": "Column created",
 			"toastRenameError": "Failed to update column",
-			"on": "On",
 			"searchIconsPlaceholder": "Search icons...",
 			"toastRenamed": "Column renamed",
 			"loading": "Loading columns...",
 			"toastUpdateError": "Failed to update column",
-			"off": "Off",
 			"newColumnPlaceholder": "New column name...",
-			"doneColumn": "Done column",
 			"add": "Add",
 			"pickIconTitle": "Pick column icon",
 			"toastDeleted": "Column deleted",
-			"doneColumnTooltip": "Treat this as a done column",
 			"toastCreateError": "Failed to create column",
 			"toastDeleteError": "Failed to delete column",
-			"toastFinalOff": "Column unmarked as final",
-			"toastFinalOn": "Column marked as final",
-			"markDoneAria": "Mark {{name}} as done column"
+			"statusTypeAria": "Type of {{name}}",
+			"statusTypeTooltip": "Classify what this status means",
+			"typeNone": "None",
+			"typeBacklog": "Backlog",
+			"typeTriage": "Triage",
+			"typeUnstarted": "Unstarted",
+			"typeStarted": "Started",
+			"typeCompleted": "Completed",
+			"typeCanceled": "Canceled",
+			"typeDuplicate": "Duplicate",
+			"toastTypeUpdated": "Status type updated"
 		},
 		"preferences": "Preferences",
 		"organizationRoles": {

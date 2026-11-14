@@ -5,10 +5,12 @@ import {
   CLOSED_STATUS_SLUGS,
   isBacklogStatus,
   isClosedStatus,
+  isClosedStatusType,
   isKnownStatus,
   NON_COLUMN_STATUS_SLUGS,
   STATUS_DEFINITIONS,
   STATUS_SLUGS,
+  STATUS_TYPE_BY_SLUG,
 } from "../../../apps/api/src/task/status-taxonomy";
 
 /**
@@ -99,6 +101,39 @@ describe("#226 appended statuses", () => {
     expect(CLOSED_STATUS_SLUGS).toContain("duplicate");
     expect(isBacklogStatus("canceled")).toBe(false);
     expect(isBacklogStatus("duplicate")).toBe(false);
+  });
+
+  it("carries the 2026-11 status TYPES (owner direction)", () => {
+    // Labels do NOT change (To Do / In Progress / Done / Planned stay). The
+    // owner's list — Backlog, Triage, Unstarted, Started, Completed, Canceled,
+    // Duplicate — classifies the TYPE of a board column, not its name.
+    const names = new Map(STATUS_DEFINITIONS.map((d) => [d.slug, d.name]));
+    expect(names.get("planned")).toBe("Planned");
+    expect(names.get("triage")).toBe("Triage");
+    expect(names.get("to-do")).toBe("To Do");
+    expect(names.get("in-progress")).toBe("In Progress");
+    expect(names.get("done")).toBe("Done");
+    expect(names.get("canceled")).toBe("Canceled");
+    expect(names.get("duplicate")).toBe("Duplicate");
+  });
+
+  it("maps every taxonomy slug to its status TYPE", () => {
+    // Backlog, Triage, Unstarted, Started, Completed, Canceled, Duplicate —
+    // verbatim from the ticket; closed types imply a final column.
+    expect(STATUS_TYPE_BY_SLUG.planned).toBe("backlog");
+    expect(STATUS_TYPE_BY_SLUG.triage).toBe("triage");
+    expect(STATUS_TYPE_BY_SLUG["to-do"]).toBe("unstarted");
+    expect(STATUS_TYPE_BY_SLUG["in-progress"]).toBe("started");
+    expect(STATUS_TYPE_BY_SLUG["in-review"]).toBe("started");
+    expect(STATUS_TYPE_BY_SLUG.done).toBe("completed");
+    expect(STATUS_TYPE_BY_SLUG.canceled).toBe("canceled");
+    expect(STATUS_TYPE_BY_SLUG.duplicate).toBe("duplicate");
+    expect(isClosedStatusType("completed")).toBe(true);
+    expect(isClosedStatusType("canceled")).toBe(true);
+    expect(isClosedStatusType("duplicate")).toBe(true);
+    expect(isClosedStatusType("started")).toBe(false);
+    expect(isClosedStatusType("backlog")).toBe(false);
+    expect(isClosedStatusType(null)).toBe(false);
   });
 
   it("exposes non-column statuses so validation accepts them without a column row", () => {

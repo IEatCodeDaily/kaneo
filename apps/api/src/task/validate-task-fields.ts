@@ -2,7 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { columnTable } from "../database/schema";
-import { NON_COLUMN_STATUS_SLUGS } from "./status-taxonomy";
+import { NON_COLUMN_STATUS_SLUGS, STATUS_SLUGS } from "./status-taxonomy";
 
 export const VALID_PRIORITIES = [
   "no-priority",
@@ -37,7 +37,10 @@ export async function getValidTaskStatuses(boardId: string): Promise<string[]> {
     .where(eq(columnTable.boardId, boardId))
     .orderBy(asc(columnTable.position));
 
-  return [...columns.map((c) => c.slug), ...VIRTUAL_STATUSES];
+  // The fixed taxonomy is always valid (e.g. legacy `in-review` rows stay
+  // writable on boards that no longer seed that column); custom column slugs
+  // add board-specific statuses on top.
+  return [...STATUS_SLUGS, ...columns.map((c) => c.slug)];
 }
 
 export async function assertValidTaskStatus(

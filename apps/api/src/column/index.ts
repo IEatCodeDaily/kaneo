@@ -60,19 +60,21 @@ const column = new Hono<{
         icon: v.optional(v.string()),
         color: v.optional(v.string()),
         isFinal: v.optional(v.boolean()),
+        statusType: v.optional(v.nullable(v.string())),
       }),
     ),
     organizationAccess.fromBoard("boardId"),
     requireOrganizationPermission({ board: ["update"] }),
     async (c) => {
       const { boardId } = c.req.valid("param");
-      const { name, icon, color, isFinal } = c.req.valid("json");
+      const { name, icon, color, isFinal, statusType } = c.req.valid("json");
       const result = await createColumn({
         boardId,
         name,
         icon,
         color,
         isFinal,
+        statusType,
       });
       return c.json(result);
     },
@@ -136,6 +138,7 @@ const column = new Hono<{
         icon: v.optional(v.nullable(v.string())),
         color: v.optional(v.nullable(v.string())),
         isFinal: v.optional(v.boolean()),
+        statusType: v.optional(v.nullable(v.string())),
       }),
     ),
     organizationAccess.fromColumn("id"),

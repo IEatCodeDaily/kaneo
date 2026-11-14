@@ -962,6 +962,14 @@ export const columnTable = pgTable(
     icon: text("icon"),
     color: text("color"),
     isFinal: boolean("is_final").default(false).notNull(),
+    /**
+     * The status TYPE (2026-11 owner direction): backlog, triage, unstarted,
+     * started, completed, canceled or duplicate. Null = unclassified. Closed
+     * types (completed/canceled/duplicate) imply `isFinal`; `isFinal` stays
+     * the closed-semantics flag every consumer reads (progress, reminders, My
+     * Tasks) and is kept in sync on writes.
+     */
+    statusType: text("status_type"),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
