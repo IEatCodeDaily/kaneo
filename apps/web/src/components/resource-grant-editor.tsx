@@ -177,12 +177,7 @@ export function ResourceGrantEditor({
   return (
     <div className="space-y-4">
       <div>
-<<<<<<< HEAD
-        <h2 className="text-sm font-semibold">Organization access</h2>
-=======
-        <h2 className="text-sm font-semibold">Organization access</h2>
->>>>>>> origin/main
-        <p className="text-xs text-muted-foreground">
+        <h2 className="text-sm font-semibold">Organization access</h2>        <p className="text-xs text-muted-foreground">
           What every organization member can do here by default. Grants below
           give specific people and teams more access on top.
         </p>

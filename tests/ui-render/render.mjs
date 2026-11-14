@@ -339,7 +339,6 @@ for (const [shot, prefs, act] of [
   await ctx.close();
 }
 
-<<<<<<< HEAD
 // Table interaction states (dark desktop), design v3 S2.
 const TABLE_STATES = [
   [
@@ -542,8 +541,6 @@ if (pages.table) {
   );
   await ctx.close();
 }
-=======
->>>>>>> origin/main
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
 const bad = Object.values(checks).reduce((n, c) => n + c.fails.length, 0);

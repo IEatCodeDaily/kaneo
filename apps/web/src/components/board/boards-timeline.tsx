@@ -742,12 +742,7 @@ export default function BoardsTimeline({
                                       title={`${sectionLabel} · ${format(sectionStart, "MMM d")}${sectionEnd > sectionStart ? ` → ${format(sectionEnd, "MMM d, yyyy")}` : ""}`}
                                     >
                                       {sectionSpan > 3 && (
-<<<<<<< HEAD
-                                        <span className="truncate px-1.5 text-xs font-medium text-primary-soft-foreground">
-=======
-                                        <span className="truncate px-1.5 text-xs font-medium text-primary-soft-foreground">
->>>>>>> origin/main
-                                          {format(sectionStart, "MMM d")}
+                                        <span className="truncate px-1.5 text-xs font-medium text-primary-soft-foreground">                                          {format(sectionStart, "MMM d")}
                                           {sectionEnd > sectionStart
                                             ? ` – ${format(sectionEnd, "MMM d")}`
                                             : ""}
@@ -861,12 +856,7 @@ export default function BoardsTimeline({
                                         title={`${task.title} · ${format(taskStart, "MMM d")}${taskEnd > taskStart ? ` → ${format(taskEnd, "MMM d, yyyy")}` : ""}`}
                                       >
                                         {taskSpan > 2 && (
-<<<<<<< HEAD
-                                          <span className="truncate text-xs font-medium text-primary-soft-foreground">
-=======
-                                          <span className="truncate text-xs font-medium text-primary-soft-foreground">
->>>>>>> origin/main
-                                            {format(taskStart, "MMM d")}
+                                          <span className="truncate text-xs font-medium text-primary-soft-foreground">                                            {format(taskStart, "MMM d")}
                                             {taskEnd > taskStart
                                               ? ` – ${format(taskEnd, "MMM d")}`
                                               : ""}

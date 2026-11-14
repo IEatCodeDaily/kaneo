@@ -374,12 +374,7 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
-<<<<<<< HEAD
-            <h2 className="text-sm font-semibold">
-=======
-            <h2 className="text-sm font-semibold">
->>>>>>> origin/main
-              {t("settings:organizationGeneral.organizationInfoTitle")}
+            <h2 className="text-sm font-semibold">              {t("settings:organizationGeneral.organizationInfoTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
               {t("settings:organizationGeneral.organizationInfoSubtitle")}
@@ -577,12 +572,7 @@ function RouteComponent() {
         {isOwner ? (
           <div className="space-y-6">
             <div className="space-y-1">
-<<<<<<< HEAD
-              <h2 className="text-sm font-semibold">
-=======
-              <h2 className="text-sm font-semibold">
->>>>>>> origin/main
-                {t("settings:organizationGeneral.transferOwnership.title", {
+              <h2 className="text-sm font-semibold">                {t("settings:organizationGeneral.transferOwnership.title", {
                   defaultValue: "Transfer ownership",
                 })}
               </h2>
@@ -675,12 +665,7 @@ function RouteComponent() {
         {canDelete && (
           <div className="space-y-6">
             <div className="space-y-1">
-<<<<<<< HEAD
-              <h2 className="text-sm font-semibold">
-=======
-              <h2 className="text-sm font-semibold">
->>>>>>> origin/main
-                {t("settings:organizationGeneral.dangerZone")}
+              <h2 className="text-sm font-semibold">                {t("settings:organizationGeneral.dangerZone")}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {t("settings:organizationGeneral.dangerZoneSubtitle")}
