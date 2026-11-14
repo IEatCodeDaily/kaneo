@@ -81,6 +81,7 @@ describe("API integration: board statuses", () => {
     // A ticket can now be set to the custom status.
     const task = await json("POST", `/api/task/${board.id}`, {
       title: "Parked idea",
+      description: "",
       status: "icebox",
       priority: "low",
     });
