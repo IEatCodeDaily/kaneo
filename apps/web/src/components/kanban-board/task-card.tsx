@@ -205,7 +205,7 @@ export const TaskCardContent = memo(function TaskCardContent({
               }}
             >
               {(showTaskNumbers || task.milestoneName) && (
-                <div className="mb-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground/90">
+                <div className="mb-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                   {showTaskNumbers ? (
                     <span className="shrink-0 font-mono">
                       {boardSlug}-{task.number}
@@ -244,7 +244,7 @@ export const TaskCardContent = memo(function TaskCardContent({
 
               <div className="mb-2.5 pr-6">
                 <div
-                  className="overflow-hidden break-words text-sm leading-5 font-medium text-foreground/95"
+                  className="overflow-hidden break-words text-sm leading-5 font-medium text-foreground"
                   style={{
                     display: "-webkit-box",
                     WebkitLineClamp: 3,
@@ -271,7 +271,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                 <TaskResourceIndicators task={task} />
                 <TodoProgressBadge description={task.description} />
                 {showPriority && (
-                  <span className="inline-flex items-center gap-1 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground">
                     {getPriorityIcon(task.priority ?? "")}
                   </span>
                 )}
@@ -296,7 +296,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                           e.stopPropagation();
                           window.open(pullRequests[0].url, "_blank");
                         }}
-                        className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
+                        className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
                       >
                         {getPRInfo(pullRequests[0]).icon}
                         <span>#{pullRequests[0].externalId}</span>
@@ -312,7 +312,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           {getPRInfo(pullRequests[0]).icon}
                           <span>{getPRInfo(pullRequests[0]).status}</span>
-                          <span className="text-muted-foreground/50">•</span>
+                          <span className="text-faint-foreground">•</span>
                           <span>#{pullRequests[0].externalId}</span>
                         </div>
                         <p className="text-sm font-medium leading-snug">
@@ -346,7 +346,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 rounded border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
+                            className="inline-flex items-center gap-1.5 rounded-sm border border-border/70 bg-muted/55 px-2 py-1 text-xs font-medium text-muted-foreground"
                           >
                             <GitPullRequest
                               className={`h-3 w-3 ${iconColor}`}
@@ -378,7 +378,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                                 <button
                                   type="button"
                                   onClick={() => window.open(pr.url, "_blank")}
-                                  className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded transition-colors"
+                                  className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded-sm transition-colors"
                                 >
                                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                     {prInfo.icon}

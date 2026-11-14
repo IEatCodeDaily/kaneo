@@ -163,7 +163,7 @@ export default function BoardLayout({
           <div className="flex min-w-0 items-center gap-2">
             <div className="hidden min-w-0 items-center gap-1 md:flex">
               <OrganizationCrumbSelect />
-              <span className="text-foreground/30 text-xs">/</span>
+              <span className="text-faint-foreground text-xs">/</span>
               <BoardCrumbSelect
                 organizationId={organizationId}
                 boardId={boardId}

@@ -150,7 +150,7 @@ export default function TaskStatusPopover({
                 )}
               </span>
             ) : (
-              <Circle className="size-4 text-muted-foreground/60" />
+              <Circle className="size-4 text-faint-foreground" />
             )}
             <span className="truncate text-xs font-semibold">
               {selectedOption

@@ -79,7 +79,7 @@ export default function TaskTemplateMenu({
           {templates.map((template) => (
             <div className="flex items-center" key={template.id}>
               <button
-                className="min-w-0 flex-1 truncate rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                className="min-w-0 flex-1 truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
                 onClick={() => {
                   onApply(template);
                 }}

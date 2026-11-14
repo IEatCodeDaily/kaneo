@@ -195,11 +195,11 @@ export function TeamsManagement({
                 key={n}
               >
                 <div className="border-b border-border px-4 py-3">
-                  <div className="h-4 w-32 rounded bg-muted" />
+                  <div className="h-4 w-32 rounded-sm bg-muted" />
                 </div>
                 <div className="space-y-3 p-4">
-                  <div className="h-7 w-full max-w-sm rounded bg-muted" />
-                  <div className="h-10 w-full rounded bg-muted" />
+                  <div className="h-7 w-full max-w-sm rounded-sm bg-muted" />
+                  <div className="h-10 w-full rounded-sm bg-muted" />
                 </div>
               </div>
             ))}

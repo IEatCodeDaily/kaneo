@@ -25,6 +25,7 @@ describe("updateTaskLabelsInBoard", () => {
           name: "Todo",
           icon: null,
           isFinal: false,
+          statusType: "unstarted",
           tasks: [
             {
               id: "task-1",

@@ -310,14 +310,14 @@ export function TelegramIntegrationSettings({ boardId }: { boardId: string }) {
     return (
       <div className="space-y-4">
         <div className="space-y-4 rounded-md border border-border bg-sidebar p-4">
-          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-          <div className="h-10 w-full animate-pulse rounded bg-muted" />
-          <div className="h-10 w-full animate-pulse rounded bg-muted" />
+          <div className="h-4 w-40 animate-pulse rounded-sm bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-sm bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-sm bg-muted" />
         </div>
         <div className="space-y-4 rounded-md border border-border bg-sidebar p-4">
-          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-          <div className="h-10 w-full animate-pulse rounded bg-muted" />
-          <div className="h-10 w-full animate-pulse rounded bg-muted" />
+          <div className="h-4 w-40 animate-pulse rounded-sm bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-sm bg-muted" />
+          <div className="h-10 w-full animate-pulse rounded-sm bg-muted" />
         </div>
       </div>
     );

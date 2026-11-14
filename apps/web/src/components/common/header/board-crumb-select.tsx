@@ -44,7 +44,7 @@ export default function BoardCrumbSelect({
         <span className="truncate text-left">
           {boardName || t("settings:boardSwitcher.selectBoard")}
         </span>
-        <ChevronsUpDown className="size-3 text-foreground/70" />
+        <ChevronsUpDown className="size-3 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72" align="start">
         <DropdownMenuGroup>

@@ -333,7 +333,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:boardGeneral.pageTitle")} />
       <div className="mx-auto min-w-0 max-w-4xl space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:boardGeneral.title")}
           </h1>
           <p className="text-muted-foreground">

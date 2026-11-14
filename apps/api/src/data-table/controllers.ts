@@ -1,4 +1,14 @@
-import { and, asc, eq, isNull, max, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  max,
+  sql,
+} from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import db from "../database";
@@ -87,6 +97,215 @@ async function listTableFields(tableId: string): Promise<StoreField[]> {
   return (await listTableFieldRows(tableId)).map(toStoreField);
 }
 
+// ── ticket fields ─────────────────────────────────────────────────────────
+// A ticket cell stores task ids. coerceValue checks the shape; ownership
+// (live task in THIS org) needs the org, so it is checked here.
+
+export type TicketRef = {
+  id: string;
+  key: string;
+  title: string;
+  status: string;
+  boardId: string;
+  boardSlug: string;
+};
+
+const ticketColumns = {
+  id: taskTable.id,
+  number: taskTable.number,
+  title: taskTable.title,
+  status: taskTable.status,
+  boardId: boardTable.id,
+  boardSlug: boardTable.slug,
+};
+
+function toTicketRef(row: {
+  id: string;
+  number: number | null;
+  title: string;
+  status: string;
+  boardId: string;
+  boardSlug: string;
+}): TicketRef {
+  return {
+    id: row.id,
+    key: `${row.boardSlug.toUpperCase()}-${row.number ?? "?"}`,
+    title: row.title,
+    status: row.status,
+    boardId: row.boardId,
+    boardSlug: row.boardSlug,
+  };
+}
+
+async function ticketRefs(
+  organizationId: string,
+  ids: string[],
+): Promise<TicketRef[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select(ticketColumns)
+    .from(taskTable)
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
+    .where(
+      and(
+        inArray(taskTable.id, ids),
+        eq(boardTable.organizationId, organizationId),
+        isNull(taskTable.deletedAt),
+      ),
+    );
+  return rows.map(toTicketRef);
+}
+
+const allowedBoards = (field: StoreField) => {
+  const ids = field.options?.boardIds;
+  return Array.isArray(ids) && ids.length > 0 ? (ids as string[]) : null;
+};
+
+/** A ticket field's board restriction may only name this org's boards. */
+async function assertTicketBoards(
+  organizationId: string,
+  type: FieldType,
+  options: Record<string, unknown> | null | undefined,
+) {
+  if (type !== "ticket") return;
+  const boardIds = allowedBoards({ id: "", type, options });
+  if (!boardIds) return;
+  const found = await db
+    .select({ id: boardTable.id })
+    .from(boardTable)
+    .where(
+      and(
+        inArray(boardTable.id, boardIds),
+        eq(boardTable.organizationId, organizationId),
+      ),
+    );
+  if (found.length !== new Set(boardIds).size) {
+    badRequest("Board not found in this organization");
+  }
+}
+
+async function assertTicketValues(
+  organizationId: string,
+  fields: StoreField[],
+  values: Record<string, unknown>,
+  // Ids already in the cell are grandfathered: a ticket deleted after it was
+  // linked must not brick the cell (pickers commit the whole array, and a
+  // stale id renders nowhere, so the user could never remove it).
+  existing: Record<string, unknown> = {},
+) {
+  for (const field of fields) {
+    if (field.type !== "ticket") continue;
+    const value = values[field.id];
+    if (!Array.isArray(value) || value.length === 0) continue;
+    const kept = new Set(
+      Array.isArray(existing[field.id])
+        ? (existing[field.id] as unknown[])
+        : [],
+    );
+    const ids = [
+      ...new Set(
+        value.filter(
+          (id): id is string => typeof id === "string" && !kept.has(id),
+        ),
+      ),
+    ];
+    if (ids.length === 0) continue;
+    const found = await ticketRefs(organizationId, ids);
+    if (found.length !== ids.length) {
+      badRequest("Ticket not found in this organization");
+    }
+    const boards = allowedBoards(field);
+    if (boards && found.some((ref) => !boards.includes(ref.boardId))) {
+      badRequest("Ticket is not on a board this field allows");
+    }
+  }
+}
+
+/** Ticket lookup for every ticket cell in a page of rows (one query). */
+async function ticketsForRows(
+  organizationId: string,
+  fields: StoreField[],
+  rows: { values: Record<string, unknown> }[],
+): Promise<Record<string, TicketRef>> {
+  const ticketFieldIds = fields
+    .filter((field) => field.type === "ticket")
+    .map((field) => field.id);
+  if (ticketFieldIds.length === 0) return {};
+  const ids = new Set<string>();
+  for (const row of rows) {
+    for (const fieldId of ticketFieldIds) {
+      const value = row.values[fieldId];
+      if (Array.isArray(value)) {
+        for (const id of value) if (typeof id === "string") ids.add(id);
+      }
+    }
+  }
+  const refs = await ticketRefs(organizationId, [...ids]);
+  return Object.fromEntries(refs.map((ref) => [ref.id, ref]));
+}
+
+/**
+ * Picker options for one ticket field: live tickets on the boards the field
+ * allows (and the caller can see), newest first. An empty query browses.
+ */
+export async function listTicketOptions(
+  organizationId: string,
+  tableId: string,
+  fieldId: string,
+  userId: string,
+  query = "",
+): Promise<TicketRef[]> {
+  await requireTable(organizationId, tableId);
+  const field = await requireField(tableId, fieldId);
+  if (field.type !== "ticket") badRequest("Not a ticket field");
+  const restricted = allowedBoards({
+    id: field.id,
+    type: "ticket",
+    options: field.options,
+  });
+  const orgBoards = await db
+    .select({ id: boardTable.id })
+    .from(boardTable)
+    .where(
+      and(
+        eq(boardTable.organizationId, organizationId),
+        restricted ? inArray(boardTable.id, restricted) : undefined,
+      ),
+    );
+  const boardIds = await listAccessibleResourceIds({
+    organizationId,
+    resourceType: "board",
+    userId,
+    resourceIds: orgBoards.map((board) => board.id),
+  });
+  if (boardIds.length === 0) return [];
+  const q = query.trim();
+  const key = /^([a-z0-9-]+)-(\d+)$/i.exec(q);
+  const number = /^#?(\d+)$/.exec(q);
+  const match = key
+    ? and(ilike(boardTable.slug, key[1]), eq(taskTable.number, Number(key[2])))
+    : number
+      ? eq(taskTable.number, Number(number[1]))
+      : q
+        ? ilike(taskTable.title, `%${q.replace(/[%_\\]/g, "\\$&")}%`)
+        : undefined;
+  const rows = await db
+    .select(ticketColumns)
+    .from(taskTable)
+    .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
+    .where(
+      and(
+        inArray(taskTable.boardId, boardIds),
+        isNull(taskTable.deletedAt),
+        match,
+      ),
+    )
+    .orderBy(desc(taskTable.createdAt))
+    // ponytail: newest 50; paging when a board outgrows a search-first picker.
+    .limit(50);
+  return rows.map(toTicketRef);
+}
+
 /** Validate an options payload against the registry schema for the type. */
 function parseFieldOptions(
   type: FieldType,
@@ -148,7 +367,8 @@ export async function getDataTable(
     1000,
     offset,
   );
-  return { ...table, fields: fieldRows, rows, total };
+  const tickets = await ticketsForRows(organizationId, fields, rows);
+  return { ...table, fields: fieldRows, rows, total, tickets };
 }
 
 export async function updateDataTable(
@@ -225,6 +445,7 @@ export async function addFieldToTable(
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const options = parseFieldOptions(values.type, values.options);
+  await assertTicketBoards(organizationId, values.type, options);
   let position = values.position;
   if (position === undefined) {
     const [result] = await db
@@ -275,6 +496,7 @@ export async function updateTableField(
     values.options !== undefined
       ? parseFieldOptions(nextType ?? fromType, values.options)
       : undefined;
+  await assertTicketBoards(organizationId, nextType ?? fromType, options);
 
   return db.transaction(async (tx) => {
     if (nextType) {
@@ -321,6 +543,7 @@ export async function addTableRow(
 ) {
   const table = requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
+  await assertTicketValues(organizationId, fields, values ?? {});
   return store.insertRow(db, table.id, fields, values ?? {});
 }
 
@@ -333,7 +556,27 @@ export async function updateTableCell(
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
-  return store.updateCell(db, tableId, fields, rowId, fieldId, value);
+  const field = fields.find((candidate) => candidate.id === fieldId);
+  const current =
+    field?.type === "ticket"
+      ? await store.getRowById(db, tableId, fields, rowId)
+      : null;
+  await assertTicketValues(
+    organizationId,
+    fields,
+    { [fieldId]: value },
+    current?.values,
+  );
+  const row = await store.updateCell(
+    db,
+    tableId,
+    fields,
+    rowId,
+    fieldId,
+    value,
+  );
+  const tickets = await ticketsForRows(organizationId, fields, [row]);
+  return { ...row, tickets };
 }
 
 export async function deleteTableRow(

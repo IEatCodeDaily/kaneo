@@ -475,7 +475,7 @@ export default function PullRequestLiveDetails({
                 className="h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)]"
               >
                 <div className="border-b px-5 py-4 pr-12">
-                  <DialogTitle className="text-base">
+                  <DialogTitle className="text-sm">
                     Pull request diff
                   </DialogTitle>
                   <DialogDescription>

@@ -116,7 +116,7 @@ export function PublicTaskCard({
 
       <div className="flex items-center gap-2">
         {task.priority && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border border-border bg-sidebar text-xs font-medium text-muted-foreground">
             {getPriorityIcon(task.priority ?? "")}
           </span>
         )}

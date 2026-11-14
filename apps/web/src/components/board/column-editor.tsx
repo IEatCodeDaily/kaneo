@@ -235,7 +235,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                 {t(TYPE_LABEL_KEY[type])}
               </h3>
               {CLOSED_TYPES.includes(type) && (
-                <span className="rounded border border-border px-1 text-xs text-muted-foreground">
+                <span className="rounded-sm border border-border px-1 text-xs text-muted-foreground">
                   {t("settings:columnEditor.closesTicket")}
                 </span>
               )}
@@ -424,7 +424,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                     className="h-8 w-[118px] text-xs"
                   >
                     <SelectValue>
-                      {t(TYPE_LABEL_KEY[col.statusType])}
+                      {t(TYPE_LABEL_KEY[col.statusType as StatusType])}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>

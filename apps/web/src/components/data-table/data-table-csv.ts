@@ -2,6 +2,7 @@ import type {
   DataTableField,
   DataTableRow,
   SelectChoice,
+  TicketRef,
 } from "@/types/data-table";
 import { asBool, asNumber, asString } from "./data-table-format";
 
@@ -18,6 +19,7 @@ function cellText(
   raw: unknown,
   choices: Map<string, SelectChoice>,
   memberNames: MemberNameLookup,
+  tickets: Record<string, TicketRef> = {},
 ): string {
   if (raw === null || raw === undefined || raw === "") return "";
   switch (field.type) {
@@ -46,6 +48,12 @@ function cellText(
     }
     case "json":
       return typeof raw === "string" ? raw : JSON.stringify(raw);
+    case "ticket":
+      // Keys, not ids: readable, and what a human types back in.
+      return (Array.isArray(raw) ? raw : [])
+        .map((id) => tickets[asString(id)]?.key ?? "")
+        .filter(Boolean)
+        .join(", ");
     default:
       return asString(raw);
   }
@@ -56,13 +64,22 @@ export function csvSerialize(
   rows: DataTableRow[],
   choices: Map<string, SelectChoice>,
   memberNames: MemberNameLookup,
+  tickets: Record<string, TicketRef> = {},
 ): string {
   const lines = [fields.map((field) => csvCell(field.name)).join(",")];
   for (const row of rows) {
     lines.push(
       fields
         .map((field) =>
-          csvCell(cellText(field, row.values[field.id], choices, memberNames)),
+          csvCell(
+            cellText(
+              field,
+              row.values[field.id],
+              choices,
+              memberNames,
+              tickets,
+            ),
+          ),
         )
         .join(","),
     );

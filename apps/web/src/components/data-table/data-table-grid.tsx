@@ -45,6 +45,7 @@ import {
   sortRows,
   summarize,
   supportsSummary,
+  typeChangeKeepsValues,
   writeDensity,
   writeHiddenFields,
 } from "@/components/data-table/data-table-format";
@@ -55,6 +56,7 @@ import {
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
+import { TicketLookupContext } from "@/components/data-table/ticket-cell";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -111,11 +113,13 @@ import type {
   DataTableFieldType,
   DataTableRow,
   SelectChoice,
+  TicketRef,
 } from "@/types/data-table";
 
 type Props = {
   table: DataTable;
   organizationId: string;
+  organizationSlug: string;
   canEdit: boolean;
   onRename: () => void;
   onDelete: () => void;
@@ -164,6 +168,9 @@ function FieldHeader({
   const unit = currencyUnit(field);
   const numeric = NUMERIC_CELL_TYPES.includes(field.type);
 
+  const [pendingType, setPendingType] = useState<DataTableFieldType | null>(
+    null,
+  );
   const changeType = async (next: DataTableFieldType) => {
     if (next === field.type) return;
     const needsEditor =
@@ -244,7 +251,7 @@ function FieldHeader({
                     ).map((type) => (
                       <DropdownMenuItem
                         key={type}
-                        onClick={() => changeType(type)}
+                        onClick={() => setPendingType(type)}
                       >
                         <FieldTypeIcon type={type} />
                         {t(FIELD_TYPE_LABEL_KEYS[type])}
@@ -295,6 +302,44 @@ function FieldHeader({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <AlertDialog
+        open={pendingType !== null}
+        onOpenChange={(open) => !open && setPendingType(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("navigation:tables.changeTypeTitle", {
+                name: field.name,
+                type: pendingType ? t(FIELD_TYPE_LABEL_KEYS[pendingType]) : "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                typeChangeKeepsValues(field.type, pendingType)
+                  ? "navigation:tables.changeTypeConvert"
+                  : "navigation:tables.changeTypeClears",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+              {t("navigation:tables.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                const next = pendingType;
+                setPendingType(null);
+                if (next) changeType(next);
+              }}
+            >
+              {t("navigation:tables.changeTypeConfirm")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -326,7 +371,7 @@ function BulkSetField({
 }) {
   const { t } = useTranslation();
   const editable = fields.filter(
-    (field) => !["longtext", "link", "json"].includes(field.type),
+    (field) => !["longtext", "link", "json", "ticket"].includes(field.type),
   );
   const [fieldId, setFieldId] = useState<string | null>(
     editable[0]?.id ?? null,
@@ -436,6 +481,7 @@ function BulkSetField({
 export function DataTableGrid({
   table,
   organizationId,
+  organizationSlug,
   canEdit,
   onRename,
   onDelete,
@@ -471,11 +517,30 @@ export function DataTableGrid({
 
   // Row pages fetched through Load-more; reset when a different table loads.
   const [appendedRows, setAppendedRows] = useState<DataTableRow[]>([]);
+  const [appendedTickets, setAppendedTickets] = useState<
+    Record<string, TicketRef>
+  >({});
   const [loadedTableId, setLoadedTableId] = useState(table.id);
   if (loadedTableId !== table.id) {
     setLoadedTableId(table.id);
     setAppendedRows([]);
+    setAppendedTickets({});
   }
+  const ticketLookup = useMemo(
+    () => ({
+      organizationId,
+      organizationSlug,
+      tableId: table.id,
+      tickets: { ...appendedTickets, ...table.tickets },
+    }),
+    [
+      organizationId,
+      organizationSlug,
+      table.id,
+      appendedTickets,
+      table.tickets,
+    ],
+  );
   const allRows = useMemo(
     () => [...rows, ...appendedRows],
     [rows, appendedRows],
@@ -531,8 +596,17 @@ export function DataTableGrid({
         ),
         allFields,
         sort,
+        ticketLookup.tickets,
       ),
-    [allRows, allFields, fieldsById, search, activeFilters, sort],
+    [
+      allRows,
+      allFields,
+      fieldsById,
+      search,
+      activeFilters,
+      sort,
+      ticketLookup.tickets,
+    ],
   );
 
   // Selection never outlives the view: rows filtered/searched/sorted out (or
@@ -699,7 +773,13 @@ export function DataTableGrid({
   }, [memberRows]);
 
   const exportCsv = () => {
-    const csv = csvSerialize(allFields, visibleRows, choicesById, memberByName);
+    const csv = csvSerialize(
+      allFields,
+      visibleRows,
+      choicesById,
+      memberByName,
+      ticketLookup.tickets,
+    );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -710,6 +790,12 @@ export function DataTableGrid({
 
   const importCsv = async (file: File) => {
     const byName = new Map(allFields.map((field) => [field.name, field]));
+    // Ticket cells export as keys; resolve them back through the lookup.
+    // ponytail: only tickets already linked somewhere in this table resolve;
+    // a key lookup endpoint if imports need arbitrary tickets.
+    const ticketIdByKey = new Map(
+      Object.values(ticketLookup.tickets).map((ref) => [ref.key, ref.id]),
+    );
     const parsed = csvParse(await file.text());
     const header = parsed[0] ?? [];
     const columns = header
@@ -761,6 +847,15 @@ export function DataTableGrid({
             } catch {
               values[field.id] = text;
             }
+          } else if (field.type === "ticket") {
+            const ids = text
+              .split(",")
+              .map((key) => ticketIdByKey.get(key.trim().toUpperCase()))
+              .filter(Boolean);
+            if (ids.length > 0) values[field.id] = ids;
+          } else if (field.type === "link") {
+            // Exported as display text; there is no id to recover. Skipping
+            // beats a 400 that drops the whole row.
           } else {
             values[field.id] = text;
           }
@@ -875,7 +970,7 @@ export function DataTableGrid({
     trailing;
 
   return (
-    <>
+    <TicketLookupContext.Provider value={ticketLookup}>
       <Layout.Toolbar>
         <DataTableToolbar
           fields={allFields}
@@ -1477,6 +1572,13 @@ export function DataTableGrid({
                             (row) => !allRows.some((r) => r.id === row.id),
                           ),
                         ]);
+                        if (page.tickets) {
+                          const pageTickets = page.tickets;
+                          setAppendedTickets((current) => ({
+                            ...current,
+                            ...pageTickets,
+                          }));
+                        }
                       } finally {
                         setLoadingMore(false);
                       }
@@ -1593,6 +1695,6 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </TicketLookupContext.Provider>
   );
 }

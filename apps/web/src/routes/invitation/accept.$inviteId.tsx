@@ -160,7 +160,7 @@ function AcceptInvitation() {
             </div>
 
             <div className="space-y-3 text-center">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-sm font-semibold text-foreground">
                 {invitationData.invitation?.expired
                   ? t("auth:invitation.invitationExpired")
                   : t("auth:invitation.invalidTitle")}
@@ -219,7 +219,7 @@ function AcceptInvitation() {
             </div>
 
             <div className="space-y-3 text-center">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-sm font-semibold text-foreground">
                 {t("auth:invitation.joinOrganization", {
                   organizationName: invitation.organizationName,
                 })}
@@ -286,7 +286,7 @@ function AcceptInvitation() {
           </div>
 
           <div className="space-y-3 text-center">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-sm font-semibold text-foreground">
               {t("auth:invitation.joinOrganization", {
                 organizationName: invitation.organizationName,
               })}

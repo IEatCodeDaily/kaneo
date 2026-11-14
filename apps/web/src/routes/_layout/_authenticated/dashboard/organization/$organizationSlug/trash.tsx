@@ -182,7 +182,7 @@ export function TrashPage({ organizationId }: { organizationId: string }) {
               {t("trash:confirmDelete.cancel")}
             </AlertDialogClose>
             <AlertDialogClose
-              className="inline-flex h-8 items-center justify-center rounded-md bg-destructive px-3 text-destructive-foreground text-sm"
+              className="inline-flex h-8 items-center justify-center rounded-md bg-destructive-solid px-3 text-white text-sm"
               onClick={() => {
                 if (pendingDeletion) permanentlyDelete(pendingDeletion.id);
                 setPendingDeletion(null);

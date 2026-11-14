@@ -87,11 +87,11 @@ function ProjectTicketTimeline({
                 ticket={ticket}
               />
               <div
-                className="relative min-h-8 rounded bg-muted"
+                className="relative min-h-8 rounded-sm bg-muted"
                 data-testid={`project-ticket-timeline-rail-${ticket.id}`}
               >
                 <div
-                  className="absolute top-1/2 h-3 -translate-y-1/2 rounded bg-primary"
+                  className="absolute top-1/2 h-3 -translate-y-1/2 rounded-sm bg-primary"
                   data-testid={`project-ticket-timeline-bar-${ticket.id}`}
                   style={{
                     left: `${((Date.parse(ticket.startDate ?? ticket.dueDate ?? "") - minimum) / span) * 100}%`,

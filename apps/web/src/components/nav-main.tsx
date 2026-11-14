@@ -153,7 +153,7 @@ export function NavMain() {
                                 {page.label}
                               </span>
                               {page.detail ? (
-                                <span className="max-w-20 shrink-0 truncate rounded bg-muted px-1 text-xs text-muted-foreground">
+                                <span className="max-w-20 shrink-0 truncate rounded-sm bg-muted px-1 text-xs text-muted-foreground">
                                   {page.detail}
                                 </span>
                               ) : null}

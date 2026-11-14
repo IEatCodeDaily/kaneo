@@ -73,7 +73,7 @@ export default function RepoLayout({
               {repo ? (
                 <a
                   aria-label={`Open ${repoTitle} in a new tab`}
-                  className="truncate text-foreground/75 hover:underline"
+                  className="truncate text-muted-foreground hover:underline"
                   href={repo.url}
                   rel="noopener noreferrer"
                   target="_blank"
@@ -81,7 +81,9 @@ export default function RepoLayout({
                   {repoTitle}
                 </a>
               ) : (
-                <span className="truncate text-foreground/75">{repoTitle}</span>
+                <span className="truncate text-muted-foreground">
+                  {repoTitle}
+                </span>
               )}
             </div>
 

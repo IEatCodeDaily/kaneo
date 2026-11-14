@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-import { Building2, FolderGit2, LayoutGrid, Library, User } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,7 +16,6 @@ type SettingsSectionNavProps = {
 
 type SectionDefinition = {
   id: SettingsSection;
-  icon: LucideIcon;
   labelKey: string;
   fallbackLabel: string;
   /**
@@ -49,28 +46,24 @@ const ORGANIZATION_PAGES = [
 const SECTIONS: SectionDefinition[] = [
   {
     id: "account",
-    icon: User,
     labelKey: "settings:account",
     fallbackLabel: "Account",
     to: "/dashboard/settings/account/information",
   },
   {
     id: "organization",
-    icon: Building2,
     labelKey: "navigation:page.settingsOrganizationTab",
     fallbackLabel: "Organization",
     to: "/dashboard/settings/organization/general",
   },
   {
     id: "boards",
-    icon: LayoutGrid,
     labelKey: "navigation:sidebar.boards",
     fallbackLabel: "Boards",
     to: "/dashboard/settings/boards",
   },
   {
     id: "repos",
-    icon: FolderGit2,
     labelKey: "navigation:sidebar.repos",
     fallbackLabel: "Repos",
     to: "/dashboard/settings/repos",
@@ -78,24 +71,19 @@ const SECTIONS: SectionDefinition[] = [
 ];
 
 function SectionHeader({
-  icon: Icon,
   className,
   children,
 }: {
-  icon: LucideIcon;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
     <p
       className={cn(
-        "flex items-center gap-2 px-2 pb-1.5 font-semibold text-foreground text-sm",
+        "flex h-7 items-end px-2 pb-1 font-medium text-faint-foreground text-xs",
         className,
       )}
     >
-      <span className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden />
-      </span>
       {children}
     </p>
   );
@@ -134,14 +122,14 @@ export default function SettingsSectionNav({
       }}
       className="group/settings"
     >
-      <summary className="flex min-h-11 cursor-pointer items-center rounded-md border px-3 text-sm md:hidden">
+      <summary className="flex min-h-11 cursor-pointer items-center rounded-md border px-3 text-ui md:hidden">
         {t("navigation:page.settingsTitle")}
       </summary>
       <nav
         aria-label={t("navigation:page.settingsTitle")}
         className="flex max-h-[45vh] flex-col gap-0.5 overflow-y-auto md:max-h-none"
       >
-        <SectionHeader icon={Library} className="mt-3">
+        <SectionHeader className="mt-2">
           {t("settings:navigation.boardsAndRepos", {
             defaultValue: "Resources",
           })}
@@ -153,17 +141,16 @@ export default function SettingsSectionNav({
         ).map((section) => {
           const disabled = isDisabled(section.id);
           const active = activeSection === section.id;
-          const Icon = section.icon;
 
           return (
             <button
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled ? "true" : undefined}
               className={cn(
-                "flex min-h-11 w-full items-center gap-2 rounded-md py-1.5 pr-2 pl-8 text-left text-sm transition-colors sm:min-h-8",
+                "flex min-h-11 w-full items-center rounded-md px-2 text-left text-ui transition-colors sm:min-h-7",
                 active
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                  ? "bg-secondary font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 disabled && "pointer-events-none opacity-50",
               )}
               data-active={active ? "true" : undefined}
@@ -176,7 +163,6 @@ export default function SettingsSectionNav({
               }}
               type="button"
             >
-              <Icon className="size-4 shrink-0" />
               <span className="truncate">
                 {t(section.labelKey, { defaultValue: section.fallbackLabel })}
               </span>
@@ -184,11 +170,8 @@ export default function SettingsSectionNav({
           );
         })}
         {(["account", "organization"] as const).map((section) => (
-          <div
-            key={section}
-            className="order-first mt-3 border-b border-border pb-3"
-          >
-            <SectionHeader icon={section === "account" ? User : Building2}>
+          <div key={section} className="order-first mt-2">
+            <SectionHeader>
               {t(
                 section === "account"
                   ? "settings:account"
@@ -213,9 +196,9 @@ export default function SettingsSectionNav({
                     data-active={activeSection === section ? "true" : undefined}
                     onClick={() => onNavigate(to)}
                     className={cn(
-                      "flex min-h-11 w-full items-center rounded-md pr-2 pl-8 text-left text-sm hover:bg-accent hover:text-foreground sm:min-h-8",
+                      "flex min-h-11 w-full items-center rounded-md px-2 text-left text-ui hover:bg-accent hover:text-foreground sm:min-h-7",
                       pathname === to
-                        ? "bg-accent font-medium text-foreground"
+                        ? "bg-secondary font-medium text-foreground"
                         : "text-muted-foreground",
                     )}
                   >

@@ -92,31 +92,27 @@ function DashboardsIndexRoute() {
   };
 
   return (
-    <OrganizationLayout title={t("navigation:dashboards.title")}>
-      <div className="flex h-full min-h-0 flex-col gap-5 overflow-y-auto p-4 sm:p-6">
+    <OrganizationLayout
+      title={t("navigation:dashboards.title")}
+      headerActions={
+        canCreate ? (
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus /> {t("navigation:dashboards.create")}
+          </Button>
+        ) : null
+      }
+    >
+      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-4">
         <PageTitle title={t("navigation:dashboards.title")} hideAppName />
-        <header className="flex shrink-0 items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary-soft-foreground">
-            <ChartPie className="size-5" />
-          </div>
-          <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold tracking-tight">
-            {t("navigation:dashboards.title")}
-          </h1>
-          {canCreate ? (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus /> {t("navigation:dashboards.create")}
-            </Button>
-          ) : null}
-        </header>
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="h-28 animate-pulse rounded-xl border bg-muted/40" />
-            <div className="h-28 animate-pulse rounded-xl border bg-muted/40" />
-            <div className="h-28 animate-pulse rounded-xl border bg-muted/40" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="h-28 animate-pulse rounded-lg border bg-muted/40" />
+            <div className="h-28 animate-pulse rounded-lg border bg-muted/40" />
+            <div className="h-28 animate-pulse rounded-lg border bg-muted/40" />
           </div>
         ) : isError ? (
           <div className="flex flex-1 items-center justify-center">
-            <div className="max-w-sm rounded-xl border bg-card p-8 text-center shadow-sm">
+            <div className="max-w-sm p-8 text-center">
               <AlertCircle className="mx-auto mb-3 size-8 text-destructive" />
               <h2 className="font-semibold">
                 {t("navigation:dashboards.loadError")}
@@ -131,10 +127,10 @@ function DashboardsIndexRoute() {
             </div>
           </div>
         ) : dashboards.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/20 p-8 text-center">
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-center">
             <div>
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-soft-foreground">
-                <ChartPie className="size-6" />
+              <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <ChartPie className="size-4" />
               </div>
               <h2 className="font-semibold">
                 {t("navigation:dashboards.empty")}
@@ -147,7 +143,7 @@ function DashboardsIndexRoute() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {dashboards.map((dashboard) => {
               const detail = details.find(
                 (query) => query.data?.id === dashboard.id,
@@ -155,7 +151,7 @@ function DashboardsIndexRoute() {
               return (
                 <div
                   key={dashboard.id}
-                  className="flex items-center gap-2 rounded-xl border bg-card p-4"
+                  className="group flex items-center gap-2 rounded-lg border bg-card p-3 hover:bg-accent"
                 >
                   <button
                     type="button"

@@ -40,7 +40,7 @@ export function RecentPagesDialog({
               <li key={page.pathname}>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
                   onClick={() => {
                     navigate({ to: page.pathname });
                     onOpenChange(false);
@@ -48,7 +48,7 @@ export function RecentPagesDialog({
                 >
                   <span className="min-w-0 flex-1 truncate">{page.label}</span>
                   {page.detail ? (
-                    <span className="shrink-0 rounded bg-muted px-1 text-xs text-muted-foreground">
+                    <span className="shrink-0 rounded-sm bg-muted px-1 text-xs text-muted-foreground">
                       {page.detail}
                     </span>
                   ) : null}

@@ -11,7 +11,7 @@ export default function TaskLabelsRow({ label, children }: TaskLabelsRowProps) {
       className="flex min-w-0 items-center gap-2 px-2"
       data-testid="task-labels-row"
     >
-      <span className="shrink-0 px-2 text-xs font-medium text-foreground/70">
+      <span className="shrink-0 px-2 text-xs font-medium text-muted-foreground">
         {label}
       </span>
       <div

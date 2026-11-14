@@ -15,6 +15,7 @@ import {
   Mail,
   Percent,
   Square,
+  Ticket,
   Type,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,7 @@ import {
   formatDateValue,
   formatNumberValue,
 } from "./data-table-format";
+import { TicketCellView } from "./ticket-cell";
 
 export type MemberOption = {
   id: string;
@@ -60,6 +62,7 @@ const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   email: Mail,
   json: Braces,
   link: Link2,
+  ticket: Ticket,
 };
 
 export function FieldTypeIcon({
@@ -74,7 +77,7 @@ export function FieldTypeIcon({
 }
 
 function EmptyValue() {
-  return <span className="text-muted-foreground/60">—</span>;
+  return <span className="text-faint-foreground">—</span>;
 }
 
 function chipStyle(color: string): React.CSSProperties {
@@ -284,6 +287,12 @@ export function DataTableCellView({
     }
     case "json":
       return <JsonCell value={value} />;
+    case "ticket":
+      return asStringArray(value).length === 0 ? (
+        <EmptyValue />
+      ) : (
+        <TicketCellView value={value} />
+      );
     case "link": {
       const ids = asStringArray(value);
       if (ids.length === 0) return <EmptyValue />;

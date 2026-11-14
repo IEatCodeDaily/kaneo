@@ -491,11 +491,11 @@ export function InboxComponent() {
               </p>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center gap-1 py-10 text-center">
-                <InboxIcon className="mb-1 size-5 text-muted-foreground/40" />
+                <InboxIcon className="mb-1 size-5 text-faint-foreground" />
                 <p className="text-muted-foreground text-sm">
                   {t("notifications:emptyTitle")}
                 </p>
-                <p className="text-muted-foreground/60 text-xs">
+                <p className="text-faint-foreground text-xs">
                   {t("notifications:emptySubtitle")}
                 </p>
               </div>

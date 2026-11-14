@@ -71,52 +71,48 @@ function SettingsLayout() {
   return (
     <>
       <PageTitle title={t("navigation:page.settingsTitle")} />
-      <div className="flex flex-col gap-4 p-4 bg-sidebar w-full h-full">
-        <div className="flex flex-col gap-4 bg-card h-full border border-border rounded-md p-4 relative overflow-hidden">
-          {/*
-            KFL-188: Back to Dashboard stays TOP LEFT, above the section list,
-            exactly where it was in the tab-strip layout — the request was to
-            restyle the navigation, not to move the escape hatch.
-          */}
-          <div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="min-h-11 sm:min-h-8"
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationSlug",
-                  params: { organizationSlug: organization?.slug ?? "" },
-                })
-              }
-            >
-              <ChevronLeft className=" border border-border rounded-md p-1 size-6" />
-              {t("navigation:page.backToOrganization")}
-            </Button>
-
-            <h1 className="text-2xl font-semibold pl-2 mt-2">
+      {/*
+        #125: settings does not render <Layout> — its section nav takes the
+        app sidebar's slot (Linear-style). design v3: same frame as every
+        page — 240px nav on the sidebar surface, content on the bordered
+        inset with the 44px header; no card nested inside the inset.
+      */}
+      <div className="flex h-svh w-full flex-col bg-sidebar md:flex-row">
+        <aside className="flex shrink-0 flex-col gap-1 overflow-y-auto p-2 md:w-60">
+          {/* KFL-188: Back to the organization stays top-left. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-start"
+            onClick={() =>
+              navigate({
+                to: "/dashboard/organization/$organizationSlug",
+                params: { organizationSlug: organization?.slug ?? "" },
+              })
+            }
+          >
+            <ChevronLeft />
+            {t("navigation:page.backToOrganization")}
+          </Button>
+          <SettingsSectionNav
+            activeSection={activeSection}
+            pathname={location.pathname}
+            hasBoards={(boards?.length ?? 0) > 0}
+            hasRepos={(repos?.length ?? 0) > 0}
+            onNavigate={(to) => navigate({ to })}
+            reposEnabled={organization?.reposEnabled === true}
+          />
+        </aside>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-background md:m-2 md:rounded-lg md:border md:border-border">
+          <header className="flex h-11 shrink-0 items-center border-b border-border px-4 md:px-8">
+            <span className="text-ui font-medium">
               {t("navigation:page.settingsTitle")}
-            </h1>
+            </span>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-8">
+            <Outlet />
           </div>
-
-          {/* One sectioned navigation; child routes own only their content. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-            <aside className="shrink-0 overflow-y-auto md:w-52 md:border-r md:border-border md:pr-3">
-              <SettingsSectionNav
-                activeSection={activeSection}
-                pathname={location.pathname}
-                hasBoards={(boards?.length ?? 0) > 0}
-                hasRepos={(repos?.length ?? 0) > 0}
-                onNavigate={(to) => navigate({ to })}
-                reposEnabled={organization?.reposEnabled === true}
-              />
-            </aside>
-
-            <div className="w-full min-w-0 flex-1 overflow-y-auto">
-              <Outlet />
-            </div>
-          </div>
-        </div>
+        </main>
       </div>
     </>
   );

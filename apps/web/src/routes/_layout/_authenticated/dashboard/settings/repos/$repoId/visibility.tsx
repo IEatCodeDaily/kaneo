@@ -42,7 +42,7 @@ function RepoVisibility() {
       <PageTitle title="Repository visibility" />
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Repository visibility</h1>
+          <h1 className="text-xl font-semibold">Repository visibility</h1>
           <p className="text-muted-foreground">
             Choose which organization members and teams can access this
             repository.

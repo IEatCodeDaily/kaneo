@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useDataTableMutations } from "@/hooks/data-table/use-data-tables";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type {
@@ -28,6 +29,7 @@ import {
   fieldIsRequired,
   makeChoiceId,
   optionsForType,
+  typeChangeKeepsValues,
 } from "./data-table-format";
 
 const CHOICE_PALETTE = [
@@ -76,6 +78,11 @@ export default function FieldOptionsDialog({
   const [max, setMax] = useState("");
   const [code, setCode] = useState("");
   const [required, setRequired] = useState(false);
+  const [boardIds, setBoardIds] = useState<string[]>([]);
+  const [multiple, setMultiple] = useState(true);
+  const { data: boards = [] } = useGetBoards({
+    organizationId: type === "ticket" ? organizationId : "",
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -90,6 +97,8 @@ export default function FieldOptionsDialog({
     setMax(typeof options.max === "number" ? String(options.max) : "");
     setCode(options.code ?? "");
     setRequired(field ? fieldIsRequired(field) : false);
+    setBoardIds(options.boardIds ?? []);
+    setMultiple(options.multiple !== false);
   }, [open, field, initialType]);
 
   const buildOptions = (): DataTableFieldOptions | undefined => {
@@ -109,6 +118,12 @@ export default function FieldOptionsDialog({
     if (type === "currency") {
       if (code.trim() !== "") draft.code = code.trim();
       else delete draft.code;
+    }
+    if (type === "ticket") {
+      if (boardIds.length > 0) draft.boardIds = boardIds;
+      else delete draft.boardIds;
+      if (!multiple) draft.multiple = false;
+      else delete draft.multiple;
     }
     if (required) draft.required = true;
     else delete draft.required;
@@ -309,6 +324,85 @@ export default function FieldOptionsDialog({
             </div>
           )}
 
+          {type === "ticket" && (
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  {t("navigation:tables.ticketBoards")}
+                </p>
+                <div className="flex flex-col gap-1 rounded-lg border p-1">
+                  <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                    <input
+                      type="radio"
+                      name="ticket-scope"
+                      checked={boardIds.length === 0}
+                      onChange={() => setBoardIds([])}
+                    />
+                    {t("navigation:tables.ticketAnyBoard")}
+                  </label>
+                  <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                    <input
+                      type="radio"
+                      name="ticket-scope"
+                      checked={boardIds.length > 0}
+                      onChange={() =>
+                        boardIds.length === 0 &&
+                        boards[0] &&
+                        setBoardIds([boards[0].id])
+                      }
+                    />
+                    {t("navigation:tables.ticketSelectedBoards")}
+                  </label>
+                  {boardIds.length > 0 && (
+                    <div className="flex max-h-36 flex-col overflow-y-auto pl-6">
+                      {boards.map((board) => (
+                        <span
+                          key={board.id}
+                          className="flex h-7 items-center gap-2 text-ui"
+                        >
+                          <Checkbox
+                            checked={boardIds.includes(board.id)}
+                            aria-label={board.name}
+                            onCheckedChange={(checked) =>
+                              setBoardIds((current) =>
+                                checked === true
+                                  ? [...current, board.id]
+                                  : current.filter((id) => id !== board.id),
+                              )
+                            }
+                          />
+                          <span className="min-w-0 truncate">{board.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  {t("navigation:tables.ticketCount")}
+                </p>
+                <div className="flex gap-1">
+                  {[
+                    [true, "navigation:tables.ticketMany"],
+                    [false, "navigation:tables.ticketSingle"],
+                  ].map(([value, label]) => (
+                    <Button
+                      key={String(value)}
+                      type="button"
+                      size="sm"
+                      variant={multiple === value ? "secondary" : "ghost"}
+                      aria-pressed={multiple === value}
+                      onClick={() => setMultiple(value as boolean)}
+                    >
+                      {t(label as string)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {type === "currency" && (
             <Input
               value={code}
@@ -316,6 +410,19 @@ export default function FieldOptionsDialog({
               placeholder={t("navigation:tables.currencyCode")}
               aria-label={t("navigation:tables.currencyCode")}
             />
+          )}
+
+          {field && type !== field.type && (
+            <p
+              role="alert"
+              className="rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive-foreground"
+            >
+              {t(
+                typeChangeKeepsValues(field.type, type)
+                  ? "navigation:tables.changeTypeConvert"
+                  : "navigation:tables.changeTypeClears",
+              )}
+            </p>
           )}
 
           <span className="flex items-center gap-2 text-sm">

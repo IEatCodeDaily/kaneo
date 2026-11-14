@@ -64,7 +64,7 @@ export function StatPanel({ spec, rows, fields }: RendererProps) {
   const value = rows[0]?.value ?? 0;
   return (
     <div className="flex flex-1 items-center">
-      <span className="text-4xl font-semibold tabular-nums">
+      <span className="text-2xl font-semibold tabular-nums">
         {formatMetricValue(
           spec.query.metric.agg,
           findField(fields, spec.query.metric.fieldId),

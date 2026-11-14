@@ -591,7 +591,7 @@ function Activity({
           data-testid="activity-connector"
         />
       )}
-      <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/80">
+      <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground">
         {activityIcon}
       </span>
       <ActorAvatar user={user || null} fallbackName={actorName} />
@@ -626,7 +626,7 @@ function Activity({
                   data-testid="activity-run-toggle"
                   aria-expanded={runExpanded}
                   onClick={() => setRunExpanded((open) => !open)}
-                  className="text-muted-foreground/70 text-xs underline-offset-2 hover:underline"
+                  className="text-faint-foreground text-xs underline-offset-2 hover:underline"
                 >
                   {t("activity:statusRunSteps", {
                     count: group.entries.length,
@@ -644,7 +644,7 @@ function Activity({
             )}
           </span>
           <span
-            className="shrink-0 whitespace-nowrap text-muted-foreground/70 text-xs"
+            className="shrink-0 whitespace-nowrap text-faint-foreground text-xs"
             data-testid="activity-time"
           >
             {formatRelativeTime(activity.createdAt)}
@@ -661,9 +661,7 @@ function Activity({
                 <span className="me-1.5 font-medium text-muted-foreground">
                   {t("flags:dialog.note")}:
                 </span>
-                <span className="text-foreground/90">
-                  {eventData.note.trim()}
-                </span>
+                <span className="text-foreground">{eventData.note.trim()}</span>
               </span>
             </div>
           )}
@@ -678,7 +676,7 @@ function Activity({
                 <span className="me-1.5 font-medium text-muted-foreground">
                   {t("flags:dialog.note")}:
                 </span>
-                <span className="text-foreground/90">
+                <span className="text-foreground">
                   {eventData.resolveNote.trim()}
                 </span>
               </span>
@@ -696,7 +694,7 @@ function Activity({
         {group && isCollapsedRun(group) && runExpanded && (
           <ol
             data-testid="activity-run-steps"
-            className="mt-1 space-y-0.5 border-border/60 border-l pl-3 text-muted-foreground/80 text-xs"
+            className="mt-1 space-y-0.5 border-border/60 border-l pl-3 text-muted-foreground text-xs"
           >
             {group.entries.map((entry) => {
               const data = getEventDataRecord(entry.eventData);
@@ -705,7 +703,7 @@ function Activity({
                   {toDisplayCase(String(data?.oldStatus ?? ""))}
                   {" \u2192 "}
                   {toDisplayCase(String(data?.newStatus ?? ""))}
-                  <span className="ml-2 whitespace-nowrap text-muted-foreground/60">
+                  <span className="ml-2 whitespace-nowrap text-faint-foreground">
                     {formatRelativeTime(entry.createdAt)}
                   </span>
                 </li>

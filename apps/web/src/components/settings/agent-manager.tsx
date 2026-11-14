@@ -137,7 +137,7 @@ export function AgentManager() {
           <p className="text-sm font-medium">
             {t("team:agentManager.secretWarning")}
           </p>
-          <code className="block break-all rounded bg-background/60 p-2 text-xs">
+          <code className="block break-all rounded-sm bg-background/60 p-2 text-xs">
             {secret}
           </code>
           <Button

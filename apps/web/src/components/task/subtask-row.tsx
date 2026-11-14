@@ -84,7 +84,7 @@ export default function SubtaskRow({
             <SubtaskStatusPopover tasks={tasks} boardId={boardId}>
               <button
                 type="button"
-                className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
+                className="shrink-0 flex items-center justify-center rounded-sm p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
               >
                 {getColumnIcon(task.status, false)}
               </button>
@@ -104,7 +104,7 @@ export default function SubtaskRow({
                   </span>
                 )}
                 <span
-                  className={`min-w-0 flex-1 text-sm truncate ${isCompleted ? "line-through text-muted-foreground" : "text-foreground/90"}`}
+                  className={`min-w-0 flex-1 text-sm truncate ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}
                 >
                   {task.title}
                 </span>
@@ -117,7 +117,7 @@ export default function SubtaskRow({
               <button
                 type="button"
                 aria-label={t("tasks:priority.label")}
-                className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
+                className="shrink-0 flex items-center justify-center rounded-sm p-0.5 transition-colors outline-none [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
               >
                 {getPriorityIcon(task.priority ?? "no-priority")}
               </button>
@@ -129,7 +129,7 @@ export default function SubtaskRow({
             >
               <button
                 type="button"
-                className="shrink-0 flex items-center justify-center rounded p-0.5 transition-colors outline-none"
+                className="shrink-0 flex items-center justify-center rounded-sm p-0.5 transition-colors outline-none"
               >
                 {task.userId && assignee ? (
                   <Avatar className={`h-5 w-5 ${getAvatarTone(task.userId)}`}>

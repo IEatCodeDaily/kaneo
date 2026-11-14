@@ -219,7 +219,7 @@ function RouteComponent() {
       <PageTitle title={t("settings:organizationLabels.pageTitle")} />
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-xl font-semibold">
             {t("settings:organizationLabels.title", { defaultValue: "Labels" })}
           </h1>
           <p className="text-muted-foreground">
@@ -233,7 +233,7 @@ function RouteComponent() {
         <CardFrame>
           <Card className="!rounded-none !border-t-0">
             <CardHeader>
-              <CardTitle className="inline-flex items-center gap-2 text-base">
+              <CardTitle className="inline-flex items-center gap-2 text-sm">
                 <Tag className="size-4" />
                 {t("settings:organizationLabels.title", {
                   defaultValue: "Labels",

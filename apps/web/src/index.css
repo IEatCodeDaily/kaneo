@@ -100,6 +100,9 @@ input:-webkit-autofill:active {
   --color-info: var(--info);
   --color-foreground: var(--foreground);
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Solid destructive fill under white text. --destructive is a light tint
+     that colours TEXT (9.9:1 on dark) — white on it is 1.9:1; this is 5.5:1. */
+  --color-destructive-solid: #c4302b;
   --color-destructive: var(--destructive);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
@@ -115,6 +118,8 @@ input:-webkit-autofill:active {
   --radius-md: 6px;
   --radius-lg: 10px;
   --radius-xl: 10px;
+  --radius-2xl: 10px;
+  --radius-3xl: 10px;
   /* design v3 §1.5: dense UI body text */
   --text-ui: 0.8125rem;
   --text-ui--line-height: 1.125rem;
@@ -304,7 +309,9 @@ input:-webkit-autofill:active {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    /* design v3 §1.5: unsized text is reading text (14px), never the
+       browser's 16px default. */
+    @apply bg-background font-sans text-foreground text-sm antialiased;
   }
   h1,
   h2,
