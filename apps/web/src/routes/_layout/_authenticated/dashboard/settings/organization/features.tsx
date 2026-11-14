@@ -120,7 +120,9 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Repos</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">                    Beta
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {" "}
+                    Beta
                   </span>
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">
@@ -146,7 +148,9 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Work</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">                    Alpha
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {" "}
+                    Alpha
                   </span>
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">
@@ -170,7 +174,9 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Tables</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">                    Alpha
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {" "}
+                    Alpha
                   </span>
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">

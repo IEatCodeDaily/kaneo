@@ -313,7 +313,8 @@ function DashboardDetailRoute() {
                     aria-label={t("navigation:dashboards.delete")}
                     className="data-popup-open:bg-secondary"
                   />
-                }              >
+                }
+              >
                 <MoreHorizontal className="size-3.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -332,7 +333,9 @@ function DashboardDetailRoute() {
         {panels.length === 0 ? (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-center">
             <div>
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary-soft-foreground">                <ChartPie className="size-6" />
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary-soft-foreground">
+                {" "}
+                <ChartPie className="size-6" />
               </div>
               <h2 className="text-sm font-semibold">
                 {t("navigation:dashboards.noData")}

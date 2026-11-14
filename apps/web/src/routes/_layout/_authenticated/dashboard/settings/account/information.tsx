@@ -286,7 +286,9 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold">              {t("settings:informationPage.sectionTitle")}
+            <h2 className="text-sm font-semibold">
+              {" "}
+              {t("settings:informationPage.sectionTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
               {t("settings:informationPage.sectionSubtitle")}
@@ -431,7 +433,9 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold">              {t("settings:informationPage.deleteAccount.sectionTitle")}
+            <h2 className="text-sm font-semibold">
+              {" "}
+              {t("settings:informationPage.deleteAccount.sectionTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
               {t("settings:informationPage.deleteAccount.sectionSubtitle")}

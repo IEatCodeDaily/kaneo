@@ -223,7 +223,9 @@ function DataTableRoute() {
       <PageTitle title={table.name} hideAppName />
       {header}
       {/* The scaffold owns padding: no padding or gap on the route root (DS rule 2). */}
-      <div className="flex min-h-0 flex-1 flex-col">        {isDeleted && (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {" "}
+        {isDeleted && (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-primary-soft px-3 py-1.5 text-ui">
             <span className="min-w-0 flex-1">
               {t("navigation:tables.deletedBanner")}
@@ -259,7 +261,6 @@ function DataTableRoute() {
             )}
           </div>
         )}
-
         <Suspense
           fallback={
             <Layout.Toolbar>
@@ -278,7 +279,8 @@ function DataTableRoute() {
             }}
             onDelete={() => setDeleteOpen(true)}
           />
-        </Suspense>      </div>
+        </Suspense>{" "}
+      </div>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
         <DialogContent className="max-w-md">

@@ -256,7 +256,9 @@ function FieldHeader({
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuGroup>            <DropdownMenuItem
+          <DropdownMenuGroup>
+            {" "}
+            <DropdownMenuItem
               onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
             >
               <ArrowUp className="size-3.5" />
@@ -1483,7 +1485,8 @@ export function DataTableGrid({
                     {t("navigation:tables.loadMore")}
                   </button>
                 )}
-                {importProgress && <span>{importProgress}</span>}              </div>
+                {importProgress && <span>{importProgress}</span>}{" "}
+              </div>
             )}
           </div>
         )}

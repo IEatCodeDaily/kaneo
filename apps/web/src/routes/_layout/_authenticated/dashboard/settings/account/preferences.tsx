@@ -113,7 +113,9 @@ function RouteComponent() {
 
       <div className="space-y-6">
         <div className="space-y-1">
-          <h2 className="text-sm font-semibold">            {t("settings:preferencesPage.appearanceTitle")}
+          <h2 className="text-sm font-semibold">
+            {" "}
+            {t("settings:preferencesPage.appearanceTitle")}
           </h2>
           <p className="text-xs text-muted-foreground">
             {t("settings:preferencesPage.appearanceSubtitle")}
@@ -308,7 +310,9 @@ function RouteComponent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold">              {t("settings:preferencesPage.displayOptions")}
+            <h2 className="text-sm font-semibold">
+              {" "}
+              {t("settings:preferencesPage.displayOptions")}
             </h2>
             <p className="text-xs text-muted-foreground">
               {t("settings:preferencesPage.displayOptionsDescription")}
