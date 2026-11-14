@@ -1,6 +1,8 @@
 name: Build & publish image to GHCR
-# Called by release.yml. Dispatch by hand only for a hotfix image off a tag (runbook §6).
-# Production runs the unified ghcr.io/<owner>/kaneo image only.
+# Called by release.yml, which gates on main + green CI. A hand dispatch has NO such gate:
+# use it only for a hotfix image off a release tag, never with latest=true from a branch.
+# Production runs the unified ghcr.io/<owner>/kaneo image only. Uncached on purpose: the
+# published image is always built from scratch.
 
 on:
   workflow_call:
@@ -69,5 +71,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: KANEO_VERSION=${{ inputs.version }}
-          cache-from: type=gha,scope=release
-          cache-to: type=gha,scope=release,mode=max

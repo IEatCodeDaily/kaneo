@@ -24,7 +24,8 @@ updates:
           - "patch"
 
   # Workflow actions are pinned to commit SHAs; this keeps the pins (and their
-  # version comments) current. One grouped PR per month.
+  # version comments) current. One grouped PR per month. On this fork both entries
+  # need Settings → Advanced Security → Dependabot version updates switched on.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

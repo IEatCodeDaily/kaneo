@@ -124,6 +124,4 @@ For headless or sandboxed environments where opening a browser is impractical, s
 
 ## Releasing
 
-Bump `version` in `packages/mcp/package.json` and merge to `main`. The [publish workflow](../../.github/workflows/publish-mcp.yml) runs the package tests, publishes the new version to npm, and creates a `mcp-v<version>` GitHub release. Nothing is published while the version stays the same, so tool changes reach npm only once the version is bumped.
-
-Publishing a GitHub release manually also works: tag it `mcp-v<version>` with the tag version matching `packages/mcp/package.json` on the tagged commit.
+`@kaneo/mcp` is published to npm by upstream (usekaneo/kaneo). This fork does not publish it.

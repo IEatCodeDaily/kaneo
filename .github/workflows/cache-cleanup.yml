@@ -1,6 +1,7 @@
 name: Cache cleanup
 # PR caches (pnpm store, buildkit layers) are only readable by that PR, so they are dead
 # weight once it closes. Purge them so main's caches stay under the 10 GB repo limit.
+# Fork PRs get a read-only token here and fail harmlessly (7-day eviction covers them).
 
 on:
   pull_request:
@@ -16,6 +17,7 @@ jobs:
       actions: write
     steps:
       - name: Delete this PR's caches
+        shell: bash # pipefail: a failed list must fail the job, not no-op
         env:
           GH_TOKEN: ${{ github.token }}
           REF: refs/pull/${{ github.event.pull_request.number }}/merge

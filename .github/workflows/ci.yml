@@ -14,8 +14,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  # Supersede stale PR/branch runs; every main commit keeps its own run.
+  # PRs/branches: one group per ref, stale runs cancelled. main: one group per sha, so
+  # every main commit gets its own complete run (entelechia + Release gate on it).
+  group: ci-${{ github.event.pull_request.number || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -168,8 +169,9 @@ jobs:
           file: ./Dockerfile.kaneo
           load: true
           tags: kaneo:render
+          # Only main writes the cache; PR-scoped caches are unreadable by anyone else.
           cache-from: type=gha,scope=render
-          cache-to: type=gha,scope=render,mode=max
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=render,mode=max' || '' }}
       - name: Run kaneo
         run: |
           docker run -d --name kaneo --network host \
@@ -192,7 +194,7 @@ jobs:
       - if: always()
         run: docker logs kaneo 2>&1 | tail -80
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-shots
           path: shots/
