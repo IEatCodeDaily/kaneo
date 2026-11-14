@@ -306,7 +306,9 @@ input:-webkit-autofill:active {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    /* design v3 §1.5: unsized text is reading text (14px), never the
+       browser's 16px default. */
+    @apply bg-background font-sans text-foreground text-sm antialiased;
   }
   h1,
   h2,

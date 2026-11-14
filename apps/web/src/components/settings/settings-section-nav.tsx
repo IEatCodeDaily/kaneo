@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, FolderGit2, LayoutGrid, Library, User } from "lucide-react";
+import { Building2, Library, User } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,7 +18,6 @@ type SettingsSectionNavProps = {
 
 type SectionDefinition = {
   id: SettingsSection;
-  icon: LucideIcon;
   labelKey: string;
   fallbackLabel: string;
   /**
@@ -49,28 +48,24 @@ const ORGANIZATION_PAGES = [
 const SECTIONS: SectionDefinition[] = [
   {
     id: "account",
-    icon: User,
     labelKey: "settings:account",
     fallbackLabel: "Account",
     to: "/dashboard/settings/account/information",
   },
   {
     id: "organization",
-    icon: Building2,
     labelKey: "navigation:page.settingsOrganizationTab",
     fallbackLabel: "Organization",
     to: "/dashboard/settings/organization/general",
   },
   {
     id: "boards",
-    icon: LayoutGrid,
     labelKey: "navigation:sidebar.boards",
     fallbackLabel: "Boards",
     to: "/dashboard/settings/boards",
   },
   {
     id: "repos",
-    icon: FolderGit2,
     labelKey: "navigation:sidebar.repos",
     fallbackLabel: "Repos",
     to: "/dashboard/settings/repos",
@@ -151,14 +146,13 @@ export default function SettingsSectionNav({
         ).map((section) => {
           const disabled = isDisabled(section.id);
           const active = activeSection === section.id;
-          const Icon = section.icon;
 
           return (
             <button
               aria-current={active ? "page" : undefined}
               aria-disabled={disabled ? "true" : undefined}
               className={cn(
-                "flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-ui transition-colors sm:min-h-7",
+                "flex min-h-11 w-full items-center rounded-md pr-2 pl-7 text-left text-ui transition-colors sm:min-h-7",
                 active
                   ? "bg-secondary font-medium text-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -174,7 +168,6 @@ export default function SettingsSectionNav({
               }}
               type="button"
             >
-              <Icon className="size-3.5 shrink-0" />
               <span className="truncate">
                 {t(section.labelKey, { defaultValue: section.fallbackLabel })}
               </span>

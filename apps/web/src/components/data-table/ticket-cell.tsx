@@ -38,10 +38,14 @@ function TicketChip({ ticket }: { ticket: TicketRef }) {
       params={{ organizationSlug, ticketKey: ticket.key }}
       onClick={(event) => event.stopPropagation()}
       title={ticket.title}
-      className="inline-flex h-5 min-w-0 max-w-full shrink-0 items-center gap-1 rounded-sm border px-1.5 text-xs hover:bg-accent"
+      className="inline-flex h-5 min-w-0 max-w-full items-center gap-1.5 rounded-sm border px-1.5 text-xs hover:bg-accent"
     >
-      <span className="[&_svg]:size-3">{getColumnIcon(ticket.status)}</span>
-      <span className="font-mono text-muted-foreground">{ticket.key}</span>
+      <span className="shrink-0 [&_svg]:size-3">
+        {getColumnIcon(ticket.status)}
+      </span>
+      <span className="shrink-0 whitespace-nowrap font-mono text-muted-foreground">
+        {ticket.key}
+      </span>
       <span className="truncate">{ticket.title}</span>
     </Link>
   );
