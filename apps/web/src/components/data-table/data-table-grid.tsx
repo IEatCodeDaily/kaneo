@@ -54,6 +54,7 @@ import {
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
+import { RowSheet } from "@/components/data-table/row-sheet";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -505,6 +506,8 @@ export function DataTableGrid({
     rowId: string;
     fieldId: string;
   } | null>(null);
+  // Row sheet (S4): the primary cell opens it; prev/next walk the view.
+  const [sheetRowId, setSheetRowId] = useState<string | null>(null);
   const [dialogField, setDialogField] = useState<DataTableField | null>(null);
   const [dialogType, setDialogType] = useState<DataTableFieldType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1270,13 +1273,21 @@ export function DataTableGrid({
                               field={field}
                               members={members}
                               canEdit={canEdit}
+                              asPrimary={fieldIndex === 0}
                               isEditing={
                                 editing?.rowId === row.id &&
                                 editing?.fieldId === field.id
                               }
-                              onEditStart={() =>
-                                setEditing({ rowId: row.id, fieldId: field.id })
-                              }
+                              onEditStart={() => {
+                                if (fieldIndex === 0) {
+                                  setSheetRowId(row.id);
+                                  return;
+                                }
+                                setEditing({
+                                  rowId: row.id,
+                                  fieldId: field.id,
+                                });
+                              }}
                               onEditEnd={() => setEditing(null)}
                               onCommit={(value) =>
                                 commitCell(row, field, value)
@@ -1516,6 +1527,36 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <RowSheet
+        open={sheetRowId !== null}
+        onOpenChange={(next) => !next && setSheetRowId(null)}
+        table={table}
+        row={rows.find((row) => row.id === sheetRowId) ?? null}
+        fields={fields}
+        members={members}
+        canEdit={canEdit}
+        onCommit={(row, field, value) => commitCell(row, field, value)}
+        onPrev={() =>
+          setSheetRowId((current) => {
+            const index = visibleRows.findIndex((row) => row.id === current);
+            if (index <= 0) return current;
+            return visibleRows[index - 1].id;
+          })
+        }
+        onNext={() =>
+          setSheetRowId((current) => {
+            const index = visibleRows.findIndex((row) => row.id === current);
+            if (index < 0 || index >= visibleRows.length - 1) return current;
+            return visibleRows[index + 1].id;
+          })
+        }
+        hasPrev={visibleRows.findIndex((row) => row.id === sheetRowId) > 0}
+        hasNext={
+          visibleRows.findIndex((row) => row.id === sheetRowId) >= 0 &&
+          visibleRows.findIndex((row) => row.id === sheetRowId) <
+            visibleRows.length - 1
+        }
+      />
 
       <FieldOptionsDialog
         organizationId={organizationId}
