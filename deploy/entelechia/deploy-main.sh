@@ -3,6 +3,7 @@
 # every 5 minutes. When origin/main has moved and CI passed on the new commit,
 # it builds a clean worktree of that commit, backs up the DB, and cuts the
 # kaneo-dev-{api,web} units over to it, rolling back if the API is unhealthy.
+# Between deploys it keeps the units on main's tree (undoes hand repoints).
 # The result is posted as the `entelechia` commit status on the main commit.
 #
 # Install / update (on talos, from a checkout of main):
@@ -26,9 +27,43 @@ mkdir -p "$STATE"
 exec 9>"$STATE/lock"
 flock -n 9 || exit 0
 
+# This script is the only owner of the units' WorkingDirectory: drop-ins from
+# older deploy schemes (sorting after ours would silently win) are retired.
+point_units_at() {
+  for u in "${UNITS[@]}"; do
+    d="$HOME/.config/systemd/user/$u.service.d"
+    for f in "$d"/*.conf; do
+      [ "$(basename "$f")" = "$DROPIN" ] && continue
+      if grep -q '^WorkingDirectory=' "$f"; then mv "$f" "$STATE/retired-$u-$(basename "$f")"; fi
+    done
+    printf '[Service]\nWorkingDirectory=%s\n' "$1" >"$d/$DROPIN"
+  done
+  systemctl --user daemon-reload
+}
+healthy() { # url
+  for _ in $(seq 1 120); do
+    curl -fsS --max-time 2 "$1" >/dev/null && return 0
+    sleep 2
+  done
+  return 1
+}
+API=http://127.0.0.1:1337/api/health
+WEB=http://127.0.0.1:5173/
+
 git -C "$GIT_DIR" fetch -q origin main
 SHA=$(git -C "$GIT_DIR" rev-parse origin/main)
-[ "$SHA" = "$(cat "$STATE/deployed-sha" 2>/dev/null)" ] && exit 0
+if [ "$SHA" = "$(cat "$STATE/deployed-sha" 2>/dev/null)" ]; then
+  # Entelechia serves main only: if anything repointed the units since the
+  # last deploy (a hand-run branch preview), put them back on main's tree.
+  TREE=$(cat "$STATE/deployed-tree" 2>/dev/null || true)
+  if [ -n "$TREE" ] && [ "$(systemctl --user show kaneo-dev-api -p WorkingDirectory --value)" != "$TREE" ]; then
+    echo "units drifted off $TREE; restoring main ${SHA:0:8}"
+    point_units_at "$TREE"
+    systemctl --user restart "${UNITS[@]}"
+    if healthy "$API" && healthy "$WEB"; then echo "restored"; else echo "restore unhealthy"; fi
+  fi
+  exit 0
+fi
 # A commit that failed to deploy is not retried until main moves again.
 [ "$SHA" = "$(cat "$STATE/failed-sha" 2>/dev/null)" ] && exit 0
 
@@ -94,29 +129,6 @@ if (spawnSync(bin + 'pg_restore', ['--list', path], { stdio: 'ignore' }).status 
 console.log('backup verified', path);
 JS
 
-# This script is the only owner of the units' WorkingDirectory: drop-ins from
-# older deploy schemes (sorting after ours would silently win) are retired.
-point_units_at() {
-  for u in "${UNITS[@]}"; do
-    d="$HOME/.config/systemd/user/$u.service.d"
-    for f in "$d"/*.conf; do
-      [ "$(basename "$f")" = "$DROPIN" ] && continue
-      if grep -q '^WorkingDirectory=' "$f"; then mv "$f" "$STATE/retired-$u-$(basename "$f")"; fi
-    done
-    printf '[Service]\nWorkingDirectory=%s\n' "$1" >"$d/$DROPIN"
-  done
-  systemctl --user daemon-reload
-}
-healthy() { # url
-  for _ in $(seq 1 120); do
-    curl -fsS --max-time 2 "$1" >/dev/null && return 0
-    sleep 2
-  done
-  return 1
-}
-API=http://127.0.0.1:1337/api/health
-WEB=http://127.0.0.1:5173/
-
 point_units_at "$NEW"
 systemctl --user restart kaneo-dev-api
 if ! healthy "$API"; then
@@ -136,6 +148,7 @@ served=$(curl -fsS --max-time 10 "$WEB" | grep -o 'index-[A-Za-z0-9_-]*\.js' | h
 
 trap - ERR
 echo "$SHA" >"$STATE/deployed-sha"
+echo "$NEW" >"$STATE/deployed-tree"
 rm -f "$STATE/failed-sha"
 status success "deployed ${SHA:0:8} ($served)"
 echo "deployed ${SHA:0:8} from $NEW ($served)"
