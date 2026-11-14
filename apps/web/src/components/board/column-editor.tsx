@@ -340,7 +340,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
               </Popover>
               <Input
                 defaultValue={col.name}
-                className="h-8 flex-1 text-sm"
+                className="h-8 w-full max-w-56 text-sm"
                 disabled={!canEdit}
                 aria-label={t("settings:columnEditor.statusNameAria")}
                 onBlur={(e) => {
@@ -359,10 +359,10 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                   }
                 }}
               />
-              <span className="hidden font-mono text-xs text-muted-foreground sm:inline">
+              <span className="hidden min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground sm:inline">
                 {col.slug}
               </span>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="ml-auto flex shrink-0 items-center gap-1">
                 <Button
                   type="button"
                   variant="ghost"
@@ -463,7 +463,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                 onChange={(e) =>
                   setNewName((prev) => ({ ...prev, [type]: e.target.value }))
                 }
-                className="h-8 flex-1 text-sm"
+                className="h-8 w-full max-w-56 text-sm"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleCreate(type);
                   if (e.key === "Escape") setAddingType(null);
