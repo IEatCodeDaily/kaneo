@@ -79,6 +79,7 @@ WORKDIR /app/packages/permissions
 RUN pnpm run build
 
 WORKDIR /app/apps/web
+ARG KANEO_VERSION
 RUN pnpm run build
 
 FROM node:20.20.2-alpine AS runtime

@@ -1,124 +1,76 @@
-name: Create Release
+name: Release
+# Stable release, run by hand from main (Actions → Release → Run workflow).
+# Version = YYYY.MMDD.HHmm in WIB (Asia/Jakarta) at dispatch time. Builds and
+# pushes the GHCR images tagged with it (+ latest), then tags the commit
+# v<version> and publishes a GitHub Release with generated notes.
+# Production (task.noovoleum.site) then pins that image tag in
+# noovoleum/infra-deploy-ucollect-internal-prod → stacks/kaneo/compose.yml.
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (leave empty for automatic versioning)"
-        required: false
-        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  prepare:
+    runs-on: ubuntu-24.04
     permissions:
-      contents: write
-      pull-requests: write
-      actions: write
-
+      actions: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Enforce dispatch from main
+      - name: Dispatched from main
         run: |
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
-            echo "::error::release.yml must be dispatched from main (current ref: $GITHUB_REF). The Chart.yaml bump and tag push will not land on main otherwise."
+            echo "::error::Release runs from main only (got $GITHUB_REF)."
             exit 1
           fi
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
+      - name: CI passed on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          bun add -g conventional-changelog-cli
-          bun add -g conventional-recommended-bump
-          bun add -g conventional-changelog-angular
-          bun add -g semver
-
-      - name: Get version bump
-        id: bump
-        if: ${{ !inputs.version }}
-        run: |
-          BUMP=$(bunx conventional-recommended-bump -p angular)
-          echo "bump=$BUMP" >> $GITHUB_OUTPUT
-
-      - name: Get current version
-        id: current_version
-        run: |
-          VERSION=$(bun x jq -r .version package.json)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Calculate new version
-        id: new_version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo 'import semver from "semver";
-            const current = "${{ steps.current_version.outputs.version }}";
-            const bump = "${{ steps.bump.outputs.bump }}";
-            console.log(semver.inc(current, bump));' > version.mjs
-            NEW_VERSION=$(bun version.mjs)
-            rm version.mjs
-            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          result=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" \
+            --json status,conclusion --jq '[.[] | select(.status == "completed")][0].conclusion')
+          if [ "$result" != "success" ]; then
+            echo "::error::CI on $GITHUB_SHA is '${result:-not finished}'. Release a commit whose CI passed."
+            exit 1
           fi
 
-      - name: Update version in package.json
+      - name: Version
+        id: version
+        run: echo "version=$(TZ=Asia/Jakarta date +%Y.%m%d.%H%M)" >> "$GITHUB_OUTPUT"
+
+  images:
+    needs: prepare
+    uses: ./.github/workflows/docker.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      latest: true
+
+  publish:
+    needs: [prepare, images]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Tag + GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          bun x npm version ${{ steps.new_version.outputs.version }} --no-git-tag-version
-
-      - name: Update Chart.yaml appVersion and chart version
-        run: |
-          VERSION="${{ steps.new_version.outputs.version }}"
-          sed -i -E "s/^version:[[:space:]]*.*/version: ${VERSION}/" charts/kaneo/Chart.yaml
-          sed -i -E "s/^appVersion:[[:space:]]*\"?[^\"]*\"?.*/appVersion: \"${VERSION}\"/" charts/kaneo/Chart.yaml
-          grep -q "^version: ${VERSION}$" charts/kaneo/Chart.yaml
-          grep -q "^appVersion: \"${VERSION}\"$" charts/kaneo/Chart.yaml
-
-      - name: Generate changelog
-        run: |
-          bunx conventional-changelog -p angular -i CHANGELOG.md -s --release-count 1
-
-      - name: Create Release Commit
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add CHANGELOG.md package.json charts/kaneo/Chart.yaml
-          git commit -m "chore(release): v${{ steps.new_version.outputs.version }}"
-          git tag "v${{ steps.new_version.outputs.version }}"
-
-      - name: Push changes
-        run: git push origin HEAD:${{ github.ref }} --tags
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3.0.1
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          tag_name: v${{ steps.new_version.outputs.version }}
-          name: Release v${{ steps.new_version.outputs.version }}
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-
-      - name: Trigger Docker Build
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'docker.yml',
-              ref: 'main',
-              inputs: {
-                version: '${{ steps.new_version.outputs.version }}',
-                latest: 'true'
-              }
-            });
-            console.log('Triggered Docker build for version ${{ steps.new_version.outputs.version }}');
+          gh release create "v$VERSION" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "v$VERSION" --generate-notes
+          {
+            echo "### Released v$VERSION"
+            echo "Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kaneo:$VERSION\`"
+            echo "Commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"

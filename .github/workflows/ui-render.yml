@@ -2,8 +2,8 @@ name: UI render
 # Builds the real kaneo image, runs it against Postgres, seeds through the API and screenshots real pages
 # (tests/ui-render/render.py). Also runs the web typecheck + web unit suite, which ci.yml does not.
 on:
-  push:
-    branches: ["stellarc/design-v3-*"]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
