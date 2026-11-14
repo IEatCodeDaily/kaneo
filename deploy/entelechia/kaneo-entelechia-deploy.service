@@ -1,0 +1,7 @@
+[Unit]
+Description=Deploy origin/main to kaneo.entelechia.cloud when CI passes
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/kaneo-deploy-main
+TimeoutStartSec=45min

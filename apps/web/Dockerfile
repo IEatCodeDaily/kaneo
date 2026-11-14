@@ -31,6 +31,7 @@ RUN pnpm run build
 
 # Build the application
 WORKDIR /app/apps/web
+ARG KANEO_VERSION
 RUN pnpm run build
 
 # Production stage with specific version

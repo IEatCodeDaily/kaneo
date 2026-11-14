@@ -31,7 +31,10 @@ const useDevHttps = process.env.KANEO_DEV_HTTPS === "1";
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version),
+    // Release images stamp YYYY.MMDD.HHmm; entelechia stamps main-<sha>.
+    __APP_VERSION__: JSON.stringify(
+      process.env.KANEO_VERSION || packageJson.version,
+    ),
   },
   base: "/",
   plugins: [
