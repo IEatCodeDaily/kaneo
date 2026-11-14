@@ -386,7 +386,7 @@ export function GanttTaskBar({
         {/* Live date readout while dragging or resizing. dragDisplay is already
             the optimistic range, so this needs no extra state. */}
         {dragDisplay ? (
-          <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-popover-foreground shadow-md">
+          <div className="pointer-events-none absolute -top-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded border border-border bg-popover px-1.5 py-0.5 text-xs font-medium tabular-nums text-popover-foreground shadow-md">
             {format(displayStart, "MMM d")}
             {differenceInCalendarDays(displayEnd, displayStart) === 0
               ? ""

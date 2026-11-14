@@ -17,7 +17,7 @@ export function TodoProgressBadge({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 text-[11px]",
+        "inline-flex shrink-0 items-center gap-1 text-xs",
         allDone ? "text-success" : "text-muted-foreground",
         className,
       )}

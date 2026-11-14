@@ -363,7 +363,7 @@ const GanttRow = memo(function GanttRow({
               {display.priority && task.priority ? (
                 <span
                   className={cn(
-                    "shrink-0 rounded px-1 py-px text-[9px] font-medium",
+                    "shrink-0 rounded px-1 py-px text-xs font-medium",
                     task.priority === "urgent" && "text-destructive-foreground",
                     task.priority === "high" && "text-warning-foreground",
                     task.priority === "medium" && "text-warning-foreground/85",
@@ -373,13 +373,13 @@ const GanttRow = memo(function GanttRow({
                   {task.priority}
                 </span>
               ) : null}
-              <span className="shrink-0 truncate text-[9px] text-muted-foreground">
+              <span className="shrink-0 truncate text-xs text-muted-foreground">
                 {task.isForeign
                   ? `${task.boardSlug}-${task.number}`
                   : `${boardSlug}-${task.number}`}
               </span>
               {task.isForeign ? (
-                <span className="shrink-0 rounded border border-dashed border-border px-1 py-px text-[9px] text-muted-foreground">
+                <span className="shrink-0 rounded border border-dashed border-border px-1 py-px text-xs text-muted-foreground">
                   {task.boardName}
                 </span>
               ) : null}
@@ -401,7 +401,7 @@ const GanttRow = memo(function GanttRow({
                       src={task.assigneeImage ?? ""}
                       alt={task.assigneeName}
                     />
-                    <AvatarFallback className="bg-transparent text-[8px] font-medium">
+                    <AvatarFallback className="bg-transparent text-xs font-medium">
                       {getInitials(task.assigneeName)}
                     </AvatarFallback>
                   </Avatar>
@@ -1099,7 +1099,7 @@ function RouteComponent() {
                           : undefined,
                       }}
                     >
-                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {t("tasks:gantt.taskHeader")}
                       </p>
                     </div>
@@ -1116,7 +1116,7 @@ function RouteComponent() {
                       <div
                         key={ms.key}
                         style={{ gridColumn: `span ${ms.span}` }}
-                        className="border-r border-border/50 px-1 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                        className="border-r border-border/50 px-1 py-0.5 text-xs font-semibold text-muted-foreground"
                       >
                         {ms.label}
                       </div>
@@ -1155,12 +1155,12 @@ function RouteComponent() {
                               "bg-muted/25",
                           )}
                         >
-                          <div className="h-3 truncate text-[10px] font-medium text-muted-foreground">
+                          <div className="h-3 truncate text-xs font-medium text-muted-foreground">
                             {cell.label}
                           </div>
                           <div
                             className={cn(
-                              "mx-auto flex h-4 min-w-4 items-center justify-center truncate rounded-full px-1 text-[10px] font-medium",
+                              "mx-auto flex h-4 min-w-4 items-center justify-center truncate rounded-full px-1 text-xs font-medium",
                               zoom === "day" &&
                                 isToday(cellDate) &&
                                 "bg-primary text-primary-foreground",
@@ -1448,10 +1448,10 @@ function RouteComponent() {
                               unscheduledCollapsed && "-rotate-90",
                             )}
                           />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {t("tasks:gantt.unscheduledGroup")}
                           </span>
-                          <span className="rounded bg-secondary px-1 py-px text-[9px] font-medium text-secondary-foreground">
+                          <span className="rounded bg-secondary px-1 py-px text-xs font-medium text-secondary-foreground">
                             {unscheduledRows.length}
                           </span>
                         </span>

@@ -163,7 +163,7 @@ export function NavRepos() {
             }
           >
             <span>{t("navigation:sidebar.repos")}</span>
-            <Badge className="h-4 px-1 text-[9px]" variant="secondary">
+            <Badge className="h-4 px-1 text-xs" variant="secondary">
               Beta
             </Badge>
           </SidebarGroupLabel>
@@ -233,7 +233,7 @@ export function NavRepos() {
                           <span className="min-w-0 flex-1 truncate">
                             {repo.name}
                           </span>
-                          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[11px] text-sidebar-foreground/70 tabular-nums">
+                          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-sidebar-foreground/70 tabular-nums">
                             <span className="flex items-center gap-0.5">
                               <CircleDot className="h-3 w-3" />
                               {repo.openIssueCount}

@@ -80,7 +80,7 @@ export default function TaskResourceIndicators({
       {visibleResources.map((resource) => (
         <a
           aria-label={`${resource.synced ? "Synced" : "Linked"} ${resource.kind} #${resource.number}`}
-          className="inline-flex max-w-24 items-center gap-1 rounded border border-border/70 bg-muted/55 px-1.5 py-1 text-[10px] font-medium text-muted-foreground"
+          className="inline-flex max-w-24 items-center gap-1 rounded border border-border/70 bg-muted/55 px-1.5 py-1 text-xs font-medium text-muted-foreground"
           href={resource.url}
           key={resource.id}
           onClick={(event) => event.stopPropagation()}
@@ -99,7 +99,7 @@ export default function TaskResourceIndicators({
         </a>
       ))}
       {resources.length > visibleResources.length && (
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           +{resources.length - visibleResources.length}
         </span>
       )}

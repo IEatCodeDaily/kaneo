@@ -25,7 +25,7 @@ export default function BoardSyncIndicator({ boardId }: { boardId: string }) {
 
   return (
     <span
-      className="flex min-w-0 shrink items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground"
+      className="flex min-w-0 shrink items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground"
       data-testid="board-sync-indicator"
       title={t("tasks:boardSync.syncedWith", { repo })}
     >

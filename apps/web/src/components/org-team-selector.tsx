@@ -247,7 +247,7 @@ export function OrgTeamSelector({
               key={team.id}
               onClick={() => setTeamView(team.id, team.name)}
             >
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-medium uppercase">
+              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium uppercase">
                 {team.name.slice(0, 2)}
               </span>
               <span className="flex-1">{team.name}</span>

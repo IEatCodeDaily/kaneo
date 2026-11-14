@@ -91,7 +91,7 @@ export default function PersonalHome() {
                 key={date.toDateString()}
                 className="min-w-0 px-1 py-3 text-center sm:px-3"
               >
-                <p className="text-[10px] uppercase text-muted-foreground sm:text-xs">
+                <p className="text-xs uppercase text-muted-foreground sm:text-xs">
                   {new Intl.DateTimeFormat(undefined, {
                     weekday: "short",
                   }).format(date)}

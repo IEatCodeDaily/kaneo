@@ -34,7 +34,7 @@ export default function SettingsOrgHeader({
           src={organizationLogo ?? ""}
         />
         <AvatarFallback
-          className="border border-sidebar-border/70 bg-sidebar-accent/70 text-[11px] font-medium text-sidebar-accent-foreground"
+          className="border border-sidebar-border/70 bg-sidebar-accent/70 text-xs font-medium text-sidebar-accent-foreground"
           data-testid="settings-org-avatar-fallback"
         >
           {initials}
@@ -43,7 +43,7 @@ export default function SettingsOrgHeader({
       <div className="flex flex-col">
         <p className="text-sm">{organizationName}</p>
         <p
-          className="text-[11px] text-sidebar-foreground/60 capitalize"
+          className="text-xs text-sidebar-foreground/60 capitalize"
           data-testid="settings-org-role"
         >
           {t(`team:roles.${membershipRole}`, {

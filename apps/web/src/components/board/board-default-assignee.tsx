@@ -126,13 +126,13 @@ export function BoardDefaultAssignee({
                 src={selectedMember?.image ?? ""}
                 alt={selectedMember?.name ?? ""}
               />
-              <AvatarFallback className="bg-transparent text-[9px] font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
+              <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30 flex-shrink-0 h-[16px] w-[16px]">
                 {getInitials(selectedMember?.name)}
               </AvatarFallback>
             </Avatar>
           ) : (
             <div className="w-[16px] h-[16px] rounded-full bg-muted border border-border flex items-center justify-center flex-shrink-0">
-              <span className="text-[8px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 ?
               </span>
             </div>

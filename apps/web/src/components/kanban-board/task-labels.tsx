@@ -25,7 +25,7 @@ function TaskCardLabels({ labels }: { labels: TaskLabel[] | undefined }) {
         <Badge
           key={label.id}
           variant="outline"
-          className="px-2 py-0.5 text-[10px] flex items-center"
+          className="px-2 py-0.5 text-xs flex items-center"
         >
           <span
             className="inline-block w-1.5 h-1.5 mr-1 rounded-full"

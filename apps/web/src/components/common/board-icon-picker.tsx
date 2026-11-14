@@ -175,7 +175,7 @@ function BoardIconPicker({
               <div className="space-y-3">
                 {Object.entries(iconCategories).map(([category, names]) => (
                   <div key={category}>
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {category}
                     </p>
                     <div className="grid grid-cols-6 gap-1.5">

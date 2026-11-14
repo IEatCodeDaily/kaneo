@@ -48,7 +48,7 @@ export function RecentPagesDialog({
                 >
                   <span className="min-w-0 flex-1 truncate">{page.label}</span>
                   {page.detail ? (
-                    <span className="shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                    <span className="shrink-0 rounded bg-muted px-1 text-xs text-muted-foreground">
                       {page.detail}
                     </span>
                   ) : null}

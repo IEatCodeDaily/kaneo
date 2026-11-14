@@ -478,6 +478,68 @@ if (pages.table) {
     );
     await ctx.close();
   }
+
+  // S7: the toolbar popovers must be usable at 390px — the popup stays inside
+  // the viewport with no horizontal overflow (no bottom-sheet rebuild unless
+  // this proves otherwise).
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    storageState: state,
+    reducedMotion: "reduce",
+    colorScheme: "dark",
+    hasTouch: true,
+  });
+  await ctx.addInitScript(() => {
+    const k = "user-preferences";
+    const cur = JSON.parse(
+      localStorage.getItem(k) ?? '{"state":{},"version":0}',
+    );
+    cur.state = { ...cur.state, theme: "dark" };
+    localStorage.setItem(k, JSON.stringify(cur));
+  });
+  const page = await ctx.newPage();
+  const fails = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1200);
+  try {
+    await page.getByRole("button", { name: /^Filter/ }).click();
+    await page.getByRole("button", { name: "Add filter" }).click();
+    await page.waitForTimeout(500);
+  } catch (e) {
+    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+  }
+  const m = await page.evaluate(() => {
+    const popup = document.querySelector('[data-slot="popover-popup"]');
+    const r = popup ? popup.getBoundingClientRect() : null;
+    return {
+      popup: r
+        ? {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            top: Math.round(r.top),
+            width: Math.round(r.width),
+          }
+        : null,
+      overflow_x: document.documentElement.scrollWidth,
+      viewport: window.innerWidth,
+    };
+  });
+  if (!m.popup) fails.push("filter popup not found");
+  if (m.popup) {
+    if (m.popup.right > m.viewport)
+      fails.push(`popup right ${m.popup.right} > viewport ${m.viewport}`);
+    if (m.popup.left < 0) fails.push(`popup left ${m.popup.left} < 0`);
+  }
+  if (m.overflow_x > m.viewport)
+    fails.push(`page overflow-x ${m.overflow_x} > ${m.viewport}`);
+  const shot = "table-filter-phone--phone-dark.png";
+  await page.screenshot({ path: join(OUT, shot) });
+  checks[shot] = { fails, ...m };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+  );
+  await ctx.close();
 }
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));

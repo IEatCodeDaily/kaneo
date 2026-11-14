@@ -1484,7 +1484,7 @@ function CreateTaskModal({
                                   src={selectedUser?.user?.image ?? ""}
                                   alt={selectedUser?.user?.name || ""}
                                 />
-                                <AvatarFallback className="bg-transparent text-[10px] font-medium border border-border/30">
+                                <AvatarFallback className="bg-transparent text-xs font-medium border border-border/30">
                                   {getInitials(selectedUser?.user?.name)}
                                 </AvatarFallback>
                               </Avatar>

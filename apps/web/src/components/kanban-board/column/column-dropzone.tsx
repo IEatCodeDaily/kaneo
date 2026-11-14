@@ -215,7 +215,7 @@ export function ColumnDropzone({
           <button
             aria-expanded={!collapsed}
             className={cn(
-              "flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground",
+              "flex items-center gap-1 self-start rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground",
               NESTED_INDENT[Math.min(depth, 3)],
             )}
             onClick={() =>
@@ -277,7 +277,7 @@ export function ColumnDropzone({
                     className={cn("size-4", getAvatarTone(firstTask?.userId))}
                   >
                     <AvatarImage alt="" src={firstTask?.assigneeImage ?? ""} />
-                    <AvatarFallback className="bg-transparent text-[8px]">
+                    <AvatarFallback className="bg-transparent text-xs">
                       {getInitials(groupTitle)}
                     </AvatarFallback>
                   </Avatar>

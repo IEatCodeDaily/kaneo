@@ -200,7 +200,7 @@ export function PrincipalPickerList({
                 compact row rhythm and the single scroll area are preserved.
               */}
               <p
-                className="px-2 pt-1 pb-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                className="px-2 pt-1 pb-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground"
                 data-testid={`principal-group-heading-${group.kind}`}
               >
                 {group.heading}

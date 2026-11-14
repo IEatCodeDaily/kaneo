@@ -239,7 +239,7 @@ function KanbanBoard({ board, disableDragDrop = false }: KanbanBoardProps) {
       <DragOverlay dropAnimation={dropAnimation}>
         {activeTask ? (
           <div className="w-80 rotate-1 scale-[1.03] rounded-lg border border-ring/40 bg-card p-3 shadow-lg ring-2 ring-ring/35">
-            <p className="text-[10px] font-mono text-muted-foreground">
+            <p className="text-xs font-mono text-muted-foreground">
               {activeTask.number}
             </p>
             <p className="mt-2 line-clamp-3 text-sm font-medium text-card-foreground">

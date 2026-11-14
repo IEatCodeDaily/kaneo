@@ -91,7 +91,7 @@ export function ChoiceChip({
   if (!choice || unknownId) return <EmptyValue />;
   return (
     <span
-      className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-[11px] font-medium"
+      className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-xs font-medium"
       style={chipStyle(choice.color)}
     >
       <span
@@ -125,7 +125,7 @@ function UserCell({
     <div className="flex min-w-0 items-center gap-1.5">
       <Avatar className={cn("size-5 shrink-0", getAvatarTone(member.id, name))}>
         {image ? <AvatarImage src={image} alt={name} /> : null}
-        <AvatarFallback className="text-[9px] font-semibold">
+        <AvatarFallback className="text-xs font-semibold">
           {getInitials(name)}
         </AvatarFallback>
       </Avatar>
@@ -190,7 +190,7 @@ export function DataTableCellView({
             />
           ))}
           {overflow > 0 && (
-            <Badge variant="secondary" className="px-1.5 text-[10px]">
+            <Badge variant="secondary" className="px-1.5 text-xs">
               +{overflow}
             </Badge>
           )}
@@ -288,7 +288,7 @@ export function DataTableCellView({
       const ids = asStringArray(value);
       if (ids.length === 0) return <EmptyValue />;
       return (
-        <Badge variant="secondary" className="gap-1 px-1.5 text-[10px]">
+        <Badge variant="secondary" className="gap-1 px-1.5 text-xs">
           <Link2 className="size-3" />
           {ids.length}
         </Badge>

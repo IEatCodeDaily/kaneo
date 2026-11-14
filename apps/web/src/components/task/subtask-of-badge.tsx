@@ -30,7 +30,7 @@ export default function SubtaskOfBadge({
   return (
     <span
       className={cn(
-        "flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground",
+        "flex min-w-0 items-center gap-1 text-xs text-muted-foreground",
         className,
       )}
       data-testid="subtask-of-badge"
