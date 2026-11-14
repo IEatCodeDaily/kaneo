@@ -219,14 +219,14 @@ export function TicketCellPicker({
                 <span className="min-w-0 flex-1 truncate">{hit.title}</span>
               </button>
             ))}
-          {hits.length === 0 && (
-            <p className="px-2 py-1 text-xs text-muted-foreground">
-              {query.trim() === ""
-                ? t("navigation:tables.typeToSearchTickets")
-                : t("navigation:tables.noTicketsFound")}
-            </p>
-          )}
         </div>
+        {hits.length === 0 && (
+          <p className="px-2 py-1 text-xs text-muted-foreground">
+            {query.trim() === ""
+              ? t("navigation:tables.typeToSearchTickets")
+              : t("navigation:tables.noTicketsFound")}
+          </p>
+        )}
       </PopoverContent>
     </Popover>
   );
