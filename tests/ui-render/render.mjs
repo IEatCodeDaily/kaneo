@@ -387,6 +387,24 @@ const TABLE_STATES = [
     },
   ],
   [
+    // Ticket picker: current link listed first + selected, newest options below.
+    "table-ticket-picker",
+    async (p) => {
+      await p.getByRole("button", { name: "Link tickets" }).first().click();
+      await p.waitForTimeout(600);
+    },
+  ],
+  [
+    // Change type asks first, and says the column will be cleared.
+    "table-change-type",
+    async (p) => {
+      await p.getByRole("button", { name: "Tickets field menu" }).click();
+      await p.getByRole("menuitem", { name: "Change type" }).click();
+      await p.getByRole("menuitem", { name: "Text", exact: true }).click();
+      await p.waitForTimeout(300);
+    },
+  ],
+  [
     "table-group",
     async (p) => {
       await p.getByRole("button", { name: /^Group/ }).click();
@@ -476,6 +494,22 @@ if (pages.table) {
       fails.push(`row ${m.row_h}px, want 32`);
     if (name === "table-select" && !m.bulk)
       fails.push("bulk bar missing after row select");
+    if (name === "table-ticket-picker") {
+      const picker = await page.evaluate(() => ({
+        selected: document.querySelectorAll(
+          '[role="listbox"] [role="option"][aria-selected="true"]',
+        ).length,
+        options: document.querySelectorAll('[role="listbox"] [role="option"]')
+          .length,
+      }));
+      if (picker.selected !== 1 || picker.options < 2)
+        fails.push(`ticket picker ${JSON.stringify(picker)}`);
+    }
+    if (
+      name === "table-change-type" &&
+      !(await page.getByRole("alertdialog").innerText()).includes("cleared")
+    )
+      fails.push("change-type warning missing");
     if (
       name === "table-select" &&
       m.selected_cell_bg &&
