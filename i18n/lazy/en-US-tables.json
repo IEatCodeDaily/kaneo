@@ -56,7 +56,10 @@
 		"noFields": "No fields yet. Add one to start.",
 		"fieldType": "Field type",
 		"changeType": "Change field type",
+<<<<<<< HEAD
 		"openRow": "Open row",
+=======
+>>>>>>> origin/main
 		"editField": "Edit field",
 		"fieldOptions": "Field options for {{name}}",
 		"choices": "Choices",
@@ -107,6 +110,7 @@
 		"importCsv": "Import CSV",
 		"importing": "Importing {done}/{total}…",
 		"importDone": "Imported {count} rows",
+<<<<<<< HEAD
 		"importError": "Import stopped at row {done} — check the values",
 		"fields": "Fields",
 		"hiddenCount_one": "{{count}} hidden",
@@ -207,6 +211,9 @@
 		"copyRowId": "Copy row ID",
 		"linkedTickets": "Linked tickets",
 		"noLinkedTickets": "No tickets linked."
+=======
+		"importError": "Import stopped at row {done} — check the values"
+>>>>>>> origin/main
 	},
 	"dashboards": {
 		"title": "Dashboards",

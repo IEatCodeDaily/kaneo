@@ -99,7 +99,11 @@ export function UserAvatar({
               ) : null}
               <AvatarFallback
                 className={cn(
+<<<<<<< HEAD
                   "text-xs font-medium",
+=======
+                  "text-xs font-medium",
+>>>>>>> origin/main
                   user.image ? "bg-transparent" : tone,
                 )}
               >

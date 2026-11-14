@@ -120,7 +120,11 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Repos</h2>
+<<<<<<< HEAD
                   <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+=======
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+>>>>>>> origin/main
                     Beta
                   </span>
                 </div>
@@ -147,7 +151,11 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Work</h2>
+<<<<<<< HEAD
                   <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+=======
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+>>>>>>> origin/main
                     Alpha
                   </span>
                 </div>
@@ -172,7 +180,11 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Tables</h2>
+<<<<<<< HEAD
                   <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+=======
+                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+>>>>>>> origin/main
                     Alpha
                   </span>
                 </div>

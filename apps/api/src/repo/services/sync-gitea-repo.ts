@@ -6,6 +6,7 @@ import {
   repoTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
+import { runBoundedSync } from "./repo-sync-flight";
 
 /**
  * Mirror a Gitea repository's issues and pull requests into repo_issue /
@@ -93,7 +94,15 @@ async function giteaGetAll(
   return out;
 }
 
-export async function syncGiteaRepo(repoId: string): Promise<{
+export function syncGiteaRepo(repoId: string): Promise<{
+  issues: number;
+  pullRequests: number;
+}> {
+  // Single-flight + dirty-flag trailing re-run: see repo-sync-flight.ts.
+  return runBoundedSync(repoId, async () => giteaSync(repoId));
+}
+
+async function giteaSync(repoId: string): Promise<{
   issues: number;
   pullRequests: number;
 }> {
@@ -242,6 +251,12 @@ export async function syncGiteaRepo(repoId: string): Promise<{
   return { issues: issueCount, pullRequests: prCount };
 }
 
+/**
+ * Route a repo id to its provider sync. The single-flight and dirty-flag
+ * trailing re-run live in repo-sync-flight.ts, inside each provider's sync
+ * function, so every call path (webhooks, scheduler, manual resync, issue
+ * management) is bounded without going through this router.
+ */
 export async function syncRepo(repoId: string) {
   const repo = await db.query.repoTable.findFirst({
     where: eq(repoTable.id, repoId),

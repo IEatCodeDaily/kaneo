@@ -29,7 +29,11 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
+<<<<<<< HEAD
             <h2 className="text-sm font-semibold">
+=======
+            <h2 className="text-sm font-semibold">
+>>>>>>> origin/main
               {t("settings:boardWorkflow.columnsTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -41,7 +45,11 @@ function RouteComponent() {
 
         <div className="space-y-6">
           <div className="space-y-1">
+<<<<<<< HEAD
             <h2 className="text-sm font-semibold">
+=======
+            <h2 className="text-sm font-semibold">
+>>>>>>> origin/main
               {t("settings:boardWorkflow.automationTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">

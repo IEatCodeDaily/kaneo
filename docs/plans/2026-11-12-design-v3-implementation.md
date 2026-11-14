@@ -30,6 +30,7 @@ Order is fixed by the design system's migration notes: tokens → primitives →
 1. CI on the PR branch (lint, API unit + coverage, build, integration, docker).
 2. Web typecheck (`tsc -p tsconfig.app.json`) and web vitest — not in CI today; run on fxbuilder, else a GitHub Actions job on the branch.
 3. Render acceptance: built `apps/web/dist` + mocked API, desktop 1440 and phone 390, vision review, screenshots to the owner. Owner OK before merge.
+<<<<<<< HEAD
 
 
 ## Status (2026-11-13)
@@ -44,3 +45,5 @@ Order is fixed by the design system's migration notes: tokens → primitives →
 - **S8** — PR #52; design-lint CI check + full-source sweep; gate green.
 
 Slice gate = MacBook full replay (lint · API unit · build · web types · web unit · integration on fresh PG16 · real-page render) + GLM review. GitHub Actions stays disabled account-side; the replay receipts live in `~/ci/receipts/<sha>/` on the Mac.
+=======
+>>>>>>> origin/main

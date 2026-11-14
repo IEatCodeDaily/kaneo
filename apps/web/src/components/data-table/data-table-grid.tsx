@@ -206,6 +206,7 @@ function FieldHeader({
               className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
             />
           }
+<<<<<<< HEAD
         >
           {/* Quantities right-align: icon + name + unit sit together over the digits. */}
           {numeric && <span className="flex-1" />}
@@ -257,6 +258,65 @@ function FieldHeader({
             </>
           )}
           <DropdownMenuGroup>
+=======
+        }}
+        className="min-w-0 flex-1 [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:font-semibold"
+      />
+      <button
+        type="button"
+        title={sortTitle}
+        aria-label={sortTitle}
+        className={cn(
+          "shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent",
+          sorted && "text-primary-soft-foreground",
+        )}
+        onClick={() => onSortChange(field.id)}
+      >
+        <SortIcon className="size-3" />
+      </button>
+      {canEdit && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                aria-label={t("navigation:tables.fieldOptions", {
+                  name: field.name,
+                })}
+                className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent focus-visible:opacity-100 group-hover/head:opacity-100"
+              />
+            }
+          >
+            <MoreHorizontal className="size-3.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FieldTypeIcon type={field.type} className="mr-2" />
+                  {t("navigation:tables.changeType")}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {EDITABLE_FIELD_TYPES.filter(
+                    (type) => type !== field.type,
+                  ).map((type) => (
+                    <DropdownMenuItem
+                      key={type}
+                      onClick={() => changeType(type)}
+                    >
+                      <FieldTypeIcon type={type} className="mr-2" />
+                      {t(FIELD_TYPE_LABEL_KEYS[type])}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem onClick={() => onEditOptions(field, null)}>
+                <SlidersHorizontal className="mr-2 size-3.5" />
+                {t("navigation:tables.fieldOptions", { name: field.name })}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+>>>>>>> origin/main
             <DropdownMenuItem
               onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
             >
@@ -1484,7 +1544,65 @@ export function DataTableGrid({
                     {t("navigation:tables.loadMore")}
                   </button>
                 )}
+<<<<<<< HEAD
                 {importProgress && <span>{importProgress}</span>}
+=======
+                {fields.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:underline"
+                      onClick={exportCsv}
+                    >
+                      {t("navigation:tables.exportCsv")}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:underline disabled:opacity-60"
+                      disabled={importProgress !== null}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {t("navigation:tables.importCsv")}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file) void importCsv(file);
+                      }}
+                    />
+                    {importProgress && (
+                      <span className="text-muted-foreground">
+                        {importProgress}
+                      </span>
+                    )}
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 font-medium text-primary-soft-foreground hover:underline"
+                          onClick={addRow}
+                        >
+                          <Plus className="size-3.5" />
+                          {t("navigation:tables.addRow")}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 hover:underline"
+                          onClick={() => openDialog(null, null)}
+                        >
+                          <Plus className="size-3.5" />
+                          {t("navigation:tables.addField")}
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+>>>>>>> origin/main
               </div>
             )}
           </div>

@@ -8,6 +8,7 @@ import {
 import { publishEvent } from "../../events";
 import { getInstallationOctokit } from "../../plugins/github/utils/github-app";
 import { resolveInstallationId } from "../controllers/manage-github-repo";
+import { runBoundedSync } from "./repo-sync-flight";
 
 /**
  * Mirror a GitHub repository's issues and pull requests into repo_issue /
@@ -105,7 +106,17 @@ function toDate(value: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export async function syncGitHubRepo(repoId: string): Promise<{
+export function syncGitHubRepo(repoId: string): Promise<{
+  issues: number;
+  pullRequests: number;
+}> {
+  // Single-flight + dirty-flag trailing re-run: see repo-sync-flight.ts.
+  // Lives here (not in the syncRepo router) so direct callers — issue
+  // management, repo management — are bounded too.
+  return runBoundedSync(repoId, async () => githubSync(repoId));
+}
+
+async function githubSync(repoId: string): Promise<{
   issues: number;
   pullRequests: number;
 }> {

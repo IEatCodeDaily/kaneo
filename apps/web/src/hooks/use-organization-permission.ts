@@ -62,6 +62,12 @@ export function useOrganizationPermission() {
     queryKey: ["organization-capabilities", organizationId, role],
     enabled: Boolean(organizationId && role),
     staleTime: 5 * 60 * 1000,
+    // A failed check must never be cached as "denied": that hid the comment
+    // box, label picker and every edit control for 5 minutes after one
+    // network blip. Throw instead, and retry even on NetworkError (the global
+    // default gives up on those immediately).
+    retry: 4,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     queryFn: async (): Promise<CapabilityMap> => {
       const entries = Object.entries(CAPABILITIES) as Array<
         [Capability, Record<string, string[]>]
@@ -73,10 +79,15 @@ export function useOrganizationPermission() {
               organizationId: organizationId,
               permissions,
             });
+            if (res.error) {
+              throw new Error(
+                res.error.message || `hasPermission ${res.error.status}`,
+              );
+            }
             return [key, res.data?.success === true] as const;
           } catch (error) {
             console.error(`hasPermission check failed for ${key}:`, error);
-            return [key, false] as const;
+            throw error;
           }
         }),
       );

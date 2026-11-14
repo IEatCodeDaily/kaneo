@@ -23,8 +23,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build workspace packages the web app imports
         run: pnpm turbo build --filter=@kaneo/web^...
+<<<<<<< HEAD
       - name: Design lint (S8 sweep)
         run: node scripts/design-lint.mjs
+=======
+>>>>>>> origin/main
       - name: Web typecheck (tsconfig.app.json)
         working-directory: apps/web
         run: pnpm exec tsc --noEmit -p tsconfig.app.json | tee ../../web-types.log; echo "errors $(grep -c 'error TS' ../../web-types.log)"

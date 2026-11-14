@@ -2,7 +2,11 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowDownIcon, ArrowUpIcon, CornerDownLeftIcon } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import SearchCommandMenu from "@/components/search-command-menu";
+import {
+  getSearchResultIcon,
+  type SearchResultItem,
+  useSearchResults,
+} from "@/components/search-command-menu";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import {
@@ -26,6 +30,7 @@ import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useCommandPaletteStore } from "@/store/command-palette";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
@@ -38,11 +43,30 @@ type PaletteActionItem = {
   onRun: () => void;
 };
 
-type PaletteGroup = {
+type PaletteActionGroup = {
+  kind: "actions";
   value: string;
   label: string;
   items: PaletteActionItem[];
 };
+
+type PaletteSearchGroup = {
+  kind: "search";
+  value: string;
+  label: string;
+  items: SearchResultItem[];
+};
+
+type PaletteGroup = PaletteActionGroup | PaletteSearchGroup;
+
+function matchesQuery(label: string, query: string) {
+  const haystack = label.toLowerCase();
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((token) => haystack.includes(token));
+}
 
 function CommandPalette() {
   const { t } = useTranslation();
@@ -50,8 +74,15 @@ function CommandPalette() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: organization } = useActiveOrganization();
-  const [open, setOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const open = useCommandPaletteStore((state) => state.open);
+  const setOpen = useCommandPaletteStore((state) => state.setOpen);
+  const togglePalette = useCommandPaletteStore((state) => state.toggle);
+  const [query, setQuery] = useState("");
+  const {
+    groups: searchGroups,
+    openResult,
+    searchEnabled,
+  } = useSearchResults(query);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
   const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] =
@@ -65,12 +96,14 @@ function CommandPalette() {
       [shortcuts.help.key]: () => {
         openKeyboardShortcutsHelp();
       },
+      // `/` and Ctrl/⌘+K are the same palette: commands + global search.
+      [shortcuts.search.prefix]: () => {
+        setOpen(true);
+      },
     },
     modifierShortcuts: {
       [shortcuts.palette.prefix]: {
-        [shortcuts.palette.open]: () => {
-          setOpen((prev) => !prev);
-        },
+        [shortcuts.palette.open]: togglePalette,
       },
     },
     sequentialShortcuts: {
@@ -95,14 +128,22 @@ function CommandPalette() {
     },
   });
 
-  const runCommand = useCallback((command: () => void) => {
-    command();
-    setOpen(false);
-  }, []);
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
 
-  const groupedItems = useMemo<PaletteGroup[]>(
+  const runCommand = useCallback(
+    (command: () => void) => {
+      command();
+      setOpen(false);
+    },
+    [setOpen],
+  );
+
+  const actionGroups = useMemo<PaletteActionGroup[]>(
     () => [
       {
+        kind: "actions",
         value: "suggestions",
         label: t("navigation:commandPalette.suggestions"),
         items: [
@@ -117,12 +158,6 @@ function CommandPalette() {
                 params: { organizationSlug: organization.slug },
               });
             },
-          },
-          {
-            value: "search",
-            label: t("navigation:commandPalette.search"),
-            shortcut: shortcuts.search.prefix,
-            onRun: () => setIsSearchOpen(true),
           },
           {
             value: "members",
@@ -149,6 +184,7 @@ function CommandPalette() {
         ],
       },
       {
+        kind: "actions",
         value: "commands",
         label: t("navigation:commandPalette.commands"),
         items: [
@@ -189,73 +225,49 @@ function CommandPalette() {
     [navigate, setTheme, t, organization?.slug],
   );
 
-  const shortcutHandlers = useMemo(() => {
-    const handlers = new Map<string, () => void>();
-    for (const group of groupedItems) {
-      for (const item of group.items) {
-        if (!item.shortcut) continue;
-        handlers.set(
-          item.shortcut.replace(/\s+/g, "").toLowerCase(),
-          item.onRun,
-        );
-      }
-    }
-    return handlers;
-  }, [groupedItems]);
+  const groupedItems = useMemo<PaletteGroup[]>(() => {
+    const trimmed = query.trim();
+    const filteredActions = trimmed
+      ? actionGroups
+          .map((group) => ({
+            ...group,
+            items: group.items.filter((item) =>
+              matchesQuery(item.label, trimmed),
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
+      : actionGroups;
+    const results: PaletteSearchGroup[] = searchGroups.map((group) => ({
+      kind: "search",
+      ...group,
+    }));
+    // Typing is almost always a search: results first, matching commands after.
+    return trimmed ? [...results, ...filteredActions] : filteredActions;
+  }, [actionGroups, query, searchGroups]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    let sequence = "";
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey ||
-        event.key === "Shift"
-      ) {
-        return;
-      }
-
-      if (event.key.length !== 1 && event.key !== "?") {
-        return;
-      }
-
-      sequence = `${sequence}${event.key.toLowerCase()}`.slice(-3);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        sequence = "";
-      }, 700);
-
-      const handler = shortcutHandlers.get(sequence);
-      if (!handler) return;
-
-      event.preventDefault();
-      runCommand(handler);
-      sequence = "";
-      clearTimeout(timeout);
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, shortcutHandlers, runCommand]);
+  const emptyMessage =
+    !query.trim() || searchEnabled
+      ? t("navigation:commandPalette.empty")
+      : t("navigation:search.minCharsHint");
 
   return (
     <>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandDialogPopup instant>
-          <Command items={groupedItems}>
+          <Command
+            items={groupedItems}
+            mode="none"
+            onValueChange={setQuery}
+            value={query}
+          >
             <CommandInput
-              placeholder={t("navigation:commandPalette.inputPlaceholder")}
+              placeholder={t("navigation:search.inputPlaceholder")}
             />
             <CommandPanel>
               <CommandEmpty>
-                {t("navigation:commandPalette.empty")}
+                <p className="text-center text-muted-foreground text-sm">
+                  {emptyMessage}
+                </p>
               </CommandEmpty>
               <CommandList>
                 {(group: PaletteGroup, groupIndex: number) => (
@@ -263,18 +275,49 @@ function CommandPalette() {
                     <CommandGroup items={group.items}>
                       <CommandGroupLabel>{group.label}</CommandGroupLabel>
                       <CommandCollection>
-                        {(item: PaletteActionItem) => {
+                        {(item: PaletteActionItem | SearchResultItem) => {
+                          if (group.kind === "search") {
+                            const result = item as SearchResultItem;
+                            const Icon = getSearchResultIcon(result.type);
+                            return (
+                              <CommandItem
+                                key={`${result.type}-${result.id}`}
+                                value={`${result.type}-${result.id}`}
+                                onClick={() =>
+                                  runCommand(() => openResult(result))
+                                }
+                                className="flex items-start gap-3 py-2.5"
+                                aria-label={`${result.type}: ${result.title}`}
+                              >
+                                <Icon
+                                  className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground"
+                                  aria-hidden="true"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate font-medium text-sm">
+                                    {result.title}
+                                  </div>
+                                  {result.description && (
+                                    <div className="mt-1 truncate text-muted-foreground text-xs">
+                                      {result.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            );
+                          }
+                          const action = item as PaletteActionItem;
                           return (
                             <CommandItem
-                              key={item.value}
-                              value={item.value}
-                              onClick={() => runCommand(item.onRun)}
+                              key={action.value}
+                              value={action.value}
+                              onClick={() => runCommand(action.onRun)}
                               className="px-3"
                             >
-                              <span className="flex-1">{item.label}</span>
-                              {item.shortcut && (
+                              <span className="flex-1">{action.label}</span>
+                              {action.shortcut && (
                                 <CommandShortcut>
-                                  {item.shortcut}
+                                  {action.shortcut}
                                 </CommandShortcut>
                               )}
                             </CommandItem>
@@ -318,7 +361,6 @@ function CommandPalette() {
         </CommandDialogPopup>
       </CommandDialog>
 
-      <SearchCommandMenu open={isSearchOpen} setOpen={setIsSearchOpen} />
       <CreateTaskModal
         open={isCreateTaskOpen}
         boardId={boardIdFromRoute}

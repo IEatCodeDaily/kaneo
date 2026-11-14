@@ -4,7 +4,6 @@ import { useLocation } from "@tanstack/react-router";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
-import SearchCommandMenu from "@/components/search-command-menu";
 import { SidebarGroup, useSidebar } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { shortcuts } from "@/constants/shortcuts";
 import { useBoardSlug } from "@/hooks/use-board-slug";
-import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useCommandPaletteStore } from "@/store/command-palette";
 
 /**
  * Lazy by design (KFL-86): this component is part of the layout rendered on
@@ -28,21 +27,14 @@ const CreateTaskModal = lazy(
 
 export default function Search() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  // Opens the unified search + command palette (same as `/` and Ctrl/⌘+K).
+  const openPalette = useCommandPaletteStore((state) => state.setOpen);
   const [createOpen, setCreateOpen] = useState(false);
   const { state } = useSidebar();
   const location = useLocation();
   const isCollapsed = state === "collapsed";
   const { boardId } = useBoardSlug();
   const isBacklog = location.pathname.endsWith("/backlog");
-
-  useRegisterShortcuts({
-    shortcuts: {
-      [shortcuts.search.prefix]: () => {
-        setOpen(true);
-      },
-    },
-  });
 
   /*
    * #96: collapsed, the search field morphs into a single icon button with a
@@ -61,7 +53,7 @@ export default function Search() {
                     aria-label={t("navigation:commandPalette.search")}
                     className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
                     data-testid="sidebar-search-collapsed"
-                    onClick={() => setOpen(true)}
+                    onClick={() => openPalette(true)}
                     type="button"
                   >
                     <SearchIcon aria-hidden="true" size={16} />
@@ -91,7 +83,6 @@ export default function Search() {
             </Tooltip>
           </div>
         </TooltipProvider>
-        <SearchCommandMenu open={open} setOpen={setOpen} />
         <CreateTaskModal
           boardId={boardId}
           onClose={() => setCreateOpen(false)}
@@ -107,7 +98,7 @@ export default function Search() {
       <div className="flex gap-1">
         <button
           className="inline-flex h-8 w-full cursor-pointer rounded-md border border-input bg-background px-2 py-1.5 text-foreground text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          onClick={() => setOpen(true)}
+          onClick={() => openPalette(true)}
           type="button"
         >
           <span className="flex grow items-center">
@@ -134,7 +125,6 @@ export default function Search() {
         </button>
       </div>
 
-      <SearchCommandMenu open={open} setOpen={setOpen} />
       <CreateTaskModal
         boardId={boardId}
         onClose={() => setCreateOpen(false)}

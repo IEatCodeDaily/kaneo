@@ -1,3 +1,4 @@
+import { shouldMirrorEvent } from "../../repo/services/mirror-events";
 import { syncGitHubWebhookPayload } from "../../repo/services/webhook-sync";
 import { getGithubApp } from "./utils/github-app";
 import { handleIssueClosed } from "./webhooks/issue-closed";
@@ -49,15 +50,19 @@ export async function handleGitHubWebhook(
     // Mirror the first-class repo (issues + PRs) so the repo view stays
     // current. Gitea does this in its own handler; GitHub was missing it,
     // so new PRs/issues never appeared without a manual sync.
-    try {
-      await syncGitHubWebhookPayload(JSON.parse(body));
-    } catch (syncError) {
-      // A failed mirror must not fail the webhook response (GitHub retries
-      // on non-2xx, which would re-run all the task-linking above).
-      console.error(
-        "[GitHub Webhook] Repo mirror sync failed:",
-        syncError instanceof Error ? syncError.message : syncError,
-      );
+    // Only events that can actually change issues/PRs: every other delivery
+    // (CI storms of workflow_job/workflow_run) used to pay a full re-sync.
+    if (shouldMirrorEvent(eventName)) {
+      try {
+        await syncGitHubWebhookPayload(JSON.parse(body));
+      } catch (syncError) {
+        // A failed mirror must not fail the webhook response (GitHub retries
+        // on non-2xx, which would re-run all the task-linking above).
+        console.error(
+          "[GitHub Webhook] Repo mirror sync failed:",
+          syncError instanceof Error ? syncError.message : syncError,
+        );
+      }
     }
 
     return { success: true };

@@ -83,7 +83,11 @@ export function AiSettings() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h2 className="font-semibold">AI chat</h2>
+<<<<<<< HEAD
                 <span className="rounded-full border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-warning">
+=======
+                <span className="rounded-full border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-warning">
+>>>>>>> origin/main
                   Alpha
                 </span>
               </div>

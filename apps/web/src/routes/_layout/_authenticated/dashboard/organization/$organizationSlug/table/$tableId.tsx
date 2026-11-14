@@ -219,11 +219,68 @@ function DataTableRoute() {
   const isDeleted = table.deletedAt !== null;
 
   return (
+<<<<<<< HEAD
     <Layout>
       <PageTitle title={table.name} hideAppName />
       {header}
       {/* The scaffold owns padding: no padding or gap on the route root (DS rule 2). */}
       <div className="flex min-h-0 flex-1 flex-col">
+=======
+    <OrganizationLayout title={table.name}>
+      <div className="flex h-full min-h-0 flex-col gap-5 overflow-hidden p-4 sm:p-6">
+        <PageTitle title={table.name} hideAppName />
+        <header className="flex shrink-0 items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary-soft-foreground">
+            <Table2 className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <Input
+              unstyled
+              value={name}
+              disabled={!canEdit || isDeleted}
+              aria-label={t("navigation:tables.tableName")}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") {
+                  renameCancelledRef.current = true;
+                  setName(table.name);
+                  e.currentTarget.blur();
+                }
+              }}
+              className="max-w-xl [&_[data-slot=input]]:h-auto [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:text-2xl [&_[data-slot=input]]:font-semibold [&_[data-slot=input]]:tracking-tight"
+            />
+            <p className="text-sm text-muted-foreground">
+              {t("navigation:tables.rowsCount", { count: rowCount })} ·{" "}
+              {t("navigation:tables.field", { count: table.fields.length })}
+            </p>
+          </div>
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("navigation:tables.tableOptions")}
+                  />
+                }
+              >
+                <MoreHorizontal className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 /> {t("navigation:tables.deleteTable")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </header>
+>>>>>>> origin/main
         {isDeleted && (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-primary-soft px-3 py-1.5 text-ui">
             <span className="min-w-0 flex-1">
@@ -268,6 +325,7 @@ function DataTableRoute() {
             </Layout.Toolbar>
           }
         >
+<<<<<<< HEAD
           <DataTableGrid
             key={table.id}
             table={table}
@@ -280,6 +338,112 @@ function DataTableRoute() {
             onDelete={() => setDeleteOpen(true)}
           />
         </Suspense>
+=======
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("navigation:tables.deleteTable")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("navigation:tables.deleteTableConfirm", {
+                  name: table.name,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+                {t("navigation:tables.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  setDeleteOpen(false);
+                  try {
+                    await deleteTable.mutateAsync({ organizationId, tableId });
+                    toast.success(t("navigation:tables.deleted"));
+                    navigate({
+                      to: "/dashboard/organization/$organizationSlug",
+                      params: { organizationSlug },
+                    });
+                  } catch {
+                    toast.error(t("navigation:tables.deleteTableError"));
+                  }
+                }}
+              >
+                {t("navigation:tables.deleteTable")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={purgeOpen}
+          onOpenChange={(open) => !open && setPurgeOpen(false)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("navigation:tables.purge")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("navigation:tables.purgeConfirm", { name: table.name })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+                {t("navigation:tables.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  if (purgeTable.isPending) return;
+                  setPurgeOpen(false);
+                  try {
+                    await purgeTable.mutateAsync({ organizationId, tableId });
+                    toast.success(t("navigation:tables.purged"));
+                    navigate({
+                      to: "/dashboard/organization/$organizationSlug",
+                      params: { organizationSlug },
+                    });
+                  } catch {
+                    toast.error(t("navigation:tables.purgeError"));
+                  }
+                }}
+              >
+                {t("navigation:tables.purge")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {table.fields.length === 0 && !canEdit ? (
+          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/20 p-8 text-center">
+            <div>
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary-soft-foreground">
+                <Table2 className="size-6" />
+              </div>
+              <h2 className="font-semibold">{t("navigation:tables.empty")}</h2>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                {t("navigation:tables.readOnlyEmpty")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Suspense
+            fallback={
+              <div className="flex-1 animate-pulse rounded-xl border bg-muted/40" />
+            }
+          >
+            <DataTableGrid
+              table={table}
+              organizationId={organizationId}
+              canEdit={canEdit && !isDeleted}
+            />
+          </Suspense>
+        )}
+>>>>>>> origin/main
       </div>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
