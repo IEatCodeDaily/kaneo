@@ -24,7 +24,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogPopup,
   DialogTitle,
   DialogTrigger,
@@ -341,7 +340,7 @@ export default function RepoTaskLinks({
             >
               <Link2 className="size-3.5" /> Link ticket
             </DialogTrigger>
-            <DialogPopup className="max-w-3xl">
+            <DialogPopup size="lg" inset="none">
               <DialogHeader>
                 <DialogTitle>Link an existing ticket</DialogTitle>
                 <DialogDescription>
@@ -351,80 +350,78 @@ export default function RepoTaskLinks({
               </DialogHeader>
               {/* Same two-pane layout as the parent selector: a board rail on
                   the left (jump/filter), search + sectioned results right. */}
-              <DialogPanel className="p-0">
-                <div className="grid min-h-80 sm:grid-cols-[12rem_1fr]">
-                  <nav
-                    aria-label="Boards"
-                    className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-x-visible sm:border-r sm:border-b-0"
-                  >
-                    {[{ id: "all", name: "All" }, ...(boards ?? [])].map(
-                      (board) => (
-                        <button
-                          aria-pressed={linkBoardId === board.id}
-                          className={cn(
-                            "flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full",
-                            linkBoardId === board.id
-                              ? "bg-accent font-medium"
-                              : "hover:bg-accent/60",
-                          )}
-                          data-testid={`link-ticket-rail-${board.id}`}
-                          key={board.id}
-                          onClick={() => setLinkBoardId(board.id)}
-                          type="button"
-                        >
-                          <span className="truncate">{board.name}</span>
-                        </button>
-                      ),
-                    )}
-                  </nav>
-                  <div className="min-w-0">
-                    <div className="border-b p-3">
-                      <Input
-                        aria-label="Search tickets"
-                        autoFocus
-                        className="h-8"
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search tickets across this organization…"
-                        value={search}
-                      />
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {isLoading ? (
-                        <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                          <LoaderCircle className="size-4 animate-spin" />{" "}
-                          Loading tickets…
-                        </p>
-                      ) : candidateGroups.length === 0 ? (
-                        <p className="p-4 text-sm text-muted-foreground">
-                          No unlinked tickets found.
-                        </p>
-                      ) : (
-                        candidateGroups.map((group) => (
-                          <div key={group.value}>
-                            <div
-                              className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
-                              data-testid={`link-ticket-board-${group.value}`}
-                            >
-                              {group.label}
-                            </div>
-                            {group.items.map((task) => (
-                              <button
-                                className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
-                                disabled={add.isPending}
-                                key={task.id}
-                                onClick={() => add.mutate(task.id)}
-                                type="button"
-                              >
-                                <LinkTicketCandidateRow task={task} />
-                              </button>
-                            ))}
+              <div className="grid min-h-80 sm:grid-cols-[12rem_1fr]">
+                <nav
+                  aria-label="Boards"
+                  className="flex gap-1 overflow-x-auto border-b p-2 sm:block sm:overflow-x-visible sm:border-r sm:border-b-0"
+                >
+                  {[{ id: "all", name: "All" }, ...(boards ?? [])].map(
+                    (board) => (
+                      <button
+                        aria-pressed={linkBoardId === board.id}
+                        className={cn(
+                          "flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full",
+                          linkBoardId === board.id
+                            ? "bg-accent font-medium"
+                            : "hover:bg-accent/60",
+                        )}
+                        data-testid={`link-ticket-rail-${board.id}`}
+                        key={board.id}
+                        onClick={() => setLinkBoardId(board.id)}
+                        type="button"
+                      >
+                        <span className="truncate">{board.name}</span>
+                      </button>
+                    ),
+                  )}
+                </nav>
+                <div className="min-w-0">
+                  <div className="border-b p-3">
+                    <Input
+                      aria-label="Search tickets"
+                      autoFocus
+                      className="h-8"
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search tickets across this organization…"
+                      value={search}
+                    />
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {isLoading ? (
+                      <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+                        <LoaderCircle className="size-4 animate-spin" /> Loading
+                        tickets…
+                      </p>
+                    ) : candidateGroups.length === 0 ? (
+                      <p className="p-4 text-sm text-muted-foreground">
+                        No unlinked tickets found.
+                      </p>
+                    ) : (
+                      candidateGroups.map((group) => (
+                        <div key={group.value}>
+                          <div
+                            className="sticky top-0 z-10 border-b bg-muted/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur"
+                            data-testid={`link-ticket-board-${group.value}`}
+                          >
+                            {group.label}
                           </div>
-                        ))
-                      )}
-                    </div>
+                          {group.items.map((task) => (
+                            <button
+                              className="flex w-full items-center gap-3 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-accent disabled:opacity-60"
+                              disabled={add.isPending}
+                              key={task.id}
+                              onClick={() => add.mutate(task.id)}
+                              type="button"
+                            >
+                              <LinkTicketCandidateRow task={task} />
+                            </button>
+                          ))}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
-              </DialogPanel>
+              </div>
               <DialogFooter>
                 <Button onClick={() => setLinkOpen(false)} variant="outline">
                   Cancel
@@ -476,46 +473,43 @@ export default function RepoTaskLinks({
                       updates overwrite its title and description.
                     </DialogDescription>
                   </DialogHeader>
-                  <DialogPanel>
-                    <label
-                      className="space-y-2 text-sm"
-                      htmlFor={syncBoardInputId}
+                  <label
+                    className="space-y-2 text-sm"
+                    htmlFor={syncBoardInputId}
+                  >
+                    <span>Board</span>
+                    <Combobox
+                      autoHighlight
+                      itemToStringLabel={(board: {
+                        id: string;
+                        name: string;
+                      }) => board.name}
+                      items={boards ?? []}
+                      onValueChange={(board) => setBoardId(board?.id ?? "")}
+                      value={
+                        (boards ?? []).find((board) => board.id === boardId) ??
+                        null
+                      }
                     >
-                      <span>Board</span>
-                      <Combobox
-                        autoHighlight
-                        itemToStringLabel={(board: {
-                          id: string;
-                          name: string;
-                        }) => board.name}
-                        items={boards ?? []}
-                        onValueChange={(board) => setBoardId(board?.id ?? "")}
-                        value={
-                          (boards ?? []).find(
-                            (board) => board.id === boardId,
-                          ) ?? null
-                        }
-                      >
-                        <ComboboxInput
-                          aria-label="Board for synced ticket"
-                          id={syncBoardInputId}
-                          placeholder="Search boards…"
-                        />
-                        <ComboboxPopup>
-                          <ComboboxEmpty>No boards found.</ComboboxEmpty>
-                          <ComboboxList>
-                            <ComboboxCollection>
-                              {(board: { id: string; name: string }) => (
-                                <ComboboxItem key={board.id} value={board}>
-                                  {board.name}
-                                </ComboboxItem>
-                              )}
-                            </ComboboxCollection>
-                          </ComboboxList>
-                        </ComboboxPopup>
-                      </Combobox>
-                    </label>
-                  </DialogPanel>
+                      <ComboboxInput
+                        aria-label="Board for synced ticket"
+                        id={syncBoardInputId}
+                        placeholder="Search boards…"
+                      />
+                      <ComboboxPopup>
+                        <ComboboxEmpty>No boards found.</ComboboxEmpty>
+                        <ComboboxList>
+                          <ComboboxCollection>
+                            {(board: { id: string; name: string }) => (
+                              <ComboboxItem key={board.id} value={board}>
+                                {board.name}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxCollection>
+                        </ComboboxList>
+                      </ComboboxPopup>
+                    </Combobox>
+                  </label>
                   <DialogFooter>
                     <Button
                       onClick={() => setSyncOpen(false)}

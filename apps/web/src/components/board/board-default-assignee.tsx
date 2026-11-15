@@ -142,7 +142,7 @@ export function BoardDefaultAssignee({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-1" align="end">
+      <PopoverContent inset="panel" className="w-64" align="end">
         <PrincipalPickerList
           clearLabel="No default"
           onSelect={(option) => assign(option)}

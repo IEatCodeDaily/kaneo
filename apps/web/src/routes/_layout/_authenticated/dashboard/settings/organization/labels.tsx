@@ -259,7 +259,7 @@ function RouteComponent() {
           </Card>
 
           <Card className="!rounded-none">
-            <CardPanel className="p-4">
+            <CardPanel>
               {organizationLabels.length === 0 ? (
                 <Empty>
                   <EmptyHeader>
@@ -344,7 +344,7 @@ function RouteComponent() {
         open={createOpen}
         onOpenChange={(open) => !open && setCreateOpen(false)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent size="sm">
           <DialogHeader>
             <DialogTitle>
               {t("settings:organizationLabels.createLabel", {
@@ -359,7 +359,7 @@ function RouteComponent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-6 pt-1 space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-label-name">
                 {t("settings:organizationLabels.nameLabel", {
@@ -435,7 +435,7 @@ function RouteComponent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent size="sm">
           <DialogHeader>
             <DialogTitle>
               {t("settings:organizationLabels.editLabel", {
@@ -449,7 +449,7 @@ function RouteComponent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-6 pt-1 space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="edit-label-name">
                 {t("settings:organizationLabels.nameLabel", {

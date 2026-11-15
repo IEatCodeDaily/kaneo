@@ -480,7 +480,7 @@ function BulkToolbar() {
                     {t("tasks:bulk.setDueDate")}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0" align="center">
+                <PopoverContent align="center">
                   <Calendar
                     mode="single"
                     onSelect={handleBulkDueDate}

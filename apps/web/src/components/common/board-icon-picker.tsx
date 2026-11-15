@@ -94,10 +94,11 @@ function BoardIconPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        inset="panel"
         align={align}
         side={side}
         sideOffset={8}
-        className="max-h-[min(26rem,var(--available-height))] w-80 overflow-hidden p-2"
+        className="max-h-[min(26rem,var(--available-height))] w-80 overflow-hidden"
       >
         <div className="space-y-2">
           <Input

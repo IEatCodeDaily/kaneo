@@ -738,6 +738,214 @@ if (pages.table) {
   await ctx.close();
 }
 
+// Overlay inset (KFL-395). The modal primitives own the 16px content gutter:
+// header text, body content and footer actions share one inset. Measured from
+// painted pixels (text ranges, borders, fills) rather than from slots, so the
+// assert reads any markup — including the pre-fix markup it was written against.
+const overlayGeometry = () => {
+  const popup = [...document.querySelectorAll('[data-slot$="-popup"]')]
+    .filter((el) => /^(dialog|alert-dialog|sheet)-popup$/.test(el.dataset.slot))
+    .at(-1);
+  if (!popup) return null;
+  const box = popup.getBoundingClientRect();
+  const left = box.left + popup.clientLeft;
+  const right = left + popup.clientWidth;
+  const clear = (c) => c === "transparent" || /,\s*0\)$/.test(c);
+  const painted = (roots) => {
+    const rects = [];
+    const walk = (el) => {
+      if (el.matches('.sr-only, [aria-label="Close"], [data-slot$="-close"]'))
+        return;
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") return;
+      const r = el.getBoundingClientRect();
+      const edged = ["Top", "Right", "Bottom", "Left"].some(
+        (side) =>
+          Number.parseFloat(cs[`border${side}Width`]) > 0 &&
+          !clear(cs[`border${side}Color`]),
+      );
+      const replaced = /^(input|textarea|select|img|svg)$/i.test(el.tagName);
+      if (
+        r.width > 1 &&
+        r.height > 1 &&
+        (edged || replaced || !clear(cs.backgroundColor))
+      )
+        rects.push(r);
+      for (const node of el.childNodes) {
+        if (node.nodeType === 1) walk(node);
+        else if (node.nodeType === 3 && node.textContent.trim()) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const text = range.getBoundingClientRect();
+          if (text.width > 1) rects.push(text);
+        }
+      }
+    };
+    for (const root of roots) walk(root);
+    return rects;
+  };
+  const header = popup.querySelector('[data-slot$="-header"]');
+  const footer = popup.querySelector('[data-slot$="-footer"]');
+  // body = everything in the popup that is neither the header nor the footer
+  const bodyRoots = [];
+  const collect = (el) => {
+    for (const child of el.children) {
+      if (child === header || child === footer) continue;
+      if (child.contains(header) || child.contains(footer)) collect(child);
+      else bodyRoots.push(child);
+    }
+  };
+  collect(popup);
+  const px = (n) => Math.round(n * 10) / 10;
+  const span = (rects) =>
+    rects.length
+      ? {
+          l: px(Math.min(...rects.map((r) => r.left)) - left),
+          r: px(right - Math.max(...rects.map((r) => r.right))),
+        }
+      : null;
+  const h = header ? span(painted([...header.children])) : null;
+  const f = footer ? span(painted([...footer.children])) : null;
+  const b = span(painted(bodyRoots));
+  return {
+    // sticky bars must be filled, or the body scrolls visibly behind them
+    // (a confirmation's header is inline message text, not a bar)
+    bars_opaque: [header, footer]
+      .filter((el) => el && getComputedStyle(el).position === "sticky")
+      .every((el) => !clear(getComputedStyle(el).backgroundColor)),
+    width: Math.round(box.width),
+    radius: getComputedStyle(popup).borderTopLeftRadius,
+    header_h: header ? Math.round(header.getBoundingClientRect().height) : null,
+    footer_h: footer ? Math.round(footer.getBoundingClientRect().height) : null,
+    header_inset: h?.l ?? null,
+    body_left: b?.l ?? null,
+    body_right: b?.r ?? null,
+    footer_inset: f?.r ?? null,
+  };
+};
+const DESKTOP = { width: 1440, height: 900 };
+const openFieldOptions = (p) =>
+  p.getByRole("button", { name: "Add field" }).first().click();
+const GUTTER = {
+  bars_opaque: true,
+  header_inset: 16,
+  body_left: 16,
+  body_right: 16,
+  radius: "10px",
+};
+// [shot, theme, viewport, open, want] — every key in `want` must measure equal;
+// a missing measurement (null) fails too.
+const OVERLAY_STATES = [
+  [
+    "dialog-field-options--desktop-dark",
+    "dark",
+    DESKTOP,
+    openFieldOptions,
+    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+  ],
+  [
+    "dialog-field-options--desktop-light",
+    "light",
+    DESKTOP,
+    openFieldOptions,
+    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+  ],
+  [
+    "dialog-field-options--phone-dark",
+    "dark",
+    { width: 390, height: 844 },
+    openFieldOptions,
+    { ...GUTTER, footer_inset: 16, width: 390 },
+  ],
+  [
+    "dialog-create-table--desktop-dark",
+    "dark",
+    DESKTOP,
+    (p) => p.getByRole("button", { name: "Create table" }).first().click(),
+    { ...GUTTER, footer_inset: 16, width: 400, footer_h: 52 },
+  ],
+  [
+    "dialog-create-board--desktop-dark",
+    "dark",
+    DESKTOP,
+    (p) => p.getByRole("button", { name: "Add board" }).first().click(),
+    { ...GUTTER, footer_inset: 16, width: 400, header_h: 44, footer_h: 52 },
+  ],
+  [
+    "dialog-confirm--desktop-dark",
+    "dark",
+    DESKTOP,
+    async (p) => {
+      await p.getByRole("button", { name: "Tickets field menu" }).click();
+      await p.getByRole("menuitem", { name: "Change field type" }).click();
+      await p.getByRole("menuitem", { name: "Text", exact: true }).click();
+    },
+    {
+      bars_opaque: true,
+      header_inset: 16,
+      footer_inset: 16,
+      width: 400,
+      footer_h: 52,
+      radius: "10px",
+    },
+  ],
+  [
+    "sheet-row--desktop-dark",
+    "dark",
+    DESKTOP,
+    (p) => p.getByText("PB-1042 Filter test A").first().click(),
+    {
+      bars_opaque: true,
+      header_inset: 16,
+      body_left: 16,
+      width: 480,
+      header_h: 44,
+    },
+  ],
+];
+if (pages.table) {
+  for (const [name, theme, viewport, open, want] of OVERLAY_STATES) {
+    const ctx = await browser.newContext({
+      viewport,
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: theme,
+      hasTouch: viewport.width < 600,
+    });
+    await ctx.addInitScript((t) => {
+      const k = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(k) ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: t };
+      localStorage.setItem(k, JSON.stringify(cur));
+    }, theme);
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    try {
+      await open(page);
+      await page.waitForTimeout(700);
+      await page.mouse.move(2, 2);
+    } catch (e) {
+      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    const m = (await page.evaluate(overlayGeometry)) ?? {};
+    for (const [key, value] of Object.entries(want))
+      if (m[key] !== value)
+        fails.push(`${key} ${m[key] ?? "not measured"}, want ${value}`);
+    const shot = `${name}.png`;
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails, ...m };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+}
+
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));
 const bad = Object.values(checks).reduce((n, c) => n + c.fails.length, 0);

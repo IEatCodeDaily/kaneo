@@ -1050,11 +1050,8 @@ function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent
-        className="kaneo-create-task-modal max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
-        showCloseButton={false}
-      >
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent size="lg" showCloseButton={false}>
+        <DialogHeader>
           <div className="flex items-center justify-between gap-3">
             <DialogTitle asChild>
               <Breadcrumb>
@@ -1081,8 +1078,8 @@ function CreateTaskModal({
                             </Button>
                           }
                         />
-                        <DialogContent className="max-w-3xl p-0">
-                          <DialogHeader className="border-b px-5 py-4">
+                        <DialogContent size="lg" inset="none">
+                          <DialogHeader>
                             <DialogTitle>
                               {t("settings:boardSwitcher.selectBoard")}
                             </DialogTitle>
@@ -1194,12 +1191,11 @@ function CreateTaskModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 min-h-0 space-y-6"
-        >
+        {/* The form is display:contents inside the dialog body; the class is
+            the hook for the editor rules in index.css. */}
+        <form onSubmit={handleSubmit} className="kaneo-create-task-modal">
           <div
-            className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6"
+            className="-mx-4 flex-1 min-h-0 overflow-y-auto space-y-6 px-4"
             data-testid="create-task-scroll-body"
           >
             {resolvedBoardId && (
@@ -1285,10 +1281,10 @@ function CreateTaskModal({
             </div>
           </div>
 
-          <DialogFooter className="flex-shrink-0 flex-col items-stretch gap-3 border-t border-border bg-background px-6 py-4 sm:flex-col">
+          <DialogFooter>
             {/* #180: properties and actions share one footer surface. */}
             <div
-              className="space-y-2"
+              className="w-full space-y-2"
               data-testid="create-task-sticky-properties"
             >
               {labels.length > 0 && (
@@ -1359,7 +1355,7 @@ function CreateTaskModal({
                         </span>
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0" align="start">
+                    <PopoverContent align="start">
                       <Calendar
                         mode="single"
                         selected={startDate}
@@ -1401,7 +1397,7 @@ function CreateTaskModal({
                         </span>
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0" align="start">
+                    <PopoverContent align="start">
                       <Calendar
                         mode="single"
                         selected={dueDate}
@@ -1444,7 +1440,7 @@ function CreateTaskModal({
                       </span>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="start">
+                  <PopoverContent inset="panel" className="w-48" align="start">
                     <div className="space-y-1">
                       {priorityOptions.map((option) => (
                         <button
@@ -1523,7 +1519,7 @@ function CreateTaskModal({
                       )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-1" align="start">
+                  <PopoverContent inset="panel" className="w-64" align="start">
                     <PrincipalPickerList
                       clearLabel={t(
                         "common:modals.createTask.assignUnassigned",
@@ -1568,7 +1564,7 @@ function CreateTaskModal({
                       <span>{t("common:modals.createTask.labels")}</span>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0" align="start">
+                  <PopoverContent align="start">
                     {labelsStep === "select" && (
                       <div className="w-auto">
                         <div className="flex items-center gap-2 p-2 border-b border-border">
@@ -1693,7 +1689,7 @@ function CreateTaskModal({
                 </Popover>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
+            <div className="flex w-full flex-wrap items-center gap-3 border-t border-border/60 pt-3">
               <div className="flex items-center gap-3 mr-auto">
                 <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                   <input

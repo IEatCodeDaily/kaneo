@@ -144,7 +144,7 @@ export default function TaskFlagPicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
+      <PopoverContent className="w-72" align="start">
         {/*
           #107: the popover is height-capped and scrolls. Flag types, the
           member/team list, the notes field and the activity all stack inside

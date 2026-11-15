@@ -78,8 +78,8 @@ export function GiteaRepositoryBrowserModal({
 
   return (
     <Dialog open={open} onOpenChange={resetAndCloseModal}>
-      <DialogContent className="!max-w-2xl max-h-[85vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent size="lg">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitBranch className="size-5" />
             {t("settings:giteaIntegration.browseModalTitle")}
@@ -89,7 +89,7 @@ export function GiteaRepositoryBrowserModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 pb-4">
+        <div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
@@ -101,7 +101,7 @@ export function GiteaRepositoryBrowserModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-2">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {!canFetch && (
             <p className="text-sm text-muted-foreground py-8 text-center">
               {t("settings:giteaIntegration.browseNeedsCredentials")}

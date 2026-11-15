@@ -209,7 +209,7 @@ export default function CreateTaskTopbar({
             </Button>
           }
         />
-        <PopoverContent className="w-64 p-0" align="start">
+        <PopoverContent className="w-64" align="start">
           <div className="max-h-64 overflow-y-auto py-1">
             <button
               type="button"
@@ -279,8 +279,8 @@ export default function CreateTaskTopbar({
             </Button>
           }
         />
-        <DialogContent className="max-w-3xl p-0">
-          <DialogHeader className="border-b px-5 py-4">
+        <DialogContent size="lg" inset="none">
+          <DialogHeader>
             <DialogTitle>{t("tasks:parentTask.title")}</DialogTitle>
             <DialogDescription>
               {t("tasks:parentTask.searchPlaceholder")}

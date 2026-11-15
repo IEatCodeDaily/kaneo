@@ -8,8 +8,9 @@ describe("task template drawer (#118)", () => {
       "utf8",
     );
 
-    expect(source).toContain("sm:max-w-md md:max-w-xl lg:max-w-3xl");
-    expect(source).toContain("border-b border-border px-4 py-2.5");
+    // Width and header bar come from the Sheet primitive (size="lg").
+    expect(source).toContain('<SheetContent size="lg">');
+    expect(source).toContain("<SheetHeader>");
     expect(source).toContain('id="template-title"');
     expect(source).toContain("text-xl font-semibold");
     expect(source).toContain("border-y border-border bg-sidebar");

@@ -185,7 +185,7 @@ export function TicketCellPicker({
           {children}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-1" align="start">
+      <PopoverContent inset="panel" className="w-80" align="start">
         <div className="relative mb-1 flex items-center">
           <Search className="absolute left-2 size-3.5 text-muted-foreground" />
           <Input

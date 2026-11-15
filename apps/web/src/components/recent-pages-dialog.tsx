@@ -26,16 +26,16 @@ export function RecentPagesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>{t("navigation:sidebar.recentViewAll")}</DialogTitle>
         </DialogHeader>
         {recentPages.length === 0 ? (
-          <p className="pb-4 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {t("navigation:sidebar.recentEmpty")}
           </p>
         ) : (
-          <ul className="max-h-80 space-y-0.5 overflow-y-auto pb-2">
+          <ul className="space-y-1">
             {recentPages.map((page) => (
               <li key={page.pathname}>
                 <button

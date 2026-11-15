@@ -51,7 +51,7 @@ function CardFrameHeader({
   ...props
 }: useRender.ComponentProps<"div">) {
   const defaultProps = {
-    className: cn("relative flex flex-col px-6 py-4", className),
+    className: cn("relative flex flex-col px-4 py-3", className),
     "data-slot": "card-frame-header",
   };
 
@@ -102,7 +102,7 @@ function CardFrameFooter({
   ...props
 }: useRender.ComponentProps<"div">) {
   const defaultProps = {
-    className: cn("px-6 py-4", className),
+    className: cn("px-4 py-3", className),
     "data-slot": "card-frame-footer",
   };
 
@@ -120,7 +120,7 @@ function CardHeader({
 }: useRender.ComponentProps<"div">) {
   const defaultProps = {
     className: cn(
-      "grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 p-6 in-[[data-slot=card]:has(>[data-slot=card-panel])]:pb-4 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
+      "grid auto-rows-min grid-rows-[auto_auto] items-start gap-1 p-4 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
       className,
     ),
     "data-slot": "card-header",
@@ -187,14 +187,19 @@ function CardAction({
   });
 }
 
+// The panel owns the 16px card inset. `inset="none"` is for full-bleed content
+// (a divided list, a table); padding classes on card sections are linted out.
 function CardPanel({
   className,
   render,
+  inset = "default",
   ...props
-}: useRender.ComponentProps<"div">) {
+}: useRender.ComponentProps<"div"> & { inset?: "default" | "none" }) {
   const defaultProps = {
     className: cn(
-      "flex-1 p-6 in-[[data-slot=card]:has(>[data-slot=card-header]:not(.border-b))]:pt-0 in-[[data-slot=card]:has(>[data-slot=card-footer]:not(.border-t))]:pb-0",
+      "flex-1",
+      inset === "default" &&
+        "p-4 in-[[data-slot=card]:has(>[data-slot=card-header]:not(.border-b))]:pt-0 in-[[data-slot=card]:has(>[data-slot=card-footer]:not(.border-t))]:pb-0",
       className,
     ),
     "data-slot": "card-panel",
@@ -213,10 +218,7 @@ function CardFooter({
   ...props
 }: useRender.ComponentProps<"div">) {
   const defaultProps = {
-    className: cn(
-      "flex items-center p-6 in-[[data-slot=card]:has(>[data-slot=card-panel])]:pt-4",
-      className,
-    ),
+    className: cn("flex items-center p-4", className),
     "data-slot": "card-footer",
   };
 

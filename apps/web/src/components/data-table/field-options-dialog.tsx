@@ -183,7 +183,7 @@ export default function FieldOptionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {field
@@ -205,10 +205,10 @@ export default function FieldOptionsDialog({
             />
           )}
           <div>
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
               {t("navigation:tables.fieldType")}
             </p>
-            <div className="grid max-h-44 grid-cols-2 gap-1 overflow-y-auto rounded-lg border p-1">
+            <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
               {(field?.type === "link"
                 ? ["link", ...EDITABLE_FIELD_TYPES]
                 : EDITABLE_FIELD_TYPES
@@ -219,7 +219,7 @@ export default function FieldOptionsDialog({
                   disabled={option === "link"}
                   data-selected={type === option}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 data-[selected=true]:bg-accent",
+                    "flex items-center gap-2 h-7 rounded-md px-2 text-left text-ui hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 data-[selected=true]:bg-accent",
                   )}
                   onClick={() => setType(option as DataTableFieldType)}
                 >
@@ -234,13 +234,13 @@ export default function FieldOptionsDialog({
 
           {(type === "select" || type === "multiselect") && (
             <div>
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">
                 {t("navigation:tables.choices")}{" "}
                 {t("navigation:tables.choicesCount", { count: choices.length })}
               </p>
               <div className="space-y-1">
                 {choices.map((choice) => (
-                  <div key={choice.id} className="flex items-center gap-1.5">
+                  <div key={choice.id} className="flex items-center gap-1">
                     <input
                       type="color"
                       value={choice.color}
@@ -279,7 +279,7 @@ export default function FieldOptionsDialog({
                 type="button"
                 variant="outline"
                 size="xs"
-                className="mt-1.5"
+                className="mt-1"
                 onClick={() =>
                   setChoices((current) => [
                     ...current,
@@ -327,7 +327,7 @@ export default function FieldOptionsDialog({
           {type === "ticket" && (
             <div className="space-y-3">
               <div>
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
                   {t("navigation:tables.ticketBoards")}
                 </p>
                 <div className="flex flex-col gap-1 rounded-lg border p-1">
@@ -379,7 +379,7 @@ export default function FieldOptionsDialog({
                 </div>
               </div>
               <div>
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
                   {t("navigation:tables.ticketCount")}
                 </p>
                 <div className="flex gap-1">
@@ -415,7 +415,7 @@ export default function FieldOptionsDialog({
           {field && type !== field.type && (
             <p
               role="alert"
-              className="rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive-foreground"
+              className="rounded-md bg-destructive/10 p-2 text-xs text-destructive-foreground"
             >
               {t(
                 typeChangeKeepsValues(field.type, type)
@@ -425,7 +425,7 @@ export default function FieldOptionsDialog({
             </p>
           )}
 
-          <span className="flex items-center gap-2 text-sm">
+          <span className="flex items-center gap-2 text-ui">
             <Checkbox
               checked={required}
               onCheckedChange={(checked) => setRequired(checked === true)}
@@ -445,7 +445,7 @@ export default function FieldOptionsDialog({
           <Button type="button" disabled={saveDisabled} onClick={save}>
             {field
               ? t("navigation:tables.editField")
-              : t("navigation:tables.createAction")}
+              : t("navigation:tables.addField")}
           </Button>
         </DialogFooter>
       </DialogContent>

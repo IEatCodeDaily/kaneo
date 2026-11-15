@@ -44,7 +44,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -828,36 +827,34 @@ export default function TaskResources({
               overwrite the task's title and description.
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel>
-            <div className="space-y-2 text-sm">
-              <label htmlFor="create-synced-issue-repository">Repository</label>
-              <Combobox
-                autoHighlight
-                itemToStringLabel={(repo) => `${repo.owner}/${repo.name}`}
-                items={repos}
-                onValueChange={(repo) => setCreateRepoId(repo?.id ?? "")}
-                value={repos.find((repo) => repo.id === createRepoId) ?? null}
-              >
-                <ComboboxInput
-                  aria-label="Repository for the new issue"
-                  id="create-synced-issue-repository"
-                  placeholder="Search repositories…"
-                />
-                <ComboboxPopup>
-                  <ComboboxEmpty>No repositories found.</ComboboxEmpty>
-                  <ComboboxList>
-                    <ComboboxCollection>
-                      {(repo) => (
-                        <ComboboxItem key={repo.id} value={repo}>
-                          {repo.owner}/{repo.name}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxCollection>
-                  </ComboboxList>
-                </ComboboxPopup>
-              </Combobox>
-            </div>
-          </DialogPanel>
+          <div className="space-y-2 text-sm">
+            <label htmlFor="create-synced-issue-repository">Repository</label>
+            <Combobox
+              autoHighlight
+              itemToStringLabel={(repo) => `${repo.owner}/${repo.name}`}
+              items={repos}
+              onValueChange={(repo) => setCreateRepoId(repo?.id ?? "")}
+              value={repos.find((repo) => repo.id === createRepoId) ?? null}
+            >
+              <ComboboxInput
+                aria-label="Repository for the new issue"
+                id="create-synced-issue-repository"
+                placeholder="Search repositories…"
+              />
+              <ComboboxPopup>
+                <ComboboxEmpty>No repositories found.</ComboboxEmpty>
+                <ComboboxList>
+                  <ComboboxCollection>
+                    {(repo) => (
+                      <ComboboxItem key={repo.id} value={repo}>
+                        {repo.owner}/{repo.name}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxCollection>
+                </ComboboxList>
+              </ComboboxPopup>
+            </Combobox>
+          </div>
           <DialogFooter>
             <Button onClick={() => setCreateOpen(false)} variant="outline">
               Cancel
@@ -887,47 +884,44 @@ export default function TaskResources({
               repository, file, table or any other URL.
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel>
-            <form
-              className="flex flex-col gap-3 text-sm"
-              id="add-resource-link-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!linkUrl.trim() || addLink.isPending) return;
-                addLink.mutate({
-                  taskId,
-                  title: linkTitle.trim() || undefined,
-                  url: linkUrl.trim(),
-                });
-              }}
-            >
-              <div className="flex flex-col gap-2">
-                <label htmlFor="add-resource-link-url">URL</label>
-                <Input
-                  autoFocus
-                  data-testid="add-resource-link-url"
-                  id="add-resource-link-url"
-                  onChange={(event) => setLinkUrl(event.target.value)}
-                  placeholder="https://…"
-                  type="url"
-                  value={linkUrl}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label htmlFor="add-resource-link-title">
-                  Label{" "}
-                  <span className="text-muted-foreground">(optional)</span>
-                </label>
-                <Input
-                  data-testid="add-resource-link-title"
-                  id="add-resource-link-title"
-                  onChange={(event) => setLinkTitle(event.target.value)}
-                  placeholder="Design doc"
-                  value={linkTitle}
-                />
-              </div>
-            </form>
-          </DialogPanel>
+          <form
+            className="flex flex-col gap-3 text-sm"
+            id="add-resource-link-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!linkUrl.trim() || addLink.isPending) return;
+              addLink.mutate({
+                taskId,
+                title: linkTitle.trim() || undefined,
+                url: linkUrl.trim(),
+              });
+            }}
+          >
+            <div className="flex flex-col gap-2">
+              <label htmlFor="add-resource-link-url">URL</label>
+              <Input
+                autoFocus
+                data-testid="add-resource-link-url"
+                id="add-resource-link-url"
+                onChange={(event) => setLinkUrl(event.target.value)}
+                placeholder="https://…"
+                type="url"
+                value={linkUrl}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="add-resource-link-title">
+                Label <span className="text-muted-foreground">(optional)</span>
+              </label>
+              <Input
+                data-testid="add-resource-link-title"
+                id="add-resource-link-title"
+                onChange={(event) => setLinkTitle(event.target.value)}
+                placeholder="Design doc"
+                value={linkTitle}
+              />
+            </div>
+          </form>
           <DialogFooter>
             <Button onClick={() => setAddLinkOpen(false)} variant="outline">
               Cancel

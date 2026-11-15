@@ -2090,11 +2090,7 @@ export default function CommentEditor({
           if (!open) setPreviewImage(null);
         }}
       >
-        <DialogPopup
-          className="max-w-6xl border-0 bg-transparent p-0 shadow-none before:hidden"
-          showCloseButton={false}
-          bottomStickOnMobile={false}
-        >
+        <DialogPopup variant="media">
           {previewImage && (
             <div className="flex max-h-[90vh] items-center justify-center p-4">
               <img

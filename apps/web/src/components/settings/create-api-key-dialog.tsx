@@ -148,8 +148,8 @@ export function CreateApiKeyDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0">
-        <DialogHeader className="px-6 py-5 border-b border-border">
+      <DialogContent>
+        <DialogHeader>
           <DialogTitle>{t("settings:apiKey.createDialog.title")}</DialogTitle>
           <DialogDescription>
             {t("settings:apiKey.createDialog.description")}
@@ -157,8 +157,8 @@ export function CreateApiKeyDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
-            <div className="space-y-5 px-6 py-5">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -227,7 +227,7 @@ export function CreateApiKeyDialog({
               />
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-2">
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"

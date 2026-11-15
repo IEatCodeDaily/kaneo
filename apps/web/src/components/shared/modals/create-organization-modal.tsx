@@ -85,7 +85,7 @@ function CreateOrganizationModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
+      <DialogContent size="sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle asChild>
             <Breadcrumb>
@@ -105,8 +105,8 @@ function CreateOrganizationModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4 px-6">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <Input
               ref={inputRef}
               unstyled

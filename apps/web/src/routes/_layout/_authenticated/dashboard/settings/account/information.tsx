@@ -483,7 +483,7 @@ function RouteComponent() {
                 })}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="space-y-2 px-6 pb-5">
+            <div className="space-y-2">
               <Label htmlFor="delete-account-confirmation">
                 {t("settings:informationPage.deleteAccount.confirmLabel", {
                   email: user?.email ?? "",

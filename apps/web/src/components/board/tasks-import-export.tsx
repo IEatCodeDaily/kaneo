@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
+  DialogFooter,
+  DialogHeader,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -179,25 +181,24 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
         open={canImport && isImportOpen}
         onOpenChange={resetAndCloseModal}
       >
-        <DialogPopup className="w-full max-w-md">
-          <div className="bg-card rounded-lg shadow-xl border border-border">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <DialogTitle className="text-sm font-semibold text-foreground">
-                {t("settings:tasksImportExport.dialogTitle")}
-              </DialogTitle>
-            </div>
+        <DialogPopup size="sm">
+          <DialogHeader>
+            <DialogTitle>
+              {t("settings:tasksImportExport.dialogTitle")}
+            </DialogTitle>
+          </DialogHeader>
 
-            <div className="p-4">
-              <p className="text-sm text-muted-foreground mb-2">
-                {t("settings:tasksImportExport.dialogDescription")}
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">
+              {t("settings:tasksImportExport.dialogDescription")}
+            </p>
+
+            <div className="mb-4 p-3 bg-muted rounded-md border border-border/50 font-mono text-sm">
+              <p className="text-muted-foreground mb-1 text-xs">
+                {t("settings:tasksImportExport.expectedFormat")}
               </p>
-
-              <div className="mb-4 p-3 bg-muted rounded-md border border-border/50 font-mono text-sm">
-                <p className="text-muted-foreground mb-1 text-xs">
-                  {t("settings:tasksImportExport.expectedFormat")}
-                </p>
-                <pre className="text-foreground overflow-auto max-h-32 text-xs">
-                  {`{
+              <pre className="text-foreground overflow-auto max-h-32 text-xs">
+                {`{
   "tasks": [
     {
       "title": "Task title",
@@ -210,52 +211,46 @@ export function TasksImportExport({ board }: TasksImportExportProps) {
     }
   ]
 }`}
-                </pre>
-              </div>
+              </pre>
+            </div>
 
-              {/** biome-ignore lint/a11y/noStaticElementInteractions: false positive for onDrop and onDragOver */}
-              <div
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center mb-4",
-                  "border-border",
-                  "hover:border-ring",
-                  "bg-muted/60",
-                  "transition-colors",
-                )}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-              >
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <Upload className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {t("settings:tasksImportExport.dropHint")}
-                  </p>
-                  <Button
-                    className="mt-2 bg-card hover:bg-accent text-foreground border border-border"
-                    size="sm"
-                    onClick={handleImportClick}
-                    disabled={isImporting}
-                  >
-                    {isImporting ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      t("settings:tasksImportExport.selectFile")
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <DialogClose
-                  render={
-                    <Button className="bg-card hover:bg-accent text-foreground border border-border" />
-                  }
+            {/** biome-ignore lint/a11y/noStaticElementInteractions: false positive for onDrop and onDragOver */}
+            <div
+              className={cn(
+                "border-2 border-dashed rounded-lg p-8 text-center",
+                "border-border",
+                "hover:border-ring",
+                "bg-muted/60",
+                "transition-colors",
+              )}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {t("settings:tasksImportExport.dropHint")}
+                </p>
+                <Button
+                  className="mt-2 bg-card hover:bg-accent text-foreground border border-border"
+                  size="sm"
+                  onClick={handleImportClick}
+                  disabled={isImporting}
                 >
-                  {t("common:actions.cancel")}
-                </DialogClose>
+                  {isImporting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    t("settings:tasksImportExport.selectFile")
+                  )}
+                </Button>
               </div>
             </div>
           </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              {t("common:actions.cancel")}
+            </DialogClose>
+          </DialogFooter>
         </DialogPopup>
       </Dialog>
     </div>

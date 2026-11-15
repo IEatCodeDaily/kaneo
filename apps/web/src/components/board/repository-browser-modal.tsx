@@ -18,11 +18,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import getGitHubAppInfo from "@/fetchers/github-integration/get-app-info";
 import listRepositories, {
   type ListRepositoriesResponse,
@@ -116,20 +116,18 @@ export function RepositoryBrowserModal({
 
   return (
     <Dialog open={open} onOpenChange={resetAndCloseModal}>
-      <DialogContent className="!max-w-2xl max-h-[85vh] p-0 gap-0 flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent size="lg">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitBranch className="w-5 h-5" />
             {t("settings:repositoryBrowser.title")}
           </DialogTitle>
-          <DialogDescription className="mt-1.5">
+          <DialogDescription>
             {t("settings:repositoryBrowser.description")}
           </DialogDescription>
         </DialogHeader>
 
-        <Separator />
-
-        <div className="px-6 py-4">
+        <div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -141,11 +139,9 @@ export function RepositoryBrowserModal({
           </div>
         </div>
 
-        <Separator />
-
-        <div className="flex-1 overflow-y-auto min-h-[300px]">
+        <div className="min-h-80 flex-1 overflow-y-auto">
           {isLoading && (
-            <div className="px-6 py-4 space-y-3">
+            <div className="space-y-3">
               {[0, 1, 2, 3, 4].map((slot) => (
                 <div
                   key={`loading-skeleton-repo-${slot}`}
@@ -164,7 +160,7 @@ export function RepositoryBrowserModal({
           )}
 
           {error && (
-            <div className="text-center py-12 px-6">
+            <div className="py-12 text-center">
               <div className="text-destructive mb-3 font-medium">
                 {t("settings:repositoryBrowser.loadError")}
               </div>
@@ -177,7 +173,7 @@ export function RepositoryBrowserModal({
           {data && !isLoading && (
             <>
               {data.repositories.length === 0 && (
-                <div className="text-center py-12 px-6">
+                <div className="py-12 text-center">
                   <GitBranch className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-sm font-semibold mb-2">
                     {t("settings:repositoryBrowser.emptyTitle")}
@@ -202,7 +198,7 @@ export function RepositoryBrowserModal({
               )}
 
               {filteredRepositories.length > 0 && (
-                <div className="px-6 py-4 space-y-2">
+                <div className="space-y-2">
                   {filteredRepositories.map((repository) => (
                     <button
                       key={repository.id}
@@ -282,7 +278,7 @@ export function RepositoryBrowserModal({
 
               {filteredRepositories.length === 0 &&
                 data.repositories.length > 0 && (
-                  <div className="text-center py-12 px-6">
+                  <div className="py-12 text-center">
                     <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-sm font-semibold mb-2">
                       {t("settings:repositoryBrowser.noSearchMatchTitle")}
@@ -297,32 +293,29 @@ export function RepositoryBrowserModal({
         </div>
 
         {data && data.installations.length > 0 && (
-          <>
-            <Separator />
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  {t("settings:repositoryBrowser.footerSummary", {
-                    repoCount: data.repositories.length,
-                    installationCount: data.installations.length,
-                  })}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    window.open(
-                      "https://github.com/settings/installations",
-                      "_blank",
-                    )
-                  }
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  {t("settings:repositoryBrowser.manageInstallations")}
-                </Button>
-              </div>
+          <DialogFooter>
+            <div className="flex w-full items-center justify-between text-sm text-muted-foreground">
+              <span>
+                {t("settings:repositoryBrowser.footerSummary", {
+                  repoCount: data.repositories.length,
+                  installationCount: data.installations.length,
+                })}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  window.open(
+                    "https://github.com/settings/installations",
+                    "_blank",
+                  )
+                }
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {t("settings:repositoryBrowser.manageInstallations")}
+              </Button>
             </div>
-          </>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

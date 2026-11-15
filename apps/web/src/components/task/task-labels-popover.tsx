@@ -394,7 +394,7 @@ export default function TaskLabelsPopover({
       <PopoverTrigger asChild nativeButton={triggerNativeButton}>
         {children}
       </PopoverTrigger>
-      <PopoverContent className="p-0" align="start">
+      <PopoverContent align="start">
         {step === "select" && renderSelectStep()}
         {step === "color" && renderColorStep()}
       </PopoverContent>

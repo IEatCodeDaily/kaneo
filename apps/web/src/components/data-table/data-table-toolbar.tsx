@@ -163,7 +163,7 @@ export function DataTableToolbar(props: Props) {
             />
           }
         />
-        <PopoverContent align="start" className="w-70 p-0">
+        <PopoverContent align="start" className="w-70">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.fieldsShown", {
               shown: fields.length - hiddenCount,
@@ -235,7 +235,7 @@ export function DataTableToolbar(props: Props) {
             />
           }
         />
-        <PopoverContent align="start" className="w-137 p-0">
+        <PopoverContent align="start" className="w-137">
           <FilterRows {...props} />
         </PopoverContent>
       </Popover>
@@ -252,7 +252,7 @@ export function DataTableToolbar(props: Props) {
             />
           }
         />
-        <PopoverContent align="start" className="w-100 p-0">
+        <PopoverContent align="start" className="w-100">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.sortBy")}
           </p>
@@ -324,7 +324,7 @@ export function DataTableToolbar(props: Props) {
             />
           }
         />
-        <PopoverContent align="start" className="w-70 p-0">
+        <PopoverContent align="start" className="w-70">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.groupBy")}
           </p>

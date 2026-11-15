@@ -26,7 +26,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -257,13 +256,13 @@ export function RepoItemTitleAction({
             <DialogTitle>Rename {name}</DialogTitle>
             <DialogDescription>Update the title in GitHub.</DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-4">
+          <div className="space-y-4">
             <Input
               aria-label="Title"
               onChange={(event) => setDraftTitle(event.target.value)}
               value={draftTitle}
             />
-          </DialogPanel>
+          </div>
           <DialogFooter>
             <Button onClick={() => setEditOpen(false)} variant="outline">
               Cancel

@@ -76,7 +76,7 @@ export default function TaskAssigneePopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-64 p-1" align="start">
+      <PopoverContent inset="panel" className="w-64" align="start">
         <PrincipalPickerList
           clearLabel={t("tasks:popover.assignee.unassigned")}
           onSelect={(option) => assign(option)}

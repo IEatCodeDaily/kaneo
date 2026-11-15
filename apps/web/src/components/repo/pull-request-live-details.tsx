@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogDescription,
+  DialogHeader,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -470,19 +471,14 @@ export default function PullRequestLiveDetails({
               </div>
             </div>
             <Dialog open={fullscreen} onOpenChange={setFullscreen}>
-              <DialogPopup
-                bottomStickOnMobile={false}
-                className="h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)]"
-              >
-                <div className="border-b px-5 py-4 pr-12">
-                  <DialogTitle className="text-sm">
-                    Pull request diff
-                  </DialogTitle>
+              <DialogPopup size="full">
+                <DialogHeader>
+                  <DialogTitle>Pull request diff</DialogTitle>
                   <DialogDescription>
                     Full-screen code comparison
                   </DialogDescription>
-                </div>
-                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4">
+                </DialogHeader>
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
                   {/* Tree column left, diff right. The diff wrapper must be a
                       full-height flex child (NOT items-start) or it sizes to its
                       content and the dialog never scrolls. */}

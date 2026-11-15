@@ -591,7 +591,7 @@ function Metric({
 }) {
   return (
     <Card>
-      <CardContent className="flex items-center gap-4 p-5">
+      <CardContent className="flex items-center gap-4">
         <span className="text-muted-foreground">{icon}</span>
         <div>
           <div className="text-2xl font-semibold tabular-nums">{value}</div>

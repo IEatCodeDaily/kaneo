@@ -135,7 +135,7 @@ export function PrincipalSelector({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-(--anchor-width) min-w-(--anchor-width) p-0"
+        className="w-(--anchor-width) min-w-(--anchor-width)"
         sideOffset={0}
         style={{ marginTop: -triggerHeight }}
       >

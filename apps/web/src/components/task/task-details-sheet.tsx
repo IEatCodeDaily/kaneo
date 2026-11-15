@@ -152,7 +152,9 @@ export default function TaskDetailsSheet({
         // #103: the drawer was `lg:max-w-4xl` — 896px, ~62% of a 1440px
         // viewport — which buried the board behind it. One step down keeps
         // the description readable while leaving the board visible.
-        className="w-full max-w-full sm:max-w-md md:max-w-xl lg:max-w-3xl p-0 gap-0 [&>button]:hidden"
+        size="lg"
+        inset="none"
+        showCloseButton={false}
         // An explicit width overrides the responsive max-* classes once the
         // user has dragged; until hydration finishes we keep the CSS default.
         style={width ? { width: `${width}px`, maxWidth: "100vw" } : undefined}

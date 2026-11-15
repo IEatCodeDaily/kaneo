@@ -50,7 +50,7 @@ export default function TaskDueDatePopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="p-0" align="start">
+      <PopoverContent align="start">
         <Calendar
           mode="single"
           selected={task.dueDate ? new Date(task.dueDate) : undefined}
