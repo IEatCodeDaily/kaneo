@@ -78,8 +78,9 @@ primitive to use for each pattern, with do and don't snippets.
   can be spent in another.
 - `inset="none"` hands the inset back to the caller. It is meant for full-bleed
   panes; the lint cannot tell a legitimate pane from a workaround.
-- A wrapper `<div>` that re-pads or bleeds a dialog body passes the types and
-  the lint. Only the rendered overlay states catch it, and only for the
+- The lint catches a host element that re-pads or bleeds a dialog body as its
+  direct child. The same padding inside a component, or one level deeper,
+  passes. Only the rendered overlay states catch that, and only for the
   surfaces they open.
 - 896 legacy offenders remain in the baseline (748 feature, 148 primitives).
   They are debt, not approval.

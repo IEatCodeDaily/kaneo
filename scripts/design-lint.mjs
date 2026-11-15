@@ -28,27 +28,90 @@ const ROOT = "apps/web/src";
 const UI = /^apps\/web\/src\/components\/ui\//;
 const BASELINE = path.join(process.cwd(), "scripts/design-lint-baseline.json");
 
-// Opening tags of the named components, whole — across lines and through
-// `{…}` expressions.
+// Index of the `>` that closes the opening tag whose name ends at `from` —
+// across lines and through `{…}` expressions.
+const tagEnd = (text, from) => {
+  let i = from;
+  let depth = 0;
+  let quote = null;
+  for (; i < text.length; i++) {
+    const c = text[i];
+    if (quote) {
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === "`") quote = c;
+    else if (c === "{") depth++;
+    else if (c === "}") depth--;
+    else if (c === ">" && depth === 0) break;
+  }
+  return i;
+};
+
+// Opening tags of the named components, whole.
 const openTags = (text, names) => {
   const found = [];
   const start = new RegExp(`<(?:${names})(?![\\w.])`, "g");
-  for (let m = start.exec(text); m; m = start.exec(text)) {
-    let i = start.lastIndex;
-    let depth = 0;
-    let quote = null;
-    for (; i < text.length; i++) {
-      const c = text[i];
-      if (quote) {
-        if (c === quote) quote = null;
-      } else if (c === '"' || c === "'" || c === "`") quote = c;
-      else if (c === "{") depth++;
-      else if (c === "}") depth--;
-      else if (c === ">" && depth === 0) break;
-    }
-    found.push(text.slice(m.index, i + 1));
-  }
+  for (let m = start.exec(text); m; m = start.exec(text))
+    found.push(text.slice(m.index, tagEnd(text, start.lastIndex) + 1));
   return found;
+};
+
+// Host elements that sit directly inside a padded Dialog/AlertDialog/Sheet
+// content (or its transparent <form>) and pad or bleed sideways without being
+// a box of their own. `inset="none"` and the chrome-less `variant="media"`
+// have no inset to fight. The enclosing element is read from indentation, which
+// `biome ci` keeps exact; `{cond && (` and `.map(` lines are transparent.
+// ponytail: components (<ScrollArea className="px-6">) are not checked, only
+// host elements. Add them if a component is ever used to re-pad a body.
+const OVERLAY_CONTENT =
+  /^<(?:Dialog|AlertDialog|Sheet)(?:Content|Popup)(?![\w.])/;
+const SIDEWAYS = /(?<![\w-])(?:-m[xytblrse]?|p[xselr]?)-(?:\d|px\b|\[)/;
+const OWN_BOX = /(?<![\w-])(?:border|bg-|shadow|ring)/;
+const repadded = (text) => {
+  const lines = text.split("\n");
+  const at = [];
+  let offset = 0;
+  for (const line of lines) {
+    at.push(offset);
+    offset += line.length + 1;
+  }
+  const indent = (i) => lines[i].length - lines[i].trimStart().length;
+  const tag = (i) =>
+    text.slice(at[i], tagEnd(text, at[i] + lines[i].indexOf("<") + 1) + 1);
+  // line of the nearest enclosing element's opening tag, or -1
+  const parent = (i) => {
+    let level = indent(i);
+    for (let k = i - 1; k >= 0; k--) {
+      const line = lines[k].trimStart();
+      if (line === "" || indent(k) >= level) continue;
+      level = indent(k);
+      if (/^<[A-Za-z]/.test(line)) return k;
+      // a lone `>` ends a multi-line opening tag that starts at this level
+      if (line === ">")
+        for (k--; k >= 0; k--)
+          if (indent(k) === level && /^<[A-Za-z]/.test(lines[k].trimStart()))
+            return k;
+    }
+    return -1;
+  };
+  const padded = (k) =>
+    k >= 0 &&
+    OVERLAY_CONTENT.test(lines[k].trimStart()) &&
+    !/\s(?:inset="none"|variant="media")/.test(tag(k));
+  let n = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^<[a-z]/.test(lines[i].trimStart())) continue;
+    const own = tag(i);
+    if (!SIDEWAYS.test(own) || OWN_BOX.test(own)) continue;
+    const up = parent(i);
+    if (
+      padded(up) ||
+      (up >= 0 &&
+        /^<form(?![\w.])/.test(lines[up].trimStart()) &&
+        padded(parent(up)))
+    )
+      n++;
+  }
+  return n;
 };
 
 // Comments carry no classes: blank JSX comments, line-leading block comments
@@ -168,6 +231,25 @@ const RULES = [
       "<DialogHeader visuallyHidden>",
       '<DialogContent\n  {/* don\'t pass className= here */}\n  size="sm">',
       '<DialogTitle className="truncate">',
+    ],
+  },
+  {
+    name: "overlay body re-padded",
+    why: "the content is already inset 16px: a direct child must not pad or bleed sideways. Group rows in a plain <div>; a full-bleed band uses -mx-(--overlay-inset) px-(--overlay-inset); a box of its own (border or fill) may pad",
+    featureOnly: true,
+    count: repadded,
+    bad: [
+      '<DialogContent>\n  <div className="grid gap-4 px-6">\n  </div>\n</DialogContent>',
+      '<SheetContent\n  size="sm"\n>\n  {open && (\n    <div className="-mx-4">\n    </div>\n  )}\n</SheetContent>',
+      '<DialogContent>\n  <form onSubmit={save}>\n    <div\n      className="p-6"\n    >\n    </div>\n  </form>\n</DialogContent>',
+    ],
+    good: [
+      '<DialogContent>\n  <div className="space-y-2">\n    <div className="px-2">\n    </div>\n  </div>\n</DialogContent>',
+      '<DialogContent>\n  <ul className="rounded-md border p-2">\n  </ul>\n</DialogContent>',
+      '<DialogContent>\n  <div className="-mx-(--overlay-inset) px-(--overlay-inset)">\n  </div>\n</DialogContent>',
+      '<DialogContent inset="none">\n  <div className="px-4">\n  </div>\n</DialogContent>',
+      '<DialogPopup variant="media">\n  <div className="flex p-4">\n  </div>\n</DialogPopup>',
+      '<Card>\n  <div className="px-6">\n  </div>\n</Card>',
     ],
   },
   {

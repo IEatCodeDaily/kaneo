@@ -60,13 +60,15 @@ Write the content. The primitive supplies the 16px inset, the 44px header, the
 // Don't
 <DialogContent className="max-w-md p-0">       {/* type error + lint */}
   <DialogHeader className="px-6 pt-6">…</DialogHeader> {/* type error + lint */}
-  <div className="px-6">…</div>   {/* compiles and lints: only the render run sees it */}
+  <div className="px-6">…</div>   {/* lint: overlay body re-padded */}
 </DialogContent>
 ```
 
-A wrapper that re-pads or bleeds the body (`px-6`, `-m-4`) is the one drift no
-type or lint rule catches. Do not write it. A band that must reach the edges
-uses the primitive's variable: `-mx-(--overlay-inset) px-(--overlay-inset)`.
+A direct child that pads or bleeds sideways (`px-6`, `-mx-4`) fails the lint
+unless it is a box of its own (it has a border or a fill). A band that must
+reach the edges uses the primitive's variable:
+`-mx-(--overlay-inset) px-(--overlay-inset)`. The lint reads host elements
+only: do not hide the same padding in a component or one level deeper.
 
 - Children are laid out as a column with a 16px gap. Group tighter rows in your
   own `<div className="space-y-2">`.
@@ -104,7 +106,8 @@ It scans every file under `apps/web/src`, variant prefixes included
 
 - Hard rules, zero tolerance: off-scale text and radius, `font-bold`, opacity
   text colours, `className` on dialog/sheet/confirmation/command-dialog slots,
-  padding (class or inline style) on popover and card slots.
+  a direct child that re-pads a dialog/sheet body, padding (class or inline
+  style) on popover and card slots.
 - Ratchet rules: off-scale spacing, `[Npx]` sizes and raw
   `<button>/<input>/<select>/<textarea>` are counted per file in
   `scripts/design-lint-baseline.json`. In `components/ui` every style rule is
