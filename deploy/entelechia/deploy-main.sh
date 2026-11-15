@@ -72,7 +72,8 @@ ci=$(gh run list -R "$REPO" --workflow ci.yml --commit "$SHA" --json status,conc
 case "$ci" in
   success) ;;
   "") echo "waiting for CI on ${SHA:0:8}"; exit 0 ;;
-  *) echo "CI $ci on ${SHA:0:8}, not deploying"; echo "$SHA" >"$STATE/failed-sha"; exit 0 ;;
+  # Not recorded as failed-sha: a CI re-run that turns green still deploys.
+  *) echo "CI $ci on ${SHA:0:8}, not deploying"; exit 0 ;;
 esac
 
 status() { # state description
