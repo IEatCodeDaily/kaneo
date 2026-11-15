@@ -1499,6 +1499,11 @@ export function DataTableGrid({
                             })}
                             onClick={() => {
                               setActive({ rowId: row.id, fieldId: field.id });
+                              // Focus lives on the grid, not the inner button:
+                              // one highlight (the active ring), arrows work.
+                              // An editor opened by this click autofocuses
+                              // after, so it still wins.
+                              refocusGrid();
                               // The whole title cell opens the drawer, not
                               // just its text (the gap used to do nothing).
                               if (fieldIndex === 0) setSheetRowId(row.id);

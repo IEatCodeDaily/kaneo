@@ -528,10 +528,17 @@ if (pages.table) {
           ? {
               label: el.getAttribute("aria-label"),
               ring: getComputedStyle(el).boxShadow,
+              // One highlight: focus sits on the grid, not a cell's button.
+              gridFocused:
+                document.activeElement?.getAttribute("role") === "grid",
             }
           : null;
       });
-      if (cell?.label !== "Cost, row 2" || !cell.ring.includes("inset"))
+      if (
+        cell?.label !== "Cost, row 2" ||
+        !cell.ring.includes("inset") ||
+        !cell.gridFocused
+      )
         fails.push(`active cell ${JSON.stringify(cell)}`);
     }
     if (name === "table-ticket-picker") {

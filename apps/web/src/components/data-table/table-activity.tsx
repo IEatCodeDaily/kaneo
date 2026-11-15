@@ -66,7 +66,8 @@ export function TableActivityList({
                 item,
                 field: fieldsById.get(item.fieldId ?? ""),
                 withRow: !rowId,
-              })}{" "}
+              })}
+              <span className="text-faint-foreground"> · </span>
               <time
                 className="text-xs text-faint-foreground"
                 dateTime={item.createdAt}

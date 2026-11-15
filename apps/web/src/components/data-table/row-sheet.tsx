@@ -1,14 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Link2,
-  Table2,
-  X,
-} from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy, Table2, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
@@ -208,16 +200,14 @@ export function RowSheet({
           ))}
         </section>
 
-        <section className="flex flex-col gap-1 border-t pt-3">
-          <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Link2 className="size-3.5" />
-            {t("navigation:tables.linkedTickets")}
-          </h3>
-          {tickets.isLoading ? null : (tickets.data?.length ?? 0) === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {t("navigation:tables.noLinkedTickets")}
-            </p>
-          ) : (
+        {/* Explicit row↔ticket links (made from a ticket's "Included in").
+            Ticket cells already show in the fields above, so an empty list
+            would only contradict them: render it when there is something. */}
+        {(tickets.data?.length ?? 0) > 0 && (
+          <section className="flex flex-col gap-1 border-t pt-3">
+            <h3 className="text-xs font-medium text-muted-foreground">
+              {t("navigation:tables.linkedTickets")}
+            </h3>
             <ul className="flex flex-col">
               {tickets.data?.map((ticket) => (
                 <li key={ticket.id}>
@@ -239,8 +229,8 @@ export function RowSheet({
                 </li>
               ))}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
 
         <section className="flex flex-col gap-2 border-t pt-3">
           <h3 className="text-xs font-medium text-muted-foreground">
