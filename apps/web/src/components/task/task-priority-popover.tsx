@@ -75,7 +75,7 @@ export default function TaskPriorityPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-48 p-0" align="start">
+      <PopoverContent className="w-48" align="start">
         <div>
           {priorityOptions.map((priority, index) => (
             <Button

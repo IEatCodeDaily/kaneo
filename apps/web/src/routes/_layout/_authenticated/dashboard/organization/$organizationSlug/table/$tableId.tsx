@@ -30,7 +30,6 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -284,7 +283,7 @@ function DataTableRoute() {
       </div>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent size="sm">
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -296,14 +295,12 @@ function DataTableRoute() {
                 {t("navigation:tables.renameTable")}
               </DialogTitle>
             </DialogHeader>
-            <DialogPanel>
-              <Input
-                autoFocus
-                value={draftName}
-                aria-label={t("navigation:tables.tableName")}
-                onChange={(event) => setDraftName(event.target.value)}
-              />
-            </DialogPanel>
+            <Input
+              autoFocus
+              value={draftName}
+              aria-label={t("navigation:tables.tableName")}
+              onChange={(event) => setDraftName(event.target.value)}
+            />
             <DialogFooter>
               <Button
                 type="button"

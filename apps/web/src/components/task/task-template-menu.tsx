@@ -74,7 +74,7 @@ export default function TaskTemplateMenu({
           </Button>
         }
       />
-      <PopoverContent align="end" className="w-72 p-2">
+      <PopoverContent inset="panel" align="end" className="w-72">
         <div className="max-h-56 overflow-y-auto">
           {templates.map((template) => (
             <div className="flex items-center" key={template.id}>

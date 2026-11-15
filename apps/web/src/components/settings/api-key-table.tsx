@@ -89,7 +89,7 @@ export function ApiKeyTable({ apiKeys, isLoading }: ApiKeyTableProps) {
   if (isLoading) {
     return (
       <Frame>
-        <FramePanel className="p-8">
+        <FramePanel>
           <p className="text-sm text-muted-foreground text-center">
             {t("settings:apiKey.table.loading")}
           </p>
@@ -101,7 +101,7 @@ export function ApiKeyTable({ apiKeys, isLoading }: ApiKeyTableProps) {
   if (apiKeys.length === 0) {
     return (
       <Frame>
-        <FramePanel className="p-8">
+        <FramePanel>
           <p className="text-sm text-muted-foreground text-center">
             {t("settings:apiKey.table.empty")}
           </p>

@@ -39,7 +39,7 @@ function MobileSidebarHeader() {
   const { t } = useTranslation();
 
   return (
-    <SheetHeader className="sr-only">
+    <SheetHeader visuallyHidden>
       <SheetTitle>{t("common:sidebar.title")}</SheetTitle>
       <SheetDescription>
         {t("common:sidebar.mobileDescription")}
@@ -212,7 +212,9 @@ function Sidebar({
     return (
       <Sheet onOpenChange={setOpenMobile} open={openMobile} {...props}>
         <SheetPopup
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          inset="none"
+          showCloseButton={false}
+          size="fit"
           data-mobile="true"
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -224,7 +226,9 @@ function Sidebar({
           }
         >
           <MobileSidebarHeader />
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div className="flex min-h-0 w-(--sidebar-width) flex-1 flex-col bg-sidebar text-sidebar-foreground">
+            {children}
+          </div>
         </SheetPopup>
       </Sheet>
     );

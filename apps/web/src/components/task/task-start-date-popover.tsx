@@ -50,7 +50,7 @@ export default function TaskStartDatePopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="p-0" align="start">
+      <PopoverContent align="start">
         <Calendar
           mode="single"
           selected={task.startDate ? new Date(task.startDate) : undefined}

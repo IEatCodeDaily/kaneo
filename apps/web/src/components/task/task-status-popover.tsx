@@ -163,7 +163,7 @@ export default function TaskStatusPopover({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start">
+      <PopoverContent className="w-52" align="start">
         <div className="py-1">
           {isLoading ? (
             <div className="p-3 text-center text-sm text-muted-foreground">

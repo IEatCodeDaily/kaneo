@@ -271,7 +271,7 @@ export function KeyboardShortcutsHelp() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="px-4 max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>{t("navigation:keyboardShortcuts.title")}</DialogTitle>
           <DialogDescription>
@@ -283,10 +283,9 @@ export function KeyboardShortcutsHelp() {
           placeholder={t("navigation:keyboardShortcuts.searchPlaceholder")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="mb-4"
         />
 
-        <div className="overflow-y-auto flex-1">
+        <div>
           <div className="space-y-4">
             {filteredCategories.map((category) => (
               <div key={category.title}>
@@ -309,7 +308,7 @@ export function KeyboardShortcutsHelp() {
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t text-xs text-muted-foreground mb-4">
+        <div className="border-t pt-4 text-xs text-muted-foreground">
           <Trans
             i18nKey="navigation:keyboardShortcuts.footer"
             components={{

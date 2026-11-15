@@ -34,7 +34,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -249,8 +248,8 @@ export function TeamsManagement({
         open={Boolean(editor)}
         onOpenChange={(open) => !open && setEditor(null)}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="gap-1.5 p-5 pb-2">
+        <DialogContent size="sm">
+          <DialogHeader>
             <DialogTitle>
               {editor?.team ? "Rename team" : "Create team"}
             </DialogTitle>
@@ -258,7 +257,7 @@ export function TeamsManagement({
               Team names must be unique within the organization.
             </DialogDescription>
           </DialogHeader>
-          <DialogPanel className="space-y-1.5 px-5 py-3">
+          <div className="space-y-1.5">
             <Label htmlFor="team-name">Name</Label>
             <Input
               id="team-name"
@@ -278,8 +277,8 @@ export function TeamsManagement({
                 }
               }}
             />
-          </DialogPanel>
-          <DialogFooter variant="bare" className="px-5 pt-0 pb-5">
+          </div>
+          <DialogFooter>
             <Button variant="outline" onClick={() => setEditor(null)}>
               Cancel
             </Button>

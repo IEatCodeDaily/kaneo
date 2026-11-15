@@ -91,8 +91,8 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
-        <DialogHeader className="px-3 pt-4 pb-1 gap-1.5">
+      <DialogContent size="sm" showCloseButton={false}>
+        <DialogHeader>
           <DialogTitle className="sr-only">
             {t("common:modals.createBoard.title")}
           </DialogTitle>
@@ -113,8 +113,8 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-6 px-3 pt-2">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <BoardIconPicker
               onValueChange={setSelectedIcon}
               searchPlaceholder={t("common:modals.createBoard.searchIcons")}
@@ -133,7 +133,7 @@ function CreateBoardModal({ open, onClose }: CreateBoardModalProps) {
             />
           </div>
 
-          <div className="space-y-3 px-3">
+          <div>
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">

@@ -87,7 +87,7 @@ export default function SubtaskStatusPopover({
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start">
+      <PopoverContent className="w-52" align="start">
         <div className="py-1">
           {sections.map((section, sectionIndex) => (
             <Fragment key={section.id}>

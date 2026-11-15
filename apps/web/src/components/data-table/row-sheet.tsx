@@ -87,12 +87,12 @@ export function RowSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:w-[480px] sm:max-w-[480px] p-0"
-      >
-        <SheetHeader className="border-b px-4 py-3">
+      <SheetContent side="right">
+        <SheetHeader>
           <div className="flex items-center gap-1">
+            <SheetTitle className="min-w-0 flex-1 truncate">
+              {String(row.values[fields[0]?.id ?? ""] ?? row.id)}
+            </SheetTitle>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -111,7 +111,6 @@ export function RowSheet({
             >
               <ChevronRight className="size-4" />
             </Button>
-            <span className="flex-1" />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -125,26 +124,20 @@ export function RowSheet({
               )}
             </Button>
           </div>
-          <SheetTitle className="truncate text-sm">
-            {String(row.values[fields[0]?.id ?? ""] ?? row.id)}
-          </SheetTitle>
           <SheetDescription className="sr-only">
             {t("navigation:tables.rowSheetTitle")}
           </SheetDescription>
         </SheetHeader>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex flex-col gap-1">
           {fields.map((field) => (
-            <div
-              key={field.id}
-              className="flex items-start gap-2 border-b px-4 py-2 last:border-b-0"
-            >
-              <span className="flex w-36 shrink-0 items-center gap-1.5 pt-0.5 text-xs text-muted-foreground">
+            <div key={field.id} className="flex min-h-8 items-start gap-2">
+              <span className="flex h-8 w-33 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
                 <FieldTypeIcon type={field.type} />
                 <span className="truncate">{field.name}</span>
               </span>
               <div
                 className={cn(
-                  "flex min-w-0 flex-1 flex-col justify-center py-0.5",
+                  "flex min-h-8 min-w-0 flex-1 flex-col justify-center",
                   ["number", "percent", "currency"].includes(field.type) &&
                     "items-end text-right",
                 )}
@@ -175,39 +168,39 @@ export function RowSheet({
               </div>
             </div>
           ))}
+        </div>
 
-          <div className="mt-2 px-4 py-2">
-            <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Link2 className="size-3.5" />
-              {t("navigation:tables.linkedTickets")}
+        <div className="border-t pt-2">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Link2 className="size-3.5" />
+            {t("navigation:tables.linkedTickets")}
+          </p>
+          {tickets.isLoading ? null : (tickets.data?.length ?? 0) === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("navigation:tables.noLinkedTickets")}
             </p>
-            {tickets.isLoading ? null : (tickets.data?.length ?? 0) === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                {t("navigation:tables.noLinkedTickets")}
-              </p>
-            ) : (
-              <ul className="flex flex-col">
-                {tickets.data?.map((ticket) => (
-                  <li
-                    key={ticket.id}
-                    className="flex items-center gap-2 border-b py-1.5 text-xs last:border-b-0"
+          ) : (
+            <ul className="flex flex-col">
+              {tickets.data?.map((ticket) => (
+                <li
+                  key={ticket.id}
+                  className="flex items-center gap-2 border-b py-1.5 text-xs last:border-b-0"
+                >
+                  <a
+                    href={ticket.url}
+                    className="min-w-0 flex-1 truncate hover:underline"
                   >
-                    <a
-                      href={ticket.url}
-                      className="min-w-0 flex-1 truncate hover:underline"
-                    >
-                      {ticket.taskTitle ?? ticket.taskId}
-                    </a>
-                    {ticket.taskStatus && (
-                      <span className="shrink-0 rounded-sm bg-primary-soft px-1.5 py-0.5 text-muted-foreground">
-                        {ticket.taskStatus}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    {ticket.taskTitle ?? ticket.taskId}
+                  </a>
+                  {ticket.taskStatus && (
+                    <span className="shrink-0 rounded-sm bg-primary-soft px-1.5 py-0.5 text-muted-foreground">
+                      {ticket.taskStatus}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </SheetContent>
     </Sheet>

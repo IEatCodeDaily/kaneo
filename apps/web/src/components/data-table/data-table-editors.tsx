@@ -305,7 +305,7 @@ function PickerTrigger({
           {children}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1" align="start">
+      <PopoverContent inset="panel" className="w-56" align="start">
         {content}
       </PopoverContent>
     </Popover>

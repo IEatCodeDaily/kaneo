@@ -139,7 +139,7 @@ export default function TaskMovePopover({
           <ArrowRightLeft className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-3" align="end" sideOffset={4}>
+      <PopoverContent inset="panel" className="w-80" align="end" sideOffset={4}>
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-foreground">
             {t("tasks:move.title")}

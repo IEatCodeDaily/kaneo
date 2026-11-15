@@ -93,7 +93,7 @@ export default function TaskMilestonePicker({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-64" align="start">
         <div className="p-2 border-b border-border">
           <Input
             value={search}

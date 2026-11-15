@@ -287,7 +287,7 @@ export default function ColumnEditor({ boardId }: ColumnEditorProps) {
                     {getColumnIcon(col.slug, col.isFinal, col.icon)}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
+                <PopoverContent inset="panel" className="w-80" align="start">
                   <div className="space-y-2">
                     <Input
                       value={iconSearch}

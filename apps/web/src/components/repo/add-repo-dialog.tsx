@@ -116,8 +116,8 @@ export function AddRepoDialog({
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 py-5">
+      <DialogContent size="lg">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Github className="size-5" />
             Connect GitHub repository
@@ -127,7 +127,7 @@ export function AddRepoDialog({
             settings.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 p-6">
+        <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -197,7 +197,7 @@ export function AddRepoDialog({
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
-        <DialogFooter className="border-t bg-muted/20 px-6 py-4">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

@@ -81,14 +81,14 @@ function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md" showCloseButton={false}>
+      <DialogContent size="sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{t("projects:actions.create")}</DialogTitle>
           <DialogDescription className="sr-only">
             {t("projects:overview.title")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
           <div className="space-y-3">
             <Input
               autoFocus

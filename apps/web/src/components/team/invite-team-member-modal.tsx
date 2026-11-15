@@ -15,7 +15,6 @@ import {
   DialogClose,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogPopup,
   DialogTitle,
 } from "../ui/dialog";
@@ -157,52 +156,50 @@ function InviteTeamMemberModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={resetAndCloseModal}>
-      <DialogPopup className="w-full max-w-md">
+      <DialogPopup size="sm">
         <DialogHeader>
           <DialogTitle>{t("team:inviteModal.title")}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
-            <DialogPanel>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("team:inviteModal.emailsLabel")}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        autoFocus
-                        className="min-h-24 resize-y"
-                        data-testid="invite-emails-input"
-                        placeholder={t("team:inviteModal.emailsPlaceholder")}
-                        rows={4}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground">
-                      {t("team:inviteModal.emailsHint")}
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {failures.length > 0 && (
-                <ul
-                  className="mt-3 space-y-1 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive"
-                  data-testid="invite-failures"
-                >
-                  {failures.map((failure) => (
-                    <li key={failure.email}>
-                      <span className="font-medium">{failure.email}</span>:{" "}
-                      {failure.reason}
-                    </li>
-                  ))}
-                </ul>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("team:inviteModal.emailsLabel")}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      autoFocus
+                      className="min-h-24 resize-y"
+                      data-testid="invite-emails-input"
+                      placeholder={t("team:inviteModal.emailsPlaceholder")}
+                      rows={4}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {t("team:inviteModal.emailsHint")}
+                  </p>
+                  <FormMessage />
+                </FormItem>
               )}
-            </DialogPanel>
+            />
+
+            {failures.length > 0 && (
+              <ul
+                className="mt-3 space-y-1 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive"
+                data-testid="invite-failures"
+              >
+                {failures.map((failure) => (
+                  <li key={failure.email}>
+                    <span className="font-medium">{failure.email}</span>:{" "}
+                    {failure.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <DialogFooter>
               <DialogClose

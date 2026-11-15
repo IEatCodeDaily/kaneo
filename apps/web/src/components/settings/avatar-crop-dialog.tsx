@@ -5,7 +5,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -193,7 +192,7 @@ export default function AvatarCropDialog({
             Drag to reposition. Use the slider or scroll to zoom.
           </DialogDescription>
         </DialogHeader>
-        <DialogPanel className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4">
           <div
             className="relative touch-none select-none overflow-hidden rounded-full border border-border"
             data-testid="avatar-crop-viewport"
@@ -250,7 +249,7 @@ export default function AvatarCropDialog({
               +
             </Button>
           </div>
-        </DialogPanel>
+        </div>
         <DialogFooter>
           <Button onClick={onCancel} variant="outline">
             Cancel

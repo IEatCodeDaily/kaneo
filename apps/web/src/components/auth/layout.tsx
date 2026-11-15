@@ -20,11 +20,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <Logo className="mx-auto flex w-full items-end justify-center" />
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-sm">{title}</CardTitle>
             {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
           </CardHeader>
-          <CardContent className="pt-0">{children}</CardContent>
+          <CardContent>{children}</CardContent>
         </Card>
       </div>
     </div>

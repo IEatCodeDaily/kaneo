@@ -102,7 +102,7 @@ function RouteComponent() {
               <div className="divide-y">
                 {identities.map((identity) => (
                   <CardPanel
-                    className="flex items-center justify-between gap-4 py-4"
+                    className="flex items-center justify-between gap-4"
                     key={identity.id}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -122,7 +122,7 @@ function RouteComponent() {
                 ))}
                 {availableProviders.map((provider) => (
                   <CardPanel
-                    className="flex items-center justify-between gap-4 py-4"
+                    className="flex items-center justify-between gap-4"
                     key={provider.providerId}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -149,7 +149,7 @@ function RouteComponent() {
                   </CardPanel>
                 ))}
                 {identities.length === 0 && availableProviders.length === 0 ? (
-                  <CardPanel className="flex items-center gap-3 py-5 text-sm text-muted-foreground">
+                  <CardPanel className="flex items-center gap-3 text-sm text-muted-foreground">
                     <KeyRound className="size-4" /> No configured sign-in
                     methods were found.
                   </CardPanel>

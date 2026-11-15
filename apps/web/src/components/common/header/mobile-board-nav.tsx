@@ -56,7 +56,7 @@ export default function MobileBoardNav({
       >
         <Menu className="size-4" />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-2">
+      <PopoverContent inset="panel" align="start" className="w-72">
         <div className="space-y-3">
           <div className="space-y-1">
             <p className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">

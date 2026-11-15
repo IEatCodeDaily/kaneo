@@ -761,7 +761,7 @@ const overlayGeometry = () => {
       const r = el.getBoundingClientRect();
       const edged = ["Top", "Right", "Bottom", "Left"].some(
         (side) =>
-          parseFloat(cs[`border${side}Width`]) > 0 &&
+          Number.parseFloat(cs[`border${side}Width`]) > 0 &&
           !clear(cs[`border${side}Color`]),
       );
       const replaced = /^(input|textarea|select|img|svg)$/i.test(el.tagName);
@@ -821,7 +821,12 @@ const overlayGeometry = () => {
 const DESKTOP = { width: 1440, height: 900 };
 const openFieldOptions = (p) =>
   p.getByRole("button", { name: "Add field" }).first().click();
-const GUTTER = { header_inset: 16, body_left: 16, body_right: 16 };
+const GUTTER = {
+  header_inset: 16,
+  body_left: 16,
+  body_right: 16,
+  radius: "10px",
+};
 // [shot, theme, viewport, open, want] — every key in `want` must measure equal;
 // a missing measurement (null) fails too.
 const OVERLAY_STATES = [
@@ -869,14 +874,20 @@ const OVERLAY_STATES = [
       await p.getByRole("menuitem", { name: "Change field type" }).click();
       await p.getByRole("menuitem", { name: "Text", exact: true }).click();
     },
-    { header_inset: 16, footer_inset: 16, width: 400, footer_h: 52 },
+    {
+      header_inset: 16,
+      footer_inset: 16,
+      width: 400,
+      footer_h: 52,
+      radius: "10px",
+    },
   ],
   [
     "sheet-row--desktop-dark",
     "dark",
     DESKTOP,
     (p) => p.getByText("PB-1042 Filter test A").first().click(),
-    { header_inset: 16, width: 480 },
+    { header_inset: 16, body_left: 16, width: 480, header_h: 44 },
   ],
 ];
 if (pages.table) {
@@ -912,8 +923,6 @@ if (pages.table) {
     for (const [key, value] of Object.entries(want))
       if (m[key] !== value)
         fails.push(`${key} ${m[key] ?? "not measured"}, want ${value}`);
-    if (m.radius !== "10px")
-      fails.push(`radius ${m.radius ?? "not measured"}, want 10px`);
     const shot = `${name}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m };

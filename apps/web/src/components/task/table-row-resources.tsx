@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogPanel,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -367,13 +366,13 @@ export function TableRowResources({
       )}
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent size="sm">
           <DialogHeader>
             <DialogTitle className="text-sm">
               {t("navigation:tables.linkTableRow")}
             </DialogTitle>
           </DialogHeader>
-          <DialogPanel className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <Select
               value={pickTableId}
               onValueChange={(next) => {
@@ -424,7 +423,7 @@ export function TableRowResources({
                 </div>
               </>
             )}
-          </DialogPanel>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"

@@ -37,7 +37,7 @@ export function ApiKeyCreatedModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[446px]">
+      <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>{t("settings:apiKey.createdModal.title")}</DialogTitle>
           <DialogDescription>
@@ -47,7 +47,7 @@ export function ApiKeyCreatedModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-6 py-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium">
@@ -89,7 +89,7 @@ export function ApiKeyCreatedModal({
           </Alert>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter>
           <Button
             onClick={onClose}
             disabled={!copied}

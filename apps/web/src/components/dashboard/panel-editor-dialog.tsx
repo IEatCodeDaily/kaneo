@@ -270,7 +270,7 @@ export default function PanelEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {panel
@@ -278,7 +278,7 @@ export default function PanelEditorDialog({
               : t("navigation:dashboards.addPanel")}
           </DialogTitle>
         </DialogHeader>
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto pe-1">
+        <div className="space-y-4">
           <Input
             value={title}
             onChange={(event) => setTitle(event.target.value)}

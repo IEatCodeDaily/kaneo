@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ChartPie } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -64,17 +63,14 @@ export default function CreateDashboardModal({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader className="gap-2">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary-soft-foreground">
-            <ChartPie className="size-5" />
-          </div>
+      <DialogContent size="sm">
+        <DialogHeader>
           <DialogTitle>{t("navigation:dashboards.createTitle")}</DialogTitle>
           <DialogDescription>
             {t("navigation:dashboards.createDescription")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit}>
           <Input
             autoFocus
             value={name}

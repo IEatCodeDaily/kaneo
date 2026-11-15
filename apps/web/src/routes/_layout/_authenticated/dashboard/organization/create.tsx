@@ -67,7 +67,7 @@ function RouteComponent() {
       <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 overflow-y-auto">
         <div className="w-full max-w-md">
           <Card className="shadow-sm">
-            <CardContent className="p-8">
+            <CardContent>
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4">
                   <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
