@@ -63,12 +63,19 @@ function CommandDialogViewport({
   );
 }
 
+// Same contract as the other modal popups (ui/overlay.ts): no `className`.
+// `lg` is the fixed-height two-pane picker.
+const commandDialogSizes = { md: "max-w-xl", lg: "h-105 max-w-3xl" };
+
 function CommandDialogPopup({
-  className,
   children,
   instant = false,
+  size = "md",
   ...props
-}: CommandDialogPrimitive.Popup.Props & { instant?: boolean }) {
+}: Omit<CommandDialogPrimitive.Popup.Props, "className"> & {
+  instant?: boolean;
+  size?: keyof typeof commandDialogSizes;
+}) {
   return (
     <CommandDialogPortal>
       <CommandDialogBackdrop
@@ -79,14 +86,14 @@ function CommandDialogPopup({
       />
       <CommandDialogViewport>
         <CommandDialogPrimitive.Popup
-          className={cn(
-            "-translate-y-[calc(1.25rem*var(--nested-dialogs))] relative row-start-2 flex max-h-105 min-h-0 w-full min-w-0 max-w-xl scale-[calc(1-0.1*var(--nested-dialogs))] flex-col rounded-2xl border bg-popover not-dark:bg-clip-padding text-popover-foreground opacity-[calc(1-0.1*var(--nested-dialogs))] shadow-lg/5 outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:bg-muted/72 before:shadow-[0_1px_--theme(--color-black/4%)] data-nested:data-ending-style:translate-y-8 data-nested:data-starting-style:translate-y-8 data-nested-dialog-open:origin-top data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 **:data-[slot=scroll-area-viewport]:data-has-overflow-y:pe-1 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
-            instant &&
-              "transition-none data-starting-style:scale-100 data-starting-style:opacity-100 data-ending-style:scale-100 data-ending-style:opacity-100",
-            className,
-          )}
           data-slot="command-dialog-popup"
           {...props}
+          className={cn(
+            "-translate-y-[calc(1.25rem*var(--nested-dialogs))] relative row-start-2 flex max-h-105 min-h-0 w-full min-w-0 scale-[calc(1-0.1*var(--nested-dialogs))] flex-col rounded-2xl border bg-popover not-dark:bg-clip-padding text-popover-foreground opacity-[calc(1-0.1*var(--nested-dialogs))] shadow-lg/5 outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:bg-muted/72 before:shadow-[0_1px_--theme(--color-black/4%)] data-nested:data-ending-style:translate-y-8 data-nested:data-starting-style:translate-y-8 data-nested-dialog-open:origin-top data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 **:data-[slot=scroll-area-viewport]:data-has-overflow-y:pe-1 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            commandDialogSizes[size],
+            instant &&
+              "transition-none data-starting-style:scale-100 data-starting-style:opacity-100 data-ending-style:scale-100 data-ending-style:opacity-100",
+          )}
         >
           {children}
         </CommandDialogPrimitive.Popup>
@@ -244,15 +251,12 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"kbd">) {
   );
 }
 
-function CommandFooter({ className, ...props }: React.ComponentProps<"div">) {
+function CommandFooter(props: Omit<React.ComponentProps<"div">, "className">) {
   return (
     <div
-      className={cn(
-        "flex items-center justify-between gap-2 rounded-b-[calc(var(--radius-2xl)-1px)] border-t px-5 py-3 text-muted-foreground text-xs",
-        className,
-      )}
       data-slot="command-footer"
       {...props}
+      className="flex items-center justify-between gap-2 rounded-b-[calc(var(--radius-2xl)-1px)] border-t px-5 py-3 text-muted-foreground text-xs"
     />
   );
 }

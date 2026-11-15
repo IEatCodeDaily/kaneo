@@ -7,6 +7,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./alert-dialog";
+import { CommandDialog, CommandDialogPopup, CommandFooter } from "./command";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,8 @@ describe("modal primitives own their inset", () => {
     );
     const body = slot("dialog-body");
     expect(body).not.toBeNull();
+    // the built-in close is found by slot, not by its translated label
+    expect(slot("dialog-close")?.tagName).toBe("BUTTON");
     expect(body?.className).toContain("p-(--overlay-inset)");
     expect(body?.className).toContain("[--overlay-inset:--spacing(4)]");
     // header, content and footer are siblings inside the one padded box
@@ -116,5 +119,20 @@ describe("modal primitives own their inset", () => {
     );
     expect(slot("alert-dialog-popup")?.className).toContain("max-w-100");
     expect(slot("sheet-popup")?.className).toContain("sm:max-w-120");
+  });
+
+  it("sizes the command dialog by prop, not className", () => {
+    const smuggled = { className: "p-0 max-w-md" } as object;
+    render(
+      <CommandDialog open>
+        <CommandDialogPopup size="lg" {...smuggled}>
+          <CommandFooter {...smuggled}>hint</CommandFooter>
+        </CommandDialogPopup>
+      </CommandDialog>,
+    );
+    const popup = slot("command-dialog-popup")?.className ?? "";
+    expect(popup).toContain("h-105 max-w-3xl");
+    expect(popup).not.toContain("max-w-md");
+    expect(slot("command-footer")?.className).not.toContain("p-0");
   });
 });

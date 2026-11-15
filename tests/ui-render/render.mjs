@@ -788,8 +788,7 @@ const overlayGeometry = () => {
   const painted = (roots) => {
     const rects = [];
     const walk = (el) => {
-      if (el.matches('.sr-only, [aria-label="Close"], [data-slot$="-close"]'))
-        return;
+      if (el.matches('.sr-only, [data-slot$="-close"]')) return;
       const cs = getComputedStyle(el);
       if (cs.display === "none" || cs.visibility === "hidden") return;
       const r = el.getBoundingClientRect();
@@ -948,6 +947,7 @@ const OVERLAY_STATES = [
       bars_opaque: true,
       header_inset: 16,
       body_left: 16,
+      body_right: 16,
       width: 480,
       header_h: 44,
     },
@@ -1008,7 +1008,7 @@ if (pages.table) {
     );
     await ctx.close();
   }
-}
+} else console.log("SKIP overlay states: the table page is not in PAGES");
 
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));

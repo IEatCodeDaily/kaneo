@@ -885,7 +885,7 @@ export default function TaskResources({
             </DialogDescription>
           </DialogHeader>
           <form
-            className="flex flex-col gap-3 text-sm"
+            className="text-sm"
             id="add-resource-link-form"
             onSubmit={(event) => {
               event.preventDefault();
@@ -939,7 +939,7 @@ export default function TaskResources({
       </Dialog>
 
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandDialogPopup className="h-105 max-w-3xl">
+        <CommandDialogPopup size="lg">
           {/* Repo rail on the left, palette on the right — same two-pane
               layout as the parent selector (KFL-333 review feedback). */}
           <div className="grid min-h-0 flex-1 overflow-hidden sm:grid-cols-[12rem_1fr]">

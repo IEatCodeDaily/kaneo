@@ -1195,7 +1195,7 @@ function CreateTaskModal({
             the hook for the editor rules in index.css. */}
         <form onSubmit={handleSubmit} className="kaneo-create-task-modal">
           <div
-            className="-mx-4 flex-1 min-h-0 overflow-y-auto space-y-6 px-4"
+            className="-mx-(--overlay-inset) flex-1 min-h-0 overflow-y-auto space-y-6 px-(--overlay-inset)"
             data-testid="create-task-scroll-body"
           >
             {resolvedBoardId && (

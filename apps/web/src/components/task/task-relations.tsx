@@ -525,7 +525,7 @@ export default function TaskRelations({
       </Collapsible>
 
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <CommandDialogPopup className="h-105 max-w-3xl">
+        <CommandDialogPopup size="lg">
           {/* Board rail + palette, the same two-pane layout as the repo and
               issue/PR pickers (KFL-333). Command renders no DOM node, so it
               needs a real flex cell to keep the panel in the right column. */}

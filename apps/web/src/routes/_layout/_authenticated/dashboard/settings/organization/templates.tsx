@@ -251,7 +251,7 @@ function RouteComponent() {
               />
             </div>
           </div>
-          <div className="-mx-4 border-y border-border bg-sidebar px-4 py-3">
+          <div className="-mx-(--overlay-inset) border-y border-border bg-sidebar px-(--overlay-inset) py-3">
             <p className="sr-only">Properties</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
