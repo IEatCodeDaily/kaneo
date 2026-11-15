@@ -139,7 +139,7 @@ export function RepositoryBrowserModal({
           </div>
         </div>
 
-        <div className="min-h-80">
+        <div className="min-h-80 flex-1 overflow-y-auto">
           {isLoading && (
             <div className="space-y-3">
               {[0, 1, 2, 3, 4].map((slot) => (

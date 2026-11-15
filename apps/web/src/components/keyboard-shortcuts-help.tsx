@@ -285,7 +285,7 @@ export function KeyboardShortcutsHelp() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        <div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="space-y-4">
             {filteredCategories.map((category) => (
               <div key={category.title}>

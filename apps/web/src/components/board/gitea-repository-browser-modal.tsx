@@ -101,7 +101,7 @@ export function GiteaRepositoryBrowserModal({
           </div>
         </div>
 
-        <div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {!canFetch && (
             <p className="text-sm text-muted-foreground py-8 text-center">
               {t("settings:giteaIntegration.browseNeedsCredentials")}

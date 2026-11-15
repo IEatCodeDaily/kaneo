@@ -67,6 +67,9 @@ Write the content. The primitive supplies the 16px inset, the 44px header, the
   own `<div className="space-y-2">`.
 - A `<form>` directly inside the content is transparent to layout: put the
   fields and the `DialogFooter` inside it.
+- A search field over a long list: give the list
+  `<div className="min-h-0 flex-1 overflow-y-auto">` so the field stays put and
+  only the list scrolls.
 - Full-bleed content (a two-pane picker, a list with its own rows):
   `inset="none"`.
 - Title only for assistive tech: `<DialogHeader visuallyHidden>`.
