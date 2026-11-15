@@ -808,6 +808,10 @@ const overlayGeometry = () => {
   const f = footer ? span(painted([...footer.children])) : null;
   const b = span(painted(bodyRoots));
   return {
+    // sticky bars must be filled, or the body scrolls visibly behind them
+    bars_opaque: [header, footer]
+      .filter(Boolean)
+      .every((el) => !clear(getComputedStyle(el).backgroundColor)),
     width: Math.round(box.width),
     radius: getComputedStyle(popup).borderTopLeftRadius,
     header_h: header ? Math.round(header.getBoundingClientRect().height) : null,
@@ -822,6 +826,7 @@ const DESKTOP = { width: 1440, height: 900 };
 const openFieldOptions = (p) =>
   p.getByRole("button", { name: "Add field" }).first().click();
 const GUTTER = {
+  bars_opaque: true,
   header_inset: 16,
   body_left: 16,
   body_right: 16,
@@ -875,6 +880,7 @@ const OVERLAY_STATES = [
       await p.getByRole("menuitem", { name: "Text", exact: true }).click();
     },
     {
+      bars_opaque: true,
       header_inset: 16,
       footer_inset: 16,
       width: 400,
@@ -887,7 +893,13 @@ const OVERLAY_STATES = [
     "dark",
     DESKTOP,
     (p) => p.getByText("PB-1042 Filter test A").first().click(),
-    { header_inset: 16, body_left: 16, width: 480, header_h: 44 },
+    {
+      bars_opaque: true,
+      header_inset: 16,
+      body_left: 16,
+      width: 480,
+      header_h: 44,
+    },
   ],
 ];
 if (pages.table) {

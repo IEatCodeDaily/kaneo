@@ -25,7 +25,7 @@ Four layers, each catching what the one before it cannot.
 3. **A lint with proofs and a ratchet.** `scripts/design-lint.mjs` carries
    `bad` and `good` probes per rule and runs them on every invocation, so a
    rule cannot go silently dead. Rules with a large legacy (off-scale spacing,
-   `[Npx]` sizes, raw controls: 758 sites) are counted per file in a baseline
+   `[Npx]` sizes, raw controls: 757 sites) are counted per file in a baseline
    that can only shrink.
 4. **Geometry asserted on the real app.** `tests/ui-render/render.mjs` opens
    seven overlay states on a seeded instance and measures header, body and
@@ -70,7 +70,7 @@ primitive to use for each pattern, with do and don't snippets.
 - The ratchet counts per file. Moving an offender within a file passes.
 - `inset="none"` hands the inset back to the caller. It is meant for full-bleed
   panes; the lint cannot tell a legitimate pane from a workaround.
-- 758 legacy offenders remain in the baseline. They are debt, not approval.
+- 757 legacy offenders remain in the baseline. They are debt, not approval.
 
 ## Sources
 

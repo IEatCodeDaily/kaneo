@@ -103,7 +103,7 @@
 		"apps/web/src/components/task/milestone-badge.tsx": 1,
 		"apps/web/src/components/task/subtask-row.tsx": 3,
 		"apps/web/src/components/task/subtask-status-popover.tsx": 1,
-		"apps/web/src/components/task/table-row-resources.tsx": 5,
+		"apps/web/src/components/task/table-row-resources.tsx": 4,
 		"apps/web/src/components/task/task-details-content.tsx": 1,
 		"apps/web/src/components/task/task-details-sheet.tsx": 1,
 		"apps/web/src/components/task/task-labels-popover.tsx": 3,

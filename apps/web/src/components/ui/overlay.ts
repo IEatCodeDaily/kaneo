@@ -1,11 +1,12 @@
 // One inset for every modal surface (Dialog, AlertDialog, Sheet): the 16px
 // content gutter of DESIGN-SYSTEM §1.2. The body owns it; header and footer
 // bleed to the edges through the same variable, so the three cannot disagree
-// and a caller has nothing to remember.
+// and a caller has nothing to remember. A direct-child <form> is transparent to
+// layout and passes the surface fill on, so sticky bars inside it stay opaque.
 export type OverlayInset = "default" | "none";
 
 export const overlayBody =
-  "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain rounded-[inherit] bg-inherit p-(--overlay-inset) [--overlay-inset:--spacing(4)] data-[inset=none]:gap-0 data-[inset=none]:[--overlay-inset:0px] [&>form]:contents";
+  "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain rounded-[inherit] bg-inherit p-(--overlay-inset) [--overlay-inset:--spacing(4)] data-[inset=none]:gap-0 data-[inset=none]:[--overlay-inset:0px] [&>form]:contents [&>form]:bg-inherit";
 
 // 44px bar (28px controls fit). A visible description makes it a two-line
 // header with 8px above and below. A header directly followed by the footer
