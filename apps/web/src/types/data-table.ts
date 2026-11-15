@@ -84,6 +84,27 @@ export type TicketRef = {
   boardSlug: string;
 };
 
+/** One table/row history entry (who created / edited / deleted what). */
+export type TableActivity = {
+  id: string;
+  type:
+    | "row_created"
+    | "row_deleted"
+    | "cell_updated"
+    | "field_created"
+    | "field_updated"
+    | "field_deleted"
+    | "ticket_linked"
+    | "ticket_unlinked";
+  rowId: string | null;
+  fieldId: string | null;
+  data: Record<string, unknown> | null;
+  createdAt: string;
+  userId: string | null;
+  userName: string | null;
+  userImage: string | null;
+};
+
 export type DataTable = DataTableSummary & {
   fields: DataTableField[];
   rows: DataTableRow[];

@@ -19,7 +19,6 @@ import {
   asString,
   asStringArray,
   fieldChoices,
-  fieldPrecision,
   isValidEmail,
   isValidNumberInput,
   isValidUrl,
@@ -111,8 +110,6 @@ export function TableCellInput({
           ? "number"
           : "text";
 
-  const precision = fieldPrecision(field);
-
   return (
     <div className="relative min-w-0 flex-1">
       <Input
@@ -121,13 +118,8 @@ export function TableCellInput({
         type={inputType}
         value={draft}
         aria-invalid={invalid || undefined}
-        step={
-          NUMERIC_TYPES.includes(field.type)
-            ? precision > 0
-              ? Number((1 / 10 ** precision).toFixed(precision))
-              : 1
-            : undefined
-        }
+        // "any": the browser must not flag 1.25 on a 0-decimal field.
+        step={NUMERIC_TYPES.includes(field.type) ? "any" : undefined}
         min={field.options?.min}
         max={field.options?.max}
         aria-label={field.name}

@@ -228,9 +228,8 @@ export function isValidNumberInput(raw: string, field: DataTableField) {
   const { min, max } = fieldBounds(field);
   if (min !== undefined && parsed < min) return false;
   if (max !== undefined && parsed > max) return false;
-  const precision = fieldPrecision(field);
-  const decimals = raw.split(".")[1];
-  return !decimals || decimals.length <= precision;
+  // Any float is storable; "decimals" only rounds the display.
+  return true;
 }
 
 /** For JSON cells: null is valid (clears the cell). */

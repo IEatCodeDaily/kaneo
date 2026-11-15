@@ -15,12 +15,14 @@ import db from "../database";
 import {
   boardTable,
   type DashboardPanelSpec,
+  dataTableActivityTable,
   dataTableDashboardTable,
   dataTableFieldTable,
   dataTableTable,
   externalLinkTable,
   organizationTable,
   taskTable,
+  userTable,
 } from "../database/schema";
 import {
   getResourcePrivilege,
@@ -53,6 +55,79 @@ async function requireTable(organizationId: string, tableId: string) {
     )
     .limit(1);
   return table ?? notFound("Data table");
+}
+
+// ── activity ──────────────────────────────────────────────────────────────
+// One row per user-visible change. Values are stored as written so the log
+// reads true after the field is retyped or deleted.
+
+type ActivityInput = {
+  tableId: string;
+  userId?: string;
+  type:
+    | "row_created"
+    | "row_deleted"
+    | "cell_updated"
+    | "field_created"
+    | "field_updated"
+    | "field_deleted"
+    | "ticket_linked"
+    | "ticket_unlinked";
+  rowId?: string | null;
+  fieldId?: string | null;
+  data?: Record<string, unknown>;
+};
+
+async function logActivity(input: ActivityInput) {
+  await db.insert(dataTableActivityTable).values({
+    tableId: input.tableId,
+    userId: input.userId ?? null,
+    type: input.type,
+    rowId: input.rowId ?? null,
+    fieldId: input.fieldId ?? null,
+    data: input.data ?? null,
+  });
+}
+
+const primaryText = (fields: StoreField[], values: Record<string, unknown>) => {
+  const value = fields.length > 0 ? values[fields[0].id] : null;
+  return value === null || value === undefined || value === ""
+    ? null
+    : String(value);
+};
+
+/** Newest first; a rowId narrows to one row's history. */
+export async function listTableActivity(
+  organizationId: string,
+  tableId: string,
+  rowId?: string,
+) {
+  await requireTable(organizationId, tableId);
+  return (
+    db
+      .select({
+        id: dataTableActivityTable.id,
+        type: dataTableActivityTable.type,
+        rowId: dataTableActivityTable.rowId,
+        fieldId: dataTableActivityTable.fieldId,
+        data: dataTableActivityTable.data,
+        createdAt: dataTableActivityTable.createdAt,
+        userId: dataTableActivityTable.userId,
+        userName: userTable.name,
+        userImage: userTable.image,
+      })
+      .from(dataTableActivityTable)
+      .leftJoin(userTable, eq(userTable.id, dataTableActivityTable.userId))
+      .where(
+        and(
+          eq(dataTableActivityTable.tableId, tableId),
+          rowId ? eq(dataTableActivityTable.rowId, rowId) : undefined,
+        ),
+      )
+      .orderBy(desc(dataTableActivityTable.createdAt))
+      // ponytail: newest 200; paginate when a table's history outgrows a panel.
+      .limit(200)
+  );
 }
 
 /** Trashed tables stay readable (restore banner) but not writable. */
@@ -446,6 +521,7 @@ export async function addFieldToTable(
     options?: unknown;
     position?: number;
   },
+  userId?: string,
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const options = parseFieldOptions(values.type, values.options);
@@ -475,6 +551,13 @@ export async function addFieldToTable(
       fieldId: created.id,
       type: values.type,
     });
+    await tx.insert(dataTableActivityTable).values({
+      tableId,
+      userId: userId ?? null,
+      type: "field_created",
+      fieldId: created.id,
+      data: { name: created.name, fieldType: created.type },
+    });
     return created;
   });
 }
@@ -484,6 +567,7 @@ export async function updateTableField(
   tableId: string,
   fieldId: string,
   values: { name?: string; options?: unknown; type?: FieldType },
+  userId?: string,
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const field = await requireField(tableId, fieldId);
@@ -520,7 +604,22 @@ export async function updateTableField(
       })
       .where(eq(dataTableFieldTable.id, fieldId))
       .returning();
-    return updated ?? notFound("Data table field");
+    if (!updated) notFound("Data table field");
+    const renamed = values.name !== undefined && values.name !== field.name;
+    if (renamed || nextType) {
+      await tx.insert(dataTableActivityTable).values({
+        tableId,
+        userId: userId ?? null,
+        type: "field_updated",
+        fieldId,
+        data: {
+          name: updated.name,
+          ...(renamed ? { fromName: field.name } : {}),
+          ...(nextType ? { fromType: fromType, toType: nextType } : {}),
+        },
+      });
+    }
+    return updated;
   });
 }
 
@@ -528,6 +627,7 @@ export async function deleteTableField(
   organizationId: string,
   tableId: string,
   fieldId: string,
+  userId?: string,
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const field = await requireField(tableId, fieldId);
@@ -536,6 +636,13 @@ export async function deleteTableField(
     await tx
       .delete(dataTableFieldTable)
       .where(eq(dataTableFieldTable.id, field.id));
+    await tx.insert(dataTableActivityTable).values({
+      tableId,
+      userId: userId ?? null,
+      type: "field_deleted",
+      fieldId: field.id,
+      data: { name: field.name },
+    });
     return { success: true as const };
   });
 }
@@ -544,11 +651,20 @@ export async function addTableRow(
   organizationId: string,
   tableId: string,
   values: Record<string, unknown> | undefined,
+  userId?: string,
 ) {
   const table = requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
   await assertTicketValues(organizationId, fields, values ?? {});
-  return store.insertRow(db, table.id, fields, values ?? {});
+  const row = await store.insertRow(db, table.id, fields, values ?? {});
+  await logActivity({
+    tableId,
+    userId,
+    type: "row_created",
+    rowId: row.id,
+    data: { title: primaryText(fields, row.values) },
+  });
+  return row;
 }
 
 export async function updateTableCell(
@@ -557,14 +673,13 @@ export async function updateTableCell(
   rowId: string,
   fieldId: string,
   value: unknown,
+  userId?: string,
 ) {
   requireLive(await requireTable(organizationId, tableId));
   const fields = await listTableFields(tableId);
-  const field = fields.find((candidate) => candidate.id === fieldId);
-  const current =
-    field?.type === "ticket"
-      ? await store.getRowById(db, tableId, fields, rowId)
-      : null;
+  // Read first: the log keeps the old value, and ticket writes grandfather
+  // ids already stored in the cell.
+  const current = await store.getRowById(db, tableId, fields, rowId);
   await assertTicketValues(
     organizationId,
     fields,
@@ -579,6 +694,18 @@ export async function updateTableCell(
     fieldId,
     value,
   );
+  const from = current?.values[fieldId] ?? null;
+  const to = row.values[fieldId] ?? null;
+  if (JSON.stringify(from) !== JSON.stringify(to)) {
+    await logActivity({
+      tableId,
+      userId,
+      type: "cell_updated",
+      rowId,
+      fieldId,
+      data: { from, to, title: primaryText(fields, row.values) },
+    });
+  }
   const tickets = await ticketsForRows(organizationId, fields, [row]);
   return { ...row, tickets };
 }
@@ -587,9 +714,23 @@ export async function deleteTableRow(
   organizationId: string,
   tableId: string,
   rowId: string,
+  userId?: string,
 ) {
   requireLive(await requireTable(organizationId, tableId));
-  return store.deleteRow(db, tableId, rowId);
+  const fields = await listTableFields(tableId);
+  const row = await store.getRowById(db, tableId, fields, rowId);
+  await store.deleteRow(db, tableId, rowId);
+  await logActivity({
+    tableId,
+    userId,
+    type: "row_deleted",
+    rowId,
+    // Keep the whole row: the log is the only trace of a deleted row.
+    data: {
+      title: row ? primaryText(fields, row.values) : null,
+      values: row?.values,
+    },
+  });
 }
 
 export async function queryDataTable(
@@ -723,6 +864,8 @@ export async function getRowTickets(
       title: externalLinkTable.title,
       taskTitle: taskTable.title,
       taskStatus: taskTable.status,
+      taskNumber: taskTable.number,
+      boardSlug: boardTable.slug,
     })
     .from(externalLinkTable)
     .innerJoin(taskTable, eq(taskTable.id, externalLinkTable.taskId))
@@ -742,6 +885,8 @@ export async function getRowTickets(
     title: link.title,
     taskTitle: link.taskTitle,
     taskStatus: link.taskStatus,
+    key: `${link.boardSlug.toUpperCase()}-${link.taskNumber ?? "?"}`,
+    boardSlug: link.boardSlug,
   }));
 }
 
@@ -781,6 +926,7 @@ export async function linkRowToTask(
   tableId: string,
   rowId: string,
   taskId: string,
+  userId?: string,
 ) {
   await requireOrgTask(organizationId, taskId);
   const table = await requireTable(organizationId, tableId);
@@ -815,6 +961,14 @@ export async function linkRowToTask(
     title: title ?? table.name,
     metadata: JSON.stringify({ tableId, tableName: table.name }),
   });
+  const [ref] = await ticketRefs(organizationId, [taskId]);
+  await logActivity({
+    tableId,
+    userId,
+    type: "ticket_linked",
+    rowId,
+    data: { taskId, key: ref?.key, title: ref?.title },
+  });
   return { success: true as const, alreadyLinked: false as const };
 }
 
@@ -823,19 +977,33 @@ export async function unlinkRowTask(
   tableId: string,
   rowId: string,
   taskId: string,
+  userId?: string,
 ) {
   await requireOrgTask(organizationId, taskId);
   await requireTable(organizationId, tableId);
-  await db.delete(externalLinkTable).where(
-    and(
-      eq(externalLinkTable.taskId, taskId),
-      eq(externalLinkTable.externalId, rowId),
-      eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
-      // Only the param table's link may be unlinked — otherwise edit
-      // privilege on table B could unlink a row that lives in table A.
-      sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
-    ),
-  );
+  const removed = await db
+    .delete(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.taskId, taskId),
+        eq(externalLinkTable.externalId, rowId),
+        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+        // Only the param table's link may be unlinked — otherwise edit
+        // privilege on table B could unlink a row that lives in table A.
+        sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
+      ),
+    )
+    .returning({ id: externalLinkTable.id });
+  if (removed.length > 0) {
+    const [ref] = await ticketRefs(organizationId, [taskId]);
+    await logActivity({
+      tableId,
+      userId,
+      type: "ticket_unlinked",
+      rowId,
+      data: { taskId, key: ref?.key, title: ref?.title },
+    });
+  }
   return { success: true as const };
 }
 

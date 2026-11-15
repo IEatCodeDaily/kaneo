@@ -25,6 +25,8 @@ export const dataTableKeys = {
   list: (organizationId: string) => ["data-tables", organizationId] as const,
   detail: (organizationId: string, tableId: string) =>
     ["data-table", organizationId, tableId] as const,
+  /** Prefix-matches every row's history too (rowId is appended). */
+  activity: (tableId: string) => ["data-table-activity", tableId] as const,
 };
 
 export function useDataTables(organizationId: string, enabled = true) {
@@ -69,9 +71,19 @@ export function useDataTableMutations(
     queryClient.invalidateQueries({
       queryKey: dataTableKeys.list(organizationId),
     });
+  // Every write lands in the activity log, so history refreshes with data.
+  const refreshActivity = () =>
+    tableId
+      ? queryClient.invalidateQueries({
+          queryKey: dataTableKeys.activity(tableId),
+        })
+      : Promise.resolve();
   const refreshDetail = () =>
     detailKey
-      ? queryClient.invalidateQueries({ queryKey: detailKey })
+      ? Promise.all([
+          queryClient.invalidateQueries({ queryKey: detailKey }),
+          refreshActivity(),
+        ])
       : Promise.resolve();
   const refreshAll = async () => {
     await Promise.all([refreshList(), refreshDetail()]);
@@ -135,6 +147,7 @@ export function useDataTableMutations(
         return { previous };
       },
       onSuccess: (row) => {
+        void refreshActivity();
         if (!detailKey) return;
         // Merge values only: replacing the row would clobber another cell's
         // in-flight optimistic value with stale server data.

@@ -7,11 +7,19 @@ import {
   Columns3,
   EyeOff,
   ListFilter,
+  Maximize2,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
 import {
@@ -56,6 +64,7 @@ import {
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
+import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
 import {
   AlertDialog,
@@ -96,6 +105,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   createDataTableRow,
   deleteDataTableRow,
   getTableRowPage,
@@ -124,6 +139,14 @@ type Props = {
   onRename: () => void;
   onDelete: () => void;
 };
+
+// Cells whose editor is a popover picker: they open from the active cell.
+const PICKER_TYPES: DataTableFieldType[] = [
+  "select",
+  "multiselect",
+  "user",
+  "ticket",
+];
 
 // Quantities right-align (header and cell) so digits line up; dates don't.
 const NUMERIC_CELL_TYPES: DataTableFieldType[] = [
@@ -574,6 +597,13 @@ export function DataTableGrid({
   } | null>(null);
   // Row sheet (S4): the primary cell opens it; prev/next walk the view.
   const [sheetRowId, setSheetRowId] = useState<string | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
+  // Active cell (NocoDB): a click selects the cell, a second click or Enter
+  // edits it, arrows move it. Keyed by ids so it survives sort/filter.
+  const [active, setActive] = useState<{
+    rowId: string;
+    fieldId: string;
+  } | null>(null);
   const [dialogField, setDialogField] = useState<DataTableField | null>(null);
   const [dialogType, setDialogType] = useState<DataTableFieldType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -633,6 +663,7 @@ export function DataTableGrid({
 
   const rowHeight = DENSITY_ROW_HEIGHT[density];
   const scrollRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const groupField =
     groupFieldId != null ? fieldsById.get(groupFieldId) : undefined;
 
@@ -699,6 +730,11 @@ export function DataTableGrid({
     [gridItems],
   );
 
+  const rowNumberById = useMemo(
+    () => new Map(renderedRows.map((row, index) => [row.id, index + 1])),
+    [renderedRows],
+  );
+
   const virtualizer = useVirtualizer({
     count: gridItems.length,
     getScrollElement: () => scrollRef.current,
@@ -722,12 +758,16 @@ export function DataTableGrid({
     if (rowHeight) virtualizer.measure();
   }, [virtualizer, rowHeight]);
 
+  // After an editor closes, keys go back to the grid (arrows keep working).
+  const refocusGrid = () => gridRef.current?.focus({ preventScroll: true });
+
   const commitCell = async (
     row: DataTableRow,
     field: DataTableField,
     value: unknown,
   ) => {
     setEditing(null);
+    refocusGrid();
     try {
       await upsertCell.mutateAsync({
         organizationId,
@@ -738,6 +778,72 @@ export function DataTableGrid({
       });
     } catch {
       toast.error(t("navigation:tables.saveCellError"));
+    }
+  };
+
+  const moveActive = (dRow: number, dCol: number) => {
+    if (!active) return;
+    const r = renderedRows.findIndex((row) => row.id === active.rowId);
+    const c = fields.findIndex((field) => field.id === active.fieldId);
+    if (r < 0 || c < 0) return;
+    const nextRow =
+      renderedRows[Math.min(Math.max(r + dRow, 0), renderedRows.length - 1)];
+    const nextField =
+      fields[Math.min(Math.max(c + dCol, 0), fields.length - 1)];
+    if (!nextRow || !nextField) return;
+    setActive({ rowId: nextRow.id, fieldId: nextField.id });
+    const index = gridItems.findIndex(
+      (item) => item.kind === "row" && item.row.id === nextRow.id,
+    );
+    if (index >= 0) virtualizer.scrollToIndex(index);
+  };
+
+  const onGridKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Editors and pickers own their keys.
+    if (editing || !active) return;
+    const target = event.target as HTMLElement;
+    if (target.closest("input, textarea, [role='listbox'], [role='dialog']"))
+      return;
+    const moves: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+    };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      moveActive(move[0], move[1]);
+      return;
+    }
+    if (event.key === "Tab") {
+      event.preventDefault();
+      moveActive(0, event.shiftKey ? -1 : 1);
+      return;
+    }
+    if (event.key === "Escape") {
+      setActive(null);
+      return;
+    }
+    // Space expands the row (NocoDB); Enter edits, or expands field 0.
+    const primaryActive = fields[0]?.id === active.fieldId;
+    if (event.key === " " || (event.key === "Enter" && primaryActive)) {
+      event.preventDefault();
+      setSheetRowId(active.rowId);
+      return;
+    }
+    if (event.key === "Enter" && canEdit) {
+      event.preventDefault();
+      const field = fields.find((candidate) => candidate.id === active.fieldId);
+      if (field && PICKER_TYPES.includes(field.type)) {
+        gridRef.current
+          ?.querySelector<HTMLElement>(
+            '[role="gridcell"][aria-selected="true"] button',
+          )
+          ?.click();
+        return;
+      }
+      setEditing(active);
     }
   };
 
@@ -1016,6 +1122,7 @@ export function DataTableGrid({
           onExport={exportCsv}
           onRename={onRename}
           onDelete={onDelete}
+          onShowActivity={() => setActivityOpen(true)}
         />
       </Layout.Toolbar>
       <input
@@ -1087,7 +1194,15 @@ export function DataTableGrid({
             className="flex min-h-full flex-col"
             style={{ minWidth: totalWidth }}
           >
-            <div role="grid" aria-rowcount={visibleRows.length + 1}>
+            {/* The grid owns focus: arrows/Tab/Enter/Space drive the active cell. */}
+            <div
+              ref={gridRef}
+              role="grid"
+              tabIndex={0}
+              aria-rowcount={visibleRows.length + 1}
+              onKeyDown={onGridKeyDown}
+              className="outline-none"
+            >
               <div
                 role="row"
                 className="sticky top-0 z-20 grid bg-background"
@@ -1293,13 +1408,17 @@ export function DataTableGrid({
                     }
                     const row = entry.row;
                     const rowIndex = item.index;
+                    // Position among rows (group headers excluded), 1-based.
+                    const rowNumber = rowNumberById.get(row.id) ?? rowIndex + 1;
                     const isSelected = selected.has(row.id);
+                    const isActiveRow = active?.rowId === row.id;
                     return (
                       <div
                         key={row.id}
                         role="row"
                         aria-rowindex={rowIndex + 2}
                         aria-selected={isSelected || undefined}
+                        data-active={isActiveRow || undefined}
                         className={cn(
                           "group absolute left-0 grid bg-background hover:bg-row-hover",
                           isSelected && "bg-row-selected hover:bg-row-selected",
@@ -1316,16 +1435,29 @@ export function DataTableGrid({
                         <div
                           role="rowheader"
                           className={cn(
-                            "sticky left-0 z-10 flex items-center justify-center border-r border-b text-xs tabular-nums text-muted-foreground",
+                            "sticky left-0 z-10 flex items-center justify-center gap-1 border-r border-b text-xs tabular-nums text-muted-foreground",
+                            // the row number overlays the hover controls
+                            "relative",
                             isSelected
                               ? "bg-row-selected group-hover:bg-row-selected"
                               : "bg-background group-hover:bg-row-hover",
                           )}
                         >
+                          {/* NocoDB gutter: the row number at rest; hover
+                              swaps in select + expand. */}
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "pointer-events-none absolute inset-0 flex items-center justify-center group-focus-within:opacity-0 group-hover:opacity-0",
+                              isSelected && "opacity-0",
+                            )}
+                          >
+                            {rowNumber}
+                          </span>
                           <Checkbox
                             checked={isSelected}
                             aria-label={t("navigation:tables.selectRow", {
-                              row: rowIndex + 1,
+                              row: rowNumber,
                             })}
                             className={cn(
                               "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
@@ -1340,23 +1472,50 @@ export function DataTableGrid({
                               })
                             }
                           />
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={t("navigation:tables.expandRow", {
+                              row: rowNumber,
+                            })}
+                            className="size-5! opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                            onClick={() => setSheetRowId(row.id)}
+                          >
+                            <Maximize2 className="size-3" />
+                          </Button>
                         </div>
                         {fields.map((field, fieldIndex) => (
+                          // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled once, by the grid (onGridKeyDown)
                           <div
                             key={field.id}
                             role="gridcell"
+                            aria-selected={
+                              (isActiveRow && active?.fieldId === field.id) ||
+                              undefined
+                            }
                             aria-label={t("navigation:tables.cellAria", {
                               field: field.name,
-                              row: rowIndex + 1,
+                              row: rowNumber,
                             })}
+                            onClick={() => {
+                              setActive({ rowId: row.id, fieldId: field.id });
+                              // The whole title cell opens the drawer, not
+                              // just its text (the gap used to do nothing).
+                              if (fieldIndex === 0) setSheetRowId(row.id);
+                            }}
                             className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
+                              "relative flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
                               isSelected
                                 ? "bg-row-selected group-hover:bg-row-selected"
-                                : "bg-background group-hover:bg-row-hover",
+                                : isActiveRow
+                                  ? "bg-row-hover"
+                                  : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
                               fieldIndex === 0 && "sticky z-[5] font-medium",
+                              // Active cell: an inset accent ring, drawn over
+                              // the borders (NocoDB).
+                              "aria-selected:z-[6] aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
                             )}
                             style={
                               fieldIndex === 0
@@ -1368,7 +1527,14 @@ export function DataTableGrid({
                               row={row}
                               field={field}
                               members={members}
-                              canEdit={canEdit}
+                              // Pickers open from the active cell only, so the
+                              // first click selects (checkboxes still toggle).
+                              canEdit={
+                                canEdit &&
+                                (field.type === "checkbox" ||
+                                  !PICKER_TYPES.includes(field.type) ||
+                                  (isActiveRow && active?.fieldId === field.id))
+                              }
                               asPrimary={fieldIndex === 0}
                               isEditing={
                                 editing?.rowId === row.id &&
@@ -1379,12 +1545,22 @@ export function DataTableGrid({
                                   setSheetRowId(row.id);
                                   return;
                                 }
+                                // First click selects; a click on the
+                                // already-active cell (or a double-click) edits.
+                                const isActiveCell =
+                                  active?.rowId === row.id &&
+                                  active.fieldId === field.id;
+                                setActive({ rowId: row.id, fieldId: field.id });
+                                if (!isActiveCell) return;
                                 setEditing({
                                   rowId: row.id,
                                   fieldId: field.id,
                                 });
                               }}
-                              onEditEnd={() => setEditing(null)}
+                              onEditEnd={() => {
+                                setEditing(null);
+                                refocusGrid();
+                              }}
                               onCommit={(value) =>
                                 commitCell(row, field, value)
                               }
@@ -1634,8 +1810,10 @@ export function DataTableGrid({
         open={sheetRowId !== null}
         onOpenChange={(next) => !next && setSheetRowId(null)}
         table={table}
-        row={rows.find((row) => row.id === sheetRowId) ?? null}
-        fields={fields}
+        row={allRows.find((row) => row.id === sheetRowId) ?? null}
+        rowIndex={visibleRows.findIndex((row) => row.id === sheetRowId)}
+        rowCount={visibleRows.length}
+        fields={allFields}
         members={members}
         canEdit={canEdit}
         onCommit={(row, field, value) => commitCell(row, field, value)}
@@ -1695,6 +1873,21 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
+        <SheetContent side="right" size="sm">
+          <SheetHeader>
+            <SheetTitle>{t("navigation:tables.tableActivity")}</SheetTitle>
+          </SheetHeader>
+          {activityOpen && (
+            <TableActivityList
+              table={table}
+              fields={allFields}
+              members={members}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </TicketLookupContext.Provider>
   );
 }
