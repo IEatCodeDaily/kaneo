@@ -45,8 +45,8 @@ primitive to use for each pattern, with do and don't snippets.
 | Modal inset | 16px (`--space-4`, content gutter) | DESIGN-SYSTEM §1.2, §1.4 |
 | Header / footer | 44px / 52px | §1.4; `pages.py` `.dlg` |
 | Dialog widths | 400 · 560 · 768 | 560 from `pages.py` `.dlg`; 400 and 768 are house values (confirmation, existing picker width) |
-| Body rhythm | 16px between children | house value: the gap is also the clearance under the header and over the footer, so it equals the inset. `.dlg-b` uses 8px between form rows; callers group tighter rows themselves |
-| Sheet header inset | 16px | house value: `kit.css` `.sheet .ph` uses 12px, which puts the title 4px left of the body. One inset per surface wins |
+| Body rhythm | 16px between children | differs from r6: `.dlg-b` uses 8px between form rows (open, see below) |
+| Sheet header inset | 16px | differs from r6: `kit.css` `.sheet .ph` uses 12px (open, see below) |
 | Row sheet | 480px | §2 |
 | Popover inset | 4px menu · 8px panel | `kit.css` `.menu`, `.pop` |
 | Spacing | 4 · 8 · 12 · 16 · 24 · 32, and 6 for icon-to-label and chips | §1.2 |
@@ -81,12 +81,20 @@ primitive to use for each pattern, with do and don't snippets.
 - A wrapper `<div>` that re-pads or bleeds a dialog body passes the types and
   the lint. Only the rendered overlay states catch it, and only for the
   surfaces they open.
-- Floating edges use the default `--border` on every primitive (popover, menu,
-  select, dialog, sheet). DESIGN-SYSTEM §1.1 asks for `--input`, and `kit.css`
-  puts the sheet on `--card`. Not changed here: it restyles every floating
-  surface and needs the owner's eye.
 - 896 legacy offenders remain in the baseline (748 feature, 148 primitives).
   They are debt, not approval.
+
+## Open: where the primitives differ from design v3 r6
+
+Found in review, not changed. Each one restyles many surfaces at once, so it is
+the owner's call, and the render asserts pin whichever value is chosen.
+
+| What | Built | r6 | Reach |
+|---|---|---|---|
+| Gap between dialog body children | 16px | 8px (`.dlg-b`) | every dialog |
+| Sheet header left inset | 16px, same as the body | 12px (`.sheet .ph`), body 16px | every sheet |
+| Edge of floating layers | `--border` | `--input` (§1.1) | popover, menu, select, dialog, sheet |
+| Sheet surface | `--popover` | `--card` (`kit.css` `.sheet`) | every sheet |
 
 ## Sources
 
