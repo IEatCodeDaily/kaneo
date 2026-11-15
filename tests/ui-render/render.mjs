@@ -809,8 +809,9 @@ const overlayGeometry = () => {
   const b = span(painted(bodyRoots));
   return {
     // sticky bars must be filled, or the body scrolls visibly behind them
+    // (a confirmation's header is inline message text, not a bar)
     bars_opaque: [header, footer]
-      .filter(Boolean)
+      .filter((el) => el && getComputedStyle(el).position === "sticky")
       .every((el) => !clear(getComputedStyle(el).backgroundColor)),
     width: Math.round(box.width),
     radius: getComputedStyle(popup).borderTopLeftRadius,
