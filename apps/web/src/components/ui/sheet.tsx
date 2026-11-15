@@ -113,6 +113,7 @@ function SheetPopup({
             <SheetPrimitive.Close
               aria-label={i18n.t("common:actions.close")}
               className={overlayClose}
+              data-slot="sheet-close"
               render={<Button size="icon-sm" variant="ghost" />}
             >
               <XIcon />

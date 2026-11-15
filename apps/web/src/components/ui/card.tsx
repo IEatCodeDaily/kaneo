@@ -199,7 +199,7 @@ function CardPanel({
     className: cn(
       "flex-1",
       inset === "default" &&
-        "p-4 in-[[data-slot=card]:has(>[data-slot=card-header]:not(.border-b))]:pt-0 in-[[data-slot=card]:has(>[data-slot=card-footer]:not(.border-t))]:pb-0",
+        "p-4 [[data-slot=card]:has(>[data-slot=card-header]:not(.border-b))>&]:pt-0 [[data-slot=card]:has(>[data-slot=card-footer]:not(.border-t))>&]:pb-0",
       className,
     ),
     "data-slot": "card-panel",

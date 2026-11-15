@@ -99,10 +99,10 @@ function RouteComponent() {
                   Identity-provider credentials remain with their provider.
                 </CardDescription>
               </CardHeader>
-              <div className="divide-y">
+              <CardPanel className="divide-y">
                 {identities.map((identity) => (
-                  <CardPanel
-                    className="flex items-center justify-between gap-4"
+                  <div
+                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
                     key={identity.id}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -118,11 +118,11 @@ function RouteComponent() {
                       </div>
                     </div>
                     <Badge variant="secondary">Linked</Badge>
-                  </CardPanel>
+                  </div>
                 ))}
                 {availableProviders.map((provider) => (
-                  <CardPanel
-                    className="flex items-center justify-between gap-4"
+                  <div
+                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
                     key={provider.providerId}
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -146,15 +146,15 @@ function RouteComponent() {
                         ? "Linking…"
                         : "Link"}
                     </Button>
-                  </CardPanel>
+                  </div>
                 ))}
                 {identities.length === 0 && availableProviders.length === 0 ? (
-                  <CardPanel className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-3 text-sm text-muted-foreground">
                     <KeyRound className="size-4" /> No configured sign-in
                     methods were found.
-                  </CardPanel>
+                  </p>
                 ) : null}
-              </div>
+              </CardPanel>
             </Card>
           )}
         </section>

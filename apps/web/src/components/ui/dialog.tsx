@@ -150,6 +150,7 @@ function DialogPopup({
             <DialogPrimitive.Close
               aria-label={i18n.t("common:actions.close")}
               className={overlayClose}
+              data-slot="dialog-close"
               render={<Button size="icon-sm" variant="ghost" />}
             >
               <XIcon />

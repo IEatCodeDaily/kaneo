@@ -20,7 +20,9 @@ export default function ProjectUpdateEditDialog({
         <DialogHeader>
           <DialogTitle>Edit update</DialogTitle>
         </DialogHeader>
-        <ProjectUpdateComposer projectId={projectId} />
+        <div>
+          <ProjectUpdateComposer projectId={projectId} />
+        </div>
       </DialogContent>
     </Dialog>
   );

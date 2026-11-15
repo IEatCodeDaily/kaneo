@@ -588,7 +588,7 @@ export default function TaskSubtasks({
       </AlertDialog>
 
       <CommandDialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <CommandDialogPopup className="h-105 max-w-3xl">
+        <CommandDialogPopup size="lg">
           {/* Two-pane board rail + palette layout, parity with the other
               linking pickers (KFL-333). */}
           <div className="grid min-h-0 flex-1 overflow-hidden sm:grid-cols-[12rem_1fr]">
