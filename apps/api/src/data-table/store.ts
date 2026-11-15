@@ -441,6 +441,42 @@ export async function getRowById(
   return record ? toRow(record, fields) : null;
 }
 
+/**
+ * Rows that include a ticket: explicit row ids plus rows whose ticket-type
+ * cells hold the task id (jsonb containment).
+ * ponytail: capped at 100 rows per table; paginate if a ticket is ever
+ * included in more rows than a ticket page can show.
+ */
+export async function getRowsIncludingTicket(
+  executor: Executor,
+  tableId: string,
+  fields: StoreField[],
+  input: { rowIds: string[]; taskId: string },
+): Promise<TableRow[]> {
+  const ticketCols = fields
+    .filter((field) => field.type === "ticket")
+    .map(
+      (field) =>
+        sql`${colRef(field.id)} @> ${JSON.stringify([input.taskId])}::jsonb`,
+    );
+  const ids = input.rowIds.map((id) => sql`${id}`);
+  const matches = [
+    ...(ids.length > 0 ? [sql`id IN (${sql.join(ids, sql.raw(", "))})`] : []),
+    ...ticketCols,
+  ];
+  if (matches.length === 0) return [];
+  const result = await executor.execute(
+    sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))}
+        FROM ${tableRef(tableId)}
+        WHERE ${sql.join(matches, sql.raw(" OR "))}
+        ORDER BY position ASC, created_at ASC
+        LIMIT 100`,
+  );
+  return result.rows.map((record) =>
+    toRow(record as Record<string, unknown>, fields),
+  );
+}
+
 export async function insertRow(
   executor: Executor,
   tableId: string,

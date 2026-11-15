@@ -1,7 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Table2, Trash2 } from "lucide-react";
+import { Plus, Table2, Unlink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  FieldTypeIcon,
+  type MemberOption,
+} from "@/components/data-table/data-table-cells";
+import { DataTableCellContent } from "@/components/data-table/data-table-editors";
+import { TicketLookupContext } from "@/components/data-table/ticket-cell";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,24 +25,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getDataTable, getDataTables } from "@/fetchers/data-table/data-table";
+import {
+  getDataTable,
+  getDataTables,
+  upsertDataTableCell,
+} from "@/fetchers/data-table/data-table";
 import {
   getRowsForTask,
   linkRowToTask,
+  type TableRowGroup,
   unlinkRowTask,
 } from "@/fetchers/data-table/row-links";
+import getActiveOrganizationMembers from "@/fetchers/organization-member/get-active-organization-members";
+import { ensureTablesStrings } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
-import type { DataTable } from "@/types/data-table";
+import type {
+  DataTable,
+  DataTableField,
+  DataTableRow,
+} from "@/types/data-table";
 
-type Group = {
-  tableId: string;
-  tableName: string;
-  rows: { id: string; primary: string | null }[];
-};
+type Group = TableRowGroup["tables"][number];
+
+// The section renders lazy-bundle strings on any ticket page.
+void ensureTablesStrings();
 
 /**
- * Ticket resources: "Table rows" (design v3 S4). Lists the rows whose table
- * carries this ticket in their linked tickets, and links more from a picker.
+ * Ticket "Included in": every table row that includes this ticket (explicit
+ * link or a ticket cell holding it), with all of the row's field values —
+ * editable in place for table editors. Rows act as custom fields, so the
+ * ticket primitive never grows per-team columns.
  * Fetches directly instead of via react-query: the surrounding resources
  * section is also mounted by tests that provide no QueryClientProvider.
  */
@@ -61,8 +79,31 @@ export function TableRowResources({
     { id: string; name: string; deletedAt: string | null }[]
   >([]);
   const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState<Map<string, MemberOption>>(
+    () => new Map(),
+  );
+  const [editing, setEditing] = useState<{
+    rowId: string;
+    fieldId: string;
+  } | null>(null);
 
   const editable = canEdit;
+
+  useEffect(() => {
+    if (!organizationId || linkedTables.length === 0) return;
+    let cancelled = false;
+    getActiveOrganizationMembers({ organizationId })
+      .then((data) => {
+        if (cancelled) return;
+        // better-auth types listMembers as {members, total} | [].
+        const rows = Array.isArray(data) ? data : (data?.members ?? []);
+        setMembers(new Map(rows.map((m) => [m.userId || m.id, m])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [organizationId, linkedTables.length]);
 
   useEffect(() => {
     if (!taskId || !organizationId) return;
@@ -163,6 +204,39 @@ export function TableRowResources({
     }
   };
 
+  const commitCell = async (
+    group: Group,
+    row: DataTableRow,
+    field: DataTableField,
+    value: unknown,
+  ) => {
+    setEditing(null);
+    try {
+      const updated = await upsertDataTableCell({
+        organizationId,
+        tableId: group.tableId,
+        rowId: row.id,
+        fieldId: field.id,
+        value,
+      });
+      setLinkedTables((current) =>
+        current.map((candidate) =>
+          candidate.tableId !== group.tableId
+            ? candidate
+            : {
+                ...candidate,
+                tickets: { ...candidate.tickets, ...updated.tickets },
+                rows: candidate.rows.map((r) =>
+                  r.id === row.id ? { ...r, values: updated.values } : r,
+                ),
+              },
+        ),
+      );
+    } catch {
+      toast.error(t("navigation:tables.saveCellError"));
+    }
+  };
+
   const primaryField = detail?.fields[0];
   const candidates = (detail?.rows ?? []).filter((row) => {
     if (pickRowId === row.id) return false;
@@ -173,12 +247,14 @@ export function TableRowResources({
     return primary.toLowerCase().includes(search.toLowerCase());
   });
 
+  // Tables off (or none exist): no section rather than an empty prompt.
+  if (tables.length === 0 && linkedTables.length === 0) return null;
+
   return (
-    <div className="flex flex-col gap-0.5" data-slot="task-table-rows">
+    <div className="mt-3 flex flex-col gap-0.5" data-slot="task-table-rows">
       <div className="flex items-center justify-between gap-2 px-2">
-        <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Table2 className="size-3.5" />
-          {t("navigation:tables.tableRowsSection")}
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("navigation:tables.includedIn")}
         </span>
         {editable && (
           <Button
@@ -186,7 +262,7 @@ export function TableRowResources({
             size="icon-xs"
             variant="ghost"
           >
-            <Table2 className="size-3.5" />
+            <Plus className="size-3.5" />
             <span className="sr-only">
               {t("navigation:tables.linkTableRow")}
             </span>
@@ -194,46 +270,101 @@ export function TableRowResources({
         )}
       </div>
 
-      {linkedTables.map((group) => (
-        <div key={group.tableId} className="flex flex-col gap-0.5">
-          <span className="px-2 text-xs text-muted-foreground">
-            {group.tableName}
-          </span>
-          {group.rows.map((row) => (
-            <div
-              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/60"
-              key={row.id}
+      {linkedTables.length === 0 && (
+        <p className="px-2 py-1 text-xs text-muted-foreground">
+          {t("navigation:tables.notIncluded")}
+        </p>
+      )}
+
+      {linkedTables.flatMap((group) =>
+        group.rows.map((row) => {
+          const [primary, ...rest] = group.fields;
+          const title = primary ? String(row.values[primary.id] ?? "") : "";
+          return (
+            <TicketLookupContext.Provider
+              key={`${group.tableId}:${row.id}`}
+              value={{
+                organizationSlug,
+                organizationId,
+                tableId: group.tableId,
+                tickets: group.tickets,
+              }}
             >
-              <Link
-                className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary-soft-foreground hover:underline"
-                params={{
-                  organizationSlug,
-                  tableId: group.tableId,
-                }}
-                to="/dashboard/organization/$organizationSlug/table/$tableId"
-              >
-                <span className="min-w-0 truncate">
-                  {row.primary || row.id}
-                </span>
-              </Link>
-              {editable && (
-                <Button
-                  aria-label={t("navigation:tables.unlinkTableRow")}
-                  className="opacity-0 group-hover:opacity-100"
-                  disabled={busy}
-                  onClick={() =>
-                    applyUnlink({ tableId: group.tableId, rowId: row.id })
-                  }
-                  size="icon-xs"
-                  variant="ghost"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
+              <div className="flex flex-col py-1" data-slot="included-in-row">
+                <div className="group flex h-7 items-center gap-1.5 rounded-md px-2 hover:bg-accent/60">
+                  <Table2 className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {group.tableName}
+                  </span>
+                  <span className="text-xs text-faint-foreground">/</span>
+                  <Link
+                    className="min-w-0 flex-1 truncate text-ui font-medium hover:underline"
+                    params={{ organizationSlug, tableId: group.tableId }}
+                    to="/dashboard/organization/$organizationSlug/table/$tableId"
+                  >
+                    {title || t("navigation:tables.untitledRow")}
+                  </Link>
+                  {editable && group.canEdit && row.linked && (
+                    <Button
+                      aria-label={t("navigation:tables.unlinkTableRow")}
+                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                      disabled={busy}
+                      onClick={() =>
+                        applyUnlink({ tableId: group.tableId, rowId: row.id })
+                      }
+                      size="icon-xs"
+                      variant="ghost"
+                    >
+                      <Unlink className="size-3.5" />
+                    </Button>
+                  )}
+                </div>
+                {rest
+                  // A ticket cell holding only this ticket just echoes the page.
+                  .filter(
+                    (field) =>
+                      !(
+                        field.type === "ticket" &&
+                        JSON.stringify(row.values[field.id]) ===
+                          JSON.stringify([taskId])
+                      ),
+                  )
+                  .map((field) => (
+                    <div
+                      key={field.id}
+                      className="flex min-h-7 items-center gap-2 rounded-md pr-2 pl-7 hover:bg-accent/40"
+                    >
+                      <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <FieldTypeIcon type={field.type} />
+                        <span className="truncate">{field.name}</span>
+                      </span>
+                      {/* Key/value list: every value starts on one column, numbers too. */}
+                      <div className="flex min-h-7 min-w-0 flex-1 items-center text-ui *:text-left!">
+                        <DataTableCellContent
+                          row={row}
+                          field={field}
+                          members={members}
+                          canEdit={editable && group.canEdit}
+                          isEditing={
+                            editing?.rowId === row.id &&
+                            editing.fieldId === field.id
+                          }
+                          onEditStart={() =>
+                            setEditing({ rowId: row.id, fieldId: field.id })
+                          }
+                          onEditEnd={() => setEditing(null)}
+                          onCommit={(value) =>
+                            commitCell(group, row, field, value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </TicketLookupContext.Provider>
+          );
+        }),
+      )}
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent className="max-w-md">

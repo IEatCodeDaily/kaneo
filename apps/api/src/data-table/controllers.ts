@@ -22,7 +22,11 @@ import {
   organizationTable,
   taskTable,
 } from "../database/schema";
-import { listAccessibleResourceIds } from "../resource-access";
+import {
+  getResourcePrivilege,
+  listAccessibleResourceIds,
+  privilegeAllows,
+} from "../resource-access";
 import { type FieldType, fieldOptionsSchema, isFieldType } from "./fields";
 import type { StoreField } from "./store";
 import * as store from "./store";
@@ -835,6 +839,11 @@ export async function unlinkRowTask(
   return { success: true as const };
 }
 
+/**
+ * "Included in" for a ticket: every row that includes it — via an explicit
+ * row link or a ticket-type cell holding it — with the row's full field
+ * values, so table rows act as custom fields without widening the ticket.
+ */
 export async function listRowsForTask(
   organizationId: string,
   taskId: string,
@@ -843,7 +852,6 @@ export async function listRowsForTask(
   await requireOrgTask(organizationId, taskId);
   const links = await db
     .select({
-      id: externalLinkTable.id,
       externalId: externalLinkTable.externalId,
       metadata: externalLinkTable.metadata,
     })
@@ -854,65 +862,78 @@ export async function listRowsForTask(
         eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
       ),
     );
-  const byTable = new Map<string, Set<string>>();
-  const names = new Map<string, string>();
+  const linkedRows = new Map<string, Set<string>>();
   for (const link of links) {
     let tableId = "";
     try {
-      const meta = link.metadata
-        ? (JSON.parse(link.metadata) as {
-            tableId?: string;
-            tableName?: string;
-          })
-        : {};
-      tableId = meta.tableId ?? "";
-      if (meta.tableName) names.set(tableId, meta.tableName);
+      tableId =
+        (link.metadata
+          ? (JSON.parse(link.metadata) as { tableId?: string }).tableId
+          : "") ?? "";
     } catch {
       tableId = "";
     }
     if (!tableId) continue;
-    const ids = byTable.get(tableId) ?? new Set<string>();
+    const ids = linkedRows.get(tableId) ?? new Set<string>();
     ids.add(link.externalId);
-    byTable.set(tableId, ids);
+    linkedRows.set(tableId, ids);
   }
-  // A table the caller cannot view must not leak its name or row content
-  // through a task's resources section — same lattice as the list route.
-  const viewableIds = new Set(
-    await listAccessibleResourceIds({
+  // Tables that can hold the ticket in a cell: live, this org, ≥1 ticket field.
+  const withTicketFields = await db
+    .selectDistinct({ id: dataTableTable.id })
+    .from(dataTableTable)
+    .innerJoin(
+      dataTableFieldTable,
+      eq(dataTableFieldTable.tableId, dataTableTable.id),
+    )
+    .where(
+      and(
+        eq(dataTableTable.organizationId, organizationId),
+        isNull(dataTableTable.deletedAt),
+        eq(dataTableFieldTable.type, "ticket"),
+      ),
+    );
+  const candidateIds = [
+    ...new Set([...linkedRows.keys(), ...withTicketFields.map((t) => t.id)]),
+  ];
+  const tables = [];
+  for (const tableId of candidateIds) {
+    // Same lattice as the table routes: hidden tables never leak a name or
+    // a value through a ticket; edit privilege decides inline editing.
+    const privilege = await getResourcePrivilege({
       organizationId,
       resourceType: "table",
+      resourceId: tableId,
       userId,
-      resourceIds: [...byTable.keys()],
-    }),
-  );
-  const tables: {
-    tableId: string;
-    tableName: string;
-    rows: { id: string; primary: string | null }[];
-  }[] = [];
-  for (const [tableId, ids] of byTable) {
-    if (!viewableIds.has(tableId)) continue;
-    const table = await db
-      .select({ name: dataTableTable.name })
+    });
+    if (!privilegeAllows(privilege, "view")) continue;
+    const [table] = await db
+      .select({ name: dataTableTable.name, icon: dataTableTable.icon })
       .from(dataTableTable)
-      .where(eq(dataTableTable.id, tableId));
-    if (!table[0]) continue;
+      .where(
+        and(
+          eq(dataTableTable.id, tableId),
+          eq(dataTableTable.organizationId, organizationId),
+          isNull(dataTableTable.deletedAt),
+        ),
+      );
+    if (!table) continue;
     const fieldRows = await listTableFieldRows(tableId);
     const fields = fieldRows.map(toStoreField);
-    const wanted: { id: string; primary: string | null }[] = [];
-    for (const rowId of ids) {
-      const row = await store.getRowById(db, tableId, fields, rowId);
-      if (!row) continue;
-      wanted.push({
-        id: row.id,
-        primary:
-          fields.length > 0 ? String(row.values[fields[0].id] ?? "") : null,
-      });
-    }
+    const linked = linkedRows.get(tableId) ?? new Set<string>();
+    const rows = await store.getRowsIncludingTicket(db, tableId, fields, {
+      rowIds: [...linked],
+      taskId,
+    });
+    if (rows.length === 0) continue;
     tables.push({
       tableId,
-      tableName: table[0].name || names.get(tableId) || "Table",
-      rows: wanted,
+      tableName: table.name,
+      icon: table.icon,
+      canEdit: privilegeAllows(privilege, "edit"),
+      fields: fieldRows,
+      rows: rows.map((row) => ({ ...row, linked: linked.has(row.id) })),
+      tickets: await ticketsForRows(organizationId, fields, rows),
     });
   }
   const [org] = await db

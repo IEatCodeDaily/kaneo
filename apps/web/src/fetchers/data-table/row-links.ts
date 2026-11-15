@@ -1,4 +1,9 @@
 import { getApiUrl } from "@/fetchers/get-api-url";
+import type {
+  DataTableField,
+  DataTableRow,
+  TicketRef,
+} from "@/types/data-table";
 
 const tablePath = ({
   organizationId,
@@ -72,12 +77,17 @@ export const unlinkRowTask = ({
     { method: "DELETE" },
   );
 
+/** "Included in": rows that include a ticket (explicit link or ticket cell). */
 export type TableRowGroup = {
   organizationSlug: string;
   tables: {
     tableId: string;
     tableName: string;
-    rows: { id: string; primary: string | null }[];
+    icon: string | null;
+    canEdit: boolean;
+    fields: DataTableField[];
+    rows: (DataTableRow & { linked: boolean })[];
+    tickets: Record<string, TicketRef>;
   }[];
 };
 

@@ -549,6 +549,118 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(after.tickets[own.id]).toBeUndefined();
     });
 
+    it("lists every row that includes a ticket, with fields, under the table lattice", async () => {
+      const org = member.organization.id;
+      const own = await seedTask(org, "Pump overhaul");
+      const json = (path: string, method: string, body?: unknown) =>
+        app.request(`/api/data-table/organization/${org}${path}`, {
+          method,
+          headers: { "content-type": "application/json" },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      const included = async () =>
+        (await (
+          await app.request(
+            `/api/data-table/organization/${org}/rows-for-ticket?taskId=${own.id}`,
+          )
+        ).json()) as {
+          tables: {
+            tableId: string;
+            canEdit: boolean;
+            fields: { id: string; name: string }[];
+            rows: {
+              id: string;
+              linked: boolean;
+              values: Record<string, unknown>;
+            }[];
+            tickets: Record<string, { key: string }>;
+          }[];
+        };
+
+      // Table A holds the ticket in a ticket cell (no explicit link).
+      const a = await createTableViaApi(app, org, "Assets");
+      const { field: name } = await createFieldViaApi(app, org, a.id, {
+        name: "Name",
+        type: "text",
+      });
+      const { field: cost } = await createFieldViaApi(app, org, a.id, {
+        name: "Cost",
+        type: "number",
+      });
+      const { field: tk } = await createFieldViaApi(app, org, a.id, {
+        name: "Tickets",
+        type: "ticket",
+      });
+      const hit = await addRowViaApi(app, org, a.id, {
+        [name?.id ?? ""]: "Pump P-2",
+        [cost?.id ?? ""]: 1200,
+        [tk?.id ?? ""]: [own.id],
+      });
+      await addRowViaApi(app, org, a.id, { [name?.id ?? ""]: "Unrelated" });
+
+      // Table B links a row explicitly.
+      const b = await createTableViaApi(app, org, "Vendors");
+      const { field: vendor } = await createFieldViaApi(app, org, b.id, {
+        name: "Vendor",
+        type: "text",
+      });
+      const linkedRow = await addRowViaApi(app, org, b.id, {
+        [vendor?.id ?? ""]: "Acme",
+      });
+      expect(
+        (
+          await json(
+            `/${b.id}/rows/${linkedRow.id}/tickets?taskId=${own.id}`,
+            "POST",
+          )
+        ).status,
+      ).toBe(200);
+
+      const body = await included();
+      const byId = Object.fromEntries(body.tables.map((t) => [t.tableId, t]));
+      expect(Object.keys(byId).sort()).toEqual([a.id, b.id].sort());
+      expect(byId[a.id].rows).toHaveLength(1);
+      expect(byId[a.id].rows[0]).toMatchObject({
+        id: hit.id,
+        linked: false,
+        values: { [name?.id ?? ""]: "Pump P-2", [cost?.id ?? ""]: 1200 },
+      });
+      expect(byId[a.id].fields.map((f) => f.name)).toEqual([
+        "Name",
+        "Cost",
+        "Tickets",
+      ]);
+      expect(byId[a.id].tickets[own.id]?.key).toBe("KFL-7");
+      expect(byId[a.id].canEdit).toBe(true);
+      expect(byId[b.id].rows[0]).toMatchObject({
+        id: linkedRow.id,
+        linked: true,
+      });
+
+      // Trashed tables drop out.
+      await db
+        .update(schema.dataTableTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(schema.dataTableTable.id, b.id));
+      expect((await included()).tables.map((t) => t.tableId)).toEqual([a.id]);
+
+      // A plain member: view-only tables are read-only, hidden ones vanish.
+      await db
+        .update(schema.organizationMemberTable)
+        .set({ role: "member" })
+        .where(eq(schema.organizationMemberTable.userId, member.user.id));
+      await db
+        .update(schema.dataTableTable)
+        .set({ orgPrivilege: "view" })
+        .where(eq(schema.dataTableTable.id, a.id));
+      expect((await included()).tables[0]?.canEdit).toBe(false);
+      await db
+        .update(schema.dataTableTable)
+        .set({ orgPrivilege: "none" })
+        .where(eq(schema.dataTableTable.id, a.id));
+      expect((await included()).tables).toEqual([]);
+    });
+
     it("enforces board scope and single-ticket fields; options follow scope", async () => {
       const org = member.organization.id;
       const table = await createTableViaApi(app, org, "Scoped");

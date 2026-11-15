@@ -222,6 +222,21 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       return c.json(await deleteDashboard(organizationId, dashboardId));
     },
   )
+  // Must precede "/:tableId": Hono matches in registration order, and a
+  // later literal segment is shadowed by the param route (404 as a table).
+  .get(
+    "/organization/:organizationId/rows-for-ticket",
+    validator("param", v.object({ organizationId: v.string() })),
+    validator("query", v.object({ taskId: v.string() })),
+    organizationAccess.fromTaskId("taskId"),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      const { taskId } = c.req.valid("query");
+      return c.json(
+        await listRowsForTask(organizationId, taskId, c.get("userId")),
+      );
+    },
+  )
   .get(
     "/organization/:organizationId/:tableId",
     validator("param", idParams),
@@ -523,19 +538,6 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       const { taskId } = c.req.valid("query");
       return c.json(
         await unlinkRowTask(organizationId, tableId, rowId, taskId),
-      );
-    },
-  )
-  .get(
-    "/organization/:organizationId/rows-for-ticket",
-    validator("param", v.object({ organizationId: v.string() })),
-    validator("query", v.object({ taskId: v.string() })),
-    organizationAccess.fromTaskId("taskId"),
-    async (c) => {
-      const { organizationId } = c.req.valid("param");
-      const { taskId } = c.req.valid("query");
-      return c.json(
-        await listRowsForTask(organizationId, taskId, c.get("userId")),
       );
     },
   );
