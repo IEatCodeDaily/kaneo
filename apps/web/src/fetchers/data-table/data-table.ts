@@ -10,6 +10,7 @@ import type {
   DataTableRowTarget,
   DataTableSummary,
   DataTableTarget,
+  TableActivity,
   TicketRef,
   UpdateDataTableFieldInput,
   UpdateDataTableInput,
@@ -53,6 +54,12 @@ export const getTableRowPage = (
 ) =>
   request<DataTable>(
     `${base(organizationId)}/${encodeURIComponent(tableId)}?offset=${offset}`,
+  );
+
+/** Newest-first history for a table, or one row of it. */
+export const getTableActivity = (target: DataTableTarget, rowId?: string) =>
+  request<TableActivity[]>(
+    `${tablePath(target)}/activity${rowId ? `?rowId=${encodeURIComponent(rowId)}` : ""}`,
   );
 
 /** Ticket picker options for one ticket field (board scope applied server-side). */

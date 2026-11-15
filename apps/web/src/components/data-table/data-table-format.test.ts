@@ -5,6 +5,7 @@ import {
   filterIsActive,
   groupRows,
   groupValue,
+  isValidNumberInput,
   readHiddenFields,
   summarize,
   typeChangeKeepsValues,
@@ -186,5 +187,21 @@ describe("typeChangeKeepsValues (mirrors the API cast)", () => {
     expect(typeChangeKeepsValues("checkbox", "text")).toBe(false);
     expect(typeChangeKeepsValues("multiselect", "ticket")).toBe(false);
     expect(typeChangeKeepsValues("ticket", "json")).toBe(false);
+  });
+});
+
+describe("isValidNumberInput", () => {
+  it("accepts any float; decimals only round the display", () => {
+    const f = field({ type: "number", options: { precision: 0 } });
+    expect(isValidNumberInput("1.25", f)).toBe(true);
+    expect(isValidNumberInput("-0.000123", f)).toBe(true);
+    expect(isValidNumberInput("abc", f)).toBe(false);
+    expect(isValidNumberInput("", f)).toBe(false);
+  });
+
+  it("still enforces min/max", () => {
+    const f = field({ type: "number", options: { min: 0, max: 10 } });
+    expect(isValidNumberInput("10.5", f)).toBe(false);
+    expect(isValidNumberInput("9.99", f)).toBe(true);
   });
 });

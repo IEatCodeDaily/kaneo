@@ -30,6 +30,9 @@ export type RowTicket = {
   title: string | null;
   taskTitle: string | null;
   taskStatus: string | null;
+  /** Ticket key, e.g. KFL-12. */
+  key: string;
+  boardSlug: string;
 };
 
 export const getRowTickets = ({

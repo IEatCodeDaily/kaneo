@@ -399,10 +399,22 @@ const TABLE_STATES = [
     },
   ],
   [
+    // Active cell: one click selects (accent ring), arrows move it.
+    "table-active-cell",
+    async (p) => {
+      await p.getByRole("gridcell", { name: "Cost, row 1" }).click();
+      await p.keyboard.press("ArrowDown");
+      await p.waitForTimeout(200);
+    },
+  ],
+  [
     // Ticket picker: current link listed first + selected, newest options below.
     "table-ticket-picker",
     async (p) => {
-      // Clicking the chip title opens the picker; only the key navigates.
+      // First click selects the cell, the second opens its picker; only the
+      // chip's key navigates.
+      await p.getByText("Supplier audit notes").first().click();
+      await p.waitForTimeout(200);
       await p.getByText("Supplier audit notes").first().click();
       await p.waitForTimeout(600);
     },
@@ -507,6 +519,28 @@ if (pages.table) {
       fails.push(`row ${m.row_h}px, want 32`);
     if (name === "table-select" && !m.bulk)
       fails.push("bulk bar missing after row select");
+    if (name === "table-active-cell") {
+      const cell = await page.evaluate(() => {
+        const el = document.querySelector(
+          '[role="gridcell"][aria-selected="true"]',
+        );
+        return el
+          ? {
+              label: el.getAttribute("aria-label"),
+              ring: getComputedStyle(el).boxShadow,
+              // One highlight: focus sits on the grid, not a cell's button.
+              gridFocused:
+                document.activeElement?.getAttribute("role") === "grid",
+            }
+          : null;
+      });
+      if (
+        cell?.label !== "Cost, row 2" ||
+        !cell.ring.includes("inset") ||
+        !cell.gridFocused
+      )
+        fails.push(`active cell ${JSON.stringify(cell)}`);
+    }
     if (name === "table-ticket-picker") {
       const picker = await page.evaluate(() => ({
         selected: document.querySelectorAll(
@@ -890,6 +924,22 @@ const OVERLAY_STATES = [
     },
   ],
   [
+    "sheet-activity--desktop-dark",
+    "dark",
+    DESKTOP,
+    async (p) => {
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Table activity" }).click();
+    },
+    {
+      bars_opaque: true,
+      header_inset: 16,
+      body_left: 16,
+      width: 480,
+      header_h: 44,
+    },
+  ],
+  [
     "sheet-row--desktop-dark",
     "dark",
     DESKTOP,
@@ -936,6 +986,20 @@ if (pages.table) {
     for (const [key, value] of Object.entries(want))
       if (m[key] !== value)
         fails.push(`${key} ${m[key] ?? "not measured"}, want ${value}`);
+    if (name.startsWith("sheet-row")) {
+      // Ticket-drawer layout: one close button, the row's history, row n of N.
+      const d = await page.evaluate(() => {
+        const popup = document.querySelector('[data-slot="sheet-popup"]');
+        const text = popup?.innerText ?? "";
+        return {
+          closes: popup?.querySelectorAll('[aria-label="Close"]').length ?? 0,
+          activity: /created row/.test(text),
+          position: /\b1 of 4\b/.test(text),
+        };
+      });
+      if (d.closes !== 1 || !d.activity || !d.position)
+        fails.push(`row drawer ${JSON.stringify(d)}`);
+    }
     const shot = `${name}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m };

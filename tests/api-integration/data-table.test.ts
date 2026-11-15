@@ -549,6 +549,87 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(after.tickets[own.id]).toBeUndefined();
     });
 
+    it("logs who created, edited and deleted rows and fields", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Assets");
+      const { field: name } = await createFieldViaApi(app, org, table.id, {
+        name: "Name",
+        type: "text",
+      });
+      const { field: cost } = await createFieldViaApi(app, org, table.id, {
+        name: "Cost",
+        type: "number",
+        options: { precision: 0 },
+      });
+      const row = await addRowViaApi(app, org, table.id, {
+        [name?.id ?? ""]: "Pump P-2",
+      });
+      const put = (value: unknown) =>
+        app.request(
+          `/api/data-table/organization/${org}/${table.id}/rows/${row.id}/cells/${cost?.id}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ value }),
+          },
+        );
+      // Decimals are display-only: a 0-decimal field stores 1.25 as written.
+      const written = await put(1.25);
+      expect(written.status).toBe(200);
+      expect(
+        ((await written.json()) as { values: Record<string, unknown> }).values[
+          cost?.id ?? ""
+        ],
+      ).toBe(1.25);
+      // An unchanged write is not history.
+      await put(1.25);
+      expect(
+        (
+          await app.request(
+            `/api/data-table/organization/${org}/${table.id}/rows/${row.id}`,
+            { method: "DELETE" },
+          )
+        ).status,
+      ).toBe(200);
+
+      type Entry = {
+        type: string;
+        rowId: string | null;
+        userId: string | null;
+        userName: string | null;
+        data: Record<string, unknown> | null;
+      };
+      const read = async (query = "") =>
+        (await (
+          await app.request(
+            `/api/data-table/organization/${org}/${table.id}/activity${query}`,
+          )
+        ).json()) as Entry[];
+      const all = await read();
+      expect(all.map((entry) => entry.type)).toEqual([
+        "row_deleted",
+        "cell_updated",
+        "row_created",
+        "field_created",
+        "field_created",
+      ]);
+      expect(all.every((entry) => entry.userId === member.user.id)).toBe(true);
+      expect(all[0].userName).toBe(member.user.name);
+      // The deleted row's values survive in the log.
+      expect(all[0].data).toMatchObject({
+        title: "Pump P-2",
+        values: { [name?.id ?? ""]: "Pump P-2" },
+      });
+      expect(all[1].data).toMatchObject({ from: null, to: 1.25 });
+
+      const forRow = await read(`?rowId=${row.id}`);
+      expect(forRow.map((entry) => entry.type)).toEqual([
+        "row_deleted",
+        "cell_updated",
+        "row_created",
+      ]);
+    });
+
     it("lists every row that includes a ticket, with fields, under the table lattice", async () => {
       const org = member.organization.id;
       const own = await seedTask(org, "Pump overhaul");

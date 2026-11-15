@@ -907,6 +907,36 @@ export const dataTableDashboardTable = pgTable(
 
 // DDL ledger for the runtime-managed kaneo_tables schema. No FK: the ledger
 // must survive explicit purges of data tables for auditing.
+// Row/field/table history (who did what), read by the row drawer and the
+// table activity panel. row_id is a physical kaneo_tables id, kept after delete.
+export const dataTableActivityTable = pgTable(
+  "data_table_activity",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    tableId: text("table_id")
+      .notNull()
+      .references(() => dataTableTable.id, { onDelete: "cascade" }),
+    rowId: text("row_id"),
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    type: text("type").notNull(),
+    fieldId: text("field_id"),
+    data: jsonb("data").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("data_table_activity_table_idx").on(table.tableId, table.createdAt),
+    index("data_table_activity_row_idx").on(
+      table.tableId,
+      table.rowId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const dataTableDdlLogTable = pgTable(
   "data_table_ddl_log",
   {

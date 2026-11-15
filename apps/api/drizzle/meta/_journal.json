@@ -617,6 +617,13 @@
 			"when": 1794581000000,
 			"tag": "0084_status_model",
 			"breakpoints": true
+		},
+		{
+			"idx": 85,
+			"version": "7",
+			"when": 1794681000000,
+			"tag": "0085_data_table_activity",
+			"breakpoints": true
 		}
 	]
 }

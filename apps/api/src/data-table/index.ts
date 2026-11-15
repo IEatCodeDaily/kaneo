@@ -25,6 +25,7 @@ import {
   listDashboards,
   listDataTables,
   listRowsForTask,
+  listTableActivity,
   listTicketOptions,
   purgeDataTable,
   queryDataTable,
@@ -340,7 +341,12 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await addFieldToTable(organizationId, tableId, c.req.valid("json")),
+        await addFieldToTable(
+          organizationId,
+          tableId,
+          c.req.valid("json"),
+          c.get("userId"),
+        ),
       );
     },
   )
@@ -372,6 +378,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           tableId,
           fieldId,
           c.req.valid("json"),
+          c.get("userId"),
         ),
       );
     },
@@ -390,7 +397,31 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
-      return c.json(await deleteTableField(organizationId, tableId, fieldId));
+      return c.json(
+        await deleteTableField(
+          organizationId,
+          tableId,
+          fieldId,
+          c.get("userId"),
+        ),
+      );
+    },
+  )
+  .get(
+    "/organization/:organizationId/:tableId/activity",
+    validator("param", idParams),
+    validator("query", v.object({ rowId: v.optional(v.string()) })),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await listTableActivity(
+          organizationId,
+          tableId,
+          c.req.valid("query").rowId,
+        ),
+      );
     },
   )
   .post(
@@ -407,7 +438,12 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await addTableRow(organizationId, tableId, c.req.valid("json").values),
+        await addTableRow(
+          organizationId,
+          tableId,
+          c.req.valid("json").values,
+          c.get("userId"),
+        ),
       );
     },
   )
@@ -425,7 +461,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("edit"),
     async (c) => {
       const { organizationId, tableId, rowId } = c.req.valid("param");
-      await deleteTableRow(organizationId, tableId, rowId);
+      await deleteTableRow(organizationId, tableId, rowId, c.get("userId"));
       return c.json({ success: true });
     },
   )
@@ -452,6 +488,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           rowId,
           fieldId,
           c.req.valid("json").value,
+          c.get("userId"),
         ),
       );
     },
@@ -516,7 +553,13 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       const { organizationId, tableId, rowId } = c.req.valid("param");
       const { taskId } = c.req.valid("query");
       return c.json(
-        await linkRowToTask(organizationId, tableId, rowId, taskId),
+        await linkRowToTask(
+          organizationId,
+          tableId,
+          rowId,
+          taskId,
+          c.get("userId"),
+        ),
       );
     },
   )
@@ -537,7 +580,13 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       const { organizationId, tableId, rowId } = c.req.valid("param");
       const { taskId } = c.req.valid("query");
       return c.json(
-        await unlinkRowTask(organizationId, tableId, rowId, taskId),
+        await unlinkRowTask(
+          organizationId,
+          tableId,
+          rowId,
+          taskId,
+          c.get("userId"),
+        ),
       );
     },
   );
