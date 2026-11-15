@@ -208,7 +208,7 @@ export default function FieldOptionsDialog({
             <p className="mb-1 text-xs font-medium text-muted-foreground">
               {t("navigation:tables.fieldType")}
             </p>
-            <div className="grid max-h-44 grid-cols-2 gap-1 overflow-y-auto rounded-lg border p-1">
+            <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
               {(field?.type === "link"
                 ? ["link", ...EDITABLE_FIELD_TYPES]
                 : EDITABLE_FIELD_TYPES
@@ -425,7 +425,7 @@ export default function FieldOptionsDialog({
             </p>
           )}
 
-          <span className="flex items-center gap-2 text-sm">
+          <span className="flex items-center gap-2 text-ui">
             <Checkbox
               checked={required}
               onCheckedChange={(checked) => setRequired(checked === true)}
@@ -445,7 +445,7 @@ export default function FieldOptionsDialog({
           <Button type="button" disabled={saveDisabled} onClick={save}>
             {field
               ? t("navigation:tables.editField")
-              : t("navigation:tables.createAction")}
+              : t("navigation:tables.addField")}
           </Button>
         </DialogFooter>
       </DialogContent>

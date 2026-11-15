@@ -90,7 +90,17 @@ feature branch ──PR──▶ main ──auto──▶ kaneo.entelechia.cloud
 4. **Production** pins the release tag in `noovoleum/infra-deploy-ucollect-internal-prod`
    → `stacks/kaneo/compose.yml` (PR there). Komodo redeploys. Only on the owner's go.
 
-## 6. Upstream
+## 6. UI changes
+
+Load `.agents/skills/kaneo-ui/SKILL.md` before touching anything under
+`apps/web/src/components` or `routes`. The primitives in `components/ui/` own
+inset, bar heights and radii; dialogs, sheets and confirmations take `size` and
+`inset`, never `className`. CI enforces it three ways: the web typecheck,
+`node scripts/design-lint.mjs` (its baseline only shrinks), and the geometry
+asserts in `tests/ui-render/render.mjs`. A review finding a machine could have
+caught becomes a rule in the same PR. Rationale: `docs/ui-design-language.md`.
+
+## 7. Upstream
 
 Cherry-pick individual commits (`git cherry-pick -x <sha>`), never merge the branch —
 the fork has diverged >1200 files. Security fixes first. Track picks as KFL cards.
@@ -99,4 +109,4 @@ the fork has diverged >1200 files. Security fixes first. Track picks as KFL card
 
 `test-driven-development`, `negative-control-testing`, `self-verification-discipline`,
 `assert-the-shipped-artifact`, `requesting-code-review`, `code-review`, `writing-plans`,
-`kaneo-development`, `komodo-compose-stack-deploys`.
+`kaneo-development`, `komodo-compose-stack-deploys`, `kaneo-ui` (repo-local).

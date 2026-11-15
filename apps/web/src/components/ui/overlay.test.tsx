@@ -1,5 +1,5 @@
-import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,6 +18,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./sheet";
 
 // ui/dialog reads the close label from the real i18n bootstrap.
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
+
+// No vitest globals here, so Testing Library does not clean up on its own.
+afterEach(cleanup);
 
 const slot = (name: string) =>
   document.querySelector<HTMLElement>(`[data-slot="${name}"]`);
