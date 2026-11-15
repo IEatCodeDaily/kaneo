@@ -917,6 +917,22 @@ const OVERLAY_STATES = [
     },
   ],
   [
+    "sheet-activity--desktop-dark",
+    "dark",
+    DESKTOP,
+    async (p) => {
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Table activity" }).click();
+    },
+    {
+      bars_opaque: true,
+      header_inset: 16,
+      body_left: 16,
+      width: 480,
+      header_h: 44,
+    },
+  ],
+  [
     "sheet-row--desktop-dark",
     "dark",
     DESKTOP,
