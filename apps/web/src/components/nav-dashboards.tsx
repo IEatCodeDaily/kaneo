@@ -2,11 +2,13 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { AlertCircle, ChartPie, Plus } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import {
   useDashboardDetails,
   useDashboards,
 } from "@/hooks/dashboards/use-dashboards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useDashboardsEnabled } from "@/hooks/use-dashboards-enabled";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { ensureTablesStrings } from "@/lib/i18n";
 
@@ -34,33 +36,28 @@ export function NavDashboards() {
   const navigate = useNavigate();
   const { canCreateBoards } = useOrganizationPermission();
   const [createOpen, setCreateOpen] = useState(false);
-  const tablesEnabled = Boolean(
-    (
-      organization as
-        | (typeof organization & { tablesEnabled?: boolean })
-        | undefined
-    )?.tablesEnabled,
-  );
+  const dashboardsEnabled = useDashboardsEnabled();
   const {
     data: dashboards = [],
     isLoading,
     isError,
     refetch,
-  } = useDashboards(organization?.id ?? "", tablesEnabled);
+  } = useDashboards(organization?.id ?? "", dashboardsEnabled);
   const details = useDashboardDetails(
     organization?.id ?? "",
     dashboards.map((dashboard) => dashboard.id),
-    tablesEnabled,
+    dashboardsEnabled,
   );
 
-  if (!organization || !tablesEnabled) return null;
+  if (!organization || !dashboardsEnabled) return null;
 
   return (
     <>
       <SidebarGroup className="group/dashboards gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
-          <SidebarGroupLabel className="h-7 flex-1 px-0 text-sidebar-accent-foreground">
-            {t("navigation:dashboards.title")}
+          <SidebarGroupLabel className="h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground">
+            <span>{t("navigation:dashboards.title")}</span>
+            <FeatureStageBadge stage="Alpha" />
           </SidebarGroupLabel>
           {canCreateBoards() && (
             <button

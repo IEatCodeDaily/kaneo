@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { AlertCircle, Plus, Table2 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { useDataTables } from "@/hooks/data-table/use-data-tables";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
@@ -51,11 +52,9 @@ export function NavTables() {
     <>
       <SidebarGroup className="group/tables gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
-          <SidebarGroupLabel className="h-7 flex-1 px-0 text-sidebar-accent-foreground">
-            {t("navigation:tables.title")}
-            <span className="ml-2 rounded-full border border-sidebar-border px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Alpha
-            </span>
+          <SidebarGroupLabel className="h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground">
+            <span>{t("navigation:tables.title")}</span>
+            <FeatureStageBadge stage="Alpha" />
           </SidebarGroupLabel>
           {canCreateBoards() && (
             <button

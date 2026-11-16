@@ -53,7 +53,6 @@ import {
   sortRows,
   summarize,
   supportsSummary,
-  typeChangeKeepsValues,
   writeDensity,
   writeHiddenFields,
 } from "@/components/data-table/data-table-format";
@@ -130,6 +129,8 @@ import type {
   SelectChoice,
   TicketRef,
 } from "@/types/data-table";
+import { ColumnResizeHandle, useColumnWidths } from "./column-resize";
+import { FieldTypeConfirmation } from "./field-type-confirmation";
 
 type Props = {
   table: DataTable;
@@ -168,6 +169,9 @@ function FieldHeader({
   onFilter,
   onHide,
   onDeleted,
+  width,
+  onResize,
+  onResetWidth,
 }: {
   field: DataTableField;
   stickyLeft: number | null;
@@ -184,6 +188,9 @@ function FieldHeader({
   onFilter: (field: DataTableField) => void;
   onHide: (field: DataTableField) => void;
   onDeleted: (field: DataTableField) => void;
+  width: number;
+  onResize: (width: number) => void;
+  onResetWidth: () => void;
 }) {
   const { t } = useTranslation();
   const { updateField } = useDataTableMutations(organizationId, tableId);
@@ -195,12 +202,15 @@ function FieldHeader({
     null,
   );
   const changeType = async (next: DataTableFieldType) => {
-    if (next === field.type) return;
+    if (!canEdit || next === field.type) return false;
     const needsEditor =
       ((next === "select" || next === "multiselect") &&
         !field.options?.choices?.length) ||
       (next === "currency" && !field.options?.code);
-    if (needsEditor) return onEditOptions(field, next);
+    if (needsEditor) {
+      onEditOptions(field, next);
+      return true;
+    }
     try {
       await updateField.mutateAsync({
         organizationId,
@@ -208,8 +218,10 @@ function FieldHeader({
         fieldId: field.id,
         type: next,
       });
+      return true;
     } catch {
       toast.error(t("navigation:tables.renameFieldError"));
+      return false;
     }
   };
 
@@ -221,7 +233,7 @@ function FieldHeader({
       }
       className={cn(
         "flex min-w-0 border-r border-b bg-background",
-        stickyLeft !== null && "sticky z-10",
+        stickyLeft !== null ? "sticky z-10" : "relative",
       )}
       style={stickyLeft !== null ? { left: stickyLeft } : undefined}
     >
@@ -233,7 +245,7 @@ function FieldHeader({
               aria-label={t("navigation:tables.fieldMenu", {
                 name: field.name,
               })}
-              className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
+              className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
             />
           }
         >
@@ -325,44 +337,24 @@ function FieldHeader({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <AlertDialog
-        open={pendingType !== null}
-        onOpenChange={(open) => !open && setPendingType(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("navigation:tables.changeTypeTitle", {
-                name: field.name,
-                type: pendingType ? t(FIELD_TYPE_LABEL_KEYS[pendingType]) : "",
-              })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t(
-                typeChangeKeepsValues(field.type, pendingType)
-                  ? "navigation:tables.changeTypeConvert"
-                  : "navigation:tables.changeTypeClears",
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
-              {t("navigation:tables.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                const next = pendingType;
-                setPendingType(null);
-                if (next) changeType(next);
-              }}
-            >
-              {t("navigation:tables.changeTypeConfirm")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ColumnResizeHandle
+        name={field.name}
+        width={width}
+        onResize={onResize}
+        onReset={onResetWidth}
+      />
+      {pendingType && (
+        <FieldTypeConfirmation
+          key={`${field.id}:${pendingType}`}
+          field={field}
+          nextType={pendingType}
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingType(null);
+          }}
+          onConfirm={() => changeType(pendingType)}
+        />
+      )}
     </div>
   );
 }
@@ -435,6 +427,10 @@ function BulkSetField({
       />
       {field.type === "select" ? (
         <Select
+          items={(field.options?.choices ?? []).map((choice) => ({
+            value: choice.id,
+            label: choice.label,
+          }))}
           value={value || null}
           onValueChange={(v) => setValue(String(v ?? ""))}
         >
@@ -451,6 +447,13 @@ function BulkSetField({
         </Select>
       ) : field.type === "user" ? (
         <Select
+          items={Array.from(members.entries()).map(([id, member]) => ({
+            value: id,
+            label:
+              member.user.name ||
+              member.user.email ||
+              t("navigation:tables.unknownValue"),
+          }))}
           value={value || null}
           onValueChange={(v) => setValue(String(v ?? ""))}
         >
@@ -460,7 +463,9 @@ function BulkSetField({
           <SelectContent>
             {Array.from(members.entries()).map(([id, m]) => (
               <SelectItem key={id} value={id}>
-                {m.user.name || m.user.email || id}
+                {m.user.name ||
+                  m.user.email ||
+                  t("navigation:tables.unknownValue")}
               </SelectItem>
             ))}
           </SelectContent>
@@ -579,6 +584,9 @@ export function DataTableGrid({
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [summaryFns, setSummaryFns] = useState<Record<string, SummaryFn>>({});
   const [density, setDensity] = useState<Density>(() => readDensity());
+  const { widths, setWidth } = useColumnWidths(table.id);
+  const columnWidth = (field: DataTableField) =>
+    widths[field.id] ?? fieldWidth(field.type);
   const [hidden, setHidden] = useState<string[]>(() =>
     readHiddenFields(table.id),
   );
@@ -595,7 +603,7 @@ export function DataTableGrid({
     rowId: string;
     fieldId: string;
   } | null>(null);
-  // Row sheet (S4): the primary cell opens it; prev/next walk the view.
+  // Row sheet opens only through the gutter or Space; prev/next walk the view.
   const [sheetRowId, setSheetRowId] = useState<string | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   // Active cell (NocoDB): a click selects the cell, a second click or Enter
@@ -761,13 +769,15 @@ export function DataTableGrid({
   // After an editor closes, keys go back to the grid (arrows keep working).
   const refocusGrid = () => gridRef.current?.focus({ preventScroll: true });
 
+  const pendingCells = useRef(new Set<string>());
   const commitCell = async (
     row: DataTableRow,
     field: DataTableField,
     value: unknown,
   ) => {
-    setEditing(null);
-    refocusGrid();
+    const key = `${row.id}:${field.id}`;
+    if (!canEdit || pendingCells.current.has(key)) return false;
+    pendingCells.current.add(key);
     try {
       await upsertCell.mutateAsync({
         organizationId,
@@ -776,8 +786,18 @@ export function DataTableGrid({
         fieldId: field.id,
         value,
       });
+      setEditing((current) =>
+        current?.rowId === row.id && current.fieldId === field.id
+          ? null
+          : current,
+      );
+      refocusGrid();
+      return true;
     } catch {
       toast.error(t("navigation:tables.saveCellError"));
+      return false;
+    } finally {
+      pendingCells.current.delete(key);
     }
   };
 
@@ -800,10 +820,9 @@ export function DataTableGrid({
 
   const onGridKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     // Editors and pickers own their keys.
-    if (editing || !active) return;
+    if (event.defaultPrevented || editing || !active) return;
     const target = event.target as HTMLElement;
-    if (target.closest("input, textarea, [role='listbox'], [role='dialog']"))
-      return;
+    if (target !== gridRef.current) return;
     const moves: Record<string, [number, number]> = {
       ArrowUp: [-1, 0],
       ArrowDown: [1, 0],
@@ -825,9 +844,8 @@ export function DataTableGrid({
       setActive(null);
       return;
     }
-    // Space expands the row (NocoDB); Enter edits, or expands field 0.
-    const primaryActive = fields[0]?.id === active.fieldId;
-    if (event.key === " " || (event.key === "Enter" && primaryActive)) {
+    // Space expands the row; Enter edits every column identically.
+    if (event.key === " ") {
       event.preventDefault();
       setSheetRowId(active.rowId);
       return;
@@ -835,10 +853,13 @@ export function DataTableGrid({
     if (event.key === "Enter" && canEdit) {
       event.preventDefault();
       const field = fields.find((candidate) => candidate.id === active.fieldId);
-      if (field && PICKER_TYPES.includes(field.type)) {
+      if (
+        field &&
+        (PICKER_TYPES.includes(field.type) || field.type === "checkbox")
+      ) {
         gridRef.current
           ?.querySelector<HTMLElement>(
-            '[role="gridcell"][aria-selected="true"] button',
+            '[role="gridcell"][aria-selected="true"] [role="button"], [role="gridcell"][aria-selected="true"] button, [role="gridcell"][aria-selected="true"] [role="checkbox"]',
           )
           ?.click();
         return;
@@ -987,6 +1008,7 @@ export function DataTableGrid({
   // ponytail: swap for a real bulk endpoint if tables outgrow that.
   const bulkBusy = upsertCell.isPending || deleteRowMutation.isPending;
   const bulkSetField = async (field: DataTableField, value: unknown) => {
+    if (!canEdit) return;
     let done = 0;
     try {
       for (const rowId of selected) {
@@ -1009,6 +1031,7 @@ export function DataTableGrid({
   };
 
   const bulkDeleteRows = async (ids: string[]) => {
+    if (!canEdit) return;
     const count = ids.length;
     let done = 0;
     try {
@@ -1068,11 +1091,11 @@ export function DataTableGrid({
   const ADD_FIELD_WIDTH = 40;
   const trailing = canEdit ? ADD_FIELD_WIDTH : 0;
   const gridTemplate = `${ROW_NUMBER_COLUMN_WIDTH}px ${fields
-    .map((field) => `${fieldWidth(field.type)}px`)
+    .map((field) => `${columnWidth(field)}px`)
     .join(" ")}${canEdit ? ` ${ADD_FIELD_WIDTH}px` : ""}`;
   const totalWidth =
     ROW_NUMBER_COLUMN_WIDTH +
-    fields.reduce((sum, field) => sum + fieldWidth(field.type), 0) +
+    fields.reduce((sum, field) => sum + columnWidth(field), 0) +
     trailing;
 
   return (
@@ -1116,7 +1139,7 @@ export function DataTableGrid({
           }
           canEdit={canEdit}
           rowsInView={visibleRows.length}
-          onAddRow={addRow}
+          onAddRow={() => addRow()}
           onAddField={() => openDialog(null, null)}
           onImport={() => fileInputRef.current?.click()}
           onExport={exportCsv}
@@ -1163,7 +1186,7 @@ export function DataTableGrid({
         </div>
       )}
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-auto">
         {allFields.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -1205,7 +1228,7 @@ export function DataTableGrid({
             >
               <div
                 role="row"
-                className="sticky top-0 z-20 grid bg-background"
+                className="sticky top-0 z-30 grid bg-background"
                 style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
               >
                 <div
@@ -1251,6 +1274,9 @@ export function DataTableGrid({
                     }
                     onHide={(target) => changeHidden([...hidden, target.id])}
                     onDeleted={setFieldToDelete}
+                    width={columnWidth(field)}
+                    onResize={(width) => setWidth(field.id, width)}
+                    onResetWidth={() => setWidth(field.id, null)}
                   />
                 ))}
                 {canEdit && (
@@ -1436,8 +1462,6 @@ export function DataTableGrid({
                           role="rowheader"
                           className={cn(
                             "sticky left-0 z-10 flex items-center justify-center gap-1 border-r border-b text-xs tabular-nums text-muted-foreground",
-                            // the row number overlays the hover controls
-                            "relative",
                             isSelected
                               ? "bg-row-selected group-hover:bg-row-selected"
                               : "bg-background group-hover:bg-row-hover",
@@ -1497,19 +1521,49 @@ export function DataTableGrid({
                               field: field.name,
                               row: rowNumber,
                             })}
-                            onClick={() => {
+                            onClick={(event) => {
+                              if (
+                                (event.target as HTMLElement).closest(
+                                  "input, textarea, a",
+                                )
+                              )
+                                return;
+                              const isActiveCell =
+                                active?.rowId === row.id &&
+                                active.fieldId === field.id;
                               setActive({ rowId: row.id, fieldId: field.id });
-                              // Focus lives on the grid, not the inner button:
-                              // one highlight (the active ring), arrows work.
-                              // An editor opened by this click autofocuses
-                              // after, so it still wins.
                               refocusGrid();
-                              // The whole title cell opens the drawer, not
-                              // just its text (the gap used to do nothing).
-                              if (fieldIndex === 0) setSheetRowId(row.id);
+                              if (!canEdit || !isActiveCell) return;
+                              if (
+                                PICKER_TYPES.includes(field.type) ||
+                                field.type === "checkbox"
+                              ) {
+                                // Whitespace on an active picker cell opens the same control.
+                                if (
+                                  !(event.target as HTMLElement).closest(
+                                    "button, [role='button'], [role='checkbox']",
+                                  )
+                                ) {
+                                  event.currentTarget
+                                    .querySelector<HTMLElement>(
+                                      "button, [role='button'], [role='checkbox']",
+                                    )
+                                    ?.click();
+                                }
+                              } else if (field.type !== "link")
+                                setEditing({
+                                  rowId: row.id,
+                                  fieldId: field.id,
+                                });
                             }}
                             className={cn(
-                              "relative flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
+                              "flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
+                              fieldIndex === 0 ? "sticky z-10" : "relative z-0",
+                              editing?.rowId === row.id &&
+                                editing.fieldId === field.id &&
+                                (fieldIndex === 0
+                                  ? "z-20 bg-background"
+                                  : "z-[1] bg-background"),
                               isSelected
                                 ? "bg-row-selected group-hover:bg-row-selected"
                                 : isActiveRow
@@ -1517,10 +1571,9 @@ export function DataTableGrid({
                                   : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
-                              fieldIndex === 0 && "sticky z-[5] font-medium",
                               // Active cell: an inset accent ring, drawn over
                               // the borders (NocoDB).
-                              "aria-selected:z-[6] aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
+                              "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
                             )}
                             style={
                               fieldIndex === 0
@@ -1532,24 +1585,20 @@ export function DataTableGrid({
                               row={row}
                               field={field}
                               members={members}
-                              // Pickers open from the active cell only, so the
-                              // first click selects (checkboxes still toggle).
+                              // Pickers and checkboxes activate only after selection.
                               canEdit={
                                 canEdit &&
-                                (field.type === "checkbox" ||
-                                  !PICKER_TYPES.includes(field.type) ||
+                                (!(
+                                  PICKER_TYPES.includes(field.type) ||
+                                  field.type === "checkbox"
+                                ) ||
                                   (isActiveRow && active?.fieldId === field.id))
                               }
-                              asPrimary={fieldIndex === 0}
                               isEditing={
                                 editing?.rowId === row.id &&
                                 editing?.fieldId === field.id
                               }
                               onEditStart={() => {
-                                if (fieldIndex === 0) {
-                                  setSheetRowId(row.id);
-                                  return;
-                                }
                                 // First click selects; a click on the
                                 // already-active cell (or a double-click) edits.
                                 const isActiveCell =
@@ -1676,17 +1725,19 @@ export function DataTableGrid({
                     count: selected.size,
                   })}
                 </span>
-                <BulkSetField
-                  fields={fields}
-                  members={members}
-                  disabled={bulkBusy}
-                  onApply={(field, value) => bulkSetField(field, value)}
-                />
+                {canEdit && (
+                  <BulkSetField
+                    fields={fields}
+                    members={members}
+                    disabled={bulkBusy}
+                    onApply={(field, value) => bulkSetField(field, value)}
+                  />
+                )}
                 <span className="flex-1" />
                 <Button
                   variant="ghost"
                   size="xs"
-                  disabled={bulkBusy}
+                  disabled={!canEdit || bulkBusy}
                   className="text-destructive-foreground hover:text-destructive-foreground"
                   onClick={() => setBulkDeleteIds([...selected])}
                 >
@@ -1889,6 +1940,7 @@ export function DataTableGrid({
               table={table}
               fields={allFields}
               members={members}
+              canEdit={canEdit}
             />
           )}
         </SheetContent>

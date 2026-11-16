@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, FileText, Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import PageTitle from "@/components/page-title";
 import type { TaskTemplateData } from "@/components/task/task-template-menu";
 import {
@@ -130,9 +131,7 @@ function RouteComponent() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold">Ticket templates</h1>
-            <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Beta
-            </span>
+            <FeatureStageBadge stage="Beta" />
           </div>
           <p className="text-muted-foreground">
             Reusable starting values for tickets in this organization.

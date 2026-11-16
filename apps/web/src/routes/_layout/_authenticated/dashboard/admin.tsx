@@ -359,6 +359,10 @@ function AdminPage() {
                                   Organization
                                 </label>
                                 <Select
+                                  items={organizations.map((organization) => ({
+                                    value: organization.id,
+                                    label: organization.name,
+                                  }))}
                                   value={organizationId}
                                   onValueChange={(value) =>
                                     setOidcOrganizationId(value ?? "")
@@ -442,6 +446,10 @@ function AdminPage() {
                                         }}
                                       />
                                       <Select
+                                        items={syncedTeams.map((team) => ({
+                                          value: team.id,
+                                          label: team.name,
+                                        }))}
                                         value={mapping.teamId}
                                         onValueChange={(teamId) => {
                                           if (teamId === null) return;

@@ -18,6 +18,7 @@ import {
   Ticket,
   Type,
 } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { isValidUrl } from "@/components/data-table/data-table-format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,6 +41,12 @@ import {
   formatNumberValue,
 } from "./data-table-format";
 import { TicketCellView } from "./ticket-cell";
+
+const MarkdownRenderer = lazy(() =>
+  import("@/components/public-board/markdown-renderer").then((module) => ({
+    default: module.MarkdownRenderer,
+  })),
+);
 
 export type MemberOption = {
   id: string;
@@ -165,11 +172,13 @@ export function DataTableCellView({
   value,
   members,
   onToggleCheckbox,
+  expanded = false,
 }: {
   field: DataTableField;
   value: unknown;
   members: Map<string, MemberOption>;
   onToggleCheckbox?: (checked: boolean) => void;
+  expanded?: boolean;
 }) {
   const { t } = useTranslation();
   switch (field.type) {
@@ -180,11 +189,16 @@ export function DataTableCellView({
       if (selected.length === 0) return <EmptyValue />;
       const choices = fieldChoices(field);
       const visible = selected
-        .slice(0, 2)
+        .slice(0, expanded ? undefined : 2)
         .map((id) => choices.find((choice) => choice.id === id));
       const overflow = selected.length - visible.length;
       return (
-        <div className="flex min-w-0 items-center gap-1">
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-1",
+            expanded ? "flex-wrap" : "overflow-hidden",
+          )}
+        >
           {visible.map((choice, index) => (
             <ChoiceChip
               key={selected[index]}
@@ -193,7 +207,7 @@ export function DataTableCellView({
             />
           ))}
           {overflow > 0 && (
-            <Badge variant="secondary" className="px-1.5 text-xs">
+            <Badge variant="secondary" className="shrink-0 px-1.5 text-xs">
               +{overflow}
             </Badge>
           )}
@@ -243,6 +257,7 @@ export function DataTableCellView({
         <Checkbox
           checked={asBool(value)}
           disabled={!onToggleCheckbox}
+          className={!onToggleCheckbox ? "pointer-events-none" : undefined}
           aria-label={t("navigation:tables.toggleCheckbox", {
             field: field.name,
           })}
@@ -285,13 +300,31 @@ export function DataTableCellView({
         </a>
       );
     }
+    case "longtext": {
+      const text = asString(value);
+      if (!text) return <EmptyValue />;
+      return (
+        <div
+          data-expanded={expanded}
+          className={cn(
+            "min-w-0 w-full break-words text-sm [&_.tiptap]:min-h-0 [&_.tiptap]:p-0",
+            !expanded &&
+              "line-clamp-1 max-h-6 overflow-hidden [&_.tiptap]:text-ui [&_.tiptap>*]:m-0 [&_.tiptap>*]:text-ui [&_.tiptap>*]:leading-5",
+          )}
+        >
+          <Suspense fallback={<span>{text}</span>}>
+            <MarkdownRenderer content={text} />
+          </Suspense>
+        </div>
+      );
+    }
     case "json":
       return <JsonCell value={value} />;
     case "ticket":
       return asStringArray(value).length === 0 ? (
         <EmptyValue />
       ) : (
-        <TicketCellView value={value} />
+        <TicketCellView value={value} expanded={expanded} />
       );
     case "link": {
       const ids = asStringArray(value);
@@ -306,14 +339,7 @@ export function DataTableCellView({
     default: {
       const text = asString(value);
       if (!text) return <EmptyValue />;
-      return (
-        <span
-          className="truncate"
-          title={field.type === "longtext" ? text : undefined}
-        >
-          {text}
-        </span>
-      );
+      return <span className="truncate">{text}</span>;
     }
   }
 }

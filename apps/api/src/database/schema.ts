@@ -185,6 +185,8 @@ export const organizationTable = pgTable(
     description: text("description"),
     reposEnabled: boolean("repos_enabled").default(false).notNull(),
     tablesEnabled: boolean("tables_enabled").default(false).notNull(),
+    /** Dashboards chart table data, so they also require tablesEnabled. */
+    dashboardsEnabled: boolean("dashboards_enabled").default(false).notNull(),
     workEnabled: boolean("work_enabled").default(false).notNull(),
     /** Microsoft Teams may show this organization's tickets (cards, search). */
     teamsEnabled: boolean("teams_enabled").default(true).notNull(),

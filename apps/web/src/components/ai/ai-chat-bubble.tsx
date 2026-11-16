@@ -1,6 +1,6 @@
 import { Grip, Sparkles, X } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { Button } from "@/components/ui/button";
 import { getApiUrl } from "@/fetchers/get-api-url";
 import useGetAiSettings from "@/hooks/queries/ai/use-get-ai-settings";
@@ -178,9 +178,7 @@ export function AiChatBubble() {
           <header className="flex items-center justify-between border-b p-3">
             <div className="flex items-center gap-2 pl-5 font-medium">
               <Sparkles className="size-4" /> {organization.name} AI
-              <Badge variant="warning" size="sm">
-                Alpha
-              </Badge>
+              <FeatureStageBadge stage="Alpha" />
             </div>
             <Button
               aria-label="Close organization AI assistant"

@@ -31,6 +31,7 @@ import {
   useDashboards,
 } from "@/hooks/dashboards/use-dashboards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useDashboardsEnabled } from "@/hooks/use-dashboards-enabled";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 
@@ -46,13 +47,7 @@ function DashboardsIndexRoute() {
   const { organizationSlug } = Route.useParams();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
-  const tablesEnabled = Boolean(
-    (
-      activeOrganization as
-        | (typeof activeOrganization & { tablesEnabled?: boolean })
-        | undefined
-    )?.tablesEnabled,
-  );
+  const dashboardsEnabled = useDashboardsEnabled();
   const { canCreateBoards, canUpdateBoards } = useOrganizationPermission();
   const canCreate = canCreateBoards();
   const canEdit = canUpdateBoards();
@@ -61,11 +56,11 @@ function DashboardsIndexRoute() {
     isLoading,
     isError,
     refetch,
-  } = useDashboards(organizationId, tablesEnabled);
+  } = useDashboards(organizationId, dashboardsEnabled);
   const details = useDashboardDetails(
     organizationId,
     dashboards.map((dashboard) => dashboard.id),
-    tablesEnabled,
+    dashboardsEnabled,
   );
   const { deleteDashboard } = useDashboardMutations(organizationId);
   const [createOpen, setCreateOpen] = useState(false);
@@ -75,7 +70,7 @@ function DashboardsIndexRoute() {
   } | null>(null);
 
   if (!activeOrganization) return null;
-  if (!tablesEnabled) return <PermissionDenied />;
+  if (!dashboardsEnabled) return <PermissionDenied />;
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;

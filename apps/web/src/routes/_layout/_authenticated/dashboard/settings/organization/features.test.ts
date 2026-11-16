@@ -16,3 +16,16 @@ describe("organization Work feature", () => {
     expect(source).toContain("workEnabled: checked");
   });
 });
+
+describe("organization Dashboards feature", () => {
+  it("has its own toggle that depends on Tables", () => {
+    expect(source).toContain('aria-label="Enable Dashboards"');
+    expect(source).toContain("dashboardsEnabled: checked");
+    expect(source).toMatch(/pendingFeature !== null \|\|\s+!tablesEnabled/);
+  });
+
+  it("marks every feature with the shared stage badge", () => {
+    expect(source).not.toContain("rounded-full border");
+    expect(source.match(/<FeatureStageBadge stage=/g)).toHaveLength(4);
+  });
+});

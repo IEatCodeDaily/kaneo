@@ -4,7 +4,10 @@ import { Check, ChevronDown, ChevronUp, Copy, Table2, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
-import { FieldTypeIcon } from "@/components/data-table/data-table-cells";
+import {
+  DataTableCellView,
+  FieldTypeIcon,
+} from "@/components/data-table/data-table-cells";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
 import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
@@ -56,14 +59,19 @@ export function RowSheet({
   fields: DataTableField[];
   members: Map<string, MemberOption>;
   canEdit: boolean;
-  onCommit: (row: DataTableRow, field: DataTableField, value: unknown) => void;
+  onCommit: (
+    row: DataTableRow,
+    field: DataTableField,
+    value: unknown,
+  ) => Promise<boolean>;
   onPrev: () => void;
   onNext: () => void;
   hasPrev: boolean;
   hasNext: boolean;
 }) {
   const { t } = useTranslation();
-  const { organizationSlug } = useContext(TicketLookupContext);
+  const { organizationSlug, tickets: ticketLookup } =
+    useContext(TicketLookupContext);
   // Editing is scoped to the current row: TableCellInput seeds its draft
   // once, so an editor left open across prev/next would write row N's text
   // into row N+1. Row-scoping unmounts it on every row switch instead.
@@ -74,8 +82,11 @@ export function RowSheet({
   const [copied, setCopied] = useState(false);
 
   const tickets = useQuery({
-    queryKey: ["row-tickets", row?.id],
+    queryKey: ["row-tickets", table.organizationId, table.id, row?.id],
     enabled: open && row !== null,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: () =>
       getRowTickets({
         organizationId: table.organizationId,
@@ -85,7 +96,34 @@ export function RowSheet({
   });
 
   if (!row) return null;
-  const title = fields[0] ? String(row.values[fields[0].id] ?? "") : "";
+  // The primary field need not be text: resolve it with the same renderer as
+  // the property list rather than showing a choice UUID as the row title.
+  const primaryField = fields[0];
+  const cellTicketIds = new Set(
+    fields
+      .filter((field) => field.type === "ticket")
+      .flatMap((field) => {
+        const value = row.values[field.id];
+        return Array.isArray(value)
+          ? value.filter((id): id is string => typeof id === "string")
+          : [];
+      }),
+  );
+  const linkedTickets = new Map(
+    (tickets.data ?? []).map((ticket) => [
+      ticket.taskId,
+      {
+        id: ticket.taskId,
+        key: ticket.key,
+        title: ticket.taskTitle ?? ticket.title ?? "",
+        status: ticket.taskStatus ?? "",
+      },
+    ]),
+  );
+  for (const id of cellTicketIds) {
+    const ref = ticketLookup[id];
+    if (ref) linkedTickets.set(id, ref);
+  }
 
   const copyId = async () => {
     try {
@@ -165,7 +203,17 @@ export function RowSheet({
         </SheetHeader>
 
         <SheetTitle className="text-xl font-semibold break-words">
-          {title || t("navigation:tables.untitledRow")}
+          {primaryField &&
+          row.values[primaryField.id] != null &&
+          row.values[primaryField.id] !== "" ? (
+            <DataTableCellView
+              field={primaryField}
+              value={row.values[primaryField.id]}
+              members={members}
+            />
+          ) : (
+            t("navigation:tables.untitledRow")
+          )}
         </SheetTitle>
 
         <section className="flex flex-col gap-0.5" data-slot="row-fields">
@@ -178,6 +226,7 @@ export function RowSheet({
               {/* Key/value list: every value starts on one column, numbers too. */}
               <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
                 <DataTableCellContent
+                  expanded
                   row={row}
                   field={field}
                   members={members}
@@ -189,10 +238,15 @@ export function RowSheet({
                     setEditing({ rowId: row.id, fieldId: field.id })
                   }
                   onEditEnd={() => setEditing(null)}
-                  onCommit={(value) => {
-                    // The grid's commitCell clears only its own editing state.
-                    setEditing(null);
-                    onCommit(row, field, value);
+                  onCommit={async (value) => {
+                    if (await onCommit(row, field, value)) {
+                      setEditing((current) =>
+                        current?.rowId === row.id &&
+                        current.fieldId === field.id
+                          ? null
+                          : current,
+                      );
+                    }
                   }}
                 />
               </div>
@@ -203,13 +257,13 @@ export function RowSheet({
         {/* Explicit row↔ticket links (made from a ticket's "Included in").
             Ticket cells already show in the fields above, so an empty list
             would only contradict them: render it when there is something. */}
-        {(tickets.data?.length ?? 0) > 0 && (
+        {linkedTickets.size > 0 && (
           <section className="flex flex-col gap-1 border-t pt-3">
             <h3 className="text-xs font-medium text-muted-foreground">
               {t("navigation:tables.linkedTickets")}
             </h3>
             <ul className="flex flex-col">
-              {tickets.data?.map((ticket) => (
+              {[...linkedTickets.values()].map((ticket) => (
                 <li key={ticket.id}>
                   <Link
                     to="/dashboard/$organizationSlug/tickets/$ticketKey"
@@ -217,13 +271,13 @@ export function RowSheet({
                     className="flex h-8 items-center gap-2 rounded-md px-2 text-ui hover:bg-row-hover"
                   >
                     <span className="shrink-0 [&_svg]:size-3.5">
-                      {getColumnIcon(ticket.taskStatus ?? "")}
+                      {getColumnIcon(ticket.status)}
                     </span>
                     <span className="shrink-0 font-mono text-xs text-muted-foreground">
                       {ticket.key}
                     </span>
                     <span className="min-w-0 flex-1 truncate">
-                      {ticket.taskTitle ?? ticket.title}
+                      {ticket.title}
                     </span>
                   </Link>
                 </li>
@@ -237,6 +291,8 @@ export function RowSheet({
             {t("navigation:tables.activity")}
           </h3>
           <TableActivityList
+            key={row.id}
+            canEdit={canEdit}
             table={table}
             fields={fields}
             members={members}

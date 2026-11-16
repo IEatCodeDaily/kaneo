@@ -41,6 +41,11 @@ export default function ProjectUpdateComposer({
         required
       />
       <Select
+        items={[
+          { value: "on-track", label: "On track" },
+          { value: "at-risk", label: "At risk" },
+          { value: "off-track", label: "Off track" },
+        ]}
         value={health}
         onValueChange={(v) => setHealth(v as ProjectHealth)}
       >

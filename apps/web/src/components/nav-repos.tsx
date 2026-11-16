@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import { AddRepoDialog } from "@/components/repo/add-repo-dialog";
 import RepoAvatar from "@/components/repo/repo-avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -163,9 +163,7 @@ export function NavRepos() {
             }
           >
             <span>{t("navigation:sidebar.repos")}</span>
-            <Badge className="h-4 px-1 text-xs" variant="secondary">
-              Beta
-            </Badge>
+            <FeatureStageBadge stage="Beta" />
           </SidebarGroupLabel>
           {canCreateRepo && (
             <button

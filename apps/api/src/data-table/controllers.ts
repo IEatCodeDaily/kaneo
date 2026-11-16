@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import {
   and,
   asc,
@@ -29,7 +30,12 @@ import {
   listAccessibleResourceIds,
   privilegeAllows,
 } from "../resource-access";
-import { type FieldType, fieldOptionsSchema, isFieldType } from "./fields";
+import {
+  coerceValue,
+  type FieldType,
+  fieldOptionsSchema,
+  isFieldType,
+} from "./fields";
 import type { StoreField } from "./store";
 import * as store from "./store";
 
@@ -43,8 +49,19 @@ function badRequest(message: string): never {
   throw new HTTPException(400, { message });
 }
 
-async function requireTable(organizationId: string, tableId: string) {
-  const [table] = await db
+type Executor = typeof db | store.DataTableTx;
+const sameJson = (a: unknown, b: unknown) =>
+  isDeepStrictEqual(
+    JSON.parse(JSON.stringify(a)),
+    JSON.parse(JSON.stringify(b)),
+  );
+
+async function requireTable(
+  organizationId: string,
+  tableId: string,
+  executor: Executor = db,
+) {
+  const [table] = await executor
     .select()
     .from(dataTableTable)
     .where(
@@ -64,36 +81,154 @@ async function requireTable(organizationId: string, tableId: string) {
 type ActivityInput = {
   tableId: string;
   userId?: string;
-  type:
-    | "row_created"
-    | "row_deleted"
-    | "cell_updated"
-    | "field_created"
-    | "field_updated"
-    | "field_deleted"
-    | "ticket_linked"
-    | "ticket_unlinked";
+  type: string;
   rowId?: string | null;
   fieldId?: string | null;
   data?: Record<string, unknown>;
 };
 
-async function logActivity(input: ActivityInput) {
-  await db.insert(dataTableActivityTable).values({
-    tableId: input.tableId,
-    userId: input.userId ?? null,
-    type: input.type,
-    rowId: input.rowId ?? null,
-    fieldId: input.fieldId ?? null,
-    data: input.data ?? null,
+async function logActivity(tx: store.DataTableTx, input: ActivityInput) {
+  // Metadata lock serializes writers. A monotonic timestamp also gives events
+  // committed by a transaction that waited for that lock their true order.
+  const [entry] = await tx
+    .insert(dataTableActivityTable)
+    .values({
+      tableId: input.tableId,
+      userId: input.userId ?? null,
+      type: input.type,
+      rowId: input.rowId ?? null,
+      fieldId: input.fieldId ?? null,
+      data: input.data ?? null,
+      createdAt: sql`GREATEST(clock_timestamp()::timestamp, COALESCE((SELECT MAX(created_at) + interval '1 millisecond' FROM data_table_activity WHERE table_id = ${input.tableId}), clock_timestamp()::timestamp))`,
+    })
+    .returning();
+  if (!entry) throw new Error("Activity insert returned no entry");
+  return entry;
+}
+
+async function lockTable(
+  tx: store.DataTableTx,
+  organizationId: string,
+  tableId: string,
+) {
+  const [table] = await tx
+    .select()
+    .from(dataTableTable)
+    .where(
+      and(
+        eq(dataTableTable.id, tableId),
+        eq(dataTableTable.organizationId, organizationId),
+      ),
+    )
+    .for("update");
+  return table ?? notFound("Data table");
+}
+
+async function tableLinks(executor: Executor, tableId: string) {
+  return executor
+    .select()
+    .from(externalLinkTable)
+    .where(
+      and(
+        eq(externalLinkTable.resourceType, "table_row"),
+        sql`${externalLinkTable.metadata}::jsonb->>'tableId' = ${tableId}`,
+      ),
+    )
+    .orderBy(asc(externalLinkTable.id));
+}
+
+async function tableSnapshot(
+  executor: Executor,
+  table: typeof dataTableTable.$inferSelect,
+) {
+  const fields = await listTableFieldRows(table.id, executor);
+  const rows = await store.allRows(
+    executor,
+    table.id,
+    fields.map(toStoreField),
+  );
+  const links = await tableLinks(executor, table.id);
+  const tickets = await ticketsForRows(
+    table.organizationId,
+    fields.map(toStoreField),
+    rows,
+    executor,
+  );
+  for (const ref of await ticketRefs(
+    table.organizationId,
+    [...new Set(links.map((link) => link.taskId))],
+    executor,
+  ))
+    tickets[ref.id] = ref;
+  return { table, fields, rows, links, tickets };
+}
+
+async function ensureHistoryBaseline(
+  tx: store.DataTableTx,
+  table: typeof dataTableTable.$inferSelect,
+  userId?: string,
+) {
+  const [existing] = await tx
+    .select({ id: dataTableActivityTable.id })
+    .from(dataTableActivityTable)
+    .where(
+      and(
+        eq(dataTableActivityTable.tableId, table.id),
+        eq(dataTableActivityTable.type, "baseline"),
+      ),
+    )
+    .limit(1);
+  if (!existing)
+    await logActivity(tx, {
+      tableId: table.id,
+      userId,
+      type: "baseline",
+      data: {
+        ...(await tableSnapshot(tx, table)),
+        boundary: "No complete history is claimed before this snapshot",
+      },
+    });
+}
+
+/** Every audited mutation uses this one connection and lock, including its reads. */
+async function mutateTable<T>(
+  organizationId: string,
+  tableId: string,
+  userId: string | undefined,
+  mutate: (
+    tx: store.DataTableTx,
+    table: typeof dataTableTable.$inferSelect,
+  ) => Promise<T>,
+  live = true,
+) {
+  return db.transaction(async (tx) => {
+    const table = await lockTable(tx, organizationId, tableId);
+    if (live) requireLive(table);
+    await ensureHistoryBaseline(tx, table, userId);
+    return mutate(tx, table);
   });
 }
 
 const primaryText = (fields: StoreField[], values: Record<string, unknown>) => {
-  const value = fields.length > 0 ? values[fields[0].id] : null;
-  return value === null || value === undefined || value === ""
-    ? null
-    : String(value);
+  const field = fields[0];
+  if (!field) return null;
+  const value = values[field.id];
+
+  if (value === null || value === undefined || value === "") return null;
+  if (field.type === "select" || field.type === "multiselect") {
+    const choices = field.options?.choices;
+    if (!Array.isArray(choices)) return null;
+    const ids = Array.isArray(value) ? value : [value];
+    const labels = ids.flatMap((id) => {
+      const choice = choices.find((choice) => choice.id === id);
+      return typeof choice?.label === "string" ? [choice.label] : [];
+    });
+    return labels.length ? labels.join(", ") : null;
+  }
+  // Missing resolution is not a license to put opaque entity ids in a title.
+  if (field.type === "user" || field.type === "ticket" || field.type === "link")
+    return null;
+  return typeof value === "object" ? JSON.stringify(value) : String(value);
 };
 
 /** Newest first; a rowId narrows to one row's history. */
@@ -101,33 +236,241 @@ export async function listTableActivity(
   organizationId: string,
   tableId: string,
   rowId?: string,
+  offset = 0,
+  limit = 100,
+  executor: Executor = db,
 ) {
-  await requireTable(organizationId, tableId);
-  return (
-    db
-      .select({
-        id: dataTableActivityTable.id,
-        type: dataTableActivityTable.type,
-        rowId: dataTableActivityTable.rowId,
-        fieldId: dataTableActivityTable.fieldId,
-        data: dataTableActivityTable.data,
-        createdAt: dataTableActivityTable.createdAt,
-        userId: dataTableActivityTable.userId,
-        userName: userTable.name,
-        userImage: userTable.image,
-      })
+  await requireTable(organizationId, tableId, executor);
+  if (
+    !Number.isSafeInteger(offset) ||
+    offset < 0 ||
+    !Number.isSafeInteger(limit) ||
+    limit < 1 ||
+    limit > 100
+  )
+    badRequest("Invalid activity pagination");
+  return activityQuery(executor, tableId, rowId).offset(offset).limit(limit);
+}
+
+function activityQuery(executor: Executor, tableId: string, rowId?: string) {
+  return executor
+    .select({
+      id: dataTableActivityTable.id,
+      type: dataTableActivityTable.type,
+      rowId: dataTableActivityTable.rowId,
+      fieldId: dataTableActivityTable.fieldId,
+      data: dataTableActivityTable.data,
+      createdAt: dataTableActivityTable.createdAt,
+      userId: dataTableActivityTable.userId,
+      userName: userTable.name,
+      userImage: userTable.image,
+    })
+    .from(dataTableActivityTable)
+    .leftJoin(userTable, eq(userTable.id, dataTableActivityTable.userId))
+    .where(
+      and(
+        eq(dataTableActivityTable.tableId, tableId),
+        rowId ? eq(dataTableActivityTable.rowId, rowId) : undefined,
+      ),
+    )
+    .orderBy(
+      desc(dataTableActivityTable.createdAt),
+      desc(dataTableActivityTable.id),
+    );
+}
+
+export async function addTableComment(
+  organizationId: string,
+  tableId: string,
+  content: string,
+  rowId: string | undefined,
+  userId: string,
+) {
+  if (
+    typeof content !== "string" ||
+    !content.trim() ||
+    content.trim().length > 20000
+  )
+    badRequest("Comment must contain 1–20000 characters");
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const fields = await listTableFieldRows(tableId, tx);
+    const row =
+      rowId === undefined
+        ? null
+        : await store.getRowById(tx, tableId, fields, rowId);
+    if (rowId !== undefined && !row) notFound("Row");
+    const entry = await logActivity(tx, {
+      tableId,
+      userId,
+      type: "comment_added",
+      rowId,
+      data: {
+        content: content.trim(),
+        ...(row ? { title: primaryText(fields, row.values) } : {}),
+      },
+    });
+    const [user] = await tx
+      .select({ name: userTable.name, image: userTable.image })
+      .from(userTable)
+      .where(eq(userTable.id, userId));
+    return {
+      id: entry.id,
+      type: entry.type,
+      rowId: entry.rowId,
+      fieldId: entry.fieldId,
+      data: entry.data,
+      createdAt: entry.createdAt,
+      userId: entry.userId,
+      userName: user?.name ?? null,
+      userImage: user?.image ?? null,
+    };
+  });
+}
+
+export async function exportTableHistory(
+  organizationId: string,
+  tableId: string,
+) {
+  // Same-table writes share this lock; independent ticket changes do not.
+  // ponytail: full archive in memory under the writer lock; stream a consistent
+  // snapshot when measured archive size or lock time demands it (never truncate).
+  return db.transaction(async (tx) => {
+    const table = await lockTable(tx, organizationId, tableId);
+    const snapshot = await tableSnapshot(tx, table);
+    const events = await activityQuery(tx, tableId);
+    const baseline = events.find((event) => event.type === "baseline");
+    return {
+      version: 1 as const,
+      tickets: snapshot.tickets,
+      table: snapshot.table,
+      fields: snapshot.fields,
+      rows: snapshot.rows,
+      links: snapshot.links,
+      events,
+      historyStartsAt: baseline?.createdAt ?? null,
+    };
+  });
+}
+
+function conflict(): never {
+  throw new HTTPException(409, {
+    message:
+      "Field changed since this conversion; restore would overwrite later edits",
+  });
+}
+
+export async function revertTableActivity(
+  organizationId: string,
+  tableId: string,
+  activityId: string,
+  userId: string,
+) {
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const [event] = await tx
+      .select()
       .from(dataTableActivityTable)
-      .leftJoin(userTable, eq(userTable.id, dataTableActivityTable.userId))
+      .where(
+        and(
+          eq(dataTableActivityTable.id, activityId),
+          eq(dataTableActivityTable.tableId, tableId),
+        ),
+      );
+    if (!event) notFound("Table activity");
+    const data = event.data;
+    const before = data?.beforeField as
+      | typeof dataTableFieldTable.$inferSelect
+      | undefined;
+    const after = data?.afterField as
+      | typeof dataTableFieldTable.$inferSelect
+      | undefined;
+    const beforeColumn = data?.beforeColumn as store.ColumnSnapshot | undefined;
+    const afterColumn = data?.afterColumn as store.ColumnSnapshot | undefined;
+    if (
+      event.type !== "field_updated" ||
+      !event.fieldId ||
+      !before ||
+      !after ||
+      !isFieldType(before.type) ||
+      !isFieldType(after.type) ||
+      before.type === after.type ||
+      !Array.isArray(beforeColumn) ||
+      !Array.isArray(afterColumn)
+    )
+      conflict();
+    const [field] = await tx
+      .select()
+      .from(dataTableFieldTable)
+      .where(
+        and(
+          eq(dataTableFieldTable.id, event.fieldId),
+          eq(dataTableFieldTable.tableId, tableId),
+        ),
+      );
+    if (!field || !sameJson(field, after)) conflict();
+    // Even a value changed and then changed back is a later edit. New/deleted
+    // rows also conflict: the archived column describes a different row set.
+    const [later] = await tx
+      .select({ id: dataTableActivityTable.id })
+      .from(dataTableActivityTable)
       .where(
         and(
           eq(dataTableActivityTable.tableId, tableId),
-          rowId ? eq(dataTableActivityTable.rowId, rowId) : undefined,
+          sql`${dataTableActivityTable.createdAt} > (SELECT created_at FROM data_table_activity WHERE id = ${activityId})`,
+          sql`(${dataTableActivityTable.fieldId} = ${event.fieldId} OR ${dataTableActivityTable.type} IN ('row_created', 'row_deleted'))`,
         ),
       )
-      .orderBy(desc(dataTableActivityTable.createdAt))
-      // ponytail: newest 200; paginate when a table's history outgrows a panel.
-      .limit(200)
-  );
+      .limit(1);
+    if (
+      later ||
+      !sameJson(
+        await store.snapshotColumn(tx, tableId, { ...field, type: after.type }),
+        afterColumn,
+      )
+    )
+      conflict();
+    await store.changeFieldType(tx, {
+      tableId,
+      fieldId: field.id,
+      from: after.type,
+      to: before.type,
+    });
+    await store.restoreColumn(
+      tx,
+      tableId,
+      { ...field, type: before.type, options: before.options },
+      beforeColumn,
+    );
+    const [restored] = await tx
+      .update(dataTableFieldTable)
+      .set({
+        name: before.name,
+        type: before.type,
+        options: before.options,
+        position: before.position,
+        updatedAt: new Date(),
+      })
+      .where(eq(dataTableFieldTable.id, field.id))
+      .returning();
+    if (!restored) throw new Error("Field restoration returned no field");
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "field_reverted",
+      fieldId: field.id,
+      data: {
+        activityId,
+        name: restored.name,
+        beforeField: field,
+        afterField: restored,
+        fromType: after.type,
+        toType: before.type,
+        beforeColumn: afterColumn,
+        afterColumn: beforeColumn,
+        tickets: data?.tickets ?? {},
+      },
+    });
+    return { success: true as const };
+  });
 }
 
 /** Trashed tables stay readable (restore banner) but not writable. */
@@ -138,8 +481,12 @@ function requireLive<T extends { deletedAt: Date | null }>(table: T): T {
   return table;
 }
 
-async function requireField(tableId: string, fieldId: string) {
-  const [field] = await db
+async function requireField(
+  tableId: string,
+  fieldId: string,
+  executor: Executor = db,
+) {
+  const [field] = await executor
     .select()
     .from(dataTableFieldTable)
     .where(
@@ -153,12 +500,12 @@ async function requireField(tableId: string, fieldId: string) {
 }
 
 /** Full field metadata rows (name, position, timestamps), known types only. */
-async function listTableFieldRows(tableId: string) {
-  const fields = await db
+async function listTableFieldRows(tableId: string, executor: Executor = db) {
+  const fields = await executor
     .select()
     .from(dataTableFieldTable)
     .where(eq(dataTableFieldTable.tableId, tableId))
-    .orderBy(asc(dataTableFieldTable.position));
+    .orderBy(asc(dataTableFieldTable.position), asc(dataTableFieldTable.id));
   // Row `type` is a plain string, so a type predicate is not assignable to
   // the row type; narrow inside the guard branch instead.
   return fields.flatMap((field) =>
@@ -219,9 +566,10 @@ function toTicketRef(row: {
 async function ticketRefs(
   organizationId: string,
   ids: string[],
+  executor: Executor = db,
 ): Promise<TicketRef[]> {
   if (ids.length === 0) return [];
-  const rows = await db
+  const rows = await executor
     .select(ticketColumns)
     .from(taskTable)
     .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
@@ -245,11 +593,12 @@ async function assertTicketBoards(
   organizationId: string,
   type: FieldType,
   options: Record<string, unknown> | null | undefined,
+  executor: Executor = db,
 ) {
   if (type !== "ticket") return;
   const boardIds = allowedBoards({ id: "", type, options });
   if (!boardIds) return;
-  const found = await db
+  const found = await executor
     .select({ id: boardTable.id })
     .from(boardTable)
     .where(
@@ -271,6 +620,7 @@ async function assertTicketValues(
   // linked must not brick the cell (pickers commit the whole array, and a
   // stale id renders nowhere, so the user could never remove it).
   existing: Record<string, unknown> = {},
+  executor: Executor = db,
 ) {
   for (const field of fields) {
     if (field.type !== "ticket") continue;
@@ -289,7 +639,7 @@ async function assertTicketValues(
       ),
     ];
     if (ids.length === 0) continue;
-    const found = await ticketRefs(organizationId, ids);
+    const found = await ticketRefs(organizationId, ids, executor);
     if (found.length !== ids.length) {
       badRequest("Ticket not found in this organization");
     }
@@ -305,6 +655,7 @@ async function ticketsForRows(
   organizationId: string,
   fields: StoreField[],
   rows: { values: Record<string, unknown> }[],
+  executor: Executor = db,
 ): Promise<Record<string, TicketRef>> {
   const ticketFieldIds = fields
     .filter((field) => field.type === "ticket")
@@ -319,7 +670,7 @@ async function ticketsForRows(
       }
     }
   }
-  const refs = await ticketRefs(organizationId, [...ids]);
+  const refs = await ticketRefs(organizationId, [...ids], executor);
   return Object.fromEntries(refs.map((ref) => [ref.id, ref]));
 }
 
@@ -418,6 +769,7 @@ export async function listDataTables(organizationId: string) {
 export async function createDataTable(
   organizationId: string,
   values: { name: string; icon?: string | null },
+  userId?: string,
 ) {
   return db.transaction(async (tx) => {
     const [created] = await tx
@@ -426,6 +778,13 @@ export async function createDataTable(
       .returning();
     if (!created) notFound("Created data table");
     await store.createTable(tx, created.id);
+    await ensureHistoryBaseline(tx, created, userId);
+    await logActivity(tx, {
+      tableId: created.id,
+      userId,
+      type: "table_created",
+      data: { table: created },
+    });
     return created;
   });
 }
@@ -454,58 +813,89 @@ export async function updateDataTable(
   organizationId: string,
   tableId: string,
   values: { name?: string; icon?: string | null },
+  userId?: string,
 ) {
-  const [updated] = await db
-    .update(dataTableTable)
-    .set({ ...values, updatedAt: new Date() })
-    .where(
-      and(
-        eq(dataTableTable.id, tableId),
-        eq(dataTableTable.organizationId, organizationId),
-      ),
+  return mutateTable(organizationId, tableId, userId, async (tx, table) => {
+    if (
+      (values.name ?? table.name) === table.name &&
+      (values.icon === undefined || values.icon === table.icon)
     )
-    .returning();
-  return updated ?? notFound("Data table");
+      return table;
+    const [updated] = await tx
+      .update(dataTableTable)
+      .set({ ...values, updatedAt: new Date() })
+      .where(eq(dataTableTable.id, tableId))
+      .returning();
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "table_updated",
+      data: { before: table, after: updated },
+    });
+    return updated;
+  });
 }
 
 export async function softDeleteDataTable(
   organizationId: string,
   tableId: string,
+  userId?: string,
 ) {
-  const [updated] = await db
-    .update(dataTableTable)
-    .set({ deletedAt: new Date(), updatedAt: new Date() })
-    .where(
-      and(
-        eq(dataTableTable.id, tableId),
-        eq(dataTableTable.organizationId, organizationId),
-      ),
-    )
-    .returning();
-  return updated ?? notFound("Data table");
+  return mutateTable(
+    organizationId,
+    tableId,
+    userId,
+    async (tx, table) => {
+      if (table.deletedAt) return table;
+      const [updated] = await tx
+        .update(dataTableTable)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(eq(dataTableTable.id, tableId))
+        .returning();
+      await logActivity(tx, {
+        tableId,
+        userId,
+        type: "table_deleted",
+        data: { before: table, after: updated },
+      });
+      return updated;
+    },
+    false,
+  );
 }
 
 export async function restoreDataTable(
   organizationId: string,
   tableId: string,
+  userId?: string,
 ) {
-  const [updated] = await db
-    .update(dataTableTable)
-    .set({ deletedAt: null, updatedAt: new Date() })
-    .where(
-      and(
-        eq(dataTableTable.id, tableId),
-        eq(dataTableTable.organizationId, organizationId),
-      ),
-    )
-    .returning();
-  return updated ?? notFound("Data table");
+  return mutateTable(
+    organizationId,
+    tableId,
+    userId,
+    async (tx, table) => {
+      if (!table.deletedAt) return table;
+      const [updated] = await tx
+        .update(dataTableTable)
+        .set({ deletedAt: null, updatedAt: new Date() })
+        .where(eq(dataTableTable.id, tableId))
+        .returning();
+      await logActivity(tx, {
+        tableId,
+        userId,
+        type: "table_restored",
+        data: { before: table, after: updated },
+      });
+      return updated;
+    },
+    false,
+  );
 }
 
 /** Hard delete: drops the physical table and the metadata row atomically. */
 export async function purgeDataTable(organizationId: string, tableId: string) {
-  const table = await requireTable(organizationId, tableId);
   await db.transaction(async (tx) => {
+    const table = await lockTable(tx, organizationId, tableId);
     await store.dropTable(tx, table.id);
     await tx.delete(dataTableTable).where(eq(dataTableTable.id, table.id));
   });
@@ -523,18 +913,13 @@ export async function addFieldToTable(
   },
   userId?: string,
 ) {
-  requireLive(await requireTable(organizationId, tableId));
-  const options = parseFieldOptions(values.type, values.options);
-  await assertTicketBoards(organizationId, values.type, options);
-  let position = values.position;
-  if (position === undefined) {
-    const [result] = await db
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const options = parseFieldOptions(values.type, values.options);
+    await assertTicketBoards(organizationId, values.type, options, tx);
+    const [last] = await tx
       .select({ position: max(dataTableFieldTable.position) })
       .from(dataTableFieldTable)
       .where(eq(dataTableFieldTable.tableId, tableId));
-    position = (result?.position ?? -1) + 1;
-  }
-  return db.transaction(async (tx) => {
     const [created] = await tx
       .insert(dataTableFieldTable)
       .values({
@@ -542,7 +927,7 @@ export async function addFieldToTable(
         name: values.name,
         type: values.type,
         options,
-        position,
+        position: values.position ?? (last?.position ?? -1) + 1,
       })
       .returning();
     if (!created) notFound("Created data table field");
@@ -551,12 +936,21 @@ export async function addFieldToTable(
       fieldId: created.id,
       type: values.type,
     });
-    await tx.insert(dataTableActivityTable).values({
+    await logActivity(tx, {
       tableId,
-      userId: userId ?? null,
+      userId,
       type: "field_created",
       fieldId: created.id,
-      data: { name: created.name, fieldType: created.type },
+      data: {
+        name: created.name,
+        fieldType: created.type,
+        field: created,
+        afterField: created,
+        afterColumn: await store.snapshotColumn(tx, tableId, {
+          ...created,
+          type: values.type,
+        }),
+      },
     });
     return created;
   });
@@ -569,56 +963,81 @@ export async function updateTableField(
   values: { name?: string; options?: unknown; type?: FieldType },
   userId?: string,
 ) {
-  requireLive(await requireTable(organizationId, tableId));
-  const field = await requireField(tableId, fieldId);
-  if (!isFieldType(field.type)) {
-    // Metadata written outside the registry would make the cast matrix unsound.
-    badRequest("Field has an unknown type and cannot be migrated");
-  }
-  // Hoist the narrowed type: property narrowing does not survive into the
-  // transaction callback below.
-  const fromType: FieldType = field.type;
-  const nextType =
-    values.type && values.type !== fromType ? values.type : undefined;
-  const options =
-    values.options !== undefined
-      ? parseFieldOptions(nextType ?? fromType, values.options)
-      : undefined;
-  await assertTicketBoards(organizationId, nextType ?? fromType, options);
-
-  return db.transaction(async (tx) => {
-    if (nextType) {
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const field = await requireField(tableId, fieldId, tx);
+    if (!isFieldType(field.type))
+      badRequest("Field has an unknown type and cannot be migrated");
+    const fromType = field.type;
+    const nextType = values.type ?? fromType;
+    // A type conversion without options must not carry incompatible old options.
+    const options =
+      values.options !== undefined || nextType !== fromType
+        ? parseFieldOptions(nextType, values.options)
+        : field.options;
+    await assertTicketBoards(organizationId, nextType, options, tx);
+    if (
+      nextType === fromType &&
+      (values.name ?? field.name) === field.name &&
+      sameJson(options, field.options)
+    )
+      return field;
+    const beforeColumn =
+      nextType !== fromType
+        ? await store.snapshotColumn(tx, tableId, { ...field, type: fromType })
+        : undefined;
+    if (nextType !== fromType)
       await store.changeFieldType(tx, {
         tableId,
         fieldId,
         from: fromType,
         to: nextType,
       });
-    }
     const [updated] = await tx
       .update(dataTableFieldTable)
       .set({
-        ...(values.name !== undefined ? { name: values.name } : {}),
-        ...(options !== undefined ? { options } : {}),
-        ...(nextType ? { type: nextType } : {}),
+        name: values.name ?? field.name,
+        options,
+        type: nextType,
+        updatedAt: new Date(),
       })
       .where(eq(dataTableFieldTable.id, fieldId))
       .returning();
     if (!updated) notFound("Data table field");
-    const renamed = values.name !== undefined && values.name !== field.name;
-    if (renamed || nextType) {
-      await tx.insert(dataTableActivityTable).values({
-        tableId,
-        userId: userId ?? null,
-        type: "field_updated",
-        fieldId,
-        data: {
-          name: updated.name,
-          ...(renamed ? { fromName: field.name } : {}),
-          ...(nextType ? { fromType: fromType, toType: nextType } : {}),
-        },
-      });
-    }
+    const afterColumn =
+      nextType !== fromType
+        ? await store.snapshotColumn(tx, tableId, {
+            ...updated,
+            type: nextType,
+          })
+        : undefined;
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "field_updated",
+      fieldId,
+      data: {
+        name: updated.name,
+        ...(updated.name !== field.name ? { fromName: field.name } : {}),
+        beforeField: field,
+        afterField: updated,
+        ...(nextType !== fromType
+          ? {
+              fromType,
+              toType: nextType,
+              beforeColumn,
+              afterColumn,
+              tickets: await ticketsForRows(
+                organizationId,
+                [{ ...field, type: fromType }],
+                (beforeColumn ?? []).map((item) => ({
+                  values: { [fieldId]: item.value },
+                })),
+                tx,
+              ),
+            }
+          : {}),
+      },
+    });
     return updated;
   });
 }
@@ -629,19 +1048,35 @@ export async function deleteTableField(
   fieldId: string,
   userId?: string,
 ) {
-  requireLive(await requireTable(organizationId, tableId));
-  const field = await requireField(tableId, fieldId);
-  return db.transaction(async (tx) => {
-    await store.dropField(tx, { tableId, fieldId: field.id });
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const field = await requireField(tableId, fieldId, tx);
+    if (!isFieldType(field.type)) badRequest("Field has an unknown type");
+    const column = await store.snapshotColumn(tx, tableId, {
+      ...field,
+      type: field.type,
+    });
+    const tickets = await ticketsForRows(
+      organizationId,
+      [{ ...field, type: field.type }],
+      column.map((item) => ({ values: { [fieldId]: item.value } })),
+      tx,
+    );
+    await store.dropField(tx, { tableId, fieldId });
     await tx
       .delete(dataTableFieldTable)
-      .where(eq(dataTableFieldTable.id, field.id));
-    await tx.insert(dataTableActivityTable).values({
+      .where(eq(dataTableFieldTable.id, fieldId));
+    await logActivity(tx, {
       tableId,
-      userId: userId ?? null,
+      userId,
       type: "field_deleted",
-      fieldId: field.id,
-      data: { name: field.name },
+      fieldId,
+      data: {
+        name: field.name,
+        field,
+        beforeField: field,
+        beforeColumn: column,
+        tickets,
+      },
     });
     return { success: true as const };
   });
@@ -653,18 +1088,25 @@ export async function addTableRow(
   values: Record<string, unknown> | undefined,
   userId?: string,
 ) {
-  const table = requireLive(await requireTable(organizationId, tableId));
-  const fields = await listTableFields(tableId);
-  await assertTicketValues(organizationId, fields, values ?? {});
-  const row = await store.insertRow(db, table.id, fields, values ?? {});
-  await logActivity({
-    tableId,
-    userId,
-    type: "row_created",
-    rowId: row.id,
-    data: { title: primaryText(fields, row.values) },
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const fields = await listTableFieldRows(tableId, tx);
+    await assertTicketValues(organizationId, fields, values ?? {}, {}, tx);
+    const row = await store.insertRow(tx, tableId, fields, values ?? {});
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "row_created",
+      rowId: row.id,
+      data: {
+        title: primaryText(fields, row.values),
+        row: await store.getRowById(tx, tableId, fields, row.id, true),
+        values: row.values,
+        fields,
+        tickets: await ticketsForRows(organizationId, fields, [row], tx),
+      },
+    });
+    return row;
   });
-  return row;
 }
 
 export async function updateTableCell(
@@ -675,39 +1117,60 @@ export async function updateTableCell(
   value: unknown,
   userId?: string,
 ) {
-  requireLive(await requireTable(organizationId, tableId));
-  const fields = await listTableFields(tableId);
-  // Read first: the log keeps the old value, and ticket writes grandfather
-  // ids already stored in the cell.
-  const current = await store.getRowById(db, tableId, fields, rowId);
-  await assertTicketValues(
-    organizationId,
-    fields,
-    { [fieldId]: value },
-    current?.values,
-  );
-  const row = await store.updateCell(
-    db,
-    tableId,
-    fields,
-    rowId,
-    fieldId,
-    value,
-  );
-  const from = current?.values[fieldId] ?? null;
-  const to = row.values[fieldId] ?? null;
-  if (JSON.stringify(from) !== JSON.stringify(to)) {
-    await logActivity({
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const fields = await listTableFieldRows(tableId, tx);
+    const current = await store.getRowById(tx, tableId, fields, rowId);
+    if (!current) notFound("Row");
+    await assertTicketValues(
+      organizationId,
+      fields,
+      { [fieldId]: value },
+      current.values,
+      tx,
+    );
+    const field = fields.find((candidate) => candidate.id === fieldId);
+    if (!field) notFound("Data table field");
+    const coerced = coerceValue(field, value);
+    if (await store.cellValueMatches(tx, tableId, rowId, field, coerced))
+      return {
+        ...current,
+        tickets: await ticketsForRows(organizationId, fields, [current], tx),
+      };
+    const beforeRow = await store.getRowById(tx, tableId, fields, rowId, true);
+    const row = await store.updateCell(
+      tx,
+      tableId,
+      fields,
+      rowId,
+      fieldId,
+      coerced,
+    );
+    const from = current.values[fieldId] ?? null;
+    const to = row.values[fieldId] ?? null;
+    const tickets = await ticketsForRows(
+      organizationId,
+      fields,
+      [current, row],
+      tx,
+    );
+    await logActivity(tx, {
       tableId,
       userId,
       type: "cell_updated",
       rowId,
       fieldId,
-      data: { from, to, title: primaryText(fields, row.values) },
+      data: {
+        from,
+        to,
+        title: primaryText(fields, row.values),
+        field,
+        beforeRow,
+        afterRow: await store.getRowById(tx, tableId, fields, rowId, true),
+        tickets,
+      },
     });
-  }
-  const tickets = await ticketsForRows(organizationId, fields, [row]);
-  return { ...row, tickets };
+    return { ...row, tickets };
+  });
 }
 
 export async function deleteTableRow(
@@ -716,20 +1179,42 @@ export async function deleteTableRow(
   rowId: string,
   userId?: string,
 ) {
-  requireLive(await requireTable(organizationId, tableId));
-  const fields = await listTableFields(tableId);
-  const row = await store.getRowById(db, tableId, fields, rowId);
-  await store.deleteRow(db, tableId, rowId);
-  await logActivity({
-    tableId,
-    userId,
-    type: "row_deleted",
-    rowId,
-    // Keep the whole row: the log is the only trace of a deleted row.
-    data: {
-      title: row ? primaryText(fields, row.values) : null,
-      values: row?.values,
-    },
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    const fields = await listTableFieldRows(tableId, tx);
+    const row = await store.getRowById(tx, tableId, fields, rowId, true);
+    if (!row) notFound("Row");
+    const links = (await tableLinks(tx, tableId)).filter(
+      (link) => link.externalId === rowId,
+    );
+    const tickets = await ticketsForRows(organizationId, fields, [row], tx);
+    for (const ref of await ticketRefs(
+      organizationId,
+      [...new Set(links.map((link) => link.taskId))],
+      tx,
+    ))
+      tickets[ref.id] = ref;
+    await store.deleteRow(tx, tableId, rowId);
+    if (links.length)
+      await tx.delete(externalLinkTable).where(
+        inArray(
+          externalLinkTable.id,
+          links.map((link) => link.id),
+        ),
+      );
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "row_deleted",
+      rowId,
+      data: {
+        title: primaryText(fields, row.values),
+        row,
+        values: row.values,
+        fields,
+        links,
+        tickets,
+      },
+    });
   });
 }
 
@@ -890,10 +1375,14 @@ export async function getRowTickets(
   }));
 }
 
-async function requireOrgTask(organizationId: string, taskId: string) {
+async function requireOrgTask(
+  organizationId: string,
+  taskId: string,
+  executor: Executor = db,
+) {
   // A task hangs off a board; its organization comes through that join (the
   // same path the organization-access middleware uses).
-  const [task] = await db
+  const [task] = await executor
     .select({ id: taskTable.id })
     .from(taskTable)
     .innerJoin(boardTable, eq(boardTable.id, taskTable.boardId))
@@ -907,20 +1396,6 @@ async function requireOrgTask(organizationId: string, taskId: string) {
   return task;
 }
 
-/** Primary-cell text for the link preview/title. */
-async function primaryValueOf(
-  tableId: string,
-  rowId: string,
-): Promise<string | null> {
-  const fieldRows = await listTableFieldRows(tableId);
-  const fields = fieldRows.map(toStoreField);
-  const row = await store.getRowById(db, tableId, fields, rowId);
-  if (!row) notFound("Row");
-  const value = fields.length > 0 ? row.values[fields[0].id] : null;
-  if (value === null || value === undefined || value === "") return null;
-  return String(value);
-}
-
 export async function linkRowToTask(
   organizationId: string,
   tableId: string,
@@ -928,48 +1403,58 @@ export async function linkRowToTask(
   taskId: string,
   userId?: string,
 ) {
-  await requireOrgTask(organizationId, taskId);
-  const table = await requireTable(organizationId, tableId);
-  const existing = await db
-    .select({ id: externalLinkTable.id })
-    .from(externalLinkTable)
-    .where(
-      and(
-        eq(externalLinkTable.taskId, taskId),
-        eq(externalLinkTable.externalId, rowId),
-        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
-      ),
-    );
-  if (existing.length > 0) {
-    return { success: true as const, alreadyLinked: true as const };
-  }
-  const [org] = await db
-    .select({ slug: organizationTable.slug })
-    .from(organizationTable)
-    .where(eq(organizationTable.id, organizationId));
-  // Fail closed: an unset client URL must never persist a localhost link
-  // into external_link (the sheet renders these as hrefs).
-  const clientUrl = process.env.KANEO_CLIENT_URL;
-  if (!clientUrl) badRequest("KANEO_CLIENT_URL is not configured");
-  const title = await primaryValueOf(tableId, rowId);
-  await db.insert(externalLinkTable).values({
-    taskId,
-    integrationId: null,
-    externalId: rowId,
-    resourceType: TABLE_ROW_RESOURCE,
-    url: `${clientUrl}/dashboard/organization/${org?.slug}/table/${tableId}`,
-    title: title ?? table.name,
-    metadata: JSON.stringify({ tableId, tableName: table.name }),
+  return mutateTable(organizationId, tableId, userId, async (tx, table) => {
+    await requireOrgTask(organizationId, taskId, tx);
+    const fields = await listTableFieldRows(tableId, tx);
+    const row = await store.getRowById(tx, tableId, fields, rowId);
+    if (!row) notFound("Row");
+    const existing = await tx
+      .select({ id: externalLinkTable.id })
+      .from(externalLinkTable)
+      .where(
+        and(
+          eq(externalLinkTable.taskId, taskId),
+          eq(externalLinkTable.externalId, rowId),
+          eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+        ),
+      );
+    if (existing.length)
+      return { success: true as const, alreadyLinked: true as const };
+    const [org] = await tx
+      .select({ slug: organizationTable.slug })
+      .from(organizationTable)
+      .where(eq(organizationTable.id, organizationId));
+    const clientUrl = process.env.KANEO_CLIENT_URL;
+    if (!clientUrl) badRequest("KANEO_CLIENT_URL is not configured");
+    const [link] = await tx
+      .insert(externalLinkTable)
+      .values({
+        taskId,
+        integrationId: null,
+        externalId: rowId,
+        resourceType: TABLE_ROW_RESOURCE,
+        url: `${clientUrl}/dashboard/organization/${org?.slug}/table/${tableId}`,
+        title: primaryText(fields, row.values) ?? table.name,
+        metadata: JSON.stringify({ tableId, tableName: table.name }),
+      })
+      .returning();
+    const [ref] = await ticketRefs(organizationId, [taskId], tx);
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "ticket_linked",
+      rowId,
+      data: {
+        taskId,
+        key: ref?.key,
+        title: ref?.title,
+        ticket: ref,
+        link,
+        rowTitle: primaryText(fields, row.values),
+      },
+    });
+    return { success: true as const, alreadyLinked: false as const };
   });
-  const [ref] = await ticketRefs(organizationId, [taskId]);
-  await logActivity({
-    tableId,
-    userId,
-    type: "ticket_linked",
-    rowId,
-    data: { taskId, key: ref?.key, title: ref?.title },
-  });
-  return { success: true as const, alreadyLinked: false as const };
 }
 
 export async function unlinkRowTask(
@@ -979,32 +1464,41 @@ export async function unlinkRowTask(
   taskId: string,
   userId?: string,
 ) {
-  await requireOrgTask(organizationId, taskId);
-  await requireTable(organizationId, tableId);
-  const removed = await db
-    .delete(externalLinkTable)
-    .where(
-      and(
-        eq(externalLinkTable.taskId, taskId),
-        eq(externalLinkTable.externalId, rowId),
-        eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
-        // Only the param table's link may be unlinked — otherwise edit
-        // privilege on table B could unlink a row that lives in table A.
-        sql`${externalLinkTable.metadata}->>'tableId' = ${tableId}`,
-      ),
-    )
-    .returning({ id: externalLinkTable.id });
-  if (removed.length > 0) {
-    const [ref] = await ticketRefs(organizationId, [taskId]);
-    await logActivity({
-      tableId,
-      userId,
-      type: "ticket_unlinked",
-      rowId,
-      data: { taskId, key: ref?.key, title: ref?.title },
-    });
-  }
-  return { success: true as const };
+  return mutateTable(organizationId, tableId, userId, async (tx) => {
+    await requireOrgTask(organizationId, taskId, tx);
+    const fields = await listTableFieldRows(tableId, tx);
+    const row = await store.getRowById(tx, tableId, fields, rowId);
+    if (!row) notFound("Row");
+    const removed = await tx
+      .delete(externalLinkTable)
+      .where(
+        and(
+          eq(externalLinkTable.taskId, taskId),
+          eq(externalLinkTable.externalId, rowId),
+          eq(externalLinkTable.resourceType, TABLE_ROW_RESOURCE),
+          sql`${externalLinkTable.metadata}::jsonb->>'tableId' = ${tableId}`,
+        ),
+      )
+      .returning();
+    if (removed.length) {
+      const [ref] = await ticketRefs(organizationId, [taskId], tx);
+      await logActivity(tx, {
+        tableId,
+        userId,
+        type: "ticket_unlinked",
+        rowId,
+        data: {
+          taskId,
+          key: ref?.key,
+          title: ref?.title,
+          ticket: ref,
+          links: removed,
+          rowTitle: primaryText(fields, row.values),
+        },
+      });
+    }
+    return { success: true as const };
+  });
 }
 
 /**

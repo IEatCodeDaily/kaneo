@@ -95,7 +95,14 @@ export type TableActivity = {
     | "field_updated"
     | "field_deleted"
     | "ticket_linked"
-    | "ticket_unlinked";
+    | "ticket_unlinked"
+    | "comment_added"
+    | "field_reverted"
+    | "table_created"
+    | "table_updated"
+    | "table_deleted"
+    | "table_restored"
+    | "baseline";
   rowId: string | null;
   fieldId: string | null;
   data: Record<string, unknown> | null;

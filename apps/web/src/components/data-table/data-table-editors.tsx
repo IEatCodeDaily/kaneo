@@ -1,6 +1,7 @@
-import { Search } from "lucide-react";
+import { Pencil, Search } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -88,9 +89,15 @@ export function TableCellInput({
       return onCancel();
     }
     if (draft === initial) return onCancel();
-    if (invalid) return onCancel();
+    if (invalid) return;
     if (TEXT_INPUT_TYPES.includes(field.type)) {
-      return onCommit(draft.trim() === "" ? null : draft.trim());
+      return onCommit(
+        draft.trim() === ""
+          ? null
+          : field.type === "longtext"
+            ? draft
+            : draft.trim(),
+      );
     }
     if (field.type === "date") {
       return onCommit(draft === "" ? null : draft);
@@ -110,36 +117,59 @@ export function TableCellInput({
           ? "number"
           : "text";
 
+  const multiline = field.type === "longtext";
+  const editorProps = {
+    autoFocus: true,
+    value: draft,
+    "aria-invalid": invalid || undefined,
+    "aria-label": field.name,
+    onChange: (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => setDraft(event.target.value),
+    onBlur: commit,
+    onKeyDown: (
+      event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      event.stopPropagation();
+      if (
+        event.key === "Enter" &&
+        (!multiline || event.metaKey || event.ctrlKey)
+      ) {
+        event.preventDefault();
+        event.currentTarget.blur();
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelledRef.current = true;
+        setDraft(initial);
+        event.currentTarget.blur();
+      }
+    },
+  };
   return (
     <div className="relative min-w-0 flex-1">
-      <Input
-        autoFocus
-        unstyled
-        type={inputType}
-        value={draft}
-        aria-invalid={invalid || undefined}
-        // "any": the browser must not flag 1.25 on a 0-decimal field.
-        step={NUMERIC_TYPES.includes(field.type) ? "any" : undefined}
-        min={field.options?.min}
-        max={field.options?.max}
-        aria-label={field.name}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            event.currentTarget.blur();
-          }
-          if (event.key === "Escape") {
-            setDraft(initial);
-            event.currentTarget.blur();
-          }
-        }}
-        className={cn(
-          "h-full w-full px-2.5 text-ui",
-          inputType === "number" && "text-right tabular-nums",
-        )}
-      />
+      {multiline ? (
+        <Textarea
+          {...editorProps}
+          rows={4}
+          className="min-h-24 w-full text-ui [&_textarea]:resize-y [&_textarea]:px-2 [&_textarea]:py-1"
+        />
+      ) : (
+        <Input
+          {...editorProps}
+          unstyled
+          type={inputType}
+          // "any": the browser must not flag 1.25 on a 0-decimal field.
+          step={NUMERIC_TYPES.includes(field.type) ? "any" : undefined}
+          min={field.options?.min}
+          max={field.options?.max}
+          className={cn(
+            "h-full w-full text-ui [&_input]:px-2",
+            inputType === "number" &&
+              "[&_input]:text-right [&_input]:tabular-nums",
+          )}
+        />
+      )}
       {invalid && <EditorError message={t(errorKey)} />}
     </div>
   );
@@ -173,7 +203,7 @@ export function JsonCellEditor({
       return onCancel();
     }
     if (draft === initial) return onCancel();
-    if (!parsed.ok) return onCancel();
+    if (!parsed.ok) return;
     onCommit(parsed.value);
   };
 
@@ -188,7 +218,9 @@ export function JsonCellEditor({
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {
+          event.stopPropagation();
           if (event.key === "Escape") {
+            event.preventDefault();
             cancelledRef.current = true;
             setDraft(initial);
             event.currentTarget.blur();
@@ -198,7 +230,7 @@ export function JsonCellEditor({
             event.currentTarget.blur();
           }
         }}
-        className="min-h-0 w-full resize-none px-2 py-1 font-mono text-xs"
+        className="min-h-0 w-full font-mono text-xs [&_textarea]:resize-none [&_textarea]:px-2 [&_textarea]:py-1"
       />
       {invalid && <EditorError message={t("navigation:tables.typeJson")} />}
     </div>
@@ -233,29 +265,33 @@ function PickerList({
     <div
       role="listbox"
       aria-multiselectable={selectedIds.length > 1 || undefined}
-      className="flex max-h-64 flex-col gap-0.5 overflow-y-auto"
+      className="flex max-h-[min(16rem,60dvh)] flex-col gap-1 overflow-y-auto"
     >
       {options.length === 0 && emptyText && (
         <p className="px-2 py-1.5 text-xs text-muted-foreground">{emptyText}</p>
       )}
       {allowEmpty && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
           role="option"
           aria-selected={selectedIds.length === 0}
-          className="rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent"
+          className="min-h-8 shrink-0 justify-start px-2 text-left text-muted-foreground"
           onClick={() => onSelect(null)}
         >
           {emptyLabel}
-        </button>
+        </Button>
       )}
       {options.map((option) => (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           key={option.id}
           type="button"
           role="option"
           aria-selected={selectedIds.includes(option.id)}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent data-[selected=true]:bg-accent"
+          className="min-h-8 shrink-0 justify-start gap-2 px-2 text-left data-[selected=true]:bg-accent"
           data-selected={selectedIds.includes(option.id)}
           onClick={() => onSelect(option.id)}
         >
@@ -267,7 +303,7 @@ function PickerList({
             />
           )}
           <span className="min-w-0 flex-1 truncate">{option.label}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -288,16 +324,25 @@ function PickerTrigger({
 }) {
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
+      <PopoverTrigger asChild nativeButton={false}>
+        <Button
+          variant="ghost"
+          size="sm"
+          render={<div />}
+          role="button"
+          tabIndex={0}
           aria-label={label}
-          className="min-w-0 flex-1 cursor-pointer text-left"
+          className="h-auto min-w-0 flex-1 justify-start whitespace-normal border-0 px-0 text-left sm:h-auto"
         >
           {children}
-        </button>
+        </Button>
       </PopoverTrigger>
-      <PopoverContent inset="panel" className="w-56" align="start">
+      <PopoverContent
+        inset="panel"
+        className="h-auto w-56 max-h-[70dvh] [&_[data-slot=popover-viewport]]:flex [&_[data-slot=popover-viewport]]:h-auto [&_[data-slot=popover-viewport]]:flex-col [&_[data-slot=popover-viewport]]:gap-2"
+        align="start"
+        onClick={(event) => event.stopPropagation()}
+      >
         {content}
       </PopoverContent>
     </Popover>
@@ -408,14 +453,17 @@ export function UserCellPicker({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => event.stopPropagation()}
-              className="h-7 pl-7 text-xs"
+              className="h-7 text-xs [&_input]:pl-7"
               aria-label={t("navigation:tables.searchRows")}
             />
           </div>
           <PickerList
             options={filtered.map((member) => ({
               id: member.id,
-              label: member.user.name || member.user.email || member.id,
+              label:
+                member.user.name ||
+                member.user.email ||
+                t("navigation:tables.unknownValue"),
             }))}
             selectedIds={[asString(value)]}
             emptyText={t("navigation:tables.userPickerEmpty")}
@@ -455,7 +503,7 @@ export function DataTableCellContent({
   members,
   canEdit,
   isEditing,
-  asPrimary = false,
+  expanded = false,
   onEditStart,
   onEditEnd,
   onCommit,
@@ -465,8 +513,7 @@ export function DataTableCellContent({
   members: Map<string, MemberOption>;
   canEdit: boolean;
   isEditing: boolean;
-  /** Field 0: clicking opens the row sheet — for viewers and every type. */
-  asPrimary?: boolean;
+  expanded?: boolean;
   onEditStart: () => void;
   onEditEnd: () => void;
   onCommit: (value: unknown) => void;
@@ -474,39 +521,8 @@ export function DataTableCellContent({
   const { t } = useTranslation();
   const value = row.values[field.id];
   const canInlineEdit = INPUT_EDIT_TYPES.includes(field.type);
-  const numericAlign =
-    field.type === "number" ||
-    field.type === "percent" ||
-    field.type === "currency";
-
-  if (field.type === "checkbox") {
-    const view = (
-      <DataTableCellView
-        field={field}
-        value={value}
-        members={members}
-        onToggleCheckbox={
-          canEdit && !asPrimary ? (checked) => onCommit(checked) : undefined
-        }
-      />
-    );
-    // The primary cell opens the sheet (its toggle lives there); other
-    // checkbox cells toggle inline for editors.
-    return asPrimary ? (
-      <button
-        type="button"
-        className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
-        onClick={onEditStart}
-        title={t("navigation:tables.openRow")}
-      >
-        {view}
-      </button>
-    ) : (
-      view
-    );
-  }
-
-  if (isEditing && field.type === "json") {
+  const numericAlign = NUMERIC_TYPES.includes(field.type);
+  if (canEdit && isEditing && field.type === "json") {
     return (
       <JsonCellEditor
         field={field}
@@ -516,7 +532,7 @@ export function DataTableCellContent({
       />
     );
   }
-  if (isEditing && canInlineEdit) {
+  if (canEdit && isEditing && canInlineEdit) {
     return (
       <TableCellInput
         field={field}
@@ -526,135 +542,46 @@ export function DataTableCellContent({
       />
     );
   }
-
   const view = (
-    <DataTableCellView field={field} value={value} members={members} />
+    <DataTableCellView
+      field={field}
+      value={value}
+      members={members}
+      expanded={expanded}
+      onToggleCheckbox={canEdit ? (checked) => onCommit(checked) : undefined}
+    />
   );
-
-  if (field.type === "select") {
-    if (asPrimary) {
-      return (
-        <button
-          type="button"
-          className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
-          onClick={onEditStart}
-          title={t("navigation:tables.openRow")}
-        >
-          {view}
-        </button>
-      );
-    }
-    return (
-      <SelectCellPicker
-        field={field}
-        value={value}
-        canEdit={canEdit}
-        onCommit={onCommit}
-      >
-        {view}
-      </SelectCellPicker>
-    );
-  }
-  if (field.type === "multiselect") {
-    if (asPrimary) {
-      return (
-        <button
-          type="button"
-          className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
-          onClick={onEditStart}
-          title={t("navigation:tables.openRow")}
-        >
-          {view}
-        </button>
-      );
-    }
-    return (
-      <MultiSelectCellPicker
-        field={field}
-        value={value}
-        canEdit={canEdit}
-        onCommit={onCommit}
-      >
-        {view}
-      </MultiSelectCellPicker>
-    );
-  }
-  if (field.type === "ticket" && !asPrimary) {
-    return (
-      <TicketCellPicker
-        field={field}
-        value={value}
-        canEdit={canEdit}
-        onCommit={onCommit}
-      >
-        {view}
-      </TicketCellPicker>
-    );
-  }
-  if (field.type === "user" && asPrimary) {
-    return (
-      <button
-        type="button"
-        className="flex min-w-0 flex-1 cursor-pointer items-center text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
-        onClick={onEditStart}
-        title={t("navigation:tables.openRow")}
-      >
-        {view}
-      </button>
-    );
-  }
-  if (field.type === "user") {
-    return (
-      <UserCellPicker
-        field={field}
-        value={value}
-        canEdit={canEdit}
-        members={members}
-        onCommit={onCommit}
-      >
-        {view}
-      </UserCellPicker>
-    );
-  }
-  return canEdit && (canInlineEdit || field.type === "json") ? (
-    <button
-      type="button"
-      className={cn(
-        "min-w-0 flex-1 cursor-pointer text-left",
-        // Numbers end on the right edge, under their header unit (DS §1.5).
-        numericAlign && "text-right tabular-nums",
-        "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
-      )}
-      onClick={onEditStart}
-      title={
-        asPrimary
-          ? t("navigation:tables.openRow")
-          : t("navigation:tables.editField")
-      }
-    >
-      {view}
-    </button>
-  ) : asPrimary ? (
-    <button
-      type="button"
-      className={cn(
-        "min-w-0 flex-1 cursor-pointer text-left",
-        numericAlign && "text-right tabular-nums",
-        "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
-      )}
-      onClick={onEditStart}
-      title={t("navigation:tables.openRow")}
-    >
-      {view}
-    </button>
-  ) : (
+  const pickerProps = { field, value, canEdit, onCommit, children: view };
+  if (field.type === "select") return <SelectCellPicker {...pickerProps} />;
+  if (field.type === "multiselect")
+    return <MultiSelectCellPicker {...pickerProps} />;
+  if (field.type === "ticket") return <TicketCellPicker {...pickerProps} />;
+  if (field.type === "user")
+    return <UserCellPicker {...pickerProps} members={members} />;
+  // Markdown and URL/email projections contain links: never nest them in a button.
+  return (
     <div
       className={cn(
-        "min-w-0 flex-1",
+        "group/value relative min-w-0 flex-1",
+        expanded &&
+          canEdit &&
+          (canInlineEdit || field.type === "json") &&
+          "pr-8",
         numericAlign && "text-right tabular-nums",
       )}
     >
       {view}
+      {expanded && canEdit && (canInlineEdit || field.type === "json") && (
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="absolute right-0 top-0 opacity-0 group-hover/value:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+          onClick={onEditStart}
+          aria-label={t("navigation:tables.editField")}
+        >
+          <Pencil className="size-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

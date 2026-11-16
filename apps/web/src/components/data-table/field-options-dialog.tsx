@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { useDataTableMutations } from "@/hooks/data-table/use-data-tables";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
-import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type {
   DataTableField,
@@ -31,6 +30,7 @@ import {
   optionsForType,
   typeChangeKeepsValues,
 } from "./data-table-format";
+import { FieldTypeConfirmation } from "./field-type-confirmation";
 
 const CHOICE_PALETTE = [
   "#8b5cf6",
@@ -80,6 +80,7 @@ export default function FieldOptionsDialog({
   const [required, setRequired] = useState(false);
   const [boardIds, setBoardIds] = useState<string[]>([]);
   const [multiple, setMultiple] = useState(true);
+  const [confirmType, setConfirmType] = useState(false);
   const { data: boards = [] } = useGetBoards({
     organizationId: type === "ticket" ? organizationId : "",
   });
@@ -99,6 +100,7 @@ export default function FieldOptionsDialog({
     setRequired(field ? fieldIsRequired(field) : false);
     setBoardIds(options.boardIds ?? []);
     setMultiple(options.multiple !== false);
+    setConfirmType(false);
   }, [open, field, initialType]);
 
   const buildOptions = (): DataTableFieldOptions | undefined => {
@@ -142,7 +144,12 @@ export default function FieldOptionsDialog({
     (!field && name.trim() === "") ||
     !optionsValid;
 
-  const save = async () => {
+  const save = async (confirmed = false): Promise<boolean> => {
+    if (saveDisabled) return false;
+    if (field && type !== field.type && !confirmed) {
+      setConfirmType(true);
+      return false;
+    }
     const options = buildOptions();
     try {
       if (field) {
@@ -162,7 +169,9 @@ export default function FieldOptionsDialog({
           options,
         });
       }
+      setConfirmType(false);
       onOpenChange(false);
+      return true;
     } catch {
       toast.error(
         t(
@@ -171,6 +180,7 @@ export default function FieldOptionsDialog({
             : "navigation:tables.addFieldError",
         ),
       );
+      return false;
     }
   };
 
@@ -182,273 +192,296 @@ export default function FieldOptionsDialog({
     );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {field
-              ? t("navigation:tables.fieldOptions", { name: field.name })
-              : t("navigation:tables.addField")}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {t("navigation:tables.fieldType")}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          {!field && (
-            <Input
-              autoFocus
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t("navigation:tables.newFieldName")}
-              aria-label={t("navigation:tables.newFieldName")}
-            />
-          )}
-          <div>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {field
+                ? t("navigation:tables.fieldOptions", { name: field.name })
+                : t("navigation:tables.addField")}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
               {t("navigation:tables.fieldType")}
-            </p>
-            <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
-              {(field?.type === "link"
-                ? ["link", ...EDITABLE_FIELD_TYPES]
-                : EDITABLE_FIELD_TYPES
-              ).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={option === "link"}
-                  data-selected={type === option}
-                  className={cn(
-                    "flex items-center gap-2 h-7 rounded-md px-2 text-left text-ui hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 data-[selected=true]:bg-accent",
-                  )}
-                  onClick={() => setType(option as DataTableFieldType)}
-                >
-                  <FieldTypeIcon type={option} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {t(FIELD_TYPE_LABEL_KEYS[option as DataTableFieldType])}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {(type === "select" || type === "multiselect") && (
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {!field && (
+              <Input
+                autoFocus
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t("navigation:tables.newFieldName")}
+                aria-label={t("navigation:tables.newFieldName")}
+              />
+            )}
             <div>
               <p className="mb-1 text-xs font-medium text-muted-foreground">
-                {t("navigation:tables.choices")}{" "}
-                {t("navigation:tables.choicesCount", { count: choices.length })}
+                {t("navigation:tables.fieldType")}
               </p>
-              <div className="space-y-1">
-                {choices.map((choice) => (
-                  <div key={choice.id} className="flex items-center gap-1">
-                    <input
-                      type="color"
-                      value={choice.color}
-                      aria-label={t("navigation:tables.choiceLabel")}
-                      onChange={(event) =>
-                        updateChoice(choice.id, { color: event.target.value })
-                      }
-                      className="size-8 shrink-0 cursor-pointer rounded-md border"
-                    />
-                    <Input
-                      value={choice.label}
-                      onChange={(event) =>
-                        updateChoice(choice.id, { label: event.target.value })
-                      }
-                      placeholder={t("navigation:tables.choiceLabel")}
-                      aria-label={t("navigation:tables.choiceLabel")}
-                      className="h-8 text-sm"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t("navigation:tables.deleteField")}
-                      onClick={() =>
-                        setChoices((current) =>
-                          current.filter((item) => item.id !== choice.id),
-                        )
-                      }
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
+              <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
+                {(field?.type === "link"
+                  ? ["link", ...EDITABLE_FIELD_TYPES]
+                  : EDITABLE_FIELD_TYPES
+                ).map((option) => (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    key={option}
+                    type="button"
+                    disabled={option === "link"}
+                    data-selected={type === option}
+                    className="min-h-8 justify-start gap-2 px-2 text-left data-[selected=true]:bg-accent"
+                    onClick={() => setType(option as DataTableFieldType)}
+                  >
+                    <FieldTypeIcon type={option} />
+                    <span className="min-w-0 flex-1 truncate">
+                      {t(FIELD_TYPE_LABEL_KEYS[option as DataTableFieldType])}
+                    </span>
+                  </Button>
                 ))}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                className="mt-1"
-                onClick={() =>
-                  setChoices((current) => [
-                    ...current,
-                    {
-                      id: makeChoiceId(),
-                      label: "",
-                      color: palette(current.length),
-                    },
-                  ])
-                }
-              >
-                <Plus className="size-3.5" /> {t("navigation:tables.addChoice")}
-              </Button>
             </div>
-          )}
 
-          {(type === "number" || type === "percent") && (
-            <div className="grid grid-cols-3 gap-2">
-              <Input
-                type="number"
-                min={0}
-                max={8}
-                value={precision}
-                onChange={(event) => setPrecision(event.target.value)}
-                placeholder={t("navigation:tables.optionPrecision")}
-                aria-label={t("navigation:tables.optionPrecision")}
-              />
-              <Input
-                type="number"
-                value={min}
-                onChange={(event) => setMin(event.target.value)}
-                placeholder={t("navigation:tables.optionMin")}
-                aria-label={t("navigation:tables.optionMin")}
-              />
-              <Input
-                type="number"
-                value={max}
-                onChange={(event) => setMax(event.target.value)}
-                placeholder={t("navigation:tables.optionMax")}
-                aria-label={t("navigation:tables.optionMax")}
-              />
-            </div>
-          )}
-
-          {type === "ticket" && (
-            <div className="space-y-3">
+            {(type === "select" || type === "multiselect") && (
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("navigation:tables.ticketBoards")}
+                  {t("navigation:tables.choices")}{" "}
+                  {t("navigation:tables.choicesCount", {
+                    count: choices.length,
+                  })}
                 </p>
-                <div className="flex flex-col gap-1 rounded-lg border p-1">
-                  <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
-                    <input
-                      type="radio"
-                      name="ticket-scope"
-                      checked={boardIds.length === 0}
-                      onChange={() => setBoardIds([])}
-                    />
-                    {t("navigation:tables.ticketAnyBoard")}
-                  </label>
-                  <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
-                    <input
-                      type="radio"
-                      name="ticket-scope"
-                      checked={boardIds.length > 0}
-                      onChange={() =>
-                        boardIds.length === 0 &&
-                        boards[0] &&
-                        setBoardIds([boards[0].id])
-                      }
-                    />
-                    {t("navigation:tables.ticketSelectedBoards")}
-                  </label>
-                  {boardIds.length > 0 && (
-                    <div className="flex max-h-36 flex-col overflow-y-auto pl-6">
-                      {boards.map((board) => (
-                        <span
-                          key={board.id}
-                          className="flex h-7 items-center gap-2 text-ui"
-                        >
-                          <Checkbox
-                            checked={boardIds.includes(board.id)}
-                            aria-label={board.name}
-                            onCheckedChange={(checked) =>
-                              setBoardIds((current) =>
-                                checked === true
-                                  ? [...current, board.id]
-                                  : current.filter((id) => id !== board.id),
-                              )
-                            }
-                          />
-                          <span className="min-w-0 truncate">{board.name}</span>
-                        </span>
-                      ))}
+                <div className="space-y-1">
+                  {choices.map((choice) => (
+                    <div key={choice.id} className="flex items-center gap-1">
+                      <input
+                        type="color"
+                        value={choice.color}
+                        aria-label={t("navigation:tables.choiceLabel")}
+                        onChange={(event) =>
+                          updateChoice(choice.id, { color: event.target.value })
+                        }
+                        className="size-8 shrink-0 cursor-pointer rounded-md border"
+                      />
+                      <Input
+                        value={choice.label}
+                        onChange={(event) =>
+                          updateChoice(choice.id, { label: event.target.value })
+                        }
+                        placeholder={t("navigation:tables.choiceLabel")}
+                        aria-label={t("navigation:tables.choiceLabel")}
+                        className="h-8 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={t("navigation:tables.deleteField")}
+                        onClick={() =>
+                          setChoices((current) =>
+                            current.filter((item) => item.id !== choice.id),
+                          )
+                        }
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("navigation:tables.ticketCount")}
-                </p>
-                <div className="flex gap-1">
-                  {[
-                    [true, "navigation:tables.ticketMany"],
-                    [false, "navigation:tables.ticketSingle"],
-                  ].map(([value, label]) => (
-                    <Button
-                      key={String(value)}
-                      type="button"
-                      size="sm"
-                      variant={multiple === value ? "secondary" : "ghost"}
-                      aria-pressed={multiple === value}
-                      onClick={() => setMultiple(value as boolean)}
-                    >
-                      {t(label as string)}
-                    </Button>
                   ))}
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  className="mt-1"
+                  onClick={() =>
+                    setChoices((current) => [
+                      ...current,
+                      {
+                        id: makeChoiceId(),
+                        label: "",
+                        color: palette(current.length),
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="size-3.5" />{" "}
+                  {t("navigation:tables.addChoice")}
+                </Button>
               </div>
-            </div>
-          )}
+            )}
 
-          {type === "currency" && (
-            <Input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder={t("navigation:tables.currencyCode")}
-              aria-label={t("navigation:tables.currencyCode")}
-            />
-          )}
+            {(type === "number" || type === "percent") && (
+              <div className="grid grid-cols-3 gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={8}
+                  value={precision}
+                  onChange={(event) => setPrecision(event.target.value)}
+                  placeholder={t("navigation:tables.optionPrecision")}
+                  aria-label={t("navigation:tables.optionPrecision")}
+                />
+                <Input
+                  type="number"
+                  value={min}
+                  onChange={(event) => setMin(event.target.value)}
+                  placeholder={t("navigation:tables.optionMin")}
+                  aria-label={t("navigation:tables.optionMin")}
+                />
+                <Input
+                  type="number"
+                  value={max}
+                  onChange={(event) => setMax(event.target.value)}
+                  placeholder={t("navigation:tables.optionMax")}
+                  aria-label={t("navigation:tables.optionMax")}
+                />
+              </div>
+            )}
 
-          {field && type !== field.type && (
-            <p
-              role="alert"
-              className="rounded-md bg-destructive/10 p-2 text-xs text-destructive-foreground"
+            {type === "ticket" && (
+              <div className="space-y-3">
+                <div>
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.ticketBoards")}
+                  </p>
+                  <div className="flex flex-col gap-1 rounded-lg border p-1">
+                    <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                      <input
+                        type="radio"
+                        name="ticket-scope"
+                        checked={boardIds.length === 0}
+                        onChange={() => setBoardIds([])}
+                      />
+                      {t("navigation:tables.ticketAnyBoard")}
+                    </label>
+                    <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                      <input
+                        type="radio"
+                        name="ticket-scope"
+                        checked={boardIds.length > 0}
+                        onChange={() =>
+                          boardIds.length === 0 &&
+                          boards[0] &&
+                          setBoardIds([boards[0].id])
+                        }
+                      />
+                      {t("navigation:tables.ticketSelectedBoards")}
+                    </label>
+                    {boardIds.length > 0 && (
+                      <div className="flex max-h-36 flex-col overflow-y-auto pl-6">
+                        {boards.map((board) => (
+                          <span
+                            key={board.id}
+                            className="flex h-7 items-center gap-2 text-ui"
+                          >
+                            <Checkbox
+                              checked={boardIds.includes(board.id)}
+                              aria-label={board.name}
+                              onCheckedChange={(checked) =>
+                                setBoardIds((current) =>
+                                  checked === true
+                                    ? [...current, board.id]
+                                    : current.filter((id) => id !== board.id),
+                                )
+                              }
+                            />
+                            <span className="min-w-0 truncate">
+                              {board.name}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.ticketCount")}
+                  </p>
+                  <div className="flex gap-1">
+                    {[
+                      [true, "navigation:tables.ticketMany"],
+                      [false, "navigation:tables.ticketSingle"],
+                    ].map(([value, label]) => (
+                      <Button
+                        key={String(value)}
+                        type="button"
+                        size="sm"
+                        variant={multiple === value ? "secondary" : "ghost"}
+                        aria-pressed={multiple === value}
+                        onClick={() => setMultiple(value as boolean)}
+                      >
+                        {t(label as string)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {type === "currency" && (
+              <Input
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder={t("navigation:tables.currencyCode")}
+                aria-label={t("navigation:tables.currencyCode")}
+              />
+            )}
+
+            {field && type !== field.type && (
+              <p
+                role="alert"
+                className="rounded-md bg-destructive/10 p-2 text-xs text-destructive-foreground"
+              >
+                {t(
+                  typeChangeKeepsValues(field.type, type)
+                    ? "navigation:tables.changeTypeConvert"
+                    : "navigation:tables.changeTypeClears",
+                )}
+              </p>
+            )}
+
+            <span className="flex items-center gap-2 text-ui">
+              <Checkbox
+                checked={required}
+                onCheckedChange={(checked) => setRequired(checked === true)}
+                aria-label={t("navigation:tables.optionRequired")}
+              />
+              {t("navigation:tables.optionRequired")}
+            </span>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
             >
-              {t(
-                typeChangeKeepsValues(field.type, type)
-                  ? "navigation:tables.changeTypeConvert"
-                  : "navigation:tables.changeTypeClears",
-              )}
-            </p>
-          )}
-
-          <span className="flex items-center gap-2 text-ui">
-            <Checkbox
-              checked={required}
-              onCheckedChange={(checked) => setRequired(checked === true)}
-              aria-label={t("navigation:tables.optionRequired")}
-            />
-            {t("navigation:tables.optionRequired")}
-          </span>
-        </div>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            {t("navigation:tables.cancel")}
-          </Button>
-          <Button type="button" disabled={saveDisabled} onClick={save}>
-            {field
-              ? t("navigation:tables.editField")
-              : t("navigation:tables.addField")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              {t("navigation:tables.cancel")}
+            </Button>
+            <Button
+              type="button"
+              disabled={saveDisabled}
+              onClick={() => {
+                void save();
+              }}
+            >
+              {field
+                ? t("navigation:tables.editField")
+                : t("navigation:tables.addField")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {field && confirmType && open && (
+        <FieldTypeConfirmation
+          key={`${field.id}:${type}`}
+          field={field}
+          nextType={type}
+          open
+          onOpenChange={setConfirmType}
+          onConfirm={() => save(true)}
+        />
+      )}
+    </>
   );
 }

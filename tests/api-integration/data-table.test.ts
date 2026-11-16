@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reconcile } from "../../apps/api/src/data-table/store";
-import db, { schema } from "../../apps/api/src/database";
+import db, { getDatabase, schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
@@ -110,6 +110,958 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       .where(eq(schema.organizationTable.id, member.organization.id));
     mockAuthenticatedSession(member.user);
     app = createApp().app;
+  });
+
+  describe("durable table history", () => {
+    const jsonHeaders = { "content-type": "application/json" };
+    type Event = {
+      id: string;
+      type: string;
+      rowId: string | null;
+      userId: string | null;
+      data: Record<string, unknown>;
+      createdAt: string;
+    };
+    const root = (org: string, table: string) =>
+      `/api/data-table/organization/${org}/${table}`;
+    const write = (path: string, body: unknown, method = "POST") =>
+      app.request(path, {
+        method,
+        headers: jsonHeaders,
+        body: JSON.stringify(body),
+      });
+    const history = async (path: string) => {
+      const response = await app.request(`${path}/activity`);
+      expect(response.status).toBe(200);
+      return (await response.json()) as Event[];
+    };
+
+    it("reconcile recovers missing physical tables, including zero-field tables, before add row", async () => {
+      const org = member.organization.id;
+      const empty = await createTableViaApi(app, org, "Empty legacy");
+      const typed = await createTableViaApi(app, org, "Typed legacy");
+      const { field } = await createFieldViaApi(app, org, typed.id, {
+        name: "Name",
+        type: "text",
+      });
+      for (const table of [empty, typed]) {
+        await db.execute(sql.raw(`DROP TABLE kaneo_tables."t_${table.id}"`));
+      }
+      const reports = await reconcile();
+      expect(reports.map((r) => r.tableId)).toEqual(
+        expect.arrayContaining([empty.id, typed.id]),
+      );
+      expect(await physicalTableName(empty.id)).not.toBeNull();
+      expect(await physicalTableName(typed.id)).not.toBeNull();
+      expect((await addRowViaApi(app, org, empty.id)).id).toEqual(
+        expect.any(String),
+      );
+      expect(
+        (await addRowViaApi(app, org, typed.id, { [field!.id]: "Recovered" }))
+          .values[field!.id],
+      ).toBe("Recovered");
+      expect(
+        (await reconcile()).filter((r) =>
+          [empty.id, typed.id].includes(r.tableId),
+        ),
+      ).toEqual([]);
+    });
+
+    it("recovers a trashed legacy table without a physical table or baseline", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Trashed legacy");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Name",
+        type: "text",
+      });
+      await db
+        .update(schema.dataTableTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(schema.dataTableTable.id, table.id));
+      await db
+        .delete(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.tableId, table.id));
+      await db.execute(sql.raw(`DROP TABLE kaneo_tables."t_${table.id}"`));
+      await reconcile();
+      expect(await physicalTableName(table.id)).not.toBeNull();
+      const path = root(org, table.id);
+      expect((await write(`${path}/restore`, {})).status).toBe(200);
+      expect(
+        (await addRowViaApi(app, org, table.id, { [field!.id]: "Recovered" }))
+          .values[field!.id],
+      ).toBe("Recovered");
+      const baseline = (await history(path)).find(
+        (event) => event.type === "baseline",
+      )!;
+      expect(baseline.data.rows).toEqual([]);
+      expect(baseline.data.boundary).toBe(
+        "No complete history is claimed before this snapshot",
+      );
+    });
+
+    it.each(["purge", "field"])(
+      "reconcile rechecks %s after entering its repair transaction",
+      async (change) => {
+        const org = member.organization.id;
+        const table = await createTableViaApi(app, org, change);
+        const { field } = await createFieldViaApi(app, org, table.id, {
+          name: "Missing",
+          type: "text",
+        });
+        await db.execute(
+          sql.raw(
+            change === "purge"
+              ? `DROP TABLE kaneo_tables."t_${table.id}"`
+              : `ALTER TABLE kaneo_tables."t_${table.id}" DROP COLUMN "c_${field!.id}"`,
+          ),
+        );
+        let entered!: () => void;
+        let release!: () => void;
+        const ready = new Promise<void>((resolve) => {
+          entered = resolve;
+        });
+        const barrier = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        const database = getDatabase();
+        const transaction = database.transaction.bind(database);
+        let first = true;
+        // Spy on the real instance: the exported lazy proxy has no own methods.
+        // Pause only reconciliation's first repair, not the competing writer.
+        const spy = vi
+          .spyOn(database, "transaction")
+          .mockImplementation(async (...args) => {
+            if (first) {
+              first = false;
+              entered();
+              await barrier;
+            }
+            return transaction(...args);
+          });
+        const repairing = reconcile();
+        try {
+          await Promise.race([
+            ready,
+            repairing.then(() => {
+              throw new Error(
+                "Reconciliation never entered its repair transaction",
+              );
+            }),
+          ]);
+          if (change === "purge") {
+            expect(
+              (await write(`${root(org, table.id)}/purge`, {})).status,
+            ).toBe(200);
+          } else {
+            // Model a writer deleting already-missing storage under the production metadata lock.
+            await db.transaction(async (tx) => {
+              await tx
+                .select()
+                .from(schema.dataTableTable)
+                .where(eq(schema.dataTableTable.id, table.id))
+                .for("update");
+              await tx
+                .delete(schema.dataTableFieldTable)
+                .where(eq(schema.dataTableFieldTable.id, field!.id));
+            });
+          }
+        } finally {
+          release();
+          await repairing.finally(() => spy.mockRestore());
+        }
+        if (change === "purge")
+          expect(await physicalTableName(table.id)).toBeNull();
+        else
+          expect(
+            (await physicalColumns(table.id)).map((col) => col.column_name),
+          ).not.toContain(`c_${field!.id}`);
+      },
+    );
+
+    it.each([
+      {
+        type: "text",
+        value: "9007199254740993.1234567890123456789",
+        target: "number",
+      },
+      { type: "datetime", value: "2026-03-12T10:30:00.123456Z" },
+      { type: "json", value: {} },
+    ])(
+      "archives and restores raw $type values without display precision loss",
+      async (spec) => {
+        const org = member.organization.id;
+        const table = await createTableViaApi(app, org, "Exact archive");
+        const path = root(org, table.id);
+        const { field } = await createFieldViaApi(app, org, table.id, {
+          name: spec.type,
+          type: spec.type,
+        });
+        const row = await addRowViaApi(app, org, table.id, {
+          [field!.id]: spec.value,
+        });
+        const col = sql.raw(`"c_${field!.id}"`);
+        const relation = sql.raw(`kaneo_tables."t_${table.id}"`);
+        if (spec.target)
+          expect(
+            (
+              await write(
+                `${path}/fields/${field!.id}`,
+                { type: spec.target },
+                "PUT",
+              )
+            ).status,
+          ).toBe(200);
+        if (spec.type === "json")
+          await db.execute(
+            sql`UPDATE ${relation} SET ${col} = ${'{"large":9007199254740993.1234567890123456789,"nested":[null,1.0000000000000000001]}'}::jsonb WHERE id = ${row.id}`,
+          );
+        const raw = async () =>
+          (
+            await db.execute(
+              sql`SELECT ${col}::text AS value FROM ${relation} WHERE id = ${row.id}`,
+            )
+          ).rows[0].value as string;
+        const original = await raw();
+        if (spec.target) expect(original).toBe(spec.value);
+        if (spec.type === "datetime")
+          expect(original).toContain("10:30:00.123456");
+        // Display API remains numeric/Date/JSON; the parallel raw transport is authoritative.
+        const archive = (await (
+          await app.request(`${path}/history-export`)
+        ).json()) as {
+          rows: {
+            id: string;
+            values: Record<string, unknown>;
+            rawValues: Record<string, string | null>;
+          }[];
+        };
+        const archived = archive.rows.find((item) => item.id === row.id)!;
+        if (spec.target)
+          expect(typeof archived.values[field!.id]).toBe("number");
+        expect(archived.rawValues?.[field!.id]).toBe(original);
+        await db
+          .delete(schema.dataTableActivityTable)
+          .where(eq(schema.dataTableActivityTable.tableId, table.id));
+        expect(
+          (
+            await write(
+              `${path}/fields/${field!.id}`,
+              { type: "checkbox" },
+              "PUT",
+            )
+          ).status,
+        ).toBe(200);
+        const events = await history(path);
+        const baseline = events.find((event) => event.type === "baseline")!;
+        expect(baseline.data.rows).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              id: row.id,
+              rawValues: expect.objectContaining({ [field!.id]: original }),
+            }),
+          ]),
+        );
+        const event = events.find((entry) => entry.type === "field_updated")!;
+        const exact = await db.execute(
+          sql`SELECT backup->>'rawValue' AS value FROM data_table_activity, jsonb_array_elements(data->'beforeColumn') backup WHERE data_table_activity.id = ${event.id} AND backup->>'id' = ${row.id}`,
+        );
+        expect(exact.rows[0]?.value).toBe(original);
+        expect(
+          (await write(`${path}/activity/${event.id}/revert`, {})).status,
+        ).toBe(200);
+        expect(await raw()).toBe(original);
+        expect(
+          (await app.request(`${path}/rows/${row.id}`, { method: "DELETE" }))
+            .status,
+        ).toBe(200);
+        const deleted = (await history(path)).find(
+          (entry) => entry.type === "row_deleted",
+        )!;
+        expect(deleted.data.row).toMatchObject({
+          rawValues: { [field!.id]: original },
+        });
+      },
+    );
+
+    it("audits an exact numeric edit even when display numbers compare equal", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Exact edits");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Amount",
+        type: "text",
+      });
+      const row = await addRowViaApi(app, org, table.id, {
+        [field!.id]: "9007199254740993",
+      });
+      const path = root(org, table.id);
+      expect(
+        (await write(`${path}/fields/${field!.id}`, { type: "number" }, "PUT"))
+          .status,
+      ).toBe(200);
+      expect(
+        (
+          await write(
+            `${path}/rows/${row.id}/cells/${field!.id}`,
+            { value: 9007199254740992 },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      const stored = await db.execute(
+        sql.raw(
+          `SELECT "c_${field!.id}"::text AS value FROM kaneo_tables."t_${table.id}" WHERE id = '${row.id}'`,
+        ),
+      );
+      expect(stored.rows[0]?.value).toBe("9007199254740992");
+      const event = (await history(path)).find(
+        (entry) => entry.type === "cell_updated",
+      )!;
+      expect(event.data.beforeRow).toMatchObject({
+        rawValues: { [field!.id]: "9007199254740993" },
+      });
+      expect(event.data.afterRow).toMatchObject({
+        rawValues: { [field!.id]: "9007199254740992" },
+      });
+      expect(
+        (
+          await write(
+            `${path}/rows/${row.id}/cells/${field!.id}`,
+            { value: 9007199254740992 },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await history(path)).filter((entry) => entry.type === "cell_updated"),
+      ).toHaveLength(1);
+    });
+
+    it("validates comments, scopes rows, and enforces view versus edit and organization access", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Comments");
+      const path = root(org, table.id);
+      const row = await addRowViaApi(app, org, table.id);
+      const otherTable = await createTableViaApi(app, org, "Other");
+      const otherRow = await addRowViaApi(app, org, otherTable.id);
+      for (const content of ["", "  \n ", "x".repeat(20001), 7, null]) {
+        expect((await write(`${path}/comments`, { content })).status).toBe(400);
+      }
+      expect(
+        (await write(`${path}/comments`, { content: "x", rowId: otherRow.id }))
+          .status,
+      ).toBe(404);
+      const comment = await write(`${path}/comments`, {
+        content: "  A useful note  ",
+        rowId: row.id,
+      });
+      expect(comment.status).toBe(200);
+      const entry = (await comment.json()) as Event;
+      expect(entry).toMatchObject({
+        type: "comment_added",
+        rowId: row.id,
+        userId: member.user.id,
+        data: { content: "A useful note" },
+      });
+      expect((await history(path))[0]).toMatchObject({
+        id: entry.id,
+        data: { content: "A useful note" },
+      });
+      expect(
+        (await write(`${path}/comments`, { content: "table note" })).status,
+      ).toBe(200);
+      expect(
+        (await write(`${path}/comments`, { content: "x".repeat(20000) }))
+          .status,
+      ).toBe(200);
+      const rowHistory = await app.request(`${path}/activity?rowId=${row.id}`);
+      expect(
+        ((await rowHistory.json()) as Event[]).filter(
+          (event) => event.type === "comment_added",
+        ),
+      ).toHaveLength(1);
+      await db
+        .update(schema.organizationMemberTable)
+        .set({ role: "member" })
+        .where(eq(schema.organizationMemberTable.userId, member.user.id));
+      await db
+        .update(schema.dataTableTable)
+        .set({ orgPrivilege: "view" })
+        .where(eq(schema.dataTableTable.id, table.id));
+      expect((await app.request(`${path}/activity`)).status).toBe(200);
+      expect((await app.request(`${path}/history-export`)).status).toBe(200);
+      expect(
+        (await write(`${path}/comments`, { content: "forbidden" })).status,
+      ).toBe(404);
+      expect(
+        (await write(`${path}/activity/${entry.id}/revert`, {})).status,
+      ).toBe(404);
+      const foreign = await createOrganizationMember();
+      await db
+        .update(schema.organizationTable)
+        .set({ tablesEnabled: true })
+        .where(eq(schema.organizationTable.id, foreign.organization.id));
+      const forged = root(foreign.organization.id, table.id);
+      expect((await app.request(`${forged}/activity`)).status).not.toBe(200);
+      expect((await app.request(`${forged}/history-export`)).status).not.toBe(
+        200,
+      );
+      expect(
+        (await write(`${forged}/comments`, { content: "wrong organization" }))
+          .status,
+      ).not.toBe(200);
+      mockAuthenticatedSession(foreign.user);
+      expect((await app.request(`${path}/activity`)).status).not.toBe(200);
+      expect((await app.request(`${path}/history-export`)).status).not.toBe(
+        200,
+      );
+      expect(
+        (await write(`${path}/comments`, { content: "foreign" })).status,
+      ).not.toBe(200);
+      expect(
+        (await write(`${path}/activity/${entry.id}/revert`, {})).status,
+      ).not.toBe(200);
+    });
+
+    it("paginates all events beyond 200 with stable ties and validates bounds", async () => {
+      const table = await createTableViaApi(
+        app,
+        member.organization.id,
+        "Long history",
+      );
+      const path = root(member.organization.id, table.id);
+      await db
+        .delete(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.tableId, table.id));
+      await db.insert(schema.dataTableActivityTable).values(
+        Array.from({ length: 205 }, (_, index) => ({
+          tableId: table.id,
+          type: "comment_added",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+          data: { content: String(index) },
+        })),
+      );
+      const expected = await db
+        .select()
+        .from(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.tableId, table.id));
+      const ids: string[] = [];
+      for (const offset of [0, 100, 200]) {
+        const response = await app.request(
+          `${path}/activity?offset=${offset}&limit=100`,
+        );
+        expect(response.status).toBe(200);
+        const events = (await response.json()) as Event[];
+        ids.push(...events.map((event) => event.id));
+      }
+      expect(new Set(ids).size).toBe(expected.length);
+      expect(ids).toHaveLength(expected.length);
+      expect(await history(path)).toHaveLength(100);
+      expect((await history(path)).map((event) => event.id)).toEqual(
+        ids.slice(0, 100),
+      );
+      for (const query of [
+        "offset=-1",
+        "offset=1.5",
+        "offset=NaN",
+        "limit=0",
+        "limit=101",
+        "limit=Infinity",
+      ]) {
+        expect((await app.request(`${path}/activity?${query}`)).status).toBe(
+          400,
+        );
+      }
+      const exported = await app.request(`${path}/history-export`);
+      expect(exported.status).toBe(200);
+      const body = (await exported.json()) as {
+        events: Event[];
+        historyStartsAt: string | null;
+      };
+      expect(body.events).toHaveLength(expected.length);
+      expect(body.historyStartsAt).toBeNull(); // Old logs are not a baseline.
+    });
+
+    it("archives options-only changes, complete rows, table identity, and an honest legacy baseline", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Legacy");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "State",
+        type: "select",
+        options: { choices: [{ id: "open", label: "Original label" }] },
+      });
+      const row = await addRowViaApi(app, org, table.id, {
+        [field!.id]: "open",
+      });
+      // Simulate an existing table whose historical changes were never audited.
+      await db
+        .delete(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.tableId, table.id));
+      const path = root(org, table.id);
+      expect(
+        (
+          await write(
+            `${path}/fields/${field!.id}`,
+            { options: { choices: [{ id: "open", label: "New label" }] } },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await write(path, { name: "Renamed", icon: "database" }, "PUT"))
+          .status,
+      ).toBe(200);
+      expect(
+        (await app.request(`${path}/rows/${row.id}`, { method: "DELETE" }))
+          .status,
+      ).toBe(200);
+      const events = await history(path);
+      const baseline = events.find((e) => e.type === "baseline")!;
+      expect(baseline.data).toMatchObject({
+        table: { name: "Legacy" },
+        fields: [
+          {
+            id: field!.id,
+            options: { choices: [{ label: "Original label" }] },
+          },
+        ],
+        rows: [row],
+      });
+      expect(
+        events.find((e) => e.type === "field_updated")?.data,
+      ).toMatchObject({
+        beforeField: { options: { choices: [{ label: "Original label" }] } },
+        afterField: { options: { choices: [{ label: "New label" }] } },
+      });
+      expect(
+        events.find((e) => e.type === "field_updated")?.data,
+      ).not.toHaveProperty("beforeColumn");
+      expect(events.find((e) => e.type === "row_deleted")?.data).toMatchObject({
+        row,
+        fields: [{ name: "State" }],
+        values: row.values,
+      });
+      expect(
+        events.find((e) => e.type === "table_updated")?.data,
+      ).toMatchObject({
+        before: { name: "Legacy" },
+        after: { name: "Renamed", icon: "database" },
+      });
+      const exported = await app.request(`${path}/history-export`);
+      const body = (await exported.json()) as {
+        version: number;
+        rows: unknown[];
+        events: Event[];
+        historyStartsAt: string;
+      };
+      expect(body.version).toBe(1);
+      expect(body.rows).toEqual([]);
+      expect(body.events).toHaveLength(events.length);
+      expect(body.historyStartsAt).toBe(baseline.createdAt);
+    });
+
+    it("archives and restores a destructive whole column beyond 1000 rows and refuses later edits", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Large restore");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Original",
+        type: "text",
+      });
+      await db.execute(
+        sql.raw(
+          `INSERT INTO kaneo_tables."t_${table.id}" (id, position, "c_${field!.id}") SELECT 'legacy' || n, n, 'lost-' || n FROM generate_series(1, 1005) n`,
+        ),
+      );
+      await db
+        .delete(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.tableId, table.id));
+      const path = root(org, table.id);
+      expect(
+        (
+          await write(
+            `${path}/fields/${field!.id}`,
+            { type: "number", name: "Converted", options: { precision: 2 } },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await history(path)).find((entry) => entry.type === "baseline")?.data
+          .rows,
+      ).toHaveLength(1005);
+      const event = (await history(path)).find(
+        (e) => e.type === "field_updated",
+      )!;
+      expect(event.data.beforeColumn).toHaveLength(1005);
+      expect(event.data.afterColumn).toHaveLength(1005);
+      expect(
+        (await write(`${path}/activity/${event.id}/revert`, {})).status,
+      ).toBe(200);
+      const exported = await app.request(`${path}/history-export`);
+      const body = (await exported.json()) as {
+        fields: FieldRow[];
+        rows: { id: string; values: Record<string, unknown> }[];
+        events: Event[];
+      };
+      expect(body.fields[0]).toMatchObject({
+        name: "Original",
+        type: "text",
+        options: null,
+      });
+      expect(body.rows).toHaveLength(1005);
+      expect(
+        body.rows.find((r) => r.id === "legacy1005")?.values[field!.id],
+      ).toBe("lost-1005");
+      expect(body.events[0]).toMatchObject({
+        type: "field_reverted",
+        data: { activityId: event.id },
+      });
+      expect(body.events.find((e) => e.id === event.id)).toEqual(event);
+      expect(
+        (await write(`${path}/activity/${event.id}/revert`, {})).status,
+      ).toBe(409);
+      expect(
+        (await write(`${path}/fields/${field!.id}`, { type: "number" }, "PUT"))
+          .status,
+      ).toBe(200);
+      const next = (await history(path)).find(
+        (e) => e.type === "field_updated",
+      )!;
+      expect(
+        (
+          await write(
+            `${path}/rows/legacy1005/cells/${field!.id}`,
+            { value: 42 },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await write(`${path}/activity/${next.id}/revert`, {})).status,
+      ).toBe(409);
+      const other = await createTableViaApi(app, org, "Other");
+      expect(
+        (await write(`${root(org, other.id)}/activity/${next.id}/revert`, {}))
+          .status,
+      ).toBe(404);
+    });
+
+    it("preserves archived choice labels, ticket titles and link snapshots through later changes", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "References");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "State",
+        type: "select",
+        options: { choices: [{ id: "open", label: "Original label" }] },
+      });
+      const { field: tickets } = await createFieldViaApi(app, org, table.id, {
+        name: "Ticket",
+        type: "ticket",
+      });
+      const { board, columns } = await createBoardFixture({
+        organizationId: org,
+        slug: "arc",
+      });
+      const [task] = await db
+        .insert(schema.taskTable)
+        .values({
+          boardId: board.id,
+          columnId: columns.todo.id,
+          title: "Original ticket",
+          status: "to-do",
+          priority: "medium",
+          number: 8,
+          position: 1,
+        })
+        .returning();
+      const row = await addRowViaApi(app, org, table.id, {
+        [field!.id]: "open",
+        [tickets!.id]: [task.id],
+      });
+      const path = root(org, table.id);
+      expect(
+        (await write(`${path}/rows/${row.id}/tickets?taskId=${task.id}`, {}))
+          .status,
+      ).toBe(200);
+      expect(
+        (
+          await app.request(
+            `${path}/rows/${row.id}/tickets?taskId=${task.id}`,
+            { method: "DELETE" },
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await write(
+            `${path}/fields/${field!.id}`,
+            { type: "checkbox" },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      const conversion = (await history(path)).find(
+        (event) => event.type === "field_updated",
+      )!;
+      expect(conversion.data).toMatchObject({
+        fromType: "select",
+        toType: "checkbox",
+        beforeField: { options: { choices: [{ label: "Original label" }] } },
+      });
+      expect(conversion.data).not.toHaveProperty("fromName");
+      expect(
+        (await history(path)).find((event) => event.type === "row_created")
+          ?.data.title,
+      ).toBe("Original label");
+      expect(
+        (await history(path)).find((event) => event.type === "ticket_linked")
+          ?.data.rowTitle,
+      ).toBe("Original label");
+      const archive = (await (
+        await app.request(`${path}/history-export`)
+      ).json()) as { tickets: Record<string, { title: string }> };
+      expect(archive.tickets[task.id].title).toBe("Original ticket");
+      expect(
+        (await write(`${path}/activity/${conversion.id}/revert`, {})).status,
+      ).toBe(200);
+      expect(
+        (
+          await write(
+            `${path}/rows/${row.id}/cells/${field!.id}`,
+            { value: null },
+            "PUT",
+          )
+        ).status,
+      ).toBe(200);
+      await db
+        .update(schema.taskTable)
+        .set({ title: "Changed ticket" })
+        .where(eq(schema.taskTable.id, task.id));
+      const events = await history(path);
+      expect(
+        events.find((event) => event.type === "cell_updated")?.data,
+      ).toMatchObject({
+        from: "open",
+        to: null,
+        field: {
+          name: "State",
+          type: "select",
+          options: { choices: [{ label: "Original label" }] },
+        },
+      });
+      expect(
+        events.find((event) => event.type === "row_created")?.data,
+      ).toMatchObject({
+        row,
+        tickets: { [task.id]: { title: "Original ticket", key: "ARC-8" } },
+      });
+      expect(
+        events.find((event) => event.type === "ticket_linked")?.data,
+      ).toMatchObject({
+        key: "ARC-8",
+        title: "Original ticket",
+        link: { externalId: row.id },
+      });
+      expect(
+        events.find((event) => event.type === "ticket_unlinked")?.data,
+      ).toMatchObject({ links: [{ externalId: row.id }] });
+      expect(
+        (await app.request(`${path}/fields/${field!.id}`, { method: "DELETE" }))
+          .status,
+      ).toBe(200);
+      expect(
+        (await history(path)).find((event) => event.type === "field_deleted")
+          ?.data,
+      ).toMatchObject({
+        beforeField: { name: "State", type: "select" },
+        beforeColumn: [{ id: row.id, value: null }],
+      });
+      expect((await app.request(path, { method: "DELETE" })).status).toBe(200);
+      expect((await write(`${path}/restore`, {})).status).toBe(200);
+      expect(
+        (await history(path)).slice(0, 2).map((event) => event.type),
+      ).toEqual(["table_restored", "table_deleted"]);
+    });
+
+    it("restores scalar, temporal, JSON and array columns verbatim without revalidating archived values", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Restore types");
+      const path = root(org, table.id);
+      for (const spec of [
+        { type: "number", value: 12.5 },
+        { type: "date", value: "2026-03-12" },
+        { type: "datetime", value: "2026-03-12T10:30:00.000Z" },
+        { type: "checkbox", value: true },
+        { type: "json", value: { nested: [1, "two"] } },
+        {
+          type: "multiselect",
+          value: ["a", "b"],
+          options: {
+            choices: [
+              { id: "a", label: "A" },
+              { id: "b", label: "B" },
+            ],
+          },
+        },
+      ]) {
+        const { field } = await createFieldViaApi(app, org, table.id, {
+          name: spec.type,
+          type: spec.type,
+          options: spec.options,
+        });
+        const row = await addRowViaApi(app, org, table.id, {
+          [field!.id]: spec.value,
+        });
+        expect(
+          (await write(`${path}/fields/${field!.id}`, { type: "text" }, "PUT"))
+            .status,
+        ).toBe(200);
+        const event = (await history(path)).find(
+          (entry) =>
+            entry.type === "field_updated" && entry.data.fromType === spec.type,
+        )!;
+        expect(
+          (await write(`${path}/activity/${event.id}/revert`, {})).status,
+        ).toBe(200);
+        const detail = (await (await app.request(path)).json()) as {
+          rows: { id: string; values: Record<string, unknown> }[];
+        };
+        expect(
+          detail.rows.find((item) => item.id === row.id)?.values[field!.id],
+        ).toEqual(row.values[field!.id]);
+      }
+    });
+
+    it("refuses conversion restores after field metadata or row membership changes", async () => {
+      const org = member.organization.id;
+      for (const change of ["metadata", "created", "deleted"]) {
+        const table = await createTableViaApi(app, org, change);
+        const { field } = await createFieldViaApi(app, org, table.id, {
+          name: "Value",
+          type: "text",
+        });
+        const row = await addRowViaApi(app, org, table.id, {
+          [field!.id]: "original",
+        });
+        const path = root(org, table.id);
+        expect(
+          (
+            await write(
+              `${path}/fields/${field!.id}`,
+              { type: "number" },
+              "PUT",
+            )
+          ).status,
+        ).toBe(200);
+        const event = (await history(path)).find(
+          (item) => item.type === "field_updated",
+        )!;
+        if (change === "metadata")
+          expect(
+            (
+              await write(
+                `${path}/fields/${field!.id}`,
+                { options: { precision: 4 } },
+                "PUT",
+              )
+            ).status,
+          ).toBe(200);
+        if (change === "created") await addRowViaApi(app, org, table.id);
+        if (change === "deleted")
+          expect(
+            (await app.request(`${path}/rows/${row.id}`, { method: "DELETE" }))
+              .status,
+          ).toBe(200);
+        expect(
+          (await write(`${path}/activity/${event.id}/revert`, {})).status,
+        ).toBe(409);
+      }
+    });
+
+    it("serializes concurrent row edits with an unbroken before/after history", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Concurrent");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Value",
+        type: "number",
+      });
+      const row = await addRowViaApi(app, org, table.id, { [field!.id]: 0 });
+      const path = root(org, table.id);
+      const results = await Promise.all(
+        [1, 2, 3, 4].map((value) =>
+          write(`${path}/rows/${row.id}/cells/${field!.id}`, { value }, "PUT"),
+        ),
+      );
+      expect(results.map((result) => result.status)).toEqual([
+        200, 200, 200, 200,
+      ]);
+      const events = (await history(path))
+        .filter((event) => event.type === "cell_updated")
+        .reverse();
+      expect(events).toHaveLength(4);
+      expect(events[0].data.from).toBe(0);
+      for (let index = 1; index < events.length; index++)
+        expect(events[index].data.from).toBe(events[index - 1].data.to);
+      const detail = (await (await app.request(path)).json()) as {
+        rows: { values: Record<string, unknown> }[];
+      };
+      expect(detail.rows[0].values[field!.id]).toBe(
+        events[events.length - 1].data.to,
+      );
+    });
+
+    it("rolls back row create, edit, and delete when the history insert fails", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Atomic");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Title",
+        type: "text",
+      });
+      const row = await addRowViaApi(app, org, table.id, {
+        [field!.id]: "Before",
+      });
+      const path = root(org, table.id);
+      await db.execute(
+        sql.raw(
+          `CREATE FUNCTION reject_table_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected audit failure'; END $$`,
+        ),
+      );
+      await db.execute(
+        sql.raw(
+          "CREATE TRIGGER reject_table_history BEFORE INSERT ON data_table_activity FOR EACH ROW EXECUTE FUNCTION reject_table_history()",
+        ),
+      );
+      try {
+        expect(
+          (
+            await write(`${path}/rows`, {
+              values: { [field!.id]: "Should roll back" },
+            })
+          ).status,
+        ).toBe(500);
+        expect(
+          (
+            await write(
+              `${path}/rows/${row.id}/cells/${field!.id}`,
+              { value: "Should roll back" },
+              "PUT",
+            )
+          ).status,
+        ).toBe(500);
+        expect(
+          (await app.request(`${path}/rows/${row.id}`, { method: "DELETE" }))
+            .status,
+        ).toBe(500);
+      } finally {
+        await db.execute(
+          sql.raw("DROP TRIGGER reject_table_history ON data_table_activity"),
+        );
+        await db.execute(sql.raw("DROP FUNCTION reject_table_history()"));
+      }
+      const detail = (await (await app.request(path)).json()) as {
+        rows: unknown[];
+      };
+      expect(detail.rows).toEqual([row]);
+    });
   });
 
   describe("store engine", () => {
@@ -612,6 +1564,8 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         "row_created",
         "field_created",
         "field_created",
+        "table_created",
+        "baseline",
       ]);
       expect(all.every((entry) => entry.userId === member.user.id)).toBe(true);
       expect(all[0].userName).toBe(member.user.name);
@@ -931,8 +1885,34 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
   });
 
   describe("dashboards", () => {
+    it("hides dashboards behind their own flag while tables stay available", async () => {
+      const organizationId = member.organization.id;
+      const base = `/api/data-table/organization/${organizationId}`;
+      expect((await app.request(`${base}/dashboards`)).status).toBe(404);
+      expect(
+        (
+          await app.request(`${base}/dashboards`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: "Ops" }),
+          })
+        ).status,
+      ).toBe(404);
+      expect((await app.request(base)).status).toBe(200);
+      await db
+        .update(schema.organizationTable)
+        .set({ dashboardsEnabled: true, tablesEnabled: false })
+        .where(eq(schema.organizationTable.id, organizationId));
+      // Dashboards read table data, so the Tables flag still gates them.
+      expect((await app.request(`${base}/dashboards`)).status).toBe(404);
+    });
+
     it("round-trips CRUD and validates panel table references", async () => {
       const organizationId = member.organization.id;
+      await db
+        .update(schema.organizationTable)
+        .set({ dashboardsEnabled: true })
+        .where(eq(schema.organizationTable.id, organizationId));
       const table = await createTableViaApi(app, organizationId, "Metrics");
 
       const created = await app.request(

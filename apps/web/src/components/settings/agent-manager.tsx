@@ -1,6 +1,7 @@
 import { Bot, Copy, KeyRound, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { Badge } from "@/components/ui/badge";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
 import useDeleteAgent from "@/hooks/mutations/agent/use-delete-agent";
@@ -89,9 +90,7 @@ export function AgentManager() {
             <p className="text-sm font-medium">
               {t("team:agentManager.title")}
             </p>
-            <Badge variant="warning" size="sm">
-              {t("team:agentManager.alphaBadge")}
-            </Badge>
+            <FeatureStageBadge stage="Alpha" />
           </div>
           <p className="text-xs text-muted-foreground">
             {t("team:agentManager.description")}

@@ -104,6 +104,13 @@ function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
               value={summary}
             />
             <Select
+              items={
+                members?.map((member) => ({
+                  value: member.userId,
+                  label:
+                    member.user?.name ?? member.user?.email ?? member.userId,
+                })) ?? []
+              }
               onValueChange={(value) => setLeadUserId(value ?? "")}
               value={leadUserId}
             >

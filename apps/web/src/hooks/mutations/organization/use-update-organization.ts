@@ -10,6 +10,7 @@ type UpdateOrganizationRequest = {
   metadata?: Record<string, unknown>;
   reposEnabled?: boolean;
   tablesEnabled?: boolean;
+  dashboardsEnabled?: boolean;
   workEnabled?: boolean;
   teamsEnabled?: boolean;
 };
@@ -26,6 +27,7 @@ function useUpdateOrganization() {
       metadata,
       reposEnabled,
       tablesEnabled,
+      dashboardsEnabled,
       workEnabled,
       teamsEnabled,
     }: UpdateOrganizationRequest) => {
@@ -37,6 +39,7 @@ function useUpdateOrganization() {
         metadata?: Record<string, unknown>;
         reposEnabled?: boolean;
         tablesEnabled?: boolean;
+        dashboardsEnabled?: boolean;
         workEnabled?: boolean;
         teamsEnabled?: boolean;
       } = {};
@@ -65,6 +68,9 @@ function useUpdateOrganization() {
       }
       if (tablesEnabled !== undefined) {
         updateData.tablesEnabled = tablesEnabled;
+      }
+      if (dashboardsEnabled !== undefined) {
+        updateData.dashboardsEnabled = dashboardsEnabled;
       }
       if (workEnabled !== undefined) {
         updateData.workEnabled = workEnabled;
