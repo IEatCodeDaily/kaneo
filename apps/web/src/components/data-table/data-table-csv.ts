@@ -59,6 +59,27 @@ function cellText(
   }
 }
 
+/**
+ * Search matches what a cell reads as (choice labels, member names, ticket
+ * keys, numbers), not only text fields: the CSV text is exactly that.
+ */
+export function rowMatchesSearch(
+  row: DataTableRow,
+  fields: DataTableField[],
+  query: string,
+  choices: Map<string, SelectChoice>,
+  memberNames: MemberNameLookup,
+  tickets: Record<string, TicketRef> = {},
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return fields.some((field) =>
+    cellText(field, row.values[field.id], choices, memberNames, tickets)
+      .toLowerCase()
+      .includes(needle),
+  );
+}
+
 export function csvSerialize(
   fields: DataTableField[],
   rows: DataTableRow[],

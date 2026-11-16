@@ -56,7 +56,7 @@ import { cn } from "@/lib/cn";
 import type { DataTableField } from "@/types/data-table";
 
 /**
- * Design v3 table toolbar (DS §2 "Toolbar button"): ghost at rest,
+ * Design v3 table toolbar: bordered like the board toolbar at rest,
  * `bg-primary-soft` + count when the view is narrowed, `bg-secondary` while
  * its popover is open. One primary action (New row) at the right end; rare
  * actions live in the overflow menu.
@@ -78,7 +78,8 @@ function ToolbarButton({
       variant="ghost"
       size="sm"
       className={cn(
-        "gap-1.5 px-2 font-normal data-popup-open:bg-secondary",
+        // Same chrome as the board's Filter/Group/Display buttons.
+        "gap-1.5 border-border bg-background px-2 text-xs hover:bg-accent/60 data-popup-open:bg-secondary",
         applied &&
           "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft data-popup-open:bg-primary-soft data-popup-open:ring-1 data-popup-open:ring-input",
       )}
