@@ -1,13 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Maximize2, X } from "lucide-react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -30,11 +23,10 @@ import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useDrawerWidth } from "@/hooks/use-drawer-width";
 import {
-  clampTaskDrawerWidth,
-  parseStoredTaskDrawerWidth,
+  TASK_DRAWER_DEFAULT_WIDTH,
   TASK_DRAWER_WIDTH_STORAGE_KEY,
-  widthFromPointer,
 } from "@/lib/task-drawer-width";
 import { resolveTemplateDate } from "@/lib/task-template-date-offset";
 
@@ -83,60 +75,11 @@ export default function TaskDetailsSheet({
     }
   }, [taskId]);
 
-  // #112: the drawer is resizable by dragging its left edge, and the width
-  // persists. Hydrate from storage BEFORE the first paint-driven save so the
-  // default render can't overwrite what the user chose.
-  const [width, setWidth] = useState<number | null>(null);
-  const isResizingRef = useRef(false);
-
-  useEffect(() => {
-    setWidth(
-      parseStoredTaskDrawerWidth(
-        window.localStorage.getItem(TASK_DRAWER_WIDTH_STORAGE_KEY),
-        window.innerWidth,
-      ),
-    );
-  }, []);
-
-  // Re-clamp when the window shrinks, otherwise a width saved on a wide
-  // monitor leaves the drawer wider than the viewport.
-  useEffect(() => {
-    const onResize = () =>
-      setWidth((current) =>
-        current === null
-          ? current
-          : clampTaskDrawerWidth(current, window.innerWidth),
-      );
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  const startResize = useCallback((event: React.PointerEvent) => {
-    event.preventDefault();
-    isResizingRef.current = true;
-
-    const onMove = (moveEvent: PointerEvent) => {
-      if (!isResizingRef.current) return;
-      setWidth(widthFromPointer(moveEvent.clientX, window.innerWidth));
-    };
-    const onUp = () => {
-      isResizingRef.current = false;
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
-      setWidth((current) => {
-        if (current !== null) {
-          window.localStorage.setItem(
-            TASK_DRAWER_WIDTH_STORAGE_KEY,
-            String(current),
-          );
-        }
-        return current;
-      });
-    };
-
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp);
-  }, []);
+  // #112: the drawer is resizable by dragging its left edge; width persists.
+  const { width, startResize } = useDrawerWidth(
+    TASK_DRAWER_WIDTH_STORAGE_KEY,
+    TASK_DRAWER_DEFAULT_WIDTH,
+  );
 
   const handleClose = useCallback(() => {
     // Do not keep the drawer visually open while the router processes removal

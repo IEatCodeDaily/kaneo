@@ -3,12 +3,14 @@ import {
   AlertCircle,
   ArchiveRestore,
   ChevronsUpDown,
+  History,
   Table2,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
 import Layout from "@/components/common/layout";
+import { ViewTabs } from "@/components/common/view-tabs";
 import PageTitle from "@/components/page-title";
 import { ensureTablesStrings } from "@/lib/i18n";
 
@@ -62,7 +64,12 @@ const SKELETON_ROWS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId",
-)({ component: DataTableRoute });
+)({
+  component: DataTableRoute,
+  // The view is URL state so a History view can be linked and survives reload.
+  validateSearch: (search: Record<string, unknown>): { view?: "history" } =>
+    search.view === "history" ? { view: "history" } : {},
+});
 
 /** Breadcrumb resource switcher: current table, other tables (DS §2 Page header). */
 function TableCrumbSelect({
@@ -126,6 +133,7 @@ function DataTableRoute() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organizationSlug, tableId } = Route.useParams();
+  const { view = "grid" } = Route.useSearch();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
   const {
@@ -171,6 +179,29 @@ function DataTableRoute() {
         ) : (
           <span className="h-4 w-32 animate-pulse rounded-sm bg-muted" />
         )}
+        <ViewTabs
+          aria-label={t("navigation:tables.views")}
+          className="ms-2"
+          value={view}
+          onValueChange={(next) =>
+            navigate({
+              to: ".",
+              search: next === "history" ? { view: "history" } : {},
+            })
+          }
+          items={[
+            {
+              value: "grid",
+              label: t("navigation:tables.viewGrid"),
+              icon: <Table2 className="size-3.5" />,
+            },
+            {
+              value: "history",
+              label: t("navigation:tables.viewHistory"),
+              icon: <History className="size-3.5" />,
+            },
+          ]}
+        />
       </div>
     </Layout.Header>
   );
@@ -269,6 +300,7 @@ function DataTableRoute() {
         >
           <DataTableGrid
             key={table.id}
+            view={view}
             table={table}
             organizationId={organizationId}
             organizationSlug={organizationSlug}
