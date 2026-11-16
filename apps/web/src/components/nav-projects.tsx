@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import {
   ContextMenu,
@@ -164,9 +165,7 @@ export function NavProjects() {
               tooltip="Projects"
             >
               <span className="flex-1">Projects</span>
-              <span className="rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium uppercase">
-                Alpha
-              </span>
+              <FeatureStageBadge stage="Alpha" />
               <ChevronRight className="size-4" />
             </SidebarMenuButton>
           </SidebarMenuItem>

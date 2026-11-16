@@ -42,6 +42,9 @@ export function useDataTable(organizationId: string, tableId: string) {
     queryKey: dataTableKeys.detail(organizationId, tableId),
     queryFn: () => getDataTable(tableId, organizationId),
     enabled: Boolean(organizationId && tableId),
+    // Tables do not receive the board's WebSocket updates.
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 

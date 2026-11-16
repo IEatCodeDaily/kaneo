@@ -12,12 +12,14 @@ import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import {
   addFieldToTable,
+  addTableComment,
   addTableRow,
   createDashboard,
   createDataTable,
   deleteDashboard,
   deleteTableField,
   deleteTableRow,
+  exportTableHistory,
   getDashboard,
   getDataTable,
   getRowTickets,
@@ -30,6 +32,7 @@ import {
   purgeDataTable,
   queryDataTable,
   restoreDataTable,
+  revertTableActivity,
   softDeleteDataTable,
   unlinkRowTask,
   updateDashboard,
@@ -38,7 +41,10 @@ import {
   updateTableField,
 } from "./controllers";
 import { FIELD_TYPES } from "./fields";
-import { assertTablesEnabled } from "./require-tables-enabled";
+import {
+  assertDashboardsEnabled,
+  assertTablesEnabled,
+} from "./require-tables-enabled";
 
 const idParams = v.object({ organizationId: v.string(), tableId: v.string() });
 const writePermission = requireOrganizationPermission({
@@ -120,6 +126,14 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     await assertTablesEnabled(c.req.param("organizationId"));
     await next();
   })
+  .use("/organization/:organizationId/dashboards", async (c, next) => {
+    await assertDashboardsEnabled(c.req.param("organizationId"));
+    await next();
+  })
+  .use("/organization/:organizationId/dashboards/*", async (c, next) => {
+    await assertDashboardsEnabled(c.req.param("organizationId"));
+    await next();
+  })
   .get(
     "/organization/:organizationId",
     validator("param", v.object({ organizationId: v.string() })),
@@ -155,6 +169,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         await createDataTable(
           c.req.valid("param").organizationId,
           c.req.valid("json"),
+          c.get("userId"),
         ),
       ),
   )
@@ -274,7 +289,12 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await updateDataTable(organizationId, tableId, c.req.valid("json")),
+        await updateDataTable(
+          organizationId,
+          tableId,
+          c.req.valid("json"),
+          c.get("userId"),
+        ),
       );
     },
   )
@@ -285,7 +305,9 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
-      return c.json(await softDeleteDataTable(organizationId, tableId));
+      return c.json(
+        await softDeleteDataTable(organizationId, tableId, c.get("userId")),
+      );
     },
   )
   .post(
@@ -305,7 +327,9 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
-      return c.json(await restoreDataTable(organizationId, tableId));
+      return c.json(
+        await restoreDataTable(organizationId, tableId, c.get("userId")),
+      );
     },
   )
   .post(
@@ -410,7 +434,32 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
   .get(
     "/organization/:organizationId/:tableId/activity",
     validator("param", idParams),
-    validator("query", v.object({ rowId: v.optional(v.string()) })),
+    validator(
+      "query",
+      v.object({
+        rowId: v.optional(v.pipe(v.string(), v.minLength(1))),
+        offset: v.optional(
+          v.pipe(
+            v.string(),
+            v.regex(/^\d+$/),
+            v.transform(Number),
+            v.integer(),
+            v.minValue(0),
+            v.maxValue(Number.MAX_SAFE_INTEGER),
+          ),
+        ),
+        limit: v.optional(
+          v.pipe(
+            v.string(),
+            v.regex(/^\d+$/),
+            v.transform(Number),
+            v.integer(),
+            v.minValue(1),
+            v.maxValue(100),
+          ),
+        ),
+      }),
+    ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("view"),
     async (c) => {
@@ -420,6 +469,73 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           organizationId,
           tableId,
           c.req.valid("query").rowId,
+          c.req.valid("query").offset ?? 0,
+          c.req.valid("query").limit ?? 100,
+        ),
+      );
+    },
+  )
+  .get(
+    "/organization/:organizationId/:tableId/history-export",
+    validator("param", idParams),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(await exportTableHistory(organizationId, tableId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/comments",
+    validator("param", idParams),
+    validator(
+      "json",
+      v.object({
+        content: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(20000),
+        ),
+        rowId: v.optional(v.pipe(v.string(), v.minLength(1))),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      const { content, rowId } = c.req.valid("json");
+      return c.json(
+        await addTableComment(
+          organizationId,
+          tableId,
+          content,
+          rowId,
+          c.get("userId"),
+        ),
+      );
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/activity/:activityId/revert",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        activityId: v.string(),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, activityId } = c.req.valid("param");
+      return c.json(
+        await revertTableActivity(
+          organizationId,
+          tableId,
+          activityId,
+          c.get("userId"),
         ),
       );
     },

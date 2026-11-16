@@ -56,11 +56,45 @@ export const getTableRowPage = (
     `${base(organizationId)}/${encodeURIComponent(tableId)}?offset=${offset}`,
   );
 
-/** Newest-first history for a table, or one row of it. */
-export const getTableActivity = (target: DataTableTarget, rowId?: string) =>
-  request<TableActivity[]>(
-    `${tablePath(target)}/activity${rowId ? `?rowId=${encodeURIComponent(rowId)}` : ""}`,
+/** Newest-first history; paginate rather than silently hiding older events. */
+export const getTableActivity = (
+  target: DataTableTarget,
+  rowId?: string,
+  offset = 0,
+  limit = 100,
+) => {
+  const query = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+  });
+  if (rowId) query.set("rowId", rowId);
+  return request<TableActivity[]>(`${tablePath(target)}/activity?${query}`);
+};
+
+export const createTableComment = (
+  target: DataTableTarget,
+  content: string,
+  rowId?: string,
+) =>
+  request<TableActivity>(`${tablePath(target)}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content, ...(rowId ? { rowId } : {}) }),
+  });
+
+export const revertTableActivity = (
+  target: DataTableTarget,
+  activityId: string,
+) =>
+  request<{ success: true }>(
+    `${tablePath(target)}/activity/${encodeURIComponent(activityId)}/revert`,
+    {
+      method: "POST",
+    },
   );
+
+/** Complete data + audit archive, not the browser's currently loaded row page. */
+export const exportTableHistory = (target: DataTableTarget) =>
+  request<Record<string, unknown>>(`${tablePath(target)}/history-export`);
 
 /** Ticket picker options for one ticket field (board scope applied server-side). */
 export const getTicketOptions = (

@@ -14,3 +14,17 @@ export async function assertTablesEnabled(organizationId: string) {
     throw new HTTPException(404, { message: "Tables feature is not enabled" });
   }
 }
+
+export async function assertDashboardsEnabled(organizationId: string) {
+  const [organization] = await db
+    .select({ dashboardsEnabled: organizationTable.dashboardsEnabled })
+    .from(organizationTable)
+    .where(eq(organizationTable.id, organizationId))
+    .limit(1);
+
+  if (!organization?.dashboardsEnabled) {
+    throw new HTTPException(404, {
+      message: "Dashboards feature is not enabled",
+    });
+  }
+}

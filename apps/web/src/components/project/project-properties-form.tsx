@@ -133,6 +133,10 @@ export function ProjectPropertiesForm({ project }: ProjectPropertiesFormProps) {
         value={successCriteria}
       />
       <Select
+        items={LIFECYCLE_STATUSES.map((value) => ({
+          value,
+          label: t(`projects:lifecycle.${value}`),
+        }))}
         onValueChange={(v) => setStatus(v as typeof status)}
         value={status}
       >
@@ -148,6 +152,12 @@ export function ProjectPropertiesForm({ project }: ProjectPropertiesFormProps) {
         </SelectContent>
       </Select>
       <Select
+        items={
+          members?.map((member) => ({
+            value: member.userId,
+            label: member.user?.name ?? member.user?.email ?? member.userId,
+          })) ?? []
+        }
         onValueChange={(value) => setLeadUserId(value ?? "")}
         value={leadUserId}
       >

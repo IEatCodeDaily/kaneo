@@ -49,7 +49,7 @@ async function seed(api) {
   await post("/auth/organization/set-active", { organizationId: org.id });
   await post("/auth/organization/update", {
     organizationId: org.id,
-    data: { tablesEnabled: true },
+    data: { tablesEnabled: true, dashboardsEnabled: true },
   });
   const board = await post("/board", {
     name: "Pilot line",
@@ -93,7 +93,11 @@ async function seed(api) {
           ["Curing", "#ec4899"],
           ["In QA", "#f59e0b"],
           ["Done", "#22c55e"],
-        ].map(([label, color]) => ({ id: label, label, color })),
+        ].map(([label, color]) => ({
+          id: `choice-${label.toLowerCase().replaceAll(" ", "-")}`,
+          label,
+          color,
+        })),
       },
     ],
     ["Cost", "currency", { code: "IDR" }],
@@ -115,11 +119,21 @@ async function seed(api) {
     await post(`/data-table/organization/${org.id}/${tbl.id}/rows`, {
       values: {
         [f.Batch.id]: batch,
-        [f.Stage.id]: stage,
+        [f.Stage.id]: f.Stage.options.choices.find(
+          (choice) => choice.label === stage,
+        ).id,
         [f.Cost.id]: cost,
         [f["Start date"].id]: `2026-11-${String(10 - i).padStart(2, "0")}`,
-        [f.Note.id]: i === 0 ? "Retest after gasket swap" : "",
-        [f.Tickets.id]: tasks[i] ? [tasks[i].id] : [],
+        [f.Note.id]:
+          i === 0
+            ? "## Retest\n\n**Gasket swap** completed.\n\n- Check pressure\n- Record the result"
+            : "",
+        [f.Tickets.id]:
+          i === 0
+            ? tasks.slice(0, 3).map((task) => task.id)
+            : tasks[i]
+              ? [tasks[i].id]
+              : [],
       },
     });
   return { org, board, tbl };
@@ -141,6 +155,8 @@ let pages = {
   // sections are the board's off-board statuses.
   workflow: `/dashboard/settings/boards/${board.id}/workflow`,
   backlog: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/backlog`,
+  // Feature flags: every rollout stage uses one badge; Dashboards has its own switch.
+  features: "/dashboard/settings/organization/features",
 };
 if (PAGES.length)
   pages = Object.fromEntries(
@@ -197,6 +213,26 @@ for (const [theme, tag, viewport, scale] of [
       fails.push(`theme not applied (dark=${m.dark})`);
     if (m.header_h !== null && m.header_h !== 44)
       fails.push(`header ${m.header_h}px, want 44`);
+    // One stage-badge style everywhere: sidebar sections and settings rows.
+    if (tag === "desktop" && (name === "table" || name === "features")) {
+      const badges = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-slot="badge"]')]
+          .filter((b) => /^(Alpha|Beta)$/.test(b.textContent.trim()))
+          .map((b) => ({ text: b.textContent.trim(), cls: b.className })),
+      );
+      const want = name === "table" ? ["Tables", "Dashboards"] : ["Dashboards"];
+      if (badges.length < (name === "table" ? 2 : 4))
+        fails.push(`stage badges missing (${badges.length})`);
+      if (new Set(badges.map((b) => b.cls)).size > 1)
+        fails.push("stage badges use different styles");
+      for (const label of want)
+        if (!text.includes(label)) fails.push(`${label} missing`);
+      if (
+        name === "features" &&
+        !(await page.getByRole("switch", { name: "Enable Dashboards" }).count())
+      )
+        fails.push("Dashboards feature switch missing");
+    }
     // The ticket column renders linked tickets as KEY chips, not raw ids.
     if (name === "table" && tag === "desktop" && !/\bKFL-\d+\b/.test(text))
       fails.push("ticket column rendered no KFL-n chip");
@@ -408,6 +444,148 @@ const TABLE_STATES = [
     },
   ],
   [
+    "table-add-row",
+    async (p) => {
+      const before = await p.getByRole("grid").getAttribute("aria-rowcount");
+      const response = p.waitForResponse(
+        (r) => r.request().method() === "POST" && r.url().endsWith("/rows"),
+      );
+      await p
+        .getByRole("button", { name: "New row", exact: true })
+        .first()
+        .click();
+      const added = await response;
+      if (!added.ok())
+        throw new Error(`add row ${added.status()} ${await added.text()}`);
+      const row = await added.json();
+      await p.waitForFunction(
+        (count) =>
+          document
+            .querySelector('[role="grid"]')
+            ?.getAttribute("aria-rowcount") !== count,
+        before,
+      );
+      // Keep subsequent seeded states independent of this mutation.
+      const removed = await p.request.delete(
+        `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/rows/${row.id}`,
+      );
+      if (!removed.ok())
+        throw new Error("could not clean up render's own new row");
+    },
+  ],
+  [
+    "table-primary-edit",
+    async (p) => {
+      const note = await p
+        .getByRole("gridcell", { name: "Note, row 1", exact: true })
+        .evaluate((cell) => {
+          const heading = cell.querySelector("h2");
+          const preview = cell.querySelector('[data-expanded="false"]');
+          if (!heading || !preview) return null;
+          const h = heading.getBoundingClientRect();
+          const b = preview.getBoundingClientRect();
+          return {
+            top: h.top,
+            bottom: h.bottom,
+            clipTop: b.top,
+            clipBottom: b.bottom,
+            text: heading.textContent,
+          };
+        });
+      if (
+        !note ||
+        note.text !== "Retest" ||
+        note.top < note.clipTop - 1 ||
+        note.bottom > note.clipBottom + 1
+      )
+        throw new Error(`Markdown preview clipped ${JSON.stringify(note)}`);
+      const cell = p.getByRole("gridcell", {
+        name: "Batch, row 1",
+        exact: true,
+      });
+      await cell.click();
+      if (await p.getByRole("dialog").count())
+        throw new Error("primary click opened the drawer");
+      await p.keyboard.press("Enter");
+      await p
+        .getByRole("textbox", { name: "Batch", exact: true })
+        .fill("Discard this edit");
+      await p.keyboard.press("Escape");
+      await p.waitForTimeout(200);
+      if (!(await cell.innerText()).includes("PB-1042 Filter test A"))
+        throw new Error("Escape committed an edit");
+    },
+  ],
+  [
+    "table-scroll-resize",
+    async (p) => {
+      const head = p.getByRole("columnheader").filter({
+        has: p.getByRole("button", { name: "Batch field menu", exact: true }),
+      });
+      const width = (await head.boundingBox()).width;
+      const handle = p.getByRole("separator", {
+        name: "Resize Batch column",
+        exact: true,
+      });
+      await handle.focus();
+      await p.keyboard.press("ArrowRight");
+      if ((await head.boundingBox()).width <= width)
+        throw new Error("resize did not widen the column");
+      await p.reload({ waitUntil: "networkidle" });
+      if ((await head.boundingBox()).width <= width)
+        throw new Error("column width did not persist");
+      await p
+        .getByRole("gridcell", { name: "Cost, row 1", exact: true })
+        .click();
+      await p.getByRole("grid").evaluate((grid) => {
+        let el = grid.parentElement;
+        while (el && getComputedStyle(el).overflowX !== "auto")
+          el = el.parentElement;
+        if (!el) throw new Error("no grid scroller");
+        el.scrollLeft = 500;
+      });
+      await p.waitForTimeout(300);
+      const geometry = await p.evaluate(() => {
+        const row = document.querySelector('[role="row"][aria-rowindex]');
+        const header = document.querySelector('[role="grid"] [role="row"]');
+        const a = row?.querySelector('[role="rowheader"]');
+        const b = header?.querySelector('[role="columnheader"]');
+        const cell = row?.querySelector('[role="gridcell"]');
+        const hcell = header?.querySelectorAll('[role="columnheader"]')[1];
+        if (!a || !b || !cell || !hcell)
+          throw new Error("missing frozen cells");
+        return {
+          gutter: a.getBoundingClientRect().left,
+          headerGutter: b.getBoundingClientRect().left,
+          primary: cell.getBoundingClientRect().left,
+          headerPrimary: hcell.getBoundingClientRect().left,
+          sticky: getComputedStyle(a).position,
+        };
+      });
+      if (
+        geometry.sticky !== "sticky" ||
+        Math.abs(geometry.gutter - geometry.headerGutter) > 1 ||
+        Math.abs(geometry.primary - geometry.headerPrimary) > 1
+      )
+        throw new Error(`frozen geometry ${JSON.stringify(geometry)}`);
+    },
+  ],
+  [
+    "table-bulk-label",
+    async (p) => {
+      await p
+        .getByRole("checkbox", { name: "Select row 1", exact: true })
+        .click();
+      const selects = p.getByRole("combobox");
+      await selects.first().click();
+      await p.getByRole("option", { name: "Stage", exact: true }).click();
+      await selects.nth(1).click();
+      await p.getByRole("option", { name: "Curing", exact: true }).click();
+      if (!(await selects.nth(1).innerText()).includes("Curing"))
+        throw new Error("bulk picker displays an id instead of its label");
+    },
+  ],
+  [
     // Ticket picker: current link listed first + selected, newest options below.
     "table-ticket-picker",
     async (p) => {
@@ -427,6 +605,89 @@ const TABLE_STATES = [
       await p.getByRole("menuitem", { name: "Change field type" }).click();
       await p.getByRole("menuitem", { name: "Text", exact: true }).click();
       await p.waitForTimeout(300);
+    },
+  ],
+  [
+    "table-type-roundtrip",
+    async (p) => {
+      await p.getByRole("button", { name: "Stage field menu" }).click();
+      await p
+        .getByRole("menuitem", { name: "Edit field", exact: true })
+        .click();
+      await p.getByRole("button", { name: "Text", exact: true }).click();
+      await p.getByRole("button", { name: "Edit field", exact: true }).click();
+      const confirm = p.getByRole("button", {
+        name: "Double-click to change type",
+        exact: true,
+      });
+      await confirm.click();
+      if (!(await confirm.isVisible()))
+        throw new Error("single click changed the type");
+      const changed = p.waitForResponse(
+        (r) => r.request().method() === "PUT" && r.url().includes("/fields/"),
+      );
+      await confirm.dblclick();
+      if (!(await changed).ok()) throw new Error("type change failed");
+      await p.getByRole("alertdialog").waitFor({ state: "hidden" });
+      await p.keyboard.press("Escape");
+      await p
+        .getByRole("button", { name: "Table options", exact: true })
+        .click();
+      await p
+        .getByRole("menuitem", { name: "Table activity", exact: true })
+        .click();
+      const restore = p.getByRole("button", {
+        name: "Restore original field",
+        exact: true,
+      });
+      await restore.first().click();
+      const reverted = p.waitForResponse(
+        (r) => r.request().method() === "POST" && r.url().endsWith("/revert"),
+      );
+      await p
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "Restore original field", exact: true })
+        .click();
+      if (!(await reverted).ok()) throw new Error("type restoration failed");
+      await p.getByRole("alertdialog").waitFor({ state: "hidden" });
+      await p.keyboard.press("Escape");
+      await p
+        .getByRole("gridcell", { name: "Stage, row 1", exact: true })
+        .getByText("Mixing", { exact: true })
+        .waitFor();
+    },
+  ],
+  [
+    "table-comment",
+    async (p) => {
+      await p
+        .getByRole("button", { name: "Expand row 1", exact: true })
+        .click();
+      const editor = p.locator(
+        '[data-slot="table-activity"] [contenteditable="true"]',
+      );
+      await editor.fill("Render comment: pressure verified");
+      const saved = p.waitForResponse(
+        (r) => r.request().method() === "POST" && r.url().endsWith("/comments"),
+      );
+      await p
+        .getByRole("button", { name: "Submit comment", exact: true })
+        .click();
+      if (!(await saved).ok()) throw new Error("comment write failed");
+      await p
+        .locator('[data-slot="table-activity"] ol')
+        .getByText("Render comment: pressure verified", { exact: true })
+        .waitFor();
+      if ((await editor.innerText()).trim())
+        throw new Error("comment draft was not cleared");
+      await p.reload({ waitUntil: "networkidle" });
+      await p
+        .getByRole("button", { name: "Expand row 1", exact: true })
+        .click();
+      await p
+        .locator('[data-slot="table-activity"] ol')
+        .getByText("Render comment: pressure verified", { exact: true })
+        .waitFor();
     },
   ],
   [
@@ -939,10 +1200,17 @@ const OVERLAY_STATES = [
     },
   ],
   [
+    "sheet-row--phone-dark",
+    "dark",
+    { width: 390, height: 844 },
+    (p) => p.getByRole("button", { name: "Expand row 1", exact: true }).click(),
+    { bars_opaque: true, header_h: 44 },
+  ],
+  [
     "sheet-row--desktop-dark",
     "dark",
     DESKTOP,
-    (p) => p.getByText("PB-1042 Filter test A").first().click(),
+    (p) => p.getByRole("button", { name: "Expand row 1", exact: true }).click(),
     {
       bars_opaque: true,
       header_inset: 16,
@@ -999,6 +1267,49 @@ if (pages.table) {
       });
       if (d.closes !== 1 || !d.activity || !d.position)
         fails.push(`row drawer ${JSON.stringify(d)}`);
+      const markdown = await page
+        .getByRole("heading", { name: "Retest", exact: true })
+        .count();
+      if (!markdown) fails.push("long text did not render a Markdown heading");
+      const layout = await page.evaluate(() => {
+        const popup = document.querySelector('[data-slot="sheet-popup"]');
+        if (!popup) return { overflow: true };
+        const bounds = popup.getBoundingClientRect();
+        return {
+          overflow: [
+            ...popup.querySelectorAll(
+              'input, textarea, [data-slot="row-fields"] a',
+            ),
+          ].some((el) => el.getBoundingClientRect().right > bounds.right + 1),
+        };
+      });
+      if (layout.overflow)
+        fails.push("row drawer content spills outside its panel");
+      if (
+        !(await page
+          .getByRole("button", { name: "Submit comment", exact: true })
+          .count())
+      )
+        fails.push("row comment composer missing");
+      const refs = await page
+        .locator('[data-slot="row-fields"] a')
+        .evaluateAll((links) =>
+          links.map((a) => {
+            const r = a.getBoundingClientRect();
+            return {
+              left: r.left,
+              right: r.right,
+              top: r.top,
+              bottom: r.bottom,
+            };
+          }),
+        );
+      for (let i = 1; i < refs.length; i++)
+        if (
+          refs[i].top < refs[i - 1].bottom &&
+          refs[i].left < refs[i - 1].right
+        )
+          fails.push("ticket keys overlap in the drawer");
     }
     const shot = `${name}.png`;
     await page.screenshot({ path: join(OUT, shot) });

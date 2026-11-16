@@ -65,6 +65,16 @@ export function ProjectTicketPicker({
               {ticket.key}
             </span>
             <Select
+              items={[
+                {
+                  value: "unassigned",
+                  label: t("projects:milestones.unassigned"),
+                },
+                ...milestones.map((milestone) => ({
+                  value: milestone.id,
+                  label: milestone.name,
+                })),
+              ]}
               onValueChange={(value) =>
                 assignMilestone.mutate({
                   projectId,

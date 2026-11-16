@@ -2,7 +2,6 @@ import { createId } from "@paralleldrive/cuid2";
 import {
   type ExtractTablesWithRelations,
   eq,
-  isNull,
   type SQL,
   sql,
 } from "drizzle-orm";
@@ -44,6 +43,9 @@ export type TableRow = {
   createdAt: Date | string;
   updatedAt: Date | string;
   values: Record<string, unknown>;
+  rawValues?: Record<string, string | null>;
+  rawCreatedAt?: string;
+  rawUpdatedAt?: string;
 };
 
 export type QuerySpec = {
@@ -269,53 +271,53 @@ export async function dropTable(
   await logDdl(tx, tableId, statement);
 }
 
-/**
- * Diff physical columns against metadata for every live table and heal the
- * gaps. Idempotent; run at boot and from tests.
- */
+/** Heal retained tables, including trash; empty replacement cannot recover lost rows. */
 export async function reconcile(): Promise<ReconcileReport[]> {
   await ensureSchema();
-
   const tables = await db
     .select({ id: dataTableTable.id })
-    .from(dataTableTable)
-    .where(isNull(dataTableTable.deletedAt));
-  const fields = await db
-    .select({
-      id: dataTableFieldTable.id,
-      tableId: dataTableFieldTable.tableId,
-      type: dataTableFieldTable.type,
-    })
-    .from(dataTableFieldTable);
-
-  const fieldsByTable = new Map<string, StoreField[]>();
-  for (const field of fields) {
-    // Unknown stored types would produce a garbage ALTER; leave them alone.
-    if (!isFieldType(field.type)) continue;
-    const list = fieldsByTable.get(field.tableId) ?? [];
-    list.push({ id: field.id, type: field.type, options: null });
-    fieldsByTable.set(field.tableId, list);
-  }
-
+    .from(dataTableTable);
   const reports: ReconcileReport[] = [];
-  for (const table of tables) {
-    const result = await db.execute(
-      sql`SELECT column_name FROM information_schema.columns
-          WHERE table_schema = ${TABLES_SCHEMA} AND table_name = ${physical(table.id)}`,
-    );
-    const actual = new Set(result.rows.map((row) => row.column_name as string));
-    const tableFields = fieldsByTable.get(table.id) ?? [];
-    const expected = new Set(tableFields.map((field) => column(field.id)));
-
-    const addedColumns = tableFields
-      .map((field) => column(field.id))
-      .filter((col) => !actual.has(col));
-    const droppedColumns = [...actual].filter(
-      (col) => col.startsWith("c_") && !expected.has(col),
-    );
-    if (addedColumns.length === 0 && droppedColumns.length === 0) continue;
-
-    await db.transaction(async (tx) => {
+  for (const candidate of tables) {
+    const report = await db.transaction(async (tx) => {
+      // Same metadata-first writer lock as controllers: discovery can outlive
+      // a purge or field delete, so plan repairs only from locked, fresh rows.
+      const [table] = await tx
+        .select({ id: dataTableTable.id })
+        .from(dataTableTable)
+        .where(eq(dataTableTable.id, candidate.id))
+        .for("update");
+      if (!table) return null;
+      const fields = await tx
+        .select()
+        .from(dataTableFieldTable)
+        .where(eq(dataTableFieldTable.tableId, table.id));
+      const tableFields = fields.flatMap((field) =>
+        isFieldType(field.type) ? [{ ...field, type: field.type }] : [],
+      );
+      const result = await tx.execute(
+        sql`SELECT column_name FROM information_schema.columns
+            WHERE table_schema = ${TABLES_SCHEMA} AND table_name = ${physical(table.id)}`,
+      );
+      const actual = new Set(
+        result.rows.map((row) => row.column_name as string),
+      );
+      // Unknown stored types remain untouched, not mistaken for orphan columns.
+      const expected = new Set(fields.map((field) => column(field.id)));
+      const missingTable = actual.size === 0;
+      const addedColumns = tableFields
+        .map((field) => column(field.id))
+        .filter((col) => !actual.has(col));
+      const droppedColumns = [...actual].filter(
+        (col) => col.startsWith("c_") && !expected.has(col),
+      );
+      if (
+        !missingTable &&
+        addedColumns.length === 0 &&
+        droppedColumns.length === 0
+      )
+        return null;
+      if (missingTable) await createTable(tx, table.id);
       for (const field of tableFields) {
         if (addedColumns.includes(column(field.id))) {
           await addField(tx, {
@@ -325,20 +327,11 @@ export async function reconcile(): Promise<ReconcileReport[]> {
           });
         }
       }
-      for (const col of droppedColumns) {
-        const fieldId = col.slice(2);
-        // The snapshot above raced addField: re-check metadata inside the
-        // heal transaction so a re-added field keeps its column and data.
-        const resurrected = await tx
-          .select({ id: dataTableFieldTable.id })
-          .from(dataTableFieldTable)
-          .where(eq(dataTableFieldTable.id, fieldId))
-          .limit(1);
-        if (resurrected.length > 0) continue;
-        await dropField(tx, { tableId: table.id, fieldId });
-      }
+      for (const col of droppedColumns)
+        await dropField(tx, { tableId: table.id, fieldId: col.slice(2) });
+      return { tableId: table.id, addedColumns, droppedColumns };
     });
-    reports.push({ tableId: table.id, addedColumns, droppedColumns });
+    if (report) reports.push(report);
   }
   return reports;
 }
@@ -391,8 +384,8 @@ const rowSelection = (fields: StoreField[]): SQL[] => {
   ];
   for (const field of fields) {
     const col = colRef(field.id);
-    // numeric arrives as a driver string and date as a TZ-shifted Date; cast
-    // to double precision / text so JSON round-trips as written.
+    // Display compatibility: numeric is a JS number, dates are calendar text.
+    // Archives carry separate native text; these display values are not exact.
     const pg = pgTypeFor(field.type);
     chunks.push(
       pg === "numeric"
@@ -404,6 +397,19 @@ const rowSelection = (fields: StoreField[]): SQL[] => {
   }
   return chunks;
 };
+
+/** Native text output bypasses driver numeric/Date/JSONB decoding for archives. */
+function archiveSelection(fields: StoreField[]): SQL[] {
+  return [
+    ...rowSelection(fields),
+    sql`created_at::text AS raw_created_at`,
+    sql`updated_at::text AS raw_updated_at`,
+    ...fields.map(
+      (field) =>
+        sql`${colRef(field.id)}::text AS ${sql.identifier(`raw_${column(field.id)}`)}`,
+    ),
+  ];
+}
 
 function toRow(
   record: Record<string, unknown>,
@@ -421,6 +427,18 @@ function toRow(
     createdAt: record.created_at as Date,
     updatedAt: record.updated_at as Date,
     values,
+    ...(record.raw_created_at !== undefined
+      ? {
+          rawCreatedAt: record.raw_created_at as string,
+          rawUpdatedAt: record.raw_updated_at as string,
+          rawValues: Object.fromEntries(
+            fields.map((field) => [
+              field.id,
+              record[`raw_${column(field.id)}`] as string | null,
+            ]),
+          ),
+        }
+      : {}),
   };
 }
 
@@ -429,11 +447,12 @@ export async function getRowById(
   tableId: string,
   fields: StoreField[],
   rowId: string,
+  archive = false,
 ): Promise<TableRow | null> {
   // Single-row lookup — the 1000-row scan this replaces was both a ceiling
   // (rows past position 1000 were unreachable) and a perf smell.
   const result = await executor.execute(
-    sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))}
+    sql`SELECT ${sql.join(archive ? archiveSelection(fields) : rowSelection(fields), sql.raw(", "))}
         FROM ${tableRef(tableId)}
         WHERE id = ${rowId}`,
   );
@@ -503,6 +522,21 @@ export async function insertRow(
   return toRow(record, fields);
 }
 
+/** Compare stored values natively; display rounding must not turn an edit into a no-op. */
+export async function cellValueMatches(
+  executor: Executor,
+  tableId: string,
+  rowId: string,
+  field: StoreField,
+  coerced: unknown,
+): Promise<boolean> {
+  const result = await executor.execute(
+    sql`SELECT ${colRef(field.id)} IS NOT DISTINCT FROM ${sqlValue(coerced)}::${sql.raw(pgTypeFor(field.type))} AS same
+        FROM ${tableRef(tableId)} WHERE id = ${rowId}`,
+  );
+  return result.rows[0]?.same === true;
+}
+
 export async function updateCell(
   executor: Executor,
   tableId: string,
@@ -533,6 +567,61 @@ export async function deleteRow(
     sql`DELETE FROM ${tableRef(tableId)} WHERE id = ${rowId} RETURNING id`,
   );
   if (result.rows.length === 0) notFound("Data table row");
+}
+
+/** Unbounded audit/export reader; never reuse the paginated grid reader. */
+export async function allRows(
+  executor: Executor,
+  tableId: string,
+  fields: StoreField[],
+): Promise<TableRow[]> {
+  const result = await executor.execute(
+    sql`SELECT ${sql.join(archiveSelection(fields), sql.raw(", "))}
+        FROM ${tableRef(tableId)} ORDER BY position ASC, created_at ASC, id ASC`,
+  );
+  return result.rows.map((record) => toRow(record, fields));
+}
+
+export type ColumnSnapshot = {
+  id: string;
+  value: unknown;
+  rawValue?: string | null;
+}[];
+
+export async function snapshotColumn(
+  executor: Executor,
+  tableId: string,
+  field: StoreField,
+): Promise<ColumnSnapshot> {
+  return (await allRows(executor, tableId, [field]))
+    .map((row) => ({
+      id: row.id,
+      value: row.values[field.id] ?? null,
+      rawValue: row.rawValues?.[field.id] ?? null,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Restore archived values verbatim, not through today's field validators. */
+export async function restoreColumn(
+  tx: DataTableTx,
+  tableId: string,
+  field: StoreField,
+  snapshot: ColumnSnapshot,
+): Promise<void> {
+  if (snapshot.length === 0) return;
+  // Old display-only snapshots cannot establish exact originals. Fail closed.
+  if (snapshot.some((item) => item.rawValue === undefined))
+    throw new HTTPException(409, {
+      message: "This snapshot predates exact-value archiving",
+    });
+  const raw = snapshot.map(({ id, rawValue }) => ({ id, rawValue }));
+  await tx.execute(
+    sql`UPDATE ${tableRef(tableId)} AS target
+        SET ${colRef(field.id)} = backup."rawValue"::${sql.raw(pgTypeFor(field.type))}
+        FROM jsonb_to_recordset(${JSON.stringify(raw)}::jsonb) AS backup(id text, "rawValue" text)
+        WHERE target.id = backup.id`,
+  );
 }
 
 export async function listRows(

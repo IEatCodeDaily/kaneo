@@ -624,6 +624,13 @@
 			"when": 1794681000000,
 			"tag": "0085_data_table_activity",
 			"breakpoints": true
+		},
+		{
+			"idx": 86,
+			"version": "7",
+			"when": 1794781000000,
+			"tag": "0086_dashboards_feature_flag",
+			"breakpoints": true
 		}
 	]
 }

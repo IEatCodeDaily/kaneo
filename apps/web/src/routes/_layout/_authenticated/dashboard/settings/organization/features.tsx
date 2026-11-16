@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BriefcaseBusiness, FolderGit2, Table2 } from "lucide-react";
+import { BriefcaseBusiness, ChartPie, FolderGit2, Table2 } from "lucide-react";
 import { useState } from "react";
+import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import PageTitle from "@/components/page-title";
 import { AiSettings } from "@/components/settings/ai-settings";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +33,13 @@ function RouteComponent() {
         | undefined
     )?.tablesEnabled,
   );
+  const dashboardsEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { dashboardsEnabled?: boolean })
+        | undefined
+    )?.dashboardsEnabled,
+  );
   const workEnabled = Boolean(
     (
       organization as
@@ -40,7 +48,7 @@ function RouteComponent() {
     )?.workEnabled,
   );
   const [pendingFeature, setPendingFeature] = useState<
-    "repos" | "tables" | "work" | null
+    "repos" | "tables" | "dashboards" | "work" | null
   >(null);
 
   const updateRepos = async (checked: boolean) => {
@@ -72,6 +80,25 @@ function RouteComponent() {
       });
       await refetchOrganization();
       toast.success(checked ? "Tables enabled" : "Tables disabled");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not update feature",
+      );
+    } finally {
+      setPendingFeature(null);
+    }
+  };
+
+  const updateDashboards = async (checked: boolean) => {
+    if (!organization?.id) return;
+    setPendingFeature("dashboards");
+    try {
+      await updateOrganization({
+        organizationId: organization.id,
+        dashboardsEnabled: checked,
+      });
+      await refetchOrganization();
+      toast.success(checked ? "Dashboards enabled" : "Dashboards disabled");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not update feature",
@@ -120,10 +147,7 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Repos</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {" "}
-                    Beta
-                  </span>
+                  <FeatureStageBadge stage="Beta" />
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">
                   Dedicated repository browsing, issue and pull-request
@@ -148,10 +172,7 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Work</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {" "}
-                    Alpha
-                  </span>
+                  <FeatureStageBadge stage="Alpha" />
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">
                   Experimental work management features for your organization.
@@ -174,10 +195,7 @@ function RouteComponent() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Tables</h2>
-                  <span className="rounded-full border border-border/80 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {" "}
-                    Alpha
-                  </span>
+                  <FeatureStageBadge stage="Alpha" />
                 </div>
                 <p className="max-w-xl text-sm text-muted-foreground">
                   Experimental standalone tables with editable text fields and
@@ -191,6 +209,33 @@ function RouteComponent() {
               checked={tablesEnabled}
               disabled={!canManageOrganization() || pendingFeature !== null}
               onCheckedChange={updateTables}
+            />
+          </div>
+          <div className="border-border border-t" />
+          <div className="flex items-start justify-between gap-6 px-4 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="mt-0.5 text-muted-foreground">
+                <ChartPie aria-hidden="true" className="size-4" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold">Dashboards</h2>
+                  <FeatureStageBadge stage="Alpha" />
+                </div>
+                <p className="max-w-xl text-sm text-muted-foreground">
+                  Chart panels built from table data. Requires Tables.
+                </p>
+              </div>
+            </div>
+            <Switch
+              aria-label="Enable Dashboards"
+              checked={dashboardsEnabled}
+              disabled={
+                !canManageOrganization() ||
+                pendingFeature !== null ||
+                !tablesEnabled
+              }
+              onCheckedChange={updateDashboards}
             />
           </div>
         </section>

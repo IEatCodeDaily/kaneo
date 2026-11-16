@@ -48,6 +48,7 @@ import {
   useDashboards,
 } from "@/hooks/dashboards/use-dashboards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useDashboardsEnabled } from "@/hooks/use-dashboards-enabled";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { toast } from "@/lib/toast";
 import type { DashboardPanelSpec } from "@/types/dashboards";
@@ -123,20 +124,14 @@ function DashboardDetailRoute() {
   const { organizationSlug, dashboardId } = Route.useParams();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
-  const tablesEnabled = Boolean(
-    (
-      activeOrganization as
-        | (typeof activeOrganization & { tablesEnabled?: boolean })
-        | undefined
-    )?.tablesEnabled,
-  );
+  const dashboardsEnabled = useDashboardsEnabled();
   const canEdit = useOrganizationPermission().canUpdateBoards();
   const {
     data: dashboard,
     isLoading,
     isError,
     refetch,
-  } = useDashboard(organizationId, dashboardId, tablesEnabled);
+  } = useDashboard(organizationId, dashboardId, dashboardsEnabled);
   const { updateDashboard, deleteDashboard } = useDashboardMutations(
     organizationId,
     dashboardId,
@@ -204,7 +199,7 @@ function DashboardDetailRoute() {
   };
 
   if (!activeOrganization) return null;
-  if (!tablesEnabled) return <PermissionDenied />;
+  if (!dashboardsEnabled) return <PermissionDenied />;
 
   const header = (
     <Layout.Header>

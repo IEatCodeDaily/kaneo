@@ -287,6 +287,9 @@ export default function PanelEditorDialog({
           />
           <div className="grid grid-cols-2 gap-3">
             <Select
+              items={tables
+                .filter((table) => table.deletedAt === null)
+                .map((table) => ({ value: table.id, label: table.name }))}
               value={tableId}
               onValueChange={(value) => selectTable(value ?? "")}
             >
@@ -304,6 +307,10 @@ export default function PanelEditorDialog({
               </SelectContent>
             </Select>
             <Select
+              items={PANEL_TYPES.map(({ value, labelKey }) => ({
+                value,
+                label: t(`navigation:dashboards.${labelKey}`),
+              }))}
               value={type}
               onValueChange={(value) => setType(value as DashboardPanelType)}
             >
@@ -321,6 +328,10 @@ export default function PanelEditorDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Select
+              items={AGGS.map(({ value, labelKey }) => ({
+                value,
+                label: t(`navigation:dashboards.${labelKey}`),
+              }))}
               value={agg}
               onValueChange={(value) => setAgg(value as DashboardAgg)}
             >
@@ -340,6 +351,10 @@ export default function PanelEditorDialog({
               </SelectContent>
             </Select>
             <Select
+              items={numericFields.map((field) => ({
+                value: field.id,
+                label: field.name,
+              }))}
               value={metricFieldId}
               onValueChange={(value) => setMetricFieldId(value ?? "")}
               disabled={agg === "count"}
@@ -360,6 +375,16 @@ export default function PanelEditorDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Select
+              items={[
+                {
+                  value: "none",
+                  label: t("navigation:dashboards.groupByNone"),
+                },
+                ...groupableFields.map((field) => ({
+                  value: field.id,
+                  label: field.name,
+                })),
+              ]}
               value={groupByFieldId}
               onValueChange={(value) => setGroupByFieldId(value ?? "none")}
             >
@@ -379,6 +404,10 @@ export default function PanelEditorDialog({
             </Select>
             {needsBucket ? (
               <Select
+                items={BUCKETS.map(({ value, labelKey }) => ({
+                  value,
+                  label: t(`navigation:dashboards.${labelKey}`),
+                }))}
                 value={bucket}
                 onValueChange={(value) =>
                   setBucket(value as DashboardDateBucket)
@@ -408,6 +437,10 @@ export default function PanelEditorDialog({
               return (
                 <div key={filter.id} className="flex items-center gap-2">
                   <Select
+                    items={fields.map((candidate) => ({
+                      value: candidate.id,
+                      label: candidate.name,
+                    }))}
                     value={filter.fieldId}
                     onValueChange={(value) => {
                       updateFilter(index, {
@@ -431,6 +464,10 @@ export default function PanelEditorDialog({
                     </SelectContent>
                   </Select>
                   <Select
+                    items={opsForField(field).map((op) => ({
+                      value: op,
+                      label: t(`navigation:dashboards.${opLabelKey(op)}`),
+                    }))}
                     value={filter.op}
                     onValueChange={(value) =>
                       updateFilter(index, { op: value as DashboardFilterOp })
@@ -487,6 +524,10 @@ export default function PanelEditorDialog({
             </Button>
           </div>
           <Select
+            items={DASHBOARD_PANEL_SPANS.map((value) => ({
+              value: String(value),
+              label: `${Math.round((value / 24) * 100)}%`,
+            }))}
             value={String(span)}
             onValueChange={(value) =>
               setSpan(Number(value) as DashboardPanelSpan)
@@ -555,7 +596,14 @@ function FilterValueInput({
       );
     }
     return (
-      <Select value={value} onValueChange={(value) => onChange(value ?? "")}>
+      <Select
+        items={choices.map((choice) => ({
+          value: choice.id,
+          label: choice.label,
+        }))}
+        value={value}
+        onValueChange={(value) => onChange(value ?? "")}
+      >
         <SelectTrigger aria-label={t("navigation:dashboards.value")}>
           <SelectValue />
         </SelectTrigger>
@@ -571,7 +619,14 @@ function FilterValueInput({
   }
   if (field?.type === "user") {
     return (
-      <Select value={value} onValueChange={(value) => onChange(value ?? "")}>
+      <Select
+        items={members.map((member) => ({
+          value: member.userId,
+          label: member.user?.name ?? member.user?.email ?? member.userId,
+        }))}
+        value={value}
+        onValueChange={(value) => onChange(value ?? "")}
+      >
         <SelectTrigger aria-label={t("navigation:dashboards.value")}>
           <SelectValue />
         </SelectTrigger>
@@ -587,7 +642,14 @@ function FilterValueInput({
   }
   if (field?.type === "checkbox") {
     return (
-      <Select value={value} onValueChange={(value) => onChange(value ?? "")}>
+      <Select
+        items={["true", "false"].map((entry) => ({
+          value: entry,
+          label: yesNoLabel(entry === "true"),
+        }))}
+        value={value}
+        onValueChange={(value) => onChange(value ?? "")}
+      >
         <SelectTrigger aria-label={t("navigation:dashboards.value")}>
           <SelectValue />
         </SelectTrigger>

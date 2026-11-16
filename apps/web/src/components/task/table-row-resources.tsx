@@ -344,6 +344,7 @@ export function TableRowResources({
                           field={field}
                           members={members}
                           canEdit={editable && group.canEdit}
+                          expanded={true}
                           isEditing={
                             editing?.rowId === row.id &&
                             editing.fieldId === field.id
@@ -374,6 +375,10 @@ export function TableRowResources({
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Select
+              items={tables.map((table) => ({
+                value: table.id,
+                label: table.name,
+              }))}
               value={pickTableId}
               onValueChange={(next) => {
                 setPickTableId(String(next ?? ""));

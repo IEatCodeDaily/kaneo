@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Search, X } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -9,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { getTicketOptions } from "@/fetchers/data-table/data-table";
+import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import type { DataTableField, TicketRef } from "@/types/data-table";
 import { asStringArray } from "./data-table-format";
@@ -40,8 +42,9 @@ function TicketChip({ ticket }: { ticket: TicketRef }) {
   const { organizationSlug } = useContext(TicketLookupContext);
   return (
     <span
+      data-ticket-chip
       title={ticket.title}
-      className="inline-flex h-5 min-w-0 max-w-full items-center gap-1.5 rounded-sm border px-1.5 text-xs"
+      className="inline-flex h-5 min-w-0 max-w-full flex-1 items-center gap-1.5 overflow-hidden rounded-sm border bg-background px-1.5 text-xs"
     >
       <span className="shrink-0 [&_svg]:size-3">
         {getColumnIcon(ticket.status)}
@@ -50,27 +53,45 @@ function TicketChip({ ticket }: { ticket: TicketRef }) {
         to="/dashboard/$organizationSlug/tickets/$ticketKey"
         params={{ organizationSlug, ticketKey: ticket.key }}
         onClick={(event) => event.stopPropagation()}
-        className="shrink-0 whitespace-nowrap font-mono text-muted-foreground hover:text-foreground hover:underline"
+        className="min-w-0 max-w-full shrink truncate whitespace-nowrap font-mono text-muted-foreground hover:text-foreground hover:underline"
       >
         {ticket.key}
       </Link>
-      <span className="truncate">{ticket.title}</span>
+      <span className="min-w-0 flex-1 truncate">{ticket.title}</span>
     </span>
   );
 }
 
-/** Read view: one chip per linked ticket; unresolved ids (deleted) drop out. */
-export function TicketCellView({ value }: { value: unknown }) {
+/** Grid shows one clipped chip plus a count; expanded views wrap all chips. */
+export function TicketCellView({
+  value,
+  expanded = false,
+}: {
+  value: unknown;
+  expanded?: boolean;
+}) {
   const { tickets } = useContext(TicketLookupContext);
   const refs = asStringArray(value)
     .map((id) => tickets[id])
     .filter((ref): ref is TicketRef => Boolean(ref));
   if (refs.length === 0) return null;
   return (
-    <span className="flex w-full min-w-0 items-center gap-1 overflow-hidden">
-      {refs.map((ref) => (
+    <span
+      className={cn(
+        "flex w-full min-w-0 items-center gap-1",
+        expanded
+          ? "flex-wrap [&>[data-ticket-chip]]:flex-none"
+          : "overflow-hidden",
+      )}
+    >
+      {(expanded ? refs : refs.slice(0, 1)).map((ref) => (
         <TicketChip key={ref.id} ticket={ref} />
       ))}
+      {!expanded && refs.length > 1 && (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          +{refs.length - 1}
+        </span>
+      )}
     </span>
   );
 }
@@ -99,6 +120,8 @@ export function TicketCellPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<TicketRef[]>([]);
+  // Retain selected search hits until the row refetch supplies the lookup.
+  const [picked, setPicked] = useState<Record<string, TicketRef>>({});
   const selected = asStringArray(value);
   const multiple = field.options?.multiple !== false;
 
@@ -136,18 +159,23 @@ export function TicketCellPicker({
     );
   };
   const linked = selected
-    .map((id) => tickets[id])
+    .map((id) => tickets[id] ?? picked[id] ?? hits.find((hit) => hit.id === id))
     .filter((ref): ref is TicketRef => Boolean(ref));
   const options = hits.filter((hit) => !selected.includes(hit.id));
 
   const row = (ref: TicketRef, isSelected: boolean) => (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       key={ref.id}
       type="button"
       role="option"
       aria-selected={isSelected}
-      onClick={() => pick(ref.id)}
-      className="group/opt flex h-7 items-center gap-2 rounded-sm px-2 text-left text-ui hover:bg-accent aria-selected:bg-secondary"
+      onClick={() => {
+        setPicked((current) => ({ ...current, [ref.id]: ref }));
+        pick(ref.id);
+      }}
+      className="group/opt min-h-8 shrink-0 justify-start gap-2 px-2 text-left aria-selected:bg-secondary"
     >
       <span className="shrink-0 [&_svg]:size-3">
         {getColumnIcon(ref.status)}
@@ -165,7 +193,7 @@ export function TicketCellPicker({
         ) : (
           <Check className="size-3.5 shrink-0 text-muted-foreground" />
         ))}
-    </button>
+    </Button>
   );
 
   return (
@@ -176,16 +204,25 @@ export function TicketCellPicker({
         if (!next) setQuery("");
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
+      <PopoverTrigger asChild nativeButton={false}>
+        <Button
+          variant="ghost"
+          size="sm"
+          render={<div />}
+          role="button"
+          tabIndex={0}
           aria-label={t("navigation:tables.linkTicket")}
-          className="min-w-0 flex-1 cursor-pointer text-left"
+          className="h-auto min-w-0 flex-1 justify-start whitespace-normal border-0 px-0 text-left sm:h-auto"
         >
           {children}
-        </button>
+        </Button>
       </PopoverTrigger>
-      <PopoverContent inset="panel" className="w-80" align="start">
+      <PopoverContent
+        inset="panel"
+        className="h-auto w-80 max-h-[70dvh] [&_[data-slot=popover-viewport]]:flex [&_[data-slot=popover-viewport]]:h-auto [&_[data-slot=popover-viewport]]:flex-col [&_[data-slot=popover-viewport]]:gap-2"
+        align="start"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="relative mb-1 flex items-center">
           <Search className="absolute left-2 size-3.5 text-muted-foreground" />
           <Input
@@ -193,7 +230,7 @@ export function TicketCellPicker({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => event.stopPropagation()}
-            className="h-7 pl-7 text-ui"
+            className="h-7 text-ui [&_input]:pl-7"
             placeholder={t("navigation:tables.searchTickets")}
             aria-label={t("navigation:tables.searchTickets")}
           />
@@ -201,31 +238,51 @@ export function TicketCellPicker({
         <div
           role="listbox"
           aria-multiselectable={multiple || undefined}
-          className="flex max-h-72 flex-col overflow-y-auto"
+          className="flex min-h-0 max-h-[min(18rem,60dvh)] flex-col gap-1 overflow-y-auto"
         >
           {linked.map((ref) => row(ref, true))}
+          {selected
+            .filter((id) => !linked.some((ref) => ref.id === id))
+            .map((id) => (
+              <Button
+                key={id}
+                variant="ghost"
+                size="sm"
+                role="option"
+                aria-selected
+                className="min-h-8 shrink-0 justify-start gap-2 px-2"
+                onClick={() =>
+                  onCommit(selected.filter((current) => current !== id))
+                }
+              >
+                {t("navigation:tables.unknownValue")}
+                <X className="size-3.5" />
+              </Button>
+            ))}
 
           {options.length > 0 && linked.length > 0 && (
             <hr className="my-1 border-border" />
           )}
           {options.map((ref) => row(ref, false))}
         </div>
-        {linked.length === 0 && options.length === 0 && (
+        {selected.length === 0 && options.length === 0 && (
           <p className="px-2 py-1 text-xs text-muted-foreground">
             {t("navigation:tables.noTicketsFound")}
           </p>
         )}
-        {!multiple && linked.length > 0 && (
-          <button
+        {!multiple && selected.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             onClick={() => {
               onCommit([]);
               setOpen(false);
             }}
-            className="mt-1 flex h-7 w-full items-center rounded-sm border-t px-2 text-left text-ui text-muted-foreground hover:bg-accent"
+            className="min-h-8 w-full shrink-0 justify-start border-t px-2 text-left text-muted-foreground"
           >
             {t("navigation:tables.clearTicket")}
-          </button>
+          </Button>
         )}
       </PopoverContent>
     </Popover>
