@@ -104,12 +104,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   createDataTableRow,
   deleteDataTableRow,
   getTableRowPage,
@@ -133,6 +127,7 @@ import { ColumnResizeHandle, useColumnWidths } from "./column-resize";
 import { FieldTypeConfirmation } from "./field-type-confirmation";
 
 type Props = {
+  view?: "grid" | "history";
   table: DataTable;
   organizationId: string;
   organizationSlug: string;
@@ -507,6 +502,7 @@ function BulkSetField({
 }
 
 export function DataTableGrid({
+  view = "grid",
   table,
   organizationId,
   organizationSlug,
@@ -605,7 +601,6 @@ export function DataTableGrid({
   } | null>(null);
   // Row sheet opens only through the gutter or Space; prev/next walk the view.
   const [sheetRowId, setSheetRowId] = useState<string | null>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
   // Active cell (NocoDB): a click selects the cell, a second click or Enter
   // edits it, arrows move it. Keyed by ids so it survives sort/filter.
   const [active, setActive] = useState<{
@@ -1098,6 +1093,22 @@ export function DataTableGrid({
     fields.reduce((sum, field) => sum + columnWidth(field), 0) +
     trailing;
 
+  if (view === "history")
+    return (
+      <TicketLookupContext.Provider value={ticketLookup}>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-3xl p-4">
+            <TableActivityList
+              table={table}
+              fields={allFields}
+              members={members}
+              canEdit={canEdit}
+            />
+          </div>
+        </div>
+      </TicketLookupContext.Provider>
+    );
+
   return (
     <TicketLookupContext.Provider value={ticketLookup}>
       <Layout.Toolbar>
@@ -1145,7 +1156,6 @@ export function DataTableGrid({
           onExport={exportCsv}
           onRename={onRename}
           onDelete={onDelete}
-          onShowActivity={() => setActivityOpen(true)}
         />
       </Layout.Toolbar>
       <input
@@ -1929,22 +1939,6 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
-        <SheetContent side="right" size="sm">
-          <SheetHeader>
-            <SheetTitle>{t("navigation:tables.tableActivity")}</SheetTitle>
-          </SheetHeader>
-          {activityOpen && (
-            <TableActivityList
-              table={table}
-              fields={allFields}
-              members={members}
-              canEdit={canEdit}
-            />
-          )}
-        </SheetContent>
-      </Sheet>
     </TicketLookupContext.Provider>
   );
 }

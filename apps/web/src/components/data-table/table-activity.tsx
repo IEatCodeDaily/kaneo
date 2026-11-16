@@ -44,11 +44,8 @@ import { TicketLookupContext } from "./ticket-cell";
 const CommentComposer = lazy(
   () => import("@/components/activity/comment-composer"),
 );
-const MarkdownRenderer = lazy(() =>
-  import("@/components/public-board/markdown-renderer").then((m) => ({
-    default: m.MarkdownRenderer,
-  })),
-);
+// The ticket drawer's comment card, so both threads read the same.
+const CommentCard = lazy(() => import("@/components/activity/comment-card"));
 const PAGE_SIZE = 100;
 const text = (value: unknown) =>
   typeof value === "string" && value !== "" ? value : null;
@@ -190,6 +187,25 @@ export function TableActivityList({
             archivedField(data.field) ??
             archivedField(data.afterField) ??
             fieldsById.get(item.fieldId ?? "");
+          if (item.type === "comment_added")
+            return (
+              <li key={item.id} className="min-w-0">
+                <Suspense fallback={null}>
+                  <CommentCard
+                    commentId={item.id}
+                    taskId=""
+                    content={text(data.content) ?? ""}
+                    user={{
+                      id: item.userId ?? undefined,
+                      name: item.userName ?? t("navigation:tables.someone"),
+                      image: item.userImage,
+                    }}
+                    createdAt={item.createdAt}
+                    editable={false}
+                  />
+                </Suspense>
+              </li>
+            );
           return (
             <li
               key={item.id}
@@ -211,11 +227,6 @@ export function TableActivityList({
                     {formatRelativeTime(item.createdAt)}
                   </time>
                 </p>
-                {item.type === "comment_added" && (
-                  <Suspense fallback={null}>
-                    <MarkdownRenderer content={text(data.content) ?? ""} />
-                  </Suspense>
-                )}
                 {item.type === "cell_updated" && (
                   <TicketLookupContext.Provider
                     value={{
@@ -246,36 +257,34 @@ export function TableActivityList({
                     {typeLabel(t, data.fromType)} → {typeLabel(t, data.toType)}
                   </p>
                 )}
-                {item.type !== "comment_added" && (
-                  <details className="min-w-0 text-xs">
-                    <summary className="cursor-pointer text-muted-foreground">
-                      {t("navigation:tables.activityDetails")}
+                <details className="min-w-0 text-xs">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    {t("navigation:tables.activityDetails")}
+                  </summary>
+                  <TicketLookupContext.Provider
+                    value={{
+                      ...lookup,
+                      tickets: {
+                        ...lookup.tickets,
+                        ...((data.tickets as typeof lookup.tickets) ?? {}),
+                      },
+                    }}
+                  >
+                    <SnapshotDetails data={data} members={members} />
+                  </TicketLookupContext.Provider>
+                  <details>
+                    <summary className="cursor-pointer text-faint-foreground">
+                      {t("navigation:tables.rawEventData")}
                     </summary>
-                    <TicketLookupContext.Provider
-                      value={{
-                        ...lookup,
-                        tickets: {
-                          ...lookup.tickets,
-                          ...((data.tickets as typeof lookup.tickets) ?? {}),
-                        },
-                      }}
-                    >
-                      <SnapshotDetails data={data} members={members} />
-                    </TicketLookupContext.Provider>
-                    <details>
-                      <summary className="cursor-pointer text-faint-foreground">
-                        {t("navigation:tables.rawEventData")}
-                      </summary>
-                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-secondary p-2">
-                        {JSON.stringify(
-                          { rowId: item.rowId, fieldId: item.fieldId, ...data },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </details>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-secondary p-2">
+                      {JSON.stringify(
+                        { rowId: item.rowId, fieldId: item.fieldId, ...data },
+                        null,
+                        2,
+                      )}
+                    </pre>
                   </details>
-                )}
+                </details>
                 {canEdit &&
                   item.type === "field_updated" &&
                   Boolean(data.fromType && data.toType && data.beforeField) && (

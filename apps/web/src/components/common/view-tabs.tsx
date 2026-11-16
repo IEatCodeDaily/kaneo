@@ -98,6 +98,9 @@ export function ViewTabs({
             </>
           );
           const shared = {
+            // The visible label collapses to an icon below 2xl; keep the name.
+            "aria-label": item.label,
+            title: item.label,
             "aria-selected": isActive,
             className: classes,
             "data-slot": "tab",

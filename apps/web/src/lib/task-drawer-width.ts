@@ -28,8 +28,9 @@ export function maxTaskDrawerWidth(viewportWidth: number): number {
 export function clampTaskDrawerWidth(
   width: number,
   viewportWidth: number,
+  fallback = TASK_DRAWER_DEFAULT_WIDTH,
 ): number {
-  if (!Number.isFinite(width)) return TASK_DRAWER_DEFAULT_WIDTH;
+  if (!Number.isFinite(width)) return fallback;
   return Math.min(
     Math.max(Math.round(width), TASK_DRAWER_MIN_WIDTH),
     maxTaskDrawerWidth(viewportWidth),
@@ -46,14 +47,14 @@ export function clampTaskDrawerWidth(
 export function parseStoredTaskDrawerWidth(
   raw: string | null | undefined,
   viewportWidth: number,
+  defaultWidth = TASK_DRAWER_DEFAULT_WIDTH,
 ): number {
-  if (!raw)
-    return clampTaskDrawerWidth(TASK_DRAWER_DEFAULT_WIDTH, viewportWidth);
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed)) {
-    return clampTaskDrawerWidth(TASK_DRAWER_DEFAULT_WIDTH, viewportWidth);
-  }
-  return clampTaskDrawerWidth(parsed, viewportWidth);
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  return clampTaskDrawerWidth(
+    Number.isFinite(parsed) ? parsed : defaultWidth,
+    viewportWidth,
+    defaultWidth,
+  );
 }
 
 /**

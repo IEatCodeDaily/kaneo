@@ -2,7 +2,6 @@ import {
   ArrowUpDown,
   Download,
   Eye,
-  History,
   ListFilter,
   MoreHorizontal,
   Pencil,
@@ -121,7 +120,6 @@ type Props = {
   onExport: () => void;
   onRename: () => void;
   onDelete: () => void;
-  onShowActivity: () => void;
 };
 
 export function DataTableToolbar(props: Props) {
@@ -435,13 +433,6 @@ export function DataTableToolbar(props: Props) {
             >
               {t("navigation:tables.fieldSummaries")}
             </DropdownMenuCheckboxItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={props.onShowActivity}>
-              <History className="size-3.5" />
-              {t("navigation:tables.tableActivity")}
-            </DropdownMenuItem>
           </DropdownMenuGroup>
           {canEdit && (
             <>

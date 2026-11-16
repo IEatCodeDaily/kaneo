@@ -38,6 +38,8 @@ type CommentCardProps = {
   editHistory?: Array<{ content: string; editedAt: string; userId: string }>;
   externalSource?: string | null;
   externalUrl?: string | null;
+  /** Off for threads without edit/delete endpoints (table comments). */
+  editable?: boolean;
 };
 
 export default function CommentCard({
@@ -49,6 +51,7 @@ export default function CommentCard({
   editHistory = [],
   externalSource,
   externalUrl,
+  editable = true,
 }: CommentCardProps) {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
@@ -59,7 +62,7 @@ export default function CommentCard({
     useDeleteComment(taskId);
   const queryClient = useQueryClient();
 
-  const canEdit = currentUser?.id === user?.id;
+  const canEdit = editable && currentUser?.id === user?.id;
   const isFromGitHub = externalSource === "github";
   const githubProfileUrl =
     isFromGitHub && user?.name ? `https://github.com/${user.name}` : null;

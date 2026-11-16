@@ -21,12 +21,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getRowTickets } from "@/fetchers/data-table/row-links";
+import { useDrawerWidth } from "@/hooks/use-drawer-width";
 import { getColumnIcon } from "@/lib/column";
 import type {
   DataTable,
   DataTableField,
   DataTableRow,
 } from "@/types/data-table";
+
+/** Matches the sheet's `sm` size, so the first drag starts where it is. */
+const ROW_DRAWER_DEFAULT_WIDTH = 480;
 
 /**
  * Row drawer, laid out like the ticket drawer but fields only: a top bar
@@ -80,6 +84,10 @@ export function RowSheet({
     fieldId: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const { width, startResize } = useDrawerWidth(
+    "kaneo:row-drawer-width",
+    ROW_DRAWER_DEFAULT_WIDTH,
+  );
 
   const tickets = useQuery({
     queryKey: ["row-tickets", table.organizationId, table.id, row?.id],
@@ -137,7 +145,19 @@ export function RowSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" size="sm" showCloseButton={false}>
+      <SheetContent
+        side="right"
+        size="sm"
+        showCloseButton={false}
+        // An explicit width wins over the size class once the user has dragged.
+        style={width ? { width: `${width}px`, maxWidth: "100vw" } : undefined}
+      >
+        <div
+          aria-hidden
+          data-testid="row-drawer-resize-handle"
+          onPointerDown={startResize}
+          className="absolute inset-y-0 left-0 z-50 w-1.5 cursor-col-resize hover:bg-primary/40 active:bg-primary/60"
+        />
         {/* One bar, one close: the primitive's floating close used to sit on
             top of the copy button. */}
         <SheetHeader>

@@ -416,6 +416,19 @@ const TABLE_STATES = [
   ],
   ["table-sort", async (p) => p.getByRole("button", { name: /^Sort/ }).click()],
   [
+    // History is a view tab beside Grid, like the board's List/Board tabs.
+    "table-history",
+    async (p) => {
+      await p.getByRole("tab", { name: "History", exact: true }).click();
+      await p
+        .getByText(/created row/)
+        .first()
+        .waitFor();
+      if (!p.url().includes("view=history"))
+        throw new Error("History view is not in the URL");
+    },
+  ],
+  [
     "table-more",
     async (p) => p.getByRole("button", { name: "Table options" }).click(),
   ],
@@ -630,12 +643,7 @@ const TABLE_STATES = [
       if (!(await changed).ok()) throw new Error("type change failed");
       await p.getByRole("alertdialog").waitFor({ state: "hidden" });
       await p.keyboard.press("Escape");
-      await p
-        .getByRole("button", { name: "Table options", exact: true })
-        .click();
-      await p
-        .getByRole("menuitem", { name: "Table activity", exact: true })
-        .click();
+      await p.getByRole("tab", { name: "History", exact: true }).click();
       const restore = p.getByRole("button", {
         name: "Restore original field",
         exact: true,
@@ -650,7 +658,7 @@ const TABLE_STATES = [
         .click();
       if (!(await reverted).ok()) throw new Error("type restoration failed");
       await p.getByRole("alertdialog").waitFor({ state: "hidden" });
-      await p.keyboard.press("Escape");
+      await p.getByRole("tab", { name: "Grid", exact: true }).click();
       await p
         .getByRole("gridcell", { name: "Stage, row 1", exact: true })
         .getByText("Mixing", { exact: true })
@@ -770,14 +778,17 @@ if (pages.table) {
         ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
-    if (!m.heads.some((x) => x.startsWith("Batch")))
-      fails.push("field names missing from header");
     if (m.header_h !== 44) fails.push(`header ${m.header_h}px, want 44`);
-    if (m.toolbar_font !== "13px")
-      fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
-    if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
-    if (name !== "table-noresult" && m.row_h !== 32)
-      fails.push(`row ${m.row_h}px, want 32`);
+    // History replaces the grid, so the grid geometry does not apply to it.
+    if (name !== "table-history") {
+      if (!m.heads.some((x) => x.startsWith("Batch")))
+        fails.push("field names missing from header");
+      if (m.toolbar_font !== "13px")
+        fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
+      if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
+      if (name !== "table-noresult" && m.row_h !== 32)
+        fails.push(`row ${m.row_h}px, want 32`);
+    }
     if (name === "table-select" && !m.bulk)
       fails.push("bulk bar missing after row select");
     if (name === "table-active-cell") {
@@ -1184,22 +1195,6 @@ const OVERLAY_STATES = [
     },
   ],
   [
-    "sheet-activity--desktop-dark",
-    "dark",
-    DESKTOP,
-    async (p) => {
-      await p.getByRole("button", { name: "Table options" }).click();
-      await p.getByRole("menuitem", { name: "Table activity" }).click();
-    },
-    {
-      bars_opaque: true,
-      header_inset: 16,
-      body_left: 16,
-      width: 480,
-      header_h: 44,
-    },
-  ],
-  [
     "sheet-row--phone-dark",
     "dark",
     { width: 390, height: 844 },
@@ -1285,6 +1280,25 @@ if (pages.table) {
       });
       if (layout.overflow)
         fails.push("row drawer content spills outside its panel");
+      if (name === "sheet-row--desktop-dark") {
+        // Dragging the left edge widens the drawer, like the ticket drawer.
+        const panel = page.locator('[data-slot="sheet-popup"]');
+        const before = (await panel.boundingBox())?.width ?? 0;
+        const handle = await page
+          .getByTestId("row-drawer-resize-handle")
+          .boundingBox();
+        if (!handle) fails.push("row drawer has no resize handle");
+        else {
+          await page.mouse.move(handle.x + 2, handle.y + 200);
+          await page.mouse.down();
+          await page.mouse.move(handle.x - 200, handle.y + 200, { steps: 5 });
+          await page.mouse.up();
+          const after = (await panel.boundingBox())?.width ?? 0;
+          if (after < before + 150)
+            fails.push(`row drawer did not resize (${before} -> ${after})`);
+          await page.evaluate(() => localStorage.clear());
+        }
+      }
       if (
         !(await page
           .getByRole("button", { name: "Submit comment", exact: true })

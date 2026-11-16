@@ -41,8 +41,8 @@ vi.mock("@/components/activity/comment-editor", () => ({
     />
   ),
 }));
-vi.mock("@/components/public-board/markdown-renderer", () => ({
-  MarkdownRenderer: ({ content }: { content: string }) => <div>{content}</div>,
+vi.mock("@/components/activity/comment-card", () => ({
+  default: ({ content }: { content: string }) => <div>{content}</div>,
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 const table = {
