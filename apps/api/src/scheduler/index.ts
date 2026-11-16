@@ -6,11 +6,34 @@ import { syncStaleRepos } from "./sync-stale-repos";
 
 const jobs: Cron[] = [];
 
+/**
+ * A job that throws (e.g. a database connection timeout) must log and wait for
+ * its next tick. Without `catch`, croner rethrows from its timer and the
+ * unhandled rejection terminates the whole API process.
+ */
+export function logJobFailure(error: unknown, job: Cron): void {
+  console.error(`[Scheduler] ${job.name ?? "job"} failed`, error);
+}
+
+export function scheduleJob(
+  pattern: string,
+  name: string,
+  run: () => Promise<void>,
+): Cron {
+  const job = new Cron(pattern, { name, catch: logJobFailure }, run);
+  jobs.push(job);
+  return job;
+}
+
 export function initializeScheduler(): void {
-  jobs.push(new Cron("*/5 * * * *", checkDueDateReminders));
-  jobs.push(new Cron("*/5 * * * *", checkBoardWebhookReminders));
-  jobs.push(new Cron("*/15 * * * *", syncStaleRepos));
-  jobs.push(new Cron("0 * * * *", purgeExpiredTrashedTasks));
+  scheduleJob("*/5 * * * *", "due-date-reminders", checkDueDateReminders);
+  scheduleJob(
+    "*/5 * * * *",
+    "board-webhook-reminders",
+    checkBoardWebhookReminders,
+  );
+  scheduleJob("*/15 * * * *", "stale-repo-resync", syncStaleRepos);
+  scheduleJob("0 * * * *", "trash-purge", purgeExpiredTrashedTasks);
   console.log(
     "⏰ Scheduler started (due date + board webhook reminders every 5m, stale repo resync every 15m, trash purge hourly)",
   );
