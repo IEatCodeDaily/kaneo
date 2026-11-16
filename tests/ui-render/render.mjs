@@ -441,6 +441,19 @@ const TABLE_STATES = [
     async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
   ],
   [
+    // Search matches what cells show: a select label, not only text fields.
+    "table-search",
+    async (p) => {
+      await p.getByLabel("Search rows").fill("curing");
+      await p.waitForTimeout(300);
+      const rows = await p.locator('[role="row"][aria-rowindex]').count();
+      if (rows !== 1)
+        throw new Error(
+          `search for a select label matched ${rows} rows, want 1`,
+        );
+    },
+  ],
+  [
     "table-select",
     async (p) => {
       await p.getByRole("checkbox", { name: "Select row 1" }).click();
@@ -783,8 +796,9 @@ if (pages.table) {
     if (name !== "table-history") {
       if (!m.heads.some((x) => x.startsWith("Batch")))
         fails.push("field names missing from header");
-      if (m.toolbar_font !== "13px")
-        fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
+      // Board toolbar buttons are 12px; the table matches them.
+      if (m.toolbar_font !== "12px")
+        fails.push(`toolbar font ${m.toolbar_font}, want 12px`);
       if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
       if (name !== "table-noresult" && m.row_h !== 32)
         fails.push(`row ${m.row_h}px, want 32`);

@@ -26,7 +26,11 @@ import {
   FieldTypeIcon,
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
-import { csvParse, csvSerialize } from "@/components/data-table/data-table-csv";
+import {
+  csvParse,
+  csvSerialize,
+  rowMatchesSearch,
+} from "@/components/data-table/data-table-csv";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
 import {
   type ColumnSort,
@@ -46,7 +50,6 @@ import {
   readDensity,
   readHiddenFields,
   rowMatchesFilters,
-  rowMatchesSearch,
   type SummaryFn,
   sortedFields,
   sortedRows,
@@ -533,6 +536,26 @@ export function DataTableGrid({
   );
 
   const allFields = useMemo(() => sortedFields(table.fields), [table.fields]);
+  const choicesById = useMemo(() => {
+    const map = new Map<string, SelectChoice>();
+    for (const field of allFields) {
+      for (const choice of field.options?.choices ?? []) {
+        map.set(choice.id, choice);
+      }
+    }
+    return map;
+  }, [allFields]);
+  // id -> display name, for search and CSV export (cells show names, store ids).
+  const memberNames = useMemo(
+    () =>
+      new Map(
+        memberRows.map((m) => [
+          m.userId || m.id,
+          m.user.name || m.user.email || "",
+        ]),
+      ),
+    [memberRows],
+  );
   const fieldsById = useMemo(
     () => new Map(allFields.map((field) => [field.id, field])),
     [allFields],
@@ -624,8 +647,14 @@ export function DataTableGrid({
       sortRows(
         allRows.filter(
           (row) =>
-            rowMatchesSearch(row, allFields, search) &&
-            rowMatchesFilters(row, fieldsById, activeFilters),
+            rowMatchesSearch(
+              row,
+              allFields,
+              search,
+              choicesById,
+              memberNames,
+              ticketLookup.tickets,
+            ) && rowMatchesFilters(row, fieldsById, activeFilters),
         ),
         allFields,
         sort,
@@ -639,6 +668,8 @@ export function DataTableGrid({
       activeFilters,
       sort,
       ticketLookup.tickets,
+      choicesById,
+      memberNames,
     ],
   );
 
@@ -672,15 +703,6 @@ export function DataTableGrid({
 
   // Bucket keys are raw ids (choice ids, member ids); headers show resolved
   // labels and groups sort by them.
-  const choicesById = useMemo(() => {
-    const map = new Map<string, SelectChoice>();
-    for (const field of allFields) {
-      for (const choice of field.options?.choices ?? []) {
-        map.set(choice.id, choice);
-      }
-    }
-    return map;
-  }, [allFields]);
 
   const groupLabel = useCallback(
     (field: DataTableField, key: string): string => {
@@ -899,7 +921,7 @@ export function DataTableGrid({
       allFields,
       visibleRows,
       choicesById,
-      memberByName,
+      memberNames,
       ticketLookup.tickets,
     );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));

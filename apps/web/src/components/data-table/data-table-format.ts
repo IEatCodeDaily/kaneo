@@ -247,27 +247,6 @@ export function parseJsonValue(raw: string) {
 export type SortDir = "asc" | "desc";
 export type ColumnSort = { fieldId: string; dir: SortDir };
 
-const TEXT_SEARCH_TYPES: DataTableFieldType[] = [
-  "text",
-  "longtext",
-  "url",
-  "email",
-];
-
-export function rowMatchesSearch(
-  row: DataTableRow,
-  fields: DataTableField[],
-  query: string,
-): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  return fields.some(
-    (field) =>
-      TEXT_SEARCH_TYPES.includes(field.type) &&
-      asString(row.values[field.id]).toLowerCase().includes(needle),
-  );
-}
-
 export type DataTableFilter = (
   | { fieldId: string; contains: string }
   | { fieldId: string; min: string; max: string }
