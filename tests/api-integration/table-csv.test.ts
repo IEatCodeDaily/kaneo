@@ -148,6 +148,7 @@ describe("CSV: server-authoritative batches and full exports", () => {
       "=1+1",
       "+SUM(A1)",
       "-9",
+      "-2+3",
       "@user",
       "\tformula",
       "\rformula",
@@ -167,7 +168,8 @@ describe("CSV: server-authoritative batches and full exports", () => {
     const parsed = parseCsv(exported);
     expect(parsed[0]?.cells[1]).toBe("'=header");
     expect(parsed.slice(1).map((r) => r.cells[0])).toEqual(
-      values.map((v) => (v === "safe" ? v : `'${v}`)),
+      // Plain numbers like -9 stay machine-readable; only formula text is escaped.
+      values.map((v) => (v === "safe" || v === "-9" ? v : `'${v}`)),
     );
     expect((await csv(t.id, exported, [t.primary, extra.id])).created).toBe(
       values.length,

@@ -327,7 +327,11 @@ export async function queryRows(
   if (csv) {
     // ponytail: materialized export in memory, stream the same query when exports outgrow API memory.
     const quote = (text: string) => {
-      const s = /^[=+\-@\t\r']/.test(text) ? `'${text}` : text;
+      // A plain number (e.g. -5) is never a formula; keep it machine-readable.
+      const formula =
+        /^[=+\-@\t\r']/.test(text) &&
+        !(text.trim() !== "" && Number.isFinite(Number(text)));
+      const s = formula ? `'${text}` : text;
       return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     return {
