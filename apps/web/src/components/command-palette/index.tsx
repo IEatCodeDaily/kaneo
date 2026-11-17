@@ -9,6 +9,7 @@ import {
 } from "@/components/search-command-menu";
 import CreateOrganizationModal from "@/components/shared/modals/create-organization-modal";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandCollection,
@@ -27,7 +28,11 @@ import {
 } from "@/components/ui/command";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { shortcuts } from "@/constants/shortcuts";
+import useGetBoards from "@/hooks/queries/board/use-get-boards";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { useGetActiveOrganizationMembers } from "@/hooks/queries/organization-members/use-get-active-organization-members";
 import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useCommandPaletteStore } from "@/store/command-palette";
@@ -35,6 +40,12 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 import { openKeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
 import CreateBoardModal from "../shared/modals/create-board-modal";
 import { getOrganizationMembersRoute } from "./members-route";
+import {
+  Highlight,
+  SearchHelp,
+  SearchShortcut,
+  searchSnippet,
+} from "./search-help";
 
 type PaletteActionItem = {
   value: string;
@@ -82,6 +93,8 @@ function CommandPalette() {
     groups: searchGroups,
     openResult,
     searchEnabled,
+    isFetching,
+    error,
   } = useSearchResults(query);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
@@ -90,6 +103,51 @@ function CommandPalette() {
   const { boardId: resolvedRouteBoardId } = useBoardSlug();
   const boardIdFromRoute = resolvedRouteBoardId || undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");
+  const prefix = query.match(
+    /(?:^|\s)(status|assignee|board|label|is|priority|type):([^\s]*)$/i,
+  );
+  const filterName = prefix?.[1]?.toLowerCase();
+  const { data: boards } = useGetBoards({
+    organizationId:
+      open && filterName === "board" ? (organization?.id ?? "") : "",
+  });
+  const { data: columns } = useGetColumns(
+    open && filterName === "status" ? (boardIdFromRoute ?? "") : "",
+  );
+  const { data: members } = useGetActiveOrganizationMembers(
+    open && filterName === "assignee" ? (organization?.id ?? "") : "",
+  );
+  const { data: labels } = useGetLabelsByOrganization(
+    open && filterName === "label" ? (organization?.id ?? "") : "",
+  );
+  const filterValues: Record<string, string[]> = {
+    label: (labels ?? []).map((label) => label.name),
+    board: (boards ?? [])
+      .map((board) => board.slug)
+      .filter((slug): slug is string => !!slug),
+    status: (columns ?? []).map((column) => column.slug),
+    assignee: [
+      "me",
+      ...(!Array.isArray(members) && members
+        ? members.members.map((member) => member.user.name)
+        : []),
+    ],
+    is: ["open", "closed", "done"],
+    priority: ["urgent", "high", "medium", "low", "no-priority"],
+    type: ["ticket", "board", "repo", "issue", "pr", "comment"],
+  };
+  const completions = (filterValues[filterName ?? ""] ?? [])
+    .filter((value) =>
+      value.toLowerCase().startsWith(prefix?.[2]?.toLowerCase() ?? ""),
+    )
+    .slice(0, 8);
+  const completeFilter = (value: string) =>
+    setQuery(
+      query.replace(
+        /[^\s]+$/,
+        `${filterName}:${value.includes(" ") ? JSON.stringify(value) : value} `,
+      ),
+    );
 
   useRegisterShortcuts({
     shortcuts: {
@@ -245,10 +303,18 @@ function CommandPalette() {
     return trimmed ? [...results, ...filteredActions] : filteredActions;
   }, [actionGroups, query, searchGroups]);
 
-  const emptyMessage =
-    !query.trim() || searchEnabled
-      ? t("navigation:commandPalette.empty")
-      : t("navigation:search.minCharsHint");
+  const emptyMessage = error
+    ? t("navigation:search.failed", {
+        defaultValue: "Search failed. Try again.",
+      })
+    : isFetching
+      ? t("navigation:search.loading", { defaultValue: "Searching…" })
+      : searchEnabled
+        ? t("navigation:search.noResults", {
+            query,
+            defaultValue: `No results for “${query}”`,
+          })
+        : t("navigation:search.minCharsHint");
 
   return (
     <>
@@ -263,11 +329,36 @@ function CommandPalette() {
             <CommandInput
               placeholder={t("navigation:search.inputPlaceholder")}
             />
-            <CommandPanel>
+            <CommandPanel className="overflow-y-auto">
+              {!query.trim() && <SearchHelp />}
+              {completions.length > 0 && (
+                <div
+                  className="flex flex-wrap gap-1 border-b p-2"
+                  data-testid="filter-suggestions"
+                >
+                  {completions.map((value) => (
+                    <Button
+                      key={value}
+                      size="xs"
+                      variant="secondary"
+                      onClick={() => completeFilter(value)}
+                    >
+                      {filterName}:{value}
+                    </Button>
+                  ))}
+                </div>
+              )}
               <CommandEmpty>
                 <p className="text-center text-muted-foreground text-sm">
                   {emptyMessage}
                 </p>
+                {searchEnabled && !isFetching && !error && (
+                  <p className="mt-2 text-center text-muted-foreground text-xs">
+                    {t("navigation:search.dropFilter", {
+                      defaultValue: "Try fewer words or drop a filter.",
+                    })}
+                  </p>
+                )}
               </CommandEmpty>
               <CommandList>
                 {(group: PaletteGroup, groupIndex: number) => (
@@ -286,7 +377,7 @@ function CommandPalette() {
                                 onClick={() =>
                                   runCommand(() => openResult(result))
                                 }
-                                className="flex items-start gap-3 py-2.5"
+                                className="flex items-start gap-3 py-2"
                                 aria-label={`${result.type}: ${result.title}`}
                               >
                                 <Icon
@@ -295,11 +386,25 @@ function CommandPalette() {
                                 />
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate font-medium text-sm">
-                                    {result.title}
+                                    <Highlight
+                                      text={result.title}
+                                      query={query}
+                                    />
                                   </div>
-                                  {result.description && (
-                                    <div className="mt-1 truncate text-muted-foreground text-xs">
-                                      {result.description}
+                                  {(result.content || result.description) && (
+                                    <div
+                                      className="mt-1 line-clamp-2 text-muted-foreground text-xs"
+                                      data-testid="search-snippet"
+                                    >
+                                      <Highlight
+                                        text={searchSnippet(
+                                          result.content ||
+                                            result.description ||
+                                            "",
+                                          query,
+                                        )}
+                                        query={query}
+                                      />
                                     </div>
                                   )}
                                 </div>
@@ -333,7 +438,12 @@ function CommandPalette() {
               </CommandList>
             </CommandPanel>
             <CommandFooter>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1">
+                  <SearchShortcut />
+                  <Kbd>/</Kbd>
+                  <span>{t("navigation:commandPalette.search")}</span>
+                </span>
                 <div className="flex items-center gap-2">
                   <KbdGroup>
                     <Kbd>

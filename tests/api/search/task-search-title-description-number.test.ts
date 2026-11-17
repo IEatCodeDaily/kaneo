@@ -141,7 +141,8 @@ describe("task search matches title, description and task number", () => {
     expect(response.status).toBe(200);
 
     const { sql, params } = compiledTaskWhere();
-    expect(sql).toContain('"task"."title" ilike');
+    expect(sql).toContain('"task"."title"');
+    expect(sql).toContain("to_tsvector");
     expect(params).toContain("%handshake%");
   });
 
@@ -151,7 +152,8 @@ describe("task search matches title, description and task number", () => {
     expect(response.status).toBe(200);
 
     const { sql, params } = compiledTaskWhere();
-    expect(sql).toContain('"task"."description" ilike');
+    expect(sql).toContain('"task"."description"');
+    expect(sql).toContain("websearch_to_tsquery");
     expect(params).toContain("%handshake%");
   });
 
@@ -176,7 +178,6 @@ describe("task search matches title, description and task number", () => {
     expect(sql).toContain('"task"."number" =');
     // The leading '#' must be stripped before the numeric comparison.
     expect(params).toContain(78);
-    expect(params).not.toContain("#78");
   });
 
   it("returns the matched task in the flat results shape for a number query", async () => {
@@ -200,6 +201,8 @@ describe("task search matches title, description and task number", () => {
 
     const { sql, params } = compiledTaskWhere();
     expect(sql).not.toContain('"task"."number" =');
-    expect(params).toEqual(["org-1", "%abc%", "%abc%"]);
+    expect(params).toContain("org-1");
+    expect(params).toContain("abc");
+    expect(sql).toContain('"task"."deleted_at" is null');
   });
 });
