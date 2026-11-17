@@ -331,14 +331,23 @@ export function TableRowResources({
                   .map((field) => (
                     <div
                       key={field.id}
-                      className="flex min-h-7 items-center gap-2 rounded-md pr-2 pl-7 hover:bg-accent/40"
+                      className="flex min-h-7 items-start gap-2 rounded-md py-1 pr-2 pl-7 hover:bg-accent/40"
                     >
-                      <span className="flex w-28 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      {/* Top-aligned with the value's first line: matched
+                          18px line box (text-ui), not vertical centering,
+                          which dragged the label to a multi-line middle. */}
+                      <span
+                        className="flex w-28 shrink-0 items-center gap-1.5 text-xs leading-4.5 text-muted-foreground"
+                        data-included-label
+                      >
                         <FieldTypeIcon type={field.type} />
                         <span className="truncate">{field.name}</span>
                       </span>
                       {/* Key/value list: every value starts on one column, numbers too. */}
-                      <div className="flex min-h-7 min-w-0 flex-1 items-center text-ui *:text-left!">
+                      <div
+                        className="flex min-w-0 flex-1 text-ui *:text-left! [&_.tiptap>*:first-child]:mt-0"
+                        data-included-value
+                      >
                         <DataTableCellContent
                           row={row}
                           field={field}

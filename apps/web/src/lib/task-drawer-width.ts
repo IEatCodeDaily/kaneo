@@ -13,6 +13,15 @@ export const TASK_DRAWER_MAX_VIEWPORT_RATIO = 0.9;
 export const TASK_DRAWER_WIDTH_STORAGE_KEY = "kaneo:task-drawer-width";
 
 /**
+ * Row drawer default: half the viewport, clamped by the shared min/max.
+ * The ticket drawer keeps its fixed 768px default; only the row drawer
+ * follows the viewport (#freeze).
+ */
+export function rowDrawerDefaultWidth(viewportWidth: number): number {
+  return clampTaskDrawerWidth(viewportWidth / 2, viewportWidth);
+}
+
+/**
  * Upper bound for a given viewport.
  *
  * Also guards the degenerate case of a viewport narrower than the minimum

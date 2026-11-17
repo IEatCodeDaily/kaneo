@@ -3,18 +3,19 @@ import {
   Download,
   Eye,
   ListFilter,
+  LockKeyhole,
   MoreHorizontal,
   Pencil,
   Plus,
   Rows3,
-  Search,
   SlidersHorizontal,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
+import { ToolbarSearch } from "@/components/common/toolbar-search";
 import {
   FieldTypeIcon,
   type MemberOption,
@@ -52,53 +53,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/cn";
 import type { DataTableField } from "@/types/data-table";
-
-/**
- * Design v3 table toolbar (DS §2 "Toolbar button"): ghost at rest,
- * `bg-primary-soft` + count when the view is narrowed, `bg-secondary` while
- * its popover is open. One primary action (New row) at the right end; rare
- * actions live in the overflow menu.
- */
-function ToolbarButton({
-  icon,
-  label,
-  badge,
-  applied,
-  ...props
-}: {
-  icon: ReactNode;
-  label: string;
-  badge?: string | number;
-  applied?: boolean;
-} & React.ComponentProps<typeof Button>) {
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn(
-        "gap-1.5 px-2 font-normal data-popup-open:bg-secondary",
-        applied &&
-          "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft data-popup-open:bg-primary-soft data-popup-open:ring-1 data-popup-open:ring-input",
-      )}
-      {...props}
-    >
-      {icon}
-      {label}
-      {badge !== undefined && (
-        <span className="rounded-sm bg-primary-soft px-1.5 text-xs tabular-nums">
-          {badge}
-        </span>
-      )}
-    </Button>
-  );
-}
 
 type Props = {
   fields: DataTableField[];
   members: Map<string, MemberOption>;
   hidden: string[];
+  showSystemFields?: boolean;
+  onShowSystemFieldsChange?: (show: boolean) => void;
   onHiddenChange: (ids: string[]) => void;
   filters: DataTableFilter[];
   onFiltersChange: (filters: DataTableFilter[]) => void;
@@ -166,40 +128,56 @@ export function DataTableToolbar(props: Props) {
         <PopoverContent align="start" className="w-70">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.fieldsShown", {
-              shown: fields.length - hiddenCount,
-              total: fields.length,
+              shown:
+                fields.filter((field) => !field.system).length - hiddenCount,
+              total: fields.filter((field) => !field.system).length,
             })}
           </p>
           <div className="flex max-h-72 flex-col overflow-y-auto p-1">
-            {fields.map((field, index) => {
-              // The first field names the row; it can't be hidden.
-              const locked = index === 0;
-              const visible = locked || !hidden.includes(field.id);
-              return (
-                <div
-                  key={field.id}
-                  className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
-                >
-                  <FieldTypeIcon
-                    type={field.type}
-                    className="text-muted-foreground"
-                  />
-                  <span className="min-w-0 flex-1 truncate">{field.name}</span>
-                  <Switch
-                    checked={visible}
-                    disabled={locked}
-                    aria-label={field.name}
-                    onCheckedChange={(next) =>
-                      props.onHiddenChange(
-                        next
-                          ? hidden.filter((id) => id !== field.id)
-                          : [...hidden, field.id],
-                      )
-                    }
-                  />
-                </div>
-              );
-            })}
+            {fields
+              .filter((field) => !field.system)
+              .map((field, index) => {
+                // The first field names the row; it can't be hidden.
+                const locked = index === 0;
+                const visible = locked || !hidden.includes(field.id);
+                return (
+                  <div
+                    key={field.id}
+                    className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
+                  >
+                    <FieldTypeIcon
+                      type={field.type}
+                      className="text-muted-foreground"
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {field.name}
+                    </span>
+                    <Switch
+                      checked={visible}
+                      disabled={locked}
+                      aria-label={field.name}
+                      onCheckedChange={(next) =>
+                        props.onHiddenChange(
+                          next
+                            ? hidden.filter((id) => id !== field.id)
+                            : [...hidden, field.id],
+                        )
+                      }
+                    />
+                  </div>
+                );
+              })}
+          </div>
+          <div className="flex h-8 items-center gap-2 border-t px-3 text-ui">
+            <LockKeyhole className="size-3.5 text-muted-foreground" />
+            <span className="flex-1">
+              {t("navigation:tables.showSystemFields")}
+            </span>
+            <Switch
+              checked={props.showSystemFields ?? false}
+              aria-label={t("navigation:tables.showSystemFields")}
+              onCheckedChange={props.onShowSystemFieldsChange}
+            />
           </div>
           <div className="flex items-center justify-between border-t p-1">
             {canEdit ? (
@@ -355,42 +333,24 @@ export function DataTableToolbar(props: Props) {
 
       <span className="flex-1" />
 
-      <div className="flex h-7 w-50 items-center gap-1.5 rounded-md border border-input px-2">
-        <Search className="size-3.5 shrink-0 text-muted-foreground" />
-        <Input
-          unstyled
-          value={search}
-          onChange={(event) => props.onSearchChange(event.target.value)}
-          placeholder={t("navigation:tables.searchRowsShort")}
-          aria-label={t("navigation:tables.searchRowsShort")}
-          className="[&_[data-slot=input]]:h-6 [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:text-ui"
-        />
-        {search && (
-          <button
-            type="button"
-            aria-label={t("common:actions.clear")}
-            className="shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
-            onClick={() => props.onSearchChange("")}
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-      </div>
+      <ToolbarSearch
+        label={t("navigation:tables.searchRowsShort")}
+        clearLabel={t("common:actions.clear")}
+        value={search}
+        onChange={props.onSearchChange}
+      />
 
       {/* Overflow: rare actions (DS rule 5) */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="data-popup-open:bg-secondary"
-              aria-label={t("navigation:tables.tableOptions")}
+            <ToolbarButton
+              iconOnly
+              icon={<MoreHorizontal className="size-3.5" />}
+              label={t("navigation:tables.tableOptions")}
             />
           }
-        >
-          <MoreHorizontal className="size-3.5" />
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuGroup>
             {canEdit && (
@@ -459,10 +419,13 @@ export function DataTableToolbar(props: Props) {
       </DropdownMenu>
 
       {canEdit && (
-        <Button size="sm" onClick={props.onAddRow}>
-          <Plus className="size-3.5" />
-          {t("navigation:tables.newRow")}
-        </Button>
+        <ToolbarButton
+          variant="default"
+          data-toolbar-primary=""
+          onClick={props.onAddRow}
+          icon={<Plus className="size-3.5" />}
+          label={t("navigation:tables.newRow")}
+        />
       )}
     </>
   );
@@ -691,7 +654,10 @@ function FilterValue({
           ...(field.type === "user"
             ? Array.from(members.entries()).map(([id, m]) => ({
                 id,
-                label: m.user.name || m.user.email || id,
+                label:
+                  m.user.name ||
+                  m.user.email ||
+                  t("navigation:tables.formerMember"),
               }))
             : (field.options?.choices ?? []).map((c) => ({
                 id: c.id,
@@ -758,7 +724,9 @@ export function FilterConditionChip({
       filter.choiceId === "__empty__"
         ? t("navigation:tables.unassigned")
         : field.type === "user"
-          ? (members.get(filter.choiceId)?.user.name ?? filter.choiceId)
+          ? members.get(filter.choiceId)?.user.name ||
+            members.get(filter.choiceId)?.user.email ||
+            t("navigation:tables.formerMember")
           : (field.options?.choices?.find((c) => c.id === filter.choiceId)
               ?.label ?? filter.choiceId);
 

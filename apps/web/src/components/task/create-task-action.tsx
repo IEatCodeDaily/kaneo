@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 
 const CreateTaskModal = lazy(
@@ -24,17 +24,14 @@ export default function CreateTaskAction({
 
   return (
     <>
-      <Button
-        type="button"
-        size="xs"
-        className="h-7 gap-1.5 px-2"
-        aria-label={label}
+      <ToolbarButton
+        variant="default"
+        label={label}
+        icon={<Plus className="size-3.5" />}
+        data-toolbar-primary=""
         data-testid="board-create-task"
         onClick={() => setOpen(true)}
-      >
-        <Plus className="size-3.5" />
-        <span className="hidden sm:inline">{label}</span>
-      </Button>
+      />
       {open ? (
         <Suspense fallback={<span className="sr-only">Loading editor</span>}>
           <CreateTaskModal

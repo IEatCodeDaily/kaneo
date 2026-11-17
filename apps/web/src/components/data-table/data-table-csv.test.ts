@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DataTableField } from "@/types/data-table";
-import { csvParse, csvSerialize } from "./data-table-csv";
+import { csvParse, csvSerialize, rowMatchesSearch } from "./data-table-csv";
+import { systemFields } from "./data-table-format";
 
 const choices = new Map([
   ["c1", { id: "c1", label: "Fermentation", color: "#f59e0b" }],
@@ -52,6 +53,16 @@ const fields: DataTableField[] = [
 ];
 
 describe("csvSerialize", () => {
+  it("does not export virtual system columns as importable data", () => {
+    expect(
+      csvSerialize(
+        [...fields, ...systemFields("t", (key) => key)],
+        [],
+        choices,
+        new Map(),
+      ),
+    ).toBe(csvSerialize(fields, [], choices, new Map()));
+  });
   it("renders a header row and data with choice labels and quoted commas", () => {
     const out = csvSerialize(
       fields,
@@ -138,5 +149,29 @@ describe("csvParse", () => {
       new Map(),
     );
     expect(csvParse(out)[1]).toEqual(["x,y", "Fermentation", "1.5", "a\nb"]);
+  });
+
+  it("searches what cells read as, not only text fields", () => {
+    const user: DataTableField = {
+      ...fields[0],
+      id: "f9",
+      name: "Owner",
+      type: "user",
+    };
+    const row = {
+      id: "r",
+      position: 0,
+      createdAt: "",
+      updatedAt: "",
+      values: { f1: "PB-1", f2: "c1", f9: "u1" },
+    };
+    const members = new Map([["u1", "Ayu Saraswati"]]);
+    const all = [fields[0], fields[1], user];
+    expect(rowMatchesSearch(row, all, "ferment", choices, members)).toBe(true);
+    expect(rowMatchesSearch(row, all, "ayu", choices, members)).toBe(true);
+    expect(rowMatchesSearch(row, all, "pb-1", choices, members)).toBe(true);
+    expect(rowMatchesSearch(row, all, "zzz", choices, members)).toBe(false);
+    // ids are not what the user sees, so they must not match
+    expect(rowMatchesSearch(row, all, "c1", choices, members)).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import {
   defaultLocale,
   supportedLocales,
 } from "@i18n/resources";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -59,8 +59,6 @@ function RouteComponent() {
   const { t } = useTranslation();
   const { locale, setLocale } = useLocale();
   const {
-    theme,
-    setTheme,
     weekStartsOn,
     setWeekStartsOn,
     viewMode,
@@ -81,12 +79,6 @@ function RouteComponent() {
     reduceOverlayBlur,
     setReduceOverlayBlur,
   } = useUserPreferencesStore();
-
-  const themeLabels: Record<string, string> = {
-    light: t("settings:preferencesPage.themeLight"),
-    dark: t("settings:preferencesPage.themeDark"),
-    system: t("settings:preferencesPage.themeSystem"),
-  };
 
   const viewLabels: Record<string, string> = {
     board: t("settings:preferencesPage.board"),
@@ -132,29 +124,13 @@ function RouteComponent() {
                 {t("settings:preferencesPage.themeDescription")}
               </p>
             </div>
-            <Select
-              value={theme}
-              onValueChange={(value) => value && setTheme(value)}
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link to="/dashboard/settings/account/appearance" />}
             >
-              <SelectTrigger size="sm" className="w-40">
-                <SelectValue
-                  placeholder={t("settings:preferencesPage.selectTheme")}
-                >
-                  {themeLabels[theme]}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">
-                  {t("settings:preferencesPage.themeLight")}
-                </SelectItem>
-                <SelectItem value="dark">
-                  {t("settings:preferencesPage.themeDark")}
-                </SelectItem>
-                <SelectItem value="system">
-                  {t("settings:preferencesPage.themeSystem")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              {t("settings:appearance.title")}
+            </Button>
           </div>
 
           <Separator />

@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
 import MyTasksCountBadge from "@/components/my-tasks-count-badge";
 import { RecentPagesDialog } from "@/components/recent-pages-dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -88,16 +89,17 @@ export function NavMain() {
                 tooltip={label}
               >
                 <Icon />
-                <span className="flex-1">{label}</span>
+                <span className="min-w-0 flex-1 truncate">{label}</span>
                 <span
-                  className="w-5"
+                  className="ml-auto flex shrink-0 items-center justify-end gap-2"
+                  data-slot="nav-trailing"
                   data-testid={
                     url === inboxUrl ? "inbox-count-column" : undefined
                   }
                 >
                   {badge}
+                  <span className="w-4 shrink-0" />
                 </span>
-                <span className="w-5" />
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -111,19 +113,28 @@ export function NavMain() {
                   onClick={() => setRecentOpen(!recentOpen)}
                 >
                   <Clock3 />
-                  <span className="flex-1">
+                  <span className="min-w-0 flex-1 truncate">
                     {t("navigation:sidebar.recent")}
                   </span>
-                  <span className="w-5 text-right text-xs tabular-nums">
-                    {recentPages.length > 0
-                      ? Math.min(recentPages.length, recentPageLimit)
-                      : null}
-                  </span>
                   <span
-                    className="flex w-5 justify-center"
-                    data-testid="recent-chevron-column"
+                    className="ml-auto flex shrink-0 items-center justify-end gap-2"
+                    data-slot="nav-trailing"
                   >
-                    {recentOpen ? <ChevronDown /> : <ChevronRight />}
+                    {recentPages.length > 0 && (
+                      <Badge
+                        size="count"
+                        variant="count"
+                        data-testid="recent-count-badge"
+                      >
+                        {Math.min(recentPages.length, recentPageLimit)}
+                      </Badge>
+                    )}
+                    <span
+                      className="flex w-4 shrink-0 justify-center [&>svg]:size-4"
+                      data-testid="recent-chevron-column"
+                    >
+                      {recentOpen ? <ChevronDown /> : <ChevronRight />}
+                    </span>
                   </span>
                 </SidebarMenuButton>
                 {recentOpen &&

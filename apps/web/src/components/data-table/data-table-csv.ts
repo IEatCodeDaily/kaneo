@@ -4,7 +4,7 @@ import type {
   SelectChoice,
   TicketRef,
 } from "@/types/data-table";
-import { asBool, asNumber, asString } from "./data-table-format";
+import { asBool, asNumber, asString, fieldValue } from "./data-table-format";
 
 type MemberNameLookup = Map<string, string>;
 
@@ -59,6 +59,27 @@ function cellText(
   }
 }
 
+/**
+ * Search matches what a cell reads as (choice labels, member names, ticket
+ * keys, numbers), not only text fields: the CSV text is exactly that.
+ */
+export function rowMatchesSearch(
+  row: DataTableRow,
+  fields: DataTableField[],
+  query: string,
+  choices: Map<string, SelectChoice>,
+  memberNames: MemberNameLookup,
+  tickets: Record<string, TicketRef> = {},
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return fields.some((field) =>
+    cellText(field, fieldValue(row, field), choices, memberNames, tickets)
+      .toLowerCase()
+      .includes(needle),
+  );
+}
+
 export function csvSerialize(
   fields: DataTableField[],
   rows: DataTableRow[],
@@ -66,15 +87,16 @@ export function csvSerialize(
   memberNames: MemberNameLookup,
   tickets: Record<string, TicketRef> = {},
 ): string {
-  const lines = [fields.map((field) => csvCell(field.name)).join(",")];
+  const exportFields = fields.filter((field) => !field.system);
+  const lines = [exportFields.map((field) => csvCell(field.name)).join(",")];
   for (const row of rows) {
     lines.push(
-      fields
+      exportFields
         .map((field) =>
           csvCell(
             cellText(
               field,
-              row.values[field.id],
+              fieldValue(row, field),
               choices,
               memberNames,
               tickets,

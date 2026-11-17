@@ -38,6 +38,21 @@ Four layers, each catching what the one before it cannot.
 A repo-local skill, `.agents/skills/kaneo-ui/SKILL.md`, tells an agent which
 primitive to use for each pattern, with do and don't snippets.
 
+## Colour
+
+Mono is the default: cool near-black surfaces in dark mode, cool off-white in
+light, with inverse primary actions. Account > Appearance also offers Indigo
+(the original neutral/indigo palette), Slate (blue), Graphite (warm stone/amber),
+and Teal (green-black). Every preset defines the complete colour-token set in
+`index.css` for both modes; components never choose palette colours. Semantic
+status/tag colours stay distinct. A per-account accent override updates root
+tokens live, with WCAG-selected button text; reset restores the preset. Mode,
+preset and accent use the existing local user-preferences store (not server
+sync). The synchronous head script restores them before first paint. Unit tests
+parse every named palette and require 4.5:1 button and muted-text contrast.
+Sidebar counts use `Badge size="count" variant="count"`; attention counts use
+`variant="attention"` (outline), in the same right-aligned trailing slot.
+
 ## Values
 
 | Token | Value | Source |

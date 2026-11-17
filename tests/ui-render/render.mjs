@@ -73,7 +73,9 @@ async function seed(api) {
     tasks.push(
       await post(`/task/${board.id}`, {
         title,
-        description: "seeded",
+        description: title.startsWith("Filter housing")
+          ? "Pressure control inspection on the pilot line. Replace the gasket before retesting."
+          : "seeded",
         status,
         priority,
       }),
@@ -110,6 +112,7 @@ async function seed(api) {
       `/data-table/organization/${org.id}/${tbl.id}/fields`,
       options ? { name, type, options } : { name, type },
     );
+  let firstRowId = "";
   for (const [i, [batch, stage, cost]] of [
     ["PB-1042 Filter test A", "Mixing", 3180000],
     ["PB-1043 Hardener batch D", "Curing", 2450000],
@@ -135,18 +138,28 @@ async function seed(api) {
               ? [tasks[i].id]
               : [],
       },
+    }).then((row) => {
+      if (i === 0) firstRowId = row.id;
     });
-  return { org, board, tbl };
+  // Explicit row ↔ ticket link: the Resources list must render it as the
+  // row's primary value + table name — its stored externalId is the row's
+  // raw id, which must never surface (#fskd8… regression).
+  await post(
+    `/data-table/organization/${org.id}/${tbl.id}/rows/${firstRowId}/tickets?taskId=${tasks[0].id}`,
+    {},
+  );
+  return { org, board, tbl, tasks };
 }
 
 await healthy();
 const api = await request.newContext();
-const { org, board, tbl } = await seed(api);
+const { org, board, tbl, tasks } = await seed(api);
 const state = await api.storageState();
 const slug = org.slug;
 let pages = {
   board: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/board`,
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
+  inbox: `/dashboard/organization/${slug}/inbox`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
   // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
   ticket: `/dashboard/${slug}/tickets/KFL-1`,
@@ -163,6 +176,144 @@ if (PAGES.length)
     Object.entries(pages).filter(([k]) => PAGES.includes(k)),
   );
 
+// Theme acceptance fixtures: reproduce the owner's 31 / 2 + 50 sidebar.
+async function themeInboxFixtures(ctx) {
+  await ctx.route("**/api/notification/unread-count", (route) =>
+    route.fulfill({ json: { count: 31 } }),
+  );
+  await ctx.route("**/api/task/my-tasks?*", (route) =>
+    route.fulfill({
+      json: Array.from({ length: 50 }, (_, i) => ({
+        ...tasks[0],
+        id: `assigned-${i}`,
+      })),
+    }),
+  );
+  await ctx.route("**/api/flag/mine?*", (route) =>
+    route.fulfill({
+      json: [
+        { taskId: tasks[0].id, resolvedAt: null },
+        { taskId: tasks[1].id, resolvedAt: null },
+      ],
+    }),
+  );
+  await ctx.route("**/api/notification", (route) =>
+    route.fulfill({
+      json: tasks.slice(0, 3).map((task, i) => ({
+        id: `theme-notification-${i}`,
+        type: "task_updated",
+        title: "Ticket updated",
+        content: null,
+        resourceType: "task",
+        resourceId: task.id,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        eventData: {
+          boardId: board.id,
+          boardName: board.name,
+          boardSlug: "KFL",
+          organizationId: org.id,
+          taskTitle: task.title,
+          taskNumber: i + 1,
+          taskStatusSlug: task.status,
+          actorName: "Ayu Saraswati",
+        },
+      })),
+    }),
+  );
+  await ctx.addInitScript(
+    ({ slug, boardSlug }) => {
+      const key = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(key) ?? '{"state":{},"version":0}',
+      );
+      cur.state = {
+        ...cur.state,
+        recentOpen: false,
+        recentPageLimit: 5,
+        recentPages: Array.from({ length: 5 }, (_, i) => ({
+          pathname: `/dashboard/organization/${slug}/board/${boardSlug}/board?recent=${i}`,
+          label: "Pilot line",
+          openedAt: Date.now() - i * 60000,
+        })),
+      };
+      localStorage.setItem(key, JSON.stringify(cur));
+    },
+    { slug, boardSlug: board.slug ?? "KFL" },
+  );
+}
+
+function themeContrast() {
+  const css = getComputedStyle(document.documentElement);
+  const rgb = (name) => {
+    const color = css.getPropertyValue(name).trim();
+    if (!color || !CSS.supports("color", color))
+      throw new Error(`invalid theme token ${name}: ${color}`);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
+  };
+  const luminance = (name) => {
+    const [r, g, b] = rgb(name).map((v) => {
+      const c = v / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => {
+    const [x, y] = [luminance(a), luminance(b)];
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  };
+  return {
+    primary: css.getPropertyValue("--primary").trim(),
+    buttonContrast: contrast("--primary-foreground", "--primary"),
+    mutedContrast: contrast("--muted-foreground", "--background"),
+    chromeSpread: Math.max(
+      ...["--primary", "--ring", "--accent", "--row-selected"].map(
+        (name) => Math.max(...rgb(name)) - Math.min(...rgb(name)),
+      ),
+    ),
+  };
+}
+
+function navBadgeGeometry() {
+  const ids = [
+    "inbox-unread-badge",
+    "my-tasks-flagged-badge",
+    "my-tasks-count-badge",
+    "recent-count-badge",
+  ];
+  const badges = ids.map((id) => {
+    const el = document.querySelector(`[data-testid="${id}"]`);
+    if (!el) return { id, missing: true };
+    const rect = el.getBoundingClientRect();
+    const row = el.closest("button");
+    const label = row?.querySelector(":scope > span");
+    const slot = el.closest('[data-slot="nav-trailing"]');
+    const style = getComputedStyle(el);
+    return {
+      id,
+      text: el.textContent.trim(),
+      left: rect.left,
+      right: rect.right,
+      height: rect.height,
+      width: rect.width,
+      labelRight: label?.getBoundingClientRect().right,
+      slotRight: slot?.getBoundingClientRect().right,
+      rowRight: row?.getBoundingClientRect().right,
+      radius: style.borderRadius,
+      bg: style.backgroundColor,
+      color: style.color,
+      border: style.borderTopColor,
+    };
+  });
+  return badges;
+}
+
 const browser = await chromium.launch();
 const checks = {};
 for (const [theme, tag, viewport, scale] of [
@@ -174,6 +325,7 @@ for (const [theme, tag, viewport, scale] of [
     const ctx = await browser.newContext({
       viewport,
       deviceScaleFactor: scale,
+      hasTouch: tag === "phone",
       storageState: state,
       reducedMotion: "reduce",
       colorScheme: theme,
@@ -186,6 +338,7 @@ for (const [theme, tag, viewport, scale] of [
       cur.state = { ...cur.state, theme: t };
       localStorage.setItem(k, JSON.stringify(cur));
     }, theme);
+    if (name === "inbox") await themeInboxFixtures(ctx);
     const page = await ctx.newPage();
     const errs = [];
     page.on("pageerror", (e) => errs.push(String(e)));
@@ -202,6 +355,121 @@ for (const [theme, tag, viewport, scale] of [
       ...BAD.filter((b) => text.includes(b)).map((b) => `error text: ${b}`),
     ];
     if (text.trim().length < 40) fails.push("page rendered no content");
+    // Resource toolbar acceptance: real phone geometry, not just screenshots.
+    if (name === "table" || name === "board") {
+      const toolbar = await page.evaluate((surface) => {
+        const root = document.querySelector(
+          surface === "table"
+            ? '[data-slot="layout-toolbar"]'
+            : '[data-testid="board-toolbar"]',
+        );
+        if (!root) return null;
+        const controls = [...root.querySelectorAll("button, input")].map(
+          (el) => {
+            const r = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            return {
+              name: el.getAttribute("aria-label"),
+              left: r.left,
+              right: r.right,
+              top: r.top,
+              height: r.height,
+              chrome: [
+                style.height,
+                style.borderTopWidth,
+                style.borderTopStyle,
+                style.fontSize,
+                style.fontWeight,
+                style.paddingTop,
+                style.paddingRight,
+                style.paddingBottom,
+                style.paddingLeft,
+              ],
+            };
+          },
+        );
+        const buttons = [...root.querySelectorAll("[data-toolbar-button]")];
+        const labels = [...root.querySelectorAll("[data-toolbar-label]")].map(
+          (el) => getComputedStyle(el).display,
+        );
+        const primary = root.querySelector("[data-toolbar-primary]");
+        const r = primary?.getBoundingClientRect();
+        return {
+          controls,
+          labels,
+          buttonCount: buttons.length,
+          primary: r
+            ? { left: r.left, right: r.right, top: r.top, height: r.height }
+            : null,
+          chrome: buttons.map((el) => {
+            const s = getComputedStyle(el);
+            return [
+              s.height,
+              s.borderTopWidth,
+              s.borderTopStyle,
+              s.fontSize,
+              s.fontWeight,
+              s.paddingTop,
+              s.paddingRight,
+              s.paddingBottom,
+              s.paddingLeft,
+            ];
+          }),
+          viewport: innerWidth,
+        };
+      }, name);
+      if (!toolbar) fails.push("resource toolbar missing");
+      else {
+        if (toolbar.buttonCount < 5 || !toolbar.labels.length)
+          fails.push("toolbar controls missing");
+        for (const control of toolbar.controls) {
+          if (control.left < 0 || control.right > toolbar.viewport)
+            fails.push(`toolbar control clipped: ${JSON.stringify(control)}`);
+        }
+        if (
+          !toolbar.primary ||
+          toolbar.primary.right > toolbar.viewport ||
+          toolbar.primary.left < 0 ||
+          toolbar.primary.height !== 28
+        )
+          fails.push(
+            `primary action clipped or missing: ${JSON.stringify(toolbar.primary)}`,
+          );
+        if (toolbar.primary && toolbar.controls[0]?.top !== toolbar.primary.top)
+          fails.push("primary action orphaned on its own row");
+        if (
+          toolbar.labels.some(
+            (display) => (tag === "phone") !== (display === "none"),
+          )
+        )
+          fails.push(`toolbar labels did not collapse: ${toolbar.labels}`);
+        for (const chrome of toolbar.chrome) {
+          if (JSON.stringify(chrome) !== JSON.stringify(toolbar.chrome[0]))
+            fails.push(
+              `toolbar buttons have different chrome: ${JSON.stringify(toolbar.chrome)}`,
+            );
+          if (
+            chrome[0] !== "28px" ||
+            chrome[1] !== "1px" ||
+            chrome[3] !== "12px" ||
+            chrome[6] !== "8px" ||
+            chrome[8] !== "8px"
+          )
+            fails.push(`toolbar chrome off scale: ${JSON.stringify(chrome)}`);
+        }
+        const sibling =
+          checks[`${name === "board" ? "table" : "board"}--${tag}-${theme}.png`]
+            ?.toolbar;
+        if (
+          sibling &&
+          JSON.stringify(sibling.chrome[0]) !==
+            JSON.stringify(toolbar.chrome[0])
+        )
+          fails.push("board/table toolbar chrome differs");
+      }
+      // These states are also the baseline desktop/phone screenshots below.
+      checks[`${name}--${tag}-${theme}.png`] = { toolbar };
+    }
     const m = await page.evaluate(() => {
       const h = document.querySelector('[data-slot="layout-header"], header');
       return {
@@ -241,12 +509,166 @@ for (const [theme, tag, viewport, scale] of [
       !(text.includes("Included in") && text.includes("PB-1042"))
     )
       fails.push("ticket page shows no Included in row (PB-1042)");
+    // Raw ids are storage keys: a cuid/UUID must never appear in the drawer's
+    // visible text (a table-row resource used to print `#<row id>`).
+    if (name === "ticket") {
+      const idLeak = text.match(
+        /\b[a-z0-9]{20,}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
+      );
+      if (idLeak) fails.push(`raw id visible in drawer: ${idLeak[0]}`);
+      const rowResource = await page
+        .getByTestId("table-row-resource-link")
+        .first()
+        .innerText()
+        .catch(() => "");
+      if (
+        !rowResource.includes("PB-1042") ||
+        !rowResource.includes("Pilot batch log")
+      )
+        fails.push(
+          `table-row resource not rendered as row value + table name: ${JSON.stringify(rowResource)}`,
+        );
+      if (tag === "desktop") {
+        // Included-in labels must top-align with their value's first line
+        // (they used to center against stacked chips / rich text). The
+        // section mounts progressively — wait for its LAST field value.
+        let mounted = true;
+        try {
+          await page
+            .getByText("Record the result")
+            .first()
+            .waitFor({ timeout: 8000 });
+        } catch {
+          mounted = false;
+        }
+        await page.waitForTimeout(300);
+        const probeFn = () => {
+          const rows = [
+            ...document.querySelectorAll('[data-slot="included-in-row"]'),
+          ];
+          const out = [];
+          const heights = [];
+          for (const row of rows) {
+            // One wrapper holds breadcrumb + every field row; measure each
+            // field row, not the wrapper's first match.
+            for (const child of row.children) {
+              const label = child.querySelector("[data-included-label]");
+              const value = child.querySelector("[data-included-value]");
+              if (!label || !value) continue; // breadcrumb row
+              const lv = label.getBoundingClientRect();
+              const vv = value.getBoundingClientRect();
+              heights.push(
+                `${label.textContent?.trim()}:${Math.round(vv.height)}`,
+              );
+              // Only multi-line values expose the centering drift.
+              if (vv.height > 28)
+                out.push(Math.round((vv.top - lv.top) * 10) / 10);
+            }
+          }
+          return { rows: rows.length, heights, deltas: out };
+        };
+        // The section settles progressively; measure once it stops changing.
+        let probe = await page.evaluate(probeFn);
+        for (
+          let attempt = 0;
+          attempt < 10 && probe.deltas.length === 0;
+          attempt++
+        ) {
+          await page.waitForTimeout(400);
+          probe = await page.evaluate(probeFn);
+        }
+        if (probe.deltas.length === 0) {
+          const detail = await page.evaluate(() => {
+            const rows = [
+              ...document.querySelectorAll('[data-slot="included-in-row"]'),
+            ];
+            return rows.map((row) => ({
+              fieldRows: [...row.children].map((child) => ({
+                label:
+                  child
+                    .querySelector("[data-included-label]")
+                    ?.textContent?.trim() ?? null,
+                hasValue: !!child.querySelector("[data-included-value]"),
+                h: Math.round(child.getBoundingClientRect().height),
+                cls: (child.className || "").slice(0, 60),
+              })),
+            }));
+          });
+          fails.push(
+            `no multi-line included-in value (mounted=${mounted}, probe=${JSON.stringify(probe)}, detail=${JSON.stringify(detail)})`,
+          );
+        }
+        for (const d of probe.deltas)
+          if (Math.abs(d) > 2)
+            fails.push(`included-in label/value tops off by ${d}px`);
+      }
+    }
+    const palette = await page.evaluate(themeContrast);
+    if (palette.buttonContrast < 4.5 || palette.mutedContrast < 4.5)
+      fails.push(`theme contrast ${JSON.stringify(palette)}`);
+    if (palette.chromeSpread > 24)
+      fails.push(`saturated chrome ${JSON.stringify(palette)}`);
+    const wantPrimary = theme === "dark" ? "#e7eaf0" : "#20252c";
+    if (palette.primary !== wantPrimary)
+      fails.push(`primary ${palette.primary}, want ${wantPrimary}`);
+    m.palette = palette;
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
-    checks[shot] = { fails, ...m, url: page.url() };
+    checks[shot] = { ...checks[shot], fails, ...m, url: page.url() };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
     );
+    if (name === "inbox") {
+      if (tag === "phone") {
+        await page.getByTestId("mobile-sidebar-toggle").first().click();
+        await page.waitForTimeout(600);
+      }
+      const badges = await page.evaluate(navBadgeGeometry);
+      const badgeFails = [];
+      for (const badge of badges) {
+        if (
+          badge.missing ||
+          badge.height !== 16 ||
+          badge.width < 24 ||
+          badge.width <= badge.height
+        )
+          badgeFails.push(`missing/non-pill count ${JSON.stringify(badge)}`);
+        if (
+          !badge.missing &&
+          (badge.left < badge.labelRight + 4 ||
+            badge.right > badge.rowRight ||
+            badge.slotRight > badge.rowRight)
+        )
+          badgeFails.push(`badge clips label/row ${JSON.stringify(badge)}`);
+      }
+      const [inbox, flagged, assigned, recent] = badges;
+      if (flagged.right + 4 > assigned.left)
+        badgeFails.push("flagged and assigned overlap or lack a 4px gap");
+      if (
+        [assigned, recent].some(
+          (badge) => Math.abs(badge.right - inbox.right) > 1,
+        )
+      )
+        badgeFails.push("nav badge right edges do not align");
+      if (
+        new Set(
+          [inbox, assigned, recent].map(
+            (b) => `${b.bg}:${b.color}:${b.radius}`,
+          ),
+        ).size !== 1
+      )
+        badgeFails.push("nav count styles differ");
+      if (flagged.bg === assigned.bg || flagged.border === flagged.bg)
+        badgeFails.push("attention badge lacks a distinct outline");
+      if (badges.map((b) => b.text).join(",") !== "31,2,50,5")
+        badgeFails.push("theme count fixtures did not load");
+      const navShot = `nav-badges--${tag}-${theme}.png`;
+      await page.screenshot({ path: join(OUT, navShot) });
+      checks[navShot] = { fails: badgeFails, badges };
+      console.log(
+        `${badgeFails.length ? "FAIL" : "ok  "} ${navShot}${badgeFails.length ? `\n      ${badgeFails.join("\n      ")}` : ""}`,
+      );
+    }
     await ctx.close();
   }
 }
@@ -401,8 +823,64 @@ for (const [shot, prefs, act] of [
   await ctx.close();
 }
 
+async function showSystemFields(page) {
+  await page.getByRole("button", { name: /^Fields/ }).click();
+  await page
+    .getByRole("switch", { name: "Show system fields", exact: true })
+    .click();
+  // Keep all five system columns in the desktop frame without shrinking text.
+  for (const name of ["Stage", "Cost", "Start date", "Note", "Tickets"]) {
+    const toggle = page.getByRole("switch", { name, exact: true });
+    if (await toggle.count()) await toggle.uncheck();
+  }
+  await page.keyboard.press("Escape");
+  for (const name of [
+    "Row ID",
+    "Created at",
+    "Updated at",
+    "Created by",
+    "Updated by",
+  ]) {
+    await page
+      .getByRole("button", { name: `${name} field menu`, exact: true })
+      .waitFor();
+  }
+  const author = page.getByRole("gridcell", {
+    name: "Created by, row 1",
+    exact: true,
+  });
+  await author.getByText("Ayu Saraswati", { exact: true }).waitFor();
+  if ((await author.getAttribute("aria-readonly")) !== "true")
+    throw new Error("system cell is editable");
+  const text = await page.getByRole("grid").innerText();
+  if (/\b[a-z][a-z0-9]{23}\b|\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/i.test(text))
+    throw new Error("raw cuid/uuid in grid");
+  // The preference must survive reload, not just a mounted component's state.
+  await page.reload({ waitUntil: "networkidle" });
+  await page
+    .getByRole("button", { name: "Created by field menu", exact: true })
+    .waitFor();
+}
+
 // Table interaction states (dark desktop), design v3 S2.
 const TABLE_STATES = [
+  ["table-system-fields", showSystemFields],
+  [
+    "table-system-drawer",
+    async (page) => {
+      await page
+        .getByRole("button", { name: "Expand row 1", exact: true })
+        .click();
+      const system = page.locator('[data-slot="row-system-fields"]');
+      if ((await system.getAttribute("open")) !== null)
+        throw new Error("System section is not collapsed");
+      await system.locator("summary").click();
+      await system
+        .getByText("Ayu Saraswati", { exact: true })
+        .first()
+        .waitFor();
+    },
+  ],
   [
     "table-fields",
     async (p) => p.getByRole("button", { name: /^Fields/ }).click(),
@@ -441,6 +919,19 @@ const TABLE_STATES = [
     async (p) => p.getByLabel("Search rows").fill("zzz-no-match"),
   ],
   [
+    // Search matches what cells show: a select label, not only text fields.
+    "table-search",
+    async (p) => {
+      await p.getByLabel("Search rows").fill("curing");
+      await p.waitForTimeout(300);
+      const rows = await p.locator('[role="row"][aria-rowindex]').count();
+      if (rows !== 1)
+        throw new Error(
+          `search for a select label matched ${rows} rows, want 1`,
+        );
+    },
+  ],
+  [
     "table-select",
     async (p) => {
       await p.getByRole("checkbox", { name: "Select row 1" }).click();
@@ -467,6 +958,7 @@ const TABLE_STATES = [
         .getByRole("button", { name: "New row", exact: true })
         .first()
         .click();
+      await p.getByRole("button", { name: "Create row", exact: true }).click();
       const added = await response;
       if (!added.ok())
         throw new Error(`add row ${added.status()} ${await added.text()}`);
@@ -506,8 +998,7 @@ const TABLE_STATES = [
           };
         });
       if (
-        !note ||
-        note.text !== "Retest" ||
+        note?.text !== "Retest" ||
         note.top < note.clipTop - 1 ||
         note.bottom > note.clipBottom + 1
       )
@@ -558,6 +1049,8 @@ const TABLE_STATES = [
         el.scrollLeft = 500;
       });
       await p.waitForTimeout(300);
+      // Freeze is opt-in now: by default no data column sticks, so the
+      // primary scrolls away with the rest while the gutter holds the edge.
       const geometry = await p.evaluate(() => {
         const row = document.querySelector('[role="row"][aria-rowindex]');
         const header = document.querySelector('[role="grid"] [role="row"]');
@@ -573,14 +1066,114 @@ const TABLE_STATES = [
           primary: cell.getBoundingClientRect().left,
           headerPrimary: hcell.getBoundingClientRect().left,
           sticky: getComputedStyle(a).position,
+          cellSticky: getComputedStyle(cell).position,
+          headSticky: getComputedStyle(hcell).position,
         };
       });
       if (
         geometry.sticky !== "sticky" ||
         Math.abs(geometry.gutter - geometry.headerGutter) > 1 ||
-        Math.abs(geometry.primary - geometry.headerPrimary) > 1
+        Math.abs(geometry.primary - geometry.headerPrimary) > 1 ||
+        geometry.cellSticky !== "relative" ||
+        geometry.headSticky !== "relative"
       )
         throw new Error(`frozen geometry ${JSON.stringify(geometry)}`);
+    },
+  ],
+  [
+    // Freeze is opt-in via the header menu: freezing Cost pins Batch+Stage+Cost
+    // (columns 0..N, spreadsheet-style) and they hold the left edge while the
+    // rest scrolls; the choice persists across a reload.
+    "table-freeze",
+    async (p) => {
+      await p.getByRole("button", { name: "Cost field menu" }).click();
+      await p.getByRole("menuitem", { name: "Freeze column" }).click();
+      await p.waitForTimeout(300);
+      await p
+        .getByRole("gridcell", { name: "Cost, row 1", exact: true })
+        .click();
+      // The grid is narrower than a 1440px viewport; shrink it so the scroll
+      // below is real (sticky columns must hold, the rest must move).
+      await p.setViewportSize({ width: 900, height: 900 });
+      await p.waitForTimeout(300);
+      const scroll = () =>
+        p.getByRole("grid").evaluate((grid) => {
+          let el = grid.parentElement;
+          while (el && getComputedStyle(el).overflowX !== "auto")
+            el = el.parentElement;
+          if (!el) throw new Error("no grid scroller");
+          el.scrollLeft = 500;
+        });
+      const geometry = () =>
+        p.evaluate(() => {
+          const row = document.querySelector('[role="row"][aria-rowindex]');
+          const header = document.querySelector('[role="grid"] [role="row"]');
+          const cellByName = (name) =>
+            [...(row?.querySelectorAll('[role="gridcell"]') ?? [])].find((el) =>
+              (el.getAttribute("aria-label") ?? "").startsWith(`${name}, `),
+            );
+          const headByName = (name) =>
+            [...(header?.querySelectorAll('[role="columnheader"]') ?? [])].find(
+              (el) => (el.innerText ?? "").startsWith(name),
+            );
+          const gutter = row?.querySelector('[role="rowheader"]');
+          const headGutter = header?.querySelector('[role="columnheader"]');
+          const batch = cellByName("Batch");
+          const cost = cellByName("Cost");
+          const start = cellByName("Start date");
+          const headBatch = headByName("Batch");
+          const headCost = headByName("Cost");
+          if (!batch || !cost || !start || !headBatch || !headCost || !gutter)
+            throw new Error("missing cells");
+          let scroller = document.querySelector('[role="grid"]')?.parentElement;
+          while (scroller && getComputedStyle(scroller).overflowX !== "auto")
+            scroller = scroller.parentElement;
+          return {
+            scrollLeft: scroller?.scrollLeft ?? 0,
+            gutter: gutter.getBoundingClientRect().left,
+            headGutter: headGutter.getBoundingClientRect().left,
+            batch: batch.getBoundingClientRect().left,
+            headBatch: headBatch.getBoundingClientRect().left,
+            cost: cost.getBoundingClientRect().left,
+            headCost: headCost.getBoundingClientRect().left,
+            batchSticky: getComputedStyle(batch).position,
+            costSticky: getComputedStyle(cost).position,
+            startSticky: getComputedStyle(start).position,
+            pin: Boolean(headCost.querySelector("svg.lucide-pin")),
+            // Sticky headers must be opaque, or scrolled headers show through.
+            headBg: getComputedStyle(headCost).backgroundColor,
+          };
+        });
+      const frozen = await geometry();
+      await scroll();
+      await p.waitForTimeout(300);
+      const scrolled = await geometry();
+      if (
+        frozen.batchSticky !== "sticky" ||
+        frozen.costSticky !== "sticky" ||
+        frozen.startSticky !== "relative" ||
+        Math.abs(frozen.gutter - frozen.headGutter) > 1 ||
+        Math.abs(frozen.batch - frozen.headBatch) > 1 ||
+        Math.abs(frozen.cost - frozen.headCost) > 1 ||
+        Math.abs(frozen.batch - (frozen.gutter + 44)) > 1 ||
+        !frozen.pin ||
+        /rgba\([^)]*,\s*0(\.\d+)?\)|transparent/.test(frozen.headBg) ||
+        // The scroll must be real, frozen columns must not move, and the
+        // first unfrozen column must travel with the content.
+        scrolled.scrollLeft < 100 ||
+        Math.abs(scrolled.batch - frozen.batch) > 1 ||
+        Math.abs(scrolled.cost - frozen.cost) > 1 ||
+        Math.abs(scrolled.start - (frozen.start - scrolled.scrollLeft)) > 1
+      )
+        throw new Error(
+          `freeze geometry ${JSON.stringify({ frozen, scrolled })}`,
+        );
+      await p.reload({ waitUntil: "networkidle" });
+      await scroll();
+      await p.waitForTimeout(300);
+      const persisted = await geometry();
+      if (persisted.batchSticky !== "sticky")
+        throw new Error("freeze did not persist across reload");
     },
   ],
   [
@@ -783,8 +1376,9 @@ if (pages.table) {
     if (name !== "table-history") {
       if (!m.heads.some((x) => x.startsWith("Batch")))
         fails.push("field names missing from header");
-      if (m.toolbar_font !== "13px")
-        fails.push(`toolbar font ${m.toolbar_font}, want 13px`);
+      // Board toolbar buttons are 12px; the table matches them.
+      if (m.toolbar_font !== "12px")
+        fails.push(`toolbar font ${m.toolbar_font}, want 12px`);
       if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
       if (name !== "table-noresult" && m.row_h !== 32)
         fails.push(`row ${m.row_h}px, want 32`);
@@ -844,6 +1438,71 @@ if (pages.table) {
     checks[shot] = { fails, ...m };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+
+  // Same controls on touch; horizontal scrolling brings the user columns into view.
+  {
+    const ctx = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: "dark",
+      hasTouch: true,
+    });
+    await ctx.addInitScript(() => {
+      const cur = JSON.parse(
+        localStorage.getItem("user-preferences") ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: "dark" };
+      localStorage.setItem("user-preferences", JSON.stringify(cur));
+    });
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (error) => fails.push(String(error)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    try {
+      // Exercise the existing resize control: a wide frozen primary leaves no
+      // room for scrolling columns on phones. This is a local view preference.
+      const resize = page.getByRole("separator", {
+        name: "Resize Batch column",
+        exact: true,
+      });
+      for (let step = 0; step < 14; step++) await resize.press("ArrowLeft");
+      await showSystemFields(page);
+      await page
+        .getByRole("gridcell", { name: "Updated by, row 1", exact: true })
+        .scrollIntoViewIfNeeded();
+      const userCell = await page
+        .getByRole("gridcell", { name: "Updated by, row 1", exact: true })
+        .boundingBox();
+      const primaryText = page
+        .getByRole("gridcell", { name: "Batch, row 1", exact: true })
+        .locator("span")
+        .first();
+      const clipping = await primaryText.evaluate((element) => ({
+        overflow: getComputedStyle(element).overflow,
+        display: getComputedStyle(element).display,
+      }));
+      if (clipping.display === "inline" || clipping.overflow !== "hidden")
+        throw new Error("narrow primary text spills into system columns");
+      if (!userCell || userCell.x < 124 || userCell.x + userCell.width > 391)
+        throw new Error("system author is obscured on phone");
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        )
+      )
+        throw new Error("page overflows phone viewport");
+    } catch (error) {
+      fails.push(String(error).split("\n")[0]);
+    }
+    const shot = "table-system-fields--phone-dark.png";
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
     );
     await ctx.close();
   }
@@ -1140,20 +1799,87 @@ const GUTTER = {
 };
 // [shot, theme, viewport, open, want] — every key in `want` must measure equal;
 // a missing measurement (null) fails too.
+const fillNewRowForm = async (p) => {
+  // Toolbar on desktop, under-grid entry point on phone.
+  const entries = p.getByRole("button", { name: "New row", exact: true });
+  await (p.viewportSize().width < 600
+    ? entries.last()
+    : entries.first()
+  ).click();
+  const title = p.getByRole("textbox", { name: "Batch", exact: true });
+  await title.waitFor();
+  if (!(await title.evaluate((el) => el === document.activeElement)))
+    throw new Error("new-row form did not focus the first field");
+  await title.fill("PB-NEW Form sample");
+  await p
+    .getByRole("group", { name: "Stage", exact: true })
+    .getByRole("button")
+    .click();
+  await p.getByRole("option", { name: "Mixing", exact: true }).click();
+  await p.getByRole("spinbutton", { name: "Cost", exact: true }).fill("12500");
+};
+const fillFieldEditor = async (p) => {
+  await openFieldOptions(p);
+  await p
+    .getByRole("textbox", { name: "New field name", exact: true })
+    .fill("Default delivery");
+  await p.getByRole("textbox", { name: "Search field types" }).fill("date");
+  const date = p.getByRole("button", { name: "Date", exact: true });
+  await date.click();
+  if ((await date.getAttribute("aria-pressed")) !== "true")
+    throw new Error("Date was not selected");
+  if ((await p.locator("button[data-field-type]").count()) !== 2)
+    throw new Error("date search did not filter types");
+  await p.locator('input[aria-label="Default value"]').fill("2026-11-17");
+  await p
+    .getByRole("textbox", { name: "Description", exact: true })
+    .fill("Expected delivery date");
+};
 const OVERLAY_STATES = [
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["desktop-light", "light", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `dialog-field-editor--${suffix}`,
+    theme,
+    viewport,
+    fillFieldEditor,
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
+  [
+    "table-new-row-form--desktop-dark",
+    "dark",
+    DESKTOP,
+    fillNewRowForm,
+    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+  ],
+  [
+    "table-new-row-form--phone-dark",
+    "dark",
+    { width: 390, height: 844 },
+    fillNewRowForm,
+    { ...GUTTER, footer_inset: 16, width: 390, header_h: 44, footer_h: 52 },
+  ],
   [
     "dialog-field-options--desktop-dark",
     "dark",
     DESKTOP,
     openFieldOptions,
-    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+    { ...GUTTER, footer_inset: 16, width: 768, header_h: 44, footer_h: 52 },
   ],
   [
     "dialog-field-options--desktop-light",
     "light",
     DESKTOP,
     openFieldOptions,
-    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+    { ...GUTTER, footer_inset: 16, width: 768, header_h: 44, footer_h: 52 },
   ],
   [
     "dialog-field-options--phone-dark",
@@ -1211,7 +1937,8 @@ const OVERLAY_STATES = [
       header_inset: 16,
       body_left: 16,
       body_right: 16,
-      width: 480,
+      // Untouched default: half the 1440px viewport (a stored width would win).
+      width: 720,
       header_h: 44,
     },
   ],
@@ -1244,6 +1971,30 @@ if (pages.table) {
       await page.mouse.move(2, 2);
     } catch (e) {
       fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    if (name.startsWith("dialog-field-options")) {
+      const search = page.getByRole("textbox", { name: "Search field types" });
+      if (viewport.width < 768) await search.fill("json");
+      await search.press("ArrowDown");
+      await page.locator("button[data-field-type]:focus").press("End");
+      const last = page.locator('button[data-field-type="json"]');
+      if (!(await last.evaluate((el) => el === document.activeElement)))
+        fails.push("type picker End did not reach JSON");
+      const visible = await last.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const list = el
+          .closest("details")
+          .parentElement.getBoundingClientRect();
+        return box.top >= list.top && box.bottom <= list.bottom;
+      });
+      if (!visible) fails.push("last type does not scroll into view");
+      await search.fill("");
+      await page
+        .getByRole("textbox", { name: "New field name", exact: true })
+        .focus();
+      await page
+        .locator('button[data-field-type="text"]')
+        .evaluate((el) => el.scrollIntoView({ block: "nearest" }));
     }
     const m = (await page.evaluate(overlayGeometry)) ?? {};
     for (const [key, value] of Object.entries(want))
@@ -1327,6 +2078,157 @@ if (pages.table) {
     }
     const shot = `${name}.png`;
     await page.screenshot({ path: join(OUT, shot) });
+    if (name.startsWith("table-new-row-form")) {
+      try {
+        const layout = await page
+          .locator('[data-slot="dialog-popup"]')
+          .evaluate((popup) => {
+            const bounds = popup.getBoundingClientRect();
+            const footer = popup
+              .querySelector('[data-slot="dialog-footer"]')
+              .getBoundingClientRect();
+            return {
+              overflow: [
+                ...popup.querySelectorAll(
+                  'input, textarea, [role="group"], button',
+                ),
+              ].some(
+                (el) => el.getBoundingClientRect().right > bounds.right + 1,
+              ),
+              footerVisible: footer.bottom <= innerHeight && footer.top >= 0,
+            };
+          });
+        if (layout.overflow || !layout.footerVisible)
+          throw new Error(`form layout ${JSON.stringify(layout)}`);
+        const response = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/rows"),
+        );
+        if (viewport.width > 600)
+          await page
+            .getByRole("spinbutton", { name: "Cost", exact: true })
+            .press("Enter");
+        else
+          await page
+            .getByRole("button", { name: "Create row", exact: true })
+            .click();
+        const added = await response;
+        if (!added.ok())
+          throw new Error(`create failed: ${await added.text()}`);
+        const row = await added.json();
+        const data = added.request().postDataJSON();
+        if (
+          !Object.values(data.values).includes(12500) ||
+          !Object.values(data.values).includes("choice-mixing")
+        )
+          throw new Error("create did not send typed form values");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const cell = page
+          .getByRole("gridcell")
+          .filter({ hasText: "PB-NEW Form sample" });
+        await cell.waitFor();
+        const newRow = cell.locator("..");
+        if (
+          !(await newRow.innerText()).includes("Mixing") ||
+          !(await newRow.innerText()).includes("12,500")
+        )
+          throw new Error("new row did not appear with form values");
+        await page.screenshot({ path: join(OUT, `${name}-created.png`) });
+        const removed = await page.request.delete(
+          `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/rows/${row.id}`,
+        );
+        if (!removed.ok())
+          throw new Error("could not clean up form-created row");
+      } catch (error) {
+        fails.push(String(error));
+      }
+    }
+    if (name.startsWith("dialog-field-editor")) {
+      let fieldId;
+      let rowId;
+      const root = `${BASE}/api/data-table/organization/${org.id}/${tbl.id}`;
+      try {
+        const layout = await page
+          .locator('[data-slot="dialog-popup"]')
+          .evaluate((popup) => {
+            const footer = popup
+              .querySelector('[data-slot="dialog-footer"]')
+              .getBoundingClientRect();
+            return {
+              overflow: popup.scrollWidth > popup.clientWidth,
+              footerVisible: footer.bottom <= innerHeight && footer.top >= 0,
+            };
+          });
+        if (layout.overflow || !layout.footerVisible)
+          throw new Error(`field editor layout ${JSON.stringify(layout)}`);
+        const saved = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/fields"),
+        );
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Add field", exact: true })
+          .click();
+        const fieldResponse = await saved;
+        if (!fieldResponse.ok())
+          throw new Error(`field create: ${await fieldResponse.text()}`);
+        const field = await fieldResponse.json();
+        fieldId = field.id;
+        if (
+          field.options.defaultValue !== "2026-11-17" ||
+          field.options.description !== "Expected delivery date"
+        )
+          throw new Error("field options not stored");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const entries = page.getByRole("button", {
+          name: "New row",
+          exact: true,
+        });
+        await (viewport.width < 600 ? entries.last() : entries.first()).click();
+        const input = page.locator('input[aria-label="Default delivery"]');
+        if ((await input.inputValue()) !== "2026-11-17")
+          throw new Error("new row did not prefill default");
+        await page
+          .getByRole("textbox", { name: "Batch", exact: true })
+          .fill("Default row sample");
+        await input.scrollIntoViewIfNeeded();
+        await page.screenshot({ path: join(OUT, `${name}-new-row.png`) });
+        const created = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/rows"),
+        );
+        await page
+          .getByRole("button", { name: "Create row", exact: true })
+          .click();
+        const rowResponse = await created;
+        if (!rowResponse.ok())
+          throw new Error(`row create: ${await rowResponse.text()}`);
+        const row = await rowResponse.json();
+        rowId = row.id;
+        if (row.values[fieldId] !== "2026-11-17")
+          throw new Error("created row lost default");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const cell = page
+          .getByRole("gridcell")
+          .filter({ hasText: "Default row sample" });
+        await cell.waitFor();
+        await cell
+          .locator("..")
+          .getByRole("button", { name: /Expand row/ })
+          .click();
+        await page
+          .getByText("Expected delivery date", { exact: true })
+          .waitFor();
+        await page.screenshot({ path: join(OUT, `${name}-created.png`) });
+      } catch (error) {
+        fails.push(String(error));
+      } finally {
+        if (rowId && !(await page.request.delete(`${root}/rows/${rowId}`)).ok())
+          fails.push("could not remove default row");
+        if (
+          fieldId &&
+          !(await page.request.delete(`${root}/fields/${fieldId}`)).ok()
+        )
+          fails.push("could not remove default field");
+      }
+    }
     checks[shot] = { fails, ...m };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
@@ -1334,6 +2236,304 @@ if (pages.table) {
     await ctx.close();
   }
 } else console.log("SKIP overlay states: the table page is not in PAGES");
+
+// Search acceptance: real API, keyboard aliases, filter chips, snippets and safe highlighting.
+if (pages.board) {
+  for (const [tag, viewport] of [
+    ["desktop", { width: 1440, height: 900 }],
+    ["phone", { width: 390, height: 844 }],
+  ]) {
+    const ctx = await browser.newContext({
+      viewport,
+      storageState: state,
+      colorScheme: "dark",
+      reducedMotion: "reduce",
+    });
+    await ctx.addInitScript(() =>
+      localStorage.setItem(
+        "user-preferences",
+        JSON.stringify({ state: { theme: "dark" }, version: 0 }),
+      ),
+    );
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(String(error)));
+    await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
+    const fails = [];
+    if (tag === "desktop") {
+      const hint = await page
+        .locator("button")
+        .filter({ hasText: /^Search/ })
+        .first()
+        .locator("kbd")
+        .textContent();
+      if (!/^(⌘K|Ctrl K)$/.test(hint ?? "") || hint === "/")
+        fails.push(`sidebar search shortcut ${hint}`);
+    }
+    await page.keyboard.press("/");
+    const popup = page.locator('[data-slot="command-dialog-popup"]');
+    const input = popup.getByRole("combobox");
+    await popup.waitFor();
+    for (const [name, query] of [
+      ["help", ""],
+      ["autocomplete", "status:"],
+      ["results", "housing pressure"],
+      ["empty", "zzznomatch board:KFL"],
+    ]) {
+      await input.fill(query);
+      if (name === "help") await page.getByTestId("search-help").waitFor();
+      if (name === "autocomplete") {
+        const chip = page.getByRole("button", {
+          name: "status:in-progress",
+          exact: true,
+        });
+        await chip.waitFor();
+        await chip.click();
+        if ((await input.inputValue()) !== "status:in-progress ")
+          fails.push("filter chip did not complete the query");
+        await input.fill("status:");
+      }
+      if (name === "results") {
+        await popup
+          .locator('[data-slot="command-item"]')
+          .filter({ hasText: "Filter housing leak" })
+          .first()
+          .waitFor();
+        if ((await popup.locator("mark").count()) < 2)
+          fails.push("matched title/snippet not highlighted");
+        if (
+          !(
+            await page.getByTestId("search-snippet").first().textContent()
+          )?.includes("Pressure")
+        )
+          fails.push("description snippet missing");
+      }
+      if (name === "empty")
+        await popup.getByText("Try fewer words or drop a filter.").waitFor();
+      const overflow = await popup.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return [...element.querySelectorAll("input, button, code, mark")].some(
+          (child) => child.getBoundingClientRect().right > bounds.right + 1,
+        );
+      });
+      if (overflow) fails.push("search content overflows palette");
+      const shot = `search-${name}--${tag}-dark.png`;
+      await page.screenshot({ path: join(OUT, shot) });
+      checks[shot] = { fails: [...fails, ...errors] };
+      console.log(
+        `${fails.length || errors.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
+      );
+    }
+    await page.keyboard.press("Escape");
+    await popup.waitFor({ state: "hidden" });
+    await page.keyboard.press(
+      await page.evaluate(() =>
+        navigator.platform.toLowerCase().includes("mac")
+          ? "Meta+k"
+          : "Control+k",
+      ),
+    );
+    await popup.waitFor();
+    await page.keyboard.press("Escape");
+    await ctx.close();
+  }
+}
+
+// Theme system acceptance: real account controls, persisted palettes and painted buttons.
+for (const [preset, mode, tag, appearance] of [
+  ["mono", "dark", "desktop", true],
+  ["mono", "dark", "phone", true],
+  ...["mono", "indigo", "slate", "graphite", "teal"].map((id) => [
+    id,
+    "dark",
+    "desktop",
+    false,
+  ]),
+  ["mono", "light", "desktop", false],
+]) {
+  const ctx = await browser.newContext({
+    viewport:
+      tag === "phone"
+        ? { width: 390, height: 844 }
+        : { width: 1440, height: 900 },
+    storageState: state,
+    colorScheme: mode,
+    reducedMotion: "reduce",
+  });
+  await ctx.addInitScript(
+    ({ preset, mode }) => {
+      if (!localStorage.getItem("user-preferences"))
+        localStorage.setItem(
+          "user-preferences",
+          JSON.stringify({
+            state: { theme: mode, themePreset: preset, accentColor: null },
+            version: 0,
+          }),
+        );
+    },
+    { preset, mode },
+  );
+  const page = await ctx.newPage();
+  const fails = [];
+  const measurements = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  const shot = appearance
+    ? `appearance--${tag}-${mode}.png`
+    : `theme-${preset}--table-${mode}.png`;
+  try {
+    await page.goto(
+      BASE +
+        (appearance
+          ? "/dashboard/settings/account/appearance"
+          : `/dashboard/organization/${slug}/table/${tbl.id}`),
+      { waitUntil: "networkidle" },
+    );
+    if (!appearance) await page.getByRole("grid").waitFor();
+    const rootTheme = await page.locator("html").getAttribute("data-theme");
+    if (rootTheme !== preset)
+      throw new Error(`data-theme ${rootTheme}, expected ${preset}`);
+    const palette = await page.evaluate(themeContrast);
+    if (palette.buttonContrast < 4.5 || palette.mutedContrast < 4.5)
+      throw new Error(`palette contrast ${JSON.stringify(palette)}`);
+    if (appearance) {
+      const cards = await page
+        .locator('[data-testid^="preset-"]')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const box = node.getBoundingClientRect();
+            const sample = node
+              .querySelector("[data-theme]")
+              .getBoundingClientRect();
+            return {
+              top: box.top,
+              bottom: box.bottom,
+              left: box.left,
+              right: box.right,
+              sampleTop: sample.top,
+              sampleBottom: sample.bottom,
+            };
+          }),
+        );
+      for (const c of cards)
+        if (c.sampleTop < c.top || c.sampleBottom > c.bottom)
+          throw new Error(`preview escapes card ${JSON.stringify(c)}`);
+      for (let i = 0; i < cards.length; i++)
+        for (let j = i + 1; j < cards.length; j++) {
+          const a = cards[i];
+          const b = cards[j];
+          if (
+            a.left < b.right &&
+            b.left < a.right &&
+            a.top < b.bottom &&
+            b.top < a.bottom
+          )
+            throw new Error("preset cards overlap");
+        }
+    }
+    if (appearance && tag === "phone") {
+      const nav = page.locator("aside details");
+      // Collapse the mobile settings navigation so the page is the captured surface.
+      if ((await nav.count()) && (await nav.getAttribute("open")) !== null)
+        await nav.locator("summary").click();
+    }
+    await page.screenshot({ path: join(OUT, shot), fullPage: appearance });
+    if (appearance && tag === "phone") {
+      await page
+        .getByTestId("appearance-preview-action")
+        .scrollIntoViewIfNeeded();
+      const accentShot = "appearance-accent--phone-dark.png";
+      await page.screenshot({ path: join(OUT, accentShot) });
+      checks[accentShot] = { fails: [], preset, mode };
+    }
+    const assertButton = async () => {
+      const button = appearance
+        ? page.getByTestId("appearance-preview-action")
+        : page.getByRole("button", { name: "New row", exact: true }).first();
+      const measured = await button.evaluate((el) => {
+        const s = getComputedStyle(el);
+        const lum = (color) => {
+          const channels = color
+            .match(/[\d.]+/g)
+            .slice(0, 3)
+            .map(Number)
+            .map((v) => {
+              const c = v / 255;
+              return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+            });
+          return channels.reduce(
+            (n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i],
+            0,
+          );
+        };
+        const a = lum(s.color);
+        const b = lum(s.backgroundColor);
+        return {
+          foreground: s.color,
+          background: s.backgroundColor,
+          ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+        };
+      });
+      measurements.push(measured);
+      if (!(measured.ratio >= 4.5))
+        throw new Error(`painted button contrast ${JSON.stringify(measured)}`);
+    };
+    await assertButton();
+    if (appearance) {
+      await page.getByTestId("preset-teal").click();
+      await page.waitForFunction(
+        () => document.documentElement.dataset.theme === "teal",
+      );
+      await page.getByRole("button", { name: "#d97706", exact: true }).click();
+      await assertButton();
+      const hex = page.getByLabel("Custom hex colour");
+      await hex.fill("#eeeeee");
+      await assertButton();
+      await page.reload({ waitUntil: "networkidle" });
+      if ((await hex.inputValue()) !== "#eeeeee")
+        throw new Error("accent did not survive reload");
+      await hex.fill("#zzzzzz");
+      if ((await hex.getAttribute("aria-invalid")) !== "true")
+        throw new Error("invalid hex accepted");
+      await page
+        .getByRole("button", { name: "Reset to preset", exact: true })
+        .click();
+      if (
+        (await page
+          .locator("html")
+          .evaluate((el) => el.style.getPropertyValue("--primary"))) !== ""
+      )
+        throw new Error("reset left inline accent");
+      await page.getByRole("button", { name: "System", exact: true }).click();
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.waitForFunction(() =>
+        document.documentElement.classList.contains("light"),
+      );
+      await assertButton();
+      await page.emulateMedia({ colorScheme: "dark" });
+      await page.waitForFunction(() =>
+        document.documentElement.classList.contains("dark"),
+      );
+      await page.getByTestId("preset-mono").click();
+      const overflow = await page
+        .getByTestId("appearance-settings")
+        .evaluate((el) => {
+          const right = el.getBoundingClientRect().right;
+          return [...el.querySelectorAll("button,input,p,h1")]
+            .filter((node) => node.getBoundingClientRect().right > right + 1)
+            .map((node) => node.textContent);
+        });
+      if (overflow.length)
+        throw new Error(`appearance overflow: ${overflow.join(",")}`);
+    }
+  } catch (e) {
+    fails.push(String(e));
+  }
+  checks[shot] = { fails, preset, mode, measurements };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(checks[shot])}`,
+  );
+  await ctx.close();
+}
 
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));

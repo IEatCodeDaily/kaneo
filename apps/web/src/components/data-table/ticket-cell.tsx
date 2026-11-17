@@ -116,7 +116,8 @@ export function TicketCellPicker({
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const { organizationId, tableId, tickets } = useContext(TicketLookupContext);
+  const context = useContext(TicketLookupContext);
+  const { organizationId, tableId, tickets } = context;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<TicketRef[]>([]);
@@ -129,7 +130,12 @@ export function TicketCellPicker({
     if (!open) return;
     let cancelled = false;
     const handle = setTimeout(() => {
-      getTicketOptions({ organizationId, tableId }, field.id, query.trim())
+      getTicketOptions(
+        { organizationId, tableId },
+        field.id,
+        query.trim(),
+        field.id === "draft" ? field.options?.boardIds : undefined,
+      )
         .then((refs) => {
           if (!cancelled) setHits(refs);
         })
@@ -141,7 +147,7 @@ export function TicketCellPicker({
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [open, query, organizationId, tableId, field.id]);
+  }, [open, query, organizationId, tableId, field.id, field.options?.boardIds]);
 
   if (!canEdit) return <>{children}</>;
 
@@ -214,7 +220,11 @@ export function TicketCellPicker({
           aria-label={t("navigation:tables.linkTicket")}
           className="h-auto min-w-0 flex-1 justify-start whitespace-normal border-0 px-0 text-left sm:h-auto"
         >
-          {children}
+          <TicketLookupContext.Provider
+            value={{ ...context, tickets: { ...tickets, ...picked } }}
+          >
+            {children}
+          </TicketLookupContext.Provider>
         </Button>
       </PopoverTrigger>
       <PopoverContent

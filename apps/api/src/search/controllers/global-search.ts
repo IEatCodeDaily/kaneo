@@ -1,8 +1,9 @@
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   activityTable,
   boardTable,
+  labelTable,
   organizationMemberTable,
   organizationTable,
   repoIssueTable,
@@ -12,6 +13,7 @@ import {
   userTable,
 } from "../../database/schema";
 import { requireResourcePrivilege } from "../../resource-access";
+import { parseSearchQuery, rankedSearch, textMatch } from "./search-sql";
 
 type SearchParams = {
   query: string;
@@ -162,110 +164,80 @@ async function globalSearch(params: SearchParams): Promise<{
   }
 
   const results: SearchResult[] = [];
-  const searchPattern = `%${query.toLowerCase()}%`;
+  const parsed = parseSearchQuery(query);
+  if (!parsed.enabled)
+    return { results: [], totalCount: 0, searchQuery: query };
+  const { filters } = parsed;
 
   const organizationFilter = organizationId
-    ? eq(boardTable.organizationId, organizationId)
+    ? and(
+        eq(boardTable.organizationId, organizationId),
+        inArray(boardTable.organizationId, accessibleOrganizationIds),
+      )
     : inArray(boardTable.organizationId, accessibleOrganizationIds);
 
   const repoOrganizationFilter = organizationId
-    ? eq(repoTable.organizationId, organizationId)
+    ? and(
+        eq(repoTable.organizationId, organizationId),
+        inArray(repoTable.organizationId, accessibleOrganizationIds),
+      )
     : inArray(repoTable.organizationId, accessibleOrganizationIds);
 
-  // Matches "#12" or a bare number so issue/PR numbers are directly searchable.
-  const issueNumberMatch = query.trim().match(/^#?(\d+)$/);
-  const searchedNumber = issueNumberMatch?.[1]
-    ? Number.parseInt(issueNumberMatch[1], 10)
-    : undefined;
+  const searchedNumber = parsed.key?.number;
+  const taskFilters = and(
+    ...(filters.board ?? []).map((slug) =>
+      ilike(boardTable.slug, slug.replace(/[\\%_]/g, "\\$&")),
+    ),
+    ...(filters.status ?? []).map(
+      (status) =>
+        sql`exists (select 1 from "column" c where c.board_id = ${taskTable.boardId} and c.slug = ${taskTable.status} and (lower(c.slug) = ${status} or lower(c.name) = ${status}))`,
+    ),
+    ...(filters.is ?? []).map(
+      (state) =>
+        sql`exists (select 1 from "column" c where c.board_id = ${taskTable.boardId} and c.slug = ${taskTable.status} and ${state === "done" ? sql`c.status_type = 'completed'` : sql`c.is_final = ${state === "closed"}`})`,
+    ),
+    ...(filters.assignee ?? []).map((name) =>
+      name === "me"
+        ? eq(taskTable.userId, resolvedUserId)
+        : sql`exists (select 1 from "user" u where u.id = ${taskTable.userId} and lower(u.name) = ${name})`,
+    ),
+    ...(filters.priority ?? []).map((priority) =>
+      eq(taskTable.priority, priority),
+    ),
+    ...(filters.label ?? []).map(
+      (name) =>
+        sql`exists (select 1 from ${labelTable} where ${labelTable.taskId} = ${taskTable.id} and lower(${labelTable.name}) = ${name})`,
+    ),
+  );
+  const taskOnly = !!(
+    filters.status ||
+    filters.assignee ||
+    filters.priority ||
+    filters.label
+  );
+  const allows = (kind: string) => !filters.type || filters.type.includes(kind);
+  const boardScope = filters.board || boardId;
+  const comments = (term: string) =>
+    sql`exists (select 1 from ${activityTable} where ${activityTable.taskId} = ${taskTable.id} and ${activityTable.type} = 'comment' and ${textMatch(sql`coalesce(${activityTable.content}, '')`, term)})`;
+  const taskExact =
+    searchedNumber === undefined
+      ? undefined
+      : and(
+          eq(taskTable.number, searchedNumber),
+          parsed.key?.slug
+            ? ilike(boardTable.slug, parsed.key.slug)
+            : undefined,
+        );
+  const taskSearch = rankedSearch(
+    sql`${taskTable.title}`,
+    sql`${taskTable.description}`,
+    parsed,
+    taskExact,
+    comments,
+  );
 
-  // Check if query matches short-id pattern (e.g. "DEP-23")
-  const shortIdMatch = query.match(/^([A-Za-z][\w-]*)-(\d+)$/);
-
-  if (type === "all" || type === "tasks") {
-    const seenTaskIds = new Set<string>();
-
-    // If query matches short-id pattern, look up by board slug + task number first
-    if (shortIdMatch?.[1] && shortIdMatch[2]) {
-      const slug = shortIdMatch[1];
-      const numberStr = shortIdMatch[2];
-      const taskNumber = Number.parseInt(numberStr, 10);
-
-      const shortIdTasks = await db
-        .select({
-          id: taskTable.id,
-          title: taskTable.title,
-          description: taskTable.description,
-          boardId: taskTable.boardId,
-          boardName: boardTable.name,
-          boardSlug: boardTable.slug,
-          organizationId: boardTable.organizationId,
-          organizationName: organizationTable.name,
-          userId: taskTable.userId,
-          userName: userTable.name,
-          createdAt: taskTable.createdAt,
-          taskNumber: taskTable.number,
-          priority: taskTable.priority,
-          status: taskTable.status,
-        })
-        .from(taskTable)
-        .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
-        .leftJoin(
-          organizationTable,
-          eq(boardTable.organizationId, organizationTable.id),
-        )
-        .leftJoin(userTable, eq(taskTable.userId, userTable.id))
-        .where(
-          and(
-            organizationFilter,
-            boardId ? eq(taskTable.boardId, boardId) : undefined,
-            ilike(boardTable.slug, slug),
-            eq(taskTable.number, taskNumber),
-            isNull(taskTable.deletedAt),
-          ),
-        )
-        .limit(1);
-
-      for (const task of shortIdTasks) {
-        seenTaskIds.add(task.id);
-        results.push({
-          id: task.id,
-          type: "task",
-          title: task.title,
-          description: task.description || undefined,
-          boardId: task.boardId,
-          boardName: task.boardName || undefined,
-          boardSlug: task.boardSlug || undefined,
-          organizationId: task.organizationId || undefined,
-          organizationName: task.organizationName || undefined,
-          userId: task.userId || undefined,
-          userName: task.userName || undefined,
-          createdAt: task.createdAt,
-          relevanceScore: 10, // Highest relevance for exact short-id match
-          taskNumber: task.taskNumber || undefined,
-          priority: task.priority || undefined,
-          status: task.status,
-        });
-      }
-    }
-
-    // Also run text search for tasks. `searchedNumber` is set when the query is
-    // a bare number or "#78", which lets users find a task by the number shown
-    // in the UI. It stays undefined for non-numeric queries like "abc" so plain
-    // text search is unaffected.
-    const taskNumberMatch =
-      searchedNumber === undefined
-        ? undefined
-        : eq(taskTable.number, searchedNumber);
-
-    const taskRelevanceScore = sql<number>`
-      CASE
-        ${taskNumberMatch ? sql`WHEN ${taskTable.number} = ${searchedNumber} THEN 4` : sql``}
-        WHEN LOWER(${taskTable.title}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${taskTable.description}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
-
+  if ((type === "all" || type === "tasks") && allows("ticket")) {
+    const taskRelevanceScore = taskSearch.score;
     const taskQuery = db
       .select({
         id: taskTable.id,
@@ -283,6 +255,16 @@ async function globalSearch(params: SearchParams): Promise<{
         priority: taskTable.priority,
         status: taskTable.status,
         relevanceScore: taskRelevanceScore.as("relevanceScore"),
+        content: sql<string>`(select ${activityTable.content} from ${activityTable} where ${activityTable.taskId} = ${taskTable.id} and ${activityTable.type} = 'comment' and ${
+          parsed.terms.length
+            ? sql.join(
+                parsed.terms.map((term) =>
+                  textMatch(sql`coalesce(${activityTable.content}, '')`, term),
+                ),
+                sql` or `,
+              )
+            : sql`false`
+        } order by ${activityTable.createdAt} desc limit 1)`,
       })
       .from(taskTable)
       .leftJoin(boardTable, eq(taskTable.boardId, boardTable.id))
@@ -296,11 +278,8 @@ async function globalSearch(params: SearchParams): Promise<{
           organizationFilter,
           boardId ? eq(taskTable.boardId, boardId) : undefined,
           isNull(taskTable.deletedAt),
-          or(
-            ilike(taskTable.title, searchPattern),
-            ilike(taskTable.description, searchPattern),
-            taskNumberMatch,
-          ),
+          taskFilters,
+          taskSearch.match,
         ),
       )
       .orderBy(desc(taskRelevanceScore), desc(taskTable.createdAt))
@@ -309,12 +288,12 @@ async function globalSearch(params: SearchParams): Promise<{
     const tasks = await taskQuery;
 
     for (const task of tasks) {
-      if (seenTaskIds.has(task.id)) continue;
       results.push({
         id: task.id,
         type: "task",
         title: task.title,
         description: task.description || undefined,
+        content: task.content || undefined,
         boardId: task.boardId,
         boardName: task.boardName || undefined,
         boardSlug: task.boardSlug || undefined,
@@ -331,14 +310,18 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "boards") {
-    const boardRelevanceScore = sql<number>`
-      CASE
-        WHEN LOWER(${boardTable.name}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${boardTable.description}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
+  if (
+    (type === "all" || type === "boards") &&
+    allows("board") &&
+    !taskOnly &&
+    !filters.is
+  ) {
+    const boardSearch = rankedSearch(
+      sql`${boardTable.name}`,
+      sql`${boardTable.description}`,
+      parsed,
+    );
+    const boardRelevanceScore = boardSearch.score;
 
     const boardQuery = db
       .select({
@@ -359,9 +342,10 @@ async function globalSearch(params: SearchParams): Promise<{
       .where(
         and(
           organizationFilter,
-          or(
-            ilike(boardTable.name, searchPattern),
-            ilike(boardTable.description, searchPattern),
+          boardSearch.match,
+          boardId ? eq(boardTable.id, boardId) : undefined,
+          ...(filters.board ?? []).map((slug) =>
+            eq(sql`lower(${boardTable.slug})`, slug),
           ),
         ),
       )
@@ -386,14 +370,19 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "organizations") {
-    const organizationRelevanceScore = sql<number>`
-      CASE
-        WHEN LOWER(${organizationTable.name}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${organizationTable.description}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
+  if (
+    (type === "all" || type === "organizations") &&
+    !taskOnly &&
+    !filters.is &&
+    !boardScope &&
+    !filters.type
+  ) {
+    const organizationSearch = rankedSearch(
+      sql`${organizationTable.name}`,
+      sql`${organizationTable.description}`,
+      parsed,
+    );
+    const organizationRelevanceScore = organizationSearch.score;
 
     const organizationQuery = db
       .select({
@@ -404,17 +393,11 @@ async function globalSearch(params: SearchParams): Promise<{
         relevanceScore: organizationRelevanceScore.as("relevanceScore"),
       })
       .from(organizationTable)
-      .leftJoin(
-        organizationMemberTable,
-        eq(organizationTable.id, organizationMemberTable.organizationId),
-      )
       .where(
         and(
           inArray(organizationTable.id, accessibleOrganizationIds),
-          or(
-            ilike(organizationTable.name, searchPattern),
-            ilike(organizationTable.description, searchPattern),
-          ),
+          organizationId ? eq(organizationTable.id, organizationId) : undefined,
+          organizationSearch.match,
         ),
       )
       .orderBy(
@@ -439,15 +422,17 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "comments" || type === "activities") {
+  if (
+    (type === "all" || type === "comments" || type === "activities") &&
+    allows("comment")
+  ) {
     const searchableActivityText = sql<string>`COALESCE(${activityTable.content}, CAST(${activityTable.eventData} AS text), '')`;
-    const activityRelevanceScore = sql<number>`
-      CASE
-        WHEN LOWER(${searchableActivityText}) LIKE ${searchPattern} THEN 2
-        WHEN LOWER(${taskTable.title}) LIKE ${searchPattern} THEN 1
-        ELSE 1
-      END
-    `;
+    const activitySearch = rankedSearch(
+      sql`${taskTable.title}`,
+      sql`${searchableActivityText}`,
+      parsed,
+    );
+    const activityRelevanceScore = activitySearch.score;
 
     const activityQuery = db
       .select({
@@ -480,11 +465,12 @@ async function globalSearch(params: SearchParams): Promise<{
         and(
           organizationFilter,
           boardId ? eq(taskTable.boardId, boardId) : undefined,
-          or(
-            ilike(searchableActivityText, searchPattern),
-            ilike(taskTable.title, searchPattern),
-          ),
-          type === "comments" ? eq(activityTable.type, "comment") : undefined,
+          activitySearch.match,
+          taskFilters,
+          isNull(taskTable.deletedAt),
+          type === "comments" || filters.type?.includes("comment")
+            ? eq(activityTable.type, "comment")
+            : undefined,
         ),
       )
       .orderBy(desc(activityRelevanceScore), desc(activityTable.createdAt))
@@ -520,14 +506,19 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "repositories") {
-    const repoRelevanceScore = sql<number>`
-      CASE
-        WHEN LOWER(${repoTable.name}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${repoTable.owner}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
+  if (
+    (type === "all" || type === "repositories") &&
+    allows("repo") &&
+    !taskOnly &&
+    !filters.is &&
+    !boardScope
+  ) {
+    const repoSearch = rankedSearch(
+      sql`${repoTable.name}`,
+      sql`coalesce(${repoTable.owner}, '') || ' ' || coalesce(${repoTable.description}, '')`,
+      parsed,
+    );
+    const repoRelevanceScore = repoSearch.score;
 
     const repos = await db
       .select({
@@ -547,20 +538,7 @@ async function globalSearch(params: SearchParams): Promise<{
         organizationTable,
         eq(repoTable.organizationId, organizationTable.id),
       )
-      .where(
-        and(
-          repoOrganizationFilter,
-          or(
-            ilike(repoTable.name, searchPattern),
-            ilike(repoTable.owner, searchPattern),
-            ilike(repoTable.description, searchPattern),
-            ilike(
-              sql<string>`${repoTable.owner} || '/' || ${repoTable.name}`,
-              searchPattern,
-            ),
-          ),
-        ),
-      )
+      .where(and(repoOrganizationFilter, repoSearch.match))
       .orderBy(desc(repoRelevanceScore), desc(repoTable.createdAt))
       .limit(limit);
 
@@ -583,15 +561,21 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "issues") {
-    const issueRelevanceScore = sql<number>`
-      CASE
-        WHEN ${searchedNumber === undefined ? sql`FALSE` : sql`${repoIssueTable.number} = ${searchedNumber}`} THEN 4
-        WHEN LOWER(${repoIssueTable.title}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${repoIssueTable.body}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
+  if (
+    (type === "all" || type === "issues") &&
+    allows("issue") &&
+    !taskOnly &&
+    !boardScope
+  ) {
+    const issueSearch = rankedSearch(
+      sql`${repoIssueTable.title}`,
+      sql`${repoIssueTable.body}`,
+      parsed,
+      searchedNumber === undefined || parsed.key?.slug
+        ? undefined
+        : eq(repoIssueTable.number, searchedNumber),
+    );
+    const issueRelevanceScore = issueSearch.score;
 
     const issues = await db
       .select({
@@ -620,12 +604,9 @@ async function globalSearch(params: SearchParams): Promise<{
       .where(
         and(
           repoOrganizationFilter,
-          or(
-            ilike(repoIssueTable.title, searchPattern),
-            ilike(repoIssueTable.body, searchPattern),
-            searchedNumber === undefined
-              ? undefined
-              : eq(repoIssueTable.number, searchedNumber),
+          issueSearch.match,
+          ...(filters.is ?? []).map((state) =>
+            eq(repoIssueTable.state, state === "open" ? "open" : "closed"),
           ),
         ),
       )
@@ -654,15 +635,21 @@ async function globalSearch(params: SearchParams): Promise<{
     }
   }
 
-  if (type === "all" || type === "pullRequests") {
-    const pullRequestRelevanceScore = sql<number>`
-      CASE
-        WHEN ${searchedNumber === undefined ? sql`FALSE` : sql`${repoPullRequestTable.number} = ${searchedNumber}`} THEN 4
-        WHEN LOWER(${repoPullRequestTable.title}) LIKE ${searchPattern} THEN 3
-        WHEN LOWER(${repoPullRequestTable.body}) LIKE ${searchPattern} THEN 2
-        ELSE 1
-      END
-    `;
+  if (
+    (type === "all" || type === "pullRequests") &&
+    allows("pr") &&
+    !taskOnly &&
+    !boardScope
+  ) {
+    const pullRequestSearch = rankedSearch(
+      sql`${repoPullRequestTable.title}`,
+      sql`${repoPullRequestTable.body}`,
+      parsed,
+      searchedNumber === undefined || parsed.key?.slug
+        ? undefined
+        : eq(repoPullRequestTable.number, searchedNumber),
+    );
+    const pullRequestRelevanceScore = pullRequestSearch.score;
 
     const pullRequests = await db
       .select({
@@ -691,12 +678,12 @@ async function globalSearch(params: SearchParams): Promise<{
       .where(
         and(
           repoOrganizationFilter,
-          or(
-            ilike(repoPullRequestTable.title, searchPattern),
-            ilike(repoPullRequestTable.body, searchPattern),
-            searchedNumber === undefined
-              ? undefined
-              : eq(repoPullRequestTable.number, searchedNumber),
+          pullRequestSearch.match,
+          ...(filters.is ?? []).map((state) =>
+            eq(
+              repoPullRequestTable.state,
+              state === "open" ? "open" : "closed",
+            ),
           ),
         ),
       )

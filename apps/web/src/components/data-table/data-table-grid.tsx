@@ -6,9 +6,13 @@ import {
   ChevronDown,
   Columns3,
   EyeOff,
+  Info,
   ListFilter,
+  LockKeyhole,
   Maximize2,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -26,7 +30,11 @@ import {
   FieldTypeIcon,
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
-import { csvParse, csvSerialize } from "@/components/data-table/data-table-csv";
+import {
+  csvParse,
+  csvSerialize,
+  rowMatchesSearch,
+} from "@/components/data-table/data-table-csv";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
 import {
   type ColumnSort,
@@ -44,17 +52,21 @@ import {
   groupValue,
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
+  readFrozenColumns,
   readHiddenFields,
+  readShowSystemFields,
   rowMatchesFilters,
-  rowMatchesSearch,
   type SummaryFn,
   sortedFields,
   sortedRows,
   sortRows,
   summarize,
   supportsSummary,
+  systemFields,
   writeDensity,
+  writeFrozenColumns,
   writeHiddenFields,
+  writeShowSystemFields,
 } from "@/components/data-table/data-table-format";
 import {
   DataTableToolbar,
@@ -62,6 +74,7 @@ import {
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
+import { NewRowDialog } from "@/components/data-table/new-row-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
 import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
@@ -76,6 +89,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   Empty,
   EmptyDescription,
@@ -103,6 +123,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createDataTableRow,
   deleteDataTableRow,
@@ -154,6 +179,8 @@ const NUMERIC_CELL_TYPES: DataTableFieldType[] = [
 function FieldHeader({
   field,
   stickyLeft,
+  frozen,
+  freezeEdge,
   sort,
   onSort,
   canEdit,
@@ -167,9 +194,14 @@ function FieldHeader({
   width,
   onResize,
   onResetWidth,
+  onToggleFreeze,
 }: {
   field: DataTableField;
   stickyLeft: number | null;
+  /** Columns 0..N freeze together; `frozen` = this column is in the range. */
+  frozen: boolean;
+  /** True for the last frozen column: carries the freeze-edge divider. */
+  freezeEdge: boolean;
   sort: ColumnSort | null;
   onSort: (sort: ColumnSort) => void;
   canEdit: boolean;
@@ -186,18 +218,24 @@ function FieldHeader({
   width: number;
   onResize: (width: number) => void;
   onResetWidth: () => void;
+  onToggleFreeze: () => void;
 }) {
   const { t } = useTranslation();
   const { updateField } = useDataTableMutations(organizationId, tableId);
   const sorted = sort?.fieldId === field.id;
   const unit = currencyUnit(field);
   const numeric = NUMERIC_CELL_TYPES.includes(field.type);
+  const freezeLabel = t(
+    frozen
+      ? "navigation:tables.unfreezeColumn"
+      : "navigation:tables.freezeColumn",
+  );
 
   const [pendingType, setPendingType] = useState<DataTableFieldType | null>(
     null,
   );
   const changeType = async (next: DataTableFieldType) => {
-    if (!canEdit || next === field.type) return false;
+    if (!canEdit || field.system || next === field.type) return false;
     const needsEditor =
       ((next === "select" || next === "multiselect") &&
         !field.options?.choices?.length) ||
@@ -221,136 +259,198 @@ function FieldHeader({
   };
 
   return (
-    <div
-      role="columnheader"
-      aria-sort={
-        sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined
-      }
-      className={cn(
-        "flex min-w-0 border-r border-b bg-background",
-        stickyLeft !== null ? "sticky z-10" : "relative",
-      )}
-      style={stickyLeft !== null ? { left: stickyLeft } : undefined}
-    >
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <button
-              type="button"
-              aria-label={t("navigation:tables.fieldMenu", {
-                name: field.name,
-              })}
-              className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
-            />
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          role="columnheader"
+          aria-sort={
+            sorted
+              ? sort.dir === "asc"
+                ? "ascending"
+                : "descending"
+              : undefined
           }
-        >
-          {/* Quantities right-align: icon + name + unit sit together over the digits. */}
-          {numeric && <span className="flex-1" />}
-          <FieldTypeIcon type={field.type} />
-          <span className="min-w-0 truncate font-medium">{field.name}</span>
-          {unit && <span className="shrink-0">{unit}</span>}
-          {!numeric && <span className="flex-1" />}
-          {sorted &&
-            (sort.dir === "asc" ? (
-              <ArrowUp className="size-3.5 shrink-0" />
-            ) : (
-              <ArrowDown className="size-3.5 shrink-0" />
-            ))}
-          {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
-              the name and digits never shift. */}
-          <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
-            <ChevronDown className="size-3.5" />
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-52">
-          {canEdit && (
-            <>
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => onEditOptions(field, null)}>
-                  <Pencil className="size-3.5" />
-                  {t("navigation:tables.editField")}
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <FieldTypeIcon type={field.type} />
-                    {t("navigation:tables.changeType")}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {EDITABLE_FIELD_TYPES.filter(
-                      (type) => type !== field.type,
-                    ).map((type) => (
-                      <DropdownMenuItem
-                        key={type}
-                        onClick={() => setPendingType(type)}
-                      >
-                        <FieldTypeIcon type={type} />
-                        {t(FIELD_TYPE_LABEL_KEYS[type])}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-            </>
+          className={cn(
+            "flex min-w-0 border-b",
+            freezeEdge ? "border-r-2" : "border-r",
+            stickyLeft !== null ? "sticky z-10" : "relative",
+            frozen ? "bg-row-hover" : "bg-background",
           )}
-          <DropdownMenuGroup>
-            {" "}
-            <DropdownMenuItem
-              onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
+          style={stickyLeft !== null ? { left: stickyLeft } : undefined}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={t("navigation:tables.fieldMenu", {
+                    name: field.name,
+                  })}
+                  className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
+                />
+              }
             >
-              <ArrowUp className="size-3.5" />
-              {t("navigation:tables.sortAscending")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSort({ fieldId: field.id, dir: "desc" })}
-            >
-              <ArrowDown className="size-3.5" />
-              {t("navigation:tables.sortDescending")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onFilter(field)}>
-              <ListFilter className="size-3.5" />
-              {t("navigation:tables.filterByField")}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          {(canHide || canEdit) && <DropdownMenuSeparator />}
-          <DropdownMenuGroup>
-            {canHide && (
-              <DropdownMenuItem onClick={() => onHide(field)}>
-                <EyeOff className="size-3.5" />
-                {t("navigation:tables.hideField")}
-              </DropdownMenuItem>
-            )}
-            {canEdit && (
-              <DropdownMenuItem
-                className="text-destructive-foreground data-highlighted:text-destructive-foreground"
-                onClick={() => onDeleted(field)}
+              {/* Quantities right-align: icon + name + unit sit together over the digits. */}
+              {numeric && <span className="flex-1" />}
+              {field.system ? (
+                <LockKeyhole className="size-3.5 shrink-0" />
+              ) : (
+                <FieldTypeIcon type={field.type} />
+              )}
+              <span className="min-w-0 truncate font-medium">{field.name}</span>
+              {unit && <span className="shrink-0">{unit}</span>}
+              {!numeric && <span className="flex-1" />}
+              {frozen && (
+                <Pin
+                  aria-hidden
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                />
+              )}
+              {sorted &&
+                (sort.dir === "asc" ? (
+                  <ArrowUp className="size-3.5 shrink-0" />
+                ) : (
+                  <ArrowDown className="size-3.5 shrink-0" />
+                ))}
+              {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
+                  the name and digits never shift. */}
+              <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
+                <ChevronDown className="size-3.5" />
+              </span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-52">
+              {canEdit && !field.system && (
+                <>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      onClick={() => onEditOptions(field, null)}
+                    >
+                      <Pencil className="size-3.5" />
+                      {t("navigation:tables.editField")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FieldTypeIcon type={field.type} />
+                        {t("navigation:tables.changeType")}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        {EDITABLE_FIELD_TYPES.filter(
+                          (type) => type !== field.type,
+                        ).map((type) => (
+                          <DropdownMenuItem
+                            key={type}
+                            onClick={() => setPendingType(type)}
+                          >
+                            <FieldTypeIcon type={type} />
+                            {t(FIELD_TYPE_LABEL_KEYS[type])}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuGroup>
+                {" "}
+                <DropdownMenuItem
+                  onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
+                >
+                  <ArrowUp className="size-3.5" />
+                  {t("navigation:tables.sortAscending")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onSort({ fieldId: field.id, dir: "desc" })}
+                >
+                  <ArrowDown className="size-3.5" />
+                  {t("navigation:tables.sortDescending")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onFilter(field)}>
+                  <ListFilter className="size-3.5" />
+                  {t("navigation:tables.filterByField")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onToggleFreeze}>
+                  {frozen ? (
+                    <PinOff className="size-3.5" />
+                  ) : (
+                    <Pin className="size-3.5" />
+                  )}
+                  {freezeLabel}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              {(canHide || (canEdit && !field.system)) && (
+                <DropdownMenuSeparator />
+              )}
+              <DropdownMenuGroup>
+                {canHide && (
+                  <DropdownMenuItem onClick={() => onHide(field)}>
+                    <EyeOff className="size-3.5" />
+                    {t("navigation:tables.hideField")}
+                  </DropdownMenuItem>
+                )}
+                {canEdit && !field.system && (
+                  <DropdownMenuItem
+                    className="text-destructive-foreground data-highlighted:text-destructive-foreground"
+                    onClick={() => onDeleted(field)}
+                  >
+                    <Trash2 className="size-3.5" />
+                    {t("navigation:tables.deleteField")}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {field.options?.description && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={field.options.description}
+                    className="shrink-0 text-muted-foreground"
+                  />
+                }
               >
-                <Trash2 className="size-3.5" />
-                {t("navigation:tables.deleteField")}
-              </DropdownMenuItem>
+                <Info className="size-3" />
+              </TooltipTrigger>
+              <TooltipContent>{field.options.description}</TooltipContent>
+            </Tooltip>
+          )}
+          <ColumnResizeHandle
+            name={field.name}
+            width={width}
+            onResize={onResize}
+            onReset={onResetWidth}
+          />
+          {pendingType && (
+            <FieldTypeConfirmation
+              key={`${field.id}:${pendingType}`}
+              field={field}
+              nextType={pendingType}
+              open
+              onOpenChange={(open) => {
+                if (!open) setPendingType(null);
+              }}
+              onConfirm={() => changeType(pendingType)}
+            />
+          )}
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuItem onClick={onToggleFreeze}>
+            {frozen ? (
+              <PinOff className="size-3.5" />
+            ) : (
+              <Pin className="size-3.5" />
             )}
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <ColumnResizeHandle
-        name={field.name}
-        width={width}
-        onResize={onResize}
-        onReset={onResetWidth}
-      />
-      {pendingType && (
-        <FieldTypeConfirmation
-          key={`${field.id}:${pendingType}`}
-          field={field}
-          nextType={pendingType}
-          open
-          onOpenChange={(open) => {
-            if (!open) setPendingType(null);
-          }}
-          onConfirm={() => changeType(pendingType)}
-        />
-      )}
-    </div>
+            {freezeLabel}
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -381,7 +481,9 @@ function BulkSetField({
 }) {
   const { t } = useTranslation();
   const editable = fields.filter(
-    (field) => !["longtext", "link", "json", "ticket"].includes(field.type),
+    (field) =>
+      !field.system &&
+      !["longtext", "link", "json", "ticket"].includes(field.type),
   );
   const [fieldId, setFieldId] = useState<string | null>(
     editable[0]?.id ?? null,
@@ -532,7 +634,36 @@ export function DataTableGrid({
     [memberRows],
   );
 
-  const allFields = useMemo(() => sortedFields(table.fields), [table.fields]);
+  const [showSystem, setShowSystem] = useState(() =>
+    readShowSystemFields(table.id),
+  );
+  const allFields = useMemo(
+    () => [
+      ...sortedFields(table.fields),
+      ...(showSystem ? systemFields(table.id, t) : []),
+    ],
+    [table.fields, table.id, showSystem, t],
+  );
+  const choicesById = useMemo(() => {
+    const map = new Map<string, SelectChoice>();
+    for (const field of allFields) {
+      for (const choice of field.options?.choices ?? []) {
+        map.set(choice.id, choice);
+      }
+    }
+    return map;
+  }, [allFields]);
+  // id -> display name, for search and CSV export (cells show names, store ids).
+  const memberNames = useMemo(
+    () =>
+      new Map(
+        memberRows.map((m) => [
+          m.userId || m.id,
+          m.user.name || m.user.email || "",
+        ]),
+      ),
+    [memberRows],
+  );
   const fieldsById = useMemo(
     () => new Map(allFields.map((field) => [field.id, field])),
     [allFields],
@@ -590,6 +721,15 @@ export function DataTableGrid({
     setHidden(ids);
     writeHiddenFields(table.id, ids);
   };
+  // Frozen data columns (spreadsheet-style: 0..N freeze together) persist per
+  // table like hidden fields; the row-number gutter stays sticky regardless.
+  const [frozenCount, setFrozenCount] = useState(() =>
+    readFrozenColumns(table.id),
+  );
+  const changeFrozen = (count: number) => {
+    setFrozenCount(count);
+    writeFrozenColumns(table.id, count);
+  };
   // The first field names the row and is never hidden (Fields popover locks it).
   const fields = useMemo(
     () => allFields.filter((f, i) => i === 0 || !hidden.includes(f.id)),
@@ -624,8 +764,14 @@ export function DataTableGrid({
       sortRows(
         allRows.filter(
           (row) =>
-            rowMatchesSearch(row, allFields, search) &&
-            rowMatchesFilters(row, fieldsById, activeFilters),
+            rowMatchesSearch(
+              row,
+              allFields,
+              search,
+              choicesById,
+              memberNames,
+              ticketLookup.tickets,
+            ) && rowMatchesFilters(row, fieldsById, activeFilters),
         ),
         allFields,
         sort,
@@ -639,6 +785,8 @@ export function DataTableGrid({
       activeFilters,
       sort,
       ticketLookup.tickets,
+      choicesById,
+      memberNames,
     ],
   );
 
@@ -672,15 +820,6 @@ export function DataTableGrid({
 
   // Bucket keys are raw ids (choice ids, member ids); headers show resolved
   // labels and groups sort by them.
-  const choicesById = useMemo(() => {
-    const map = new Map<string, SelectChoice>();
-    for (const field of allFields) {
-      for (const choice of field.options?.choices ?? []) {
-        map.set(choice.id, choice);
-      }
-    }
-    return map;
-  }, [allFields]);
 
   const groupLabel = useCallback(
     (field: DataTableField, key: string): string => {
@@ -692,7 +831,11 @@ export function DataTableGrid({
       if (field.type === "select") return choicesById.get(key)?.label ?? key;
       if (field.type === "user") {
         const member = members.get(key);
-        return member?.user.name || member?.user.email || key;
+        return (
+          member?.user.name ||
+          member?.user.email ||
+          t("navigation:tables.formerMember")
+        );
       }
       return key;
     },
@@ -771,7 +914,7 @@ export function DataTableGrid({
     value: unknown,
   ) => {
     const key = `${row.id}:${field.id}`;
-    if (!canEdit || pendingCells.current.has(key)) return false;
+    if (!canEdit || field.system || pendingCells.current.has(key)) return false;
     pendingCells.current.add(key);
     try {
       await upsertCell.mutateAsync({
@@ -848,6 +991,7 @@ export function DataTableGrid({
     if (event.key === "Enter" && canEdit) {
       event.preventDefault();
       const field = fields.find((candidate) => candidate.id === active.fieldId);
+      if (field?.system) return;
       if (
         field &&
         (PICKER_TYPES.includes(field.type) || field.type === "checkbox")
@@ -863,16 +1007,12 @@ export function DataTableGrid({
     }
   };
 
-  const addRow = async (presetValues?: Record<string, unknown>) => {
-    try {
-      await createRow.mutateAsync({
-        organizationId,
-        tableId: table.id,
-        values: presetValues,
-      });
-    } catch {
-      toast.error(t("navigation:tables.addRowError"));
-    }
+  const [newRowValues, setNewRowValues] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const addRow = (presetValues: Record<string, unknown> = {}) => {
+    if (canEdit) setNewRowValues(presetValues);
   };
 
   const addRowInGroup = async (field: DataTableField, key: string) => {
@@ -899,7 +1039,7 @@ export function DataTableGrid({
       allFields,
       visibleRows,
       choicesById,
-      memberByName,
+      memberNames,
       ticketLookup.tickets,
     );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -911,7 +1051,7 @@ export function DataTableGrid({
   };
 
   const importCsv = async (file: File) => {
-    const byName = new Map(allFields.map((field) => [field.name, field]));
+    const byName = new Map(table.fields.map((field) => [field.name, field]));
     // Ticket cells export as keys; resolve them back through the lookup.
     // ponytail: only tickets already linked somewhere in this table resolve;
     // a key lookup endpoint if imports need arbitrary tickets.
@@ -920,9 +1060,8 @@ export function DataTableGrid({
     );
     const parsed = csvParse(await file.text());
     const header = parsed[0] ?? [];
-    const columns = header
-      .map((name) => byName.get(name.trim()))
-      .filter((field): field is DataTableField => Boolean(field));
+    // Keep original indexes: ignored system/unknown headers must not shift cells.
+    const columns = header.map((name) => byName.get(name.trim()));
     const dataRows = parsed
       .slice(1)
       .filter((cells) => cells.some((cell) => cell.trim() !== ""));
@@ -931,6 +1070,7 @@ export function DataTableGrid({
       for (const cells of dataRows) {
         const values: Record<string, unknown> = {};
         columns.forEach((field, index) => {
+          if (!field || field.system) return;
           const text = (cells[index] ?? "").trim();
           if (text === "") return;
           if (
@@ -1085,6 +1225,14 @@ export function DataTableGrid({
   // Grid template: row # · fields · trailing "+" add-field cell (DS §2 Grid).
   const ADD_FIELD_WIDTH = 40;
   const trailing = canEdit ? ADD_FIELD_WIDTH : 0;
+  // Sticky offsets for the frozen columns: gutter width plus the widths of
+  // the frozen columns before each, so header and body cells agree exactly.
+  const frozenLefts: number[] = [];
+  let frozenX = ROW_NUMBER_COLUMN_WIDTH;
+  for (let i = 0; i < frozenCount && i < fields.length; i++) {
+    frozenLefts.push(frozenX);
+    frozenX += columnWidth(fields[i]);
+  }
   const gridTemplate = `${ROW_NUMBER_COLUMN_WIDTH}px ${fields
     .map((field) => `${columnWidth(field)}px`)
     .join(" ")}${canEdit ? ` ${ADD_FIELD_WIDTH}px` : ""}`;
@@ -1116,6 +1264,22 @@ export function DataTableGrid({
           fields={allFields}
           members={members}
           hidden={hidden}
+          showSystemFields={showSystem}
+          onShowSystemFieldsChange={(show) => {
+            setShowSystem(show);
+            writeShowSystemFields(table.id, show);
+            if (!show) {
+              setFilters((current) =>
+                current.filter((filter) => !filter.fieldId.startsWith("__")),
+              );
+              setSort((current) =>
+                current?.fieldId.startsWith("__") ? null : current,
+              );
+              setGroupFieldId((current) =>
+                current?.startsWith("__") ? null : current,
+              );
+            }
+          }}
           onHiddenChange={changeHidden}
           filters={filters}
           onFiltersChange={setFilters}
@@ -1266,11 +1430,13 @@ export function DataTableGrid({
                   <FieldHeader
                     key={field.id}
                     field={field}
-                    stickyLeft={index === 0 ? ROW_NUMBER_COLUMN_WIDTH : null}
+                    stickyLeft={index < frozenCount ? frozenLefts[index] : null}
+                    frozen={index < frozenCount}
+                    freezeEdge={index === frozenCount - 1}
                     sort={sort}
                     onSort={setSort}
                     canEdit={canEdit}
-                    canHide={index > 0}
+                    canHide={index > 0 && !field.system}
                     organizationId={organizationId}
                     tableId={table.id}
                     onEditOptions={(target, presetType) =>
@@ -1287,6 +1453,10 @@ export function DataTableGrid({
                     width={columnWidth(field)}
                     onResize={(width) => setWidth(field.id, width)}
                     onResetWidth={() => setWidth(field.id, null)}
+                    // Freeze to this column, or unfreeze back to its start.
+                    onToggleFreeze={() =>
+                      changeFrozen(index < frozenCount ? index : index + 1)
+                    }
                   />
                 ))}
                 {canEdit && (
@@ -1523,6 +1693,7 @@ export function DataTableGrid({
                           <div
                             key={field.id}
                             role="gridcell"
+                            aria-readonly={field.system || undefined}
                             aria-selected={
                               (isActiveRow && active?.fieldId === field.id) ||
                               undefined
@@ -1543,7 +1714,8 @@ export function DataTableGrid({
                                 active.fieldId === field.id;
                               setActive({ rowId: row.id, fieldId: field.id });
                               refocusGrid();
-                              if (!canEdit || !isActiveCell) return;
+                              if (!canEdit || field.system || !isActiveCell)
+                                return;
                               if (
                                 PICKER_TYPES.includes(field.type) ||
                                 field.type === "checkbox"
@@ -1567,11 +1739,16 @@ export function DataTableGrid({
                                 });
                             }}
                             className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
-                              fieldIndex === 0 ? "sticky z-10" : "relative z-0",
+                              "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
+                              fieldIndex === frozenCount - 1
+                                ? "border-r-2"
+                                : "border-r",
+                              fieldIndex < frozenCount
+                                ? "sticky z-10"
+                                : "relative z-0",
                               editing?.rowId === row.id &&
                                 editing.fieldId === field.id &&
-                                (fieldIndex === 0
+                                (fieldIndex < frozenCount
                                   ? "z-20 bg-background"
                                   : "z-[1] bg-background"),
                               isSelected
@@ -1581,13 +1758,14 @@ export function DataTableGrid({
                                   : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
+                              field.system && "text-muted-foreground",
                               // Active cell: an inset accent ring, drawn over
                               // the borders (NocoDB).
                               "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
                             )}
                             style={
-                              fieldIndex === 0
-                                ? { left: ROW_NUMBER_COLUMN_WIDTH }
+                              fieldIndex < frozenCount
+                                ? { left: frozenLefts[fieldIndex] }
                                 : undefined
                             }
                           >
@@ -1615,7 +1793,7 @@ export function DataTableGrid({
                                   active?.rowId === row.id &&
                                   active.fieldId === field.id;
                                 setActive({ rowId: row.id, fieldId: field.id });
-                                if (!isActiveCell) return;
+                                if (field.system || !isActiveCell) return;
                                 setEditing({
                                   rowId: row.id,
                                   fieldId: field.id,
@@ -1872,6 +2050,18 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {newRowValues !== null && (
+        <NewRowDialog
+          tableName={table.name}
+          fields={fields}
+          members={members}
+          initialValues={newRowValues}
+          onOpenChange={(open) => !open && setNewRowValues(null)}
+          onCreate={(values) =>
+            createRow.mutateAsync({ organizationId, tableId: table.id, values })
+          }
+        />
+      )}
       <RowSheet
         open={sheetRowId !== null}
         onOpenChange={(next) => !next && setSheetRowId(null)}
@@ -1879,7 +2069,7 @@ export function DataTableGrid({
         row={allRows.find((row) => row.id === sheetRowId) ?? null}
         rowIndex={visibleRows.findIndex((row) => row.id === sheetRowId)}
         rowCount={visibleRows.length}
-        fields={allFields}
+        fields={sortedFields(table.fields)}
         members={members}
         canEdit={canEdit}
         onCommit={(row, field, value) => commitCell(row, field, value)}
@@ -1912,6 +2102,7 @@ export function DataTableGrid({
         onOpenChange={setDialogOpen}
         field={dialogField}
         initialType={dialogType}
+        members={members}
       />
 
       <AlertDialog

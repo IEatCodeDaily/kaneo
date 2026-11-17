@@ -2,14 +2,22 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { DataTableField, DataTableRow } from "@/types/data-table";
 import {
   currencyUnit,
+  fieldValue,
   filterIsActive,
   groupRows,
   groupValue,
   isValidNumberInput,
+  readFrozenColumns,
   readHiddenFields,
+  readShowSystemFields,
+  rowMatchesFilters,
+  sortRows,
   summarize,
+  systemFields,
   typeChangeKeepsValues,
+  writeFrozenColumns,
   writeHiddenFields,
+  writeShowSystemFields,
 } from "./data-table-format";
 
 const field = (over: Partial<DataTableField>): DataTableField => ({
@@ -91,6 +99,103 @@ describe("hidden fields", () => {
   it("survives corrupt storage", () => {
     localStorage.setItem("kaneo-table-hidden:t1", "{not json");
     expect(readHiddenFields("t1")).toEqual([]);
+  });
+});
+
+describe("frozen columns", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("round-trips a frozen count per table", () => {
+    writeFrozenColumns("t1", 2);
+    expect(readFrozenColumns("t1")).toBe(2);
+    expect(readFrozenColumns("t2")).toBe(0);
+  });
+
+  it("falls back to none on corrupt or nonsensical storage", () => {
+    localStorage.setItem("kaneo-table-frozen:t1", "{not json");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", "-3");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", "1.5");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", '"2"');
+    expect(readFrozenColumns("t1")).toBe(0);
+  });
+});
+
+describe("virtual system fields", () => {
+  const fields = systemFields("t", (key) => key);
+  const byId = new Map(fields.map((field) => [field.id, field]));
+  const row: DataTableRow = {
+    id: "opaque-row-id",
+    position: 8,
+    createdAt: "2026-11-10T12:00:00Z",
+    updatedAt: "2026-11-11T13:00:00Z",
+    createdBy: "creator",
+    updatedBy: "editor",
+    values: { __row_id: "spoofed" },
+  };
+  it("projects immutable metadata, not editable values or raw row ids", () => {
+    expect(fields.map((field) => field.system)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(fields.map((field) => fieldValue(row, field))).toEqual([
+      9,
+      row.createdAt,
+      row.updatedAt,
+      "creator",
+      "editor",
+    ]);
+    expect(
+      fieldValue({ ...row, createdBy: undefined }, byId.get("__created_by")!),
+    ).toBeNull();
+  });
+  it("reuses date/user filters and date/number sorts", () => {
+    const later = {
+      ...row,
+      id: "later",
+      position: 10,
+      createdAt: "2026-11-12T00:00:00Z",
+    };
+    expect(
+      sortRows([later, row], fields, { fieldId: "__created_at", dir: "asc" }),
+    ).toEqual([row, later]);
+    expect(
+      sortRows([row, later], fields, { fieldId: "__row_id", dir: "desc" }),
+    ).toEqual([later, row]);
+    expect(
+      rowMatchesFilters(row, byId, [
+        {
+          id: "f",
+          fieldId: "__created_at",
+          from: "2026-11-10",
+          to: "2026-11-10",
+        },
+      ]),
+    ).toBe(true);
+    expect(
+      rowMatchesFilters(row, byId, [
+        { id: "f", fieldId: "__created_by", choiceId: "creator" },
+      ]),
+    ).toBe(true);
+    expect(
+      rowMatchesFilters(row, byId, [
+        { id: "f", fieldId: "__updated_by", choiceId: "creator" },
+      ]),
+    ).toBe(false);
+  });
+  it("persists visibility per table, defaulting off", () => {
+    localStorage.clear();
+    expect(readShowSystemFields("t")).toBe(false);
+    writeShowSystemFields("t", true);
+    expect(readShowSystemFields("t")).toBe(true);
+    expect(readShowSystemFields("other")).toBe(false);
+    writeShowSystemFields("t", false);
+    expect(readShowSystemFields("t")).toBe(false);
   });
 });
 

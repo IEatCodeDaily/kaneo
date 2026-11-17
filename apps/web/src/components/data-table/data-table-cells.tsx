@@ -128,8 +128,19 @@ function UserCell({
   members: Map<string, MemberOption>;
 }) {
   const member = members.get(asString(value));
-  if (!member) return <EmptyValue />;
-  const name = member.user.name || member.user.email || "";
+  const { t } = useTranslation();
+  if (!member)
+    return asString(value) ? (
+      <span className="text-muted-foreground">
+        {t("navigation:tables.formerMember")}
+      </span>
+    ) : (
+      <EmptyValue />
+    );
+  const name =
+    member.user.name ||
+    member.user.email ||
+    t("navigation:tables.formerMember");
   const image = member.user.image;
   return (
     <div className="flex min-w-0 items-center gap-1.5">
@@ -339,7 +350,7 @@ export function DataTableCellView({
     default: {
       const text = asString(value);
       if (!text) return <EmptyValue />;
-      return <span className="truncate">{text}</span>;
+      return <span className="block truncate">{text}</span>;
     }
   }
 }

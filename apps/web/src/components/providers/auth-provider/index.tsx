@@ -1,5 +1,11 @@
-import { createContext, type PropsWithChildren, useRef } from "react";
+import {
+  createContext,
+  type PropsWithChildren,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { authClient } from "@/lib/auth-client";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { User } from "@/types/user";
 import { LoadingSkeleton } from "../../ui/loading-skeleton";
 
@@ -17,6 +23,12 @@ export const AuthContext = createContext<{
 
 function AuthProvider({ children }: PropsWithChildren) {
   const { data, isPending, refetch } = useSession();
+  useLayoutEffect(() => {
+    if (!isPending)
+      useUserPreferencesStore
+        .getState()
+        .setAppearanceUserId(data?.user.id ?? null);
+  }, [data?.user.id, isPending]);
   // Only show the loading skeleton during the *first* session fetch. Better
   // Auth re-fetches the session on window focus; if we kept returning the
   // skeleton while those background fetches are pending we'd unmount the

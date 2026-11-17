@@ -15,6 +15,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
+import { parseSearchQuery } from "../../../../../apps/api/src/search/query";
 import { getSearchResultRoute } from "./search-result-route";
 
 /**
@@ -86,9 +87,13 @@ export function useSearchResults(query: string) {
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
 
-  const searchEnabled = query.trim().length >= SEARCH_MIN_CHARS;
+  const searchEnabled = parseSearchQuery(query).enabled;
 
-  const { data: searchResults } = useGlobalSearch({
+  const {
+    data: searchResults,
+    isFetching,
+    error,
+  } = useGlobalSearch({
     q: searchEnabled ? query : "",
     type: "all",
     organizationId: organization?.id,
@@ -202,5 +207,5 @@ export function useSearchResults(query: string) {
     }));
   }, [searchEnabled, searchResults?.results, t]);
 
-  return { groups, openResult, searchEnabled };
+  return { groups, openResult, searchEnabled, isFetching, error };
 }

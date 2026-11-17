@@ -75,6 +75,68 @@ export function sortedRows(rows: DataTableRow[]) {
   return [...rows].sort((a, b) => a.position - b.position);
 }
 
+/** Virtual fields reuse the normal date/user rendering, sorting and filters. */
+export function systemFields(
+  tableId: string,
+  label: (key: string) => string,
+): DataTableField[] {
+  return (
+    [
+      ["__row_id", "systemRowId", "number"],
+      ["__created_at", "systemCreatedAt", "datetime"],
+      ["__updated_at", "systemUpdatedAt", "datetime"],
+      ["__created_by", "systemCreatedBy", "user"],
+      ["__updated_by", "systemUpdatedBy", "user"],
+    ] as const
+  ).map(([id, key, type], position) => ({
+    id,
+    tableId,
+    name: label(`navigation:tables.${key}`),
+    type,
+    system: true,
+    options: null,
+    position,
+    createdAt: "",
+    updatedAt: "",
+  }));
+}
+
+/** Never project the opaque row id into visible text. Position stays stable on sort. */
+export function fieldValue(row: DataTableRow, field: DataTableField): unknown {
+  if (!field.system) return row.values[field.id];
+  switch (field.id) {
+    case "__row_id":
+      return row.position + 1;
+    case "__created_at":
+      return row.createdAt;
+    case "__updated_at":
+      return row.updatedAt;
+    case "__created_by":
+      return row.createdBy ?? null;
+    case "__updated_by":
+      return row.updatedBy ?? null;
+    default:
+      return null;
+  }
+}
+
+const systemFieldsKey = (tableId: string) =>
+  `kaneo-table-system-fields:${tableId}`;
+export function readShowSystemFields(tableId: string): boolean {
+  try {
+    return window.localStorage.getItem(systemFieldsKey(tableId)) === "true";
+  } catch {
+    return false;
+  }
+}
+export function writeShowSystemFields(tableId: string, show: boolean): void {
+  try {
+    window.localStorage.setItem(systemFieldsKey(tableId), String(show));
+  } catch {
+    /* In-memory state still works when storage is unavailable. */
+  }
+}
+
 // ── options accessors ──────────────────────────────────────────────────────
 
 export function fieldChoices(field: DataTableField): SelectChoice[] {
@@ -247,27 +309,6 @@ export function parseJsonValue(raw: string) {
 export type SortDir = "asc" | "desc";
 export type ColumnSort = { fieldId: string; dir: SortDir };
 
-const TEXT_SEARCH_TYPES: DataTableFieldType[] = [
-  "text",
-  "longtext",
-  "url",
-  "email",
-];
-
-export function rowMatchesSearch(
-  row: DataTableRow,
-  fields: DataTableField[],
-  query: string,
-): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  return fields.some(
-    (field) =>
-      TEXT_SEARCH_TYPES.includes(field.type) &&
-      asString(row.values[field.id]).toLowerCase().includes(needle),
-  );
-}
-
 export type DataTableFilter = (
   | { fieldId: string; contains: string }
   | { fieldId: string; min: string; max: string }
@@ -308,7 +349,7 @@ function filterMatches(
   field: DataTableField,
   filter: DataTableFilter,
 ): boolean {
-  const raw = row.values[field.id];
+  const raw = fieldValue(row, field);
   switch (field.type) {
     case "number":
     case "percent":
@@ -331,7 +372,7 @@ function filterMatches(
         if (from !== "" && value < from) return false;
         if (to !== "") {
           // Date-only "to" is inclusive through the whole day.
-          const bound = field.type === "date" ? `${to}T23:59:59.999` : to;
+          const bound = to.length === 10 ? `${to}T23:59:59.999` : to;
           if (value > bound) return false;
         }
       }
@@ -385,7 +426,7 @@ export function sortValue(
   field: DataTableField,
   tickets: Record<string, { key: string }> = {},
 ): string | number | null {
-  const raw = row.values[field.id];
+  const raw = fieldValue(row, field);
   switch (field.type) {
     case "ticket": {
       // Arrays fall through asString to "": sort by the first ticket key.
@@ -497,6 +538,36 @@ export function writeHiddenFields(tableId: string, ids: string[]): void {
   }
 }
 
+// ── frozen columns (per table, per browser: view state stays local) ────────
+
+const frozenKey = (tableId: string) => `kaneo-table-frozen:${tableId}`;
+
+/**
+ * How many leading data columns are frozen (0 = none). Freezing column N
+ * freezes 0..N, spreadsheet-style; a count follows the field order, so
+ * hiding a field inside the range never breaks the geometry.
+ */
+export function readFrozenColumns(tableId: string): number {
+  try {
+    const parsed: unknown = JSON.parse(
+      window.localStorage.getItem(frozenKey(tableId)) ?? "0",
+    );
+    return typeof parsed === "number" && Number.isInteger(parsed) && parsed >= 0
+      ? parsed
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function writeFrozenColumns(tableId: string, count: number): void {
+  try {
+    window.localStorage.setItem(frozenKey(tableId), JSON.stringify(count));
+  } catch {
+    // Storage can be unavailable; the in-memory state still works.
+  }
+}
+
 /** A filter only narrows rows once it has a value; empty rows stay inert. */
 export function filterIsActive(filter: DataTableFilter): boolean {
   if ("contains" in filter) return filter.contains.trim() !== "";
@@ -524,6 +595,7 @@ export function optionsForType(
       ? { choices: options?.choices ?? [] }
       : {};
   if (options?.required) base.required = true;
+  if (options?.description) base.description = options.description;
   if (type === "number" || type === "percent") {
     if (typeof options?.precision === "number") {
       base.precision = options.precision;
@@ -575,7 +647,7 @@ export function groupRows(
 ): FieldRowGroup[] {
   const buckets = new Map<string, DataTableRow[]>();
   for (const row of rows) {
-    const key = groupKey(field, row.values[field.id]);
+    const key = groupKey(field, fieldValue(row, field));
     const list = buckets.get(key);
     if (list) list.push(row);
     else buckets.set(key, [row]);
@@ -637,7 +709,7 @@ export function summarize(
   const precision = fieldPrecision(field);
   const fmt = (n: number) =>
     n.toLocaleString(undefined, { maximumFractionDigits: precision });
-  const values = rows.map((row) => row.values[field.id]);
+  const values = rows.map((row) => fieldValue(row, field));
   const filled = values.filter(
     (v) => v !== null && v !== undefined && v !== "" && v !== false,
   );

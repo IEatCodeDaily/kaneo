@@ -1,5 +1,6 @@
 import { ArrowDownAZ, ArrowUpAZ } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,23 +66,23 @@ export default function SortControl({ sort, onSortChange }: SortControlProps) {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium outline-none ring-0 ${
+            <ToolbarButton
+              icon={
+                sort.direction === "asc" ? (
+                  <ArrowUpAZ className="size-3.5" />
+                ) : (
+                  <ArrowDownAZ className="size-3.5" />
+                )
+              }
+              label={
                 isActive
-                  ? "border-primary/30 bg-primary/10 text-primary-soft-foreground hover:bg-primary/15"
-                  : "border-border bg-background text-foreground hover:bg-accent/60"
-              }`}
+                  ? (activeLabel ?? t("tasks:sort.label"))
+                  : t("tasks:sort.label")
+              }
+              applied={isActive}
             />
           }
-        >
-          {sort.direction === "asc" ? (
-            <ArrowUpAZ className="h-3 w-3" />
-          ) : (
-            <ArrowDownAZ className="h-3 w-3" />
-          )}
-          {isActive ? activeLabel : t("tasks:sort.label")}
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs uppercase tracking-wide">
@@ -128,22 +129,22 @@ export default function SortControl({ sort, onSortChange }: SortControlProps) {
       </DropdownMenu>
 
       {isActive && (
-        <button
-          type="button"
+        <ToolbarButton
+          iconOnly
           onClick={toggleDirection}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-accent/60"
-          title={
+          label={
             sort.direction === "asc"
               ? t("tasks:sort.ascending")
               : t("tasks:sort.descending")
           }
-        >
-          {sort.direction === "asc" ? (
-            <ArrowUpAZ className="h-3 w-3" />
-          ) : (
-            <ArrowDownAZ className="h-3 w-3" />
-          )}
-        </button>
+          icon={
+            sort.direction === "asc" ? (
+              <ArrowUpAZ className="size-3.5" />
+            ) : (
+              <ArrowDownAZ className="size-3.5" />
+            )
+          }
+        />
       )}
     </div>
   );

@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useDataTableMutations } from "@/hooks/data-table/use-data-tables";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { toast } from "@/lib/toast";
@@ -21,16 +23,16 @@ import type {
   DataTableFieldType,
   SelectChoice,
 } from "@/types/data-table";
-import { FieldTypeIcon } from "./data-table-cells";
+import type { MemberOption } from "./data-table-cells";
 import {
-  EDITABLE_FIELD_TYPES,
-  FIELD_TYPE_LABEL_KEYS,
   fieldIsRequired,
   makeChoiceId,
   optionsForType,
   typeChangeKeepsValues,
 } from "./data-table-format";
 import { FieldTypeConfirmation } from "./field-type-confirmation";
+import { FieldTypePicker } from "./field-type-picker";
+import { FieldValueEditor } from "./field-value-editor";
 
 const CHOICE_PALETTE = [
   "#8b5cf6",
@@ -52,6 +54,7 @@ type Props = {
   field: DataTableField | null;
   /** Type preselected by "change type" before opening this dialog. */
   initialType?: DataTableFieldType | null;
+  members?: Map<string, MemberOption>;
 };
 
 const palette = (index: number) =>
@@ -64,6 +67,7 @@ export default function FieldOptionsDialog({
   onOpenChange,
   field,
   initialType,
+  members = new Map(),
 }: Props) {
   const { t } = useTranslation();
   const { createField, updateField } = useDataTableMutations(
@@ -78,6 +82,11 @@ export default function FieldOptionsDialog({
   const [max, setMax] = useState("");
   const [code, setCode] = useState("");
   const [required, setRequired] = useState(false);
+  const [description, setDescription] = useState("");
+  const [allowTeams, setAllowTeams] = useState(false);
+  const [defaultValue, setDefaultValue] = useState<unknown>(undefined);
+  const [defaultInvalid, setDefaultInvalid] = useState(false);
+  const [editorVersion, setEditorVersion] = useState(0);
   const [boardIds, setBoardIds] = useState<string[]>([]);
   const [multiple, setMultiple] = useState(true);
   const [confirmType, setConfirmType] = useState(false);
@@ -89,6 +98,15 @@ export default function FieldOptionsDialog({
     if (!open) return;
     const options: DataTableFieldOptions = field?.options ?? {};
     setName(field?.name ?? "");
+    setDescription(options.description ?? "");
+    setAllowTeams(options.allowTeams === true);
+    setDefaultValue(
+      initialType && initialType !== field?.type
+        ? undefined
+        : options.defaultValue,
+    );
+    setDefaultInvalid(false);
+    setEditorVersion((version) => version + 1);
     setType(initialType ?? field?.type ?? "text");
     setChoices(options.choices ? options.choices.map((c) => ({ ...c })) : []);
     setPrecision(
@@ -127,6 +145,11 @@ export default function FieldOptionsDialog({
       if (!multiple) draft.multiple = false;
       else delete draft.multiple;
     }
+    if (type === "user") draft.allowTeams = allowTeams;
+    if (description.trim()) draft.description = description.trim();
+    else delete draft.description;
+    if (defaultValue !== undefined && defaultValue !== null)
+      draft.defaultValue = defaultValue;
     if (required) draft.required = true;
     else delete draft.required;
     return draft;
@@ -141,7 +164,8 @@ export default function FieldOptionsDialog({
   const saveDisabled =
     createField.isPending ||
     updateField.isPending ||
-    (!field && name.trim() === "") ||
+    name.trim() === "" ||
+    defaultInvalid ||
     !optionsValid;
 
   const save = async (confirmed = false): Promise<boolean> => {
@@ -157,6 +181,7 @@ export default function FieldOptionsDialog({
           organizationId,
           tableId,
           fieldId: field.id,
+          name: name.trim(),
           type,
           options,
         });
@@ -194,7 +219,7 @@ export default function FieldOptionsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent size="lg">
           <DialogHeader>
             <DialogTitle>
               {field
@@ -206,228 +231,299 @@ export default function FieldOptionsDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {!field && (
+            <div className="space-y-2">
+              <label
+                htmlFor="field-name"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                {t("navigation:tables.fieldName")}
+              </label>
               <Input
+                id="field-name"
                 autoFocus
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder={t("navigation:tables.newFieldName")}
                 aria-label={t("navigation:tables.newFieldName")}
               />
-            )}
-            <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                {t("navigation:tables.fieldType")}
-              </p>
-              <div className="grid grid-cols-2 gap-1 rounded-lg border p-1">
-                {(field?.type === "link"
-                  ? ["link", ...EDITABLE_FIELD_TYPES]
-                  : EDITABLE_FIELD_TYPES
-                ).map((option) => (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    key={option}
-                    type="button"
-                    disabled={option === "link"}
-                    data-selected={type === option}
-                    className="min-h-8 justify-start gap-2 px-2 text-left data-[selected=true]:bg-accent"
-                    onClick={() => setType(option as DataTableFieldType)}
-                  >
-                    <FieldTypeIcon type={option} />
-                    <span className="min-w-0 flex-1 truncate">
-                      {t(FIELD_TYPE_LABEL_KEYS[option as DataTableFieldType])}
-                    </span>
-                  </Button>
-                ))}
-              </div>
             </div>
-
-            {(type === "select" || type === "multiselect") && (
-              <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  {t("navigation:tables.choices")}{" "}
-                  {t("navigation:tables.choicesCount", {
-                    count: choices.length,
-                  })}
-                </p>
-                <div className="space-y-1">
-                  {choices.map((choice) => (
-                    <div key={choice.id} className="flex items-center gap-1">
-                      <input
-                        type="color"
-                        value={choice.color}
-                        aria-label={t("navigation:tables.choiceLabel")}
-                        onChange={(event) =>
-                          updateChoice(choice.id, { color: event.target.value })
-                        }
-                        className="size-8 shrink-0 cursor-pointer rounded-md border"
-                      />
-                      <Input
-                        value={choice.label}
-                        onChange={(event) =>
-                          updateChoice(choice.id, { label: event.target.value })
-                        }
-                        placeholder={t("navigation:tables.choiceLabel")}
-                        aria-label={t("navigation:tables.choiceLabel")}
-                        className="h-8 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={t("navigation:tables.deleteField")}
-                        onClick={() =>
-                          setChoices((current) =>
-                            current.filter((item) => item.id !== choice.id),
-                          )
-                        }
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="xs"
-                  className="mt-1"
-                  onClick={() =>
-                    setChoices((current) => [
-                      ...current,
-                      {
-                        id: makeChoiceId(),
-                        label: "",
-                        color: palette(current.length),
-                      },
-                    ])
-                  }
-                >
-                  <Plus className="size-3.5" />{" "}
-                  {t("navigation:tables.addChoice")}
-                </Button>
-              </div>
-            )}
-
-            {(type === "number" || type === "percent") && (
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={8}
-                  value={precision}
-                  onChange={(event) => setPrecision(event.target.value)}
-                  placeholder={t("navigation:tables.optionPrecision")}
-                  aria-label={t("navigation:tables.optionPrecision")}
-                />
-                <Input
-                  type="number"
-                  value={min}
-                  onChange={(event) => setMin(event.target.value)}
-                  placeholder={t("navigation:tables.optionMin")}
-                  aria-label={t("navigation:tables.optionMin")}
-                />
-                <Input
-                  type="number"
-                  value={max}
-                  onChange={(event) => setMax(event.target.value)}
-                  placeholder={t("navigation:tables.optionMax")}
-                  aria-label={t("navigation:tables.optionMax")}
-                />
-              </div>
-            )}
-
-            {type === "ticket" && (
-              <div className="space-y-3">
-                <div>
-                  <p className="mb-1 text-xs font-medium text-muted-foreground">
-                    {t("navigation:tables.ticketBoards")}
-                  </p>
-                  <div className="flex flex-col gap-1 rounded-lg border p-1">
-                    <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
-                      <input
-                        type="radio"
-                        name="ticket-scope"
-                        checked={boardIds.length === 0}
-                        onChange={() => setBoardIds([])}
-                      />
-                      {t("navigation:tables.ticketAnyBoard")}
-                    </label>
-                    <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
-                      <input
-                        type="radio"
-                        name="ticket-scope"
-                        checked={boardIds.length > 0}
-                        onChange={() =>
-                          boardIds.length === 0 &&
-                          boards[0] &&
-                          setBoardIds([boards[0].id])
-                        }
-                      />
-                      {t("navigation:tables.ticketSelectedBoards")}
-                    </label>
-                    {boardIds.length > 0 && (
-                      <div className="flex max-h-36 flex-col overflow-y-auto pl-6">
-                        {boards.map((board) => (
-                          <span
-                            key={board.id}
-                            className="flex h-7 items-center gap-2 text-ui"
+            <FieldTypePicker
+              value={type}
+              onChange={(next) => {
+                if (next === type) return;
+                setType(next);
+                setDefaultValue(undefined);
+                setDefaultInvalid(false);
+                setEditorVersion((version) => version + 1);
+              }}
+            />
+            {[
+              "select",
+              "multiselect",
+              "number",
+              "percent",
+              "currency",
+              "ticket",
+              "user",
+            ].includes(type) && (
+              <section
+                aria-label={t("navigation:tables.typeSettings")}
+                className="space-y-3"
+              >
+                <h3 className="text-xs font-medium text-muted-foreground">
+                  {t("navigation:tables.typeSettings")}
+                </h3>
+                {(type === "select" || type === "multiselect") && (
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">
+                      {t("navigation:tables.choices")}{" "}
+                      {t("navigation:tables.choicesCount", {
+                        count: choices.length,
+                      })}
+                    </p>
+                    <div className="space-y-1">
+                      {choices.map((choice) => (
+                        <div
+                          key={choice.id}
+                          className="flex items-center gap-1"
+                        >
+                          <input
+                            type="color"
+                            value={choice.color}
+                            aria-label={t("navigation:tables.choiceLabel")}
+                            onChange={(event) =>
+                              updateChoice(choice.id, {
+                                color: event.target.value,
+                              })
+                            }
+                            className="size-8 shrink-0 cursor-pointer rounded-md border"
+                          />
+                          <Input
+                            value={choice.label}
+                            onChange={(event) =>
+                              updateChoice(choice.id, {
+                                label: event.target.value,
+                              })
+                            }
+                            placeholder={t("navigation:tables.choiceLabel")}
+                            aria-label={t("navigation:tables.choiceLabel")}
+                            className="h-8 text-sm"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={t("navigation:tables.deleteField")}
+                            onClick={() =>
+                              setChoices((current) =>
+                                current.filter((item) => item.id !== choice.id),
+                              )
+                            }
                           >
-                            <Checkbox
-                              checked={boardIds.includes(board.id)}
-                              aria-label={board.name}
-                              onCheckedChange={(checked) =>
-                                setBoardIds((current) =>
-                                  checked === true
-                                    ? [...current, board.id]
-                                    : current.filter((id) => id !== board.id),
-                                )
-                              }
-                            />
-                            <span className="min-w-0 truncate">
-                              {board.name}
-                            </span>
-                          </span>
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      className="mt-1"
+                      onClick={() =>
+                        setChoices((current) => [
+                          ...current,
+                          {
+                            id: makeChoiceId(),
+                            label: "",
+                            color: palette(current.length),
+                          },
+                        ])
+                      }
+                    >
+                      <Plus className="size-3.5" />{" "}
+                      {t("navigation:tables.addChoice")}
+                    </Button>
+                  </div>
+                )}
+
+                {(type === "number" || type === "percent") && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={8}
+                      value={precision}
+                      onChange={(event) => setPrecision(event.target.value)}
+                      placeholder={t("navigation:tables.optionPrecision")}
+                      aria-label={t("navigation:tables.optionPrecision")}
+                    />
+                    <Input
+                      type="number"
+                      value={min}
+                      onChange={(event) => setMin(event.target.value)}
+                      placeholder={t("navigation:tables.optionMin")}
+                      aria-label={t("navigation:tables.optionMin")}
+                    />
+                    <Input
+                      type="number"
+                      value={max}
+                      onChange={(event) => setMax(event.target.value)}
+                      placeholder={t("navigation:tables.optionMax")}
+                      aria-label={t("navigation:tables.optionMax")}
+                    />
+                  </div>
+                )}
+
+                {type === "ticket" && (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        {t("navigation:tables.ticketBoards")}
+                      </p>
+                      <div className="flex flex-col gap-1 rounded-lg border p-1">
+                        <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                          <input
+                            type="radio"
+                            name="ticket-scope"
+                            checked={boardIds.length === 0}
+                            onChange={() => setBoardIds([])}
+                          />
+                          {t("navigation:tables.ticketAnyBoard")}
+                        </label>
+                        <label className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent">
+                          <input
+                            type="radio"
+                            name="ticket-scope"
+                            checked={boardIds.length > 0}
+                            onChange={() =>
+                              boardIds.length === 0 &&
+                              boards[0] &&
+                              setBoardIds([boards[0].id])
+                            }
+                          />
+                          {t("navigation:tables.ticketSelectedBoards")}
+                        </label>
+                        {boardIds.length > 0 && (
+                          <div className="flex max-h-36 flex-col overflow-y-auto pl-6">
+                            {boards.map((board) => (
+                              <span
+                                key={board.id}
+                                className="flex h-7 items-center gap-2 text-ui"
+                              >
+                                <Checkbox
+                                  checked={boardIds.includes(board.id)}
+                                  aria-label={board.name}
+                                  onCheckedChange={(checked) =>
+                                    setBoardIds((current) =>
+                                      checked === true
+                                        ? [...current, board.id]
+                                        : current.filter(
+                                            (id) => id !== board.id,
+                                          ),
+                                    )
+                                  }
+                                />
+                                <span className="min-w-0 truncate">
+                                  {board.name}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        {t("navigation:tables.ticketCount")}
+                      </p>
+                      <div className="flex gap-1">
+                        {[
+                          [true, "navigation:tables.ticketMany"],
+                          [false, "navigation:tables.ticketSingle"],
+                        ].map(([value, label]) => (
+                          <Button
+                            key={String(value)}
+                            type="button"
+                            size="sm"
+                            variant={multiple === value ? "secondary" : "ghost"}
+                            aria-pressed={multiple === value}
+                            onClick={() => setMultiple(value as boolean)}
+                          >
+                            {t(label as string)}
+                          </Button>
                         ))}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium text-muted-foreground">
-                    {t("navigation:tables.ticketCount")}
-                  </p>
-                  <div className="flex gap-1">
-                    {[
-                      [true, "navigation:tables.ticketMany"],
-                      [false, "navigation:tables.ticketSingle"],
-                    ].map(([value, label]) => (
-                      <Button
-                        key={String(value)}
-                        type="button"
-                        size="sm"
-                        variant={multiple === value ? "secondary" : "ghost"}
-                        aria-pressed={multiple === value}
-                        onClick={() => setMultiple(value as boolean)}
-                      >
-                        {t(label as string)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+                )}
+
+                {type === "currency" && (
+                  <Input
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    placeholder={t("navigation:tables.currencyCode")}
+                    aria-label={t("navigation:tables.currencyCode")}
+                  />
+                )}
+
+                {type === "user" && (
+                  <label
+                    htmlFor="field-allow-teams"
+                    className="flex items-center justify-between gap-2 text-ui"
+                  >
+                    <span>{t("navigation:tables.allowTeams")}</span>
+                    <Switch
+                      id="field-allow-teams"
+                      checked={allowTeams}
+                      onCheckedChange={setAllowTeams}
+                    />
+                  </label>
+                )}
+              </section>
+            )}
+            <section
+              className="space-y-2"
+              aria-label={t("navigation:tables.defaultValue")}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-medium text-muted-foreground">
+                  {t("navigation:tables.defaultValue")}
+                </h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => {
+                    setDefaultValue(undefined);
+                    setDefaultInvalid(false);
+                    setEditorVersion((version) => version + 1);
+                  }}
+                >
+                  {t("navigation:tables.clearDefault")}
+                </Button>
               </div>
-            )}
-
-            {type === "currency" && (
-              <Input
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                placeholder={t("navigation:tables.currencyCode")}
-                aria-label={t("navigation:tables.currencyCode")}
+              <FieldValueEditor
+                key={editorVersion}
+                field={{
+                  id: "draft",
+                  tableId,
+                  name: t("navigation:tables.defaultValue"),
+                  type,
+                  options: { ...buildOptions(), required: false },
+                  position: 0,
+                  createdAt: "",
+                  updatedAt: "",
+                }}
+                value={defaultValue}
+                members={members}
+                onChange={setDefaultValue}
+                onInvalidChange={setDefaultInvalid}
               />
-            )}
-
+              <p className="text-xs text-muted-foreground">
+                {t("navigation:tables.defaultHelp")}
+              </p>
+            </section>
             {field && type !== field.type && (
               <p
                 role="alert"
@@ -441,18 +537,44 @@ export default function FieldOptionsDialog({
               </p>
             )}
 
-            <span className="flex items-center gap-2 text-ui">
-              <Checkbox
-                checked={required}
-                onCheckedChange={(checked) => setRequired(checked === true)}
-                aria-label={t("navigation:tables.optionRequired")}
-              />
-              {t("navigation:tables.optionRequired")}
-            </span>
+            <section
+              className="space-y-3 border-t pt-3"
+              aria-label={t("navigation:tables.fieldOptionsSection")}
+            >
+              <h3 className="text-xs font-medium text-muted-foreground">
+                {t("navigation:tables.fieldOptionsSection")}
+              </h3>
+              <label
+                htmlFor="field-required"
+                className="flex items-center justify-between gap-2 text-ui"
+              >
+                <span>{t("navigation:tables.optionRequired")}</span>
+                <Switch
+                  id="field-required"
+                  checked={required}
+                  onCheckedChange={setRequired}
+                />
+              </label>
+              <label
+                htmlFor="field-description"
+                className="flex flex-col gap-2 text-ui"
+              >
+                {t("navigation:tables.fieldDescription")}
+                <Textarea
+                  id="field-description"
+                  value={description}
+                  rows={2}
+                  maxLength={2000}
+                  onChange={(event) => setDescription(event.target.value)}
+                  aria-label={t("navigation:tables.fieldDescription")}
+                />
+              </label>
+            </section>
           </div>
           <DialogFooter>
             <Button
               type="button"
+              className="h-8"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
@@ -460,6 +582,7 @@ export default function FieldOptionsDialog({
             </Button>
             <Button
               type="button"
+              className="h-8"
               disabled={saveDisabled}
               onClick={() => {
                 void save();

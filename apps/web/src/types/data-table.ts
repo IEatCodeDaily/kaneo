@@ -43,9 +43,13 @@ export type DataTableFieldOptions = {
   /** ticket: false = one ticket per cell (absent = many). */
   multiple?: boolean;
   required?: boolean;
+  defaultValue?: unknown;
+  description?: string;
 };
 
 export type DataTableField = {
+  /** Client-only virtual column, never sent to field mutations. */
+  system?: true;
   id: string;
   tableId: string;
   name: string;
@@ -61,6 +65,9 @@ export type DataTableRow = {
   position: number;
   createdAt: string;
   updatedAt: string;
+  /** Optional for retained pre-migration snapshots and browser caches. */
+  createdBy?: string | null;
+  updatedBy?: string | null;
   values: Record<string, unknown>;
 };
 
