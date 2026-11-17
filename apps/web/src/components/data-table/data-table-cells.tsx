@@ -178,20 +178,32 @@ function JsonCell({ value }: { value: unknown }) {
  * Read-only projection of one cell. Interactive affordances (popover pickers,
  * inline editors, checkbox toggle) are layered on by data-table-editors.
  */
+// Literal classes so Tailwind picks the clamp sizes up.
+const WRAP_CLAMP: Record<number, string> = {
+  3: "line-clamp-3",
+  4: "line-clamp-4",
+  5: "line-clamp-5",
+  6: "line-clamp-6",
+};
+
 export function DataTableCellView({
   field,
   value,
   members,
   onToggleCheckbox,
   expanded = false,
+  wrapLines,
 }: {
   field: DataTableField;
   value: unknown;
   members: Map<string, MemberOption>;
   onToggleCheckbox?: (checked: boolean) => void;
   expanded?: boolean;
+  /** Row-height wrap mode: lines of long text before clamping. */
+  wrapLines?: number;
 }) {
   const { t } = useTranslation();
+  const wrapped = !!wrapLines && !expanded;
   switch (field.type) {
     case "select":
       return <ChoiceChip choice={resolveChoice(field, value)} />;
@@ -200,14 +212,14 @@ export function DataTableCellView({
       if (selected.length === 0) return <EmptyValue />;
       const choices = fieldChoices(field);
       const visible = selected
-        .slice(0, expanded ? undefined : 2)
+        .slice(0, expanded || wrapped ? undefined : 2)
         .map((id) => choices.find((choice) => choice.id === id));
       const overflow = selected.length - visible.length;
       return (
         <div
           className={cn(
             "flex min-w-0 items-center gap-1",
-            expanded ? "flex-wrap" : "overflow-hidden",
+            expanded || wrapped ? "flex-wrap" : "overflow-hidden",
           )}
         >
           {visible.map((choice, index) => (
@@ -320,7 +332,12 @@ export function DataTableCellView({
           className={cn(
             "min-w-0 w-full break-words text-sm [&_.tiptap]:min-h-0 [&_.tiptap]:p-0",
             !expanded &&
-              "line-clamp-1 max-h-6 overflow-hidden [&_.tiptap]:text-ui [&_.tiptap>*]:m-0 [&_.tiptap>*]:text-ui [&_.tiptap>*]:leading-5",
+              (wrapped
+                ? cn(
+                    WRAP_CLAMP[wrapLines ?? 0] ?? "line-clamp-1",
+                    "overflow-hidden [&_.tiptap]:text-ui [&_.tiptap>*]:m-0 [&_.tiptap>*]:text-ui [&_.tiptap>*]:leading-5",
+                  )
+                : "line-clamp-1 max-h-6 overflow-hidden [&_.tiptap]:text-ui [&_.tiptap>*]:m-0 [&_.tiptap>*]:text-ui [&_.tiptap>*]:leading-5"),
           )}
         >
           <Suspense fallback={<span>{text}</span>}>
@@ -335,7 +352,7 @@ export function DataTableCellView({
       return asStringArray(value).length === 0 ? (
         <EmptyValue />
       ) : (
-        <TicketCellView value={value} expanded={expanded} />
+        <TicketCellView value={value} expanded={expanded} wrapLines={wrapped} />
       );
     case "link": {
       const ids = asStringArray(value);
@@ -350,7 +367,17 @@ export function DataTableCellView({
     default: {
       const text = asString(value);
       if (!text) return <EmptyValue />;
-      return <span className="block truncate">{text}</span>;
+      return (
+        <span
+          className={
+            wrapped
+              ? "block min-w-0 whitespace-pre-wrap break-words"
+              : "block truncate"
+          }
+        >
+          {text}
+        </span>
+      );
     }
   }
 }

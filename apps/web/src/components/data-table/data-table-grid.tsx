@@ -31,17 +31,22 @@ import {
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
 import { csvParse } from "@/components/data-table/data-table-csv";
-import { DataTableCellContent } from "@/components/data-table/data-table-editors";
+import {
+  DataTableCellContent,
+  INPUT_EDIT_TYPES,
+} from "@/components/data-table/data-table-editors";
 import {
   type ColumnSort,
   currencyUnit,
   type DataTableFilter,
   DENSITY_ROW_HEIGHT,
+  DENSITY_WRAP_LINES,
   type Density,
   defaultFilterFor,
   defaultSummaryFn,
   EDITABLE_FIELD_TYPES,
   FIELD_TYPE_LABEL_KEYS,
+  fieldIsRequired,
   fieldWidth,
   filterIsActive,
   groupRows,
@@ -668,7 +673,7 @@ export function DataTableGrid({
   );
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [summaryFns, setSummaryFns] = useState<Record<string, SummaryFn>>({});
-  const [density, setDensity] = useState<Density>(() => readDensity());
+  const [density, setDensity] = useState<Density>(() => readDensity(table.id));
   const { widths, setWidth } = useColumnWidths(table.id);
   const columnWidth = (field: DataTableField) =>
     widths[field.id] ?? fieldWidth(field.type);
@@ -696,6 +701,8 @@ export function DataTableGrid({
   const [editing, setEditing] = useState<{
     rowId: string;
     fieldId: string;
+    /** Type-to-replace: the printable character that opened the editor. */
+    seed?: string;
   } | null>(null);
   // Row sheet opens only through the gutter or Space; prev/next walk the view.
   const [sheetRowId, setSheetRowId] = useState<string | null>(null);
@@ -937,15 +944,9 @@ export function DataTableGrid({
     }
   };
 
-  const moveActive = (dRow: number, dCol: number) => {
-    if (!active) return;
-    const r = renderedRows.findIndex((row) => row.id === active.rowId);
-    const c = fields.findIndex((field) => field.id === active.fieldId);
-    if (r < 0 || c < 0) return;
-    const nextRow =
-      renderedRows[Math.min(Math.max(r + dRow, 0), renderedRows.length - 1)];
-    const nextField =
-      fields[Math.min(Math.max(c + dCol, 0), fields.length - 1)];
+  const setActiveCell = (rowIndex: number, colIndex: number) => {
+    const nextRow = renderedRows[rowIndex];
+    const nextField = fields[colIndex];
     if (!nextRow || !nextField) return;
     setActive({ rowId: nextRow.id, fieldId: nextField.id });
     const index = gridItems.findIndex(
@@ -954,11 +955,31 @@ export function DataTableGrid({
     if (index >= 0) virtualizer.scrollToIndex(index);
   };
 
+  const activeCell = () => {
+    if (!active) return null;
+    const r = renderedRows.findIndex((row) => row.id === active.rowId);
+    const c = fields.findIndex((field) => field.id === active.fieldId);
+    return r < 0 || c < 0 ? null : { r, c, row: renderedRows[r] };
+  };
+
+  const moveActive = (dRow: number, dCol: number) => {
+    const cell = activeCell();
+    if (!cell) return;
+    setActiveCell(
+      Math.min(Math.max(cell.r + dRow, 0), renderedRows.length - 1),
+      Math.min(Math.max(cell.c + dCol, 0), fields.length - 1),
+    );
+  };
+
   const onGridKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     // Editors and pickers own their keys.
     if (event.defaultPrevented || editing || !active) return;
     const target = event.target as HTMLElement;
     if (target !== gridRef.current) return;
+    const cell = activeCell();
+    if (!cell) return;
+    const lastRow = renderedRows.length - 1;
+    const lastCol = fields.length - 1;
     const moves: Record<string, [number, number]> = {
       ArrowUp: [-1, 0],
       ArrowDown: [1, 0],
@@ -968,12 +989,33 @@ export function DataTableGrid({
     const move = moves[event.key];
     if (move) {
       event.preventDefault();
-      moveActive(move[0], move[1]);
+      if (event.metaKey || event.ctrlKey) {
+        // Modifier+arrow pins the row/column to its boundary.
+        moveActive(
+          move[0] * (move[0] < 0 ? cell.r : lastRow - cell.r),
+          move[1] * (move[1] < 0 ? cell.c : lastCol - cell.c),
+        );
+      } else {
+        moveActive(move[0], move[1]);
+      }
       return;
     }
     if (event.key === "Tab") {
+      // Wrap to the neighbouring row; at the grid's outer boundary Tab leaves.
+      const atEdge = event.shiftKey
+        ? cell.r === 0 && cell.c === 0
+        : cell.r === lastRow && cell.c === lastCol;
+      if (atEdge) return;
       event.preventDefault();
-      moveActive(0, event.shiftKey ? -1 : 1);
+      const wrap = event.shiftKey ? cell.c === 0 : cell.c === lastCol;
+      setActiveCell(
+        wrap ? cell.r + (event.shiftKey ? -1 : 1) : cell.r,
+        wrap
+          ? event.shiftKey
+            ? lastCol
+            : 0
+          : cell.c + (event.shiftKey ? -1 : 1),
+      );
       return;
     }
     if (event.key === "Escape") {
@@ -986,9 +1028,41 @@ export function DataTableGrid({
       setSheetRowId(active.rowId);
       return;
     }
+    const field = fields.find((candidate) => candidate.id === active.fieldId);
+    if (
+      (event.key === "Delete" || event.key === "Backspace") &&
+      canEdit &&
+      field &&
+      !field.system &&
+      // Required fields cannot be emptied; zero and false are values, so the
+      // clear always writes (never a no-op on falsy values).
+      !fieldIsRequired(field)
+    ) {
+      event.preventDefault();
+      void commitCell(
+        cell.row,
+        field,
+        field.type === "checkbox" ? false : null,
+      );
+      return;
+    }
+    // Typing a printable character replaces the cell's value.
+    if (
+      canEdit &&
+      field &&
+      !field.system &&
+      INPUT_EDIT_TYPES.includes(field.type) &&
+      event.key.length === 1 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      setEditing({ ...active, seed: event.key });
+      return;
+    }
     if (event.key === "Enter" && canEdit) {
       event.preventDefault();
-      const field = fields.find((candidate) => candidate.id === active.fieldId);
       if (field?.system) return;
       if (
         field &&
@@ -1288,7 +1362,7 @@ export function DataTableGrid({
           density={density}
           onDensityChange={(next) => {
             setDensity(next);
-            writeDensity(next);
+            writeDensity(table.id, next);
           }}
           groupFieldId={groupFieldId}
           onGroupChange={(fieldId) => {
@@ -1777,6 +1851,14 @@ export function DataTableGrid({
                                   : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
+                              // Wrapped cells clip at the fixed row height —
+                              // except while their editor is open.
+                              DENSITY_WRAP_LINES[density] &&
+                                !(
+                                  editing?.rowId === row.id &&
+                                  editing.fieldId === field.id
+                                ) &&
+                                "overflow-hidden",
                               field.system && "text-muted-foreground",
                               // Active cell: an inset accent ring, drawn over
                               // the borders (NocoDB).
@@ -1792,6 +1874,13 @@ export function DataTableGrid({
                               row={row}
                               field={field}
                               members={members}
+                              wrapLines={DENSITY_WRAP_LINES[density]}
+                              seed={
+                                editing?.rowId === row.id &&
+                                editing.fieldId === field.id
+                                  ? editing.seed
+                                  : undefined
+                              }
                               // Pickers and checkboxes activate only after selection.
                               canEdit={
                                 canEdit &&

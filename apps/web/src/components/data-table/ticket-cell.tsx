@@ -62,32 +62,34 @@ function TicketChip({ ticket }: { ticket: TicketRef }) {
   );
 }
 
-/** Grid shows one clipped chip plus a count; expanded views wrap all chips. */
+/** Grid shows one clipped chip plus a count; wrap/expanded views wrap all. */
 export function TicketCellView({
   value,
   expanded = false,
+  wrapLines = false,
 }: {
   value: unknown;
   expanded?: boolean;
+  /** Row-height wrap mode: show every chip, wrapped, instead of 1 + count. */
+  wrapLines?: boolean;
 }) {
   const { tickets } = useContext(TicketLookupContext);
   const refs = asStringArray(value)
     .map((id) => tickets[id])
     .filter((ref): ref is TicketRef => Boolean(ref));
   if (refs.length === 0) return null;
+  const wrap = expanded || wrapLines;
   return (
     <span
       className={cn(
         "flex w-full min-w-0 items-center gap-1",
-        expanded
-          ? "flex-wrap [&>[data-ticket-chip]]:flex-none"
-          : "overflow-hidden",
+        wrap ? "flex-wrap [&>[data-ticket-chip]]:flex-none" : "overflow-hidden",
       )}
     >
-      {(expanded ? refs : refs.slice(0, 1)).map((ref) => (
+      {(wrap ? refs : refs.slice(0, 1)).map((ref) => (
         <TicketChip key={ref.id} ticket={ref} />
       ))}
-      {!expanded && refs.length > 1 && (
+      {!wrap && refs.length > 1 && (
         <span className="shrink-0 text-xs text-muted-foreground">
           +{refs.length - 1}
         </span>

@@ -1396,6 +1396,90 @@ const TABLE_STATES = [
       await p.waitForTimeout(400);
     },
   ],
+  [
+    // Spreadsheet keyboard (NocoDB parity): wrap, edge jumps, clear, replace.
+    "table-keyboard",
+    async (p) => {
+      const grid = p.getByRole("grid");
+      const activeLabel = () =>
+        p.evaluate(() =>
+          document
+            .querySelector('[role="gridcell"][aria-selected="true"]')
+            ?.getAttribute("aria-label"),
+        );
+      await p.getByRole("gridcell", { name: "Batch, row 1" }).click();
+      await grid.press("Control+ArrowRight");
+      if ((await activeLabel()) !== "Tickets, row 1")
+        throw new Error("Ctrl+ArrowRight did not reach the last field");
+      await grid.press("Control+ArrowLeft");
+      if ((await activeLabel()) !== "Batch, row 1")
+        throw new Error("Ctrl+ArrowLeft did not reach the first field");
+      for (let i = 0; i < 6; i++) await grid.press("Tab");
+      if ((await activeLabel()) !== "Batch, row 2")
+        throw new Error("Tab did not wrap across rows");
+      await grid.press("Shift+Tab");
+      if ((await activeLabel()) !== "Tickets, row 1")
+        throw new Error("Shift+Tab did not wrap back");
+      // Typing replaces the active cell; Esc cancels without saving.
+      await p.getByRole("gridcell", { name: "Note, row 1" }).click();
+      await grid.press("x");
+      const note = p.getByRole("textbox", { name: "Note", exact: true });
+      if ((await note.inputValue()) !== "x")
+        throw new Error("typing did not seed the editor with the keystroke");
+      await note.press("Escape");
+      await p
+        .getByRole("textbox", { name: "Note", exact: true })
+        .waitFor({ state: "detached" });
+      // Delete clears an editable cell through the real API; typing restores.
+      await p.getByRole("gridcell", { name: "Cost, row 1" }).click();
+      await grid.press("Delete");
+      await p.waitForFunction(
+        () =>
+          document
+            .querySelector('[aria-label="Cost, row 1"]')
+            ?.textContent?.trim() === "—",
+      );
+      await p.getByRole("gridcell", { name: "Cost, row 1" }).click();
+      await grid.press("3");
+      const cost = p.getByRole("spinbutton", { name: "Cost", exact: true });
+      await cost.fill("3180000");
+      await cost.press("Enter");
+      await p.waitForFunction(
+        () =>
+          document
+            .querySelector('[aria-label="Cost, row 1"]')
+            ?.textContent?.trim() !== "—",
+      );
+      // Space expands the row; Esc closes the drawer again.
+      await p.getByRole("gridcell", { name: "Batch, row 1" }).click();
+      await grid.press(" ");
+      await p.locator('[data-slot="sheet-popup"]').waitFor({ timeout: 5000 });
+      await p.keyboard.press("Escape");
+      await p
+        .locator('[data-slot="sheet-popup"]')
+        .waitFor({ state: "detached" });
+      // Outer boundary: Tab leaves the grid instead of clamping.
+      await p
+        .getByRole("gridcell", { name: /Tickets, row \d+/ })
+        .last()
+        .click();
+      await grid.press("Tab");
+      const left = await p.evaluate(
+        () => document.activeElement?.getAttribute("role") !== "grid",
+      );
+      if (!left)
+        throw new Error("Tab at the outer boundary did not leave the grid");
+    },
+  ],
+  [
+    // Row height (NocoDB parity): Tall wraps long text at a fixed height.
+    "table-row-height",
+    async (p) => {
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitemcheckbox", { name: "Tall" }).click();
+      await p.waitForTimeout(400);
+    },
+  ],
 ];
 if (pages.table) {
   for (const [name, act] of TABLE_STATES) {
@@ -1472,7 +1556,11 @@ if (pages.table) {
       if (m.toolbar_font !== "12px")
         fails.push(`toolbar font ${m.toolbar_font}, want 12px`);
       if (m.toolbar_h !== 40) fails.push(`toolbar ${m.toolbar_h}px, want 40`);
-      if (name !== "table-noresult" && m.row_h !== 32)
+      if (
+        name !== "table-noresult" &&
+        name !== "table-row-height" &&
+        m.row_h !== 32
+      )
         fails.push(`row ${m.row_h}px, want 32`);
     }
     if (name === "table-select" && !m.bulk)
@@ -1525,6 +1613,58 @@ if (pages.table) {
       fails.push("selected row cells are not tinted");
     if (name === "table-group" && m.groups < 1)
       fails.push("no group headers after grouping");
+    if (name === "table-keyboard") {
+      const end = await page.evaluate(() => ({
+        active: document
+          .querySelector('[role="gridcell"][aria-selected="true"]')
+          ?.getAttribute("aria-label"),
+        sheet: !!document.querySelector('[data-slot="sheet-popup"]'),
+        // The boundary Tab parks focus on the header's select-all checkbox:
+        // that is focus leaving the grid, not a cell editor.
+        editor: !!document.querySelector(
+          '[role="grid"] input:not([type="checkbox"]), [role="grid"] textarea',
+        ),
+        cost: document
+          .querySelector('[aria-label="Cost, row 1"]')
+          ?.textContent?.trim(),
+      }));
+      if (!end.active || !end.active.startsWith("Tickets, row"))
+        fails.push(`keyboard end active ${JSON.stringify(end)}`);
+      if (end.sheet || end.editor)
+        fails.push(`keyboard end left UI open ${JSON.stringify(end)}`);
+      if (end.cost === "—")
+        fails.push("cost cell was not restored after Delete");
+    }
+    if (name === "table-row-height") {
+      const tall = await page.evaluate(() => {
+        const row = document.querySelector(
+          '[role="grid"] [role="row"][aria-rowindex]',
+        );
+        const preview = document.querySelector(
+          '[aria-label="Note, row 1"] [data-expanded="false"]',
+        );
+        const rows = [
+          ...document.querySelectorAll('[role="row"][aria-rowindex]'),
+        ];
+        let overlap = false;
+        for (let i = 1; i < rows.length; i++) {
+          const a = rows[i - 1].getBoundingClientRect();
+          const b = rows[i].getBoundingClientRect();
+          if (a.bottom > b.top + 1) overlap = true;
+        }
+        return {
+          h: row ? Math.round(row.getBoundingClientRect().height) : null,
+          clamp: preview ? getComputedStyle(preview).webkitLineClamp : null,
+          overlap,
+          overflow: document.documentElement.scrollWidth > window.innerWidth,
+        };
+      });
+      if (tall.h !== 80) fails.push(`tall row ${tall.h}px, want 80`);
+      if (tall.clamp !== "4")
+        fails.push(`note clamp ${tall.clamp}, want 4 lines`);
+      if (tall.overlap) fails.push("rows overlap at tall height");
+      if (tall.overflow) fails.push("tall rows overflow the viewport");
+    }
     const shot = `${name}--desktop-dark.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m };
@@ -1563,6 +1703,64 @@ if (pages.table) {
     checks[shot] = { fails };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
+    );
+    await ctx.close();
+  }
+
+  // Keyboard + row-height states must also hold at 390px (dark, touch).
+  for (const [name, act] of [
+    ...TABLE_STATES.filter(
+      ([id]) => id === "table-keyboard" || id === "table-row-height",
+    ),
+  ]) {
+    const ctx = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: "dark",
+      hasTouch: true,
+    });
+    await ctx.addInitScript(() => {
+      const k = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(k) ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: "dark" };
+      localStorage.setItem(k, JSON.stringify(cur));
+    });
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    try {
+      await act(page);
+      await page.waitForTimeout(500);
+    } catch (e) {
+      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    const m = await page.evaluate(() => {
+      const row = document.querySelector(
+        '[role="grid"] [role="row"][aria-rowindex]',
+      );
+      return {
+        row_h: row ? Math.round(row.getBoundingClientRect().height) : null,
+        overflow: document.documentElement.scrollWidth > window.innerWidth,
+        active: document
+          .querySelector('[role="gridcell"][aria-selected="true"]')
+          ?.getAttribute("aria-label"),
+      };
+    });
+    if (name === "table-row-height" && m.row_h !== 80)
+      fails.push(`phone tall row ${m.row_h}px, want 80`);
+    if (name === "table-keyboard" && !m.active)
+      fails.push("phone keyboard state lost the active cell");
+    if (m.overflow) fails.push("state overflows the phone viewport");
+    const shot = `${name}--phone-dark.png`;
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails, ...m };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}`,
     );
     await ctx.close();
   }
