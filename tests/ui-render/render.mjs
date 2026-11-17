@@ -1046,9 +1046,119 @@ async function fullQueryState(page) {
   await page.unroute("**/row-query");
 }
 
+async function filterGroupsState(page) {
+  let lastFilters;
+  const onRequest = (request) => {
+    if (request.url().endsWith("/row-query") && request.method() === "POST")
+      lastFilters = request.postDataJSON()?.filters;
+  };
+  page.on("request", onRequest);
+  await page
+    .getByRole("button", { name: "Batch field menu", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Filter by this field", exact: true })
+    .click();
+  const builder = page.locator("[data-filter-builder]");
+  await builder.waitFor();
+  if ((await builder.locator("[data-filter-condition]").count()) !== 1)
+    throw new Error("Header filter action did not create a condition");
+  await builder
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  const root = builder.locator('[data-filter-group="1"]');
+  const add = async (group, text) => {
+    await group
+      .getByRole("button", { name: "Add filter", exact: true })
+      .last()
+      .click();
+    await group.getByLabel("Filter value", { exact: true }).last().fill(text);
+  };
+  await add(root, "PB-1042 Filter test A");
+  await root.getByRole("button", { name: "Add group", exact: true }).click();
+  const nested = builder.locator('[data-filter-group="2"]');
+  await nested.getByLabel("Group logic").click();
+  await page.getByRole("option", { name: "OR", exact: true }).click();
+  await add(nested, "PB-1042 Filter test A");
+  await add(nested, "PB-1043 Mixing test B");
+  await page.waitForTimeout(400);
+  const filterButton = page.getByRole("button", { name: /^Filter/ });
+  if (
+    !(await filterButton.innerText()).includes("3") ||
+    (await filterButton.getAttribute("data-applied")) !== "true"
+  )
+    throw new Error("Filter active count must be 3");
+  if (
+    lastFilters?.conjunction !== "and" ||
+    lastFilters?.children?.[1]?.conjunction !== "or" ||
+    lastFilters.children[1].children.length !== 2
+  )
+    throw new Error("Nested expression was flattened or not sent to row query");
+  await nested
+    .getByRole("button", { name: "Remove filter", exact: true })
+    .last()
+    .click();
+  if ((await builder.locator("[data-filter-condition]").count()) !== 2)
+    throw new Error("Remove condition failed");
+  await nested.getByRole("button", { name: "Add group", exact: true }).click();
+  const deepest = builder.locator('[data-filter-group="3"]');
+  if (
+    !(await deepest
+      .getByRole("button", { name: "Add group", exact: true })
+      .isDisabled())
+  )
+    throw new Error("Depth limit not enforced in builder");
+  await deepest.getByRole("button", { name: "Remove group" }).click();
+  await builder
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  if (
+    (await builder.locator("[data-filter-condition]").count()) !== 0 ||
+    (await builder.locator("[data-filter-group]").count()) !== 1
+  )
+    throw new Error("Clear all did not clear nested conditions");
+  await add(root, "PB-1042 Filter test A");
+  await root.getByRole("button", { name: "Add group", exact: true }).click();
+  await nested.getByLabel("Group logic").click();
+  await page.getByRole("option", { name: "OR", exact: true }).click();
+  await add(nested, "PB-1042 Filter test A");
+  await add(nested, "PB-1043 Mixing test B");
+  await page.waitForTimeout(400);
+  const overflow = await builder.evaluate((el) =>
+    Array.from(
+      el.querySelectorAll('button,input:not([aria-hidden="true"])'),
+    ).flatMap((control) => {
+      const r = control.getBoundingClientRect();
+      const style = getComputedStyle(control);
+      return r.width > 2 &&
+        r.height > 2 &&
+        style.visibility !== "hidden" &&
+        style.display !== "none" &&
+        (r.left < 0 || r.right > window.innerWidth)
+        ? [
+            {
+              label: control.getAttribute("aria-label") ?? control.textContent,
+              left: r.left,
+              right: r.right,
+            },
+          ]
+        : [];
+    }),
+  );
+  if (overflow.length)
+    throw new Error(
+      `Filter controls overflow viewport: ${JSON.stringify(overflow)}`,
+    );
+  await builder.locator(".overflow-y-auto").evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  page.off("request", onRequest);
+}
+
 // Table interaction states (dark desktop), design v3 S2.
 const TABLE_STATES = [
   ["table-full-query", fullQueryState],
+  ["table-filter-groups", filterGroupsState],
   ["table-system-fields", showSystemFields],
   [
     "table-system-drawer",
@@ -1803,7 +1913,10 @@ if (pages.table) {
   // Keyboard + row-height states must also hold at 390px (dark, touch).
   for (const [name, act] of [
     ...TABLE_STATES.filter(
-      ([id]) => id === "table-keyboard" || id === "table-row-height",
+      ([id]) =>
+        id === "table-keyboard" ||
+        id === "table-row-height" ||
+        id === "table-filter-groups",
     ),
   ]) {
     const ctx = await browser.newContext({

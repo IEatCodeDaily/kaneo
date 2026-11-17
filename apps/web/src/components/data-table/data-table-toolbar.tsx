@@ -11,7 +11,6 @@ import {
   SlidersHorizontal,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ToolbarButton } from "@/components/common/toolbar-button";
@@ -22,16 +21,12 @@ import {
 } from "@/components/data-table/data-table-cells";
 import {
   type ColumnSort,
-  type DataTableFilter,
   DENSITY_LABEL_KEYS,
   type Density,
-  defaultFilterFor,
-  filterIsActive,
   isGroupable,
   isQueryable,
 } from "@/components/data-table/data-table-format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -55,7 +50,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import type { DataTableField } from "@/types/data-table";
+import type { DataTableField, FilterGroup } from "@/types/data-table";
+import {
+  conditionActive,
+  FilterBuilder,
+  filterConditions,
+} from "./filter-builder";
 
 type Props = {
   fields: DataTableField[];
@@ -64,8 +64,10 @@ type Props = {
   showSystemFields?: boolean;
   onShowSystemFieldsChange?: (show: boolean) => void;
   onHiddenChange: (ids: string[]) => void;
-  filters: DataTableFilter[];
-  onFiltersChange: (filters: DataTableFilter[]) => void;
+  filterOpen?: boolean;
+  onFilterOpenChange?: (open: boolean) => void;
+  filters: FilterGroup;
+  onFiltersChange: (filters: FilterGroup) => void;
   sort: ColumnSort | null;
   onSortChange: (sort: ColumnSort | null) => void;
   search: string;
@@ -107,7 +109,7 @@ export function DataTableToolbar(props: Props) {
     (f, i) => i > 0 && hidden.includes(f.id),
   ).length;
   // Draft rows without a value don't narrow anything, so they don't count.
-  const activeCount = filters.filter(filterIsActive).length;
+  const activeCount = filterConditions(filters).filter(conditionActive).length;
   const sortField = sort ? fields.find((f) => f.id === sort.fieldId) : null;
 
   return (
@@ -205,19 +207,31 @@ export function DataTableToolbar(props: Props) {
       </Popover>
 
       {/* Filter */}
-      <Popover>
+      <Popover open={props.filterOpen} onOpenChange={props.onFilterOpenChange}>
         <PopoverTrigger
           render={
             <ToolbarButton
-              icon={<ListFilter className="size-3.5" />}
+              icon={
+                <>
+                  <ListFilter className="size-3.5" />
+                  {activeCount > 0 && (
+                    <span className="text-xs tabular-nums @3xl/toolbar:hidden">
+                      {activeCount}
+                    </span>
+                  )}
+                </>
+              }
               label={t("common:actions.filter")}
               applied={activeCount > 0}
               badge={activeCount > 0 ? activeCount : undefined}
             />
           }
         />
-        <PopoverContent align="start" className="w-137">
-          <FilterRows {...props} fields={queryableFields} />
+        <PopoverContent align="start" inset="panel" className="w-120">
+          <FilterBuilder
+            {...props}
+            fields={fields.filter((field) => !field.options?.unavailable)}
+          />
         </PopoverContent>
       </Popover>
 
@@ -438,7 +452,9 @@ export function FieldSelect({
   value,
   placeholder,
   onChange,
+  className = "w-40 min-w-0",
 }: {
+  className?: string;
   fields: DataTableField[];
   value: string;
   placeholder: string;
@@ -450,7 +466,7 @@ export function FieldSelect({
       value={value || null}
       onValueChange={(next) => next && onChange(String(next))}
     >
-      <SelectTrigger size="sm" className="w-40 min-w-0">
+      <SelectTrigger size="sm" className={className}>
         <SelectValue placeholder={placeholder}>
           {current && (
             <span className="flex min-w-0 items-center gap-1.5">
@@ -477,282 +493,5 @@ export function FieldSelect({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-/** Stacked condition rows on one grid: word · field · value · trash (DS §2). */
-function FilterRows({
-  fields,
-  members,
-  filters,
-  onFiltersChange,
-}: Pick<Props, "fields" | "members" | "filters" | "onFiltersChange">) {
-  const { t } = useTranslation();
-  const update = (id: string, next: DataTableFilter) =>
-    onFiltersChange(filters.map((f) => (f.id === id ? next : f)));
-
-  return (
-    <>
-      <div className="flex flex-col gap-1 p-2">
-        {filters.length === 0 && (
-          <p className="px-1 py-1.5 text-xs text-muted-foreground">
-            {t("navigation:tables.noFilters")}
-          </p>
-        )}
-        {filters.map((filter, index) => {
-          const field = fields.find((f) => f.id === filter.fieldId);
-          return (
-            <div
-              key={filter.id}
-              className="grid grid-cols-[48px_160px_1fr_28px] items-center gap-1"
-            >
-              <span className="px-1 text-xs text-muted-foreground">
-                {index === 0
-                  ? t("navigation:tables.where")
-                  : t("navigation:tables.and")}
-              </span>
-              <FieldSelect
-                fields={fields}
-                value={filter.fieldId}
-                placeholder={t("navigation:tables.pickField")}
-                onChange={(fieldId) => {
-                  const next = fields.find((f) => f.id === fieldId);
-                  if (next)
-                    update(filter.id, {
-                      ...defaultFilterFor(next),
-                      id: filter.id,
-                    });
-                }}
-              />
-              {field ? (
-                <FilterValue
-                  filter={filter}
-                  field={field}
-                  members={members}
-                  onChange={(next) => update(filter.id, next)}
-                />
-              ) : (
-                <span />
-              )}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("navigation:tables.removeFilter")}
-                onClick={() =>
-                  onFiltersChange(filters.filter((f) => f.id !== filter.id))
-                }
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex items-center justify-between border-t p-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={fields.length === 0}
-          onClick={() =>
-            fields[0] &&
-            onFiltersChange([...filters, defaultFilterFor(fields[0])])
-          }
-        >
-          <Plus className="size-3.5" />
-          {t("navigation:tables.addFilter")}
-        </Button>
-        <span className="flex items-center gap-2">
-          {filters.length > 1 && (
-            <span className="text-xs text-muted-foreground">
-              {t("navigation:tables.matchAll")}
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={filters.length === 0}
-            onClick={() => onFiltersChange([])}
-          >
-            {t("navigation:tables.clearFilters")}
-          </Button>
-        </span>
-      </div>
-    </>
-  );
-}
-
-function FilterValue({
-  filter,
-  field,
-  members,
-  onChange,
-}: {
-  filter: DataTableFilter;
-  field: DataTableField;
-  members: Map<string, MemberOption>;
-  onChange: (next: DataTableFilter) => void;
-}) {
-  const { t } = useTranslation();
-  const input = (props: React.ComponentProps<typeof Input>) => (
-    <Input size="sm" className="min-w-0" {...props} />
-  );
-
-  if ("contains" in filter) {
-    return input({
-      value: filter.contains,
-      placeholder: t("navigation:tables.contains"),
-      "aria-label": field.name,
-      onChange: (e) => onChange({ ...filter, contains: e.target.value }),
-    });
-  }
-  if ("min" in filter) {
-    return (
-      <span className="grid grid-cols-2 gap-1">
-        {input({
-          type: "number",
-          value: filter.min,
-          placeholder: t("navigation:tables.optionMin"),
-          "aria-label": t("navigation:tables.optionMin"),
-          onChange: (e) => onChange({ ...filter, min: e.target.value }),
-        })}
-        {input({
-          type: "number",
-          value: filter.max,
-          placeholder: t("navigation:tables.optionMax"),
-          "aria-label": t("navigation:tables.optionMax"),
-          onChange: (e) => onChange({ ...filter, max: e.target.value }),
-        })}
-      </span>
-    );
-  }
-  if ("from" in filter) {
-    return (
-      <span className="grid grid-cols-2 gap-1">
-        {input({
-          type: "date",
-          value: filter.from,
-          "aria-label": t("navigation:tables.optionMin"),
-          onChange: (e) => onChange({ ...filter, from: e.target.value }),
-        })}
-        {input({
-          type: "date",
-          value: filter.to,
-          "aria-label": t("navigation:tables.optionMax"),
-          onChange: (e) => onChange({ ...filter, to: e.target.value }),
-        })}
-      </span>
-    );
-  }
-  const options =
-    "checked" in filter
-      ? [
-          { id: "any", label: t("navigation:tables.anyValue") },
-          { id: "true", label: t("navigation:dashboards.yes") },
-          { id: "false", label: t("navigation:dashboards.no") },
-        ]
-      : [
-          { id: "__any__", label: t("navigation:tables.anyValue") },
-          { id: "__empty__", label: t("navigation:tables.unassigned") },
-          ...(field.type === "user"
-            ? Array.from(members.entries()).map(([id, m]) => ({
-                id,
-                label:
-                  m.user.name ||
-                  m.user.email ||
-                  t("navigation:tables.formerMember"),
-              }))
-            : (field.options?.choices ?? []).map((c) => ({
-                id: c.id,
-                label: c.label,
-              }))),
-        ];
-  const value = "checked" in filter ? filter.checked : filter.choiceId;
-  return (
-    <Select
-      value={value || null}
-      onValueChange={(next) => {
-        const v = next === "__any__" ? "" : String(next ?? "");
-        onChange(
-          "checked" in filter
-            ? { ...filter, checked: v === "true" || v === "false" ? v : "any" }
-            : { ...filter, choiceId: v },
-        );
-      }}
-    >
-      <SelectTrigger size="sm" className="min-w-0">
-        <SelectValue placeholder={t("navigation:tables.selectChoice")}>
-          {options.find((o) => o.id === value)?.label}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.id} value={o.id}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-/** One 24px chip per applied filter in the condition row (DS §1.4). */
-export function FilterConditionChip({
-  filter,
-  field,
-  members,
-  onRemove,
-}: {
-  filter: DataTableFilter;
-  field: DataTableField;
-  members: Map<string, MemberOption>;
-  onRemove: () => void;
-}) {
-  const { t } = useTranslation();
-  let summary = "";
-  if ("contains" in filter) summary = `“${filter.contains}”`;
-  else if ("min" in filter)
-    summary = [filter.min && `≥ ${filter.min}`, filter.max && `≤ ${filter.max}`]
-      .filter(Boolean)
-      .join(" · ");
-  else if ("from" in filter)
-    summary = [filter.from, filter.to].filter(Boolean).join(" – ");
-  else if ("checked" in filter)
-    summary =
-      filter.checked === "true"
-        ? t("navigation:dashboards.yes")
-        : t("navigation:dashboards.no");
-  else
-    summary =
-      filter.choiceId === "__empty__"
-        ? t("navigation:tables.unassigned")
-        : field.type === "user"
-          ? members.get(filter.choiceId)?.user.name ||
-            members.get(filter.choiceId)?.user.email ||
-            t("navigation:tables.formerMember")
-          : (field.options?.choices?.find((c) => c.id === filter.choiceId)
-              ?.label ?? filter.choiceId);
-
-  return (
-    <span className="inline-flex h-6 items-center rounded-md border border-input text-xs">
-      <span className="flex items-center gap-1.5 px-2 font-medium">
-        <FieldTypeIcon type={field.type} className="text-muted-foreground" />
-        {field.name}
-      </span>
-      <span className="h-full w-px bg-border" />
-      <span className="max-w-48 truncate px-2 text-muted-foreground">
-        {summary}
-      </span>
-      <span className="h-full w-px bg-border" />
-      <button
-        type="button"
-        aria-label={t("navigation:tables.removeFilterNamed", {
-          name: field.name,
-        })}
-        className="flex h-full w-6 items-center justify-center rounded-r-md text-muted-foreground hover:bg-accent hover:text-foreground"
-        onClick={onRemove}
-      >
-        <X className="size-3.5" />
-      </button>
-    </span>
   );
 }
