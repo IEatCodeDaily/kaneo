@@ -56,7 +56,7 @@ function LayoutToolbar({ children, className }: ToolbarProps) {
   return (
     <div
       className={cn(
-        "flex h-10 shrink-0 items-center gap-1 border-b border-border px-3",
+        "@container/toolbar flex h-10 min-w-0 shrink-0 items-center gap-1 border-b border-border px-3",
         className,
       )}
       data-slot="layout-toolbar"

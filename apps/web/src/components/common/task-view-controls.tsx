@@ -1,5 +1,6 @@
 import { ArrowDownAZ, ArrowUpAZ, Columns3, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,25 +100,24 @@ export default function TaskViewControls({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium outline-none ring-0 ${
+            <ToolbarButton
+              icon={
+                sort.direction === "asc" ? (
+                  <ArrowUpAZ className="size-3.5" />
+                ) : (
+                  <ArrowDownAZ className="size-3.5" />
+                )
+              }
+              label={
                 sort.field !== "position"
-                  ? "border-primary/30 bg-primary/10 text-primary-soft-foreground hover:bg-primary/15"
-                  : "border-border bg-background text-foreground hover:bg-accent/60"
-              }`}
+                  ? (sortFields.find((f) => f.field === sort.field)?.label ??
+                    t("tasks:sort.label"))
+                  : t("tasks:sort.label")
+              }
+              applied={sort.field !== "position"}
             />
           }
-        >
-          {sort.direction === "asc" ? (
-            <ArrowUpAZ className="h-3 w-3" />
-          ) : (
-            <ArrowDownAZ className="h-3 w-3" />
-          )}
-          {sort.field !== "position"
-            ? sortFields.find((f) => f.field === sort.field)?.label
-            : t("tasks:sort.label")}
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs uppercase tracking-wide">
@@ -161,21 +161,18 @@ export default function TaskViewControls({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium outline-none ring-0 ${
+            <ToolbarButton
+              icon={<Columns3 className="size-3.5" />}
+              applied={group !== "none"}
+              label={
                 group !== "none"
-                  ? "border-primary/30 bg-primary/10 text-primary-soft-foreground hover:bg-primary/15"
-                  : "border-border bg-background text-foreground hover:bg-accent/60"
-              }`}
+                  ? (groupFields.find((g) => g.field === group)?.label ??
+                    t("tasks:group.label"))
+                  : t("tasks:group.label")
+              }
             />
           }
-        >
-          <Columns3 className="h-3 w-3" />
-          {group !== "none"
-            ? groupFields.find((g) => g.field === group)?.label
-            : t("tasks:group.label")}
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs uppercase tracking-wide">
@@ -200,15 +197,12 @@ export default function TaskViewControls({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground outline-none ring-0 hover:bg-accent/60"
+            <ToolbarButton
+              icon={<Eye className="size-3.5" />}
+              label={t("tasks:display.label")}
             />
           }
-        >
-          <Eye className="h-3 w-3" />
-          {t("tasks:display.label")}
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent className="w-48" align="start">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs uppercase tracking-wide">
@@ -231,17 +225,22 @@ export default function TaskViewControls({
 
       {/* Sort direction toggle */}
       {sort.field !== "position" && (
-        <button
-          type="button"
+        <ToolbarButton
+          iconOnly
           onClick={toggleSortDirection}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-accent/60"
-        >
-          {sort.direction === "asc" ? (
-            <ArrowUpAZ className="h-3 w-3" />
-          ) : (
-            <ArrowDownAZ className="h-3 w-3" />
-          )}
-        </button>
+          label={
+            sort.direction === "asc"
+              ? t("tasks:sort.ascending")
+              : t("tasks:sort.descending")
+          }
+          icon={
+            sort.direction === "asc" ? (
+              <ArrowUpAZ className="size-3.5" />
+            ) : (
+              <ArrowDownAZ className="size-3.5" />
+            )
+          }
+        />
       )}
     </div>
   );

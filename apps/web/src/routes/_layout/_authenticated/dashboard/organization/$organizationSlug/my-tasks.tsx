@@ -10,11 +10,12 @@ import {
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
+import { ToolbarButton } from "@/components/common/toolbar-button";
+import { ToolbarSearch } from "@/components/common/toolbar-search";
 import PageTitle from "@/components/page-title";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { resolveLabelColor } from "@/constants/label-colors";
 import type { MyTasksRelation } from "@/fetchers/task/get-my-tasks";
 import useGetLabelsByOrganization from "@/hooks/queries/label/use-get-labels-by-organization";
@@ -269,7 +270,7 @@ export function MyTasksComponent() {
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="@container/toolbar flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
             <div className="-my-1 flex min-w-0 items-center gap-1.5 overflow-x-auto py-1 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)]">
               {/* shrink-0: chips keep their width and the row scrolls. */}
               <div className="shrink-0">
@@ -293,47 +294,34 @@ export function MyTasksComponent() {
                   />
                 </Suspense>
               </div>
-              <Button
+              <ToolbarButton
                 type="button"
-                size="xs"
-                variant="outline"
                 aria-pressed={includeCompleted}
                 onClick={() => setIncludeCompleted((previous) => !previous)}
-                className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
-              >
-                <Check
-                  aria-hidden
-                  className={`size-3.5 ${includeCompleted ? "" : "opacity-30"}`}
-                />
-                {t("myTasks:includeCompleted")}
-              </Button>
-              <Button
+                icon={<Check className="size-3.5" />}
+                label={t("myTasks:includeCompleted")}
+                applied={includeCompleted}
+              />
+              <ToolbarButton
                 type="button"
-                size="xs"
-                variant="outline"
                 aria-pressed={flaggedOnly}
                 onClick={() => setFlaggedOnly((previous) => !previous)}
-                className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
-              >
-                <Flag aria-hidden className="size-3.5" />
-                {t("myTasks:flagged")}
-              </Button>
+                icon={<Flag className="size-3.5" />}
+                label={t("myTasks:flagged")}
+                applied={flaggedOnly}
+              />
               {(["overdue", "soon"] as const).map((value) => (
-                <Button
+                <ToolbarButton
                   key={value}
                   type="button"
-                  size="xs"
-                  variant="outline"
                   aria-pressed={dueFilter === value}
                   onClick={() =>
                     setDueFilter((previous) =>
                       previous === value ? null : value,
                     )
                   }
-                  className="min-h-11 shrink-0 gap-1.5 rounded-md px-2.5 text-xs aria-pressed:border-foreground/30 aria-pressed:bg-accent aria-pressed:text-foreground sm:min-h-8"
-                >
-                  <CalendarDays aria-hidden className="size-3.5" />
-                  {t(
+                  icon={<CalendarDays className="size-3.5" />}
+                  label={t(
                     value === "overdue"
                       ? "home:due.Overdue"
                       : "home:due.Next 7 days",
@@ -342,17 +330,16 @@ export function MyTasksComponent() {
                         value === "overdue" ? "Overdue" : "Next 7 days",
                     },
                   )}
-                </Button>
+                  applied={dueFilter === value}
+                />
               ))}
             </div>
             <div className="flex items-center gap-2 sm:ml-auto">
-              <Input
+              <ToolbarSearch
+                label="Filter tickets"
+                clearLabel={t("common:actions.clear")}
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Filter tickets…"
-                aria-label="Filter tickets"
-                size="sm"
-                className="w-full sm:w-48 [&_[data-slot=input]]:h-[42px] [&_[data-slot=input]]:text-xs sm:[&_[data-slot=input]]:h-[30px]"
+                onChange={setSearch}
               />
               <span className="shrink-0 whitespace-nowrap text-muted-foreground text-xs tabular-nums sm:hidden">
                 {countLabel}

@@ -184,6 +184,7 @@ for (const [theme, tag, viewport, scale] of [
     const ctx = await browser.newContext({
       viewport,
       deviceScaleFactor: scale,
+      hasTouch: tag === "phone",
       storageState: state,
       reducedMotion: "reduce",
       colorScheme: theme,
@@ -212,6 +213,121 @@ for (const [theme, tag, viewport, scale] of [
       ...BAD.filter((b) => text.includes(b)).map((b) => `error text: ${b}`),
     ];
     if (text.trim().length < 40) fails.push("page rendered no content");
+    // Resource toolbar acceptance: real phone geometry, not just screenshots.
+    if (name === "table" || name === "board") {
+      const toolbar = await page.evaluate((surface) => {
+        const root = document.querySelector(
+          surface === "table"
+            ? '[data-slot="layout-toolbar"]'
+            : '[data-testid="board-toolbar"]',
+        );
+        if (!root) return null;
+        const controls = [...root.querySelectorAll("button, input")].map(
+          (el) => {
+            const r = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            return {
+              name: el.getAttribute("aria-label"),
+              left: r.left,
+              right: r.right,
+              top: r.top,
+              height: r.height,
+              chrome: [
+                style.height,
+                style.borderTopWidth,
+                style.borderTopStyle,
+                style.fontSize,
+                style.fontWeight,
+                style.paddingTop,
+                style.paddingRight,
+                style.paddingBottom,
+                style.paddingLeft,
+              ],
+            };
+          },
+        );
+        const buttons = [...root.querySelectorAll("[data-toolbar-button]")];
+        const labels = [...root.querySelectorAll("[data-toolbar-label]")].map(
+          (el) => getComputedStyle(el).display,
+        );
+        const primary = root.querySelector("[data-toolbar-primary]");
+        const r = primary?.getBoundingClientRect();
+        return {
+          controls,
+          labels,
+          buttonCount: buttons.length,
+          primary: r
+            ? { left: r.left, right: r.right, top: r.top, height: r.height }
+            : null,
+          chrome: buttons.map((el) => {
+            const s = getComputedStyle(el);
+            return [
+              s.height,
+              s.borderTopWidth,
+              s.borderTopStyle,
+              s.fontSize,
+              s.fontWeight,
+              s.paddingTop,
+              s.paddingRight,
+              s.paddingBottom,
+              s.paddingLeft,
+            ];
+          }),
+          viewport: innerWidth,
+        };
+      }, name);
+      if (!toolbar) fails.push("resource toolbar missing");
+      else {
+        if (toolbar.buttonCount < 5 || !toolbar.labels.length)
+          fails.push("toolbar controls missing");
+        for (const control of toolbar.controls) {
+          if (control.left < 0 || control.right > toolbar.viewport)
+            fails.push(`toolbar control clipped: ${JSON.stringify(control)}`);
+        }
+        if (
+          !toolbar.primary ||
+          toolbar.primary.right > toolbar.viewport ||
+          toolbar.primary.left < 0 ||
+          toolbar.primary.height !== 28
+        )
+          fails.push(
+            `primary action clipped or missing: ${JSON.stringify(toolbar.primary)}`,
+          );
+        if (toolbar.primary && toolbar.controls[0]?.top !== toolbar.primary.top)
+          fails.push("primary action orphaned on its own row");
+        if (
+          toolbar.labels.some(
+            (display) => (tag === "phone") !== (display === "none"),
+          )
+        )
+          fails.push(`toolbar labels did not collapse: ${toolbar.labels}`);
+        for (const chrome of toolbar.chrome) {
+          if (JSON.stringify(chrome) !== JSON.stringify(toolbar.chrome[0]))
+            fails.push(
+              `toolbar buttons have different chrome: ${JSON.stringify(toolbar.chrome)}`,
+            );
+          if (
+            chrome[0] !== "28px" ||
+            chrome[1] !== "1px" ||
+            chrome[3] !== "12px" ||
+            chrome[6] !== "8px" ||
+            chrome[8] !== "8px"
+          )
+            fails.push(`toolbar chrome off scale: ${JSON.stringify(chrome)}`);
+        }
+        const sibling =
+          checks[`${name === "board" ? "table" : "board"}--${tag}-${theme}.png`]
+            ?.toolbar;
+        if (
+          sibling &&
+          JSON.stringify(sibling.chrome[0]) !==
+            JSON.stringify(toolbar.chrome[0])
+        )
+          fails.push("board/table toolbar chrome differs");
+      }
+      // These states are also the baseline desktop/phone screenshots below.
+      checks[`${name}--${tag}-${theme}.png`] = { toolbar };
+    }
     const m = await page.evaluate(() => {
       const h = document.querySelector('[data-slot="layout-header"], header');
       return {
@@ -347,7 +463,7 @@ for (const [theme, tag, viewport, scale] of [
     }
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
-    checks[shot] = { fails, ...m, url: page.url() };
+    checks[shot] = { ...checks[shot], fails, ...m, url: page.url() };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
     );

@@ -956,7 +956,7 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="border-b border-border/80 px-3 py-2 sm:px-4">
+        <div className="@container/toolbar border-b border-border/80 px-3 py-2 sm:px-4">
           <div className="flex flex-wrap items-center gap-3">
             <BoardToolbar
               board={board}

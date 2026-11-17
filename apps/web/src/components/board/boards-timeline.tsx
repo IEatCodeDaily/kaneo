@@ -3,11 +3,14 @@ import {
   CalendarRange,
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Diamond,
   Filter,
 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import {
   buildTimeline,
   dayOffsetRem,
@@ -254,10 +257,13 @@ export default function BoardsTimeline({
 
   return (
     <TooltipProvider delay={0} closeDelay={0}>
-      <div className="flex flex-col gap-2">
+      <div className="@container/toolbar flex min-w-0 flex-col gap-2">
         <div className="flex items-center justify-end gap-1.5">
-          <button
-            className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
+          <ToolbarButton
+            icon={<ChevronsUpDown className="size-3.5" />}
+            label={t("organization:boards.timeline.expandAll", {
+              defaultValue: "Expand all",
+            })}
             data-testid="boards-timeline-expand-all"
             onClick={() => {
               const boardIds = filteredScheduled.map(({ board }) => board.id);
@@ -279,41 +285,31 @@ export default function BoardsTimeline({
               setExpandedSectionIds(sectionIds);
             }}
             type="button"
-          >
-            {t("organization:boards.timeline.expandAll", {
-              defaultValue: "Expand all",
+          />
+          <ToolbarButton
+            icon={<ChevronsDownUp className="size-3.5" />}
+            label={t("organization:boards.timeline.collapseAll", {
+              defaultValue: "Collapse all",
             })}
-          </button>
-          <button
-            className="inline-flex h-7 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
             data-testid="boards-timeline-collapse-all"
             onClick={() => {
               setExpandedBoardIds([]);
               setExpandedSectionIds([]);
             }}
             type="button"
-          >
-            {t("organization:boards.timeline.collapseAll", {
-              defaultValue: "Collapse all",
-            })}
-          </button>
+          />
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <button
-                  aria-label={t("common:actions.filter", {
-                    defaultValue: "Filter",
-                  })}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium hover:bg-accent/60"
+                <ToolbarButton
+                  icon={<Filter className="size-3.5" />}
+                  label={t("common:actions.filter", { defaultValue: "Filter" })}
+                  applied={statusFilters.length > 0}
+                  badge={statusFilters.length || undefined}
                   data-testid="boards-timeline-filter"
-                  type="button"
                 />
               }
-            >
-              <Filter className="size-3" />
-              {t("common:actions.filter", { defaultValue: "Filter" })}
-              {statusFilters.length > 0 ? ` (${statusFilters.length})` : null}
-            </DropdownMenuTrigger>
+            />
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs uppercase tracking-wide">
