@@ -21,6 +21,22 @@
 		"csvValidate": "Validate preview",
 		"csvImport": "Import rows",
 
+		"savedViews": {
+			"title": "Saved views",
+			"switch": "Switch saved view",
+			"options": "View actions",
+			"default": "Default",
+			"create": "Create view",
+			"rename": "Rename view",
+			"duplicate": "Duplicate view",
+			"delete": "Delete view",
+			"name": "View name",
+			"deleteConfirm": "Delete this view? Its rows will not be deleted.",
+			"error": "Could not save the view. Your layout is kept locally; retry before switching.",
+			"retry": "Retry save",
+			"moveLeft": "Move {{name}} left",
+			"moveRight": "Move {{name}} right"
+		},
 		"fieldName": "Field name",
 		"linkToTable": "Link to another table",
 		"activityLinkAdded": "Linked {{label}}",

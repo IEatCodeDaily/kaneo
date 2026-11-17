@@ -115,6 +115,216 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
     app = createApp().app;
   });
 
+  describe("saved Grid views", () => {
+    it("round-trips layouts and opaque filters, duplicates, renames and preserves exactly one default under concurrent deletes", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Views");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Name",
+        type: "text",
+      });
+      const root = `/api/data-table/organization/${org}/${table.id}/views`;
+      const call = (method: string, path = "", body?: unknown) =>
+        app.request(root + path, {
+          method,
+          headers: { "content-type": "application/json" },
+          ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
+      const list = async () =>
+        (await (await call("GET")).json()) as {
+          id: string;
+          isDefault: boolean;
+          name: string;
+          config: unknown;
+        }[];
+      const [initial] = await list();
+      expect(initial?.isDefault).toBe(true);
+      expect(initial?.config).toBeNull();
+      const config = {
+        filters: { op: "or", children: [{ future: { version: 2 } }] },
+        sort: { fieldId: field!.id, dir: "desc" },
+        groupFieldId: field!.id,
+        hiddenFields: [field!.id],
+        fieldOrder: [field!.id],
+        columnWidths: { [field!.id]: 321 },
+        rowHeight: "extra",
+        frozenColumns: 1,
+        summaries: { [field!.id]: "filled" },
+        showSystemFields: true,
+      };
+      expect(
+        (await call("PUT", `/${initial!.id}`, { config, initializeOnly: true }))
+          .status,
+      ).toBe(200);
+      // A second browser cannot overwrite the first successful carry-over.
+      await call("PUT", `/${initial!.id}`, {
+        config: { ...config, rowHeight: "compact" },
+        initializeOnly: true,
+      });
+      expect((await list())[0]?.config).toEqual(config);
+      const copyResponse = await call("POST", "", {
+        name: "QA view",
+        duplicateFrom: initial!.id,
+      });
+      expect(copyResponse.status).toBe(200);
+      const copy = (await copyResponse.json()) as {
+        id: string;
+        config: unknown;
+        isDefault: boolean;
+      };
+      expect(copy.config).toEqual(config);
+      expect(copy.isDefault).toBe(false);
+      expect(
+        (await call("PUT", `/${copy.id}`, { name: "Review" })).status,
+      ).toBe(200);
+      expect((await list()).find((v) => v.id === copy.id)?.name).toBe("Review");
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: { ...config, filters: "x".repeat(65537) },
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: { ...config, columnWidths: { [field!.id]: 900 } },
+          })
+        ).status,
+      ).toBe(400);
+      expect((await call("POST", "", { name: "  " })).status).toBe(400);
+      const deletes = await Promise.all([
+        call("DELETE", `/${initial!.id}`),
+        call("DELETE", `/${copy.id}`),
+      ]);
+      expect(deletes.map((r) => r.status).sort()).toEqual([200, 400]);
+      const remaining = await list();
+      expect(remaining).toHaveLength(1);
+      expect(remaining[0]?.isDefault).toBe(true);
+      expect((await call("DELETE", `/${remaining[0]!.id}`)).status).toBe(400);
+    });
+
+    it("rejects cross-table/org identifiers and view-only writes without leaking hidden views", async () => {
+      const org = member.organization.id;
+      const a = await createTableViaApi(app, org, "A");
+      const b = await createTableViaApi(app, org, "B");
+      const { field } = await createFieldViaApi(app, org, b.id, {
+        name: "Foreign",
+        type: "text",
+      });
+      const root = (organizationId: string, tableId: string) =>
+        `/api/data-table/organization/${organizationId}/${tableId}/views`;
+      const list = (await (await app.request(root(org, b.id))).json()) as {
+        id: string;
+      }[];
+      const call = (method: string, path: string, body?: unknown) =>
+        app.request(path, {
+          method,
+          headers: { "content-type": "application/json" },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+      for (const method of ["PUT", "DELETE"])
+        expect(
+          (
+            await call(method, `${root(org, a.id)}/${list[0]!.id}`, {
+              name: "Stolen",
+            })
+          ).status,
+        ).toBe(404);
+      expect(
+        (
+          await call("POST", root(org, a.id), {
+            name: "Stolen",
+            duplicateFrom: list[0]!.id,
+          })
+        ).status,
+      ).toBe(404);
+      const config = {
+        filters: [],
+        sort: null,
+        groupFieldId: null,
+        hiddenFields: [field!.id],
+        fieldOrder: [],
+        columnWidths: {},
+        rowHeight: "compact",
+        frozenColumns: 0,
+        summaries: {},
+        showSystemFields: false,
+      };
+      expect(
+        (
+          await call("POST", root(org, a.id), {
+            name: "Foreign fields",
+            config,
+          })
+        ).status,
+      ).toBe(400);
+      const other = await createOrganizationMember();
+      expect(
+        (await call("GET", root(other.organization.id, a.id))).status,
+      ).not.toBe(200);
+      await db
+        .update(schema.organizationMemberTable)
+        .set({ role: "member" })
+        .where(eq(schema.organizationMemberTable.userId, member.user.id));
+      await db
+        .update(schema.dataTableTable)
+        .set({ orgPrivilege: "view" })
+        .where(eq(schema.dataTableTable.id, b.id));
+      expect((await call("GET", root(org, b.id))).status).toBe(200);
+      expect(
+        (await call("POST", root(org, b.id), { name: "Forbidden" })).status,
+      ).toBe(404);
+      expect(
+        (
+          await call("PUT", `${root(org, b.id)}/${list[0]!.id}`, {
+            name: "Forbidden",
+          })
+        ).status,
+      ).toBe(404);
+      expect(
+        (await call("DELETE", `${root(org, b.id)}/${list[0]!.id}`)).status,
+      ).toBe(404);
+      await db
+        .update(schema.dataTableTable)
+        .set({ orgPrivilege: "none" })
+        .where(eq(schema.dataTableTable.id, b.id));
+      expect((await call("GET", root(org, b.id))).status).toBe(404);
+    });
+
+    it("backfills existing tables idempotently and enforces the default invariant in the database", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Invariant");
+      const migration = readFileSync(
+        new URL(
+          "../../apps/api/drizzle/0090_table_saved_views.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.execute(sql.raw(migration));
+      await db.execute(sql.raw(migration));
+      const views = await db
+        .select()
+        .from(schema.dataTableViewTable)
+        .where(eq(schema.dataTableViewTable.tableId, table.id));
+      expect(views).toHaveLength(1);
+      await expect(
+        db
+          .delete(schema.dataTableViewTable)
+          .where(eq(schema.dataTableViewTable.tableId, table.id)),
+      ).rejects.toThrow();
+      await expect(
+        db.insert(schema.dataTableViewTable).values({
+          tableId: table.id,
+          organizationId: org,
+          name: "Invalid default",
+          isDefault: true,
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
   describe("complete-table row query", () => {
     it("queries, groups, summarizes and exports off-page rows through one authorized predicate", async () => {
       const org = member.organization.id;

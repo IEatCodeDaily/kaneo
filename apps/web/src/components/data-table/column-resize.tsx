@@ -7,7 +7,7 @@ const MAX_WIDTH = 800;
 const clamp = (width: number) =>
   Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)));
 const storageKey = (tableId: string) => `kaneo-table-widths:${tableId}`;
-function readWidths(tableId: string): Record<string, number> {
+export function readWidths(tableId: string): Record<string, number> {
   try {
     const raw: unknown = JSON.parse(
       localStorage.getItem(storageKey(tableId)) ?? "{}",

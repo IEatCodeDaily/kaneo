@@ -1156,7 +1156,102 @@ async function filterGroupsState(page) {
 }
 
 // Table interaction states (dark desktop), design v3 S2.
+// Each interaction state starts with its own persisted layout. A shared default
+// would make earlier filter/height/visibility tests contaminate later states.
+async function freshGridUrl() {
+  const r = await api.post(
+    `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/views`,
+    {
+      data: {
+        name: "Grid",
+        config: {
+          filters: [],
+          sort: null,
+          groupFieldId: null,
+          hiddenFields: [],
+          fieldOrder: [],
+          columnWidths: {},
+          rowHeight: "compact",
+          frozenColumns: 0,
+          summaries: {},
+          showSystemFields: false,
+        },
+      },
+    },
+  );
+  if (!r.ok()) throw new Error(`create render view: ${await r.text()}`);
+  return `${BASE}${pages.table}?v=${(await r.json()).id}`;
+}
 const TABLE_STATES = [
+  [
+    "table-saved-views",
+    async (p) => {
+      const switcher = p.getByRole("button", {
+        name: "Switch saved view",
+        exact: true,
+      });
+      const original = p.url();
+      const viewName = p.viewportSize().width < 768 ? "QA phone" : "QA review";
+      await switcher.click();
+      await p
+        .getByRole("menuitem", { name: "Create view", exact: true })
+        .click();
+      await p.getByRole("textbox", { name: "View name" }).fill(viewName);
+      await p.getByRole("button", { name: "Create view", exact: true }).click();
+      await p.waitForURL((url) => url.href !== original);
+      await p.getByRole("grid").waitFor();
+      const second = p.url();
+      await p.getByRole("button", { name: "Table options" }).click();
+      const saved = p.waitForResponse(
+        (r) =>
+          r.request().method() === "PUT" &&
+          r.url().includes("/views/") &&
+          r.ok(),
+      );
+      await p
+        .getByRole("menuitemcheckbox", { name: "Tall", exact: true })
+        .click();
+      await saved;
+      // Checkbox menu items intentionally keep the table-options menu open.
+      await p.keyboard.press("Escape");
+      await p.getByRole("button", { name: "Fields", exact: true }).click();
+      const hidden = p.waitForResponse(
+        (r) =>
+          r.request().method() === "PUT" &&
+          r.url().includes("/views/") &&
+          r.ok(),
+      );
+      await p.getByRole("switch", { name: "Stage", exact: true }).click();
+      await hidden;
+      await p.keyboard.press("Escape");
+      await p.goto(original, { waitUntil: "networkidle" });
+      const geometry = () =>
+        p.evaluate(() => ({
+          height: document
+            .querySelector('[role="row"][aria-rowindex]')
+            ?.getBoundingClientRect().height,
+          stage: [...document.querySelectorAll('[role="columnheader"]')].some(
+            (e) => e.textContent.includes("Stage"),
+          ),
+        }));
+      await p.getByRole("grid").waitFor();
+      let m = await geometry();
+      if (m.height !== 32 || !m.stage)
+        throw new Error(`first view lost its layout: ${JSON.stringify(m)}`);
+      // Switch by the actual header control, then reload the linkable URL.
+      await switcher.click();
+      await p.getByRole("menuitem", { name: viewName, exact: true }).click();
+      await p.waitForURL(second);
+      await p.reload({ waitUntil: "networkidle" });
+      await p.getByRole("grid").waitFor();
+      m = await geometry();
+      if (m.height !== 80 || m.stage)
+        throw new Error(`second view lost its layout: ${JSON.stringify(m)}`);
+      await p
+        .getByRole("button", { name: "View actions", exact: true })
+        .click();
+    },
+  ],
   ["table-full-query", fullQueryState],
   ["table-filter-groups", filterGroupsState],
   ["table-system-fields", showSystemFields],
@@ -1703,7 +1798,7 @@ if (pages.table) {
     const page = await ctx.newPage();
     const fails = [];
     page.on("pageerror", (e) => fails.push(String(e)));
-    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
     await page.waitForTimeout(1200);
     try {
       await act(page);
@@ -1762,6 +1857,7 @@ if (pages.table) {
       if (
         name !== "table-noresult" &&
         name !== "table-row-height" &&
+        name !== "table-saved-views" &&
         m.row_h !== 32
       )
         fails.push(`row ${m.row_h}px, want 32`);
@@ -1916,7 +2012,8 @@ if (pages.table) {
       ([id]) =>
         id === "table-keyboard" ||
         id === "table-row-height" ||
-        id === "table-filter-groups",
+        id === "table-filter-groups" ||
+        id === "table-saved-views",
     ),
   ]) {
     const ctx = await browser.newContext({
@@ -1937,7 +2034,7 @@ if (pages.table) {
     const page = await ctx.newPage();
     const fails = [];
     page.on("pageerror", (e) => fails.push(String(e)));
-    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
     await page.waitForTimeout(1200);
     try {
       await act(page);
@@ -1990,7 +2087,7 @@ if (pages.table) {
     const page = await ctx.newPage();
     const fails = [];
     page.on("pageerror", (error) => fails.push(String(error)));
-    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
     try {
       // Exercise the existing resize control: a wide frozen primary leaves no
       // room for scrolling columns on phones. This is a local view preference.
@@ -2057,7 +2154,7 @@ if (pages.table) {
   const page = await ctx.newPage();
   const fails = [];
   page.on("pageerror", (e) => fails.push(String(e)));
-  await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+  await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
   try {
     await page.getByRole("button", { name: /^Filter/ }).click();
@@ -2767,7 +2864,7 @@ if (pages.table) {
     const page = await ctx.newPage();
     const fails = [];
     page.on("pageerror", (e) => fails.push(String(e)));
-    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
     await page.waitForTimeout(1200);
     try {
       await open(page);

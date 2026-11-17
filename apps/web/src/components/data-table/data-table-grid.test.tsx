@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DataTable, DataTableFieldType } from "@/types/data-table";
+import { legacyViewConfig, type SavedViewConfig } from "./saved-view-layout";
 
 const { rowPages, upsertCell, createRow } = vi.hoisted(() => ({
   rowPages: vi.fn(),
@@ -143,6 +144,10 @@ const mount = (
   type: DataTableFieldType = "text",
   canEdit = true,
   queryState = {},
+  saved?: {
+    initialConfig: SavedViewConfig;
+    onConfigChange: (config: SavedViewConfig) => void;
+  },
 ) => {
   rowPages.mockReturnValue({
     data: {
@@ -165,6 +170,7 @@ const mount = (
   });
   return render(
     <DataTableGrid
+      {...saved}
       table={table(type)}
       organizationId="o"
       organizationSlug="org"
@@ -387,8 +393,17 @@ describe("column geometry and resize", () => {
       "relative",
     );
   });
-  it("keyboard resize shares header/body tracks, persists after remount, and resets on double click", () => {
-    const view = mount();
+  it("keyboard resize shares tracks, round-trips through the saved view, and resets on double click", () => {
+    let config = legacyViewConfig("t");
+    const onConfigChange = (next: SavedViewConfig) => {
+      config = next;
+    };
+    const view = mount(
+      "text",
+      true,
+      {},
+      { initialConfig: config, onConfigChange },
+    );
     const handle = screen.getByRole("separator", {
       name: "navigation:tables.resizeColumn Title",
     });
@@ -402,7 +417,7 @@ describe("column geometry and resize", () => {
     );
     const resized = header.style.gridTemplateColumns;
     view.unmount();
-    mount();
+    mount("text", true, {}, { initialConfig: config, onConfigChange });
     expect(screen.getAllByRole("row")[0].style.gridTemplateColumns).toBe(
       resized,
     );

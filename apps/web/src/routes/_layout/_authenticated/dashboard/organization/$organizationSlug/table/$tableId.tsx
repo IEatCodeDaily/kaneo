@@ -11,7 +11,10 @@ import { useTranslation } from "react-i18next";
 import OrganizationCrumbSelect from "@/components/common/header/organization-crumb-select";
 import Layout from "@/components/common/layout";
 import { ViewTabs } from "@/components/common/view-tabs";
+import { legacyViewConfig } from "@/components/data-table/saved-view-layout";
+import { ViewSwitcher } from "@/components/data-table/view-switcher";
 import PageTitle from "@/components/page-title";
+import { useTableViews } from "@/hooks/data-table/use-table-views";
 import { ensureTablesStrings } from "@/lib/i18n";
 
 // Pull the lazy tables/dashboards strings as early as possible.
@@ -67,8 +70,12 @@ export const Route = createFileRoute(
 )({
   component: DataTableRoute,
   // The view is URL state so a History view can be linked and survives reload.
-  validateSearch: (search: Record<string, unknown>): { view?: "history" } =>
-    search.view === "history" ? { view: "history" } : {},
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { view?: "history"; v?: string } => ({
+    ...(search.view === "history" ? { view: "history" } : {}),
+    ...(typeof search.v === "string" ? { v: search.v } : {}),
+  }),
 });
 
 /** Breadcrumb resource switcher: current table, other tables (DS §2 Page header). */
@@ -133,7 +140,7 @@ function DataTableRoute() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { organizationSlug, tableId } = Route.useParams();
-  const { view = "grid" } = Route.useSearch();
+  const { view = "grid", v: viewId } = Route.useSearch();
   const { data: activeOrganization } = useActiveOrganization();
   const organizationId = activeOrganization?.id ?? "";
   const {
@@ -143,7 +150,21 @@ function DataTableRoute() {
     refetch,
   } = useDataTable(organizationId, tableId);
   const { canUpdateBoards } = useOrganizationPermission();
-  const canEdit = canUpdateBoards();
+  const canEdit = table?.canEdit ?? canUpdateBoards();
+  const saved = useTableViews(
+    organizationId,
+    tableId,
+    canEdit && table?.deletedAt === null,
+    !!table,
+  );
+  const currentView =
+    saved.data?.find((entry) => entry.id === viewId) ??
+    saved.data?.find((entry) => entry.isDefault);
+  const currentConfig = currentView
+    ? (saved.local[currentView.id] ??
+      currentView.config ??
+      legacyViewConfig(tableId))
+    : undefined;
   const { updateTable, deleteTable, restoreTable, purgeTable } =
     useDataTableMutations(organizationId, tableId);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -186,7 +207,10 @@ function DataTableRoute() {
           onValueChange={(next) =>
             navigate({
               to: ".",
-              search: next === "history" ? { view: "history" } : {},
+              search: {
+                ...(next === "history" ? { view: "history" } : {}),
+                ...(currentView ? { v: currentView.id } : {}),
+              },
             })
           }
           items={[
@@ -202,6 +226,18 @@ function DataTableRoute() {
             },
           ]}
         />
+        {table && (
+          <ViewSwitcher
+            views={saved.data ?? []}
+            current={currentView}
+            target={{ organizationId, tableId }}
+            canEdit={canEdit && table.deletedAt === null}
+            onSelect={(id) => navigate({ to: ".", search: { v: id } })}
+            onRefresh={saved.refetch}
+            flush={saved.flush}
+            saveError={saved.saveError}
+          />
+        )}
       </div>
     </Layout.Header>
   );
@@ -298,19 +334,37 @@ function DataTableRoute() {
             </Layout.Toolbar>
           }
         >
-          <DataTableGrid
-            key={table.id}
-            view={view}
-            table={table}
-            organizationId={organizationId}
-            organizationSlug={organizationSlug}
-            canEdit={canEdit && !isDeleted}
-            onRename={() => {
-              setDraftName(table.name);
-              setRenameOpen(true);
-            }}
-            onDelete={() => setDeleteOpen(true)}
-          />
+          {saved.isError ? (
+            <div role="alert" className="p-4 text-sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => saved.refetch()}
+              >
+                {t("navigation:tables.retry")}
+              </Button>
+            </div>
+          ) : currentView && currentConfig ? (
+            <DataTableGrid
+              key={`${table.id}:${currentView.id}`}
+              initialConfig={currentConfig}
+              onConfigChange={(config) => saved.change(currentView.id, config)}
+              view={view}
+              table={table}
+              organizationId={organizationId}
+              organizationSlug={organizationSlug}
+              canEdit={canEdit && !isDeleted}
+              onRename={() => {
+                setDraftName(table.name);
+                setRenameOpen(true);
+              }}
+              onDelete={() => setDeleteOpen(true)}
+            />
+          ) : (
+            <div role="status" className="p-4 text-sm">
+              {t("navigation:tables.queryLoading")}
+            </div>
+          )}
         </Suspense>{" "}
       </div>
 

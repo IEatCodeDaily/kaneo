@@ -912,7 +912,18 @@ export async function getDataTable(
     rows,
     table.deletedAt ? undefined : userId,
   );
-  return { ...table, fields: fieldRows, rows, total, tickets };
+  const canEdit = userId
+    ? privilegeAllows(
+        await getResourcePrivilege({
+          organizationId,
+          resourceType: "table",
+          resourceId: tableId,
+          userId,
+        }),
+        "edit",
+      )
+    : false;
+  return { ...table, canEdit, fields: fieldRows, rows, total, tickets };
 }
 
 export async function queryTableRows(

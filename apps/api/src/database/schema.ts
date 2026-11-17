@@ -837,6 +837,33 @@ export const dataTableTable = pgTable(
   ],
 );
 
+export const dataTableViewTable = pgTable(
+  "data_table_view",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    tableId: text("table_id").notNull(),
+    name: text("name").notNull(),
+    isDefault: boolean("is_default").notNull().default(false),
+    // NULL is the one-time legacy-layout carry-over sentinel.
+    config: jsonb("config").$type<import("../data-table/views").ViewConfig>(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.tableId],
+      foreignColumns: [dataTableTable.organizationId, dataTableTable.id],
+    }).onDelete("cascade"),
+    uniqueIndex("data_table_view_default_idx")
+      .on(table.tableId)
+      .where(sql`${table.isDefault}`),
+    index("data_table_view_table_idx").on(table.organizationId, table.tableId),
+  ],
+);
+
 export const dataTableFieldTable = pgTable(
   "data_table_field",
   {
