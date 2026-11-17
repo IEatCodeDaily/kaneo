@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DataTable, DataTableFieldType } from "@/types/data-table";
 
 const { rowPages, upsertCell, createRow } = vi.hoisted(() => ({
@@ -27,11 +27,15 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 vi.mock("@tanstack/react-virtual", () => ({
-  useVirtualizer: () => ({
+  useVirtualizer: (opts: { count: number }) => ({
     measure: vi.fn(),
     scrollToIndex: vi.fn(),
-    getTotalSize: () => 32,
-    getVirtualItems: () => [{ index: 0, start: 0 }],
+    getTotalSize: () => opts.count * 32,
+    getVirtualItems: () =>
+      Array.from({ length: opts.count }, (_, index) => ({
+        index,
+        start: index * 32,
+      })),
   }),
 }));
 vi.mock("@/components/common/layout", () => ({
@@ -424,5 +428,207 @@ describe("column geometry and resize", () => {
     expect(handle.getAttribute("aria-valuenow")).not.toBe(before);
     pointer("pointercancel", 10000);
     expect(handle).toHaveAttribute("aria-valuenow", before);
+  });
+});
+
+describe("spreadsheet keyboard navigation", () => {
+  beforeEach(() => localStorage.clear());
+
+  const keyTable = (
+    over: {
+      type?: DataTableFieldType;
+      required?: boolean;
+      values?: Record<string, unknown>;
+    } = {},
+  ): DataTable => {
+    const base = table(over.type ?? "text");
+    return {
+      ...base,
+      total: 2,
+      fields: base.fields.map((f, i) =>
+        over.required && i === 0
+          ? { ...f, options: { ...f.options, required: true } }
+          : f,
+      ),
+      rows: [
+        {
+          id: "r1",
+          position: 0,
+          createdAt: "",
+          updatedAt: "",
+          values: { first: "one", second: "two", ...over.values },
+        },
+        {
+          id: "r2",
+          position: 1,
+          createdAt: "",
+          updatedAt: "",
+          values: { first: "three", second: "four" },
+        },
+      ],
+    };
+  };
+  const mountKey = (over?: Parameters<typeof keyTable>[0]) => {
+    const data = keyTable(over);
+    // Rows come from the server row query since KFL-403.
+    rowPages.mockReturnValue({
+      data: {
+        pages: [
+          {
+            rows: data.rows,
+            total: data.rows.length,
+            tableTotal: data.rows.length,
+            summaries: {},
+            groups: [],
+            tickets: {},
+          },
+        ],
+      },
+      hasNextPage: false,
+      isError: false,
+      isPending: false,
+      isFetching: false,
+    });
+    return render(
+      <DataTableGrid
+        table={data}
+        organizationId="o"
+        organizationSlug="org"
+        canEdit
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+  };
+  const cell = (index: number) => screen.getAllByRole("gridcell")[index];
+  const select = (index: number) => {
+    fireEvent.click(cell(index));
+    expect(cell(index)).toHaveAttribute("aria-selected", "true");
+  };
+  const press = (key: string, init: Record<string, unknown> = {}) =>
+    fireEvent.keyDown(screen.getByRole("grid"), { key, ...init });
+  const active = () =>
+    screen
+      .getAllByRole("gridcell")
+      .findIndex((c) => c.getAttribute("aria-selected") === "true");
+
+  it("Tab wraps to the next row and Shift+Tab wraps back", () => {
+    mountKey();
+    select(0);
+    press("Tab");
+    expect(active()).toBe(1);
+    press("Tab");
+    expect(active()).toBe(2);
+    press("Tab", { shiftKey: true });
+    expect(active()).toBe(1);
+    press("Tab", { shiftKey: true });
+    expect(active()).toBe(0);
+  });
+
+  it("Tab at the grid's outer boundary escapes instead of clamping", () => {
+    mountKey();
+    select(3);
+    press("Tab");
+    expect(active()).toBe(3);
+    select(0);
+    press("Shift+Tab");
+    expect(active()).toBe(0);
+  });
+
+  it("modifier+arrows jump to row and column edges", () => {
+    mountKey();
+    select(0);
+    press("ArrowRight", { ctrlKey: true });
+    expect(active()).toBe(1);
+    press("ArrowDown", { ctrlKey: true });
+    expect(active()).toBe(3);
+    press("ArrowUp", { ctrlKey: true });
+    expect(active()).toBe(1);
+    press("ArrowLeft", { ctrlKey: true });
+    expect(active()).toBe(0);
+  });
+
+  it("Delete clears an editable cell through the API", async () => {
+    mountKey();
+    select(0);
+    press("Delete");
+    await waitFor(() =>
+      expect(upsertCell).toHaveBeenCalledWith(
+        expect.objectContaining({ rowId: "r1", fieldId: "first", value: null }),
+      ),
+    );
+  });
+
+  it("Delete clears to false on checkbox and Backspace works too", async () => {
+    mountKey({ type: "checkbox", values: { first: true } });
+    select(0);
+    press("Backspace");
+    await waitFor(() =>
+      expect(upsertCell).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldId: "first", value: false }),
+      ),
+    );
+  });
+
+  it("zero is a value: Delete still clears it", async () => {
+    mountKey({ type: "number", values: { first: 0 } });
+    select(0);
+    press("Delete");
+    await waitFor(() =>
+      expect(upsertCell).toHaveBeenCalledWith(
+        expect.objectContaining({ value: null }),
+      ),
+    );
+  });
+
+  it("Delete skips required fields", () => {
+    mountKey({ required: true });
+    select(0);
+    press("Delete");
+    expect(upsertCell).not.toHaveBeenCalled();
+  });
+
+  it("Delete skips read-only system fields", () => {
+    localStorage.setItem("kaneo-table-system-fields:t", "true");
+    mountKey();
+    const system = screen
+      .getAllByRole("gridcell")
+      .filter((c) => c.getAttribute("aria-readonly") === "true");
+    fireEvent.click(system[0]);
+    expect(system[0]).toHaveAttribute("aria-selected", "true");
+    press("Delete");
+    expect(upsertCell).not.toHaveBeenCalled();
+  });
+
+  it("typing replaces the value and Esc cancels without saving", async () => {
+    mountKey();
+    select(0);
+    press("a");
+    const input = screen.getByRole("textbox", { name: "Title" });
+    expect(input).toHaveValue("a");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("textbox", { name: "Title" })).toBeNull();
+    expect(upsertCell).not.toHaveBeenCalled();
+    expect(active()).toBe(0);
+  });
+
+  it("modifier+printable does not edit", () => {
+    mountKey();
+    select(0);
+    press("a", { ctrlKey: true });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    press("a", { metaKey: true });
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("row height setting drives the row box and wraps cells", () => {
+    mountKey();
+    expect(screen.getAllByRole("row")[1].style.height).toBe("32px");
+    expect(cell(0).className).not.toContain("overflow-hidden");
+    cleanup();
+    localStorage.setItem("kaneo-table-density:t", "tall");
+    mountKey();
+    expect(screen.getAllByRole("row")[1].style.height).toBe("80px");
+    expect(cell(0).className).toContain("overflow-hidden");
   });
 });

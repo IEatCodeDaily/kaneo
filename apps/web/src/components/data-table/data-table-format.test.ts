@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { DataTableField, DataTableRow } from "@/types/data-table";
 import {
   currencyUnit,
+  DENSITY_LABEL_KEYS,
+  DENSITY_ROW_HEIGHT,
+  DENSITY_WRAP_LINES,
   fieldValue,
   filterIsActive,
   groupRows,
   groupValue,
   isValidNumberInput,
+  readDensity,
   readFrozenColumns,
   readHiddenFields,
   readShowSystemFields,
@@ -15,6 +19,7 @@ import {
   summarize,
   systemFields,
   typeChangeKeepsValues,
+  writeDensity,
   writeFrozenColumns,
   writeHiddenFields,
   writeShowSystemFields,
@@ -120,6 +125,48 @@ describe("frozen columns", () => {
     expect(readFrozenColumns("t1")).toBe(0);
     localStorage.setItem("kaneo-table-frozen:t1", '"2"');
     expect(readFrozenColumns("t1")).toBe(0);
+  });
+});
+
+describe("row height (density)", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("offers the four NocoDB heights, tall+ wrap long text", () => {
+    expect(Object.keys(DENSITY_ROW_HEIGHT)).toEqual([
+      "compact",
+      "comfortable",
+      "tall",
+      "extra",
+    ]);
+    expect(DENSITY_ROW_HEIGHT.tall).toBeGreaterThan(
+      DENSITY_ROW_HEIGHT.comfortable,
+    );
+    expect(DENSITY_ROW_HEIGHT.extra).toBeGreaterThan(DENSITY_ROW_HEIGHT.tall);
+    expect(DENSITY_WRAP_LINES.tall).toBeGreaterThan(1);
+    expect(DENSITY_WRAP_LINES.extra).toBeGreaterThan(
+      DENSITY_WRAP_LINES.tall ?? 0,
+    );
+    for (const key of Object.keys(DENSITY_ROW_HEIGHT))
+      expect(
+        DENSITY_LABEL_KEYS[key as keyof typeof DENSITY_ROW_HEIGHT],
+      ).toMatch(/^navigation:tables\.density/);
+  });
+
+  it("persists per table and defaults to short", () => {
+    writeDensity("t1", "tall");
+    writeDensity("t2", "extra");
+    expect(readDensity("t1")).toBe("tall");
+    expect(readDensity("t2")).toBe("extra");
+    expect(readDensity("t3")).toBe("compact");
+  });
+
+  it("carries over the old browser-wide preference, ignores junk", () => {
+    localStorage.setItem("kaneo-table-density", "comfortable");
+    expect(readDensity("t1")).toBe("comfortable");
+    writeDensity("t1", "compact");
+    expect(readDensity("t2")).toBe("comfortable");
+    localStorage.setItem("kaneo-table-density:t1", "gigantic");
+    expect(readDensity("t1")).toBe("comfortable");
   });
 });
 

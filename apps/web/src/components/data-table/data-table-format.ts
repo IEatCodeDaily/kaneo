@@ -490,28 +490,49 @@ export function sortRows(
   });
 }
 
-// ── density preference (localStorage, readListGroupBy pattern) ─────────────
+// ── row height (per table, per browser: view state stays local) ────────────
+// NocoDB parity: short/medium/tall/extra fixed heights; tall+ wrap content.
 
-export type Density = "compact" | "comfortable";
+export type Density = "compact" | "comfortable" | "tall" | "extra";
 export const DENSITY_ROW_HEIGHT: Record<Density, number> = {
   compact: 32,
   comfortable: 40,
+  tall: 80,
+  extra: 120,
 };
 
-const DENSITY_KEY = "kaneo-table-density";
+/** Lines of long text shown before clamping, per wrap mode. */
+export const DENSITY_WRAP_LINES: Partial<Record<Density, number>> = {
+  tall: 3,
+  extra: 5,
+};
 
-export function readDensity(): Density {
+export const DENSITY_LABEL_KEYS: Record<Density, string> = {
+  compact: "navigation:tables.densityShort",
+  comfortable: "navigation:tables.densityMedium",
+  tall: "navigation:tables.densityTall",
+  extra: "navigation:tables.densityExtra",
+};
+
+const densityKey = (tableId: string) => `kaneo-table-density:${tableId}`;
+
+export function readDensity(tableId: string): Density {
   try {
-    const value = window.localStorage.getItem(DENSITY_KEY);
-    return value === "comfortable" ? "comfortable" : "compact";
+    const value = window.localStorage.getItem(densityKey(tableId));
+    if (value && value in DENSITY_ROW_HEIGHT) return value as Density;
+    // One-time carry-over from the old browser-wide preference.
+    const legacy = window.localStorage.getItem("kaneo-table-density");
+    return legacy && legacy in DENSITY_ROW_HEIGHT
+      ? (legacy as Density)
+      : "compact";
   } catch {
     return "compact";
   }
 }
 
-export function writeDensity(value: Density): void {
+export function writeDensity(tableId: string, value: Density): void {
   try {
-    window.localStorage.setItem(DENSITY_KEY, value);
+    window.localStorage.setItem(densityKey(tableId), value);
   } catch {
     // Storage can be unavailable in hardened/private contexts; state works.
   }

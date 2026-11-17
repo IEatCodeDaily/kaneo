@@ -36,6 +36,8 @@ type EditorProps = {
   /** Persistent form editors publish drafts without blur/Enter cell commits. */
   formMode?: boolean;
   onInvalidChange?: (invalid: boolean) => void;
+  /** Type-to-replace: the keystroke that opened the editor seeds the draft. */
+  seed?: string;
 };
 
 const NUMERIC_TYPES = ["number", "percent", "currency"];
@@ -57,6 +59,7 @@ export function TableCellInput({
   onCancel,
   formMode = false,
   onInvalidChange,
+  seed,
 }: EditorProps) {
   const { t } = useTranslation();
   const initial = useMemo(() => {
@@ -66,7 +69,7 @@ export function TableCellInput({
     }
     return asString(value);
   }, [field.type, value]);
-  const [draft, setDraft] = useState(initial);
+  const [draft, setDraft] = useState(seed ?? initial);
   // Esc must cancel, but the blur handler still sees the pre-update draft
   // closure — flag the cancel explicitly so commit cannot fire with it.
   const cancelledRef = useRef(false);
@@ -201,6 +204,7 @@ export function JsonCellEditor({
   onCancel,
   formMode = false,
   onInvalidChange,
+  seed,
 }: EditorProps) {
   const { t } = useTranslation();
   const initial = useMemo(() => {
@@ -211,7 +215,7 @@ export function JsonCellEditor({
       return asString(value);
     }
   }, [value]);
-  const [draft, setDraft] = useState(initial);
+  const [draft, setDraft] = useState(seed ?? initial);
   // Esc flags cancel: the blur-triggered commit closure still holds the
   // pre-update draft, so resetting state alone would commit it.
   const cancelledRef = useRef(false);
@@ -512,7 +516,8 @@ export function UserCellPicker({
   );
 }
 
-const INPUT_EDIT_TYPES: DataTableFieldType[] = [
+/** Types whose editor is a text/number/date input that can seed-edit. */
+export const INPUT_EDIT_TYPES: DataTableFieldType[] = [
   "text",
   "longtext",
   "url",
@@ -534,6 +539,8 @@ export function DataTableCellContent({
   canEdit,
   isEditing,
   expanded = false,
+  wrapLines,
+  seed,
   onEditStart,
   onEditEnd,
   onCommit,
@@ -544,6 +551,10 @@ export function DataTableCellContent({
   canEdit: boolean;
   isEditing: boolean;
   expanded?: boolean;
+  /** Lines of long text to show before clamping (row-height wrap mode). */
+  wrapLines?: number;
+  /** Type-to-replace seed from the grid's keyboard handler. */
+  seed?: string;
   onEditStart: () => void;
   onEditEnd: () => void;
   onCommit: (value: unknown) => void;
@@ -557,6 +568,7 @@ export function DataTableCellContent({
         value={value}
         members={members}
         expanded={expanded}
+        wrapLines={wrapLines}
       />
     );
   const canInlineEdit = INPUT_EDIT_TYPES.includes(field.type);
@@ -566,6 +578,7 @@ export function DataTableCellContent({
       <JsonCellEditor
         field={field}
         value={value}
+        seed={seed}
         onCommit={onCommit}
         onCancel={onEditEnd}
       />
@@ -576,6 +589,7 @@ export function DataTableCellContent({
       <TableCellInput
         field={field}
         value={value}
+        seed={seed}
         onCommit={onCommit}
         onCancel={onEditEnd}
       />
@@ -587,6 +601,7 @@ export function DataTableCellContent({
       value={value}
       members={members}
       expanded={expanded}
+      wrapLines={wrapLines}
       onToggleCheckbox={canEdit ? (checked) => onCommit(checked) : undefined}
     />
   );

@@ -23,6 +23,7 @@ import {
 import {
   type ColumnSort,
   type DataTableFilter,
+  DENSITY_LABEL_KEYS,
   type Density,
   defaultFilterFor,
   filterIsActive,
@@ -374,20 +375,19 @@ export function DataTableToolbar(props: Props) {
             <DropdownMenuLabel className="text-xs">
               {t("navigation:tables.rowHeight")}
             </DropdownMenuLabel>
-            {(["compact", "comfortable"] as Density[]).map((option) => (
-              <DropdownMenuCheckboxItem
-                key={option}
-                checked={density === option}
-                onCheckedChange={() => props.onDensityChange(option)}
-              >
-                {t(
-                  option === "compact"
-                    ? "navigation:tables.densityCompact"
-                    : "navigation:tables.densityComfortable",
-                )}
-              </DropdownMenuCheckboxItem>
-            ))}
+            {(["compact", "comfortable", "tall", "extra"] as Density[]).map(
+              (option) => (
+                <DropdownMenuCheckboxItem
+                  key={option}
+                  checked={density === option}
+                  onCheckedChange={() => props.onDensityChange(option)}
+                >
+                  {t(DENSITY_LABEL_KEYS[option])}
+                </DropdownMenuCheckboxItem>
+              ),
+            )}
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuCheckboxItem
               checked={summariesActive}
