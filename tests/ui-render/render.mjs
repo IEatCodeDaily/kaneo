@@ -662,6 +662,8 @@ const TABLE_STATES = [
             costSticky: getComputedStyle(cost).position,
             startSticky: getComputedStyle(start).position,
             pin: Boolean(headCost.querySelector("svg.lucide-pin")),
+            // Sticky headers must be opaque, or scrolled headers show through.
+            headBg: getComputedStyle(headCost).backgroundColor,
           };
         });
       const frozen = await geometry();
@@ -677,6 +679,7 @@ const TABLE_STATES = [
         Math.abs(frozen.cost - frozen.headCost) > 1 ||
         Math.abs(frozen.batch - (frozen.gutter + 44)) > 1 ||
         !frozen.pin ||
+        /rgba\([^)]*,\s*0(\.\d+)?\)|transparent/.test(frozen.headBg) ||
         // The scroll must be real, frozen columns must not move, and the
         // first unfrozen column must travel with the content.
         scrolled.scrollLeft < 100 ||
