@@ -59,6 +59,7 @@ import {
 
 type Props = {
   fields: DataTableField[];
+  onFieldOrderChange?: (ids: string[]) => void;
   members: Map<string, MemberOption>;
   hidden: string[];
   showSystemFields?: boolean;
@@ -157,6 +158,54 @@ export function DataTableToolbar(props: Props) {
                     <span className="min-w-0 flex-1 truncate">
                       {field.name}
                     </span>
+                    {props.onFieldOrderChange && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={t(
+                            "navigation:tables.savedViews.moveLeft",
+                            { name: field.name },
+                          )}
+                          disabled={index === 0}
+                          onClick={() => {
+                            const ids = fields
+                              .filter((f) => !f.system)
+                              .map((f) => f.id);
+                            [ids[index - 1], ids[index]] = [
+                              ids[index],
+                              ids[index - 1],
+                            ];
+                            props.onFieldOrderChange?.(ids);
+                          }}
+                        >
+                          ←
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={t(
+                            "navigation:tables.savedViews.moveRight",
+                            { name: field.name },
+                          )}
+                          disabled={
+                            index === fields.filter((f) => !f.system).length - 1
+                          }
+                          onClick={() => {
+                            const ids = fields
+                              .filter((f) => !f.system)
+                              .map((f) => f.id);
+                            [ids[index], ids[index + 1]] = [
+                              ids[index + 1],
+                              ids[index],
+                            ];
+                            props.onFieldOrderChange?.(ids);
+                          }}
+                        >
+                          →
+                        </Button>
+                      </>
+                    )}
                     <Switch
                       checked={visible}
                       disabled={locked}

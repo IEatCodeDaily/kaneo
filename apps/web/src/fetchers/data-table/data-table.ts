@@ -36,6 +36,41 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export const getTableViews = (target: DataTableTarget) =>
+  request<import("@/components/data-table/saved-view-layout").SavedTableView[]>(
+    `${tablePath(target)}/views`,
+  );
+export const createTableView = (
+  target: DataTableTarget,
+  values: {
+    name: string;
+    duplicateFrom?: string;
+    config?: import("@/components/data-table/saved-view-layout").SavedViewConfig;
+  },
+) =>
+  request<import("@/components/data-table/saved-view-layout").SavedTableView>(
+    `${tablePath(target)}/views`,
+    { method: "POST", body: JSON.stringify(values) },
+  );
+export const updateTableView = (
+  target: DataTableTarget,
+  viewId: string,
+  values: {
+    name?: string;
+    config?: import("@/components/data-table/saved-view-layout").SavedViewConfig;
+    initializeOnly?: boolean;
+  },
+) =>
+  request<import("@/components/data-table/saved-view-layout").SavedTableView>(
+    `${tablePath(target)}/views/${encodeURIComponent(viewId)}`,
+    { method: "PUT", body: JSON.stringify(values) },
+  );
+export const deleteTableView = (target: DataTableTarget, viewId: string) =>
+  request<{ success: true }>(
+    `${tablePath(target)}/views/${encodeURIComponent(viewId)}`,
+    { method: "DELETE" },
+  );
+
 const base = (organizationId: string) =>
   `/data-table/organization/${encodeURIComponent(organizationId)}`;
 

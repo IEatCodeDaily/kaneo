@@ -59,10 +59,6 @@ import {
   summarize,
   supportsSummary,
   systemFields,
-  writeDensity,
-  writeFrozenColumns,
-  writeHiddenFields,
-  writeShowSystemFields,
 } from "@/components/data-table/data-table-format";
 import {
   DataTableToolbar,
@@ -146,7 +142,8 @@ import type {
   TableRowQuery,
   TicketRef,
 } from "@/types/data-table";
-import { ColumnResizeHandle, useColumnWidths } from "./column-resize";
+import { isFilterGroup } from "../../../../api/src/data-table/filter-expression";
+import { ColumnResizeHandle } from "./column-resize";
 import { FieldTypeConfirmation } from "./field-type-confirmation";
 import {
   conditionActive,
@@ -155,8 +152,11 @@ import {
   newFilterCondition,
   pruneFilterGroup,
 } from "./filter-builder";
+import type { SavedViewConfig } from "./saved-view-layout";
 
 type Props = {
+  initialConfig?: SavedViewConfig;
+  onConfigChange?: (config: SavedViewConfig) => void;
   view?: "grid" | "history";
   table: DataTable;
   organizationId: string;
@@ -615,6 +615,8 @@ function BulkSetField({
 }
 
 export function DataTableGrid({
+  initialConfig,
+  onConfigChange,
   view = "grid",
   table,
   organizationId,
@@ -645,16 +647,23 @@ export function DataTableGrid({
     [memberRows],
   );
 
-  const [showSystem, setShowSystem] = useState(() =>
-    readShowSystemFields(table.id),
+  const [showSystem, setShowSystem] = useState(
+    () => initialConfig?.showSystemFields ?? readShowSystemFields(table.id),
   );
-  const allFields = useMemo(
-    () => [
+  const [fieldOrder, setFieldOrder] = useState<string[]>(
+    initialConfig?.fieldOrder ?? [],
+  );
+  const allFields = useMemo(() => {
+    const fields = [
       ...sortedFields(table.fields),
       ...(showSystem ? systemFields(table.id, t) : []),
-    ],
-    [table.fields, table.id, showSystem, t],
-  );
+    ];
+    return fields.sort((a, b) => {
+      const x = fieldOrder.indexOf(a.id);
+      const y = fieldOrder.indexOf(b.id);
+      return (x < 0 ? fields.length : x) - (y < 0 ? fields.length : y);
+    });
+  }, [table.fields, table.id, showSystem, t, fieldOrder]);
   const choicesById = useMemo(() => {
     const map = new Map<string, SelectChoice>();
     for (const field of allFields) {
@@ -670,35 +679,88 @@ export function DataTableGrid({
   );
 
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterGroup>(emptyFilterGroup);
+  // Views saved before nested filters stored a flat list; those start empty.
+  const [filters, setFilters] = useState<FilterGroup>(() => {
+    const saved = initialConfig?.filters;
+    return isFilterGroup(saved) ? saved : emptyFilterGroup();
+  });
   const [filterOpen, setFilterOpen] = useState(false);
-  const [sort, setSort] = useState<ColumnSort | null>(null);
-  const [groupFieldId, setGroupFieldId] = useState<string | null>(null);
+  const [sort, setSort] = useState<ColumnSort | null>(
+    initialConfig?.sort ?? null,
+  );
+  const [groupFieldId, setGroupFieldId] = useState<string | null>(
+    initialConfig?.groupFieldId ?? null,
+  );
   const [collapsedGroups, setCollapsedGroups] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [summaryFns, setSummaryFns] = useState<Record<string, SummaryFn>>({});
-  const [density, setDensity] = useState<Density>(() => readDensity(table.id));
-  const { widths, setWidth } = useColumnWidths(table.id);
+  const [summaryFns, setSummaryFns] = useState<Record<string, SummaryFn>>(
+    initialConfig?.summaries ?? {},
+  );
+  const [density, setDensity] = useState<Density>(
+    () => initialConfig?.rowHeight ?? readDensity(table.id),
+  );
+  const [widths, setWidths] = useState<Record<string, number>>(
+    initialConfig?.columnWidths ?? {},
+  );
+  const setWidth = (id: string, width: number | null) =>
+    setWidths((current) => {
+      const next = { ...current };
+      if (width === null) delete next[id];
+      else next[id] = Math.round(Math.max(80, Math.min(800, width)));
+      return next;
+    });
   const columnWidth = (field: DataTableField) =>
     widths[field.id] ?? fieldWidth(field.type);
-  const [hidden, setHidden] = useState<string[]>(() =>
-    readHiddenFields(table.id),
+  const [hidden, setHidden] = useState<string[]>(
+    () => initialConfig?.hiddenFields ?? readHiddenFields(table.id),
   );
   const changeHidden = (ids: string[]) => {
     setHidden(ids);
-    writeHiddenFields(table.id, ids);
   };
   // Frozen data columns (spreadsheet-style: 0..N freeze together) persist per
   // table like hidden fields; the row-number gutter stays sticky regardless.
-  const [frozenCount, setFrozenCount] = useState(() =>
-    readFrozenColumns(table.id),
+  const [frozenCount, setFrozenCount] = useState(
+    () => initialConfig?.frozenColumns ?? readFrozenColumns(table.id),
   );
   const changeFrozen = (count: number) => {
     setFrozenCount(count);
-    writeFrozenColumns(table.id, count);
   };
+  const config = useMemo<SavedViewConfig>(
+    () => ({
+      filters,
+      sort,
+      groupFieldId,
+      hiddenFields: hidden,
+      fieldOrder,
+      columnWidths: widths,
+      rowHeight: density,
+      frozenColumns: frozenCount,
+      summaries: summaryFns,
+      showSystemFields: showSystem,
+    }),
+    [
+      filters,
+      sort,
+      groupFieldId,
+      hidden,
+      fieldOrder,
+      widths,
+      density,
+      frozenCount,
+      summaryFns,
+      showSystem,
+    ],
+  );
+  const lastConfig = useRef(JSON.stringify(config));
+  useEffect(() => {
+    const serialized = JSON.stringify(config);
+    if (serialized !== lastConfig.current) {
+      lastConfig.current = serialized;
+      onConfigChange?.(config);
+    }
+  }, [config, onConfigChange]);
   // The first field names the row and is never hidden (Fields popover locks it).
   const fields = useMemo(
     () => allFields.filter((f, i) => i === 0 || !hidden.includes(f.id)),
@@ -1180,6 +1242,10 @@ export function DataTableGrid({
         pruneFilterGroup(current, (f) => f.fieldId !== field.id),
       );
       setGroupFieldId((current) => (current === field.id ? null : current));
+      setSort((current) => (current?.fieldId === field.id ? null : current));
+      setHidden((current) => current.filter((id) => id !== field.id));
+      setFieldOrder((current) => current.filter((id) => id !== field.id));
+      setWidth(field.id, null);
       setCollapsedGroups(new Set());
       setSummaryFns((current) => {
         const { [field.id]: _dropped, ...rest } = current;
@@ -1244,12 +1310,13 @@ export function DataTableGrid({
         <Layout.Toolbar>
           <DataTableToolbar
             fields={allFields}
+            onFieldOrderChange={setFieldOrder}
             members={members}
             hidden={hidden}
             showSystemFields={showSystem}
             onShowSystemFieldsChange={(show) => {
               setShowSystem(show);
-              writeShowSystemFields(table.id, show);
+
               if (!show) {
                 setFilters((current) =>
                   pruneFilterGroup(
@@ -1277,7 +1344,6 @@ export function DataTableGrid({
             density={density}
             onDensityChange={(next) => {
               setDensity(next);
-              writeDensity(table.id, next);
             }}
             groupFieldId={groupFieldId}
             onGroupChange={(fieldId) => {

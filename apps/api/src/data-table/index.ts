@@ -50,6 +50,7 @@ import {
 } from "./require-tables-enabled";
 
 import { rowQuerySchema } from "./row-query";
+import * as views from "./views";
 
 const idParams = v.object({ organizationId: v.string(), tableId: v.string() });
 const writePermission = requireOrganizationPermission({
@@ -353,6 +354,71 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       return c.json(
         await restoreDataTable(organizationId, tableId, c.get("userId")),
       );
+    },
+  )
+  .get(
+    "/organization/:organizationId/:tableId/views",
+    validator("param", idParams),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(await views.listViews(organizationId, tableId));
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/views",
+    validator("param", idParams),
+    validator("json", views.createViewSchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await views.createView(organizationId, tableId, c.req.valid("json")),
+      );
+    },
+  )
+  .put(
+    "/organization/:organizationId/:tableId/views/:viewId",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        viewId: v.string(),
+      }),
+    ),
+    validator("json", views.updateViewSchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, viewId } = c.req.valid("param");
+      return c.json(
+        await views.updateView(
+          organizationId,
+          tableId,
+          viewId,
+          c.req.valid("json"),
+        ),
+      );
+    },
+  )
+  .delete(
+    "/organization/:organizationId/:tableId/views/:viewId",
+    validator(
+      "param",
+      v.object({
+        organizationId: v.string(),
+        tableId: v.string(),
+        viewId: v.string(),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId, viewId } = c.req.valid("param");
+      return c.json(await views.deleteView(organizationId, tableId, viewId));
     },
   )
   .post(
