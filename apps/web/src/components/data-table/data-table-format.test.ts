@@ -6,9 +6,11 @@ import {
   groupRows,
   groupValue,
   isValidNumberInput,
+  readFrozenColumns,
   readHiddenFields,
   summarize,
   typeChangeKeepsValues,
+  writeFrozenColumns,
   writeHiddenFields,
 } from "./data-table-format";
 
@@ -91,6 +93,27 @@ describe("hidden fields", () => {
   it("survives corrupt storage", () => {
     localStorage.setItem("kaneo-table-hidden:t1", "{not json");
     expect(readHiddenFields("t1")).toEqual([]);
+  });
+});
+
+describe("frozen columns", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("round-trips a frozen count per table", () => {
+    writeFrozenColumns("t1", 2);
+    expect(readFrozenColumns("t1")).toBe(2);
+    expect(readFrozenColumns("t2")).toBe(0);
+  });
+
+  it("falls back to none on corrupt or nonsensical storage", () => {
+    localStorage.setItem("kaneo-table-frozen:t1", "{not json");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", "-3");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", "1.5");
+    expect(readFrozenColumns("t1")).toBe(0);
+    localStorage.setItem("kaneo-table-frozen:t1", '"2"');
+    expect(readFrozenColumns("t1")).toBe(0);
   });
 });
 

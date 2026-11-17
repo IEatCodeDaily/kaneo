@@ -675,6 +675,8 @@ const TABLE_STATES = [
         el.scrollLeft = 500;
       });
       await p.waitForTimeout(300);
+      // Freeze is opt-in now: by default no data column sticks, so the
+      // primary scrolls away with the rest while the gutter holds the edge.
       const geometry = await p.evaluate(() => {
         const row = document.querySelector('[role="row"][aria-rowindex]');
         const header = document.querySelector('[role="grid"] [role="row"]');
@@ -690,14 +692,111 @@ const TABLE_STATES = [
           primary: cell.getBoundingClientRect().left,
           headerPrimary: hcell.getBoundingClientRect().left,
           sticky: getComputedStyle(a).position,
+          cellSticky: getComputedStyle(cell).position,
+          headSticky: getComputedStyle(hcell).position,
         };
       });
       if (
         geometry.sticky !== "sticky" ||
         Math.abs(geometry.gutter - geometry.headerGutter) > 1 ||
-        Math.abs(geometry.primary - geometry.headerPrimary) > 1
+        Math.abs(geometry.primary - geometry.headerPrimary) > 1 ||
+        geometry.cellSticky !== "relative" ||
+        geometry.headSticky !== "relative"
       )
         throw new Error(`frozen geometry ${JSON.stringify(geometry)}`);
+    },
+  ],
+  [
+    // Freeze is opt-in via the header menu: freezing Cost pins Batch+Stage+Cost
+    // (columns 0..N, spreadsheet-style) and they hold the left edge while the
+    // rest scrolls; the choice persists across a reload.
+    "table-freeze",
+    async (p) => {
+      await p.getByRole("button", { name: "Cost field menu" }).click();
+      await p.getByRole("menuitem", { name: "Freeze column" }).click();
+      await p.waitForTimeout(300);
+      await p
+        .getByRole("gridcell", { name: "Cost, row 1", exact: true })
+        .click();
+      // The grid is narrower than a 1440px viewport; shrink it so the scroll
+      // below is real (sticky columns must hold, the rest must move).
+      await p.setViewportSize({ width: 900, height: 900 });
+      await p.waitForTimeout(300);
+      const scroll = () =>
+        p.getByRole("grid").evaluate((grid) => {
+          let el = grid.parentElement;
+          while (el && getComputedStyle(el).overflowX !== "auto")
+            el = el.parentElement;
+          if (!el) throw new Error("no grid scroller");
+          el.scrollLeft = 500;
+        });
+      const geometry = () =>
+        p.evaluate(() => {
+          const row = document.querySelector('[role="row"][aria-rowindex]');
+          const header = document.querySelector('[role="grid"] [role="row"]');
+          const cellByName = (name) =>
+            [...(row?.querySelectorAll('[role="gridcell"]') ?? [])].find((el) =>
+              (el.getAttribute("aria-label") ?? "").startsWith(`${name}, `),
+            );
+          const headByName = (name) =>
+            [...(header?.querySelectorAll('[role="columnheader"]') ?? [])].find(
+              (el) => (el.innerText ?? "").startsWith(name),
+            );
+          const gutter = row?.querySelector('[role="rowheader"]');
+          const headGutter = header?.querySelector('[role="columnheader"]');
+          const batch = cellByName("Batch");
+          const cost = cellByName("Cost");
+          const start = cellByName("Start date");
+          const headBatch = headByName("Batch");
+          const headCost = headByName("Cost");
+          if (!batch || !cost || !start || !headBatch || !headCost || !gutter)
+            throw new Error("missing cells");
+          let scroller = document.querySelector('[role="grid"]')?.parentElement;
+          while (scroller && getComputedStyle(scroller).overflowX !== "auto")
+            scroller = scroller.parentElement;
+          return {
+            scrollLeft: scroller?.scrollLeft ?? 0,
+            gutter: gutter.getBoundingClientRect().left,
+            headGutter: headGutter.getBoundingClientRect().left,
+            batch: batch.getBoundingClientRect().left,
+            headBatch: headBatch.getBoundingClientRect().left,
+            cost: cost.getBoundingClientRect().left,
+            headCost: headCost.getBoundingClientRect().left,
+            batchSticky: getComputedStyle(batch).position,
+            costSticky: getComputedStyle(cost).position,
+            startSticky: getComputedStyle(start).position,
+            pin: Boolean(headCost.querySelector("svg.lucide-pin")),
+          };
+        });
+      const frozen = await geometry();
+      await scroll();
+      await p.waitForTimeout(300);
+      const scrolled = await geometry();
+      if (
+        frozen.batchSticky !== "sticky" ||
+        frozen.costSticky !== "sticky" ||
+        frozen.startSticky !== "relative" ||
+        Math.abs(frozen.gutter - frozen.headGutter) > 1 ||
+        Math.abs(frozen.batch - frozen.headBatch) > 1 ||
+        Math.abs(frozen.cost - frozen.headCost) > 1 ||
+        Math.abs(frozen.batch - (frozen.gutter + 44)) > 1 ||
+        !frozen.pin ||
+        // The scroll must be real, frozen columns must not move, and the
+        // first unfrozen column must travel with the content.
+        scrolled.scrollLeft < 100 ||
+        Math.abs(scrolled.batch - frozen.batch) > 1 ||
+        Math.abs(scrolled.cost - frozen.cost) > 1 ||
+        Math.abs(scrolled.start - (frozen.start - scrolled.scrollLeft)) > 1
+      )
+        throw new Error(
+          `freeze geometry ${JSON.stringify({ frozen, scrolled })}`,
+        );
+      await p.reload({ waitUntil: "networkidle" });
+      await scroll();
+      await p.waitForTimeout(300);
+      const persisted = await geometry();
+      if (persisted.batchSticky !== "sticky")
+        throw new Error("freeze did not persist across reload");
     },
   ],
   [
@@ -1329,7 +1428,8 @@ const OVERLAY_STATES = [
       header_inset: 16,
       body_left: 16,
       body_right: 16,
-      width: 480,
+      // Untouched default: half the 1440px viewport (a stored width would win).
+      width: 720,
       header_h: 44,
     },
   ],

@@ -160,6 +160,8 @@
 		"sortAscending": "Sort ascending",
 		"sortDescending": "Sort descending",
 		"filterByField": "Filter by this field",
+		"freezeColumn": "Freeze column",
+		"unfreezeColumn": "Unfreeze column",
 		"hideField": "Hide field",
 		"rowNumber": "Row number",
 		"noMatches": "No rows match",

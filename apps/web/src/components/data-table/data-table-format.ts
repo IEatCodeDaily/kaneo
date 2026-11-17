@@ -476,6 +476,36 @@ export function writeHiddenFields(tableId: string, ids: string[]): void {
   }
 }
 
+// ── frozen columns (per table, per browser: view state stays local) ────────
+
+const frozenKey = (tableId: string) => `kaneo-table-frozen:${tableId}`;
+
+/**
+ * How many leading data columns are frozen (0 = none). Freezing column N
+ * freezes 0..N, spreadsheet-style; a count follows the field order, so
+ * hiding a field inside the range never breaks the geometry.
+ */
+export function readFrozenColumns(tableId: string): number {
+  try {
+    const parsed: unknown = JSON.parse(
+      window.localStorage.getItem(frozenKey(tableId)) ?? "0",
+    );
+    return typeof parsed === "number" && Number.isInteger(parsed) && parsed >= 0
+      ? parsed
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function writeFrozenColumns(tableId: string, count: number): void {
+  try {
+    window.localStorage.setItem(frozenKey(tableId), JSON.stringify(count));
+  } catch {
+    // Storage can be unavailable; the in-memory state still works.
+  }
+}
+
 /** A filter only narrows rows once it has a value; empty rows stay inert. */
 export function filterIsActive(filter: DataTableFilter): boolean {
   if ("contains" in filter) return filter.contains.trim() !== "";
