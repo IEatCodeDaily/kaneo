@@ -151,7 +151,11 @@ export function ViewSwitcher({
               <DropdownMenuItem onClick={() => open("duplicate")}>
                 {label("duplicate")}
               </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
               <DropdownMenuItem
+                className="text-destructive-foreground data-highlighted:text-destructive-foreground"
                 disabled={views.length <= 1}
                 onClick={() => open("delete")}
               >
