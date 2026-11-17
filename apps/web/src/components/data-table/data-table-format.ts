@@ -6,7 +6,7 @@ import type {
   SelectChoice,
 } from "@/types/data-table";
 
-/** Types a field can be switched to. `link` is read-only v1, never offered. */
+/** Scalar conversion targets; relationships are created explicitly, never cast. */
 export const EDITABLE_FIELD_TYPES: DataTableFieldType[] = [
   "text",
   "longtext",
@@ -61,7 +61,7 @@ const FIELD_WIDTHS: Record<DataTableFieldType, number> = {
   url: 200,
   email: 200,
   json: 220,
-  link: 110,
+  link: 240,
   ticket: 260,
 };
 

@@ -19,6 +19,7 @@ const { createField } = vi.hoisted(() => ({
   createField: vi.fn().mockResolvedValue({}),
 }));
 vi.mock("@/hooks/data-table/use-data-tables", () => ({
+  useDataTables: () => ({ data: [] }),
   useDataTableMutations: () => ({
     createField: { mutateAsync: createField, isPending: false },
     updateField: { isPending: false },
@@ -38,13 +39,13 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it("groups every type, searches descriptions, highlights selection and supports keyboard navigation", () => {
+it("enables link creation, groups every type, searches descriptions and supports keyboard navigation", () => {
   const onChange = vi.fn();
   render(<FieldTypePicker value="date" onChange={onChange} />);
   expect(screen.getAllByRole("group")).toHaveLength(6);
   expect(
     screen.getByRole("button", { name: "navigation:tables.linkToTable" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   const search = screen.getByRole("textbox");
   fireEvent.change(search, { target: { value: "datetime" } });
   expect(screen.getAllByRole("button")).toHaveLength(1);

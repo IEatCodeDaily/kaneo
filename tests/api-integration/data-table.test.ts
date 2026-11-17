@@ -944,7 +944,9 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         historyStartsAt: string;
       };
       expect(body.version).toBe(1);
-      expect(body.rows).toEqual([]);
+      expect(body.rows).toMatchObject([
+        { id: row.id, deletedAt: expect.any(String) },
+      ]);
       expect(body.events).toHaveLength(events.length);
       expect(body.historyStartsAt).toBe(baseline.createdAt);
     });
@@ -1464,6 +1466,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(columns.map((column) => column.column_name).sort()).toEqual([
         "created_at",
         "created_by",
+        "deleted_at",
         "id",
         "position",
         "updated_at",
@@ -1551,7 +1554,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(valuesById.get(second.id)).toBeNull();
     });
 
-    it("drops a field column and its index", async () => {
+    it("trashes a field and retains its column and index until purge", async () => {
       const table = await createTableViaApi(
         app,
         member.organization.id,
@@ -1573,9 +1576,15 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const columns = await physicalColumns(table.id);
       expect(
         columns.find((c) => c.column_name === `c_${field.id}`),
-      ).toBeUndefined();
+      ).toBeDefined();
       const indexes = await physicalIndexes(table.id);
-      expect(indexes).not.toContain(`t_${table.id}_c_${field.id}_idx`);
+      expect(indexes).toContain(`t_${table.id}_c_${field.id}_idx`);
+      const detail = await (
+        await app.request(
+          `/api/data-table/organization/${member.organization.id}/${table.id}`,
+        )
+      ).json();
+      expect(detail.fields).toEqual([]);
     });
 
     it("reconcile heals a physically dropped column", async () => {

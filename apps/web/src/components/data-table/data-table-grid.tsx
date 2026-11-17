@@ -73,6 +73,7 @@ import {
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
+import { LinkNavigationProvider } from "@/components/data-table/link-cell";
 import { NewRowDialog } from "@/components/data-table/new-row-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
 import { TableActivityList } from "@/components/data-table/table-activity";
@@ -168,6 +169,7 @@ const PICKER_TYPES: DataTableFieldType[] = [
   "multiselect",
   "user",
   "ticket",
+  "link",
 ];
 
 // Quantities right-align (header and cell) so digits line up; dates don't.
@@ -330,7 +332,7 @@ function FieldHeader({
                       {t("navigation:tables.editField")}
                     </DropdownMenuItem>
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
+                      <DropdownMenuSubTrigger disabled={field.type === "link"}>
                         <FieldTypeIcon type={field.type} />
                         {t("navigation:tables.changeType")}
                       </DropdownMenuSubTrigger>
@@ -1070,7 +1072,7 @@ export function DataTableGrid({
       ) {
         gridRef.current
           ?.querySelector<HTMLElement>(
-            '[role="gridcell"][aria-selected="true"] [role="button"], [role="gridcell"][aria-selected="true"] button, [role="gridcell"][aria-selected="true"] [role="checkbox"]',
+            '[role="gridcell"][aria-selected="true"] [data-link-picker-trigger], [role="gridcell"][aria-selected="true"] [role="button"], [role="gridcell"][aria-selected="true"] button:not([data-link-chip]), [role="gridcell"][aria-selected="true"] [role="checkbox"]',
           )
           ?.click();
         return;
@@ -1107,6 +1109,10 @@ export function DataTableGrid({
   }, [memberRows]);
 
   const exportCsv = async () => {
+    if (table.fields.some((field) => field.type === "link")) {
+      toast.error(t("navigation:tables.linkCsvUnavailable"));
+      return;
+    }
     try {
       const blob = await exportTableRows(
         { organizationId, tableId: table.id },
@@ -1124,6 +1130,10 @@ export function DataTableGrid({
   };
 
   const importCsv = async (file: File) => {
+    if (table.fields.some((field) => field.type === "link")) {
+      toast.error(t("navigation:tables.linkCsvUnavailable"));
+      return;
+    }
     const byName = new Map(table.fields.map((field) => [field.name, field]));
     // Ticket cells export as keys; resolve them back through the lookup.
     // ponytail: only tickets already linked somewhere in this table resolve;
@@ -1330,298 +1340,412 @@ export function DataTableGrid({
     );
 
   return (
-    <TicketLookupContext.Provider value={ticketLookup}>
-      <Layout.Toolbar>
-        <DataTableToolbar
-          fields={allFields}
-          members={members}
-          hidden={hidden}
-          showSystemFields={showSystem}
-          onShowSystemFieldsChange={(show) => {
-            setShowSystem(show);
-            writeShowSystemFields(table.id, show);
-            if (!show) {
-              setFilters((current) =>
-                current.filter((filter) => !filter.fieldId.startsWith("__")),
-              );
-              setSort((current) =>
-                current?.fieldId.startsWith("__") ? null : current,
-              );
-              setGroupFieldId((current) =>
-                current?.startsWith("__") ? null : current,
-              );
-            }
-          }}
-          onHiddenChange={changeHidden}
-          filters={filters}
-          onFiltersChange={setFilters}
-          sort={sort}
-          onSortChange={setSort}
-          search={search}
-          onSearchChange={setSearch}
-          density={density}
-          onDensityChange={(next) => {
-            setDensity(next);
-            writeDensity(table.id, next);
-          }}
-          groupFieldId={groupFieldId}
-          onGroupChange={(fieldId) => {
-            setGroupFieldId(fieldId);
-            setCollapsedGroups(new Set());
-          }}
-          summariesActive={Object.values(summaryFns).some(
-            (fn) => fn !== "none",
-          )}
-          onSummariesToggle={() =>
-            setSummaryFns((current) => {
-              const on = Object.values(current).some((fn) => fn !== "none");
-              if (on) return {};
-              const next: Record<string, SummaryFn> = {};
-              for (const field of fields) {
-                if (supportsSummary(field))
-                  next[field.id] = defaultSummaryFn(field);
+    <LinkNavigationProvider organizationId={organizationId} members={members}>
+      <TicketLookupContext.Provider value={ticketLookup}>
+        <Layout.Toolbar>
+          <DataTableToolbar
+            fields={allFields}
+            members={members}
+            hidden={hidden}
+            showSystemFields={showSystem}
+            onShowSystemFieldsChange={(show) => {
+              setShowSystem(show);
+              writeShowSystemFields(table.id, show);
+              if (!show) {
+                setFilters((current) =>
+                  current.filter((filter) => !filter.fieldId.startsWith("__")),
+                );
+                setSort((current) =>
+                  current?.fieldId.startsWith("__") ? null : current,
+                );
+                setGroupFieldId((current) =>
+                  current?.startsWith("__") ? null : current,
+                );
               }
-              return next;
-            })
-          }
-          canEdit={canEdit}
-          rowsInView={visibleRows.length}
-          onAddRow={() => addRow()}
-          onAddField={() => openDialog(null, null)}
-          onImport={() => fileInputRef.current?.click()}
-          onExport={exportCsv}
-          onRename={onRename}
-          onDelete={onDelete}
-        />
-      </Layout.Toolbar>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = "";
-          if (file) void importCsv(file);
-        }}
-      />
-
-      {activeFilters.length > 0 && (
-        <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b px-3">
-          {activeFilters.map((filter) => {
-            const field = fieldsById.get(filter.fieldId);
-            if (!field) return null;
-            return (
-              <FilterConditionChip
-                key={filter.id}
-                filter={filter}
-                field={field}
-                members={members}
-                onRemove={() =>
-                  setFilters((current) =>
-                    current.filter((item) => item.id !== filter.id),
-                  )
+            }}
+            onHiddenChange={changeHidden}
+            filters={filters}
+            onFiltersChange={setFilters}
+            sort={sort}
+            onSortChange={setSort}
+            search={search}
+            onSearchChange={setSearch}
+            density={density}
+            onDensityChange={(next) => {
+              setDensity(next);
+              writeDensity(table.id, next);
+            }}
+            groupFieldId={groupFieldId}
+            onGroupChange={(fieldId) => {
+              setGroupFieldId(fieldId);
+              setCollapsedGroups(new Set());
+            }}
+            summariesActive={Object.values(summaryFns).some(
+              (fn) => fn !== "none",
+            )}
+            onSummariesToggle={() =>
+              setSummaryFns((current) => {
+                const on = Object.values(current).some((fn) => fn !== "none");
+                if (on) return {};
+                const next: Record<string, SummaryFn> = {};
+                for (const field of fields) {
+                  if (supportsSummary(field))
+                    next[field.id] = defaultSummaryFn(field);
                 }
-              />
-            );
-          })}
-          <span className="flex-1" />
-          <Button variant="ghost" size="xs" onClick={() => setFilters([])}>
-            {t("navigation:tables.clearFilters")}
-          </Button>
-        </div>
-      )}
+                return next;
+              })
+            }
+            canEdit={canEdit}
+            rowsInView={visibleRows.length}
+            onAddRow={() => addRow()}
+            onAddField={() => openDialog(null, null)}
+            onImport={() => fileInputRef.current?.click()}
+            onExport={exportCsv}
+            onRename={onRename}
+            onDelete={onDelete}
+          />
+        </Layout.Toolbar>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) void importCsv(file);
+          }}
+        />
 
-      <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-auto">
-        {rowPages.isError ? (
-          <div role="alert" className="flex items-center gap-3 p-4 text-sm">
-            <span>{t("navigation:tables.queryError")}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => rowPages.refetch()}
-            >
-              {t("navigation:tables.queryRetry")}
+        {activeFilters.length > 0 && (
+          <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b px-3">
+            {activeFilters.map((filter) => {
+              const field = fieldsById.get(filter.fieldId);
+              if (!field) return null;
+              return (
+                <FilterConditionChip
+                  key={filter.id}
+                  filter={filter}
+                  field={field}
+                  members={members}
+                  onRemove={() =>
+                    setFilters((current) =>
+                      current.filter((item) => item.id !== filter.id),
+                    )
+                  }
+                />
+              );
+            })}
+            <span className="flex-1" />
+            <Button variant="ghost" size="xs" onClick={() => setFilters([])}>
+              {t("navigation:tables.clearFilters")}
             </Button>
           </div>
-        ) : rowPages.isPending ||
-          (rowPages.isFetching && !rowPages.isFetchingNextPage) ? (
-          <div role="status" className="p-4 text-sm text-muted-foreground">
-            {t("navigation:tables.queryLoading")}
-          </div>
-        ) : allFields.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Columns3 />
-              </EmptyMedia>
-              <EmptyTitle className="text-sm">
-                {t("navigation:tables.empty")}
-              </EmptyTitle>
-              <EmptyDescription>
-                {canEdit
-                  ? t("navigation:tables.noFields")
-                  : t("navigation:tables.readOnlyEmpty")}
-              </EmptyDescription>
-            </EmptyHeader>
-            {canEdit && (
+        )}
+
+        <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-auto">
+          {rowPages.isError ? (
+            <div role="alert" className="flex items-center gap-3 p-4 text-sm">
+              <span>{t("navigation:tables.queryError")}</span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => openDialog(null, null)}
+                onClick={() => rowPages.refetch()}
               >
-                <Plus className="size-3.5" /> {t("navigation:tables.addField")}
+                {t("navigation:tables.queryRetry")}
               </Button>
-            )}
-          </Empty>
-        ) : (
-          <div
-            className="flex min-h-full flex-col"
-            style={{ minWidth: totalWidth }}
-          >
-            {/* The grid owns focus: arrows/Tab/Enter/Space drive the active cell. */}
+            </div>
+          ) : rowPages.isPending ||
+            (rowPages.isFetching && !rowPages.isFetchingNextPage) ? (
+            <div role="status" className="p-4 text-sm text-muted-foreground">
+              {t("navigation:tables.queryLoading")}
+            </div>
+          ) : allFields.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Columns3 />
+                </EmptyMedia>
+                <EmptyTitle className="text-sm">
+                  {t("navigation:tables.empty")}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {canEdit
+                    ? t("navigation:tables.noFields")
+                    : t("navigation:tables.readOnlyEmpty")}
+                </EmptyDescription>
+              </EmptyHeader>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openDialog(null, null)}
+                >
+                  <Plus className="size-3.5" />{" "}
+                  {t("navigation:tables.addField")}
+                </Button>
+              )}
+            </Empty>
+          ) : (
             <div
-              ref={gridRef}
-              role="grid"
-              tabIndex={0}
-              aria-rowcount={visibleRows.length + 1}
-              onKeyDown={onGridKeyDown}
-              className="outline-none"
+              className="flex min-h-full flex-col"
+              style={{ minWidth: totalWidth }}
             >
+              {/* The grid owns focus: arrows/Tab/Enter/Space drive the active cell. */}
               <div
-                role="row"
-                className="sticky top-0 z-30 grid bg-background"
-                style={{ gridTemplateColumns: gridTemplate, width: totalWidth }}
+                ref={gridRef}
+                role="grid"
+                tabIndex={0}
+                aria-rowcount={visibleRows.length + 1}
+                onKeyDown={onGridKeyDown}
+                className="outline-none"
               >
                 <div
-                  role="columnheader"
-                  aria-label={t("navigation:tables.rowNumber")}
-                  className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
+                  role="row"
+                  className="sticky top-0 z-30 grid bg-background"
+                  style={{
+                    gridTemplateColumns: gridTemplate,
+                    width: totalWidth,
+                  }}
                 >
-                  <Checkbox
-                    checked={
-                      renderedRows.length > 0 &&
-                      renderedRows.every((row) => selected.has(row.id))
-                    }
-                    aria-label={t("navigation:tables.selectAllRows")}
-                    className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
-                    onCheckedChange={(next) =>
-                      setSelected(
-                        next
-                          ? new Set(renderedRows.map((row) => row.id))
-                          : new Set(),
-                      )
-                    }
-                  />
-                </div>
-                {fields.map((field, index) => (
-                  <FieldHeader
-                    key={field.id}
-                    field={field}
-                    stickyLeft={index < frozenCount ? frozenLefts[index] : null}
-                    frozen={index < frozenCount}
-                    freezeEdge={index === frozenCount - 1}
-                    sort={sort}
-                    onSort={setSort}
-                    canEdit={canEdit}
-                    canHide={index > 0 && !field.system}
-                    organizationId={organizationId}
-                    tableId={table.id}
-                    onEditOptions={(target, presetType) =>
-                      openDialog(target, presetType)
-                    }
-                    onFilter={(target) =>
-                      setFilters((current) => [
-                        ...current,
-                        defaultFilterFor(target),
-                      ])
-                    }
-                    onHide={(target) => changeHidden([...hidden, target.id])}
-                    onDeleted={setFieldToDelete}
-                    width={columnWidth(field)}
-                    onResize={(width) => setWidth(field.id, width)}
-                    onResetWidth={() => setWidth(field.id, null)}
-                    // Freeze to this column, or unfreeze back to its start.
-                    onToggleFreeze={() =>
-                      changeFrozen(index < frozenCount ? index : index + 1)
-                    }
-                  />
-                ))}
-                {canEdit && (
-                  <div role="columnheader" className="border-b bg-background">
-                    <button
-                      type="button"
-                      aria-label={t("navigation:tables.addField")}
-                      title={t("navigation:tables.addField")}
-                      className="flex size-full items-center justify-center text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                      onClick={() => openDialog(null, null)}
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
+                  <div
+                    role="columnheader"
+                    aria-label={t("navigation:tables.rowNumber")}
+                    className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
+                  >
+                    <Checkbox
+                      checked={
+                        renderedRows.length > 0 &&
+                        renderedRows.every((row) => selected.has(row.id))
+                      }
+                      aria-label={t("navigation:tables.selectAllRows")}
+                      className="size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 data-checked:opacity-100"
+                      onCheckedChange={(next) =>
+                        setSelected(
+                          next
+                            ? new Set(renderedRows.map((row) => row.id))
+                            : new Set(),
+                        )
+                      }
+                    />
                   </div>
-                )}
-              </div>
+                  {fields.map((field, index) => (
+                    <FieldHeader
+                      key={field.id}
+                      field={field}
+                      stickyLeft={
+                        index < frozenCount ? frozenLefts[index] : null
+                      }
+                      frozen={index < frozenCount}
+                      freezeEdge={index === frozenCount - 1}
+                      sort={sort}
+                      onSort={setSort}
+                      canEdit={canEdit}
+                      canHide={index > 0 && !field.system}
+                      organizationId={organizationId}
+                      tableId={table.id}
+                      onEditOptions={(target, presetType) =>
+                        openDialog(target, presetType)
+                      }
+                      onFilter={(target) =>
+                        setFilters((current) => [
+                          ...current,
+                          defaultFilterFor(target),
+                        ])
+                      }
+                      onHide={(target) => changeHidden([...hidden, target.id])}
+                      onDeleted={setFieldToDelete}
+                      width={columnWidth(field)}
+                      onResize={(width) => setWidth(field.id, width)}
+                      onResetWidth={() => setWidth(field.id, null)}
+                      // Freeze to this column, or unfreeze back to its start.
+                      onToggleFreeze={() =>
+                        changeFrozen(index < frozenCount ? index : index + 1)
+                      }
+                    />
+                  ))}
+                  {canEdit && (
+                    <div role="columnheader" className="border-b bg-background">
+                      <button
+                        type="button"
+                        aria-label={t("navigation:tables.addField")}
+                        title={t("navigation:tables.addField")}
+                        className="flex size-full items-center justify-center text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                        onClick={() => openDialog(null, null)}
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-              {visibleRows.length === 0 ? (
-                <Empty className="flex-none py-12">
-                  <EmptyHeader>
-                    <EmptyTitle className="text-sm">
-                      {filtersActive
-                        ? t("navigation:tables.noMatches")
-                        : t("navigation:tables.noRowsTitle")}
-                    </EmptyTitle>
-                    <EmptyDescription>
-                      {filtersActive
-                        ? t("navigation:tables.noMatchesHint")
-                        : t("navigation:tables.noRows")}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  {filtersActive ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSearch("");
-                        setFilters([]);
-                      }}
-                    >
-                      {t("common:actions.clearAllFilters")}
-                    </Button>
-                  ) : (
-                    canEdit && (
+                {visibleRows.length === 0 ? (
+                  <Empty className="flex-none py-12">
+                    <EmptyHeader>
+                      <EmptyTitle className="text-sm">
+                        {filtersActive
+                          ? t("navigation:tables.noMatches")
+                          : t("navigation:tables.noRowsTitle")}
+                      </EmptyTitle>
+                      <EmptyDescription>
+                        {filtersActive
+                          ? t("navigation:tables.noMatchesHint")
+                          : t("navigation:tables.noRows")}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    {filtersActive ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => addRow()}
+                        onClick={() => {
+                          setSearch("");
+                          setFilters([]);
+                        }}
                       >
-                        <Plus className="size-3.5" />
-                        {t("navigation:tables.newRow")}
+                        {t("common:actions.clearAllFilters")}
                       </Button>
-                    )
-                  )}
-                </Empty>
-              ) : (
-                <div
-                  style={{
-                    height: virtualizer.getTotalSize(),
-                    position: "relative",
-                  }}
-                >
-                  {virtualizer.getVirtualItems().map((item) => {
-                    const entry = gridItems[item.index];
-                    if (!entry) return null;
-                    if (entry.kind === "group") {
-                      const gf = groupField;
-                      if (!gf) return null;
-                      const collapsed = collapsedGroups.has(entry.key);
-                      const label = groupLabel(gf, entry.key);
+                    ) : (
+                      canEdit && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addRow()}
+                        >
+                          <Plus className="size-3.5" />
+                          {t("navigation:tables.newRow")}
+                        </Button>
+                      )
+                    )}
+                  </Empty>
+                ) : (
+                  <div
+                    style={{
+                      height: virtualizer.getTotalSize(),
+                      position: "relative",
+                    }}
+                  >
+                    {virtualizer.getVirtualItems().map((item) => {
+                      const entry = gridItems[item.index];
+                      if (!entry) return null;
+                      if (entry.kind === "group") {
+                        const gf = groupField;
+                        if (!gf) return null;
+                        const collapsed = collapsedGroups.has(entry.key);
+                        const label = groupLabel(gf, entry.key);
+                        return (
+                          <div
+                            key={`group:${entry.key}`}
+                            role="row"
+                            className="group absolute left-0 grid bg-background"
+                            style={{
+                              height: GROUP_HEADER_HEIGHT,
+                              top: item.start,
+                              gridTemplateColumns: gridTemplate,
+                              width: totalWidth,
+                            }}
+                          >
+                            <div
+                              role="rowheader"
+                              className="flex items-center gap-2 border-b border-r bg-secondary/50 ps-2 pe-2 text-xs"
+                              style={{ gridColumn: "1 / -1" }}
+                            >
+                              <button
+                                type="button"
+                                aria-expanded={!collapsed}
+                                aria-label={t("navigation:tables.toggleGroup", {
+                                  group: label,
+                                })}
+                                className="flex min-w-0 items-center gap-1.5 rounded-md py-1 text-left font-medium outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                onClick={() =>
+                                  setCollapsedGroups((current) => {
+                                    const next = new Set(current);
+                                    if (next.has(entry.key)) {
+                                      next.delete(entry.key);
+                                    } else {
+                                      next.add(entry.key);
+                                    }
+                                    return next;
+                                  })
+                                }
+                              >
+                                <ChevronDown
+                                  className={cn(
+                                    "size-3.5 shrink-0 transition-transform",
+                                    collapsed && "-rotate-90",
+                                  )}
+                                />
+                                <span className="truncate">{label}</span>
+                                <span className="shrink-0 tabular-nums text-muted-foreground">
+                                  {result?.groups.find(
+                                    (g) => g.key === entry.key,
+                                  )?.total ?? 0}
+                                </span>
+                              </button>
+                              {/* Per-group aggregates for columns with a
+                                summary function (design: count + same
+                                aggregates). */}
+                              {fields
+                                .filter(
+                                  (field) =>
+                                    (summaryFns[field.id] ?? "none") !== "none",
+                                )
+                                .map((field) => (
+                                  <span
+                                    key={field.id}
+                                    className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
+                                  >
+                                    {field.name}{" "}
+                                    {serverSummary(
+                                      field,
+                                      result?.groups.find(
+                                        (g) => g.key === entry.key,
+                                      ),
+                                      result?.groups.find(
+                                        (g) => g.key === entry.key,
+                                      )?.total ?? 0,
+                                    ) ?? "—"}
+                                  </span>
+                                ))}
+                              <span className="flex-1" />
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:flex"
+                                  onClick={() => addRowInGroup(gf, entry.key)}
+                                >
+                                  <Plus className="size-3.5" />
+                                  {t("navigation:tables.newRowIn", {
+                                    group: label,
+                                  })}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      const row = entry.row;
+                      const rowIndex = item.index;
+                      // Position among rows (group headers excluded), 1-based.
+                      const rowNumber =
+                        rowNumberById.get(row.id) ?? rowIndex + 1;
+                      const isSelected = selected.has(row.id);
+                      const isActiveRow = active?.rowId === row.id;
                       return (
                         <div
-                          key={`group:${entry.key}`}
+                          key={row.id}
                           role="row"
-                          className="group absolute left-0 grid bg-background"
+                          aria-rowindex={rowIndex + 2}
+                          aria-selected={isSelected || undefined}
+                          data-active={isActiveRow || undefined}
+                          className={cn(
+                            "group absolute left-0 grid bg-background hover:bg-row-hover",
+                            isSelected &&
+                              "bg-row-selected hover:bg-row-selected",
+                          )}
                           style={{
-                            height: GROUP_HEADER_HEIGHT,
+                            height: rowHeight,
+                            // top, not transform: transform would trap the sticky
+                            // cells inside the row box and break horizontal stick.
                             top: item.start,
                             gridTemplateColumns: gridTemplate,
                             width: totalWidth,
@@ -1629,608 +1753,516 @@ export function DataTableGrid({
                         >
                           <div
                             role="rowheader"
-                            className="flex items-center gap-2 border-b border-r bg-secondary/50 ps-2 pe-2 text-xs"
-                            style={{ gridColumn: "1 / -1" }}
-                          >
-                            <button
-                              type="button"
-                              aria-expanded={!collapsed}
-                              aria-label={t("navigation:tables.toggleGroup", {
-                                group: label,
-                              })}
-                              className="flex min-w-0 items-center gap-1.5 rounded-md py-1 text-left font-medium outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={() =>
-                                setCollapsedGroups((current) => {
-                                  const next = new Set(current);
-                                  if (next.has(entry.key)) {
-                                    next.delete(entry.key);
-                                  } else {
-                                    next.add(entry.key);
-                                  }
-                                  return next;
-                                })
-                              }
-                            >
-                              <ChevronDown
-                                className={cn(
-                                  "size-3.5 shrink-0 transition-transform",
-                                  collapsed && "-rotate-90",
-                                )}
-                              />
-                              <span className="truncate">{label}</span>
-                              <span className="shrink-0 tabular-nums text-muted-foreground">
-                                {result?.groups.find((g) => g.key === entry.key)
-                                  ?.total ?? 0}
-                              </span>
-                            </button>
-                            {/* Per-group aggregates for columns with a
-                                summary function (design: count + same
-                                aggregates). */}
-                            {fields
-                              .filter(
-                                (field) =>
-                                  (summaryFns[field.id] ?? "none") !== "none",
-                              )
-                              .map((field) => (
-                                <span
-                                  key={field.id}
-                                  className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
-                                >
-                                  {field.name}{" "}
-                                  {serverSummary(
-                                    field,
-                                    result?.groups.find(
-                                      (g) => g.key === entry.key,
-                                    ),
-                                    result?.groups.find(
-                                      (g) => g.key === entry.key,
-                                    )?.total ?? 0,
-                                  ) ?? "—"}
-                                </span>
-                              ))}
-                            <span className="flex-1" />
-                            {canEdit && (
-                              <button
-                                type="button"
-                                className="hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:flex"
-                                onClick={() => addRowInGroup(gf, entry.key)}
-                              >
-                                <Plus className="size-3.5" />
-                                {t("navigation:tables.newRowIn", {
-                                  group: label,
-                                })}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-                    const row = entry.row;
-                    const rowIndex = item.index;
-                    // Position among rows (group headers excluded), 1-based.
-                    const rowNumber = rowNumberById.get(row.id) ?? rowIndex + 1;
-                    const isSelected = selected.has(row.id);
-                    const isActiveRow = active?.rowId === row.id;
-                    return (
-                      <div
-                        key={row.id}
-                        role="row"
-                        aria-rowindex={rowIndex + 2}
-                        aria-selected={isSelected || undefined}
-                        data-active={isActiveRow || undefined}
-                        className={cn(
-                          "group absolute left-0 grid bg-background hover:bg-row-hover",
-                          isSelected && "bg-row-selected hover:bg-row-selected",
-                        )}
-                        style={{
-                          height: rowHeight,
-                          // top, not transform: transform would trap the sticky
-                          // cells inside the row box and break horizontal stick.
-                          top: item.start,
-                          gridTemplateColumns: gridTemplate,
-                          width: totalWidth,
-                        }}
-                      >
-                        <div
-                          role="rowheader"
-                          className={cn(
-                            "sticky left-0 z-10 flex items-center justify-center gap-1 border-r border-b text-xs tabular-nums text-muted-foreground",
-                            isSelected
-                              ? "bg-row-selected group-hover:bg-row-selected"
-                              : "bg-background group-hover:bg-row-hover",
-                          )}
-                        >
-                          {/* NocoDB gutter: the row number at rest; hover
-                              swaps in select + expand. */}
-                          <span
-                            aria-hidden
                             className={cn(
-                              "pointer-events-none absolute inset-0 flex items-center justify-center group-focus-within:opacity-0 group-hover:opacity-0",
-                              isSelected && "opacity-0",
-                            )}
-                          >
-                            {rowNumber}
-                          </span>
-                          <Checkbox
-                            checked={isSelected}
-                            aria-label={t("navigation:tables.selectRow", {
-                              row: rowNumber,
-                            })}
-                            className={cn(
-                              "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-                              isSelected && "opacity-100",
-                            )}
-                            onCheckedChange={(next) =>
-                              setSelected((current) => {
-                                const next2 = new Set(current);
-                                if (next) next2.add(row.id);
-                                else next2.delete(row.id);
-                                return next2;
-                              })
-                            }
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            aria-label={t("navigation:tables.expandRow", {
-                              row: rowNumber,
-                            })}
-                            className="size-5! opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-                            onClick={() => setSheetRowId(row.id)}
-                          >
-                            <Maximize2 className="size-3" />
-                          </Button>
-                        </div>
-                        {fields.map((field, fieldIndex) => (
-                          // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled once, by the grid (onGridKeyDown)
-                          <div
-                            key={field.id}
-                            role="gridcell"
-                            aria-readonly={field.system || undefined}
-                            aria-selected={
-                              (isActiveRow && active?.fieldId === field.id) ||
-                              undefined
-                            }
-                            aria-label={t("navigation:tables.cellAria", {
-                              field: field.name,
-                              row: rowNumber,
-                            })}
-                            onClick={(event) => {
-                              if (
-                                (event.target as HTMLElement).closest(
-                                  "input, textarea, a",
-                                )
-                              )
-                                return;
-                              const isActiveCell =
-                                active?.rowId === row.id &&
-                                active.fieldId === field.id;
-                              setActive({ rowId: row.id, fieldId: field.id });
-                              refocusGrid();
-                              if (!canEdit || field.system || !isActiveCell)
-                                return;
-                              if (
-                                PICKER_TYPES.includes(field.type) ||
-                                field.type === "checkbox"
-                              ) {
-                                // Whitespace on an active picker cell opens the same control.
-                                if (
-                                  !(event.target as HTMLElement).closest(
-                                    "button, [role='button'], [role='checkbox']",
-                                  )
-                                ) {
-                                  event.currentTarget
-                                    .querySelector<HTMLElement>(
-                                      "button, [role='button'], [role='checkbox']",
-                                    )
-                                    ?.click();
-                                }
-                              } else if (field.type !== "link")
-                                setEditing({
-                                  rowId: row.id,
-                                  fieldId: field.id,
-                                });
-                            }}
-                            className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
-                              fieldIndex === frozenCount - 1
-                                ? "border-r-2"
-                                : "border-r",
-                              fieldIndex < frozenCount
-                                ? "sticky z-10"
-                                : "relative z-0",
-                              editing?.rowId === row.id &&
-                                editing.fieldId === field.id &&
-                                (fieldIndex < frozenCount
-                                  ? "z-20 bg-background"
-                                  : "z-[1] bg-background"),
+                              "sticky left-0 z-10 flex items-center justify-center gap-1 border-r border-b text-xs tabular-nums text-muted-foreground",
                               isSelected
                                 ? "bg-row-selected group-hover:bg-row-selected"
-                                : isActiveRow
-                                  ? "bg-row-hover"
-                                  : "bg-background group-hover:bg-row-hover",
-                              NUMERIC_CELL_TYPES.includes(field.type) &&
-                                "justify-end",
-                              // Wrapped cells clip at the fixed row height —
-                              // except while their editor is open.
-                              DENSITY_WRAP_LINES[density] &&
-                                !(
-                                  editing?.rowId === row.id &&
-                                  editing.fieldId === field.id
-                                ) &&
-                                "overflow-hidden",
-                              field.system && "text-muted-foreground",
-                              // Active cell: an inset accent ring, drawn over
-                              // the borders (NocoDB).
-                              "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
+                                : "bg-background group-hover:bg-row-hover",
                             )}
-                            style={
-                              fieldIndex < frozenCount
-                                ? { left: frozenLefts[fieldIndex] }
-                                : undefined
-                            }
                           >
-                            <DataTableCellContent
-                              row={row}
-                              field={field}
-                              members={members}
-                              wrapLines={DENSITY_WRAP_LINES[density]}
-                              seed={
-                                editing?.rowId === row.id &&
-                                editing.fieldId === field.id
-                                  ? editing.seed
-                                  : undefined
+                            {/* NocoDB gutter: the row number at rest; hover
+                              swaps in select + expand. */}
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "pointer-events-none absolute inset-0 flex items-center justify-center group-focus-within:opacity-0 group-hover:opacity-0",
+                                isSelected && "opacity-0",
+                              )}
+                            >
+                              {rowNumber}
+                            </span>
+                            <Checkbox
+                              checked={isSelected}
+                              aria-label={t("navigation:tables.selectRow", {
+                                row: rowNumber,
+                              })}
+                              className={cn(
+                                "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                                isSelected && "opacity-100",
+                              )}
+                              onCheckedChange={(next) =>
+                                setSelected((current) => {
+                                  const next2 = new Set(current);
+                                  if (next) next2.add(row.id);
+                                  else next2.delete(row.id);
+                                  return next2;
+                                })
                               }
-                              // Pickers and checkboxes activate only after selection.
-                              canEdit={
-                                canEdit &&
-                                (!(
-                                  PICKER_TYPES.includes(field.type) ||
-                                  field.type === "checkbox"
-                                ) ||
-                                  (isActiveRow && active?.fieldId === field.id))
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label={t("navigation:tables.expandRow", {
+                                row: rowNumber,
+                              })}
+                              className="size-5! opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                              onClick={() => setSheetRowId(row.id)}
+                            >
+                              <Maximize2 className="size-3" />
+                            </Button>
+                          </div>
+                          {fields.map((field, fieldIndex) => (
+                            // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled once, by the grid (onGridKeyDown)
+                            <div
+                              key={field.id}
+                              role="gridcell"
+                              aria-readonly={field.system || undefined}
+                              aria-selected={
+                                (isActiveRow && active?.fieldId === field.id) ||
+                                undefined
                               }
-                              isEditing={
-                                editing?.rowId === row.id &&
-                                editing?.fieldId === field.id
-                              }
-                              onEditStart={() => {
-                                // First click selects; a click on the
-                                // already-active cell (or a double-click) edits.
+                              aria-label={t("navigation:tables.cellAria", {
+                                field: field.name,
+                                row: rowNumber,
+                              })}
+                              onClick={(event) => {
+                                if (
+                                  (event.target as HTMLElement).closest(
+                                    "input, textarea, a",
+                                  )
+                                )
+                                  return;
                                 const isActiveCell =
                                   active?.rowId === row.id &&
                                   active.fieldId === field.id;
                                 setActive({ rowId: row.id, fieldId: field.id });
-                                if (field.system || !isActiveCell) return;
-                                setEditing({
-                                  rowId: row.id,
-                                  fieldId: field.id,
-                                });
-                              }}
-                              onEditEnd={() => {
-                                setEditing(null);
                                 refocusGrid();
+                                if (!canEdit || field.system || !isActiveCell)
+                                  return;
+                                if (
+                                  PICKER_TYPES.includes(field.type) ||
+                                  field.type === "checkbox"
+                                ) {
+                                  // Whitespace on an active picker cell opens the same control.
+                                  if (
+                                    !(event.target as HTMLElement).closest(
+                                      "button, [role='button'], [role='checkbox']",
+                                    )
+                                  ) {
+                                    event.currentTarget
+                                      .querySelector<HTMLElement>(
+                                        "button, [role='button'], [role='checkbox']",
+                                      )
+                                      ?.click();
+                                  }
+                                } else if (field.type !== "link")
+                                  setEditing({
+                                    rowId: row.id,
+                                    fieldId: field.id,
+                                  });
                               }}
-                              onCommit={(value) =>
-                                commitCell(row, field, value)
+                              className={cn(
+                                "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
+                                fieldIndex === frozenCount - 1
+                                  ? "border-r-2"
+                                  : "border-r",
+                                fieldIndex < frozenCount
+                                  ? "sticky z-10"
+                                  : "relative z-0",
+                                editing?.rowId === row.id &&
+                                  editing.fieldId === field.id &&
+                                  (fieldIndex < frozenCount
+                                    ? "z-20 bg-background"
+                                    : "z-[1] bg-background"),
+                                isSelected
+                                  ? "bg-row-selected group-hover:bg-row-selected"
+                                  : isActiveRow
+                                    ? "bg-row-hover"
+                                    : "bg-background group-hover:bg-row-hover",
+                                NUMERIC_CELL_TYPES.includes(field.type) &&
+                                  "justify-end",
+                                // Wrapped cells clip at the fixed row height —
+                                // except while their editor is open.
+                                DENSITY_WRAP_LINES[density] &&
+                                  !(
+                                    editing?.rowId === row.id &&
+                                    editing.fieldId === field.id
+                                  ) &&
+                                  "overflow-hidden",
+                                field.system && "text-muted-foreground",
+                                // Active cell: an inset accent ring, drawn over
+                                // the borders (NocoDB).
+                                "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
+                              )}
+                              style={
+                                fieldIndex < frozenCount
+                                  ? { left: frozenLefts[fieldIndex] }
+                                  : undefined
+                              }
+                            >
+                              <DataTableCellContent
+                                row={row}
+                                field={field}
+                                members={members}
+                                wrapLines={DENSITY_WRAP_LINES[density]}
+                                seed={
+                                  editing?.rowId === row.id &&
+                                  editing.fieldId === field.id
+                                    ? editing.seed
+                                    : undefined
+                                }
+                                // Pickers and checkboxes activate only after selection.
+                                canEdit={
+                                  canEdit &&
+                                  (!(
+                                    PICKER_TYPES.includes(field.type) ||
+                                    field.type === "checkbox"
+                                  ) ||
+                                    (isActiveRow &&
+                                      active?.fieldId === field.id))
+                                }
+                                isEditing={
+                                  editing?.rowId === row.id &&
+                                  editing?.fieldId === field.id
+                                }
+                                onEditStart={() => {
+                                  // First click selects; a click on the
+                                  // already-active cell (or a double-click) edits.
+                                  const isActiveCell =
+                                    active?.rowId === row.id &&
+                                    active.fieldId === field.id;
+                                  setActive({
+                                    rowId: row.id,
+                                    fieldId: field.id,
+                                  });
+                                  if (field.system || !isActiveCell) return;
+                                  setEditing({
+                                    rowId: row.id,
+                                    fieldId: field.id,
+                                  });
+                                }}
+                                onEditEnd={() => {
+                                  setEditing(null);
+                                  refocusGrid();
+                                }}
+                                onCommit={(value) =>
+                                  commitCell(row, field, value)
+                                }
+                              />
+                            </div>
+                          ))}
+                          {canEdit && <div className="border-b" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {canEdit && visibleRows.length > 0 && (
+                <button
+                  type="button"
+                  className="flex h-8 shrink-0 items-center border-b text-ui text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                  style={{ width: totalWidth }}
+                  onClick={() => addRow()}
+                >
+                  <span
+                    className="sticky left-0 flex justify-center"
+                    style={{ width: ROW_NUMBER_COLUMN_WIDTH }}
+                  >
+                    <Plus className="size-3.5" />
+                  </span>
+                  <span
+                    className="sticky px-2"
+                    style={{ left: ROW_NUMBER_COLUMN_WIDTH }}
+                  >
+                    {t("navigation:tables.newRow")}
+                  </span>
+                </button>
+              )}
+              <span className="flex-1" />
+
+              {/* Per-field footer summaries (S3): sticky above the footer, off by
+                default, selection-scoped. Each cell picks its function. */}
+              {Object.values(summaryFns).some((fn) => fn !== "none") &&
+                visibleRows.length > 0 && (
+                  <div
+                    className="sticky bottom-8 left-0 z-10 grid bg-background"
+                    style={{
+                      gridTemplateColumns: gridTemplate,
+                      width: totalWidth,
+                    }}
+                  >
+                    <div
+                      className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs text-muted-foreground"
+                      title={t(
+                        selected.size > 0
+                          ? "navigation:tables.summarySelection"
+                          : "navigation:tables.summaryView",
+                      )}
+                    >
+                      {t(
+                        selected.size > 0
+                          ? "navigation:tables.summarySelectionShort"
+                          : "navigation:tables.summaryViewShort",
+                      )}
+                    </div>
+                    {fields.map((field) => {
+                      const fn = summaryFns[field.id] ?? "none";
+                      const text =
+                        selected.size > 0
+                          ? summarize(fn, field, scopeRows)
+                          : serverSummary(
+                              field,
+                              result?.summaries,
+                              result?.total ?? 0,
+                            );
+                      return (
+                        <div
+                          key={field.id}
+                          className={cn(
+                            "flex min-w-0 items-center border-r border-b bg-background px-2 text-xs text-muted-foreground",
+                            NUMERIC_CELL_TYPES.includes(field.type) &&
+                              "justify-end",
+                          )}
+                        >
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  className="w-full truncate text-left tabular-nums outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                  aria-label={t(
+                                    "navigation:tables.summaryMenu",
+                                    {
+                                      field: field.name,
+                                    },
+                                  )}
+                                >
+                                  {text ?? "—"}
+                                </button>
                               }
                             />
-                          </div>
-                        ))}
-                        {canEdit && <div className="border-b" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {canEdit && visibleRows.length > 0 && (
-              <button
-                type="button"
-                className="flex h-8 shrink-0 items-center border-b text-ui text-muted-foreground outline-none hover:bg-row-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                style={{ width: totalWidth }}
-                onClick={() => addRow()}
-              >
-                <span
-                  className="sticky left-0 flex justify-center"
-                  style={{ width: ROW_NUMBER_COLUMN_WIDTH }}
-                >
-                  <Plus className="size-3.5" />
-                </span>
-                <span
-                  className="sticky px-2"
-                  style={{ left: ROW_NUMBER_COLUMN_WIDTH }}
-                >
-                  {t("navigation:tables.newRow")}
-                </span>
-              </button>
-            )}
-            <span className="flex-1" />
-
-            {/* Per-field footer summaries (S3): sticky above the footer, off by
-                default, selection-scoped. Each cell picks its function. */}
-            {Object.values(summaryFns).some((fn) => fn !== "none") &&
-              visibleRows.length > 0 && (
-                <div
-                  className="sticky bottom-8 left-0 z-10 grid bg-background"
-                  style={{
-                    gridTemplateColumns: gridTemplate,
-                    width: totalWidth,
-                  }}
-                >
-                  <div
-                    className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs text-muted-foreground"
-                    title={t(
-                      selected.size > 0
-                        ? "navigation:tables.summarySelection"
-                        : "navigation:tables.summaryView",
-                    )}
-                  >
-                    {t(
-                      selected.size > 0
-                        ? "navigation:tables.summarySelectionShort"
-                        : "navigation:tables.summaryViewShort",
-                    )}
+                            <DropdownMenuContent
+                              align="start"
+                              className="min-w-40"
+                            >
+                              {SUMMARY_FNS.filter(
+                                (option) =>
+                                  option === "none" ||
+                                  ["filled", "empty"].includes(option) ||
+                                  (option === "checked"
+                                    ? field.type === "checkbox"
+                                    : NUMERIC_CELL_TYPES.includes(field.type)),
+                              ).map((option) => (
+                                <DropdownMenuCheckboxItem
+                                  key={option}
+                                  checked={fn === option}
+                                  onCheckedChange={() =>
+                                    setSummaryFns((current) => ({
+                                      ...current,
+                                      [field.id]: option,
+                                    }))
+                                  }
+                                >
+                                  {t(`navigation:tables.summary_${option}`)}
+                                </DropdownMenuCheckboxItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {fields.map((field) => {
-                    const fn = summaryFns[field.id] ?? "none";
-                    const text =
-                      selected.size > 0
-                        ? summarize(fn, field, scopeRows)
-                        : serverSummary(
-                            field,
-                            result?.summaries,
-                            result?.total ?? 0,
-                          );
-                    return (
-                      <div
-                        key={field.id}
-                        className={cn(
-                          "flex min-w-0 items-center border-r border-b bg-background px-2 text-xs text-muted-foreground",
-                          NUMERIC_CELL_TYPES.includes(field.type) &&
-                            "justify-end",
-                        )}
-                      >
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <button
-                                type="button"
-                                className="w-full truncate text-left tabular-nums outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label={t("navigation:tables.summaryMenu", {
-                                  field: field.name,
-                                })}
-                              >
-                                {text ?? "—"}
-                              </button>
-                            }
-                          />
-                          <DropdownMenuContent
-                            align="start"
-                            className="min-w-40"
-                          >
-                            {SUMMARY_FNS.filter(
-                              (option) =>
-                                option === "none" ||
-                                ["filled", "empty"].includes(option) ||
-                                (option === "checked"
-                                  ? field.type === "checkbox"
-                                  : NUMERIC_CELL_TYPES.includes(field.type)),
-                            ).map((option) => (
-                              <DropdownMenuCheckboxItem
-                                key={option}
-                                checked={fn === option}
-                                onCheckedChange={() =>
-                                  setSummaryFns((current) => ({
-                                    ...current,
-                                    [field.id]: option,
-                                  }))
-                                }
-                              >
-                                {t(`navigation:tables.summary_${option}`)}
-                              </DropdownMenuCheckboxItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-            {/* Footer: honest count (DS rule 4) — swaps to the bulk bar while
-                rows are selected (S3). */}
-            {selected.size > 0 ? (
-              <div className="sticky bottom-0 left-0 z-20 flex h-8 shrink-0 items-center gap-2 border-t bg-background px-3 text-xs">
-                <span className="font-medium tabular-nums">
-                  {t("navigation:tables.bulkSelected", {
-                    count: selected.size,
-                  })}
-                </span>
-                {canEdit && (
-                  <BulkSetField
-                    fields={fields}
-                    members={members}
-                    disabled={bulkBusy}
-                    onApply={(field, value) => bulkSetField(field, value)}
-                  />
                 )}
-                <span className="flex-1" />
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  disabled={!canEdit || bulkBusy}
-                  className="text-destructive-foreground hover:text-destructive-foreground"
-                  onClick={() => setBulkDeleteIds([...selected])}
-                >
-                  <Trash2 className="size-3.5" />
-                  {t("navigation:tables.bulkDelete")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  disabled={bulkBusy}
-                  onClick={() => setSelected(new Set())}
-                >
-                  {t("common:actions.clear")}
-                </Button>
-              </div>
-            ) : (
-              <div
-                className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground"
-                style={{ width: "min(100%, 100vw)" }}
-              >
-                <span className="tabular-nums">
-                  <Trans
-                    i18nKey="navigation:tables.queryCount"
-                    values={{
-                      loaded: allRows.length,
-                      matched: result?.total ?? 0,
-                      total: result?.tableTotal ?? 0,
-                    }}
-                    components={{
-                      b: <span className="font-medium text-foreground" />,
-                    }}
-                  />
-                </span>
-                {!allLoaded && (
+
+              {/* Footer: honest count (DS rule 4) — swaps to the bulk bar while
+                rows are selected (S3). */}
+              {selected.size > 0 ? (
+                <div className="sticky bottom-0 left-0 z-20 flex h-8 shrink-0 items-center gap-2 border-t bg-background px-3 text-xs">
+                  <span className="font-medium tabular-nums">
+                    {t("navigation:tables.bulkSelected", {
+                      count: selected.size,
+                    })}
+                  </span>
+                  {canEdit && (
+                    <BulkSetField
+                      fields={fields}
+                      members={members}
+                      disabled={bulkBusy}
+                      onApply={(field, value) => bulkSetField(field, value)}
+                    />
+                  )}
+                  <span className="flex-1" />
                   <Button
                     variant="ghost"
                     size="xs"
-                    disabled={rowPages.isFetchingNextPage}
-                    onClick={() => rowPages.fetchNextPage()}
+                    disabled={!canEdit || bulkBusy}
+                    className="text-destructive-foreground hover:text-destructive-foreground"
+                    onClick={() => setBulkDeleteIds([...selected])}
                   >
-                    {t(
-                      rowPages.isFetchingNextPage
-                        ? "navigation:tables.queryLoading"
-                        : "navigation:tables.loadMore",
-                    )}
+                    <Trash2 className="size-3.5" />
+                    {t("navigation:tables.bulkDelete")}
                   </Button>
-                )}
-                {importProgress && <span>{importProgress}</span>}{" "}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    disabled={bulkBusy}
+                    onClick={() => setSelected(new Set())}
+                  >
+                    {t("common:actions.clear")}
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground"
+                  style={{ width: "min(100%, 100vw)" }}
+                >
+                  <span className="tabular-nums">
+                    <Trans
+                      i18nKey="navigation:tables.queryCount"
+                      values={{
+                        loaded: allRows.length,
+                        matched: result?.total ?? 0,
+                        total: result?.tableTotal ?? 0,
+                      }}
+                      components={{
+                        b: <span className="font-medium text-foreground" />,
+                      }}
+                    />
+                  </span>
+                  {!allLoaded && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      disabled={rowPages.isFetchingNextPage}
+                      onClick={() => rowPages.fetchNextPage()}
+                    >
+                      {t(
+                        rowPages.isFetchingNextPage
+                          ? "navigation:tables.queryLoading"
+                          : "navigation:tables.loadMore",
+                      )}
+                    </Button>
+                  )}
+                  {importProgress && <span>{importProgress}</span>}{" "}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      <AlertDialog
-        open={bulkDeleteIds.length > 0}
-        onOpenChange={(open) => !open && setBulkDeleteIds([])}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("navigation:tables.bulkDeleteTitle", {
-                count: bulkDeleteIds.length,
-              })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("navigation:tables.bulkDeleteConfirm", {
-                count: bulkDeleteIds.length,
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
-              {t("navigation:tables.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={bulkBusy}
-              onClick={async () => {
-                const ids = bulkDeleteIds;
-                setBulkDeleteIds([]);
-                await bulkDeleteRows(ids);
-              }}
-            >
-              {t("navigation:tables.bulkDelete")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {newRowValues !== null && (
-        <NewRowDialog
-          tableName={table.name}
-          fields={fields}
+        <AlertDialog
+          open={bulkDeleteIds.length > 0}
+          onOpenChange={(open) => !open && setBulkDeleteIds([])}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("navigation:tables.bulkDeleteTitle", {
+                  count: bulkDeleteIds.length,
+                })}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("navigation:tables.bulkDeleteConfirm", {
+                  count: bulkDeleteIds.length,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+                {t("navigation:tables.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={bulkBusy}
+                onClick={async () => {
+                  const ids = bulkDeleteIds;
+                  setBulkDeleteIds([]);
+                  await bulkDeleteRows(ids);
+                }}
+              >
+                {t("navigation:tables.bulkDelete")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {newRowValues !== null && (
+          <NewRowDialog
+            tableName={table.name}
+            fields={fields}
+            members={members}
+            initialValues={newRowValues}
+            onOpenChange={(open) => !open && setNewRowValues(null)}
+            onCreate={(values) =>
+              createRow.mutateAsync({
+                organizationId,
+                tableId: table.id,
+                values,
+              })
+            }
+          />
+        )}
+        <RowSheet
+          open={sheetRowId !== null}
+          onOpenChange={(next) => !next && setSheetRowId(null)}
+          table={table}
+          row={allRows.find((row) => row.id === sheetRowId) ?? null}
+          rowIndex={visibleRows.findIndex((row) => row.id === sheetRowId)}
+          rowCount={visibleRows.length}
+          fields={sortedFields(table.fields)}
           members={members}
-          initialValues={newRowValues}
-          onOpenChange={(open) => !open && setNewRowValues(null)}
-          onCreate={(values) =>
-            createRow.mutateAsync({ organizationId, tableId: table.id, values })
+          canEdit={canEdit}
+          onCommit={(row, field, value) => commitCell(row, field, value)}
+          onPrev={() =>
+            setSheetRowId((current) => {
+              const index = visibleRows.findIndex((row) => row.id === current);
+              if (index <= 0) return current;
+              return visibleRows[index - 1].id;
+            })
+          }
+          onNext={() =>
+            setSheetRowId((current) => {
+              const index = visibleRows.findIndex((row) => row.id === current);
+              if (index < 0 || index >= visibleRows.length - 1) return current;
+              return visibleRows[index + 1].id;
+            })
+          }
+          hasPrev={visibleRows.findIndex((row) => row.id === sheetRowId) > 0}
+          hasNext={
+            visibleRows.findIndex((row) => row.id === sheetRowId) >= 0 &&
+            visibleRows.findIndex((row) => row.id === sheetRowId) <
+              visibleRows.length - 1
           }
         />
-      )}
-      <RowSheet
-        open={sheetRowId !== null}
-        onOpenChange={(next) => !next && setSheetRowId(null)}
-        table={table}
-        row={allRows.find((row) => row.id === sheetRowId) ?? null}
-        rowIndex={visibleRows.findIndex((row) => row.id === sheetRowId)}
-        rowCount={visibleRows.length}
-        fields={sortedFields(table.fields)}
-        members={members}
-        canEdit={canEdit}
-        onCommit={(row, field, value) => commitCell(row, field, value)}
-        onPrev={() =>
-          setSheetRowId((current) => {
-            const index = visibleRows.findIndex((row) => row.id === current);
-            if (index <= 0) return current;
-            return visibleRows[index - 1].id;
-          })
-        }
-        onNext={() =>
-          setSheetRowId((current) => {
-            const index = visibleRows.findIndex((row) => row.id === current);
-            if (index < 0 || index >= visibleRows.length - 1) return current;
-            return visibleRows[index + 1].id;
-          })
-        }
-        hasPrev={visibleRows.findIndex((row) => row.id === sheetRowId) > 0}
-        hasNext={
-          visibleRows.findIndex((row) => row.id === sheetRowId) >= 0 &&
-          visibleRows.findIndex((row) => row.id === sheetRowId) <
-            visibleRows.length - 1
-        }
-      />
 
-      <FieldOptionsDialog
-        organizationId={organizationId}
-        tableId={table.id}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        field={dialogField}
-        initialType={dialogType}
-        members={members}
-      />
+        <FieldOptionsDialog
+          organizationId={organizationId}
+          tableId={table.id}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          field={dialogField}
+          initialType={dialogType}
+          members={members}
+        />
 
-      <AlertDialog
-        open={fieldToDelete !== null}
-        onOpenChange={(open) => !open && setFieldToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("navigation:tables.deleteField")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("navigation:tables.deleteFieldConfirm", {
-                name: fieldToDelete?.name ?? "",
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="outline" size="sm" render={<AlertDialogClose />}>
-              {t("navigation:tables.cancel")}
-            </Button>
-            <Button size="sm" onClick={confirmDeleteField}>
-              {t("navigation:tables.deleteField")}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </TicketLookupContext.Provider>
+        <AlertDialog
+          open={fieldToDelete !== null}
+          onOpenChange={(open) => !open && setFieldToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("navigation:tables.deleteField")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("navigation:tables.deleteFieldConfirm", {
+                  name: fieldToDelete?.name ?? "",
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+                {t("navigation:tables.cancel")}
+              </Button>
+              <Button size="sm" onClick={confirmDeleteField}>
+                {t("navigation:tables.deleteField")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TicketLookupContext.Provider>
+    </LinkNavigationProvider>
   );
 }

@@ -40,6 +40,7 @@ import {
   formatDateValue,
   formatNumberValue,
 } from "./data-table-format";
+import { LinkCellView } from "./link-cell";
 import { TicketCellView } from "./ticket-cell";
 
 const MarkdownRenderer = lazy(() =>
@@ -354,16 +355,8 @@ export function DataTableCellView({
       ) : (
         <TicketCellView value={value} expanded={expanded} wrapLines={wrapped} />
       );
-    case "link": {
-      const ids = asStringArray(value);
-      if (ids.length === 0) return <EmptyValue />;
-      return (
-        <Badge variant="secondary" className="gap-1 px-1.5 text-xs">
-          <Link2 className="size-3" />
-          {ids.length}
-        </Badge>
-      );
-    }
+    case "link":
+      return <LinkCellView value={value} expanded={expanded} />;
     default: {
       const text = asString(value);
       if (!text) return <EmptyValue />;

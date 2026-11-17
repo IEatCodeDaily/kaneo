@@ -26,6 +26,7 @@ import {
   isValidUrl,
   parseJsonValue,
 } from "./data-table-format";
+import { LinkCellPicker } from "./link-cell";
 import { TicketCellPicker } from "./ticket-cell";
 
 type EditorProps = {
@@ -610,6 +611,8 @@ export function DataTableCellContent({
   if (field.type === "multiselect")
     return <MultiSelectCellPicker {...pickerProps} />;
   if (field.type === "ticket") return <TicketCellPicker {...pickerProps} />;
+  if (field.type === "link")
+    return <LinkCellPicker {...pickerProps} rowId={row.id} members={members} />;
   if (field.type === "user")
     return <UserCellPicker {...pickerProps} members={members} />;
   // Markdown and URL/email projections contain links: never nest them in a button.

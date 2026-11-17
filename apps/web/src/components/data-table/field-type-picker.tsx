@@ -97,7 +97,6 @@ export function FieldTypePicker({
                   data-field-type={type}
                   variant="ghost"
                   type="button"
-                  disabled={type === "link"}
                   aria-pressed={value === type}
                   aria-label={
                     type === "link"

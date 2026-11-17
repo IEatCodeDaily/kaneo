@@ -852,6 +852,7 @@ export const dataTableFieldTable = pgTable(
     // Per-type options (choices, precision, currency code...); shape validated
     // by the field registry in data-table/fields.ts, not by a DB constraint.
     options: jsonb("options").$type<Record<string, unknown>>(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()
@@ -862,6 +863,54 @@ export const dataTableFieldTable = pgTable(
     index("data_table_field_table_position_idx").on(
       table.tableId,
       table.position,
+    ),
+    unique("data_table_field_table_id_id_unique").on(table.tableId, table.id),
+  ],
+);
+
+export const dataTableRelationTable = pgTable(
+  "data_table_relation",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizationTable.id),
+    sourceTableId: text("source_table_id").notNull(),
+    targetTableId: text("target_table_id").notNull(),
+    sourceFieldId: text("source_field_id").notNull().unique(),
+    targetFieldId: text("target_field_id").notNull().unique(),
+    sourceMax: text("source_max", { enum: ["one", "many"] }).notNull(),
+    targetMax: text("target_max", { enum: ["one", "many"] }).notNull(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.organizationId, table.sourceTableId],
+      foreignColumns: [dataTableTable.organizationId, dataTableTable.id],
+    }),
+    foreignKey({
+      columns: [table.organizationId, table.targetTableId],
+      foreignColumns: [dataTableTable.organizationId, dataTableTable.id],
+    }),
+    foreignKey({
+      columns: [table.sourceTableId, table.sourceFieldId],
+      foreignColumns: [dataTableFieldTable.tableId, dataTableFieldTable.id],
+    }),
+    foreignKey({
+      columns: [table.targetTableId, table.targetFieldId],
+      foreignColumns: [dataTableFieldTable.tableId, dataTableFieldTable.id],
+    }),
+    check(
+      "data_table_relation_maxima",
+      sql`${table.sourceMax} IN ('one', 'many') AND ${table.targetMax} IN ('one', 'many')`,
+    ),
+    check(
+      "data_table_relation_distinct_fields",
+      sql`${table.sourceFieldId} <> ${table.targetFieldId}`,
     ),
   ],
 );

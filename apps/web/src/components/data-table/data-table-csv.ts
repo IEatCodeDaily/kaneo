@@ -46,6 +46,10 @@ function cellText(
       const id = asString(raw);
       return memberNames.get(id) ?? "";
     }
+    case "link": {
+      if (!raw || typeof raw !== "object" || !("searchText" in raw)) return "";
+      return typeof raw.searchText === "string" ? raw.searchText : "";
+    }
     case "json":
       return typeof raw === "string" ? raw : JSON.stringify(raw);
     case "ticket":
