@@ -83,6 +83,7 @@ vi.mock("@/fetchers/data-table/data-table", () => ({
   getTicketOptions: vi.fn().mockResolvedValue([]),
 }));
 
+import { createDataTableRow } from "@/fetchers/data-table/data-table";
 import { DataTableGrid } from "./data-table-grid";
 
 const table = (type: DataTableFieldType = "text"): DataTable => ({
@@ -122,6 +123,8 @@ const table = (type: DataTableFieldType = "text"): DataTable => ({
       position: 0,
       createdAt: "",
       updatedAt: "",
+      createdBy: "member",
+      updatedBy: "deleted-member",
       values: { first: type === "checkbox" ? true : "x", second: "other" },
     },
   ],
@@ -161,6 +164,48 @@ it("toolbar opens the form without creating an empty row", async () => {
       values: { first: "New entry" },
     }),
   );
+});
+
+it("CSV import ignores system columns without shifting later data", async () => {
+  const view = mount();
+  const input = view.container.querySelector('input[type="file"]')!;
+  fireEvent.change(input, {
+    target: {
+      files: [
+        {
+          text: async () =>
+            "Created at,Title,Updated by,Other\n2026-11-17,Imported,Someone,Preserved",
+        },
+      ],
+    },
+  });
+  await waitFor(() =>
+    expect(createDataTableRow).toHaveBeenCalledWith({
+      organizationId: "o",
+      tableId: "t",
+      values: { first: "Imported", second: "Preserved" },
+    }),
+  );
+});
+
+it("system cells show names or Former member, never ids, and cannot edit", () => {
+  localStorage.setItem("kaneo-table-system-fields:t", "true");
+  mount();
+  const cells = screen
+    .getAllByRole("gridcell")
+    .filter((cell) => cell.getAttribute("aria-readonly") === "true");
+  expect(cells).toHaveLength(5);
+  expect(cells[0]).toHaveTextContent("1");
+  expect(cells[3]).toHaveTextContent("Ada");
+  expect(cells[4]).toHaveTextContent("navigation:tables.formerMember");
+  expect(screen.getByRole("grid")).not.toHaveTextContent("deleted-member");
+  for (const cell of cells) {
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    fireEvent.keyDown(screen.getByRole("grid"), { key: "Enter" });
+  }
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(upsertCell).not.toHaveBeenCalled();
 });
 
 describe("uniform first-column interaction", () => {

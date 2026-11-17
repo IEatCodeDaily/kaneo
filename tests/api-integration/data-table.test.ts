@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reconcile } from "../../apps/api/src/data-table/store";
@@ -93,6 +94,8 @@ async function addRowViaApi(
     position: number;
     createdAt: string;
     updatedAt: string;
+    createdBy: string | null;
+    updatedBy: string | null;
     values: Record<string, unknown>;
   };
 }
@@ -1064,6 +1067,108 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
     });
   });
 
+  describe("system field attribution", () => {
+    it("attributes creates and edits, preserves creator, and backfills legacy rows idempotently", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Attribution");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Name",
+        type: "text",
+      });
+      const row = await addRowViaApi(app, org, table.id, {
+        [field!.id]: "Initial",
+      });
+      expect(row).toMatchObject({
+        createdBy: member.user.id,
+        updatedBy: member.user.id,
+      });
+      const other = await createOrganizationMember();
+      await db.insert(schema.organizationMemberTable).values({
+        organizationId: org,
+        userId: other.user.id,
+        role: "owner",
+        joinedAt: new Date(),
+      });
+      mockAuthenticatedSession(other.user);
+      const update = await app.request(
+        `/api/data-table/organization/${org}/${table.id}/rows/${row.id}/cells/${field!.id}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ value: "Edited" }),
+        },
+      );
+      expect(update.status).toBe(200);
+      expect(await update.json()).toMatchObject({
+        createdBy: member.user.id,
+        updatedBy: other.user.id,
+      });
+      // Conversions and restoration also touch physical values in shared store paths.
+      const fieldPath = `/api/data-table/organization/${org}/${table.id}/fields/${field!.id}`;
+      const converted = await app.request(fieldPath, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ type: "number" }),
+      });
+      expect(converted.status).toBe(200);
+      const events = (await (
+        await app.request(
+          `/api/data-table/organization/${org}/${table.id}/activity`,
+        )
+      ).json()) as { id: string; type: string }[];
+      const conversion = events.find(
+        (event) => event.type === "field_updated",
+      )!;
+      mockAuthenticatedSession(member.user);
+      const restored = await app.request(
+        `/api/data-table/organization/${org}/${table.id}/activity/${conversion.id}/revert`,
+        { method: "POST" },
+      );
+      expect(restored.status).toBe(200);
+      const restoredRows = await db.execute(
+        sql.raw(
+          `SELECT created_by, updated_by FROM kaneo_tables."t_${table.id}" WHERE id = '${row.id}'`,
+        ),
+      );
+      expect(restoredRows.rows[0]).toMatchObject({
+        created_by: member.user.id,
+        updated_by: member.user.id,
+      });
+      const unknown = await addRowViaApi(app, org, table.id);
+      await db
+        .delete(schema.dataTableActivityTable)
+        .where(eq(schema.dataTableActivityTable.rowId, unknown.id));
+      // Simulate a pre-migration physical table, then run the actual migration twice.
+      await db.execute(
+        sql.raw(
+          `ALTER TABLE kaneo_tables."t_${table.id}" DROP COLUMN created_by, DROP COLUMN updated_by`,
+        ),
+      );
+      const migration = readFileSync(
+        new URL(
+          "../../apps/api/drizzle/0087_table_system_fields.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.execute(sql.raw(migration));
+      await db.execute(sql.raw(migration));
+      const result = await db.execute(
+        sql.raw(
+          `SELECT id, created_by, updated_by FROM kaneo_tables."t_${table.id}"`,
+        ),
+      );
+      expect(result.rows.find((item) => item.id === row.id)).toMatchObject({
+        created_by: member.user.id,
+        updated_by: member.user.id,
+      });
+      expect(result.rows.find((item) => item.id === unknown.id)).toMatchObject({
+        created_by: null,
+        updated_by: null,
+      });
+    });
+  });
+
   describe("store engine", () => {
     it("creates a physical table with system columns and a DDL ledger entry", async () => {
       const table = await createTableViaApi(app, member.organization.id, "CRM");
@@ -1071,9 +1176,11 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const columns = await physicalColumns(table.id);
       expect(columns.map((column) => column.column_name).sort()).toEqual([
         "created_at",
+        "created_by",
         "id",
         "position",
         "updated_at",
+        "updated_by",
       ]);
       expect(columns.find((c) => c.column_name === "position")?.data_type).toBe(
         "double precision",

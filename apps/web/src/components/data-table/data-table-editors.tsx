@@ -20,6 +20,7 @@ import {
   asString,
   asStringArray,
   fieldChoices,
+  fieldValue,
   isValidEmail,
   isValidNumberInput,
   isValidUrl,
@@ -548,7 +549,16 @@ export function DataTableCellContent({
   onCommit: (value: unknown) => void;
 }) {
   const { t } = useTranslation();
-  const value = row.values[field.id];
+  const value = fieldValue(row, field);
+  if (field.system)
+    return (
+      <DataTableCellView
+        field={field}
+        value={value}
+        members={members}
+        expanded={expanded}
+      />
+    );
   const canInlineEdit = INPUT_EDIT_TYPES.includes(field.type);
   const numericAlign = NUMERIC_TYPES.includes(field.type);
   if (canEdit && isEditing && field.type === "json") {

@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronUp, Copy, Table2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  LockKeyhole,
+  Table2,
+  X,
+} from "lucide-react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
@@ -9,6 +17,10 @@ import {
   FieldTypeIcon,
 } from "@/components/data-table/data-table-cells";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
+import {
+  fieldValue,
+  systemFields,
+} from "@/components/data-table/data-table-format";
 import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
 import { Button } from "@/components/ui/button";
@@ -196,7 +208,6 @@ export function RowSheet({
               variant="ghost"
               size="icon-sm"
               aria-label={t("navigation:tables.copyRowId")}
-              title={row.id}
               onClick={copyId}
             >
               {copied ? (
@@ -280,6 +291,33 @@ export function RowSheet({
             </div>
           ))}
         </section>
+
+        <details
+          key={row.id}
+          className="border-t pt-3"
+          data-slot="row-system-fields"
+        >
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            {t("navigation:tables.systemSection")}
+          </summary>
+          <div className="mt-2 flex flex-col gap-1">
+            {systemFields(table.id, t).map((field) => (
+              <div key={field.id} className="flex min-h-8 items-center gap-2">
+                <span className="flex w-36 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                  <LockKeyhole className="size-3.5 shrink-0" />
+                  {field.name}
+                </span>
+                <div className="min-w-0 flex-1 px-2 text-ui">
+                  <DataTableCellView
+                    field={field}
+                    value={fieldValue(row, field)}
+                    members={members}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
 
         {/* Explicit row↔ticket links (made from a ticket's "Included in").
             Ticket cells already show in the fields above, so an empty list

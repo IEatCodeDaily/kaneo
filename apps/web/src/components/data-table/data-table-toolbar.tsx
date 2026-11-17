@@ -3,6 +3,7 @@ import {
   Download,
   Eye,
   ListFilter,
+  LockKeyhole,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -58,6 +59,8 @@ type Props = {
   fields: DataTableField[];
   members: Map<string, MemberOption>;
   hidden: string[];
+  showSystemFields?: boolean;
+  onShowSystemFieldsChange?: (show: boolean) => void;
   onHiddenChange: (ids: string[]) => void;
   filters: DataTableFilter[];
   onFiltersChange: (filters: DataTableFilter[]) => void;
@@ -125,40 +128,56 @@ export function DataTableToolbar(props: Props) {
         <PopoverContent align="start" className="w-70">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.fieldsShown", {
-              shown: fields.length - hiddenCount,
-              total: fields.length,
+              shown:
+                fields.filter((field) => !field.system).length - hiddenCount,
+              total: fields.filter((field) => !field.system).length,
             })}
           </p>
           <div className="flex max-h-72 flex-col overflow-y-auto p-1">
-            {fields.map((field, index) => {
-              // The first field names the row; it can't be hidden.
-              const locked = index === 0;
-              const visible = locked || !hidden.includes(field.id);
-              return (
-                <div
-                  key={field.id}
-                  className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
-                >
-                  <FieldTypeIcon
-                    type={field.type}
-                    className="text-muted-foreground"
-                  />
-                  <span className="min-w-0 flex-1 truncate">{field.name}</span>
-                  <Switch
-                    checked={visible}
-                    disabled={locked}
-                    aria-label={field.name}
-                    onCheckedChange={(next) =>
-                      props.onHiddenChange(
-                        next
-                          ? hidden.filter((id) => id !== field.id)
-                          : [...hidden, field.id],
-                      )
-                    }
-                  />
-                </div>
-              );
-            })}
+            {fields
+              .filter((field) => !field.system)
+              .map((field, index) => {
+                // The first field names the row; it can't be hidden.
+                const locked = index === 0;
+                const visible = locked || !hidden.includes(field.id);
+                return (
+                  <div
+                    key={field.id}
+                    className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
+                  >
+                    <FieldTypeIcon
+                      type={field.type}
+                      className="text-muted-foreground"
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {field.name}
+                    </span>
+                    <Switch
+                      checked={visible}
+                      disabled={locked}
+                      aria-label={field.name}
+                      onCheckedChange={(next) =>
+                        props.onHiddenChange(
+                          next
+                            ? hidden.filter((id) => id !== field.id)
+                            : [...hidden, field.id],
+                        )
+                      }
+                    />
+                  </div>
+                );
+              })}
+          </div>
+          <div className="flex h-8 items-center gap-2 border-t px-3 text-ui">
+            <LockKeyhole className="size-3.5 text-muted-foreground" />
+            <span className="flex-1">
+              {t("navigation:tables.showSystemFields")}
+            </span>
+            <Switch
+              checked={props.showSystemFields ?? false}
+              aria-label={t("navigation:tables.showSystemFields")}
+              onCheckedChange={props.onShowSystemFieldsChange}
+            />
           </div>
           <div className="flex items-center justify-between border-t p-1">
             {canEdit ? (
@@ -635,7 +654,10 @@ function FilterValue({
           ...(field.type === "user"
             ? Array.from(members.entries()).map(([id, m]) => ({
                 id,
-                label: m.user.name || m.user.email || id,
+                label:
+                  m.user.name ||
+                  m.user.email ||
+                  t("navigation:tables.formerMember"),
               }))
             : (field.options?.choices ?? []).map((c) => ({
                 id: c.id,
@@ -702,7 +724,9 @@ export function FilterConditionChip({
       filter.choiceId === "__empty__"
         ? t("navigation:tables.unassigned")
         : field.type === "user"
-          ? (members.get(filter.choiceId)?.user.name ?? filter.choiceId)
+          ? members.get(filter.choiceId)?.user.name ||
+            members.get(filter.choiceId)?.user.email ||
+            t("navigation:tables.formerMember")
           : (field.options?.choices?.find((c) => c.id === filter.choiceId)
               ?.label ?? filter.choiceId);
 

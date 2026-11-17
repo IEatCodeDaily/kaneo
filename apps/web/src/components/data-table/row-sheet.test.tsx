@@ -87,6 +87,11 @@ it("keeps the drawer's changed draft after a failed save, closing only after suc
       />
     </QueryClientProvider>,
   );
+  const system = document.querySelector('[data-slot="row-system-fields"]');
+  expect(system).not.toHaveAttribute("open");
+  expect(
+    screen.getByRole("button", { name: "navigation:tables.copyRowId" }),
+  ).not.toHaveAttribute("title");
   fireEvent.click(
     screen.getByRole("button", { name: "navigation:tables.editField" }),
   );

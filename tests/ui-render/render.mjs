@@ -621,8 +621,64 @@ for (const [shot, prefs, act] of [
   await ctx.close();
 }
 
+async function showSystemFields(page) {
+  await page.getByRole("button", { name: /^Fields/ }).click();
+  await page
+    .getByRole("switch", { name: "Show system fields", exact: true })
+    .click();
+  // Keep all five system columns in the desktop frame without shrinking text.
+  for (const name of ["Stage", "Cost", "Start date", "Note", "Tickets"]) {
+    const toggle = page.getByRole("switch", { name, exact: true });
+    if (await toggle.count()) await toggle.uncheck();
+  }
+  await page.keyboard.press("Escape");
+  for (const name of [
+    "Row ID",
+    "Created at",
+    "Updated at",
+    "Created by",
+    "Updated by",
+  ]) {
+    await page
+      .getByRole("button", { name: `${name} field menu`, exact: true })
+      .waitFor();
+  }
+  const author = page.getByRole("gridcell", {
+    name: "Created by, row 1",
+    exact: true,
+  });
+  await author.getByText("Ayu Saraswati", { exact: true }).waitFor();
+  if ((await author.getAttribute("aria-readonly")) !== "true")
+    throw new Error("system cell is editable");
+  const text = await page.getByRole("grid").innerText();
+  if (/\b[a-z][a-z0-9]{23}\b|\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/i.test(text))
+    throw new Error("raw cuid/uuid in grid");
+  // The preference must survive reload, not just a mounted component's state.
+  await page.reload({ waitUntil: "networkidle" });
+  await page
+    .getByRole("button", { name: "Created by field menu", exact: true })
+    .waitFor();
+}
+
 // Table interaction states (dark desktop), design v3 S2.
 const TABLE_STATES = [
+  ["table-system-fields", showSystemFields],
+  [
+    "table-system-drawer",
+    async (page) => {
+      await page
+        .getByRole("button", { name: "Expand row 1", exact: true })
+        .click();
+      const system = page.locator('[data-slot="row-system-fields"]');
+      if ((await system.getAttribute("open")) !== null)
+        throw new Error("System section is not collapsed");
+      await system.locator("summary").click();
+      await system
+        .getByText("Ayu Saraswati", { exact: true })
+        .first()
+        .waitFor();
+    },
+  ],
   [
     "table-fields",
     async (p) => p.getByRole("button", { name: /^Fields/ }).click(),
@@ -1181,6 +1237,71 @@ if (pages.table) {
     checks[shot] = { fails, ...m };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+
+  // Same controls on touch; horizontal scrolling brings the user columns into view.
+  {
+    const ctx = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: "dark",
+      hasTouch: true,
+    });
+    await ctx.addInitScript(() => {
+      const cur = JSON.parse(
+        localStorage.getItem("user-preferences") ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: "dark" };
+      localStorage.setItem("user-preferences", JSON.stringify(cur));
+    });
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (error) => fails.push(String(error)));
+    await page.goto(BASE + pages.table, { waitUntil: "networkidle" });
+    try {
+      // Exercise the existing resize control: a wide frozen primary leaves no
+      // room for scrolling columns on phones. This is a local view preference.
+      const resize = page.getByRole("separator", {
+        name: "Resize Batch column",
+        exact: true,
+      });
+      for (let step = 0; step < 14; step++) await resize.press("ArrowLeft");
+      await showSystemFields(page);
+      await page
+        .getByRole("gridcell", { name: "Updated by, row 1", exact: true })
+        .scrollIntoViewIfNeeded();
+      const userCell = await page
+        .getByRole("gridcell", { name: "Updated by, row 1", exact: true })
+        .boundingBox();
+      const primaryText = page
+        .getByRole("gridcell", { name: "Batch, row 1", exact: true })
+        .locator("span")
+        .first();
+      const clipping = await primaryText.evaluate((element) => ({
+        overflow: getComputedStyle(element).overflow,
+        display: getComputedStyle(element).display,
+      }));
+      if (clipping.display === "inline" || clipping.overflow !== "hidden")
+        throw new Error("narrow primary text spills into system columns");
+      if (!userCell || userCell.x < 124 || userCell.x + userCell.width > 391)
+        throw new Error("system author is obscured on phone");
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        )
+      )
+        throw new Error("page overflows phone viewport");
+    } catch (error) {
+      fails.push(String(error).split("\n")[0]);
+    }
+    const shot = "table-system-fields--phone-dark.png";
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
     );
     await ctx.close();
   }
