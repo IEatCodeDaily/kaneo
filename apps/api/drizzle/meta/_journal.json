@@ -638,6 +638,13 @@
 			"when": 1794881000000,
 			"tag": "0087_table_system_fields",
 			"breakpoints": true
+		},
+		{
+			"idx": 88,
+			"version": "7",
+			"when": 1794881001000,
+			"tag": "0088_ranked_search",
+			"breakpoints": true
 		}
 	]
 }

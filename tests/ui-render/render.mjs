@@ -73,7 +73,9 @@ async function seed(api) {
     tasks.push(
       await post(`/task/${board.id}`, {
         title,
-        description: "seeded",
+        description: title.startsWith("Filter housing")
+          ? "Pressure control inspection on the pilot line. Replace the gasket before retesting."
+          : "seeded",
         status,
         priority,
       }),
@@ -2035,6 +2037,108 @@ if (pages.table) {
     await ctx.close();
   }
 } else console.log("SKIP overlay states: the table page is not in PAGES");
+
+// Search acceptance: real API, keyboard aliases, filter chips, snippets and safe highlighting.
+if (pages.board) {
+  for (const [tag, viewport] of [
+    ["desktop", { width: 1440, height: 900 }],
+    ["phone", { width: 390, height: 844 }],
+  ]) {
+    const ctx = await browser.newContext({
+      viewport,
+      storageState: state,
+      colorScheme: "dark",
+      reducedMotion: "reduce",
+    });
+    await ctx.addInitScript(() =>
+      localStorage.setItem(
+        "user-preferences",
+        JSON.stringify({ state: { theme: "dark" }, version: 0 }),
+      ),
+    );
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(String(error)));
+    await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
+    const fails = [];
+    if (tag === "desktop") {
+      const hint = await page
+        .locator("button")
+        .filter({ hasText: /^Search/ })
+        .first()
+        .locator("kbd")
+        .textContent();
+      if (!/^(⌘K|Ctrl K)$/.test(hint ?? "") || hint === "/")
+        fails.push(`sidebar search shortcut ${hint}`);
+    }
+    await page.keyboard.press("/");
+    const popup = page.locator('[data-slot="command-dialog-popup"]');
+    const input = popup.getByRole("combobox");
+    await popup.waitFor();
+    for (const [name, query] of [
+      ["help", ""],
+      ["autocomplete", "status:"],
+      ["results", "housing pressure"],
+      ["empty", "zzznomatch board:KFL"],
+    ]) {
+      await input.fill(query);
+      if (name === "help") await page.getByTestId("search-help").waitFor();
+      if (name === "autocomplete") {
+        const chip = page.getByRole("button", {
+          name: "status:in-progress",
+          exact: true,
+        });
+        await chip.waitFor();
+        await chip.click();
+        if ((await input.inputValue()) !== "status:in-progress ")
+          fails.push("filter chip did not complete the query");
+        await input.fill("status:");
+      }
+      if (name === "results") {
+        await popup
+          .locator('[data-slot="command-item"]')
+          .filter({ hasText: "Filter housing leak" })
+          .first()
+          .waitFor();
+        if ((await popup.locator("mark").count()) < 2)
+          fails.push("matched title/snippet not highlighted");
+        if (
+          !(
+            await page.getByTestId("search-snippet").first().textContent()
+          )?.includes("Pressure")
+        )
+          fails.push("description snippet missing");
+      }
+      if (name === "empty")
+        await popup.getByText("Try fewer words or drop a filter.").waitFor();
+      const overflow = await popup.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return [...element.querySelectorAll("input, button, code, mark")].some(
+          (child) => child.getBoundingClientRect().right > bounds.right + 1,
+        );
+      });
+      if (overflow) fails.push("search content overflows palette");
+      const shot = `search-${name}--${tag}-dark.png`;
+      await page.screenshot({ path: join(OUT, shot) });
+      checks[shot] = { fails: [...fails, ...errors] };
+      console.log(
+        `${fails.length || errors.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
+      );
+    }
+    await page.keyboard.press("Escape");
+    await popup.waitFor({ state: "hidden" });
+    await page.keyboard.press(
+      await page.evaluate(() =>
+        navigator.platform.toLowerCase().includes("mac")
+          ? "Meta+k"
+          : "Control+k",
+      ),
+    );
+    await popup.waitFor();
+    await page.keyboard.press("Escape");
+    await ctx.close();
+  }
+}
 
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));

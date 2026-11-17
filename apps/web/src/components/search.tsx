@@ -4,6 +4,7 @@ import { useLocation } from "@tanstack/react-router";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import { lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SearchShortcut } from "@/components/command-palette/search-help";
 import { SidebarGroup, useSidebar } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -11,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { shortcuts } from "@/constants/shortcuts";
 import { useBoardSlug } from "@/hooks/use-board-slug";
 import { useCommandPaletteStore } from "@/store/command-palette";
 
@@ -111,9 +111,7 @@ export default function Search() {
               {t("navigation:commandPalette.search")}
             </span>
           </span>
-          <kbd className="-me-0.5 ms-6 inline-flex h-4 max-h-full items-center rounded-sm border border-border/70 bg-background px-1 font-[inherit] font-medium text-xs text-faint-foreground">
-            {shortcuts.search.prefix}
-          </kbd>
+          <SearchShortcut />
         </button>
         <button
           aria-label={t("navigation:commandPalette.createTask")}
