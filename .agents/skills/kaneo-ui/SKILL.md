@@ -5,7 +5,7 @@ description: Use when adding or changing any UI in apps/web. Names the primitive
 
 # Kaneo UI
 
-Dense, dark-first, one indigo accent. The primitives in `apps/web/src/components/ui/`
+Dense, dark-first, cold monochrome chrome with semantic status colours. The primitives in `apps/web/src/components/ui/`
 own every inset, bar height and radius. Feature code composes them and adds
 content. If you are typing a padding class onto a dialog, sheet, popover or
 card, stop: there is a prop for it.

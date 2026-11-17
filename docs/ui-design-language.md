@@ -38,6 +38,15 @@ Four layers, each catching what the one before it cannot.
 A repo-local skill, `.agents/skills/kaneo-ui/SKILL.md`, tells an agent which
 primitive to use for each pattern, with do and don't snippets.
 
+## Colour
+
+Cold monochrome chrome: cool near-black surfaces in dark mode, cool off-white in
+light. Primary actions invert (near-white/dark text in dark mode, near-black/light
+text in light mode); selection, hover and focus use cool gray, never a saturated
+brand hue. Semantic status/tag colours remain distinct and slightly desaturated.
+Sidebar counts use `Badge size="count" variant="count"`; attention counts use
+`variant="attention"` (outline), in the same right-aligned trailing slot.
+
 ## Values
 
 | Token | Value | Source |

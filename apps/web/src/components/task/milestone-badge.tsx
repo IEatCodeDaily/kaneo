@@ -15,7 +15,7 @@ type MilestoneBadgeProps = {
 
 const statusClassNames: Record<string, string> = {
   planned: "text-muted-foreground",
-  active: "text-indigo-600 dark:text-indigo-400",
+  active: "text-primary-soft-foreground",
   completed: "text-emerald-600 dark:text-emerald-400",
   archived: "text-muted-foreground line-through",
 };

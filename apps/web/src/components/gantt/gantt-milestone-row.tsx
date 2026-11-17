@@ -16,7 +16,7 @@ import type { GanttTimeline } from "./gantt-timeline";
  */
 const statusClasses: Record<string, string> = {
   planned: "text-violet-500",
-  active: "text-indigo-500",
+  active: "text-primary-soft-foreground",
   completed: "text-emerald-500",
   archived: "text-muted-foreground",
 };
@@ -65,7 +65,7 @@ export function GanttMilestoneRow({
     <div
       data-testid={`gantt-milestone-${milestone.id}`}
       data-collapsed={collapsed ? "true" : "false"}
-      className="grid h-9 items-stretch border-y border-indigo-500/25 bg-indigo-500/[0.06]"
+      className="grid h-9 items-stretch border-y border-border bg-primary-soft"
       style={{
         gridTemplateColumns: showTaskRail
           ? isMobile
@@ -75,7 +75,7 @@ export function GanttMilestoneRow({
       }}
     >
       {showTaskRail ? (
-        <div className="sticky left-0 z-[13] flex min-w-0 items-center border-r border-indigo-500/25 bg-card">
+        <div className="sticky left-0 z-[13] flex min-w-0 items-center border-r border-border bg-card">
           <button
             type="button"
             aria-expanded={!collapsed}

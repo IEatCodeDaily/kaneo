@@ -15,12 +15,16 @@ const badgeVariants = cva(
     },
     variants: {
       size: {
+        count:
+          "h-4 min-w-6 rounded-full px-1.5 text-xs tabular-nums leading-none",
         default:
           "h-5.5 min-w-5.5 px-[calc(--spacing(1)-1px)] text-sm sm:h-4.5 sm:min-w-4.5 sm:text-xs",
         lg: "h-6.5 min-w-6.5 px-[calc(--spacing(1.5)-1px)] text-base sm:h-5.5 sm:min-w-5.5 sm:text-sm",
         sm: "h-5 min-w-5 rounded-[.25rem] px-[calc(--spacing(1)-1px)] text-xs sm:h-4 sm:min-w-4 sm:text-[.625rem]",
       },
       variant: {
+        count: "bg-secondary text-secondary-foreground",
+        attention: "border-input bg-transparent text-foreground",
         default:
           "bg-primary text-primary-foreground [button&,a&]:hover:bg-primary/90",
         destructive:

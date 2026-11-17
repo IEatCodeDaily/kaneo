@@ -205,9 +205,21 @@ describe("NavMain compact personal group", () => {
       screen.getByRole("button", { name: "navigation:sidebar.inbox" })
         .className,
     ).toContain("h-6");
-    expect(screen.getByTestId("inbox-count-column").className).toContain("w-5");
+    expect(screen.getByTestId("inbox-count-column")).toHaveAttribute(
+      "data-slot",
+      "nav-trailing",
+    );
+    expect(screen.getByTestId("inbox-count-column").className).toContain(
+      "shrink-0",
+    );
+    const recent = screen.getByTestId("recent-count-badge");
+    const inbox = screen.getByTestId("inbox-unread-badge");
+    expect(recent.className).toBe(inbox.className);
+    expect(recent.parentElement?.className).toBe(
+      inbox.parentElement?.className,
+    );
     expect(screen.getByTestId("recent-chevron-column").className).toContain(
-      "w-5",
+      "w-4",
     );
   });
   it("renders compact Recent rows with relative open times", () => {
