@@ -239,9 +239,16 @@ export function RowSheet({
         <section className="flex flex-col gap-0.5" data-slot="row-fields">
           {fields.map((field) => (
             <div key={field.id} className="flex min-h-8 items-start gap-2">
-              <span className="flex h-8 w-36 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="flex min-h-8 w-36 shrink-0 items-start gap-1.5 py-2 text-xs text-muted-foreground">
                 <FieldTypeIcon type={field.type} />
-                <span className="truncate">{field.name}</span>
+                <span className="min-w-0">
+                  <span className="block truncate">{field.name}</span>
+                  {field.options?.description && (
+                    <span className="block whitespace-normal text-xs font-normal">
+                      {field.options.description}
+                    </span>
+                  )}
+                </span>
               </span>
               {/* Key/value list: every value starts on one column, numbers too. */}
               <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">

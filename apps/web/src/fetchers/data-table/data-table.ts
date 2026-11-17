@@ -101,9 +101,10 @@ export const getTicketOptions = (
   { organizationId, tableId }: DataTableTarget,
   fieldId: string,
   q: string,
+  boardIds?: string[],
 ) =>
   request<TicketRef[]>(
-    `${tablePath({ organizationId, tableId })}/fields/${encodeURIComponent(fieldId)}/tickets?q=${encodeURIComponent(q)}`,
+    `${tablePath({ organizationId, tableId })}/fields/${encodeURIComponent(fieldId)}/tickets?q=${encodeURIComponent(q)}${boardIds ? `&boards=${encodeURIComponent(boardIds.join(","))}` : ""}`,
   );
 
 export const createDataTable = ({

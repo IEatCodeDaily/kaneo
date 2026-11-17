@@ -1268,6 +1268,92 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
   });
 
   describe("field + row routes", () => {
+    it("validates defaults, applies only absent values without backfill, and round-trips descriptions", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Defaults");
+      const oldRow = await addRowViaApi(app, org, table.id);
+      const invalid = await createFieldViaApi(app, org, table.id, {
+        name: "Bad",
+        type: "number",
+        options: { defaultValue: "oops" },
+      });
+      expect(invalid.response.status).toBe(400);
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Amount",
+        type: "number",
+        options: { defaultValue: 42, description: "Expected amount" },
+      });
+      expect(field!.options).toMatchObject({
+        defaultValue: 42,
+        description: "Expected amount",
+      });
+      expect((await addRowViaApi(app, org, table.id)).values[field!.id]).toBe(
+        42,
+      );
+      expect(
+        (await addRowViaApi(app, org, table.id, { [field!.id]: null })).values[
+          field!.id
+        ],
+      ).toBeNull();
+      expect(
+        (await addRowViaApi(app, org, table.id, { [field!.id]: 0 })).values[
+          field!.id
+        ],
+      ).toBe(0);
+      const root = `/api/data-table/organization/${org}/${table.id}`;
+      const snapshot = await (await app.request(root)).json();
+      expect(
+        snapshot.rows.find((row: { id: string }) => row.id === oldRow.id)
+          .values[field!.id],
+      ).toBeNull();
+      expect(
+        snapshot.fields.find((f: { id: string }) => f.id === field!.id).options
+          .description,
+      ).toBe("Expected amount");
+      const changed = await app.request(`${root}/fields/${field!.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ type: "checkbox" }),
+      });
+      expect(changed.status).toBe(200);
+      expect((await changed.json()).options).toEqual({
+        description: "Expected amount",
+      });
+      expect(
+        (await addRowViaApi(app, org, table.id)).values[field!.id],
+      ).toBeNull();
+    });
+    it("uses false defaults before required validation and rejects invalid choice defaults", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Required defaults");
+      const bad = await createFieldViaApi(app, org, table.id, {
+        name: "State",
+        type: "select",
+        options: {
+          choices: [{ id: "a", label: "A" }],
+          defaultValue: "missing",
+        },
+      });
+      expect(bad.response.status).toBe(400);
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Done",
+        type: "checkbox",
+        options: { required: true, defaultValue: false },
+      });
+      expect((await addRowViaApi(app, org, table.id)).values[field!.id]).toBe(
+        false,
+      );
+      const response = await app.request(
+        `/api/data-table/organization/${org}/${table.id}/rows`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ values: { [field!.id]: null } }),
+        },
+      );
+      expect(response.status).toBe(400);
+    });
+
     it("rejects invalid field types and invalid options with 400", async () => {
       const table = await createTableViaApi(
         app,
@@ -1428,6 +1514,53 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         .returning();
       return task;
     }
+
+    it("validates ticket defaults and draft picker board scope before a field exists", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Ticket defaults");
+      const own = await seedTask(org, "Default task");
+      const other = await createOrganizationMember();
+      const foreign = await seedTask(other.organization.id, "Foreign task");
+      const root = `/api/data-table/organization/${org}/${table.id}`;
+      const invalid = await createFieldViaApi(app, org, table.id, {
+        name: "Bad",
+        type: "ticket",
+        options: { defaultValue: [foreign.id] },
+      });
+      expect(invalid.response.status).toBe(400);
+      const lookup = await app.request(
+        `${root}/fields/draft/tickets?boards=${own.boardId}`,
+      );
+      expect(lookup.status).toBe(200);
+      expect(
+        (await lookup.json()).map((ref: { id: string }) => ref.id),
+      ).toEqual([own.id]);
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Ticket",
+        type: "ticket",
+        options: {
+          defaultValue: [own.id],
+          boardIds: [own.boardId],
+          multiple: false,
+        },
+      });
+      expect(field).not.toBeNull();
+      const detail = await (await app.request(root)).json();
+      expect(detail.tickets[own.id].title).toBe("Default task");
+      expect(
+        (await addRowViaApi(app, org, table.id)).values[field!.id],
+      ).toEqual([own.id]);
+      await db
+        .update(schema.taskTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(schema.taskTable.id, own.id));
+      const response = await app.request(`${root}/rows`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      expect(response.status).toBe(400);
+    });
 
     it("links same-org tickets, rejects foreign ones, and ships the lookup", async () => {
       const table = await createTableViaApi(app, member.organization.id, "Ops");

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Columns3,
   EyeOff,
+  Info,
   ListFilter,
   Maximize2,
   Pencil,
@@ -107,6 +108,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createDataTableRow,
   deleteDataTableRow,
@@ -336,6 +342,24 @@ function FieldHeader({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      {field.options?.description && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={field.options.description}
+                className="shrink-0 text-muted-foreground"
+              />
+            }
+          >
+            <Info className="size-3" />
+          </TooltipTrigger>
+          <TooltipContent>{field.options.description}</TooltipContent>
+        </Tooltip>
+      )}
       <ColumnResizeHandle
         name={field.name}
         width={width}
@@ -1943,6 +1967,7 @@ export function DataTableGrid({
         onOpenChange={setDialogOpen}
         field={dialogField}
         initialType={dialogType}
+        members={members}
       />
 
       <AlertDialog

@@ -684,9 +684,17 @@ export async function listTicketOptions(
   fieldId: string,
   userId: string,
   query = "",
+  draftBoardIds?: string[],
 ): Promise<TicketRef[]> {
   await requireTable(organizationId, tableId);
-  const field = await requireField(tableId, fieldId);
+  const field =
+    fieldId === "draft"
+      ? {
+          id: "draft",
+          type: "ticket",
+          options: { boardIds: draftBoardIds ?? [] },
+        }
+      : await requireField(tableId, fieldId);
   if (field.type !== "ticket") badRequest("Not a ticket field");
   const restricted = allowedBoards({
     id: field.id,
@@ -805,7 +813,14 @@ export async function getDataTable(
     1000,
     offset,
   );
-  const tickets = await ticketsForRows(organizationId, fields, rows);
+  const tickets = await ticketsForRows(organizationId, fields, [
+    ...rows,
+    {
+      values: Object.fromEntries(
+        fields.map((field) => [field.id, field.options?.defaultValue]),
+      ),
+    },
+  ]);
   return { ...table, fields: fieldRows, rows, total, tickets };
 }
 
@@ -916,6 +931,13 @@ export async function addFieldToTable(
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const options = parseFieldOptions(values.type, values.options);
     await assertTicketBoards(organizationId, values.type, options, tx);
+    await assertTicketValues(
+      organizationId,
+      [{ id: "default", type: values.type, options }],
+      { default: options?.defaultValue },
+      {},
+      tx,
+    );
     const [last] = await tx
       .select({ position: max(dataTableFieldTable.position) })
       .from(dataTableFieldTable)
@@ -972,9 +994,20 @@ export async function updateTableField(
     // A type conversion without options must not carry incompatible old options.
     const options =
       values.options !== undefined || nextType !== fromType
-        ? parseFieldOptions(nextType, values.options)
+        ? values.options === undefined && nextType !== fromType
+          ? field.options?.description
+            ? { description: field.options.description }
+            : null
+          : parseFieldOptions(nextType, values.options)
         : field.options;
     await assertTicketBoards(organizationId, nextType, options, tx);
+    await assertTicketValues(
+      organizationId,
+      [{ id: field.id, type: nextType, options }],
+      { [field.id]: options?.defaultValue },
+      {},
+      tx,
+    );
     if (
       nextType === fromType &&
       (values.name ?? field.name) === field.name &&
@@ -1090,8 +1123,17 @@ export async function addTableRow(
 ) {
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const fields = await listTableFieldRows(tableId, tx);
-    await assertTicketValues(organizationId, fields, values ?? {}, {}, tx);
-    const row = await store.insertRow(tx, tableId, fields, values ?? {});
+    const initialValues = { ...values };
+    for (const field of fields) {
+      if (
+        !Object.hasOwn(initialValues, field.id) &&
+        Object.hasOwn(field.options ?? {}, "defaultValue")
+      ) {
+        initialValues[field.id] = field.options?.defaultValue;
+      }
+    }
+    await assertTicketValues(organizationId, fields, initialValues, {}, tx);
+    const row = await store.insertRow(tx, tableId, fields, initialValues);
     await logActivity(tx, {
       tableId,
       userId,

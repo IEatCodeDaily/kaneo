@@ -43,6 +43,8 @@ export type DataTableFieldOptions = {
   /** ticket: false = one ticket per cell (absent = many). */
   multiple?: boolean;
   required?: boolean;
+  defaultValue?: unknown;
+  description?: string;
 };
 
 export type DataTableField = {

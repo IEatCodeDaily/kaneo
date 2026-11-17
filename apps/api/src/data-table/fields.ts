@@ -88,19 +88,20 @@ const multiChoices = v.object({
 });
 
 /**
- * Valibot schema for the `options` payload of each field type. `required` is
- * accepted on EVERY type (the grid's field editor always offers it), so the
- * exported schema is the per-type schema intersected with the shared
- * `{required?}` object — and types with no options of their own still accept
- * `{required}` alone.
+ * Type-specific settings plus shared required, description and typed default.
+ * Defaults use the same coercion contract as cell writes, including choices.
+ * Plain types reject unknown options; optioned types merge the shared keys.
  */
-const REQUIRED_ONLY = v.object({ required: v.optional(v.boolean()) });
+const SHARED_OPTIONS = {
+  required: v.optional(v.boolean()),
+  description: v.optional(v.pipe(v.string(), v.maxLength(2000))),
+  defaultValue: v.optional(v.unknown()),
+};
+const REQUIRED_ONLY = v.object(SHARED_OPTIONS);
 // Plain types have no per-type schema to merge with, so unknown keys can be
 // rejected outright; the intersect variant must stay loose or it would reject
 // per-type keys (precision, choices, code, ...).
-const REQUIRED_ONLY_STRICT = v.strictObject({
-  required: v.optional(v.boolean()),
-});
+const REQUIRED_ONLY_STRICT = v.strictObject(SHARED_OPTIONS);
 
 const FIELD_OPTIONS: Partial<Record<FieldType, v.GenericSchema>> = {
   select: multiChoices,
@@ -129,7 +130,19 @@ const FIELD_OPTIONS: Partial<Record<FieldType, v.GenericSchema>> = {
 
 export function fieldOptionsSchema(type: FieldType): v.GenericSchema {
   const base = FIELD_OPTIONS[type];
-  return base ? v.intersect([base, REQUIRED_ONLY]) : REQUIRED_ONLY_STRICT;
+  return v.pipe(
+    base ? v.intersect([base, REQUIRED_ONLY]) : REQUIRED_ONLY_STRICT,
+    v.check((options) => {
+      const draft = options as Record<string, unknown>;
+      if (!Object.hasOwn(draft, "defaultValue")) return true;
+      try {
+        coerceValue({ type, options: draft }, draft.defaultValue);
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Default value is invalid for this field type"),
+  );
 }
 
 export function isFieldType(type: string): type is FieldType {
