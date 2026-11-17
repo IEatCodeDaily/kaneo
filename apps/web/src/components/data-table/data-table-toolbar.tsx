@@ -7,14 +7,14 @@ import {
   Pencil,
   Plus,
   Rows3,
-  Search,
   SlidersHorizontal,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
+import { ToolbarSearch } from "@/components/common/toolbar-search";
 import {
   FieldTypeIcon,
   type MemberOption,
@@ -52,49 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/cn";
 import type { DataTableField } from "@/types/data-table";
-
-/**
- * Design v3 table toolbar: bordered like the board toolbar at rest,
- * `bg-primary-soft` + count when the view is narrowed, `bg-secondary` while
- * its popover is open. One primary action (New row) at the right end; rare
- * actions live in the overflow menu.
- */
-function ToolbarButton({
-  icon,
-  label,
-  badge,
-  applied,
-  ...props
-}: {
-  icon: ReactNode;
-  label: string;
-  badge?: string | number;
-  applied?: boolean;
-} & React.ComponentProps<typeof Button>) {
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn(
-        // Same chrome as the board's Filter/Group/Display buttons.
-        "gap-1.5 border-border bg-background px-2 text-xs hover:bg-accent/60 data-popup-open:bg-secondary",
-        applied &&
-          "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft data-popup-open:bg-primary-soft data-popup-open:ring-1 data-popup-open:ring-input",
-      )}
-      {...props}
-    >
-      {icon}
-      {label}
-      {badge !== undefined && (
-        <span className="rounded-sm bg-primary-soft px-1.5 text-xs tabular-nums">
-          {badge}
-        </span>
-      )}
-    </Button>
-  );
-}
 
 type Props = {
   fields: DataTableField[];
@@ -356,42 +314,24 @@ export function DataTableToolbar(props: Props) {
 
       <span className="flex-1" />
 
-      <div className="flex h-7 w-50 items-center gap-1.5 rounded-md border border-input px-2">
-        <Search className="size-3.5 shrink-0 text-muted-foreground" />
-        <Input
-          unstyled
-          value={search}
-          onChange={(event) => props.onSearchChange(event.target.value)}
-          placeholder={t("navigation:tables.searchRowsShort")}
-          aria-label={t("navigation:tables.searchRowsShort")}
-          className="[&_[data-slot=input]]:h-6 [&_[data-slot=input]]:px-0 [&_[data-slot=input]]:text-ui"
-        />
-        {search && (
-          <button
-            type="button"
-            aria-label={t("common:actions.clear")}
-            className="shrink-0 rounded-sm text-muted-foreground hover:text-foreground"
-            onClick={() => props.onSearchChange("")}
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-      </div>
+      <ToolbarSearch
+        label={t("navigation:tables.searchRowsShort")}
+        clearLabel={t("common:actions.clear")}
+        value={search}
+        onChange={props.onSearchChange}
+      />
 
       {/* Overflow: rare actions (DS rule 5) */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="data-popup-open:bg-secondary"
-              aria-label={t("navigation:tables.tableOptions")}
+            <ToolbarButton
+              iconOnly
+              icon={<MoreHorizontal className="size-3.5" />}
+              label={t("navigation:tables.tableOptions")}
             />
           }
-        >
-          <MoreHorizontal className="size-3.5" />
-        </DropdownMenuTrigger>
+        />
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuGroup>
             {canEdit && (
@@ -460,10 +400,13 @@ export function DataTableToolbar(props: Props) {
       </DropdownMenu>
 
       {canEdit && (
-        <Button size="sm" onClick={props.onAddRow}>
-          <Plus className="size-3.5" />
-          {t("navigation:tables.newRow")}
-        </Button>
+        <ToolbarButton
+          variant="default"
+          data-toolbar-primary=""
+          onClick={props.onAddRow}
+          icon={<Plus className="size-3.5" />}
+          label={t("navigation:tables.newRow")}
+        />
       )}
     </>
   );

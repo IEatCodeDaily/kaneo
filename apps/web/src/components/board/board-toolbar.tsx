@@ -1,11 +1,11 @@
-import { Filter, Search, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import BoardViewOptions from "@/components/board/board-view-options";
 import SortControl from "@/components/common/sort-control";
-
+import { ToolbarButton } from "@/components/common/toolbar-button";
+import { ToolbarSearch } from "@/components/common/toolbar-search";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -305,7 +305,7 @@ export default function BoardToolbar({
       className={
         filtersOnly
           ? "min-w-0"
-          : "border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70"
+          : "@container/toolbar min-w-0 shrink-0 border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70"
       }
       data-testid={filtersOnly ? "board-filter-controls" : "board-toolbar"}
     >
@@ -316,20 +316,18 @@ export default function BoardToolbar({
             : "flex min-h-10 items-center px-2 py-1.5 md:px-3"
         }
       >
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex w-full min-w-0 items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <button
-                    type="button"
-                    className="inline-flex h-7 min-h-11 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-foreground text-xs font-medium outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background sm:min-h-0"
+                  <ToolbarButton
+                    icon={<Filter className="size-3.5" />}
+                    label={t("common:actions.filter")}
+                    applied={hasActiveFilters}
                   />
                 }
-              >
-                <Filter className="h-3 w-3" />
-                {t("common:actions.filter")}
-              </DropdownMenuTrigger>
+              />
               <DropdownMenuContent
                 className="max-h-[min(28rem,calc(100vh-6rem))] w-56 overflow-y-auto"
                 align="start"
@@ -616,32 +614,18 @@ export default function BoardToolbar({
             )}
 
             {!filtersOnly && (
-              <div className="relative w-[200px]">
-                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  value={searchQuery}
-                  onChange={(event) => onSearchQueryChange(event.target.value)}
-                  placeholder={t("tasks:boardSearchPlaceholder")}
-                  aria-label={t("tasks:boardSearchPlaceholder")}
-                  className="h-7 [&_[data-slot=input]]:h-7 [&_[data-slot=input]]:leading-7 [&_[data-slot=input]]:pl-8 [&_[data-slot=input]]:pr-7 [&_[data-slot=input]]:text-xs [&_[data-slot=input]]:placeholder:text-xs"
-                />
-                {searchQuery ? (
-                  <button
-                    aria-label={t("tasks:boardClearSearch")}
-                    className="-translate-y-1/2 absolute top-1/2 right-1.5 rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    onClick={() => onSearchQueryChange("")}
-                    type="button"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                ) : null}
-              </div>
+              <ToolbarSearch
+                inputRef={searchInputRef}
+                value={searchQuery}
+                onChange={onSearchQueryChange}
+                label={t("tasks:boardSearchPlaceholder")}
+                clearLabel={t("tasks:boardClearSearch")}
+              />
             )}
 
             {!filtersOnly && searchAdornment ? (
               <div
-                className="shrink-0"
+                className="hidden shrink-0 @3xl/toolbar:block"
                 data-testid="board-toolbar-search-adornment"
               >
                 {searchAdornment}

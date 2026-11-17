@@ -1,4 +1,6 @@
+import { ListChecks } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 
 import useBulkSelectionStore from "@/store/bulk-selection";
 
@@ -16,15 +18,16 @@ function ListBulkActionsToggle() {
   const setSelectMode = useBulkSelectionStore((state) => state.setSelectMode);
 
   return (
-    <button
+    <ToolbarButton
+      icon={<ListChecks className="size-3.5" />}
+      label={
+        isSelectMode ? t("common:actions.cancel") : t("tasks:bulkActions.label")
+      }
+      applied={isSelectMode}
       aria-pressed={isSelectMode}
-      className="inline-flex h-7 shrink-0 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-accent/60"
       data-testid="list-bulk-actions"
       onClick={() => setSelectMode(!isSelectMode)}
-      type="button"
-    >
-      {isSelectMode ? t("common:actions.cancel") : t("tasks:bulkActions.label")}
-    </button>
+    />
   );
 }
 

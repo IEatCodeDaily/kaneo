@@ -191,7 +191,7 @@ function RouteComponent() {
     >
       <PageTitle title={t("tasks:backlog.pageTitle", { name: board?.name })} />
       <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
-        <div className="border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
+        <div className="@container/toolbar border-border/80 border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/70">
           <div className="flex min-h-12 items-center px-3 py-2 md:px-4">
             <div className="flex w-full items-center gap-2">
               <div className="flex w-full flex-wrap items-center gap-1.5">

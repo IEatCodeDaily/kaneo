@@ -10,6 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 
 import {
   DropdownMenu,
@@ -60,15 +61,15 @@ function BoardViewOptions({ groupBy, onGroupByChange }: BoardViewOptionsProps) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 font-medium text-foreground text-xs outline-none ring-0 hover:bg-accent/60"
-            type="button"
-          >
-            <Group className="size-3.5" />
-            {t("tasks:groupBy.label")}
-          </button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <ToolbarButton
+              icon={<Group className="size-3.5" />}
+              label={t("tasks:groupBy.label")}
+              applied={groupBy !== "none"}
+            />
+          }
+        />
         <DropdownMenuContent align="start" className="w-52">
           <DropdownMenuRadioGroup
             value={groupBy}
@@ -90,15 +91,14 @@ function BoardViewOptions({ groupBy, onGroupByChange }: BoardViewOptionsProps) {
       </DropdownMenu>
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 font-medium text-foreground text-xs outline-none ring-0 hover:bg-accent/60"
-            type="button"
-          >
-            <Eye className="size-3.5" />
-            {t("tasks:display.label")}
-          </button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <ToolbarButton
+              icon={<Eye className="size-3.5" />}
+              label={t("tasks:display.label")}
+            />
+          }
+        />
         <DropdownMenuContent align="start" className="w-52">
           {fields.map(([label, checked, toggle]) => (
             <DropdownMenuCheckboxItem
