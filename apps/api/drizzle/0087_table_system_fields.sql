@@ -5,7 +5,7 @@ DECLARE
 BEGIN
   FOR physical_table IN
     SELECT table_name FROM information_schema.tables
-    WHERE table_schema = 'kaneo_tables' AND table_type = 'BASE TABLE'
+    WHERE table_schema = 'kaneo_tables' AND table_type = 'BASE TABLE' AND table_name ~ '^t_[a-zA-Z0-9]+$'
   LOOP
     EXECUTE format('ALTER TABLE kaneo_tables.%I ADD COLUMN IF NOT EXISTS created_by text, ADD COLUMN IF NOT EXISTS updated_by text', physical_table.table_name);
     -- Missing activity is unknown, never attributed to the table owner.
