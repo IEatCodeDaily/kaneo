@@ -73,6 +73,26 @@ export const exportTableRows = async (
   return response.blob();
 };
 
+export type CsvImportResult = {
+  created: number;
+  checked: number;
+  total: number;
+  errors: { line: number; field: string; message: string }[];
+};
+export const importTableCsv = (
+  target: DataTableTarget,
+  input: {
+    csv: string;
+    mapping: (string | null)[];
+    offset: number;
+    preview: boolean;
+  },
+) =>
+  request<CsvImportResult>(`${tablePath(target)}/row-import`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
 /** Subsequent row pages for the grid's Load-more (server caps at 1000/page). */
 export const getTableRowPage = (
   tableId: string,

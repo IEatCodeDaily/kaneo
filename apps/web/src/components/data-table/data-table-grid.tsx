@@ -26,11 +26,11 @@ import {
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Layout from "@/components/common/layout";
+import { CsvImportDialog } from "@/components/data-table/csv-import-dialog";
 import {
   FieldTypeIcon,
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
-import { csvParse } from "@/components/data-table/data-table-csv";
 import {
   DataTableCellContent,
   INPUT_EDIT_TYPES,
@@ -129,7 +129,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  createDataTableRow,
   deleteDataTableRow,
   exportTableRows,
   queryTableRows,
@@ -1094,25 +1093,10 @@ export function DataTableGrid({
     await addRow(value === null ? undefined : { [field.id]: value });
   };
 
-  // CSV round-trip: export the filtered view, import maps headers to fields
-  // by name and leans on the row endpoint's server-side coercion.
-  const [importProgress, setImportProgress] = useState<string | null>(null);
+  const [csvSource, setCsvSource] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const memberByName = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const member of memberRows) {
-      const name = member.user.name || member.user.email;
-      if (name) map.set(name.toLowerCase(), member.userId || member.id);
-    }
-    return map;
-  }, [memberRows]);
-
   const exportCsv = async () => {
-    if (table.fields.some((field) => field.type === "link")) {
-      toast.error(t("navigation:tables.linkCsvUnavailable"));
-      return;
-    }
     try {
       const blob = await exportTableRows(
         { organizationId, tableId: table.id },
@@ -1126,99 +1110,6 @@ export function DataTableGrid({
       URL.revokeObjectURL(url);
     } catch {
       toast.error(t("navigation:tables.exportError"));
-    }
-  };
-
-  const importCsv = async (file: File) => {
-    if (table.fields.some((field) => field.type === "link")) {
-      toast.error(t("navigation:tables.linkCsvUnavailable"));
-      return;
-    }
-    const byName = new Map(table.fields.map((field) => [field.name, field]));
-    // Ticket cells export as keys; resolve them back through the lookup.
-    // ponytail: only tickets already linked somewhere in this table resolve;
-    // a key lookup endpoint if imports need arbitrary tickets.
-    const ticketIdByKey = new Map(
-      Object.values(ticketLookup.tickets).map((ref) => [ref.key, ref.id]),
-    );
-    const parsed = csvParse(await file.text());
-    const header = parsed[0] ?? [];
-    // Keep original indexes: ignored system/unknown headers must not shift cells.
-    const columns = header.map((name) => byName.get(name.trim()));
-    const dataRows = parsed
-      .slice(1)
-      .filter((cells) => cells.some((cell) => cell.trim() !== ""));
-    let done = 0;
-    try {
-      for (const cells of dataRows) {
-        const values: Record<string, unknown> = {};
-        columns.forEach((field, index) => {
-          if (!field || field.system) return;
-          const text = (cells[index] ?? "").trim();
-          if (text === "") return;
-          if (
-            field.type === "number" ||
-            field.type === "percent" ||
-            field.type === "currency"
-          ) {
-            const n = Number(text);
-            if (!Number.isNaN(n)) values[field.id] = n;
-          } else if (field.type === "checkbox") {
-            values[field.id] = ["true", "yes", "1"].includes(
-              text.toLowerCase(),
-            );
-          } else if (field.type === "select") {
-            const choice = field.options?.choices?.find(
-              (c) => c.label.toLowerCase() === text.toLowerCase(),
-            );
-            if (choice) values[field.id] = choice.id;
-          } else if (field.type === "multiselect") {
-            const ids = text
-              .split(",")
-              .map((label) => {
-                const choice = field.options?.choices?.find(
-                  (c) => c.label.toLowerCase() === label.trim().toLowerCase(),
-                );
-                return choice?.id;
-              })
-              .filter(Boolean);
-            if (ids.length > 0) values[field.id] = ids;
-          } else if (field.type === "user") {
-            const userId = memberByName.get(text.toLowerCase());
-            if (userId) values[field.id] = userId;
-          } else if (field.type === "json") {
-            try {
-              values[field.id] = JSON.parse(text);
-            } catch {
-              values[field.id] = text;
-            }
-          } else if (field.type === "ticket") {
-            const ids = text
-              .split(",")
-              .map((key) => ticketIdByKey.get(key.trim().toUpperCase()))
-              .filter(Boolean);
-            if (ids.length > 0) values[field.id] = ids;
-          } else if (field.type === "link") {
-            // Exported as display text; there is no id to recover. Skipping
-            // beats a 400 that drops the whole row.
-          } else {
-            values[field.id] = text;
-          }
-        });
-        await createDataTableRow({ organizationId, tableId: table.id, values });
-        done += 1;
-        setImportProgress(
-          t("navigation:tables.importing", { done, total: dataRows.length }),
-        );
-      }
-      await queryClient.invalidateQueries({
-        queryKey: dataTableKeys.detail(organizationId, table.id),
-      });
-      toast.success(t("navigation:tables.importDone", { count: done }));
-    } catch {
-      toast.error(t("navigation:tables.importError", { done }));
-    } finally {
-      setImportProgress(null);
     }
   };
 
@@ -1405,6 +1296,19 @@ export function DataTableGrid({
             onDelete={onDelete}
           />
         </Layout.Toolbar>
+        {csvSource !== null && (
+          <CsvImportDialog
+            csv={csvSource}
+            fields={table.fields}
+            target={{ organizationId, tableId: table.id }}
+            onClose={() => setCsvSource(null)}
+            onImported={() =>
+              queryClient.invalidateQueries({
+                queryKey: dataTableKeys.detail(organizationId, table.id),
+              })
+            }
+          />
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -1413,7 +1317,13 @@ export function DataTableGrid({
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = "";
-            if (file) void importCsv(file);
+            if (file)
+              void file
+                .text()
+                .then(setCsvSource)
+                .catch(() =>
+                  toast.error(t("navigation:tables.importError", { done: 0 })),
+                );
           }}
         />
 
@@ -2135,7 +2045,6 @@ export function DataTableGrid({
                       )}
                     </Button>
                   )}
-                  {importProgress && <span>{importProgress}</span>}{" "}
                 </div>
               )}
             </div>

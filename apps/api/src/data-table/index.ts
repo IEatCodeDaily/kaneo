@@ -41,6 +41,7 @@ import {
   updateTableCell,
   updateTableField,
 } from "./controllers";
+import { csvImportSchema, importCsv } from "./csv";
 import { FIELD_TYPES } from "./fields";
 import * as links from "./link-controllers";
 import {
@@ -374,6 +375,24 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     },
   )
   .post(
+    "/organization/:organizationId/:tableId/row-import",
+    validator("param", idParams),
+    validator("json", csvImportSchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await importCsv(
+          organizationId,
+          tableId,
+          c.req.valid("json"),
+          c.get("userId"),
+        ),
+      );
+    },
+  )
+  .post(
     "/organization/:organizationId/:tableId/row-export",
     validator("param", idParams),
     validator("json", rowQuerySchema),
@@ -386,6 +405,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         tableId,
         c.req.valid("json"),
         true,
+        c.get("userId"),
       );
       c.header("Content-Type", "text/csv; charset=utf-8");
       c.header("Content-Disposition", 'attachment; filename="table.csv"');

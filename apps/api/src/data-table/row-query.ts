@@ -73,6 +73,7 @@ type QueryField = StoreField & { name?: string; system?: boolean };
 export type QueryLookups = {
   members: Record<string, string>;
   tickets: Record<string, { key: string }>;
+  links?: Record<string, SQL>;
 };
 const system: QueryField[] = [
   { id: "__row_id", type: "number", system: true },
@@ -121,7 +122,7 @@ function value(f: QueryField): SQL {
 const textMap = (map: Record<string, string>, key: SQL) =>
   sql`COALESCE(${JSON.stringify(map)}::jsonb ->> (${key})::text, '')`;
 /** Same data text as CSV/search: labels, member names and live org-scoped ticket keys, never entity ids. */
-function cellText(f: QueryField, lookups: QueryLookups): SQL {
+export function cellText(f: QueryField, lookups: QueryLookups): SQL {
   const col = value(f);
   const choices = Object.fromEntries(
     (Array.isArray(f.options?.choices) ? f.options.choices : []).map(
@@ -146,7 +147,7 @@ function cellText(f: QueryField, lookups: QueryLookups): SQL {
     case "json":
       return sql`COALESCE(CASE WHEN jsonb_typeof(${col}) = 'string' THEN ${col} #>> '{}' ELSE ${col}::text END, '')`;
     case "link":
-      return sql`''`;
+      return lookups.links?.[f.id] ?? sql`''`;
     default:
       return sql`COALESCE(${col}::text, '')`;
   }
@@ -298,7 +299,7 @@ export async function queryRows(
     return sql`${expression} AS ${sql.identifier(id)}`;
   });
   const aggregate = [sql`count(*)::integer AS total`, ...summarySql];
-  const exportFields = fields.filter(supported);
+  const exportFields = fields.filter((f) => supported(f) || f.type === "link");
   if (csv && exportFields.length === 0) return { csv: "" };
   const selection = csv
     ? exportFields.map(
@@ -325,8 +326,14 @@ export async function queryRows(
   };
   if (csv) {
     // ponytail: materialized export in memory, stream the same query when exports outgrow API memory.
-    const quote = (s: string) =>
-      /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    const quote = (text: string) => {
+      // A plain number (e.g. -5) is never a formula; keep it machine-readable.
+      const formula =
+        /^[=+\-@\t\r']/.test(text) &&
+        !(text.trim() !== "" && Number.isFinite(Number(text)));
+      const s = formula ? `'${text}` : text;
+      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
     return {
       csv: [
         exportFields.map((f) => quote(f.name ?? "")).join(","),

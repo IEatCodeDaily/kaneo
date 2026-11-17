@@ -32,6 +32,7 @@ import {
   listAccessibleResourceIds,
   privilegeAllows,
 } from "../resource-access";
+import { csvLinkColumns } from "./csv";
 import {
   coerceValue,
   type FieldType,
@@ -957,6 +958,23 @@ export async function queryTableRows(
           members.map((m) => [m.id, m.name || m.email || ""]),
         ),
         tickets,
+        ...(csv
+          ? {
+              links: await csvLinkColumns(
+                tx,
+                organizationId,
+                tableId,
+                fields,
+                {
+                  members: Object.fromEntries(
+                    members.map((m) => [m.id, m.name || m.email || ""]),
+                  ),
+                  tickets,
+                },
+                userId,
+              ),
+            }
+          : {}),
       },
       csv,
     );
