@@ -312,7 +312,9 @@ describe("typed nested table filters (real PostgreSQL)", () => {
     const a = await json(request(root(), { name: "A" }));
     const b = await json(request(root(), { name: "B" }));
     await json(request(`${root(a.id)}/fields`, { name: "Name", type: "text" }));
-    await json(request(`${root(b.id)}/fields`, { name: "Name", type: "text" }));
+    const bName = await json(
+      request(`${root(b.id)}/fields`, { name: "Name", type: "text" }),
+    );
     const f = await json(
       request(`${root(a.id)}/fields`, {
         name: "Related",
@@ -321,7 +323,9 @@ describe("typed nested table filters (real PostgreSQL)", () => {
       }),
     );
     const x = await json(request(`${root(a.id)}/rows`, {}));
-    const y = await json(request(`${root(b.id)}/rows`, {}));
+    const y = await json(
+      request(`${root(b.id)}/rows`, { values: { [bName.id]: "Yarrow" } }),
+    );
     await json(
       request(`${root(a.id)}/rows/${x.id}/links/${f.id}`, { add: [y.id] }),
     );
@@ -331,6 +335,13 @@ describe("typed nested table filters (real PostgreSQL)", () => {
       });
     expect((await json(query("hasAny", [y.id]))).total).toBe(1);
     expect((await json(query("isEmpty"))).total).toBe(0);
+    // CSV export keeps link labels while the same link field filters rows.
+    const exported = await (
+      await request(`${root(a.id)}/row-export`, {
+        filters: group(condition(f.id, "hasAny", [y.id])),
+      })
+    ).text();
+    expect(exported).toContain("Yarrow");
     expect((await query("hasAll", [y.id])).status).toBe(400);
     expect((await query("hasAny", [x.id])).status).toBe(400);
     await app.request(`${root(b.id)}/rows/${y.id}`, { method: "DELETE" });
