@@ -358,7 +358,7 @@ export default function FieldOptionsDialog({
                           variant="outline"
                           role="radio"
                           aria-checked={cardinality === kind}
-                          className="h-auto w-full justify-start whitespace-normal py-2 text-left"
+                          className="h-auto w-full justify-start whitespace-normal py-2 text-left text-ui aria-checked:border-ring aria-checked:bg-accent"
                           onClick={() => setCardinality(kind)}
                         >
                           {t(`navigation:tables.linkSentence.${kind}`, {
