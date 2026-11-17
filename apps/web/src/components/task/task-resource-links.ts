@@ -25,6 +25,10 @@ export function selectResourceAutoLinks(
     // label list into Resources. Excluding it was the old behaviour inverted —
     // it removed the remark from the one place the user asked to keep it.
     if (manualUrls.has(link.url)) return false;
+    // Table-row links are Kaneo-internal: their externalId is the row's id,
+    // which the GitHub row shape would print as `#<row id>`. They render in
+    // "Included in" and as their own Kaneo row in Resources instead.
+    if (link.resourceType === "table_row") return false;
     if (hasPullRequest && link.resourceType === "branch") return false;
     return true;
   });

@@ -1,3 +1,5 @@
+import { hasRawId, hostLabel } from "./resource-label";
+
 /**
  * #265: links and attachments already present in a task's description surface
  * as resources.
@@ -57,10 +59,13 @@ export function extractDescriptionResources(
   const push = (rawUrl: string, title: string, kind: "image" | "link") => {
     const url = trimTrailingPunctuation(rawUrl.trim());
     if (!isHttpUrl(url)) return;
+    // A bare Kaneo URL's filename is a row/table/ticket id — fall back to the
+    // host rather than ever showing it (ids are storage keys, not labels).
+    const named = title.trim() || filenameFromUrl(url);
     found.push({
       id: url,
       url,
-      title: title.trim() || filenameFromUrl(url),
+      title: hasRawId(named) ? hostLabel(url) : named,
       kind,
     });
   };

@@ -43,4 +43,22 @@ describe("task Resources synced-issue consolidation (#75)", () => {
 
     expect(rows.map((row) => row.id)).toEqual(["pr"]);
   });
+
+  it("never routes a table-row link through the GitHub row shape", () => {
+    // Its externalId is the row id; `#<id>` in Resources was the reported bug.
+    const rows = selectResourceAutoLinks(
+      [
+        externalLink({
+          id: "row-link",
+          resourceType: "table_row",
+          externalId: "fskd8b8dl0gpntdx74m27rjh",
+          url: `${window.location.origin}/dashboard/organization/x/table/t1`,
+        }),
+        externalLink({}),
+      ],
+      [],
+    );
+
+    expect(rows.map((row) => row.id)).toEqual(["link-1"]);
+  });
 });
