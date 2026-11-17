@@ -2251,7 +2251,207 @@ const fillFieldEditor = async (p) => {
     .getByRole("textbox", { name: "Description", exact: true })
     .fill("Expected delivery date");
 };
+// CSV exercises real writes on its own table, never polluting existing render fixtures.
+let csvRenderTable;
+async function openCsvTable(p) {
+  if (!csvRenderTable) {
+    const response = await api.post(
+      `${BASE}/api/data-table/organization/${org.id}`,
+      { data: { name: "CSV import checks" } },
+    );
+    if (!response.ok()) throw new Error(await response.text());
+    csvRenderTable = await response.json();
+    for (const [name, type] of [
+      ["Batch", "text"],
+      ["Cost", "number"],
+      ["Note", "longtext"],
+    ]) {
+      const field = await api.post(
+        `${BASE}/api/data-table/organization/${org.id}/${csvRenderTable.id}/fields`,
+        { data: { name, type } },
+      );
+      if (!field.ok()) throw new Error(await field.text());
+    }
+  }
+  await p.goto(
+    `${BASE}/dashboard/organization/${slug}/table/${csvRenderTable.id}`,
+    { waitUntil: "networkidle" },
+  );
+}
+async function csvPreviewState(p) {
+  await openCsvTable(p);
+  await p.locator('input[type="file"][accept=".csv,text/csv"]').setInputFiles({
+    name: "batches.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(
+      'Batch,Unrecognised,Cost,Legacy\r\n"CSV café 東京",ignored,not-a-number,excluded\r\n',
+    ),
+  });
+  const dialog = p.getByRole("dialog");
+  await dialog.getByText("CSV import preview", { exact: true }).waitFor();
+  if (
+    !(
+      await dialog
+        .getByRole("combobox", { name: "Map Unrecognised", exact: true })
+        .innerText()
+    ).includes("Exclude column")
+  )
+    throw new Error("Unknown column not excluded");
+  await dialog
+    .getByRole("button", { name: "Validate preview", exact: true })
+    .click();
+  await dialog.getByText(/Line 2 · Cost:/).waitFor();
+  await dialog.getByText("0 rows created", { exact: true }).waitFor();
+  // Exclusion is reversible; the original positional column must stay put.
+  await dialog
+    .getByRole("combobox", { name: "Map Unrecognised", exact: true })
+    .click();
+  await p.getByRole("option", { name: "Note", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Validate preview", exact: true })
+    .click();
+  await dialog.getByText(/Line 2 · Cost:/).waitFor();
+  if (!(await dialog.innerText()).includes("all-or-nothing"))
+    throw new Error("Missing atomicity declaration");
+  if (
+    !(await dialog
+      .getByRole("button", { name: "Import rows", exact: true })
+      .isEnabled())
+  )
+    throw new Error("Cannot import validated batches");
+}
+async function csvCompletionState(p) {
+  await openCsvTable(p);
+  const prefix = `CSV-${Date.now()}`;
+  const source = `Batch,Cost\n${Array.from({ length: 51 }, (_, i) => `${prefix}-${i},${i === 50 ? "invalid" : i}`).join("\n")}`;
+  await p.locator('input[type="file"][accept=".csv,text/csv"]').setInputFiles({
+    name: "batches.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(source),
+  });
+  const dialog = p.getByRole("dialog");
+  await dialog
+    .getByRole("button", { name: "Validate preview", exact: true })
+    .click();
+  await dialog.getByText(/Line 52 · Cost:/).waitFor();
+  await dialog
+    .getByRole("button", { name: "Import rows", exact: true })
+    .click();
+  await dialog.getByText("Import complete.", { exact: true }).waitFor();
+  await dialog.getByText("50 rows created", { exact: true }).waitFor();
+  const response = await p.request.post(
+    `${BASE}/api/data-table/organization/${org.id}/${csvRenderTable.id}/row-query`,
+    { data: { search: prefix } },
+  );
+  const persisted = await response.json();
+  if (!response.ok() || persisted.total !== 50)
+    throw new Error(
+      `CSV completion disagrees with persisted rows: ${JSON.stringify(persisted)}`,
+    );
+}
+async function csvCancelState(p) {
+  await openCsvTable(p);
+  const prefix = `CSV-CANCEL-${Date.now()}`;
+  const source = `Batch,Cost\n${Array.from({ length: 101 }, (_, i) => `${prefix}-${i},${i}`).join("\n")}`;
+  let release;
+  let started;
+  const secondStarted = new Promise((resolve) => {
+    started = resolve;
+  });
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await p.route("**/row-import", async (route) => {
+    const body = route.request().postDataJSON();
+    if (!body.preview && body.offset === 50) {
+      started();
+      await held;
+    }
+    await route.continue();
+  });
+  await p.locator('input[type="file"][accept=".csv,text/csv"]').setInputFiles({
+    name: "cancel.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(source),
+  });
+  const dialog = p.getByRole("dialog");
+  await dialog
+    .getByRole("button", { name: "Validate preview", exact: true })
+    .click();
+  await dialog
+    .getByText("Preview checked. No rows were created.", { exact: true })
+    .waitFor();
+  await dialog
+    .getByRole("button", { name: "Import rows", exact: true })
+    .click();
+  await secondStarted;
+  await dialog.getByText("50 rows created", { exact: true }).waitFor();
+  await dialog
+    .getByRole("button", { name: "Cancel after batch", exact: true })
+    .click();
+  release();
+  await dialog
+    .getByText("Cancelled. Completed batches were kept.", { exact: true })
+    .waitFor();
+  await dialog.getByText("100 rows created", { exact: true }).waitFor();
+  await p.unroute("**/row-import");
+  const response = await p.request.post(
+    `${BASE}/api/data-table/organization/${org.id}/${csvRenderTable.id}/row-query`,
+    { data: { search: prefix } },
+  );
+  if (!response.ok() || (await response.json()).total !== 100)
+    throw new Error("Cancel summary disagrees with persisted batches");
+}
 const OVERLAY_STATES = [
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `table-csv-cancel--${suffix}`,
+    theme,
+    viewport,
+    csvCancelState,
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `table-csv-complete--${suffix}`,
+    theme,
+    viewport,
+    csvCompletionState,
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["desktop-light", "light", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `table-csv-preview--${suffix}`,
+    theme,
+    viewport,
+    csvPreviewState,
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
   ...[
     ["desktop-dark", "dark", DESKTOP],
     ["desktop-light", "light", DESKTOP],

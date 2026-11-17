@@ -53,6 +53,32 @@ const fields: DataTableField[] = [
 ];
 
 describe("csvSerialize", () => {
+  it("neutralises formula-leading cells and field names before CSV quoting", () => {
+    for (const value of [
+      "=1+1",
+      "+SUM(A1)",
+      "-9",
+      "@user",
+      "\tformula",
+      "\rformula",
+    ]) {
+      const out = csvSerialize(
+        [{ ...fields[0], name: value }],
+        [
+          {
+            id: "r",
+            position: 0,
+            createdAt: "",
+            updatedAt: "",
+            values: { f1: value },
+          },
+        ],
+        choices,
+        new Map(),
+      );
+      expect(csvParse(out)).toEqual([[`'${value}`], [`'${value}`]]);
+    }
+  });
   it("does not export virtual system columns as importable data", () => {
     expect(
       csvSerialize(

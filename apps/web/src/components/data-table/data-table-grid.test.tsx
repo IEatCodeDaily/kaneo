@@ -87,10 +87,13 @@ vi.mock("@/fetchers/data-table/data-table", () => ({
   deleteDataTableRow: vi.fn(),
   queryTableRows: vi.fn(),
   exportTableRows: vi.fn(),
+  importTableCsv: vi
+    .fn()
+    .mockResolvedValue({ created: 0, checked: 1, total: 1, errors: [] }),
   getTicketOptions: vi.fn().mockResolvedValue([]),
 }));
 
-import { createDataTableRow } from "@/fetchers/data-table/data-table";
+import { importTableCsv } from "@/fetchers/data-table/data-table";
 import { DataTableGrid } from "./data-table-grid";
 
 const table = (type: DataTableFieldType = "text"): DataTable => ({
@@ -230,12 +233,21 @@ it("CSV import ignores system columns without shifting later data", async () => 
       ],
     },
   });
+  await screen.findByRole("dialog");
+  expect(importTableCsv).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole("button", { name: "navigation:tables.csvValidate" }),
+  );
   await waitFor(() =>
-    expect(createDataTableRow).toHaveBeenCalledWith({
-      organizationId: "o",
-      tableId: "t",
-      values: { first: "Imported", second: "Preserved" },
-    }),
+    expect(importTableCsv).toHaveBeenCalledWith(
+      { organizationId: "o", tableId: "t" },
+      {
+        csv: "Created at,Title,Updated by,Other\n2026-11-17,Imported,Someone,Preserved",
+        mapping: [null, "first", null, "second"],
+        offset: 0,
+        preview: true,
+      },
+    ),
   );
 });
 

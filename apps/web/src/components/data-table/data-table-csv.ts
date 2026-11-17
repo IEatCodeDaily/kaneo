@@ -9,7 +9,8 @@ import { asBool, asNumber, asString, fieldValue } from "./data-table-format";
 type MemberNameLookup = Map<string, string>;
 
 /** RFC4180: quote fields containing separators/quotes/newlines, escape as "". */
-function csvCell(value: string): string {
+function csvCell(text: string): string {
+  const value = /^[=+\-@\t\r']/.test(text) ? `'${text}` : text;
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
@@ -47,8 +48,14 @@ function cellText(
       return memberNames.get(id) ?? "";
     }
     case "link": {
-      if (!raw || typeof raw !== "object" || !("searchText" in raw)) return "";
-      return typeof raw.searchText === "string" ? raw.searchText : "";
+      if (
+        !raw ||
+        typeof raw !== "object" ||
+        !("records" in raw) ||
+        !Array.isArray(raw.records)
+      )
+        return "";
+      return raw.records.map((record) => record.label).join(", ");
     }
     case "json":
       return typeof raw === "string" ? raw : JSON.stringify(raw);
