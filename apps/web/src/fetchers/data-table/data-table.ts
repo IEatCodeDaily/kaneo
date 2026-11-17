@@ -11,6 +11,8 @@ import type {
   DataTableSummary,
   DataTableTarget,
   TableActivity,
+  TableRowQuery,
+  TableRowQueryResult,
   TicketRef,
   UpdateDataTableFieldInput,
   UpdateDataTableInput,
@@ -45,6 +47,31 @@ export const getDataTables = (organizationId: string) =>
 
 export const getDataTable = (tableId: string, organizationId: string) =>
   request<DataTable>(`${base(organizationId)}/${encodeURIComponent(tableId)}`);
+
+export const queryTableRows = (
+  target: DataTableTarget,
+  query: TableRowQuery,
+  signal?: AbortSignal,
+) =>
+  request<TableRowQueryResult>(`${tablePath(target)}/row-query`, {
+    method: "POST",
+    body: JSON.stringify(query),
+    signal,
+  });
+
+export const exportTableRows = async (
+  target: DataTableTarget,
+  query: TableRowQuery,
+) => {
+  const response = await fetch(getApiUrl(`${tablePath(target)}/row-export`), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(query),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.blob();
+};
 
 /** Subsequent row pages for the grid's Load-more (server caps at 1000/page). */
 export const getTableRowPage = (

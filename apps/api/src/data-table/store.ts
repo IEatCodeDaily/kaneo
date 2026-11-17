@@ -114,9 +114,9 @@ export function column(fieldId: string): string {
 }
 
 const q = (identifier: string) => `"${identifier}"`;
-const tableRef = (tableId: string) =>
+export const tableRef = (tableId: string) =>
   sql.raw(`${TABLES_SCHEMA}.${q(physical(tableId))}`);
-const colRef = (fieldId: string) => sql.raw(q(column(fieldId)));
+export const colRef = (fieldId: string) => sql.raw(q(column(fieldId)));
 const indexName = (tableId: string, fieldId: string) =>
   `${physical(tableId)}_${column(fieldId)}_idx`;
 
@@ -383,7 +383,7 @@ function sqlValue(value: unknown): SQL {
   return sql`${Array.isArray(value) ? JSON.stringify(value) : value}`;
 }
 
-const rowSelection = (fields: StoreField[]): SQL[] => {
+export const rowSelection = (fields: StoreField[]): SQL[] => {
   const chunks: SQL[] = [
     sql`id`,
     sql`position`,
@@ -421,7 +421,7 @@ function archiveSelection(fields: StoreField[]): SQL[] {
   ];
 }
 
-function toRow(
+export function toRow(
   record: Record<string, unknown>,
   fields: StoreField[],
 ): TableRow {
@@ -657,7 +657,7 @@ export async function listRows(
   const [result, count] = await Promise.all([
     executor.execute(
       sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))} FROM ${tableRef(tableId)}
-          ORDER BY position ASC, created_at ASC
+          ORDER BY position ASC, created_at ASC, id ASC
           LIMIT ${limit} OFFSET ${offset}`,
     ),
     executor.execute(

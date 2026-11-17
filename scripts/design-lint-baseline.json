@@ -274,7 +274,7 @@
 		"apps/web/src/components/common/sidebar-resize-handle.tsx": 1,
 		"apps/web/src/components/common/task-layout.tsx": 1,
 		"apps/web/src/components/common/view-tabs.tsx": 1,
-		"apps/web/src/components/data-table/data-table-grid.tsx": 8,
+		"apps/web/src/components/data-table/data-table-grid.tsx": 7,
 		"apps/web/src/components/data-table/data-table-toolbar.tsx": 1,
 		"apps/web/src/components/data-table/field-options-dialog.tsx": 3,
 		"apps/web/src/components/flag/task-flag-picker.tsx": 1,

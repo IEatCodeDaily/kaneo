@@ -21,6 +21,7 @@ import {
   dataTableFieldTable,
   dataTableTable,
   externalLinkTable,
+  organizationMemberTable,
   organizationTable,
   taskTable,
   userTable,
@@ -36,6 +37,7 @@ import {
   fieldOptionsSchema,
   isFieldType,
 } from "./fields";
+import { queryRows, type RowQueryInput } from "./row-query";
 import type { StoreField } from "./store";
 import * as store from "./store";
 
@@ -824,6 +826,55 @@ export async function getDataTable(
     },
   ]);
   return { ...table, fields: fieldRows, rows, total, tickets };
+}
+
+export async function queryTableRows(
+  organizationId: string,
+  tableId: string,
+  input: RowQueryInput,
+  csv = false,
+) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ`);
+    await tx.execute(sql`SET LOCAL TIME ZONE 'UTC'`);
+    await requireTable(organizationId, tableId, tx);
+    const fields = await listTableFieldRows(tableId, tx);
+    const members = await tx
+      .select({
+        id: userTable.id,
+        name: userTable.name,
+        email: userTable.email,
+      })
+      .from(organizationMemberTable)
+      .innerJoin(userTable, eq(userTable.id, organizationMemberTable.userId))
+      .where(eq(organizationMemberTable.organizationId, organizationId));
+    // Resolve only references present in this table, within this organization.
+    const ticketFields = fields.filter((f) => f.type === "ticket");
+    const ids = new Set<string>();
+    for (const field of ticketFields) {
+      const result = await tx.execute(
+        sql`SELECT DISTINCT jsonb_array_elements_text(COALESCE(${store.colRef(field.id)}, '[]'::jsonb)) AS id FROM ${store.tableRef(tableId)}`,
+      );
+      for (const row of result.rows) ids.add(String(row.id));
+    }
+    const tickets = Object.fromEntries(
+      (await ticketRefs(organizationId, [...ids], tx)).map((t) => [t.id, t]),
+    );
+    const result = await queryRows(
+      tx,
+      tableId,
+      fields,
+      input,
+      {
+        members: Object.fromEntries(
+          members.map((m) => [m.id, m.name || m.email || ""]),
+        ),
+        tickets,
+      },
+      csv,
+    );
+    return { ...result, tickets };
+  });
 }
 
 export async function updateDataTable(

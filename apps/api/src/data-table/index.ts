@@ -31,6 +31,7 @@ import {
   listTicketOptions,
   purgeDataTable,
   queryDataTable,
+  queryTableRows,
   restoreDataTable,
   revertTableActivity,
   softDeleteDataTable,
@@ -45,6 +46,8 @@ import {
   assertDashboardsEnabled,
   assertTablesEnabled,
 } from "./require-tables-enabled";
+
+import { rowQuerySchema } from "./row-query";
 
 const idParams = v.object({ organizationId: v.string(), tableId: v.string() });
 const writePermission = requireOrganizationPermission({
@@ -330,6 +333,38 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       return c.json(
         await restoreDataTable(organizationId, tableId, c.get("userId")),
       );
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/row-query",
+    validator("param", idParams),
+    validator("json", rowQuerySchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await queryTableRows(organizationId, tableId, c.req.valid("json")),
+      );
+    },
+  )
+  .post(
+    "/organization/:organizationId/:tableId/row-export",
+    validator("param", idParams),
+    validator("json", rowQuerySchema),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      const result = await queryTableRows(
+        organizationId,
+        tableId,
+        c.req.valid("json"),
+        true,
+      );
+      c.header("Content-Type", "text/csv; charset=utf-8");
+      c.header("Content-Disposition", 'attachment; filename="table.csv"');
+      return c.body("csv" in result ? (result.csv ?? "") : "");
     },
   )
   .post(

@@ -8,7 +8,8 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DataTable, DataTableFieldType } from "@/types/data-table";
 
-const { upsertCell, createRow } = vi.hoisted(() => ({
+const { rowPages, upsertCell, createRow } = vi.hoisted(() => ({
+  rowPages: vi.fn(),
   upsertCell: vi.fn().mockResolvedValue({}),
   createRow: vi.fn().mockResolvedValue({}),
 }));
@@ -22,6 +23,7 @@ vi.mock("react-i18next", async (original) => ({
   Trans: () => null,
 }));
 vi.mock("@tanstack/react-query", () => ({
+  useInfiniteQuery: rowPages,
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 vi.mock("@tanstack/react-virtual", () => ({
@@ -79,7 +81,8 @@ vi.mock("@/hooks/data-table/use-data-tables", () => ({
 vi.mock("@/fetchers/data-table/data-table", () => ({
   createDataTableRow: vi.fn(),
   deleteDataTableRow: vi.fn(),
-  getTableRowPage: vi.fn(),
+  queryTableRows: vi.fn(),
+  exportTableRows: vi.fn(),
   getTicketOptions: vi.fn().mockResolvedValue([]),
 }));
 
@@ -129,8 +132,31 @@ const table = (type: DataTableFieldType = "text"): DataTable => ({
     },
   ],
 });
-const mount = (type: DataTableFieldType = "text", canEdit = true) =>
-  render(
+const mount = (
+  type: DataTableFieldType = "text",
+  canEdit = true,
+  queryState = {},
+) => {
+  rowPages.mockReturnValue({
+    data: {
+      pages: [
+        {
+          rows: table(type).rows,
+          total: 1,
+          tableTotal: 1,
+          summaries: {},
+          groups: [],
+          tickets: {},
+        },
+      ],
+    },
+    hasNextPage: false,
+    isError: false,
+    isPending: false,
+    isFetching: false,
+    ...queryState,
+  });
+  return render(
     <DataTableGrid
       table={table(type)}
       organizationId="o"
@@ -140,10 +166,31 @@ const mount = (type: DataTableFieldType = "text", canEdit = true) =>
       onDelete={vi.fn()}
     />,
   );
+};
 afterEach(() => {
   cleanup();
   localStorage.clear();
   vi.clearAllMocks();
+});
+
+it("query loading and failure never claim empty results or render stale rows", () => {
+  const view = mount("text", true, { isFetching: true });
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "navigation:tables.queryLoading",
+  );
+  expect(screen.queryByRole("grid")).toBeNull();
+  expect(screen.queryByText("navigation:tables.noMatches")).toBeNull();
+  view.unmount();
+  const refetch = vi.fn();
+  mount("text", true, { isFetching: false, isError: true, refetch });
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "navigation:tables.queryError",
+  );
+  expect(screen.queryByRole("grid")).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "navigation:tables.queryRetry" }),
+  );
+  expect(refetch).toHaveBeenCalledOnce();
 });
 
 it("toolbar opens the form without creating an empty row", async () => {
