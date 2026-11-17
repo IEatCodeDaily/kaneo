@@ -1569,6 +1569,23 @@
 		}
 	},
 	"settings": {
+		"appearance": {
+			"title": "Appearance",
+			"description": "Choose your workspace palette. Changes apply immediately and are saved for your account on this browser.",
+			"mode": "Colour mode",
+			"preset": "Theme preset",
+			"accent": "Accent colour",
+			"accentHint": "Use a swatch or a six-digit hex colour. Button text adjusts automatically for contrast.",
+			"hex": "Custom hex colour",
+			"invalidHex": "Enter a six-digit hex colour, such as #5e6ad2.",
+			"reset": "Reset to preset",
+			"preview": "Preview action",
+			"mono": "Mono",
+			"indigo": "Indigo",
+			"slate": "Slate",
+			"graphite": "Graphite",
+			"teal": "Teal"
+		},
 		"navigation": {
 			"boardsAndRepos": "Resources",
 			"authentication": "Authentication",

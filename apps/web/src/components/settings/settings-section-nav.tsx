@@ -29,6 +29,7 @@ const ACCOUNT_PAGES = [
   ["information", "settings:information", "Profile"],
   ["notifications", "settings:notifications", "Notifications"],
   ["preferences", "settings:preferences", "Preferences"],
+  ["appearance", "settings:appearance.title", "Appearance"],
   ["authentication", "settings:navigation.authentication", "Authentication"],
   ["developer", "settings:apiKeys", "API keys"],
 ];
