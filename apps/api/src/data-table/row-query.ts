@@ -5,6 +5,7 @@ import type db from "../database";
 import {
   colRef,
   type DataTableTx,
+  physical,
   rowSelection,
   type StoreField,
   tableRef,
@@ -307,7 +308,7 @@ export async function queryRows(
   // One statement/snapshot: page, totals, groups and summaries share exactly the same predicate.
   const result =
     await executor.execute(sql`WITH filtered AS MATERIALIZED (SELECT *${group ? sql`, ${groupKey} AS __group_key, ${groupLabel} AS __group_label` : sql``} FROM ${tableRef(tableId)} WHERE deleted_at IS NULL AND ${where}),
-    page AS (SELECT ${sql.join(selection, sql`, `)} FROM filtered ORDER BY ${sql.join(order, sql`, `)} ${csv ? sql`` : sql`LIMIT ${spec.limit} OFFSET ${spec.offset}`})
+    page AS (SELECT ${sql.join(selection, sql`, `)} FROM filtered AS ${sql.identifier(physical(tableId))} ORDER BY ${sql.join(order, sql`, `)} ${csv ? sql`` : sql`LIMIT ${spec.limit} OFFSET ${spec.offset}`})
     SELECT (SELECT COALESCE(jsonb_agg(page), '[]'::jsonb) FROM page) AS rows,
     (SELECT row_to_json(t) FROM (SELECT ${sql.join(aggregate, sql`, `)} FROM filtered) t) AS summary,
     (SELECT count(*)::integer FROM ${tableRef(tableId)} WHERE deleted_at IS NULL) AS table_total,
