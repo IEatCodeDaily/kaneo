@@ -88,8 +88,49 @@ describe("design v3 tokens", () => {
     expect(theme).toContain("--radius-lg: 10px;");
   });
 
-  // #5e6ad2 as text is 3.81:1 on the dark card, under the 4.5:1 floor; accent-coloured
-  // text must use text-primary-soft-foreground (6.7:1 light, 9.0:1 dark).
+  it.each([":root", ".dark"])(
+    "%s keeps chrome cold and monochrome",
+    (theme) => {
+      for (const token of [
+        "--primary",
+        "--primary-soft",
+        "--ring",
+        "--background",
+        "--sidebar",
+        "--accent",
+        "--secondary",
+        "--row-selected",
+      ]) {
+        const [, a, b] = oklab(hex(theme, token));
+        expect(Math.hypot(a, b), token).toBeLessThan(0.04);
+      }
+      const luminance = (h: string) => {
+        const rgb = [1, 3, 5].map(
+          (i) => Number.parseInt(h.slice(i, i + 2), 16) / 255,
+        );
+        const [r, g, b] = rgb.map((c) =>
+          c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+        );
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const contrast = (a: string, b: string) => {
+        const x = luminance(hex(theme, a));
+        const y = luminance(hex(theme, b));
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+      for (const [fg, bg] of [
+        ["--primary-foreground", "--primary"],
+        ["--muted-foreground", "--background"],
+        ["--muted-foreground", "--card"],
+        ["--primary-soft-foreground", "--primary-soft"],
+      ]) {
+        expect(contrast(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      }
+      expect(luminance(hex(theme, "--primary")) > 0.5).toBe(theme === ".dark");
+    },
+  );
+
+  // Text uses its own token, never the inverse button fill.
   it("uses no bare text-primary in app source", () => {
     const offenders: string[] = [];
     const walk = (dir: string) => {
@@ -101,7 +142,7 @@ describe("design v3 tokens", () => {
           !/\.test\.tsx?$/.test(entry.name)
         ) {
           if (
-            // text-primary as accent text keeps 3.81:1 on the dark card. Catch
+            // Keep text independent of the inverse primary button fill. Catch
             // bare, opacity-twin (`text-primary/80`) and arbitrary-variant
             // (`]:text-primary`) forms; `-soft-foreground`/`-foreground` pass
             // via the `(?!-)` guard.

@@ -83,7 +83,7 @@ export type TimelineMilestone = {
  */
 const MILESTONE_STATUS_CLASSES: Record<string, string> = {
   planned: "text-violet-500",
-  active: "text-indigo-500",
+  active: "text-primary-soft-foreground",
   completed: "text-emerald-500",
   archived: "text-muted-foreground",
 };

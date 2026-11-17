@@ -213,7 +213,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                   ) : null}
                   {task.milestoneName ? (
                     <span
-                      className="inline-flex min-w-0 items-center gap-1 rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-indigo-400"
+                      className="inline-flex min-w-0 items-center gap-1 rounded-full bg-primary-soft px-1.5 py-0.5 text-primary-soft-foreground"
                       data-testid="task-card-milestone"
                       title={task.milestoneName}
                     >

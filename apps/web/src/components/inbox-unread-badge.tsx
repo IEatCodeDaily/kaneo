@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import useGetUnreadNotificationCount from "@/hooks/queries/notification/use-get-unread-notification-count";
 
 /**
@@ -16,14 +17,15 @@ function InboxUnreadBadge() {
   if (unreadCount === 0) return null;
 
   return (
-    <span
+    <Badge
+      size="count"
+      variant="count"
       aria-label={t("inbox:unreadCount", { count: unreadCount })}
       role="status"
-      className="ml-auto flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-sidebar-primary px-1 font-semibold text-xs text-sidebar-primary-foreground leading-none"
       data-testid="inbox-unread-badge"
     >
       {unreadCount > 99 ? "99+" : unreadCount}
-    </span>
+    </Badge>
   );
 }
 

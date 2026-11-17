@@ -136,17 +136,18 @@ async function seed(api) {
               : [],
       },
     });
-  return { org, board, tbl };
+  return { org, board, tbl, tasks };
 }
 
 await healthy();
 const api = await request.newContext();
-const { org, board, tbl } = await seed(api);
+const { org, board, tbl, tasks } = await seed(api);
 const state = await api.storageState();
 const slug = org.slug;
 let pages = {
   board: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/board`,
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
+  inbox: `/dashboard/organization/${slug}/inbox`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
   // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
   ticket: `/dashboard/${slug}/tickets/KFL-1`,
@@ -162,6 +163,139 @@ if (PAGES.length)
   pages = Object.fromEntries(
     Object.entries(pages).filter(([k]) => PAGES.includes(k)),
   );
+
+// Theme acceptance fixtures: reproduce the owner's 31 / 2 + 50 sidebar.
+async function themeInboxFixtures(ctx) {
+  await ctx.route("**/api/notification/unread-count", (route) =>
+    route.fulfill({ json: { count: 31 } }),
+  );
+  await ctx.route("**/api/task/my-tasks?*", (route) =>
+    route.fulfill({
+      json: Array.from({ length: 50 }, (_, i) => ({
+        ...tasks[0],
+        id: `assigned-${i}`,
+      })),
+    }),
+  );
+  await ctx.route("**/api/flag/mine?*", (route) =>
+    route.fulfill({
+      json: [
+        { taskId: tasks[0].id, resolvedAt: null },
+        { taskId: tasks[1].id, resolvedAt: null },
+      ],
+    }),
+  );
+  await ctx.route("**/api/notification", (route) =>
+    route.fulfill({
+      json: tasks.slice(0, 3).map((task, i) => ({
+        id: `theme-notification-${i}`,
+        type: "task_updated",
+        title: "Ticket updated",
+        content: null,
+        resourceType: "task",
+        resourceId: task.id,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        eventData: {
+          boardId: board.id,
+          boardName: board.name,
+          boardSlug: "KFL",
+          organizationId: org.id,
+          taskTitle: task.title,
+          taskNumber: i + 1,
+          taskStatusSlug: task.status,
+          actorName: "Ayu Saraswati",
+        },
+      })),
+    }),
+  );
+  await ctx.addInitScript(
+    ({ slug, boardSlug }) => {
+      const key = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(key) ?? '{"state":{},"version":0}',
+      );
+      cur.state = {
+        ...cur.state,
+        recentOpen: false,
+        recentPageLimit: 5,
+        recentPages: Array.from({ length: 5 }, (_, i) => ({
+          pathname: `/dashboard/organization/${slug}/board/${boardSlug}/board?recent=${i}`,
+          label: "Pilot line",
+          openedAt: Date.now() - i * 60000,
+        })),
+      };
+      localStorage.setItem(key, JSON.stringify(cur));
+    },
+    { slug, boardSlug: board.slug ?? "KFL" },
+  );
+}
+
+function themeContrast() {
+  const css = getComputedStyle(document.documentElement);
+  const rgb = (name) => {
+    const hex = css.getPropertyValue(name).trim();
+    if (!/^#[0-9a-f]{6}$/i.test(hex))
+      throw new Error(`non-hex theme token ${name}: ${hex}`);
+    return [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+  };
+  const luminance = (name) => {
+    const [r, g, b] = rgb(name).map((v) => {
+      const c = v / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => {
+    const [x, y] = [luminance(a), luminance(b)];
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  };
+  return {
+    primary: css.getPropertyValue("--primary").trim(),
+    buttonContrast: contrast("--primary-foreground", "--primary"),
+    mutedContrast: contrast("--muted-foreground", "--background"),
+    chromeSpread: Math.max(
+      ...["--primary", "--ring", "--accent", "--row-selected"].map(
+        (name) => Math.max(...rgb(name)) - Math.min(...rgb(name)),
+      ),
+    ),
+  };
+}
+
+function navBadgeGeometry() {
+  const ids = [
+    "inbox-unread-badge",
+    "my-tasks-flagged-badge",
+    "my-tasks-count-badge",
+    "recent-count-badge",
+  ];
+  const badges = ids.map((id) => {
+    const el = document.querySelector(`[data-testid="${id}"]`);
+    if (!el) return { id, missing: true };
+    const rect = el.getBoundingClientRect();
+    const row = el.closest("button");
+    const label = row?.querySelector(":scope > span");
+    const slot = el.closest('[data-slot="nav-trailing"]');
+    const style = getComputedStyle(el);
+    return {
+      id,
+      text: el.textContent.trim(),
+      left: rect.left,
+      right: rect.right,
+      height: rect.height,
+      width: rect.width,
+      labelRight: label?.getBoundingClientRect().right,
+      slotRight: slot?.getBoundingClientRect().right,
+      rowRight: row?.getBoundingClientRect().right,
+      radius: style.borderRadius,
+      bg: style.backgroundColor,
+      color: style.color,
+      border: style.borderTopColor,
+    };
+  });
+  return badges;
+}
 
 const browser = await chromium.launch();
 const checks = {};
@@ -186,6 +320,7 @@ for (const [theme, tag, viewport, scale] of [
       cur.state = { ...cur.state, theme: t };
       localStorage.setItem(k, JSON.stringify(cur));
     }, theme);
+    if (name === "inbox") await themeInboxFixtures(ctx);
     const page = await ctx.newPage();
     const errs = [];
     page.on("pageerror", (e) => errs.push(String(e)));
@@ -241,12 +376,72 @@ for (const [theme, tag, viewport, scale] of [
       !(text.includes("Included in") && text.includes("PB-1042"))
     )
       fails.push("ticket page shows no Included in row (PB-1042)");
+    const palette = await page.evaluate(themeContrast);
+    if (palette.buttonContrast < 4.5 || palette.mutedContrast < 4.5)
+      fails.push(`theme contrast ${JSON.stringify(palette)}`);
+    if (palette.chromeSpread > 24)
+      fails.push(`saturated chrome ${JSON.stringify(palette)}`);
+    const wantPrimary = theme === "dark" ? "#e7eaf0" : "#20252c";
+    if (palette.primary !== wantPrimary)
+      fails.push(`primary ${palette.primary}, want ${wantPrimary}`);
+    m.palette = palette;
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m, url: page.url() };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
     );
+    if (name === "inbox") {
+      if (tag === "phone") {
+        await page.getByTestId("mobile-sidebar-toggle").first().click();
+        await page.waitForTimeout(600);
+      }
+      const badges = await page.evaluate(navBadgeGeometry);
+      const badgeFails = [];
+      for (const badge of badges) {
+        if (
+          badge.missing ||
+          badge.height !== 16 ||
+          badge.width < 24 ||
+          badge.width <= badge.height
+        )
+          badgeFails.push(`missing/non-pill count ${JSON.stringify(badge)}`);
+        if (
+          !badge.missing &&
+          (badge.left < badge.labelRight + 4 ||
+            badge.right > badge.rowRight ||
+            badge.slotRight > badge.rowRight)
+        )
+          badgeFails.push(`badge clips label/row ${JSON.stringify(badge)}`);
+      }
+      const [inbox, flagged, assigned, recent] = badges;
+      if (flagged.right + 4 > assigned.left)
+        badgeFails.push("flagged and assigned overlap or lack a 4px gap");
+      if (
+        [assigned, recent].some(
+          (badge) => Math.abs(badge.right - inbox.right) > 1,
+        )
+      )
+        badgeFails.push("nav badge right edges do not align");
+      if (
+        new Set(
+          [inbox, assigned, recent].map(
+            (b) => `${b.bg}:${b.color}:${b.radius}`,
+          ),
+        ).size !== 1
+      )
+        badgeFails.push("nav count styles differ");
+      if (flagged.bg === assigned.bg || flagged.border === flagged.bg)
+        badgeFails.push("attention badge lacks a distinct outline");
+      if (badges.map((b) => b.text).join(",") !== "31,2,50,5")
+        badgeFails.push("theme count fixtures did not load");
+      const navShot = `nav-badges--${tag}-${theme}.png`;
+      await page.screenshot({ path: join(OUT, navShot) });
+      checks[navShot] = { fails: badgeFails, badges };
+      console.log(
+        `${badgeFails.length ? "FAIL" : "ok  "} ${navShot}${badgeFails.length ? `\n      ${badgeFails.join("\n      ")}` : ""}`,
+      );
+    }
     await ctx.close();
   }
 }

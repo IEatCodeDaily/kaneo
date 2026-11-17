@@ -70,7 +70,7 @@ describe("MyTasksCountBadge", () => {
     expect(screen.getByTestId("my-tasks-flagged-badge").textContent).toBe("2");
   });
 
-  it("gives the flagged badge a warning colour, distinct from assigned", () => {
+  it("gives the flagged badge a monochrome outline, distinct from assigned", () => {
     withTasks([{ id: "a" }]);
     withFlags([{ taskId: "f-1", resolvedAt: null }]);
 
@@ -78,8 +78,15 @@ describe("MyTasksCountBadge", () => {
 
     const flagged = screen.getByTestId("my-tasks-flagged-badge");
     const assigned = screen.getByTestId("my-tasks-count-badge");
-    expect(flagged.classList.contains("bg-warning")).toBe(true);
-    expect(assigned.classList.contains("bg-sidebar-primary")).toBe(true);
+    expect(flagged.classList.contains("border-input")).toBe(true);
+    expect(flagged.classList.contains("bg-transparent")).toBe(true);
+    expect(assigned.classList.contains("bg-secondary")).toBe(true);
+    for (const badge of [flagged, assigned]) {
+      expect(badge.classList.contains("h-4")).toBe(true);
+      expect(badge.classList.contains("min-w-6")).toBe(true);
+      expect(badge.classList.contains("rounded-full")).toBe(true);
+    }
+    expect(flagged.parentElement?.classList.contains("gap-1")).toBe(true);
     // The two bubbles must not share a background.
     expect(flagged.className).not.toBe(assigned.className);
   });
@@ -161,13 +168,12 @@ describe("MyTasksCountBadge", () => {
     const badge = screen.getByTestId("my-tasks-count-badge");
     for (const token of [
       "rounded-full",
-      "bg-sidebar-primary",
-      "text-sidebar-primary-foreground",
+      "bg-secondary",
+      "text-secondary-foreground",
     ]) {
       expect(badge.classList.contains(token)).toBe(true);
     }
-    // ml-auto now lives on the wrapper that holds both bubbles, so the group
-    // as a whole still sits flush right in the nav row.
-    expect(badge.parentElement?.classList.contains("ml-auto")).toBe(true);
+    // NavMain owns right alignment; this group only owns the inter-badge gap.
+    expect(badge.parentElement?.classList.contains("shrink-0")).toBe(true);
   });
 });
