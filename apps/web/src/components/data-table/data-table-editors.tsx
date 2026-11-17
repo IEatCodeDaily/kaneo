@@ -32,6 +32,9 @@ type EditorProps = {
   value: unknown;
   onCommit: (value: unknown) => void;
   onCancel: () => void;
+  /** Persistent form editors publish drafts without blur/Enter cell commits. */
+  formMode?: boolean;
+  onInvalidChange?: (invalid: boolean) => void;
 };
 
 const NUMERIC_TYPES = ["number", "percent", "currency"];
@@ -51,6 +54,8 @@ export function TableCellInput({
   value,
   onCommit,
   onCancel,
+  formMode = false,
+  onInvalidChange,
 }: EditorProps) {
   const { t } = useTranslation();
   const initial = useMemo(() => {
@@ -65,7 +70,7 @@ export function TableCellInput({
   // closure — flag the cancel explicitly so commit cannot fire with it.
   const cancelledRef = useRef(false);
 
-  const invalid =
+  const isInvalid = (draft: string) =>
     (field.type === "url" &&
       draft.trim() !== "" &&
       !isValidUrl(draft.trim())) ||
@@ -75,6 +80,7 @@ export function TableCellInput({
     (NUMERIC_TYPES.includes(field.type) &&
       draft !== "" &&
       !isValidNumberInput(draft, field));
+  const invalid = isInvalid(draft);
 
   const errorKey =
     field.type === "url"
@@ -90,22 +96,25 @@ export function TableCellInput({
     }
     if (draft === initial) return onCancel();
     if (invalid) return;
+    onCommit(typedValue(draft));
+  };
+
+  const typedValue = (draft: string): unknown => {
+    if (draft === "") return null;
     if (TEXT_INPUT_TYPES.includes(field.type)) {
-      return onCommit(
-        draft.trim() === ""
-          ? null
-          : field.type === "longtext"
-            ? draft
-            : draft.trim(),
-      );
+      return draft.trim() === ""
+        ? null
+        : field.type === "longtext"
+          ? draft
+          : draft.trim();
     }
     if (field.type === "date") {
-      return onCommit(draft === "" ? null : draft);
+      return draft;
     }
     if (field.type === "datetime") {
-      return onCommit(draft === "" ? null : new Date(draft).toISOString());
+      return new Date(draft).toISOString();
     }
-    return onCommit(Number(draft));
+    return Number(draft);
   };
 
   const inputType =
@@ -119,17 +128,26 @@ export function TableCellInput({
 
   const multiline = field.type === "longtext";
   const editorProps = {
-    autoFocus: true,
+    autoFocus: !formMode,
     value: draft,
     "aria-invalid": invalid || undefined,
     "aria-label": field.name,
     onChange: (
       event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) => setDraft(event.target.value),
-    onBlur: commit,
+    ) => {
+      const next = event.target.value;
+      setDraft(next);
+      if (formMode) {
+        const invalid = isInvalid(next);
+        onInvalidChange?.(invalid);
+        if (!invalid) onCommit(typedValue(next));
+      }
+    },
+    onBlur: formMode ? undefined : commit,
     onKeyDown: (
       event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
+      if (formMode) return;
       event.stopPropagation();
       if (
         event.key === "Enter" &&
@@ -157,7 +175,7 @@ export function TableCellInput({
       ) : (
         <Input
           {...editorProps}
-          unstyled
+          unstyled={!formMode}
           type={inputType}
           // "any": the browser must not flag 1.25 on a 0-decimal field.
           step={NUMERIC_TYPES.includes(field.type) ? "any" : undefined}
@@ -180,6 +198,8 @@ export function JsonCellEditor({
   value,
   onCommit,
   onCancel,
+  formMode = false,
+  onInvalidChange,
 }: EditorProps) {
   const { t } = useTranslation();
   const initial = useMemo(() => {
@@ -210,14 +230,23 @@ export function JsonCellEditor({
   return (
     <div className="relative min-w-0 flex-1">
       <Textarea
-        autoFocus
+        autoFocus={!formMode}
         value={draft}
         aria-invalid={invalid || undefined}
         aria-label={field.name}
         rows={3}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (formMode) {
+            const parsed = parseJsonValue(next);
+            onInvalidChange?.(!parsed.ok);
+            if (parsed.ok) onCommit(parsed.value);
+          }
+        }}
+        onBlur={formMode ? undefined : commit}
         onKeyDown={(event) => {
+          if (formMode) return;
           event.stopPropagation();
           if (event.key === "Escape") {
             event.preventDefault();

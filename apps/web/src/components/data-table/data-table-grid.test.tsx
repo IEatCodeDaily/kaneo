@@ -143,14 +143,22 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it("toolbar creates an empty row, never submitting the click event as values", async () => {
+it("toolbar opens the form without creating an empty row", async () => {
   mount();
   fireEvent.click(screen.getByRole("button", { name: "Toolbar new row" }));
+  expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  expect(createRow).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByRole("textbox", { name: "Title" }), {
+    target: { value: "New entry" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "navigation:tables.createRow" }),
+  );
   await waitFor(() =>
     expect(createRow).toHaveBeenCalledWith({
       organizationId: "o",
       tableId: "t",
-      values: undefined,
+      values: { first: "New entry" },
     }),
   );
 });

@@ -65,6 +65,7 @@ import {
   FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
+import { NewRowDialog } from "@/components/data-table/new-row-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
 import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
@@ -885,16 +886,12 @@ export function DataTableGrid({
     }
   };
 
-  const addRow = async (presetValues?: Record<string, unknown>) => {
-    try {
-      await createRow.mutateAsync({
-        organizationId,
-        tableId: table.id,
-        values: presetValues,
-      });
-    } catch {
-      toast.error(t("navigation:tables.addRowError"));
-    }
+  const [newRowValues, setNewRowValues] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const addRow = (presetValues: Record<string, unknown> = {}) => {
+    if (canEdit) setNewRowValues(presetValues);
   };
 
   const addRowInGroup = async (field: DataTableField, key: string) => {
@@ -1894,6 +1891,18 @@ export function DataTableGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {newRowValues !== null && (
+        <NewRowDialog
+          tableName={table.name}
+          fields={fields}
+          members={members}
+          initialValues={newRowValues}
+          onOpenChange={(open) => !open && setNewRowValues(null)}
+          onCreate={(values) =>
+            createRow.mutateAsync({ organizationId, tableId: table.id, values })
+          }
+        />
+      )}
       <RowSheet
         open={sheetRowId !== null}
         onOpenChange={(next) => !next && setSheetRowId(null)}
