@@ -514,6 +514,16 @@ function sentence(
             : "navigation:tables.activityFieldOptions",
         { from: text(data.fromName), field: fieldName },
       );
+    case "link_added":
+      return t("navigation:tables.activityLinkAdded", {
+        label: text(data.label) ?? t("navigation:tables.linkUnavailable"),
+      });
+    case "link_removed":
+      return t("navigation:tables.activityLinkRemoved", {
+        label: text(data.label) ?? t("navigation:tables.linkUnavailable"),
+      });
+    case "links_migrated":
+      return t("navigation:tables.activityLinksMigrated");
     case "ticket_linked":
       return t("navigation:tables.activityTicketLinked", {
         ticket: [text(data.key), text(data.title)].filter(Boolean).join(" "),

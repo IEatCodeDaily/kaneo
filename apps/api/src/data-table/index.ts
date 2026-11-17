@@ -42,6 +42,7 @@ import {
   updateTableField,
 } from "./controllers";
 import { FIELD_TYPES } from "./fields";
+import * as links from "./link-controllers";
 import {
   assertDashboardsEnabled,
   assertTablesEnabled,
@@ -152,7 +153,22 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           resourceIds: tables.map((table) => table.id),
         }),
       );
-      return c.json(tables.filter((table) => visibleIds.has(table.id)));
+      return c.json(
+        await Promise.all(
+          tables
+            .filter((table) => visibleIds.has(table.id))
+            .map(async (table) => ({
+              ...table,
+              canEdit: await requireResourcePrivilege({
+                organizationId,
+                resourceType: "table",
+                resourceId: table.id,
+                userId: c.get("userId"),
+                required: "edit",
+              }),
+            })),
+        ),
+      );
     },
   )
   .post(
@@ -273,6 +289,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           organizationId,
           tableId,
           Number.isFinite(offset) && offset > 0 ? offset : 0,
+          c.get("userId"),
         ),
       );
     },
@@ -320,7 +337,9 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     tablePrivilege("manage"),
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
-      return c.json(await purgeDataTable(organizationId, tableId));
+      return c.json(
+        await purgeDataTable(organizationId, tableId, c.get("userId")),
+      );
     },
   )
   .post(
@@ -344,7 +363,13 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
     async (c) => {
       const { organizationId, tableId } = c.req.valid("param");
       return c.json(
-        await queryTableRows(organizationId, tableId, c.req.valid("json")),
+        await queryTableRows(
+          organizationId,
+          tableId,
+          c.req.valid("json"),
+          false,
+          c.get("userId"),
+        ),
       );
     },
   )
@@ -506,6 +531,8 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           c.req.valid("query").rowId,
           c.req.valid("query").offset ?? 0,
           c.req.valid("query").limit ?? 100,
+          undefined,
+          c.get("userId"),
         ),
       );
     },
@@ -627,7 +654,10 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         fieldId: v.string(),
       }),
     ),
-    validator("json", v.object({ value: v.unknown() })),
+    validator(
+      "json",
+      v.object({ value: v.unknown(), ifVersion: v.optional(v.string()) }),
+    ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("edit"),
     async (c) => {
@@ -640,9 +670,186 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           fieldId,
           c.req.valid("json").value,
           c.get("userId"),
+          c.req.valid("json").ifVersion,
         ),
       );
     },
+  )
+  .get(
+    "/organization/:organizationId/:tableId/rows/:rowId",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    async (c) =>
+      c.json(
+        await links.getLinkedRow(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.get("userId"),
+        ),
+      ),
+  )
+  .get(
+    "/organization/:organizationId/:tableId/fields/:fieldId/link-options",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    validator(
+      "query",
+      v.object({
+        q: v.optional(v.pipe(v.string(), v.maxLength(200))),
+        cursor: v.optional(v.pipe(v.string(), v.maxLength(4000))),
+      }),
+    ),
+    async (c) =>
+      c.json(
+        await links.getLinkOptions(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("fieldId"),
+          c.get("userId"),
+          c.req.valid("query").q,
+          c.req.valid("query").cursor,
+        ),
+      ),
+  )
+  .get(
+    "/organization/:organizationId/:tableId/rows/:rowId/links/:fieldId",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("view"),
+    validator(
+      "query",
+      v.object({
+        cursor: v.optional(
+          v.pipe(
+            v.string(),
+            v.regex(/^\d+$/),
+            v.transform(Number),
+            v.integer(),
+            v.minValue(0),
+            v.maxValue(Number.MAX_SAFE_INTEGER),
+          ),
+        ),
+      }),
+    ),
+    async (c) =>
+      c.json(
+        await links.getRowLinks(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.req.param("fieldId"),
+          c.get("userId"),
+          c.req.valid("query").cursor,
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/rows/:rowId/links/:fieldId",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    validator(
+      "json",
+      v.strictObject({
+        add: v.optional(v.pipe(v.array(v.string()), v.maxLength(100))),
+        remove: v.optional(v.pipe(v.array(v.string()), v.maxLength(100))),
+        ifVersion: v.optional(v.string()),
+      }),
+    ),
+    async (c) =>
+      c.json(
+        await links.mutateLinks(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.req.param("fieldId"),
+          c.req.valid("json"),
+          c.get("userId"),
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/rows/:rowId/links/:fieldId/new-row",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    validator(
+      "json",
+      v.strictObject({
+        values: v.record(v.string(), v.unknown()),
+        ifVersion: v.optional(v.string()),
+      }),
+    ),
+    async (c) =>
+      c.json(
+        await links.createLinkedRow(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.req.param("fieldId"),
+          c.req.valid("json").values,
+          c.get("userId"),
+          c.req.valid("json").ifVersion,
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/rows/:rowId/restore",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) =>
+      c.json(
+        await links.rowLifecycle(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.get("userId"),
+          false,
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/rows/:rowId/purge",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) =>
+      c.json(
+        await links.rowLifecycle(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("rowId"),
+          c.get("userId"),
+          true,
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/fields/:fieldId/restore",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("edit"),
+    async (c) =>
+      c.json(
+        await links.pairLifecycle(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("fieldId"),
+          c.get("userId"),
+          false,
+        ),
+      ),
+  )
+  .post(
+    "/organization/:organizationId/:tableId/fields/:fieldId/purge",
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("manage"),
+    async (c) =>
+      c.json(
+        await links.pairLifecycle(
+          c.req.param("organizationId"),
+          c.req.param("tableId"),
+          c.req.param("fieldId"),
+          c.get("userId"),
+          true,
+        ),
+      ),
   )
   .get(
     "/organization/:organizationId/:tableId/fields/:fieldId/tickets",

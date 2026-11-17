@@ -44,6 +44,7 @@ export type TableRow = {
   updatedAt: Date | string;
   createdBy: string | null;
   updatedBy: string | null;
+  deletedAt?: Date | string | null;
   values: Record<string, unknown>;
   rawValues?: Record<string, string | null>;
   rawCreatedAt?: string;
@@ -165,7 +166,8 @@ export async function createTable(
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   created_by text,
-  updated_by text
+  updated_by text,
+  deleted_at timestamptz
 )`;
   await tx.execute(sql.raw(statement));
   await logDdl(tx, tableId, statement);
@@ -226,6 +228,8 @@ export async function changeFieldType(
     userId?: string;
   },
 ): Promise<void> {
+  if (change.from === "link" || change.to === "link")
+    badRequest("Create a new relationship instead of converting link fields");
   const toPg = pgTypeFor(change.to);
   const col = q(column(change.fieldId));
   const table = `${TABLES_SCHEMA}.${q(physical(change.tableId))}`;
@@ -301,7 +305,10 @@ export async function reconcile(): Promise<ReconcileReport[]> {
         .from(dataTableFieldTable)
         .where(eq(dataTableFieldTable.tableId, table.id));
       const tableFields = fields.flatMap((field) =>
-        isFieldType(field.type) ? [{ ...field, type: field.type }] : [],
+        isFieldType(field.type) &&
+        !(field.type === "link" && field.options?.relationId)
+          ? [{ ...field, type: field.type }]
+          : [],
       );
       const result = await tx.execute(
         sql`SELECT column_name FROM information_schema.columns
@@ -319,6 +326,24 @@ export async function reconcile(): Promise<ReconcileReport[]> {
       const droppedColumns = [...actual].filter(
         (col) => col.startsWith("c_") && !expected.has(col),
       );
+      const relations = fields.filter(
+        (field) =>
+          field.type === "link" &&
+          typeof field.options?.relationId === "string",
+      );
+      for (const field of relations) {
+        const id = assertSafeId(
+          String(field.options?.relationId),
+          "relationship",
+        );
+        const exists = await tx.execute(
+          sql`SELECT to_regclass(${`${TABLES_SCHEMA}.l_${id}`}) AS name`,
+        );
+        if (!exists.rows[0]?.name || missingTable)
+          throw new Error(
+            "Relationship integrity failure: restore the coordinated backup; do not create empty edges",
+          );
+      }
       if (
         !missingTable &&
         addedColumns.length === 0 &&
@@ -351,6 +376,9 @@ function requireField(fields: StoreField[], fieldId: string): StoreField {
 }
 
 /** Coerce a values map against metadata; unknown field ids are a 400. */
+const virtualLink = (field: StoreField) =>
+  field.type === "link" && typeof field.options?.relationId === "string";
+
 function coerceRowValues(
   fields: StoreField[],
   values: Record<string, unknown>,
@@ -360,6 +388,8 @@ function coerceRowValues(
   for (const [fieldId, value] of Object.entries(values)) {
     const field = byId.get(fieldId);
     if (!field) badRequest(`Unknown field: ${fieldId}`);
+    if (field.type === "link")
+      badRequest("Use the relationship writer for link values");
     coerced.set(fieldId, coerceValue(field, value));
   }
   // Omission is not a free pass: a required field absent from the payload
@@ -383,7 +413,7 @@ function sqlValue(value: unknown): SQL {
   return sql`${Array.isArray(value) ? JSON.stringify(value) : value}`;
 }
 
-export const rowSelection = (fields: StoreField[]): SQL[] => {
+export const rowSelection = (fields: StoreField[], tableId: string): SQL[] => {
   const chunks: SQL[] = [
     sql`id`,
     sql`position`,
@@ -391,9 +421,25 @@ export const rowSelection = (fields: StoreField[]): SQL[] => {
     sql`updated_at`,
     sql`created_by`,
     sql`updated_by`,
+    sql`deleted_at`,
   ];
   for (const field of fields) {
     const col = colRef(field.id);
+    if (virtualLink(field)) {
+      const id = assertSafeId(
+        String(field.options?.relationId),
+        "relationship",
+      );
+      const source = field.options?.side === "source";
+      const local = sql.identifier(source ? "source_row_id" : "target_row_id");
+      const opposite = sql.identifier(
+        source ? "target_row_id" : "source_row_id",
+      );
+      chunks.push(
+        sql`(SELECT COALESCE(jsonb_agg(${opposite} ORDER BY position, ${opposite}), '[]'::jsonb) FROM ${sql.raw(`${TABLES_SCHEMA}."l_${id}"`)} WHERE ${local} = ${sql.identifier(physical(tableId))}.id) AS ${col}`,
+      );
+      continue;
+    }
     // Display compatibility: numeric is a JS number, dates are calendar text.
     // Archives carry separate native text; these display values are not exact.
     const pg = pgTypeFor(field.type);
@@ -409,15 +455,17 @@ export const rowSelection = (fields: StoreField[]): SQL[] => {
 };
 
 /** Native text output bypasses driver numeric/Date/JSONB decoding for archives. */
-function archiveSelection(fields: StoreField[]): SQL[] {
+function archiveSelection(fields: StoreField[], tableId: string): SQL[] {
   return [
-    ...rowSelection(fields),
+    ...rowSelection(fields, tableId),
     sql`created_at::text AS raw_created_at`,
     sql`updated_at::text AS raw_updated_at`,
-    ...fields.map(
-      (field) =>
-        sql`${colRef(field.id)}::text AS ${sql.identifier(`raw_${column(field.id)}`)}`,
-    ),
+    ...fields
+      .filter((field) => !virtualLink(field))
+      .map(
+        (field) =>
+          sql`${colRef(field.id)}::text AS ${sql.identifier(`raw_${column(field.id)}`)}`,
+      ),
   ];
 }
 
@@ -438,6 +486,7 @@ export function toRow(
     updatedAt: record.updated_at as Date,
     createdBy: (record.created_by as string | null) ?? null,
     updatedBy: (record.updated_by as string | null) ?? null,
+    deletedAt: (record.deleted_at as Date | null) ?? null,
     values,
     ...(record.raw_created_at !== undefined
       ? {
@@ -464,9 +513,9 @@ export async function getRowById(
   // Single-row lookup — the 1000-row scan this replaces was both a ceiling
   // (rows past position 1000 were unreachable) and a perf smell.
   const result = await executor.execute(
-    sql`SELECT ${sql.join(archive ? archiveSelection(fields) : rowSelection(fields), sql.raw(", "))}
+    sql`SELECT ${sql.join(archive ? archiveSelection(fields, tableId) : rowSelection(fields, tableId), sql.raw(", "))}
         FROM ${tableRef(tableId)}
-        WHERE id = ${rowId}`,
+        WHERE id = ${rowId} ${archive ? sql`` : sql`AND deleted_at IS NULL`}`,
   );
   const record = result.rows[0];
   return record ? toRow(record, fields) : null;
@@ -497,9 +546,9 @@ export async function getRowsIncludingTicket(
   ];
   if (matches.length === 0) return [];
   const result = await executor.execute(
-    sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))}
+    sql`SELECT ${sql.join(rowSelection(fields, tableId), sql.raw(", "))}
         FROM ${tableRef(tableId)}
-        WHERE ${sql.join(matches, sql.raw(" OR "))}
+        WHERE deleted_at IS NULL AND (${sql.join(matches, sql.raw(" OR "))})
         ORDER BY position ASC, created_at ASC
         LIMIT 100`,
   );
@@ -515,7 +564,10 @@ export async function insertRow(
   values: Record<string, unknown> = {},
   userId: string | null = null,
 ): Promise<TableRow> {
-  const coerced = coerceRowValues(fields, values);
+  const coerced = coerceRowValues(
+    fields.filter((field) => !virtualLink(field)),
+    values,
+  );
   const columns: SQL[] = [
     sql`id`,
     sql`position`,
@@ -535,7 +587,7 @@ export async function insertRow(
   const result = await executor.execute(
     sql`INSERT INTO ${tableRef(tableId)} (${sql.join(columns, sql.raw(", "))})
         VALUES (${sql.join(valueChunks, sql.raw(", "))})
-        RETURNING ${sql.join(rowSelection(fields), sql.raw(", "))}`,
+        RETURNING ${sql.join(rowSelection(fields, tableId), sql.raw(", "))}`,
   );
   const record = result.rows[0];
   if (!record) notFound("Created row");
@@ -567,12 +619,14 @@ export async function updateCell(
   userId: string | null = null,
 ): Promise<TableRow> {
   const field = requireField(fields, fieldId);
+  if (field.type === "link")
+    badRequest("Use the relationship writer for link values");
   const coerced = coerceValue(field, value);
   const result = await executor.execute(
     sql`UPDATE ${tableRef(tableId)}
         SET ${colRef(fieldId)} = ${sqlValue(coerced)}, updated_at = now(), updated_by = ${userId}
         WHERE id = ${rowId}
-        RETURNING ${sql.join(rowSelection(fields), sql.raw(", "))}`,
+        RETURNING ${sql.join(rowSelection(fields, tableId), sql.raw(", "))}`,
   );
   const record = result.rows[0];
   if (!record) notFound("Data table row");
@@ -597,7 +651,7 @@ export async function allRows(
   fields: StoreField[],
 ): Promise<TableRow[]> {
   const result = await executor.execute(
-    sql`SELECT ${sql.join(archiveSelection(fields), sql.raw(", "))}
+    sql`SELECT ${sql.join(archiveSelection(fields, tableId), sql.raw(", "))}
         FROM ${tableRef(tableId)} ORDER BY position ASC, created_at ASC, id ASC`,
   );
   return result.rows.map((record) => toRow(record, fields));
@@ -656,12 +710,13 @@ export async function listRows(
 ): Promise<{ rows: TableRow[]; total: number }> {
   const [result, count] = await Promise.all([
     executor.execute(
-      sql`SELECT ${sql.join(rowSelection(fields), sql.raw(", "))} FROM ${tableRef(tableId)}
+      sql`SELECT ${sql.join(rowSelection(fields, tableId), sql.raw(", "))} FROM ${tableRef(tableId)}
+          WHERE deleted_at IS NULL
           ORDER BY position ASC, created_at ASC, id ASC
           LIMIT ${limit} OFFSET ${offset}`,
     ),
     executor.execute(
-      sql`SELECT count(*)::bigint AS total FROM ${tableRef(tableId)}`,
+      sql`SELECT count(*)::bigint AS total FROM ${tableRef(tableId)} WHERE deleted_at IS NULL`,
     ),
   ]);
   return {
@@ -699,7 +754,9 @@ function filterExpression(
   filter: NonNullable<QuerySpec["filters"]>[number],
   fields: StoreField[],
 ): SQL {
-  const field = fields.find((candidate) => candidate.id === filter.fieldId);
+  const field = fields.find(
+    (candidate) => candidate.id === filter.fieldId && candidate.type !== "link",
+  );
   if (!field) badRequest(`Unknown filter field: ${filter.fieldId}`);
   const ops = OP_MATRIX[opFamily(field.type)] as readonly string[];
   if (!ops.includes(filter.op)) {
@@ -737,7 +794,9 @@ export async function runQuery(
   let labelExpression: SQL;
   let groupExpression: SQL | null = null;
   if (spec.groupBy) {
-    const field = fields.find((c) => c.id === spec.groupBy?.fieldId);
+    const field = fields.find(
+      (c) => c.id === spec.groupBy?.fieldId && c.type !== "link",
+    );
     if (!field) badRequest(`Unknown groupBy field: ${spec.groupBy.fieldId}`);
     if (spec.groupBy.bucket) {
       if (
@@ -775,14 +834,14 @@ export async function runQuery(
   if (groupExpression) {
     query = sql`SELECT ${labelExpression} AS label, ${metric} AS value
         FROM ${tableRef(tableId)}
-        ${whereExpression ? sql`WHERE ${whereExpression}` : sql``}
+        ${whereExpression ? sql`WHERE deleted_at IS NULL AND ${whereExpression}` : sql`WHERE deleted_at IS NULL`}
         GROUP BY ${groupExpression}
         ORDER BY label ASC NULLS LAST
         LIMIT ${limit}`;
   } else {
     query = sql`SELECT ${labelExpression} AS label, ${metric} AS value
         FROM ${tableRef(tableId)}
-        ${whereExpression ? sql`WHERE ${whereExpression}` : sql``}
+        ${whereExpression ? sql`WHERE deleted_at IS NULL AND ${whereExpression}` : sql`WHERE deleted_at IS NULL`}
         LIMIT ${limit}`;
   }
   const result = await executor.execute(query);

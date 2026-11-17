@@ -148,12 +148,48 @@ async function seed(api) {
     `/data-table/organization/${org.id}/${tbl.id}/rows/${firstRowId}/tickets?taskId=${tasks[0].id}`,
     {},
   );
-  return { org, board, tbl, tasks };
+  const invoices = await post(`/data-table/organization/${org.id}`, {
+    name: "Invoice",
+  });
+  const customers = await post(`/data-table/organization/${org.id}`, {
+    name: "Customer",
+  });
+  const invoiceNumber = await post(
+    `/data-table/organization/${org.id}/${invoices.id}/fields`,
+    { name: "Invoice number", type: "text" },
+  );
+  const customerNumber = await post(
+    `/data-table/organization/${org.id}/${customers.id}/fields`,
+    { name: "Customer number", type: "text" },
+  );
+  const customer = await post(
+    `/data-table/organization/${org.id}/${customers.id}/rows`,
+    { values: { [customerNumber.id]: "CUST-001 · Acme Manufacturing" } },
+  );
+  const relation = await post(
+    `/data-table/organization/${org.id}/${invoices.id}/fields`,
+    {
+      name: "Customer",
+      type: "link",
+      options: {
+        targetTableId: customers.id,
+        inverseName: "Invoices",
+        cardinality: "many-to-one",
+      },
+    },
+  );
+  await post(`/data-table/organization/${org.id}/${invoices.id}/rows`, {
+    values: {
+      [invoiceNumber.id]: "INV-2026-001",
+      [relation.id]: [customer.id],
+    },
+  });
+  return { org, board, tbl, tasks, invoices, customers };
 }
 
 await healthy();
 const api = await request.newContext();
-const { org, board, tbl, tasks } = await seed(api);
+const { org, board, tbl, tasks, invoices, customers } = await seed(api);
 const state = await api.storageState();
 const slug = org.slug;
 let pages = {
@@ -161,6 +197,8 @@ let pages = {
   "my-tickets": `/dashboard/organization/${slug}/my-tasks`,
   inbox: `/dashboard/organization/${slug}/inbox`,
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
+  "table-link-picker": `/dashboard/organization/${slug}/table/${invoices.id}`,
+  "table-link-reciprocal": `/dashboard/organization/${slug}/table/${customers.id}`,
   // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
   ticket: `/dashboard/${slug}/tickets/KFL-1`,
   settings: "/dashboard/settings/account/authentication",
@@ -355,6 +393,61 @@ for (const [theme, tag, viewport, scale] of [
       ...BAD.filter((b) => text.includes(b)).map((b) => `error text: ${b}`),
     ];
     if (text.trim().length < 40) fails.push("page rendered no content");
+    if (name === "table-link-picker" || name === "table-link-reciprocal") {
+      const expected =
+        name === "table-link-picker"
+          ? "CUST-001 · Acme Manufacturing"
+          : "INV-2026-001";
+      await page
+        .locator("[data-link-chip]")
+        .filter({ hasText: expected })
+        .waitFor();
+      if (
+        !(await page
+          .locator("[data-link-chip]")
+          .filter({ hasText: expected })
+          .count())
+      )
+        fails.push("Primary value chip missing");
+      await page
+        .getByRole("button", { name: "Linked records", exact: true })
+        .first()
+        .click();
+      const picker = page.locator("[data-link-picker]");
+      await picker
+        .getByRole("option", { name: new RegExp(expected.split(" · ")[0]) })
+        .first()
+        .waitFor();
+      // The preview renders immediately; edit controls arrive after mutual-access lookup.
+      await picker.getByRole("button", { name: /Unlink/ }).waitFor();
+      if ((await picker.getByRole("button", { name: /Unlink/ }).count()) !== 1)
+        fails.push("Selected record not removable");
+      await page.waitForTimeout(600);
+      const geometry = await picker.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, viewport: innerWidth };
+      });
+      if (geometry.left < 0 || geometry.right > geometry.viewport)
+        fails.push("Link picker outside viewport");
+      const visible = await picker.innerText();
+      if (visible.includes(invoices.id) || visible.includes(customers.id))
+        fails.push("Opaque identifier in picker");
+      if (name === "table-link-picker") {
+        await picker.getByRole("textbox").fill("no-such-record");
+        await picker
+          .getByText("No matching records", { exact: true })
+          .waitFor();
+        await picker.getByRole("textbox").fill("");
+        await picker
+          .getByRole("option", { name: new RegExp(expected.split(" · ")[0]) })
+          .first()
+          .waitFor();
+      }
+      // Search refresh keeps the selected preview mounted while authorization reloads.
+      await picker.getByRole("status").waitFor({ state: "hidden" });
+      await picker.getByRole("button", { name: /Unlink/ }).waitFor();
+      await page.waitForTimeout(600);
+    }
     // Resource toolbar acceptance: real phone geometry, not just screenshots.
     if (name === "table" || name === "board") {
       const toolbar = await page.evaluate((surface) => {
@@ -2159,6 +2252,77 @@ const fillFieldEditor = async (p) => {
     .fill("Expected delivery date");
 };
 const OVERLAY_STATES = [
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["desktop-light", "light", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `table-link-settings--${suffix}`,
+    theme,
+    viewport,
+    async (p) => {
+      await openFieldOptions(p);
+      await p
+        .getByRole("textbox", { name: "New field name", exact: true })
+        .fill("Customer relationship");
+      await p.getByRole("textbox", { name: "Search field types" }).fill("link");
+      await p
+        .getByRole("button", { name: "Link to another table", exact: true })
+        .click();
+      await p
+        .getByRole("combobox", { name: "Target table", exact: true })
+        .click();
+      await p.getByRole("option", { name: "Customer", exact: true }).click();
+      await p.waitForTimeout(600);
+      if (
+        !(
+          await p
+            .getByRole("combobox", { name: "Target table", exact: true })
+            .innerText()
+        ).includes("Customer")
+      )
+        throw new Error(
+          "Target table displays an opaque ID instead of Customer",
+        );
+      const choices = p.getByRole("radiogroup", {
+        name: "Relationship",
+        exact: true,
+      });
+      if ((await choices.getByRole("radio").count()) !== 4)
+        throw new Error("Missing relationship cardinality");
+      for (const sentence of [
+        "belongs to one Customer",
+        "has many Customer",
+        "links to many Customer",
+        "has at most one Customer",
+      ])
+        if (
+          !(await choices
+            .getByRole("radio", { name: new RegExp(sentence) })
+            .count())
+        )
+          throw new Error(`Missing plain-language cardinality: ${sentence}`);
+      if (
+        (await choices
+          .getByRole("radio")
+          .first()
+          .getAttribute("aria-checked")) !== "true"
+      )
+        throw new Error("Many-to-one is not the default");
+      await p
+        .getByRole("textbox", { name: "Reciprocal field name", exact: true })
+        .fill("Invoices");
+      if (!(await p.getByText(/Also creates “Invoices” on Customer/).count()))
+        throw new Error("No reciprocal summary");
+    },
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
   ...[
     ["desktop-dark", "dark", DESKTOP],
     ["desktop-light", "light", DESKTOP],

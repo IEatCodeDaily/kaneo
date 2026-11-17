@@ -1330,6 +1330,7 @@ export function DataTableGrid({
     );
 
   return (
+    <LinkNavigationProvider organizationId={organizationId} members={members}>
     <TicketLookupContext.Provider value={ticketLookup}>
       <Layout.Toolbar>
         <DataTableToolbar
@@ -2232,5 +2233,6 @@ export function DataTableGrid({
         </AlertDialogContent>
       </AlertDialog>
     </TicketLookupContext.Provider>
+    </LinkNavigationProvider>
   );
 }

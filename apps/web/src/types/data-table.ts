@@ -38,6 +38,14 @@ export type DataTableFieldOptions = {
   code?: string;
   allowTeams?: boolean;
   targetTableId?: string;
+  relationId?: string;
+  inverseFieldId?: string;
+  side?: "source" | "target";
+  localMax?: "one" | "many";
+  inverseMax?: "one" | "many";
+  cardinality?: "many-to-one" | "one-to-many" | "many-to-many" | "one-to-one";
+  inverseName?: string;
+  unavailable?: boolean;
   /** ticket: restrict to these boards (absent/empty = any board). */
   boardIds?: string[];
   /** ticket: false = one ticket per cell (absent = many). */
@@ -60,6 +68,16 @@ export type DataTableField = {
   updatedAt: string;
 };
 
+export type LinkedRecord = { id: string; label: string; deleted?: boolean };
+export type LinkValue = {
+  kind: "link";
+  status: "ok" | "unavailable";
+  records: LinkedRecord[];
+  total: number | null;
+  hasMore: boolean;
+  version: string | null;
+};
+
 export type DataTableRow = {
   id: string;
   position: number;
@@ -72,6 +90,7 @@ export type DataTableRow = {
 };
 
 export type DataTableSummary = {
+  canEdit?: boolean;
   id: string;
   organizationId: string;
   name: string;
@@ -98,6 +117,9 @@ export type TableActivity = {
     | "row_created"
     | "row_deleted"
     | "cell_updated"
+    | "link_added"
+    | "link_removed"
+    | "links_migrated"
     | "field_created"
     | "field_updated"
     | "field_deleted"

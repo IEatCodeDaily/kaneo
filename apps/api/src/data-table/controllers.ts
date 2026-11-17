@@ -19,6 +19,7 @@ import {
   dataTableActivityTable,
   dataTableDashboardTable,
   dataTableFieldTable,
+  dataTableRelationTable,
   dataTableTable,
   externalLinkTable,
   organizationMemberTable,
@@ -37,6 +38,7 @@ import {
   fieldOptionsSchema,
   isFieldType,
 } from "./fields";
+import * as relations from "./relations";
 import { queryRows, type RowQueryInput } from "./row-query";
 import type { StoreField } from "./store";
 import * as store from "./store";
@@ -193,7 +195,7 @@ async function ensureHistoryBaseline(
 }
 
 /** Every audited mutation uses this one connection and lock, including its reads. */
-async function mutateTable<T>(
+export async function mutateTable<T>(
   organizationId: string,
   tableId: string,
   userId: string | undefined,
@@ -202,13 +204,55 @@ async function mutateTable<T>(
     table: typeof dataTableTable.$inferSelect,
   ) => Promise<T>,
   live = true,
+  extraTables: string[] = [],
+  baseline = true,
 ) {
-  return db.transaction(async (tx) => {
-    const table = await lockTable(tx, organizationId, tableId);
-    if (live) requireLive(table);
-    await ensureHistoryBaseline(tx, table, userId);
-    return mutate(tx, table);
-  });
+  const discovered = await relations.incident(db, tableId);
+  const ids = [
+    ...new Set([
+      tableId,
+      ...extraTables,
+      ...discovered.flatMap((relation) => [
+        relation.sourceTableId,
+        relation.targetTableId,
+      ]),
+    ]),
+  ].sort();
+  try {
+    return await db.transaction(async (tx) => {
+      // ponytail: table-scoped serialization; use finer locks only after contention measurements.
+      const tables = [];
+      for (const id of ids)
+        tables.push(await lockTable(tx, organizationId, id));
+      const fresh = await relations.incident(tx, tableId);
+      if (
+        fresh.some(
+          (relation) =>
+            !ids.includes(relation.sourceTableId) ||
+            !ids.includes(relation.targetTableId),
+        )
+      )
+        throw new HTTPException(409, {
+          message: "Table relationships changed. Please retry",
+        });
+      const table = tables.find((table) => table.id === tableId);
+      if (!table) notFound("Data table");
+      if (live) requireLive(table);
+      if (baseline)
+        for (const endpoint of tables)
+          await ensureHistoryBaseline(tx, endpoint, userId);
+      return mutate(tx, table);
+    });
+  } catch (error) {
+    const code =
+      (error as { cause?: { code?: string }; code?: string }).cause?.code ??
+      (error as { code?: string }).code;
+    if (code === "23505" || code === "23503" || code === "23514")
+      throw new HTTPException(409, {
+        message: "Relationship conflict. Refresh and try again",
+      });
+    throw error;
+  }
 }
 
 const primaryText = (fields: StoreField[], values: Record<string, unknown>) => {
@@ -241,6 +285,7 @@ export async function listTableActivity(
   offset = 0,
   limit = 100,
   executor: Executor = db,
+  userId?: string,
 ) {
   await requireTable(organizationId, tableId, executor);
   if (
@@ -251,7 +296,20 @@ export async function listTableActivity(
     limit > 100
   )
     badRequest("Invalid activity pagination");
-  return activityQuery(executor, tableId, rowId).offset(offset).limit(limit);
+  const entries = await activityQuery(executor, tableId, rowId)
+    .offset(offset)
+    .limit(limit);
+  return Promise.all(
+    entries.map(async (entry) => ({
+      ...entry,
+      data: (await relations.redactHistory(
+        executor,
+        organizationId,
+        entry.data,
+        userId,
+      )) as Record<string, unknown> | null,
+    })),
+  );
 }
 
 function activityQuery(executor: Executor, tableId: string, rowId?: string) {
@@ -340,6 +398,19 @@ export async function exportTableHistory(
     const table = await lockTable(tx, organizationId, tableId);
     const snapshot = await tableSnapshot(tx, table);
     const events = await activityQuery(tx, tableId);
+    await relations.project(
+      tx,
+      organizationId,
+      tableId,
+      snapshot.fields,
+      snapshot.rows,
+    );
+    for (const event of events)
+      event.data = (await relations.redactHistory(
+        tx,
+        organizationId,
+        event.data,
+      )) as Record<string, unknown> | null;
     const baseline = events.find((event) => event.type === "baseline");
     return {
       version: 1 as const,
@@ -497,6 +568,7 @@ async function requireField(
       and(
         eq(dataTableFieldTable.id, fieldId),
         eq(dataTableFieldTable.tableId, tableId),
+        isNull(dataTableFieldTable.deletedAt),
       ),
     )
     .limit(1);
@@ -508,7 +580,12 @@ async function listTableFieldRows(tableId: string, executor: Executor = db) {
   const fields = await executor
     .select()
     .from(dataTableFieldTable)
-    .where(eq(dataTableFieldTable.tableId, tableId))
+    .where(
+      and(
+        eq(dataTableFieldTable.tableId, tableId),
+        isNull(dataTableFieldTable.deletedAt),
+      ),
+    )
     .orderBy(asc(dataTableFieldTable.position), asc(dataTableFieldTable.id));
   // Row `type` is a plain string, so a type predicate is not assignable to
   // the row type; narrow inside the guard branch instead.
@@ -655,7 +732,7 @@ async function assertTicketValues(
 }
 
 /** Ticket lookup for every ticket cell in a page of rows (one query). */
-async function ticketsForRows(
+export async function ticketsForRows(
   organizationId: string,
   fields: StoreField[],
   rows: { values: Record<string, unknown> }[],
@@ -805,6 +882,7 @@ export async function getDataTable(
   organizationId: string,
   tableId: string,
   offset = 0,
+  userId?: string,
 ) {
   // Soft-deleted tables still resolve here so the client can show a restore banner.
   const table = await requireTable(organizationId, tableId);
@@ -825,6 +903,14 @@ export async function getDataTable(
       ),
     },
   ]);
+  await relations.project(
+    db,
+    organizationId,
+    tableId,
+    fieldRows,
+    rows,
+    table.deletedAt ? undefined : userId,
+  );
   return { ...table, fields: fieldRows, rows, total, tickets };
 }
 
@@ -833,6 +919,7 @@ export async function queryTableRows(
   tableId: string,
   input: RowQueryInput,
   csv = false,
+  userId?: string,
 ) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ`);
@@ -873,6 +960,15 @@ export async function queryTableRows(
       },
       csv,
     );
+    if ("rows" in result && result.rows)
+      await relations.project(
+        tx,
+        organizationId,
+        tableId,
+        fields,
+        result.rows,
+        userId,
+      );
     return { ...result, tickets };
   });
 }
@@ -961,13 +1057,74 @@ export async function restoreDataTable(
 }
 
 /** Hard delete: drops the physical table and the metadata row atomically. */
-export async function purgeDataTable(organizationId: string, tableId: string) {
-  await db.transaction(async (tx) => {
-    const table = await lockTable(tx, organizationId, tableId);
-    await store.dropTable(tx, table.id);
-    await tx.delete(dataTableTable).where(eq(dataTableTable.id, table.id));
-  });
-  return { success: true as const };
+export async function purgeDataTable(
+  organizationId: string,
+  tableId: string,
+  userId?: string,
+) {
+  return mutateTable(
+    organizationId,
+    tableId,
+    userId,
+    async (tx, table) => {
+      const incident = await relations.incident(tx, tableId);
+      if (incident.length && !table.deletedAt)
+        throw new HTTPException(409, {
+          message: "Move this table to trash before permanent deletion",
+        });
+      await relations.authorize(
+        tx,
+        organizationId,
+        [
+          tableId,
+          ...incident.flatMap((relation) => [
+            relation.sourceTableId,
+            relation.targetTableId,
+          ]),
+        ],
+        userId,
+        "manage",
+        false,
+      );
+      for (const relation of incident) {
+        const edges = await tx.execute(
+          sql`SELECT source_row_id, target_row_id FROM ${relations.junctionRef(relation.id)}`,
+        );
+        for (const edge of edges.rows)
+          await relations.edgeActivity(
+            tx,
+            relation,
+            String(edge.source_row_id),
+            String(edge.target_row_id),
+            "link_removed",
+            userId,
+            "table_purged",
+          );
+        await relations.ddl(
+          tx,
+          relation,
+          `DROP TABLE kaneo_tables."${relations.junction(relation.id)}"`,
+        );
+        await tx
+          .delete(dataTableRelationTable)
+          .where(eq(dataTableRelationTable.id, relation.id));
+        await tx
+          .delete(dataTableFieldTable)
+          .where(
+            inArray(dataTableFieldTable.id, [
+              relation.sourceFieldId,
+              relation.targetFieldId,
+            ]),
+          );
+      }
+      await store.dropTable(tx, table.id);
+      await tx.delete(dataTableTable).where(eq(dataTableTable.id, table.id));
+      return { success: true as const };
+    },
+    false,
+    [],
+    false,
+  );
 }
 
 export async function addFieldToTable(
@@ -981,6 +1138,18 @@ export async function addFieldToTable(
   },
   userId?: string,
 ) {
+  if (values.type === "link") {
+    const options = relations.creationOptions(values.options);
+    return mutateTable(
+      organizationId,
+      tableId,
+      userId,
+      (tx) =>
+        relations.createRelation(tx, organizationId, tableId, values, userId),
+      true,
+      [options.targetTableId],
+    );
+  }
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const options = parseFieldOptions(values.type, values.options);
     await assertTicketBoards(organizationId, values.type, options, tx);
@@ -1044,6 +1213,38 @@ export async function updateTableField(
       badRequest("Field has an unknown type and cannot be migrated");
     const fromType = field.type;
     const nextType = values.type ?? fromType;
+    if (fromType === "link" || nextType === "link") {
+      if (
+        nextType !== fromType ||
+        (values.options !== undefined &&
+          !sameJson(values.options, field.options))
+      )
+        badRequest(
+          "Relationship targets and cardinality cannot be changed here; create a new relationship",
+        );
+      const [updated] = await tx
+        .update(dataTableFieldTable)
+        .set({ name: values.name ?? field.name, updatedAt: new Date() })
+        .where(eq(dataTableFieldTable.id, fieldId))
+        .returning();
+      await logActivity(tx, {
+        tableId,
+        fieldId,
+        userId,
+        type: "field_updated",
+        data: { name: values.name ?? field.name, fromName: field.name },
+      });
+      if (
+        !(await relations.allowed(
+          organizationId,
+          String(field.options?.targetTableId),
+          userId,
+          "view",
+        ))
+      )
+        return { ...updated, options: { unavailable: true } };
+      return updated;
+    }
     // A type conversion without options must not carry incompatible old options.
     const options =
       values.options !== undefined || nextType !== fromType
@@ -1138,6 +1339,46 @@ export async function deleteTableField(
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const field = await requireField(tableId, fieldId, tx);
     if (!isFieldType(field.type)) badRequest("Field has an unknown type");
+    if (field.type === "link") {
+      const relation = await relations.relationFor(
+        tx,
+        organizationId,
+        tableId,
+        fieldId,
+      );
+      await relations.authorize(
+        tx,
+        organizationId,
+        [relation.sourceTableId, relation.targetTableId],
+        userId,
+        "edit",
+      );
+      await tx
+        .update(dataTableRelationTable)
+        .set({ deletedAt: new Date() })
+        .where(eq(dataTableRelationTable.id, relation.id));
+      await tx
+        .update(dataTableFieldTable)
+        .set({ deletedAt: new Date() })
+        .where(
+          inArray(dataTableFieldTable.id, [
+            relation.sourceFieldId,
+            relation.targetFieldId,
+          ]),
+        );
+      for (const [id, endpointTable] of [
+        [relation.sourceFieldId, relation.sourceTableId],
+        [relation.targetFieldId, relation.targetTableId],
+      ])
+        await logActivity(tx, {
+          tableId: endpointTable!,
+          fieldId: id,
+          userId,
+          type: "field_deleted",
+          data: { relationId: relation.id },
+        });
+      return { success: true as const };
+    }
     const column = await store.snapshotColumn(tx, tableId, {
       ...field,
       type: field.type,
@@ -1148,9 +1389,9 @@ export async function deleteTableField(
       column.map((item) => ({ values: { [fieldId]: item.value } })),
       tx,
     );
-    await store.dropField(tx, { tableId, fieldId });
     await tx
-      .delete(dataTableFieldTable)
+      .update(dataTableFieldTable)
+      .set({ deletedAt: new Date() })
       .where(eq(dataTableFieldTable.id, fieldId));
     await logActivity(tx, {
       tableId,
@@ -1175,40 +1416,67 @@ export async function addTableRow(
   values: Record<string, unknown> | undefined,
   userId?: string,
 ) {
-  return mutateTable(organizationId, tableId, userId, async (tx) => {
-    const fields = await listTableFieldRows(tableId, tx);
-    const initialValues = { ...(values ?? {}) };
-    for (const field of fields) {
-      if (
-        !Object.hasOwn(initialValues, field.id) &&
-        Object.hasOwn(field.options ?? {}, "defaultValue")
-      ) {
-        initialValues[field.id] = field.options?.defaultValue;
-      }
+  return mutateTable(organizationId, tableId, userId, (tx) =>
+    insertTableRow(tx, organizationId, tableId, values, userId),
+  );
+}
+
+export async function insertTableRow(
+  tx: store.DataTableTx,
+  organizationId: string,
+  tableId: string,
+  values: Record<string, unknown> | undefined,
+  userId?: string,
+) {
+  const fields = await listTableFieldRows(tableId, tx);
+  const initialValues = { ...(values ?? {}) };
+  for (const field of fields) {
+    if (
+      !Object.hasOwn(initialValues, field.id) &&
+      Object.hasOwn(field.options ?? {}, "defaultValue")
+    ) {
+      initialValues[field.id] = field.options?.defaultValue;
     }
-    await assertTicketValues(organizationId, fields, initialValues, {}, tx);
-    const row = await store.insertRow(
+  }
+  await assertTicketValues(organizationId, fields, initialValues, {}, tx);
+  const linkValues = Object.fromEntries(
+    fields
+      .filter(
+        (field) =>
+          field.type === "link" && Object.hasOwn(initialValues, field.id),
+      )
+      .map((field) => [field.id, initialValues[field.id]]),
+  );
+  for (const id of Object.keys(linkValues)) delete initialValues[id];
+  const row = await store.insertRow(tx, tableId, fields, initialValues, userId);
+  for (const [id, value] of Object.entries(linkValues))
+    await relations.writeLinks(
       tx,
+      organizationId,
       tableId,
-      fields,
-      initialValues,
+      id,
+      row.id,
+      { value },
       userId,
+      true,
     );
-    await logActivity(tx, {
-      tableId,
-      userId,
-      type: "row_created",
-      rowId: row.id,
-      data: {
-        title: primaryText(fields, row.values),
-        row: await store.getRowById(tx, tableId, fields, row.id, true),
-        values: row.values,
-        fields,
-        tickets: await ticketsForRows(organizationId, fields, [row], tx),
-      },
-    });
-    return row;
+  const refreshed = await store.getRowById(tx, tableId, fields, row.id);
+  if (refreshed) row.values = refreshed.values;
+  await logActivity(tx, {
+    tableId,
+    userId,
+    type: "row_created",
+    rowId: row.id,
+    data: {
+      title: primaryText(fields, row.values),
+      row: await store.getRowById(tx, tableId, fields, row.id, true),
+      values: row.values,
+      fields,
+      tickets: await ticketsForRows(organizationId, fields, [row], tx),
+    },
   });
+  await relations.project(tx, organizationId, tableId, fields, [row], userId);
+  return row;
 }
 
 export async function updateTableCell(
@@ -1218,6 +1486,7 @@ export async function updateTableCell(
   fieldId: string,
   value: unknown,
   userId?: string,
+  ifVersion?: string,
 ) {
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const fields = await listTableFieldRows(tableId, tx);
@@ -1232,12 +1501,46 @@ export async function updateTableCell(
     );
     const field = fields.find((candidate) => candidate.id === fieldId);
     if (!field) notFound("Data table field");
+    if (field.type === "link") {
+      await relations.writeLinks(
+        tx,
+        organizationId,
+        tableId,
+        fieldId,
+        rowId,
+        { value, ifVersion },
+        userId,
+      );
+      const row = await store.getRowById(tx, tableId, fields, rowId);
+      if (!row) notFound("Row");
+      await relations.project(
+        tx,
+        organizationId,
+        tableId,
+        fields,
+        [row],
+        userId,
+      );
+      return {
+        ...row,
+        tickets: await ticketsForRows(organizationId, fields, [row], tx),
+      };
+    }
     const coerced = coerceValue(field, value);
-    if (await store.cellValueMatches(tx, tableId, rowId, field, coerced))
+    if (await store.cellValueMatches(tx, tableId, rowId, field, coerced)) {
+      await relations.project(
+        tx,
+        organizationId,
+        tableId,
+        fields,
+        [current],
+        userId,
+      );
       return {
         ...current,
         tickets: await ticketsForRows(organizationId, fields, [current], tx),
       };
+    }
     const beforeRow = await store.getRowById(tx, tableId, fields, rowId, true);
     const row = await store.updateCell(
       tx,
@@ -1272,6 +1575,7 @@ export async function updateTableCell(
         tickets,
       },
     });
+    await relations.project(tx, organizationId, tableId, fields, [row], userId);
     return { ...row, tickets };
   });
 }
@@ -1296,7 +1600,9 @@ export async function deleteTableRow(
       tx,
     ))
       tickets[ref.id] = ref;
-    await store.deleteRow(tx, tableId, rowId);
+    await tx.execute(
+      sql`UPDATE ${relations.rowRef(tableId)} SET deleted_at = now() WHERE id = ${rowId}`,
+    );
     if (links.length)
       await tx.delete(externalLinkTable).where(
         inArray(
@@ -1691,6 +1997,14 @@ export async function listRowsForTask(
       taskId,
     });
     if (rows.length === 0) continue;
+    await relations.project(
+      db,
+      organizationId,
+      tableId,
+      fieldRows,
+      rows,
+      userId,
+    );
     tables.push({
       tableId,
       tableName: table.name,

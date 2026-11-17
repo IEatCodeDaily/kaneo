@@ -41,6 +41,7 @@ import type {
   DataTableField,
   DataTableRow,
 } from "@/types/data-table";
+import { LinkNavigationContext } from "./link-cell";
 
 /**
  * Row drawer, laid out like the ticket drawer but fields only: a top bar
@@ -49,6 +50,8 @@ import type {
  */
 export function RowSheet({
   open,
+  linked = false,
+  onBack,
   onOpenChange,
   table,
   row,
@@ -64,6 +67,8 @@ export function RowSheet({
   hasNext,
 }: {
   open: boolean;
+  linked?: boolean;
+  onBack?: () => void;
   onOpenChange: (open: boolean) => void;
   table: DataTable;
   row: DataTableRow | null;
@@ -84,6 +89,7 @@ export function RowSheet({
   hasNext: boolean;
 }) {
   const { t } = useTranslation();
+  const navigation = useContext(LinkNavigationContext);
   const { organizationSlug, tickets: ticketLookup } =
     useContext(TicketLookupContext);
   // Editing is scoped to the current row: TableCellInput seeds its draft
@@ -156,7 +162,10 @@ export function RowSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet
+      open={open && (linked || !navigation?.stack.length)}
+      onOpenChange={onOpenChange}
+    >
       <SheetContent
         side="right"
         size="sm"
@@ -233,6 +242,11 @@ export function RowSheet({
           </SheetDescription>
         </SheetHeader>
 
+        {onBack && (
+          <Button size="sm" variant="ghost" onClick={onBack}>
+            {t("navigation:tables.linkBack")}
+          </Button>
+        )}
         <SheetTitle className="text-xl font-semibold break-words">
           {primaryField &&
           row.values[primaryField.id] != null &&

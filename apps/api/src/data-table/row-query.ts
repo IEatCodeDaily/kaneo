@@ -303,14 +303,14 @@ export async function queryRows(
     ? exportFields.map(
         (f) => sql`${cellText(f, lookups)} AS ${sql.identifier(f.id)}`,
       )
-    : rowSelection(fields);
+    : rowSelection(fields, tableId);
   // One statement/snapshot: page, totals, groups and summaries share exactly the same predicate.
   const result =
-    await executor.execute(sql`WITH filtered AS MATERIALIZED (SELECT *${group ? sql`, ${groupKey} AS __group_key, ${groupLabel} AS __group_label` : sql``} FROM ${tableRef(tableId)} WHERE ${where}),
+    await executor.execute(sql`WITH filtered AS MATERIALIZED (SELECT *${group ? sql`, ${groupKey} AS __group_key, ${groupLabel} AS __group_label` : sql``} FROM ${tableRef(tableId)} WHERE deleted_at IS NULL AND ${where}),
     page AS (SELECT ${sql.join(selection, sql`, `)} FROM filtered ORDER BY ${sql.join(order, sql`, `)} ${csv ? sql`` : sql`LIMIT ${spec.limit} OFFSET ${spec.offset}`})
     SELECT (SELECT COALESCE(jsonb_agg(page), '[]'::jsonb) FROM page) AS rows,
     (SELECT row_to_json(t) FROM (SELECT ${sql.join(aggregate, sql`, `)} FROM filtered) t) AS summary,
-    (SELECT count(*)::integer FROM ${tableRef(tableId)}) AS table_total,
+    (SELECT count(*)::integer FROM ${tableRef(tableId)} WHERE deleted_at IS NULL) AS table_total,
     ${group ? sql`(SELECT COALESCE(jsonb_agg(g ORDER BY NULLIF(g.label, '') ASC NULLS LAST, g.key), '[]'::jsonb) FROM (SELECT __group_key AS key, __group_label AS label, ${sql.join(aggregate, sql`, `)} FROM filtered GROUP BY __group_key, __group_label) g)` : sql`'[]'::jsonb`} AS groups`);
   const record = result.rows[0] as {
     rows: Record<string, unknown>[];

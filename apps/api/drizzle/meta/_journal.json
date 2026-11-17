@@ -645,6 +645,13 @@
 			"when": 1794881001000,
 			"tag": "0088_ranked_search",
 			"breakpoints": true
+		},
+		{
+			"idx": 89,
+			"version": "7",
+			"when": 1794881002000,
+			"tag": "0089_table_links",
+			"breakpoints": true
 		}
 	]
 }

@@ -12,9 +12,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useDataTableMutations } from "@/hooks/data-table/use-data-tables";
+import {
+  useDataTableMutations,
+  useDataTables,
+} from "@/hooks/data-table/use-data-tables";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import { toast } from "@/lib/toast";
 import type {
@@ -90,6 +100,20 @@ export default function FieldOptionsDialog({
   const [boardIds, setBoardIds] = useState<string[]>([]);
   const [multiple, setMultiple] = useState(true);
   const [confirmType, setConfirmType] = useState(false);
+  const [targetTableId, setTargetTableId] = useState("");
+  const [cardinality, setCardinality] =
+    useState<NonNullable<DataTableFieldOptions["cardinality"]>>("many-to-one");
+  const [inverseName, setInverseName] = useState("");
+  const { data: tables = [] } = useDataTables(
+    organizationId,
+    open && type === "link",
+  );
+  const localName =
+    tables.find((table) => table.id === tableId)?.name ??
+    t("navigation:tables.linkThisTable");
+  const targetName =
+    tables.find((table) => table.id === targetTableId)?.name ??
+    t("navigation:tables.linkTargetTable");
   const { data: boards = [] } = useGetBoards({
     organizationId: type === "ticket" ? organizationId : "",
   });
@@ -118,10 +142,21 @@ export default function FieldOptionsDialog({
     setRequired(field ? fieldIsRequired(field) : false);
     setBoardIds(options.boardIds ?? []);
     setMultiple(options.multiple !== false);
+    setTargetTableId(options.targetTableId ?? "");
+    setInverseName("");
+    setCardinality("many-to-one");
     setConfirmType(false);
   }, [open, field, initialType]);
 
   const buildOptions = (): DataTableFieldOptions | undefined => {
+    if (type === "link")
+      return field?.type === "link"
+        ? (field.options ?? undefined)
+        : {
+            targetTableId,
+            cardinality,
+            ...(inverseName.trim() ? { inverseName: inverseName.trim() } : {}),
+          };
     const draft: DataTableFieldOptions = optionsForType(type, field?.options);
     if (type === "select" || type === "multiselect") {
       draft.choices = choices.filter((choice) => choice.label.trim() !== "");
@@ -156,6 +191,8 @@ export default function FieldOptionsDialog({
   };
 
   const optionsValid =
+    (type !== "link" || Boolean(targetTableId)) &&
+    (!field || (type === "link") === (field.type === "link")) &&
     (type !== "currency" || code.trim() !== "") &&
     (type !== "select" && type !== "multiselect"
       ? true
@@ -257,6 +294,109 @@ export default function FieldOptionsDialog({
                 setEditorVersion((version) => version + 1);
               }}
             />
+            {type === "link" && (
+              <section
+                className="space-y-3"
+                aria-label={t("navigation:tables.linkSettings")}
+              >
+                <label htmlFor="link-target-table" className="block space-y-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.linkTargetTable")}
+                  </span>
+                  <Select
+                    items={tables.map((table) => ({
+                      value: table.id,
+                      label: table.name,
+                    }))}
+                    value={targetTableId || null}
+                    onValueChange={(value) => setTargetTableId(value ?? "")}
+                    disabled={Boolean(field)}
+                  >
+                    <SelectTrigger
+                      id="link-target-table"
+                      className="w-full"
+                      aria-label={t("navigation:tables.linkTargetTable")}
+                    >
+                      <SelectValue
+                        placeholder={t("navigation:tables.linkTargetTable")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tables.map((table) => (
+                        <SelectItem
+                          key={table.id}
+                          value={table.id}
+                          disabled={table.canEdit === false}
+                        >
+                          {table.name}
+                          {table.id === tableId
+                            ? ` · ${t("navigation:tables.linkThisTable")}`
+                            : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                {!field && (
+                  <>
+                    <div
+                      className="space-y-1"
+                      role="radiogroup"
+                      aria-label={t("navigation:tables.linkRelationship")}
+                    >
+                      {(
+                        [
+                          "many-to-one",
+                          "one-to-many",
+                          "many-to-many",
+                          "one-to-one",
+                        ] as const
+                      ).map((kind) => (
+                        <Button
+                          key={kind}
+                          type="button"
+                          variant="outline"
+                          role="radio"
+                          aria-checked={cardinality === kind}
+                          className="h-auto w-full justify-start whitespace-normal py-2 text-left"
+                          onClick={() => setCardinality(kind)}
+                        >
+                          {t(`navigation:tables.linkSentence.${kind}`, {
+                            source: localName,
+                            target: targetName,
+                          })}
+                        </Button>
+                      ))}
+                    </div>
+                    <label
+                      htmlFor="link-inverse-name"
+                      className="block space-y-2"
+                    >
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {t("navigation:tables.linkInverseName")}
+                      </span>
+                      <Input
+                        id="link-inverse-name"
+                        value={inverseName}
+                        onChange={(event) => setInverseName(event.target.value)}
+                        placeholder={localName}
+                        aria-label={t("navigation:tables.linkInverseName")}
+                      />
+                    </label>
+                  </>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t("navigation:tables.linkReciprocalSummary", {
+                    source: localName,
+                    target: targetName,
+                    name: inverseName.trim() || localName,
+                  })}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("navigation:tables.linkMutualEdit")}
+                </p>
+              </section>
+            )}
             {[
               "select",
               "multiselect",
@@ -482,48 +622,50 @@ export default function FieldOptionsDialog({
                 )}
               </section>
             )}
-            <section
-              className="space-y-2"
-              aria-label={t("navigation:tables.defaultValue")}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-xs font-medium text-muted-foreground">
-                  {t("navigation:tables.defaultValue")}
-                </h3>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => {
-                    setDefaultValue(undefined);
-                    setDefaultInvalid(false);
-                    setEditorVersion((version) => version + 1);
+            {type !== "link" && (
+              <section
+                className="space-y-2"
+                aria-label={t("navigation:tables.defaultValue")}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.defaultValue")}
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => {
+                      setDefaultValue(undefined);
+                      setDefaultInvalid(false);
+                      setEditorVersion((version) => version + 1);
+                    }}
+                  >
+                    {t("navigation:tables.clearDefault")}
+                  </Button>
+                </div>
+                <FieldValueEditor
+                  key={editorVersion}
+                  field={{
+                    id: "draft",
+                    tableId,
+                    name: t("navigation:tables.defaultValue"),
+                    type,
+                    options: { ...buildOptions(), required: false },
+                    position: 0,
+                    createdAt: "",
+                    updatedAt: "",
                   }}
-                >
-                  {t("navigation:tables.clearDefault")}
-                </Button>
-              </div>
-              <FieldValueEditor
-                key={editorVersion}
-                field={{
-                  id: "draft",
-                  tableId,
-                  name: t("navigation:tables.defaultValue"),
-                  type,
-                  options: { ...buildOptions(), required: false },
-                  position: 0,
-                  createdAt: "",
-                  updatedAt: "",
-                }}
-                value={defaultValue}
-                members={members}
-                onChange={setDefaultValue}
-                onInvalidChange={setDefaultInvalid}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("navigation:tables.defaultHelp")}
-              </p>
-            </section>
+                  value={defaultValue}
+                  members={members}
+                  onChange={setDefaultValue}
+                  onInvalidChange={setDefaultInvalid}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("navigation:tables.defaultHelp")}
+                </p>
+              </section>
+            )}
             {field && type !== field.type && (
               <p
                 role="alert"
@@ -551,7 +693,8 @@ export default function FieldOptionsDialog({
                 <span>{t("navigation:tables.optionRequired")}</span>
                 <Switch
                   id="field-required"
-                  checked={required}
+                  disabled={type === "link"}
+                  checked={type !== "link" && required}
                   onCheckedChange={setRequired}
                 />
               </label>

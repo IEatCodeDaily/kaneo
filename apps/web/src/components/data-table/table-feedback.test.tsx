@@ -21,6 +21,9 @@ vi.mock("react-i18next", async (original) => ({
   ...(await original<typeof import("react-i18next")>()),
   useTranslation: () => ({ t: (key: string) => key }),
 }));
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
     children,
@@ -39,6 +42,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@/fetchers/data-table/data-table", () => ({ getTicketOptions }));
 vi.mock("@/hooks/data-table/use-data-tables", () => ({
+  useDataTables: () => ({ data: [] }),
   useDataTableMutations: () => ({
     createField: { mutateAsync: vi.fn(), isPending: false },
     updateField: { mutateAsync: updateField, isPending: false },
