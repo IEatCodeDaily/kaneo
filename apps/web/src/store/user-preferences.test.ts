@@ -4,6 +4,39 @@ import { useUserPreferencesStore } from "./user-preferences";
 const STORAGE_NAME = "user-preferences";
 
 describe("user preferences persistence", () => {
+  it("keeps appearance isolated by account and restores it after hydration", async () => {
+    useUserPreferencesStore.setState({
+      appearanceUserId: null,
+      userAppearance: {},
+      theme: "dark",
+      themePreset: "mono",
+      accentColor: null,
+    });
+    const store = () => useUserPreferencesStore.getState();
+    store().setAppearanceUserId("alice");
+    store().setAppearance({
+      theme: "light",
+      themePreset: "teal",
+      accentColor: "#abcdef",
+    });
+    store().setAppearanceUserId("bob");
+    expect(store().themePreset).toBe("mono");
+    expect(store().accentColor).toBeNull();
+    store().setAppearance({ themePreset: "graphite" });
+    store().setAppearanceUserId(null);
+    expect(store().themePreset).toBe("mono");
+    await useUserPreferencesStore.persist.rehydrate();
+    store().setAppearanceUserId("alice");
+    expect(store()).toMatchObject({
+      theme: "light",
+      themePreset: "teal",
+      accentColor: "#abcdef",
+    });
+    store().setAppearanceUserId("bob");
+    expect(store().themePreset).toBe("graphite");
+    store().setAppearance({ accentColor: "invalid" });
+    expect(store().accentColor).toBeNull();
+  });
   beforeEach(() => {
     localStorage.clear();
     useUserPreferencesStore.setState({ recentPages: [] });

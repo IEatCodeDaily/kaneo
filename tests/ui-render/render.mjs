@@ -235,10 +235,15 @@ async function themeInboxFixtures(ctx) {
 function themeContrast() {
   const css = getComputedStyle(document.documentElement);
   const rgb = (name) => {
-    const hex = css.getPropertyValue(name).trim();
-    if (!/^#[0-9a-f]{6}$/i.test(hex))
-      throw new Error(`non-hex theme token ${name}: ${hex}`);
-    return [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+    const color = css.getPropertyValue(name).trim();
+    if (!color || !CSS.supports("color", color))
+      throw new Error(`invalid theme token ${name}: ${color}`);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);
   };
   const luminance = (name) => {
     const [r, g, b] = rgb(name).map((v) => {
@@ -1543,6 +1548,202 @@ if (pages.table) {
     await ctx.close();
   }
 } else console.log("SKIP overlay states: the table page is not in PAGES");
+
+// Theme system acceptance: real account controls, persisted palettes and painted buttons.
+for (const [preset, mode, tag, appearance] of [
+  ["mono", "dark", "desktop", true],
+  ["mono", "dark", "phone", true],
+  ...["mono", "indigo", "slate", "graphite", "teal"].map((id) => [
+    id,
+    "dark",
+    "desktop",
+    false,
+  ]),
+  ["mono", "light", "desktop", false],
+]) {
+  const ctx = await browser.newContext({
+    viewport:
+      tag === "phone"
+        ? { width: 390, height: 844 }
+        : { width: 1440, height: 900 },
+    storageState: state,
+    colorScheme: mode,
+    reducedMotion: "reduce",
+  });
+  await ctx.addInitScript(
+    ({ preset, mode }) => {
+      if (!localStorage.getItem("user-preferences"))
+        localStorage.setItem(
+          "user-preferences",
+          JSON.stringify({
+            state: { theme: mode, themePreset: preset, accentColor: null },
+            version: 0,
+          }),
+        );
+    },
+    { preset, mode },
+  );
+  const page = await ctx.newPage();
+  const fails = [];
+  const measurements = [];
+  page.on("pageerror", (e) => fails.push(String(e)));
+  const shot = appearance
+    ? `appearance--${tag}-${mode}.png`
+    : `theme-${preset}--table-${mode}.png`;
+  try {
+    await page.goto(
+      BASE +
+        (appearance
+          ? "/dashboard/settings/account/appearance"
+          : `/dashboard/organization/${slug}/table/${tbl.id}`),
+      { waitUntil: "networkidle" },
+    );
+    if (!appearance) await page.getByRole("grid").waitFor();
+    const rootTheme = await page.locator("html").getAttribute("data-theme");
+    if (rootTheme !== preset)
+      throw new Error(`data-theme ${rootTheme}, expected ${preset}`);
+    const palette = await page.evaluate(themeContrast);
+    if (palette.buttonContrast < 4.5 || palette.mutedContrast < 4.5)
+      throw new Error(`palette contrast ${JSON.stringify(palette)}`);
+    if (appearance) {
+      const cards = await page
+        .locator('[data-testid^="preset-"]')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const box = node.getBoundingClientRect();
+            const sample = node
+              .querySelector("[data-theme]")
+              .getBoundingClientRect();
+            return {
+              top: box.top,
+              bottom: box.bottom,
+              left: box.left,
+              right: box.right,
+              sampleTop: sample.top,
+              sampleBottom: sample.bottom,
+            };
+          }),
+        );
+      for (const c of cards)
+        if (c.sampleTop < c.top || c.sampleBottom > c.bottom)
+          throw new Error(`preview escapes card ${JSON.stringify(c)}`);
+      for (let i = 0; i < cards.length; i++)
+        for (let j = i + 1; j < cards.length; j++) {
+          const a = cards[i];
+          const b = cards[j];
+          if (
+            a.left < b.right &&
+            b.left < a.right &&
+            a.top < b.bottom &&
+            b.top < a.bottom
+          )
+            throw new Error("preset cards overlap");
+        }
+    }
+    if (appearance && tag === "phone") {
+      const nav = page.locator("aside details");
+      // Collapse the mobile settings navigation so the page is the captured surface.
+      if ((await nav.count()) && (await nav.getAttribute("open")) !== null)
+        await nav.locator("summary").click();
+    }
+    await page.screenshot({ path: join(OUT, shot), fullPage: appearance });
+    if (appearance && tag === "phone") {
+      await page
+        .getByTestId("appearance-preview-action")
+        .scrollIntoViewIfNeeded();
+      const accentShot = "appearance-accent--phone-dark.png";
+      await page.screenshot({ path: join(OUT, accentShot) });
+      checks[accentShot] = { fails: [], preset, mode };
+    }
+    const assertButton = async () => {
+      const button = appearance
+        ? page.getByTestId("appearance-preview-action")
+        : page.getByRole("button", { name: "New row", exact: true }).first();
+      const measured = await button.evaluate((el) => {
+        const s = getComputedStyle(el);
+        const lum = (color) => {
+          const channels = color
+            .match(/[\d.]+/g)
+            .slice(0, 3)
+            .map(Number)
+            .map((v) => {
+              const c = v / 255;
+              return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+            });
+          return channels.reduce(
+            (n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i],
+            0,
+          );
+        };
+        const a = lum(s.color);
+        const b = lum(s.backgroundColor);
+        return {
+          foreground: s.color,
+          background: s.backgroundColor,
+          ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+        };
+      });
+      measurements.push(measured);
+      if (!(measured.ratio >= 4.5))
+        throw new Error(`painted button contrast ${JSON.stringify(measured)}`);
+    };
+    await assertButton();
+    if (appearance) {
+      await page.getByTestId("preset-teal").click();
+      await page.waitForFunction(
+        () => document.documentElement.dataset.theme === "teal",
+      );
+      await page.getByRole("button", { name: "#d97706", exact: true }).click();
+      await assertButton();
+      const hex = page.getByLabel("Custom hex colour");
+      await hex.fill("#eeeeee");
+      await assertButton();
+      await page.reload({ waitUntil: "networkidle" });
+      if ((await hex.inputValue()) !== "#eeeeee")
+        throw new Error("accent did not survive reload");
+      await hex.fill("#zzzzzz");
+      if ((await hex.getAttribute("aria-invalid")) !== "true")
+        throw new Error("invalid hex accepted");
+      await page
+        .getByRole("button", { name: "Reset to preset", exact: true })
+        .click();
+      if (
+        (await page
+          .locator("html")
+          .evaluate((el) => el.style.getPropertyValue("--primary"))) !== ""
+      )
+        throw new Error("reset left inline accent");
+      await page.getByRole("button", { name: "System", exact: true }).click();
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.waitForFunction(() =>
+        document.documentElement.classList.contains("light"),
+      );
+      await assertButton();
+      await page.emulateMedia({ colorScheme: "dark" });
+      await page.waitForFunction(() =>
+        document.documentElement.classList.contains("dark"),
+      );
+      await page.getByTestId("preset-mono").click();
+      const overflow = await page
+        .getByTestId("appearance-settings")
+        .evaluate((el) => {
+          const right = el.getBoundingClientRect().right;
+          return [...el.querySelectorAll("button,input,p,h1")]
+            .filter((node) => node.getBoundingClientRect().right > right + 1)
+            .map((node) => node.textContent);
+        });
+      if (overflow.length)
+        throw new Error(`appearance overflow: ${overflow.join(",")}`);
+    }
+  } catch (e) {
+    fails.push(String(e));
+  }
+  checks[shot] = { fails, preset, mode, measurements };
+  console.log(
+    `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(checks[shot])}`,
+  );
+  await ctx.close();
+}
 
 await browser.close();
 writeFileSync(join(OUT, "checks.json"), JSON.stringify(checks, null, 1));

@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  type Appearance,
+  DEFAULT_APPEARANCE,
+  normalizeAppearance,
+} from "@/lib/appearance";
 import type { BoardView, RepoView } from "@/lib/board-view";
 import type { MyTasksGroup, MyTasksSort } from "@/lib/my-tasks-view";
 
@@ -31,6 +36,12 @@ export function isWeekStartDay(value: number): value is WeekStartDay {
 }
 
 type UserPreferencesStore = {
+  themePreset: Appearance["themePreset"];
+  accentColor: string | null;
+  appearanceUserId: string | null;
+  userAppearance: Record<string, Appearance>;
+  setAppearanceUserId: (userId: string | null) => void;
+  setAppearance: (value: Partial<Appearance>) => void;
   theme: "light" | "dark" | "system";
   setTheme: (
     theme: "light" | "dark" | "system",
@@ -122,8 +133,41 @@ type UserPreferencesStore = {
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
   persist(
-    (set) => ({
-      theme: "dark",
+    (set, get) => ({
+      ...DEFAULT_APPEARANCE,
+      appearanceUserId: null,
+      userAppearance: {},
+      setAppearanceUserId: (appearanceUserId) => {
+        const state = get();
+        if (state.appearanceUserId === appearanceUserId) return;
+        const appearance = appearanceUserId
+          ? (state.userAppearance[appearanceUserId] ??
+            (state.appearanceUserId === null
+              ? normalizeAppearance(state)
+              : DEFAULT_APPEARANCE))
+          : DEFAULT_APPEARANCE;
+        const normalized = normalizeAppearance(appearance);
+        set({
+          appearanceUserId,
+          ...normalized,
+          userAppearance: appearanceUserId
+            ? { ...state.userAppearance, [appearanceUserId]: normalized }
+            : state.userAppearance,
+        });
+      },
+      setAppearance: (value) =>
+        set((state) => {
+          const appearance = normalizeAppearance({ ...state, ...value });
+          return {
+            ...appearance,
+            userAppearance: state.appearanceUserId
+              ? {
+                  ...state.userAppearance,
+                  [state.appearanceUserId]: appearance,
+                }
+              : state.userAppearance,
+          };
+        }),
       setTheme: (
         theme: "light" | "dark" | "system",
         coordinates?: { x: number; y: number },
@@ -144,10 +188,10 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
         if ("startViewTransition" in document) {
           document.startViewTransition(() => {
-            set({ theme });
+            get().setAppearance({ theme });
           });
         } else {
-          set({ theme });
+          get().setAppearance({ theme });
         }
       },
 
@@ -279,6 +323,12 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         return {
           ...currentState,
           ...persisted,
+          ...normalizeAppearance(persisted),
+          userAppearance: Object.fromEntries(
+            Object.entries(persisted?.userAppearance ?? {}).map(
+              ([id, appearance]) => [id, normalizeAppearance(appearance)],
+            ),
+          ),
           recentPages:
             persisted.recentPages?.map((page) => ({
               ...page,

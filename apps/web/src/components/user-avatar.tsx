@@ -254,7 +254,15 @@ export function UserAvatar({
             className="flex h-7 items-center justify-between gap-2 px-2 text-sm font-normal"
             data-testid="user-menu-theme-toggle"
           >
-            <span>{t("navigation:userMenu.theme")}</span>
+            <Button
+              variant="link"
+              size="xs"
+              onClick={() =>
+                navigate({ to: "/dashboard/settings/account/appearance" })
+              }
+            >
+              {t("settings:appearance.title")}
+            </Button>
             <ThemeToggleDropdown />
           </div>
         </div>
