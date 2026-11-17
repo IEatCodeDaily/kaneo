@@ -48,6 +48,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMember
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/search'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/trash'
+import { Route as LayoutAuthenticatedDashboardSettingsAccountAppearanceRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/appearance'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountAuthenticationRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/authentication'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountConnectionsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/connections'
 import { Route as LayoutAuthenticatedDashboardSettingsAccountDeveloperRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/developer'
@@ -337,6 +338,12 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute =
         LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute =
+  LayoutAuthenticatedDashboardSettingsAccountAppearanceRouteImport.update({
+    id: '/appearance',
+    path: '/appearance',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsAccountRoute,
+  } as any)
 const LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute =
   LayoutAuthenticatedDashboardSettingsAccountAuthenticationRouteImport.update({
     id: '/authentication',
@@ -742,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
   '/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
   '/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
+  '/dashboard/settings/account/appearance': typeof LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -826,6 +834,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
   '/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
   '/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
+  '/dashboard/settings/account/appearance': typeof LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute
   '/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -916,6 +925,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugMyTasksRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/search': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugSearchRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRoute
+  '/_layout/_authenticated/dashboard/settings/account/appearance': typeof LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute
   '/_layout/_authenticated/dashboard/settings/account/authentication': typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   '/_layout/_authenticated/dashboard/settings/account/connections': typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   '/_layout/_authenticated/dashboard/settings/account/developer': typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -1005,6 +1015,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/my-tasks'
     | '/dashboard/organization/$organizationSlug/search'
     | '/dashboard/organization/$organizationSlug/trash'
+    | '/dashboard/settings/account/appearance'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -1089,6 +1100,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/my-tasks'
     | '/dashboard/organization/$organizationSlug/search'
     | '/dashboard/organization/$organizationSlug/trash'
+    | '/dashboard/settings/account/appearance'
     | '/dashboard/settings/account/authentication'
     | '/dashboard/settings/account/connections'
     | '/dashboard/settings/account/developer'
@@ -1178,6 +1190,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/my-tasks'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/search'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/trash'
+    | '/_layout/_authenticated/dashboard/settings/account/appearance'
     | '/_layout/_authenticated/dashboard/settings/account/authentication'
     | '/_layout/_authenticated/dashboard/settings/account/connections'
     | '/_layout/_authenticated/dashboard/settings/account/developer'
@@ -1515,6 +1528,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/organization/$organizationSlug/trash'
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTrashRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
+    }
+    '/_layout/_authenticated/dashboard/settings/account/appearance': {
+      id: '/_layout/_authenticated/dashboard/settings/account/appearance'
+      path: '/appearance'
+      fullPath: '/dashboard/settings/account/appearance'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsAccountAppearanceRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsAccountRoute
     }
     '/_layout/_authenticated/dashboard/settings/account/authentication': {
       id: '/_layout/_authenticated/dashboard/settings/account/authentication'
@@ -1856,6 +1876,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface LayoutAuthenticatedDashboardSettingsAccountRouteChildren {
+  LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute: typeof LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute
   LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute: typeof LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute
   LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute: typeof LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute
   LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute: typeof LayoutAuthenticatedDashboardSettingsAccountDeveloperRoute
@@ -1867,6 +1888,8 @@ interface LayoutAuthenticatedDashboardSettingsAccountRouteChildren {
 
 const LayoutAuthenticatedDashboardSettingsAccountRouteChildren: LayoutAuthenticatedDashboardSettingsAccountRouteChildren =
   {
+    LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute:
+      LayoutAuthenticatedDashboardSettingsAccountAppearanceRoute,
     LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute:
       LayoutAuthenticatedDashboardSettingsAccountAuthenticationRoute,
     LayoutAuthenticatedDashboardSettingsAccountConnectionsRoute:

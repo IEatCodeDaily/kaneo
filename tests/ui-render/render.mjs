@@ -998,8 +998,7 @@ const TABLE_STATES = [
           };
         });
       if (
-        !note ||
-        note.text !== "Retest" ||
+        note?.text !== "Retest" ||
         note.top < note.clipTop - 1 ||
         note.bottom > note.clipBottom + 1
       )

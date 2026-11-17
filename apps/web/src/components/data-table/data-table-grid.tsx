@@ -292,11 +292,11 @@ function FieldHeader({
             >
               {/* Quantities right-align: icon + name + unit sit together over the digits. */}
               {numeric && <span className="flex-1" />}
-          {field.system ? (
-            <LockKeyhole className="size-3.5 shrink-0" />
-          ) : (
-            <FieldTypeIcon type={field.type} />
-          )}
+              {field.system ? (
+                <LockKeyhole className="size-3.5 shrink-0" />
+              ) : (
+                <FieldTypeIcon type={field.type} />
+              )}
               <span className="min-w-0 truncate font-medium">{field.name}</span>
               {unit && <span className="shrink-0">{unit}</span>}
               {!numeric && <span className="flex-1" />}
@@ -319,7 +319,7 @@ function FieldHeader({
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-52">
-          {canEdit && !field.system && (
+              {canEdit && !field.system && (
                 <>
                   <DropdownMenuGroup>
                     <DropdownMenuItem
@@ -378,7 +378,9 @@ function FieldHeader({
                   {freezeLabel}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
-          {(canHide || (canEdit && !field.system)) && <DropdownMenuSeparator />}
+              {(canHide || (canEdit && !field.system)) && (
+                <DropdownMenuSeparator />
+              )}
               <DropdownMenuGroup>
                 {canHide && (
                   <DropdownMenuItem onClick={() => onHide(field)}>
@@ -386,7 +388,7 @@ function FieldHeader({
                     {t("navigation:tables.hideField")}
                   </DropdownMenuItem>
                 )}
-            {canEdit && !field.system && (
+                {canEdit && !field.system && (
                   <DropdownMenuItem
                     className="text-destructive-foreground data-highlighted:text-destructive-foreground"
                     onClick={() => onDeleted(field)}

@@ -24,6 +24,8 @@ COPY packages/libs ./packages/libs
 COPY packages/permissions ./packages/permissions
 COPY i18n ./i18n
 COPY apps/web ./apps/web
+# Search query syntax is shared with the API (dependency-free module).
+COPY apps/api/src/search/query.ts ./apps/api/src/search/query.ts
 
 # Build the permissions package first
 WORKDIR /app/packages/permissions
