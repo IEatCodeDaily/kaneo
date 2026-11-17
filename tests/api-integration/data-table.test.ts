@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { reconcile } from "../../apps/api/src/data-table/store";
 import db, { getDatabase, schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
-import { mockAuthenticatedSession } from "./helpers/auth";
+import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
 import {
   createBoardFixture,
@@ -113,6 +113,293 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       .where(eq(schema.organizationTable.id, member.organization.id));
     mockAuthenticatedSession(member.user);
     app = createApp().app;
+  });
+
+  describe("complete-table row query", () => {
+    it("queries, groups, summarizes and exports off-page rows through one authorized predicate", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Full query");
+      const fields: Record<string, FieldRow> = {};
+      for (const [name, type, options] of [
+        ["Name", "text"],
+        ["Amount", "number"],
+        ["Date", "datetime"],
+        ["Done", "checkbox"],
+        [
+          "Stage",
+          "select",
+          {
+            choices: [
+              { id: "needle", label: "Fermentation", color: "#123456" },
+            ],
+          },
+        ],
+        [
+          "Tags",
+          "multiselect",
+          { choices: [{ id: "tag", label: "Rare batch", color: "#123456" }] },
+        ],
+        ["Owner", "user"],
+        ["Ticket", "ticket"],
+        ["JSON", "json"],
+      ] as const) {
+        const { field, response } = await createFieldViaApi(
+          app,
+          org,
+          table.id,
+          { name, type, options },
+        );
+        expect(response.status).toBe(200);
+        fields[name] = field!;
+      }
+      const { board, columns } = await createBoardFixture({
+        organizationId: org,
+        slug: "full",
+      });
+      const [ticket] = await db
+        .insert(schema.taskTable)
+        .values({
+          boardId: board.id,
+          columnId: columns.todo.id,
+          title: "Batch review",
+          status: "to-do",
+          priority: "medium",
+          number: 7,
+          position: 1,
+        })
+        .returning();
+      await db.execute(sql`INSERT INTO ${sql.raw(`kaneo_tables."t_${table.id}"`)} (id, position, created_by, created_at,
+        ${sql.identifier(`c_${fields.Name.id}`)}, ${sql.identifier(`c_${fields.Amount.id}`)}, ${sql.identifier(`c_${fields.Date.id}`)}, ${sql.identifier(`c_${fields.Done.id}`)}, ${sql.identifier(`c_${fields.Stage.id}`)}, ${sql.identifier(`c_${fields.Tags.id}`)}, ${sql.identifier(`c_${fields.Owner.id}`)}, ${sql.identifier(`c_${fields.Ticket.id}`)}, ${sql.identifier(`c_${fields.JSON.id}`)})
+        SELECT 'row' || lpad(n::text, 4, '0'), n - 1, ${member.user.id}, '2026-01-01'::timestamptz,
+        CASE WHEN n = 1005 THEN 'Off-page match' ELSE 'Ordinary' END,
+        CASE WHEN n = 1005 THEN 9000 ELSE 1 END,
+        CASE WHEN n = 1005 THEN '2026-03-15T23:59:59.999Z'::timestamptz ELSE NULL END,
+        n = 1005, CASE WHEN n = 1005 THEN 'needle' ELSE NULL END,
+        CASE WHEN n = 1005 THEN '["tag"]'::jsonb ELSE '[]'::jsonb END,
+        CASE WHEN n = 1005 THEN ${member.user.id} ELSE NULL END,
+        CASE WHEN n = 1005 THEN ${JSON.stringify([ticket!.id])}::jsonb ELSE '[]'::jsonb END,
+        CASE WHEN n = 1005 THEN '{"memo":"rare-json"}'::jsonb ELSE NULL END
+        FROM generate_series(1, 1005) n`);
+      const root = `/api/data-table/organization/${org}/${table.id}`;
+      const post = (suffix: string, body: unknown) =>
+        app.request(`${root}/${suffix}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      const query = async (body: unknown) => {
+        const r = await post("row-query", body);
+        const text = await r.text();
+        expect(r.status, text).toBe(200);
+        return JSON.parse(text) as {
+          rows: { id: string; values: Record<string, unknown> }[];
+          total: number;
+          tableTotal: number;
+          summaries: Record<string, number>;
+          groups: { key: string; total: number; [key: string]: unknown }[];
+          tickets: Record<string, unknown>;
+        };
+      };
+      const first = await query({});
+      expect(first.total).toBe(1005);
+      expect(first.rows).toHaveLength(1000);
+      expect(first.rows.some((r) => r.id === "row1005")).toBe(false);
+      for (const search of [
+        "off-page",
+        "ferment",
+        "rare batch",
+        member.user.name,
+        "FULL-7",
+        "rare-json",
+      ]) {
+        const r = await query({ search });
+        expect(
+          r.rows.map((r) => r.id),
+          search,
+        ).toEqual(["row1005"]);
+        expect(r.total).toBe(1);
+        expect(r.tableTotal).toBe(1005);
+      }
+      const summaries = {
+        [fields.Amount.id]: "sum",
+        [fields.Stage.id]: "filled",
+        [fields.Done.id]: "checked",
+      };
+      const filters = [
+        { fieldId: fields.Name.id, contains: "Off-page" },
+        { fieldId: fields.Amount.id, min: "8999", max: "9000" },
+        { fieldId: fields.Date.id, from: "2026-03-15", to: "2026-03-15" },
+        { fieldId: fields.Done.id, checked: "true" },
+        { fieldId: fields.Stage.id, choiceId: "needle" },
+        { fieldId: fields.Tags.id, choiceId: "tag" },
+        { fieldId: fields.Owner.id, choiceId: member.user.id },
+        { fieldId: fields.Ticket.id, choiceId: ticket!.id },
+        { fieldId: fields.JSON.id, contains: "rare-json" },
+      ];
+      for (const filter of filters)
+        expect((await query({ filters: [filter] })).total).toBe(1);
+      const spec = {
+        search: "ferment",
+        filters,
+        sort: { fieldId: "__created_at", dir: "desc" },
+        groupFieldId: fields.Stage.id,
+        summaries,
+        limit: 1,
+      };
+      const r = await query(spec);
+      expect(r.total).toBe(1);
+      expect(r.rows[0].id).toBe("row1005");
+      expect(r.summaries).toMatchObject({
+        [fields.Amount.id]: 9000,
+        [fields.Stage.id]: 1,
+        [fields.Done.id]: 1,
+      });
+      expect(r.groups).toMatchObject([
+        { key: "needle", total: 1, [fields.Amount.id]: 9000 },
+      ]);
+      const exported = await post("row-export", { ...spec, offset: 999 });
+      expect(exported.status).toBe(200);
+      const csv = await exported.text();
+      expect(csv.split("\r\n")).toHaveLength(2);
+      for (const text of [
+        "Off-page match",
+        "9000",
+        "Fermentation",
+        "Rare batch",
+        member.user.name,
+        "FULL-7",
+      ])
+        expect(csv).toContain(text);
+      const wholeExport = await post("row-export", { limit: 1, offset: 999 });
+      expect((await wholeExport.text()).split("\r\n")).toHaveLength(1006);
+      const all = await query({ summaries, groupFieldId: fields.Stage.id });
+      expect(all.summaries[fields.Amount.id]).toBe(10004);
+      expect(all.groups.reduce((n, g) => n + g.total, 0)).toBe(1005);
+      expect(
+        (await query({ groupFieldId: fields.Amount.id })).groups
+          .map((g) => g.key)
+          .sort(),
+      ).toEqual(["1", "9000"]);
+      expect(
+        (
+          await query({
+            sort: { fieldId: fields.Amount.id, dir: "desc" },
+            limit: 1,
+          })
+        ).rows[0].id,
+      ).toBe("row1005");
+      expect(
+        (await query({ sort: { fieldId: "__row_id", dir: "desc" }, limit: 1 }))
+          .rows[0].id,
+      ).toBe("row1005");
+      expect(
+        (await query({ search: "1005", includeSystem: true })).rows[0].id,
+      ).toBe("row1005");
+      for (const id of [
+        fields.Stage.id,
+        fields.Tags.id,
+        fields.Owner.id,
+        fields.Ticket.id,
+      ])
+        expect(
+          (await query({ filters: [{ fieldId: id, choiceId: "__empty__" }] }))
+            .total,
+        ).toBe(1004);
+      expect(
+        (
+          await query({
+            filters: [{ fieldId: fields.Done.id, checked: "false" }],
+          })
+        ).total,
+      ).toBe(1004);
+      // Equal sort values must have a deterministic Row-ID tie-break across page boundaries.
+      const ids: string[] = [];
+      for (const offset of [0, 333, 666, 999])
+        ids.push(
+          ...(
+            await query({
+              sort: { fieldId: "__created_at", dir: "asc" },
+              limit: 333,
+              offset,
+            })
+          ).rows.map((r) => r.id),
+        );
+      expect(ids).toHaveLength(1005);
+      expect(new Set(ids).size).toBe(1005);
+      expect(ids).toEqual([...ids].sort());
+      expect(
+        (
+          await query({
+            sort: { fieldId: "__created_at", dir: "asc" },
+            limit: 333,
+            offset: 333,
+          })
+        ).rows.map((r) => r.id),
+      ).toEqual(ids.slice(333, 666));
+      for (const bad of [
+        { filters: [{ fieldId: fields.Amount.id, min: "no", max: "" }] },
+        { filters: [{ fieldId: fields.Name.id, checked: "true" }] },
+        { sort: { fieldId: "c_bad; DROP TABLE", dir: "asc" } },
+        { offset: -1 },
+        { limit: 1001 },
+      ])
+        expect((await post("row-query", bad)).status).toBe(400);
+      const foreign = await createOrganizationMember({
+        userName: "Foreign-only secret name",
+      });
+      // Stale/invalid ids cannot resolve names from another organization.
+      await db.execute(
+        sql`UPDATE ${sql.raw(`kaneo_tables."t_${table.id}"`)} SET ${sql.identifier(`c_${fields.Owner.id}`)} = ${foreign.user.id}, created_by = ${foreign.user.id} WHERE id = 'row0001'`,
+      );
+      expect((await query({ search: foreign.user.name })).total).toBe(0);
+      expect(
+        (await query({ search: foreign.user.name, includeSystem: true })).total,
+      ).toBe(0);
+      for (const dir of ["asc", "desc"])
+        expect(
+          (await query({ sort: { fieldId: fields.Date.id, dir }, limit: 2 }))
+            .rows[0].id,
+        ).toBe("row1005");
+      expect(
+        (await query({ summaries: { [fields.Amount.id]: "avg" } })).summaries[
+          fields.Amount.id
+        ],
+      ).toBeCloseTo(10004 / 1005);
+      expect(
+        (await query({ summaries: { [fields.Stage.id]: "empty" } })).summaries[
+          fields.Stage.id
+        ],
+      ).toBe(1004);
+      expect(
+        (
+          await post("row-query", {
+            filters: [{ fieldId: fields.Date.id, from: "2026-02-30", to: "" }],
+          })
+        ).status,
+      ).toBe(400);
+      const foreignTable = await db
+        .insert(schema.dataTableTable)
+        .values({ organizationId: foreign.organization.id, name: "Private" })
+        .returning();
+      expect(
+        (
+          await app.request(
+            `/api/data-table/organization/${org}/${foreignTable[0].id}/row-query`,
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: "{}",
+            },
+          )
+        ).status,
+      ).not.toBe(200);
+      mockAuthenticatedSession(foreign.user);
+      for (const suffix of ["row-query", "row-export"])
+        expect((await post(suffix, {})).status).not.toBe(200);
+      mockAnonymousSession();
+      for (const suffix of ["row-query", "row-export"])
+        expect((await post(suffix, {})).status).toBe(401);
+    });
   });
 
   describe("durable table history", () => {

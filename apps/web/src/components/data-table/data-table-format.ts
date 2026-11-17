@@ -320,6 +320,10 @@ export type DataTableFilter = (
   id: string;
 };
 
+export function isQueryable(field: DataTableField): boolean {
+  return EDITABLE_FIELD_TYPES.includes(field.type);
+}
+
 export function defaultFilterFor(field: DataTableField): DataTableFilter {
   const inner = (() => {
     switch (field.type) {
@@ -696,7 +700,7 @@ export function defaultSummaryFn(field: DataTableField): SummaryFn {
 
 /** Columns a summary makes sense for; others show none. */
 export function supportsSummary(field: DataTableField): boolean {
-  return !["longtext", "datetime"].includes(field.type);
+  return isQueryable(field) && !["longtext", "datetime"].includes(field.type);
 }
 
 /** Formatted summary over rows, or null when there is nothing to show. */

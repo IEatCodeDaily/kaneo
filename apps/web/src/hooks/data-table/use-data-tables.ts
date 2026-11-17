@@ -150,6 +150,10 @@ export function useDataTableMutations(
         return { previous };
       },
       onSuccess: (row) => {
+        if (detailKey)
+          void queryClient.invalidateQueries({
+            queryKey: [...detailKey, "rows"],
+          });
         void refreshActivity();
         if (!detailKey) return;
         // Merge values only: replacing the row would clobber another cell's

@@ -862,8 +862,100 @@ async function showSystemFields(page) {
     .waitFor();
 }
 
+let fullQueryFixture;
+async function fullQueryState(page) {
+  fullQueryFixture ??= (async () => {
+    const post = async (path, data) => {
+      const response = await page.request.post(
+        `${BASE}/api/data-table/organization/${org.id}${path}`,
+        { data, headers: { Origin: BASE } },
+      );
+      if (!response.ok())
+        throw new Error(`full-query seed: ${await response.text()}`);
+      return response.json();
+    };
+    const table = await post("", { name: "Complete batch log" });
+    const field = await post(`/${table.id}/fields`, {
+      name: "Batch",
+      type: "text",
+    });
+    for (let n = 0; n < 1001; n++)
+      await post(`/${table.id}/rows`, {
+        values: {
+          [field.id]:
+            n === 1000 ? "Off-page batch found" : `Ordinary batch ${n + 1}`,
+        },
+      });
+    return table;
+  })();
+  const table = await fullQueryFixture;
+  await page.goto(BASE + pages.table.replace(tbl.id, table.id), {
+    waitUntil: "networkidle",
+  });
+  await page
+    .getByRole("button", { name: "Load more rows", exact: true })
+    .waitFor();
+  let release;
+  let first = true;
+  await page.route("**/row-query", async (route) => {
+    if (!first) return route.continue();
+    first = false;
+    await new Promise((resolve) => {
+      release = resolve;
+    });
+    await route.fulfill({ status: 503, body: "Query temporarily unavailable" });
+  });
+  await page.getByLabel("Search rows").fill("Off-page batch found");
+  await page
+    .getByRole("status")
+    .filter({ hasText: "Querying all rows" })
+    .waitFor();
+  if (await page.getByText(/loaded.*matching.*total/).count())
+    throw new Error("loading query still claims totals");
+  await page.screenshot({
+    path: join(
+      OUT,
+      `table-full-query-loading--${page.viewportSize().width < 600 ? "phone" : "desktop"}-${await page.evaluate(() => (document.documentElement.classList.contains("dark") ? "dark" : "light"))}.png`,
+    ),
+  });
+  release();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Could not query rows" })
+    .waitFor();
+  if (await page.getByText("No rows match", { exact: true }).count())
+    throw new Error("query error looks like empty results");
+  await page.screenshot({
+    path: join(
+      OUT,
+      `table-full-query-error--${page.viewportSize().width < 600 ? "phone" : "desktop"}-${await page.evaluate(() => (document.documentElement.classList.contains("dark") ? "dark" : "light"))}.png`,
+    ),
+  });
+  await page.getByRole("button", { name: "Retry query", exact: true }).click();
+  await page
+    .getByRole("gridcell", { name: "Batch, row 1", exact: true })
+    .filter({ hasText: "Off-page batch found" })
+    .waitFor();
+  await page
+    .getByText("1 loaded · 1 matching · 1001 total", { exact: true })
+    .waitFor();
+  if (
+    await page
+      .getByRole("button", { name: "Load more rows", exact: true })
+      .count()
+  )
+    throw new Error("off-page search needs Load more");
+  const bounds = await page
+    .getByText("1 loaded · 1 matching · 1001 total", { exact: true })
+    .boundingBox();
+  if (!bounds || bounds.x + bounds.width > page.viewportSize().width)
+    throw new Error("query count clips viewport");
+  await page.unroute("**/row-query");
+}
+
 // Table interaction states (dark desktop), design v3 S2.
 const TABLE_STATES = [
+  ["table-full-query", fullQueryState],
   ["table-system-fields", showSystemFields],
   [
     "table-system-drawer",
@@ -1438,6 +1530,39 @@ if (pages.table) {
     checks[shot] = { fails, ...m };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+
+  for (const [label, viewport, theme] of [
+    ["phone-dark", { width: 390, height: 844 }, "dark"],
+    ["desktop-light", { width: 1440, height: 900 }, "light"],
+  ]) {
+    const ctx = await browser.newContext({
+      viewport,
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: theme,
+    });
+    await ctx.addInitScript((theme) => {
+      localStorage.setItem(
+        "user-preferences",
+        JSON.stringify({ state: { theme }, version: 0 }),
+      );
+    }, theme);
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    try {
+      await fullQueryState(page);
+    } catch (error) {
+      fails.push(String(error).split("\n")[0]);
+    }
+    const shot = `table-full-query--${label}.png`;
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${fails.join("; ")}`,
     );
     await ctx.close();
   }

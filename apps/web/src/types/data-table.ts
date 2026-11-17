@@ -126,6 +126,39 @@ export type DataTable = DataTableSummary & {
   tickets?: Record<string, TicketRef>;
 };
 
+export type TableRowQuery = {
+  search?: string;
+  includeSystem?: boolean;
+  filters?: ({ fieldId: string } & (
+    | { contains: string }
+    | { min: string; max: string }
+    | { from: string; to: string }
+    | { choiceId: string }
+    | { checked: "any" | "true" | "false" }
+  ))[];
+  sort?: { fieldId: string; dir: "asc" | "desc" } | null;
+  groupFieldId?: string | null;
+  summaries?: Record<
+    string,
+    "none" | "sum" | "avg" | "min" | "max" | "filled" | "empty" | "checked"
+  >;
+  limit?: number;
+  offset?: number;
+};
+export type TableRowQueryResult = {
+  rows: DataTableRow[];
+  total: number;
+  tableTotal: number;
+  summaries: Record<string, number | null>;
+  groups: {
+    key: string;
+    label: string;
+    total: number;
+    [fieldId: string]: string | number | null;
+  }[];
+  tickets: Record<string, TicketRef>;
+};
+
 export type CreateDataTableInput = {
   organizationId: string;
   name: string;

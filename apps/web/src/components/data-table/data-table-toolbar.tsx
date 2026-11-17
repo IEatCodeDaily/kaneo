@@ -27,6 +27,7 @@ import {
   defaultFilterFor,
   filterIsActive,
   isGroupable,
+  isQueryable,
 } from "@/components/data-table/data-table-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,7 @@ export function DataTableToolbar(props: Props) {
     groupFieldId,
     summariesActive,
   } = props;
+  const queryableFields = fields.filter(isQueryable);
   const groupableFields = fields.filter(isGroupable);
   // The primary field is always visible, so it never counts as hidden.
   const hiddenCount = fields.filter(
@@ -214,7 +216,7 @@ export function DataTableToolbar(props: Props) {
           }
         />
         <PopoverContent align="start" className="w-137">
-          <FilterRows {...props} />
+          <FilterRows {...props} fields={queryableFields} />
         </PopoverContent>
       </Popover>
 
@@ -236,7 +238,7 @@ export function DataTableToolbar(props: Props) {
           </p>
           <div className="flex items-center gap-1 px-2 pb-2">
             <FieldSelect
-              fields={fields}
+              fields={queryableFields}
               value={sort?.fieldId ?? ""}
               placeholder={t("navigation:tables.pickField")}
               onChange={(fieldId) =>

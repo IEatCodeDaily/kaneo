@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowDown,
@@ -30,11 +30,7 @@ import {
   FieldTypeIcon,
   type MemberOption,
 } from "@/components/data-table/data-table-cells";
-import {
-  csvParse,
-  csvSerialize,
-  rowMatchesSearch,
-} from "@/components/data-table/data-table-csv";
+import { csvParse } from "@/components/data-table/data-table-csv";
 import { DataTableCellContent } from "@/components/data-table/data-table-editors";
 import {
   type ColumnSort,
@@ -50,16 +46,14 @@ import {
   filterIsActive,
   groupRows,
   groupValue,
+  isQueryable,
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
   readFrozenColumns,
   readHiddenFields,
   readShowSystemFields,
-  rowMatchesFilters,
   type SummaryFn,
   sortedFields,
-  sortedRows,
-  sortRows,
   summarize,
   supportsSummary,
   systemFields,
@@ -131,7 +125,8 @@ import {
 import {
   createDataTableRow,
   deleteDataTableRow,
-  getTableRowPage,
+  exportTableRows,
+  queryTableRows,
 } from "@/fetchers/data-table/data-table";
 import {
   dataTableKeys,
@@ -146,6 +141,7 @@ import type {
   DataTableFieldType,
   DataTableRow,
   SelectChoice,
+  TableRowQuery,
   TicketRef,
 } from "@/types/data-table";
 import { ColumnResizeHandle, useColumnWidths } from "./column-resize";
@@ -354,18 +350,23 @@ function FieldHeader({
               <DropdownMenuGroup>
                 {" "}
                 <DropdownMenuItem
+                  disabled={!isQueryable(field)}
                   onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
                 >
                   <ArrowUp className="size-3.5" />
                   {t("navigation:tables.sortAscending")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  disabled={!isQueryable(field)}
                   onClick={() => onSort({ fieldId: field.id, dir: "desc" })}
                 >
                   <ArrowDown className="size-3.5" />
                   {t("navigation:tables.sortDescending")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onFilter(field)}>
+                <DropdownMenuItem
+                  disabled={!isQueryable(field)}
+                  onClick={() => onFilter(field)}
+                >
                   <ListFilter className="size-3.5" />
                   {t("navigation:tables.filterByField")}
                 </DropdownMenuItem>
@@ -653,52 +654,9 @@ export function DataTableGrid({
     }
     return map;
   }, [allFields]);
-  // id -> display name, for search and CSV export (cells show names, store ids).
-  const memberNames = useMemo(
-    () =>
-      new Map(
-        memberRows.map((m) => [
-          m.userId || m.id,
-          m.user.name || m.user.email || "",
-        ]),
-      ),
-    [memberRows],
-  );
   const fieldsById = useMemo(
     () => new Map(allFields.map((field) => [field.id, field])),
     [allFields],
-  );
-  const rows = useMemo(() => sortedRows(table.rows), [table.rows]);
-
-  // Row pages fetched through Load-more; reset when a different table loads.
-  const [appendedRows, setAppendedRows] = useState<DataTableRow[]>([]);
-  const [appendedTickets, setAppendedTickets] = useState<
-    Record<string, TicketRef>
-  >({});
-  const [loadedTableId, setLoadedTableId] = useState(table.id);
-  if (loadedTableId !== table.id) {
-    setLoadedTableId(table.id);
-    setAppendedRows([]);
-    setAppendedTickets({});
-  }
-  const ticketLookup = useMemo(
-    () => ({
-      organizationId,
-      organizationSlug,
-      tableId: table.id,
-      tickets: { ...appendedTickets, ...table.tickets },
-    }),
-    [
-      organizationId,
-      organizationSlug,
-      table.id,
-      appendedTickets,
-      table.tickets,
-    ],
-  );
-  const allRows = useMemo(
-    () => [...rows, ...appendedRows],
-    [rows, appendedRows],
   );
 
   const [search, setSearch] = useState("");
@@ -753,42 +711,77 @@ export function DataTableGrid({
   const [fieldToDelete, setFieldToDelete] = useState<DataTableField | null>(
     null,
   );
-  const [loadingMore, setLoadingMore] = useState(false);
-
   const activeFilters = useMemo(
     () => filters.filter(filterIsActive),
     [filters],
   );
-  const visibleRows = useMemo(
-    () =>
-      sortRows(
-        allRows.filter(
-          (row) =>
-            rowMatchesSearch(
-              row,
-              allFields,
-              search,
-              choicesById,
-              memberNames,
-              ticketLookup.tickets,
-            ) && rowMatchesFilters(row, fieldsById, activeFilters),
-        ),
-        allFields,
-        sort,
-        ticketLookup.tickets,
-      ),
-    [
-      allRows,
-      allFields,
-      fieldsById,
+  const rowQuery = useMemo<TableRowQuery>(
+    () => ({
       search,
-      activeFilters,
+      includeSystem: showSystem,
+      filters: activeFilters,
       sort,
-      ticketLookup.tickets,
-      choicesById,
-      memberNames,
-    ],
+      groupFieldId,
+      summaries: summaryFns,
+    }),
+    [search, showSystem, activeFilters, sort, groupFieldId, summaryFns],
   );
+  const rowPages = useInfiniteQuery({
+    queryKey: [
+      ...dataTableKeys.detail(organizationId, table.id),
+      "rows",
+      rowQuery,
+    ],
+    queryFn: ({ pageParam, signal }) =>
+      queryTableRows(
+        { organizationId, tableId: table.id },
+        { ...rowQuery, offset: pageParam },
+        signal,
+      ),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const loaded = pages.reduce((n, page) => n + page.rows.length, 0);
+      return loaded < last.total ? loaded : undefined;
+    },
+    retry: false,
+  });
+  const result = rowPages.data?.pages[0];
+  const allRows = useMemo(() => {
+    const unique = new Map(
+      rowPages.data?.pages.flatMap((p) => p.rows).map((r) => [r.id, r]) ?? [],
+    );
+    return [...unique.values()];
+  }, [rowPages.data]);
+  const visibleRows = allRows;
+  const ticketLookup = useMemo(
+    () => ({
+      organizationId,
+      organizationSlug,
+      tableId: table.id,
+      tickets: {
+        ...table.tickets,
+        ...(rowPages.data?.pages.reduce<Record<string, TicketRef>>(
+          (refs, page) => ({ ...refs, ...page.tickets }),
+          {},
+        ) ?? {}),
+      },
+    }),
+    [organizationId, organizationSlug, table.id, table.tickets, rowPages.data],
+  );
+  const serverSummary = (
+    field: DataTableField,
+    values: Record<string, string | number | null> | undefined,
+    count: number,
+  ) => {
+    const fn = summaryFns[field.id] ?? "none";
+    const value = values?.[field.id];
+    if (fn === "none" || value == null || count === 0) return null;
+    return ["filled", "empty", "checked"].includes(fn)
+      ? `${value}/${count}`
+      : Number(value).toLocaleString(undefined, {
+          maximumFractionDigits: field.options?.precision ?? 2,
+        });
+  };
 
   // Selection never outlives the view: rows filtered/searched/sorted out (or
   // removed) are dropped, so bulk actions can't touch invisible rows.
@@ -851,9 +844,14 @@ export function DataTableGrid({
       return visibleRows.map((row) => ({ kind: "row", row }) as GridItem);
     }
     const items: GridItem[] = [];
-    for (const group of groupRows(groupField, visibleRows, (key) =>
-      groupLabel(groupField, key),
-    )) {
+    const loadedGroups = new Map(
+      groupRows(groupField, visibleRows).map((g) => [g.key, g.rows]),
+    );
+    for (const bucket of result?.groups ?? []) {
+      const group = {
+        key: bucket.key,
+        rows: loadedGroups.get(bucket.key) ?? [],
+      };
       const collapsed = collapsedGroups.has(group.key);
       items.push({ kind: "group", key: group.key, rows: group.rows });
       if (!collapsed) {
@@ -863,7 +861,7 @@ export function DataTableGrid({
       }
     }
     return items;
-  }, [groupField, visibleRows, collapsedGroups, groupLabel]);
+  }, [groupField, visibleRows, collapsedGroups, result?.groups]);
 
   const renderedRows = useMemo(
     () =>
@@ -1034,20 +1032,21 @@ export function DataTableGrid({
     return map;
   }, [memberRows]);
 
-  const exportCsv = () => {
-    const csv = csvSerialize(
-      allFields,
-      visibleRows,
-      choicesById,
-      memberNames,
-      ticketLookup.tickets,
-    );
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${table.name}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+  const exportCsv = async () => {
+    try {
+      const blob = await exportTableRows(
+        { organizationId, tableId: table.id },
+        rowQuery,
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${table.name}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(t("navigation:tables.exportError"));
+    }
   };
 
   const importCsv = async (file: File) => {
@@ -1219,8 +1218,7 @@ export function DataTableGrid({
   };
 
   const filtersActive = search !== "" || activeFilters.length > 0;
-  const narrowed = visibleRows.length !== allRows.length;
-  const allLoaded = allRows.length >= table.total;
+  const allLoaded = !rowPages.hasNextPage;
 
   // Grid template: row # · fields · trailing "+" add-field cell (DS §2 Grid).
   const ADD_FIELD_WIDTH = 40;
@@ -1361,7 +1359,23 @@ export function DataTableGrid({
       )}
 
       <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-auto">
-        {allFields.length === 0 ? (
+        {rowPages.isError ? (
+          <div role="alert" className="flex items-center gap-3 p-4 text-sm">
+            <span>{t("navigation:tables.queryError")}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => rowPages.refetch()}
+            >
+              {t("navigation:tables.queryRetry")}
+            </Button>
+          </div>
+        ) : rowPages.isPending ||
+          (rowPages.isFetching && !rowPages.isFetchingNextPage) ? (
+          <div role="status" className="p-4 text-sm text-muted-foreground">
+            {t("navigation:tables.queryLoading")}
+          </div>
+        ) : allFields.length === 0 ? (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -1571,7 +1585,8 @@ export function DataTableGrid({
                               />
                               <span className="truncate">{label}</span>
                               <span className="shrink-0 tabular-nums text-muted-foreground">
-                                {entry.rows.length}
+                                {result?.groups.find((g) => g.key === entry.key)
+                                  ?.total ?? 0}
                               </span>
                             </button>
                             {/* Per-group aggregates for columns with a
@@ -1588,10 +1603,14 @@ export function DataTableGrid({
                                   className="hidden shrink-0 tabular-nums text-muted-foreground lg:inline"
                                 >
                                   {field.name}{" "}
-                                  {summarize(
-                                    summaryFns[field.id] ?? "none",
+                                  {serverSummary(
                                     field,
-                                    entry.rows,
+                                    result?.groups.find(
+                                      (g) => g.key === entry.key,
+                                    ),
+                                    result?.groups.find(
+                                      (g) => g.key === entry.key,
+                                    )?.total ?? 0,
                                   ) ?? "—"}
                                 </span>
                               ))}
@@ -1851,10 +1870,30 @@ export function DataTableGrid({
                     width: totalWidth,
                   }}
                 >
-                  <div className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background" />
+                  <div
+                    className="sticky left-0 z-10 flex items-center justify-center border-r border-b bg-background text-xs text-muted-foreground"
+                    title={t(
+                      selected.size > 0
+                        ? "navigation:tables.summarySelection"
+                        : "navigation:tables.summaryView",
+                    )}
+                  >
+                    {t(
+                      selected.size > 0
+                        ? "navigation:tables.summarySelectionShort"
+                        : "navigation:tables.summaryViewShort",
+                    )}
+                  </div>
                   {fields.map((field) => {
                     const fn = summaryFns[field.id] ?? "none";
-                    const text = summarize(fn, field, scopeRows);
+                    const text =
+                      selected.size > 0
+                        ? summarize(fn, field, scopeRows)
+                        : serverSummary(
+                            field,
+                            result?.summaries,
+                            result?.total ?? 0,
+                          );
                     return (
                       <div
                         key={field.id}
@@ -1882,7 +1921,14 @@ export function DataTableGrid({
                             align="start"
                             className="min-w-40"
                           >
-                            {SUMMARY_FNS.map((option) => (
+                            {SUMMARY_FNS.filter(
+                              (option) =>
+                                option === "none" ||
+                                ["filled", "empty"].includes(option) ||
+                                (option === "checked"
+                                  ? field.type === "checkbox"
+                                  : NUMERIC_CELL_TYPES.includes(field.type)),
+                            ).map((option) => (
                               <DropdownMenuCheckboxItem
                                 key={option}
                                 checked={fn === option}
@@ -1942,70 +1988,36 @@ export function DataTableGrid({
                 </Button>
               </div>
             ) : (
-              <div className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground">
+              <div
+                className="sticky bottom-0 left-0 flex h-8 shrink-0 items-center gap-3 border-t bg-background px-3 text-xs text-muted-foreground"
+                style={{ width: "min(100%, 100vw)" }}
+              >
                 <span className="tabular-nums">
-                  {narrowed ? (
-                    <Trans
-                      i18nKey={
-                        allLoaded
-                          ? "navigation:tables.rowsOfTotal"
-                          : "navigation:tables.rowsOfLoaded"
-                      }
-                      values={{
-                        shown: visibleRows.length,
-                        total: allLoaded ? table.total : allRows.length,
-                      }}
-                      components={{
-                        b: <span className="font-medium text-foreground" />,
-                      }}
-                    />
-                  ) : (
-                    <Trans
-                      i18nKey={
-                        allLoaded
-                          ? "navigation:tables.rowsTotal"
-                          : "navigation:tables.rowsLoaded"
-                      }
-                      values={{ count: allRows.length, total: table.total }}
-                      components={{
-                        b: <span className="font-medium text-foreground" />,
-                      }}
-                    />
-                  )}
+                  <Trans
+                    i18nKey="navigation:tables.queryCount"
+                    values={{
+                      loaded: allRows.length,
+                      matched: result?.total ?? 0,
+                      total: result?.tableTotal ?? 0,
+                    }}
+                    components={{
+                      b: <span className="font-medium text-foreground" />,
+                    }}
+                  />
                 </span>
                 {!allLoaded && (
-                  <button
-                    type="button"
-                    className="font-medium text-primary-soft-foreground hover:underline disabled:opacity-60"
-                    disabled={loadingMore}
-                    onClick={async () => {
-                      setLoadingMore(true);
-                      try {
-                        const page = await getTableRowPage(
-                          table.id,
-                          organizationId,
-                          allRows.length,
-                        );
-                        setAppendedRows((current) => [
-                          ...current,
-                          ...page.rows.filter(
-                            (row) => !allRows.some((r) => r.id === row.id),
-                          ),
-                        ]);
-                        if (page.tickets) {
-                          const pageTickets = page.tickets;
-                          setAppendedTickets((current) => ({
-                            ...current,
-                            ...pageTickets,
-                          }));
-                        }
-                      } finally {
-                        setLoadingMore(false);
-                      }
-                    }}
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    disabled={rowPages.isFetchingNextPage}
+                    onClick={() => rowPages.fetchNextPage()}
                   >
-                    {t("navigation:tables.loadMore")}
-                  </button>
+                    {t(
+                      rowPages.isFetchingNextPage
+                        ? "navigation:tables.queryLoading"
+                        : "navigation:tables.loadMore",
+                    )}
+                  </Button>
                 )}
                 {importProgress && <span>{importProgress}</span>}{" "}
               </div>
