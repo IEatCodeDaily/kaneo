@@ -387,6 +387,7 @@ export function DataTableToolbar(props: Props) {
               ),
             )}
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuCheckboxItem
               checked={summariesActive}

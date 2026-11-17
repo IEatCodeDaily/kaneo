@@ -1660,8 +1660,8 @@ if (pages.table) {
         };
       });
       if (tall.h !== 80) fails.push(`tall row ${tall.h}px, want 80`);
-      if (tall.clamp !== "4")
-        fails.push(`note clamp ${tall.clamp}, want 4 lines`);
+      if (tall.clamp !== "3")
+        fails.push(`note clamp ${tall.clamp}, want 3 lines`);
       if (tall.overlap) fails.push("rows overlap at tall height");
       if (tall.overflow) fails.push("tall rows overflow the viewport");
     }

@@ -503,8 +503,8 @@ export const DENSITY_ROW_HEIGHT: Record<Density, number> = {
 
 /** Lines of long text shown before clamping, per wrap mode. */
 export const DENSITY_WRAP_LINES: Partial<Record<Density, number>> = {
-  tall: 4,
-  extra: 6,
+  tall: 3,
+  extra: 5,
 };
 
 export const DENSITY_LABEL_KEYS: Record<Density, string> = {
