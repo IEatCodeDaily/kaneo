@@ -3,6 +3,7 @@ import {
   clampTaskDrawerWidth,
   maxTaskDrawerWidth,
   parseStoredTaskDrawerWidth,
+  rowDrawerDefaultWidth,
   TASK_DRAWER_DEFAULT_WIDTH,
   TASK_DRAWER_MIN_WIDTH,
   widthFromPointer,
@@ -88,5 +89,33 @@ describe("widthFromPointer (#112)", () => {
     expect(widthFromPointer(VIEWPORT + 100, VIEWPORT)).toBe(
       TASK_DRAWER_MIN_WIDTH,
     );
+  });
+});
+
+describe("rowDrawerDefaultWidth (row drawer: half the viewport)", () => {
+  it("defaults to half the viewport", () => {
+    expect(rowDrawerDefaultWidth(VIEWPORT)).toBe(720);
+    expect(rowDrawerDefaultWidth(2000)).toBe(1000);
+  });
+
+  it("clamps to the minimum on small screens", () => {
+    // A 390px phone: half is unusable, the shared minimum wins.
+    expect(rowDrawerDefaultWidth(390)).toBe(TASK_DRAWER_MIN_WIDTH);
+  });
+
+  it("stays under the viewport ceiling on huge screens", () => {
+    // Half the viewport can never exceed the 90% ceiling, so no clamp applies.
+    expect(rowDrawerDefaultWidth(4000)).toBe(2000);
+    expect(rowDrawerDefaultWidth(4000)).toBeLessThan(maxTaskDrawerWidth(4000));
+  });
+
+  it("a stored width still wins over the default", () => {
+    expect(
+      parseStoredTaskDrawerWidth(
+        "980",
+        VIEWPORT,
+        rowDrawerDefaultWidth(VIEWPORT),
+      ),
+    ).toBe(980);
   });
 });

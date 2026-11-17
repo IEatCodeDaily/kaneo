@@ -9,6 +9,8 @@ import {
   ListFilter,
   Maximize2,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -48,6 +50,7 @@ import {
   groupValue,
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
+  readFrozenColumns,
   readHiddenFields,
   rowMatchesFilters,
   type SummaryFn,
@@ -57,6 +60,7 @@ import {
   summarize,
   supportsSummary,
   writeDensity,
+  writeFrozenColumns,
   writeHiddenFields,
 } from "@/components/data-table/data-table-format";
 import {
@@ -79,6 +83,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   Empty,
   EmptyDescription,
@@ -157,6 +168,8 @@ const NUMERIC_CELL_TYPES: DataTableFieldType[] = [
 function FieldHeader({
   field,
   stickyLeft,
+  frozen,
+  freezeEdge,
   sort,
   onSort,
   canEdit,
@@ -170,9 +183,14 @@ function FieldHeader({
   width,
   onResize,
   onResetWidth,
+  onToggleFreeze,
 }: {
   field: DataTableField;
   stickyLeft: number | null;
+  /** Columns 0..N freeze together; `frozen` = this column is in the range. */
+  frozen: boolean;
+  /** True for the last frozen column: carries the freeze-edge divider. */
+  freezeEdge: boolean;
   sort: ColumnSort | null;
   onSort: (sort: ColumnSort) => void;
   canEdit: boolean;
@@ -189,12 +207,18 @@ function FieldHeader({
   width: number;
   onResize: (width: number) => void;
   onResetWidth: () => void;
+  onToggleFreeze: () => void;
 }) {
   const { t } = useTranslation();
   const { updateField } = useDataTableMutations(organizationId, tableId);
   const sorted = sort?.fieldId === field.id;
   const unit = currencyUnit(field);
   const numeric = NUMERIC_CELL_TYPES.includes(field.type);
+  const freezeLabel = t(
+    frozen
+      ? "navigation:tables.unfreezeColumn"
+      : "navigation:tables.freezeColumn",
+  );
 
   const [pendingType, setPendingType] = useState<DataTableFieldType | null>(
     null,
@@ -224,136 +248,174 @@ function FieldHeader({
   };
 
   return (
-    <div
-      role="columnheader"
-      aria-sort={
-        sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined
-      }
-      className={cn(
-        "flex min-w-0 border-r border-b bg-background",
-        stickyLeft !== null ? "sticky z-10" : "relative",
-      )}
-      style={stickyLeft !== null ? { left: stickyLeft } : undefined}
-    >
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <button
-              type="button"
-              aria-label={t("navigation:tables.fieldMenu", {
-                name: field.name,
-              })}
-              className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
-            />
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          role="columnheader"
+          aria-sort={
+            sorted
+              ? sort.dir === "asc"
+                ? "ascending"
+                : "descending"
+              : undefined
           }
-        >
-          {/* Quantities right-align: icon + name + unit sit together over the digits. */}
-          {numeric && <span className="flex-1" />}
-          <FieldTypeIcon type={field.type} />
-          <span className="min-w-0 truncate font-medium">{field.name}</span>
-          {unit && <span className="shrink-0">{unit}</span>}
-          {!numeric && <span className="flex-1" />}
-          {sorted &&
-            (sort.dir === "asc" ? (
-              <ArrowUp className="size-3.5 shrink-0" />
-            ) : (
-              <ArrowDown className="size-3.5 shrink-0" />
-            ))}
-          {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
-              the name and digits never shift. */}
-          <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
-            <ChevronDown className="size-3.5" />
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-52">
-          {canEdit && (
-            <>
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => onEditOptions(field, null)}>
-                  <Pencil className="size-3.5" />
-                  {t("navigation:tables.editField")}
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <FieldTypeIcon type={field.type} />
-                    {t("navigation:tables.changeType")}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {EDITABLE_FIELD_TYPES.filter(
-                      (type) => type !== field.type,
-                    ).map((type) => (
-                      <DropdownMenuItem
-                        key={type}
-                        onClick={() => setPendingType(type)}
-                      >
-                        <FieldTypeIcon type={type} />
-                        {t(FIELD_TYPE_LABEL_KEYS[type])}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-            </>
+          className={cn(
+            "flex min-w-0 border-b",
+            freezeEdge ? "border-r-2" : "border-r",
+            stickyLeft !== null ? "sticky z-10" : "relative",
+            frozen ? "bg-secondary" : "bg-background",
           )}
-          <DropdownMenuGroup>
-            {" "}
-            <DropdownMenuItem
-              onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
+          style={stickyLeft !== null ? { left: stickyLeft } : undefined}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={t("navigation:tables.fieldMenu", {
+                    name: field.name,
+                  })}
+                  className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
+                />
+              }
             >
-              <ArrowUp className="size-3.5" />
-              {t("navigation:tables.sortAscending")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSort({ fieldId: field.id, dir: "desc" })}
-            >
-              <ArrowDown className="size-3.5" />
-              {t("navigation:tables.sortDescending")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onFilter(field)}>
-              <ListFilter className="size-3.5" />
-              {t("navigation:tables.filterByField")}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          {(canHide || canEdit) && <DropdownMenuSeparator />}
-          <DropdownMenuGroup>
-            {canHide && (
-              <DropdownMenuItem onClick={() => onHide(field)}>
-                <EyeOff className="size-3.5" />
-                {t("navigation:tables.hideField")}
-              </DropdownMenuItem>
+              {/* Quantities right-align: icon + name + unit sit together over the digits. */}
+              {numeric && <span className="flex-1" />}
+              <FieldTypeIcon type={field.type} />
+              <span className="min-w-0 truncate font-medium">{field.name}</span>
+              {unit && <span className="shrink-0">{unit}</span>}
+              {!numeric && <span className="flex-1" />}
+              {frozen && (
+                <Pin
+                  aria-hidden
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                />
+              )}
+              {sorted &&
+                (sort.dir === "asc" ? (
+                  <ArrowUp className="size-3.5 shrink-0" />
+                ) : (
+                  <ArrowDown className="size-3.5 shrink-0" />
+                ))}
+              {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
+                  the name and digits never shift. */}
+              <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
+                <ChevronDown className="size-3.5" />
+              </span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-52">
+              {canEdit && (
+                <>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      onClick={() => onEditOptions(field, null)}
+                    >
+                      <Pencil className="size-3.5" />
+                      {t("navigation:tables.editField")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FieldTypeIcon type={field.type} />
+                        {t("navigation:tables.changeType")}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        {EDITABLE_FIELD_TYPES.filter(
+                          (type) => type !== field.type,
+                        ).map((type) => (
+                          <DropdownMenuItem
+                            key={type}
+                            onClick={() => setPendingType(type)}
+                          >
+                            <FieldTypeIcon type={type} />
+                            {t(FIELD_TYPE_LABEL_KEYS[type])}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuGroup>
+                {" "}
+                <DropdownMenuItem
+                  onClick={() => onSort({ fieldId: field.id, dir: "asc" })}
+                >
+                  <ArrowUp className="size-3.5" />
+                  {t("navigation:tables.sortAscending")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onSort({ fieldId: field.id, dir: "desc" })}
+                >
+                  <ArrowDown className="size-3.5" />
+                  {t("navigation:tables.sortDescending")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onFilter(field)}>
+                  <ListFilter className="size-3.5" />
+                  {t("navigation:tables.filterByField")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onToggleFreeze}>
+                  {frozen ? (
+                    <PinOff className="size-3.5" />
+                  ) : (
+                    <Pin className="size-3.5" />
+                  )}
+                  {freezeLabel}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              {(canHide || canEdit) && <DropdownMenuSeparator />}
+              <DropdownMenuGroup>
+                {canHide && (
+                  <DropdownMenuItem onClick={() => onHide(field)}>
+                    <EyeOff className="size-3.5" />
+                    {t("navigation:tables.hideField")}
+                  </DropdownMenuItem>
+                )}
+                {canEdit && (
+                  <DropdownMenuItem
+                    className="text-destructive-foreground data-highlighted:text-destructive-foreground"
+                    onClick={() => onDeleted(field)}
+                  >
+                    <Trash2 className="size-3.5" />
+                    {t("navigation:tables.deleteField")}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ColumnResizeHandle
+            name={field.name}
+            width={width}
+            onResize={onResize}
+            onReset={onResetWidth}
+          />
+          {pendingType && (
+            <FieldTypeConfirmation
+              key={`${field.id}:${pendingType}`}
+              field={field}
+              nextType={pendingType}
+              open
+              onOpenChange={(open) => {
+                if (!open) setPendingType(null);
+              }}
+              onConfirm={() => changeType(pendingType)}
+            />
+          )}
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuItem onClick={onToggleFreeze}>
+            {frozen ? (
+              <PinOff className="size-3.5" />
+            ) : (
+              <Pin className="size-3.5" />
             )}
-            {canEdit && (
-              <DropdownMenuItem
-                className="text-destructive-foreground data-highlighted:text-destructive-foreground"
-                onClick={() => onDeleted(field)}
-              >
-                <Trash2 className="size-3.5" />
-                {t("navigation:tables.deleteField")}
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <ColumnResizeHandle
-        name={field.name}
-        width={width}
-        onResize={onResize}
-        onReset={onResetWidth}
-      />
-      {pendingType && (
-        <FieldTypeConfirmation
-          key={`${field.id}:${pendingType}`}
-          field={field}
-          nextType={pendingType}
-          open
-          onOpenChange={(open) => {
-            if (!open) setPendingType(null);
-          }}
-          onConfirm={() => changeType(pendingType)}
-        />
-      )}
-    </div>
+            {freezeLabel}
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -612,6 +674,15 @@ export function DataTableGrid({
   const changeHidden = (ids: string[]) => {
     setHidden(ids);
     writeHiddenFields(table.id, ids);
+  };
+  // Frozen data columns (spreadsheet-style: 0..N freeze together) persist per
+  // table like hidden fields; the row-number gutter stays sticky regardless.
+  const [frozenCount, setFrozenCount] = useState(() =>
+    readFrozenColumns(table.id),
+  );
+  const changeFrozen = (count: number) => {
+    setFrozenCount(count);
+    writeFrozenColumns(table.id, count);
   };
   // The first field names the row and is never hidden (Fields popover locks it).
   const fields = useMemo(
@@ -1107,6 +1178,14 @@ export function DataTableGrid({
   // Grid template: row # · fields · trailing "+" add-field cell (DS §2 Grid).
   const ADD_FIELD_WIDTH = 40;
   const trailing = canEdit ? ADD_FIELD_WIDTH : 0;
+  // Sticky offsets for the frozen columns: gutter width plus the widths of
+  // the frozen columns before each, so header and body cells agree exactly.
+  const frozenLefts: number[] = [];
+  let frozenX = ROW_NUMBER_COLUMN_WIDTH;
+  for (let i = 0; i < frozenCount && i < fields.length; i++) {
+    frozenLefts.push(frozenX);
+    frozenX += columnWidth(fields[i]);
+  }
   const gridTemplate = `${ROW_NUMBER_COLUMN_WIDTH}px ${fields
     .map((field) => `${columnWidth(field)}px`)
     .join(" ")}${canEdit ? ` ${ADD_FIELD_WIDTH}px` : ""}`;
@@ -1288,7 +1367,9 @@ export function DataTableGrid({
                   <FieldHeader
                     key={field.id}
                     field={field}
-                    stickyLeft={index === 0 ? ROW_NUMBER_COLUMN_WIDTH : null}
+                    stickyLeft={index < frozenCount ? frozenLefts[index] : null}
+                    frozen={index < frozenCount}
+                    freezeEdge={index === frozenCount - 1}
                     sort={sort}
                     onSort={setSort}
                     canEdit={canEdit}
@@ -1309,6 +1390,10 @@ export function DataTableGrid({
                     width={columnWidth(field)}
                     onResize={(width) => setWidth(field.id, width)}
                     onResetWidth={() => setWidth(field.id, null)}
+                    // Freeze to this column, or unfreeze back to its start.
+                    onToggleFreeze={() =>
+                      changeFrozen(index < frozenCount ? index : index + 1)
+                    }
                   />
                 ))}
                 {canEdit && (
@@ -1589,11 +1674,16 @@ export function DataTableGrid({
                                 });
                             }}
                             className={cn(
-                              "flex min-w-0 items-center gap-1.5 border-r border-b px-2 text-ui",
-                              fieldIndex === 0 ? "sticky z-10" : "relative z-0",
+                              "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
+                              fieldIndex === frozenCount - 1
+                                ? "border-r-2"
+                                : "border-r",
+                              fieldIndex < frozenCount
+                                ? "sticky z-10"
+                                : "relative z-0",
                               editing?.rowId === row.id &&
                                 editing.fieldId === field.id &&
-                                (fieldIndex === 0
+                                (fieldIndex < frozenCount
                                   ? "z-20 bg-background"
                                   : "z-[1] bg-background"),
                               isSelected
@@ -1608,8 +1698,8 @@ export function DataTableGrid({
                               "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
                             )}
                             style={
-                              fieldIndex === 0
-                                ? { left: ROW_NUMBER_COLUMN_WIDTH }
+                              fieldIndex < frozenCount
+                                ? { left: frozenLefts[fieldIndex] }
                                 : undefined
                             }
                           >

@@ -23,14 +23,12 @@ import {
 import { getRowTickets } from "@/fetchers/data-table/row-links";
 import { useDrawerWidth } from "@/hooks/use-drawer-width";
 import { getColumnIcon } from "@/lib/column";
+import { rowDrawerDefaultWidth } from "@/lib/task-drawer-width";
 import type {
   DataTable,
   DataTableField,
   DataTableRow,
 } from "@/types/data-table";
-
-/** Matches the sheet's `sm` size, so the first drag starts where it is. */
-const ROW_DRAWER_DEFAULT_WIDTH = 480;
 
 /**
  * Row drawer, laid out like the ticket drawer but fields only: a top bar
@@ -86,7 +84,9 @@ export function RowSheet({
   const [copied, setCopied] = useState(false);
   const { width, startResize } = useDrawerWidth(
     "kaneo:row-drawer-width",
-    ROW_DRAWER_DEFAULT_WIDTH,
+    // Half the viewport until the user drags (clamped by the shared min/max);
+    // a stored width wins.
+    rowDrawerDefaultWidth,
   );
 
   const tickets = useQuery({
