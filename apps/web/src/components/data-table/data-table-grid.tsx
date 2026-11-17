@@ -263,7 +263,7 @@ function FieldHeader({
             "flex min-w-0 border-b",
             freezeEdge ? "border-r-2" : "border-r",
             stickyLeft !== null ? "sticky z-10" : "relative",
-            frozen ? "bg-secondary" : "bg-background",
+            frozen ? "bg-row-hover" : "bg-background",
           )}
           style={stickyLeft !== null ? { left: stickyLeft } : undefined}
         >
