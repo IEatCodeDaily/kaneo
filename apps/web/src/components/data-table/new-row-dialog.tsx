@@ -10,12 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import type { DataTableField } from "@/types/data-table";
 import { FieldTypeIcon, type MemberOption } from "./data-table-cells";
-import {
-  DataTableCellContent,
-  JsonCellEditor,
-  TableCellInput,
-} from "./data-table-editors";
 import { FIELD_TYPE_LABEL_KEYS, fieldIsRequired } from "./data-table-format";
+import { FieldValueEditor } from "./field-value-editor";
 
 /** Mounted per opening: cancelling never leaks drafts into the next row. */
 export function NewRowDialog({
@@ -40,6 +36,14 @@ export function NewRowDialog({
       fields
         .filter((field) => field.type === "checkbox")
         .map((field) => [field.id, false]),
+    ),
+    ...Object.fromEntries(
+      fields
+        .filter((field) => Object.hasOwn(field.options ?? {}, "defaultValue"))
+        .map((field) => [
+          field.id,
+          structuredClone(field.options?.defaultValue),
+        ]),
     ),
     ...initialValues,
   }));
@@ -119,27 +123,6 @@ export function NewRowDialog({
           </DialogHeader>
           <div className="flex flex-col gap-4">
             {fields.map((field) => {
-              const props = {
-                field,
-                value: values[field.id],
-                formMode: true,
-                onCommit: (value: unknown) =>
-                  setValues((current) => ({ ...current, [field.id]: value })),
-                onCancel: () => {},
-                onInvalidChange: (invalid: boolean) =>
-                  setInvalid((current) => ({
-                    ...current,
-                    [field.id]: invalid,
-                  })),
-              };
-              const picker = [
-                "select",
-                "multiselect",
-                "checkbox",
-                "user",
-                "ticket",
-                "link",
-              ].includes(field.type);
               return (
                 <fieldset
                   key={field.id}
@@ -161,31 +144,28 @@ export function NewRowDialog({
                       {t(FIELD_TYPE_LABEL_KEYS[field.type])}
                     </span>
                   </div>
-                  {field.type === "json" ? (
-                    <JsonCellEditor {...props} />
-                  ) : !picker ? (
-                    <TableCellInput {...props} />
-                  ) : (
-                    <div className="flex min-h-8 min-w-0 items-center rounded-md border px-2 text-ui">
-                      <DataTableCellContent
-                        row={{
-                          id: "",
-                          position: 0,
-                          createdAt: "",
-                          updatedAt: "",
-                          values,
-                        }}
-                        field={field}
-                        members={members}
-                        canEdit
-                        expanded
-                        isEditing={false}
-                        onEditStart={() => {}}
-                        onEditEnd={() => {}}
-                        onCommit={props.onCommit}
-                      />
-                    </div>
+                  {field.options?.description && (
+                    <p className="text-xs text-muted-foreground">
+                      {field.options.description}
+                    </p>
                   )}
+                  <FieldValueEditor
+                    field={field}
+                    value={values[field.id]}
+                    members={members}
+                    onChange={(value) =>
+                      setValues((current) => ({
+                        ...current,
+                        [field.id]: value,
+                      }))
+                    }
+                    onInvalidChange={(invalid) =>
+                      setInvalid((current) => ({
+                        ...current,
+                        [field.id]: invalid,
+                      }))
+                    }
+                  />
                 </fieldset>
               );
             })}

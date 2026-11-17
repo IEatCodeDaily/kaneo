@@ -619,7 +619,13 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
         fieldId: v.string(),
       }),
     ),
-    validator("query", v.object({ q: v.optional(v.string()) })),
+    validator(
+      "query",
+      v.object({
+        q: v.optional(v.string()),
+        boards: v.optional(v.pipe(v.string(), v.maxLength(10000))),
+      }),
+    ),
     organizationAccess.fromParam("organizationId"),
     tablePrivilege("edit"),
     async (c) => {
@@ -631,6 +637,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
           fieldId,
           c.get("userId"),
           c.req.valid("query").q,
+          c.req.valid("query").boards?.split(",").filter(Boolean),
         ),
       );
     },

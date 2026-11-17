@@ -1380,7 +1380,41 @@ const fillNewRowForm = async (p) => {
   await p.getByRole("option", { name: "Mixing", exact: true }).click();
   await p.getByRole("spinbutton", { name: "Cost", exact: true }).fill("12500");
 };
+const fillFieldEditor = async (p) => {
+  await openFieldOptions(p);
+  await p
+    .getByRole("textbox", { name: "New field name", exact: true })
+    .fill("Default delivery");
+  await p.getByRole("textbox", { name: "Search field types" }).fill("date");
+  const date = p.getByRole("button", { name: "Date", exact: true });
+  await date.click();
+  if ((await date.getAttribute("aria-pressed")) !== "true")
+    throw new Error("Date was not selected");
+  if ((await p.locator("button[data-field-type]").count()) !== 2)
+    throw new Error("date search did not filter types");
+  await p.locator('input[aria-label="Default value"]').fill("2026-11-17");
+  await p
+    .getByRole("textbox", { name: "Description", exact: true })
+    .fill("Expected delivery date");
+};
 const OVERLAY_STATES = [
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["desktop-light", "light", DESKTOP],
+    ["phone-dark", "dark", { width: 390, height: 844 }],
+  ].map(([suffix, theme, viewport]) => [
+    `dialog-field-editor--${suffix}`,
+    theme,
+    viewport,
+    fillFieldEditor,
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
   [
     "table-new-row-form--desktop-dark",
     "dark",
@@ -1400,14 +1434,14 @@ const OVERLAY_STATES = [
     "dark",
     DESKTOP,
     openFieldOptions,
-    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+    { ...GUTTER, footer_inset: 16, width: 768, header_h: 44, footer_h: 52 },
   ],
   [
     "dialog-field-options--desktop-light",
     "light",
     DESKTOP,
     openFieldOptions,
-    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+    { ...GUTTER, footer_inset: 16, width: 768, header_h: 44, footer_h: 52 },
   ],
   [
     "dialog-field-options--phone-dark",
@@ -1499,6 +1533,30 @@ if (pages.table) {
       await page.mouse.move(2, 2);
     } catch (e) {
       fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    }
+    if (name.startsWith("dialog-field-options")) {
+      const search = page.getByRole("textbox", { name: "Search field types" });
+      if (viewport.width < 768) await search.fill("json");
+      await search.press("ArrowDown");
+      await page.locator("button[data-field-type]:focus").press("End");
+      const last = page.locator('button[data-field-type="json"]');
+      if (!(await last.evaluate((el) => el === document.activeElement)))
+        fails.push("type picker End did not reach JSON");
+      const visible = await last.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const list = el
+          .closest("details")
+          .parentElement.getBoundingClientRect();
+        return box.top >= list.top && box.bottom <= list.bottom;
+      });
+      if (!visible) fails.push("last type does not scroll into view");
+      await search.fill("");
+      await page
+        .getByRole("textbox", { name: "New field name", exact: true })
+        .focus();
+      await page
+        .locator('button[data-field-type="text"]')
+        .evaluate((el) => el.scrollIntoView({ block: "nearest" }));
     }
     const m = (await page.evaluate(overlayGeometry)) ?? {};
     for (const [key, value] of Object.entries(want))
@@ -1644,6 +1702,93 @@ if (pages.table) {
           throw new Error("could not clean up form-created row");
       } catch (error) {
         fails.push(String(error));
+      }
+    }
+    if (name.startsWith("dialog-field-editor")) {
+      let fieldId;
+      let rowId;
+      const root = `${BASE}/api/data-table/organization/${org.id}/${tbl.id}`;
+      try {
+        const layout = await page
+          .locator('[data-slot="dialog-popup"]')
+          .evaluate((popup) => {
+            const footer = popup
+              .querySelector('[data-slot="dialog-footer"]')
+              .getBoundingClientRect();
+            return {
+              overflow: popup.scrollWidth > popup.clientWidth,
+              footerVisible: footer.bottom <= innerHeight && footer.top >= 0,
+            };
+          });
+        if (layout.overflow || !layout.footerVisible)
+          throw new Error(`field editor layout ${JSON.stringify(layout)}`);
+        const saved = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/fields"),
+        );
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Add field", exact: true })
+          .click();
+        const fieldResponse = await saved;
+        if (!fieldResponse.ok())
+          throw new Error(`field create: ${await fieldResponse.text()}`);
+        const field = await fieldResponse.json();
+        fieldId = field.id;
+        if (
+          field.options.defaultValue !== "2026-11-17" ||
+          field.options.description !== "Expected delivery date"
+        )
+          throw new Error("field options not stored");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const entries = page.getByRole("button", {
+          name: "New row",
+          exact: true,
+        });
+        await (viewport.width < 600 ? entries.last() : entries.first()).click();
+        const input = page.locator('input[aria-label="Default delivery"]');
+        if ((await input.inputValue()) !== "2026-11-17")
+          throw new Error("new row did not prefill default");
+        await page
+          .getByRole("textbox", { name: "Batch", exact: true })
+          .fill("Default row sample");
+        await input.scrollIntoViewIfNeeded();
+        await page.screenshot({ path: join(OUT, `${name}-new-row.png`) });
+        const created = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/rows"),
+        );
+        await page
+          .getByRole("button", { name: "Create row", exact: true })
+          .click();
+        const rowResponse = await created;
+        if (!rowResponse.ok())
+          throw new Error(`row create: ${await rowResponse.text()}`);
+        const row = await rowResponse.json();
+        rowId = row.id;
+        if (row.values[fieldId] !== "2026-11-17")
+          throw new Error("created row lost default");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const cell = page
+          .getByRole("gridcell")
+          .filter({ hasText: "Default row sample" });
+        await cell.waitFor();
+        await cell
+          .locator("..")
+          .getByRole("button", { name: /Expand row/ })
+          .click();
+        await page
+          .getByText("Expected delivery date", { exact: true })
+          .waitFor();
+        await page.screenshot({ path: join(OUT, `${name}-created.png`) });
+      } catch (error) {
+        fails.push(String(error));
+      } finally {
+        if (rowId && !(await page.request.delete(`${root}/rows/${rowId}`)).ok())
+          fails.push("could not remove default row");
+        if (
+          fieldId &&
+          !(await page.request.delete(`${root}/fields/${fieldId}`)).ok()
+        )
+          fails.push("could not remove default field");
       }
     }
     checks[shot] = { fails, ...m };

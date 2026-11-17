@@ -533,6 +533,7 @@ export function optionsForType(
       ? { choices: options?.choices ?? [] }
       : {};
   if (options?.required) base.required = true;
+  if (options?.description) base.description = options.description;
   if (type === "number" || type === "percent") {
     if (typeof options?.precision === "number") {
       base.precision = options.precision;

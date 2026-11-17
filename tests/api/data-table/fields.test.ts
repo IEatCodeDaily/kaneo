@@ -66,6 +66,36 @@ describe("field registry", () => {
   });
 });
 
+describe("field default validation", () => {
+  it.each([
+    ["number", { defaultValue: 12.5 }, true],
+    ["number", { defaultValue: "12.5" }, false],
+    ["date", { defaultValue: "2026-11-17" }, true],
+    ["date", { defaultValue: "tomorrow" }, false],
+    ["checkbox", { defaultValue: false, required: true }, true],
+    ["checkbox", { defaultValue: null, required: true }, false],
+    ["text", { description: "Helpful context" }, true],
+    ["text", { description: 42 }, false],
+    [
+      "select",
+      { choices: [{ id: "a", label: "A" }], defaultValue: "missing" },
+      false,
+    ],
+    [
+      "multiselect",
+      { choices: [{ id: "a", label: "A" }], defaultValue: ["a"] },
+      true,
+    ],
+  ] as const)(
+    "validates %s defaults and descriptions",
+    (type, options, valid) => {
+      expect(v.safeParse(fieldOptionsSchema(type), options).success).toBe(
+        valid,
+      );
+    },
+  );
+});
+
 describe("coerceValue", () => {
   it("passes through null as a cleared cell", () => {
     expect(coerceValue({ type: "number" }, null)).toBeNull();
