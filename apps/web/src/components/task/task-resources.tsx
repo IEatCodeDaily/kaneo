@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Link2,
   Search,
+  Table2,
   Trash2,
 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
@@ -61,6 +62,7 @@ import { getRepoIssueRelationTarget } from "@/lib/repo-issue-relation-link";
 import { toast } from "@/lib/toast";
 import type { ExternalLink as ExternalLinkType } from "@/types/external-link";
 import { extractDescriptionResources } from "./description-resources";
+import { isInternalUrl, resourceLinkLabel } from "./resource-label";
 import ResourcePickerRow from "./resource-picker-row";
 import { ResourceSyncBadge } from "./resource-sync-badge";
 import { TableRowResources } from "./table-row-resources";
@@ -103,7 +105,11 @@ type ResourceGroup = {
  */
 function getRepoLabelFromUrl(url: string) {
   try {
-    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    const parsed = new URL(url);
+    // A Kaneo URL's first two path segments are route fragments
+    // ("dashboard/organization"), not an owner/repo — never render them.
+    if (parsed.origin === window.location.origin) return null;
+    const segments = parsed.pathname.split("/").filter(Boolean);
     if (segments.length < 2) return null;
     return `${segments[0]}/${segments[1]}`;
   } catch {
@@ -128,6 +134,10 @@ function RepoLabel({ label }: { label: string }) {
     </span>
   );
 }
+
+/** Shared row chrome for auto-synced, manual and table-row resource rows. */
+const rowClassName =
+  "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60";
 
 async function linkResource({
   repoId,
@@ -406,6 +416,19 @@ export default function TaskResources({
   );
 
   /**
+   * Table-row links (row ↔ ticket): Kaneo-internal, so they never render in
+   * the GitHub row shape. The stored title is the row's primary value and the
+   * metadata carries the table name — the id in `externalId` stays in storage.
+   */
+  const tableRowLinks = useMemo(
+    () =>
+      (externalLinks as ExternalLinkType[]).filter(
+        (link) => link.resourceType === "table_row",
+      ),
+    [externalLinks],
+  );
+
+  /**
    * #265: links and attachments already in the description surface as
    * resources. Derived, never persisted — the description stays the source of
    * truth, so these cannot drift from the text. Anything already linked
@@ -427,6 +450,7 @@ export default function TaskResources({
     links.length > 0 ||
     autoLinks.length > 0 ||
     manualLinks.length > 0 ||
+    tableRowLinks.length > 0 ||
     descriptionResources.length > 0;
 
   /** repoId -> "owner/name", so manual links can show their repository. */
@@ -627,9 +651,6 @@ export default function TaskResources({
             const internal =
               internalTarget?.internal === true ? internalTarget : null;
 
-            const rowClassName =
-              "group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60";
-
             const body = (
               <>
                 {/*
@@ -702,6 +723,58 @@ export default function TaskResources({
               </a>
             );
           })}
+
+          {/*
+            Kaneo-internal row links: label is the row's primary value (via
+            the stored title), the source is the table name. In-app Link when
+            the stored URL is the table route; the id is never displayed.
+          */}
+          {tableRowLinks.map((link) => {
+            const meta = (link.metadata ?? {}) as { tableName?: string };
+            const segments = link.url.split("/");
+            const isTableRoute =
+              isInternalUrl(link.url) &&
+              segments[4] === "organization" &&
+              segments[6] === "table";
+            const row = (
+              <>
+                <Table2 className="size-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">
+                  {resourceLinkLabel(link.url, link.title)}
+                </span>
+                <span
+                  className="shrink-0 text-xs text-muted-foreground"
+                  title={meta.tableName}
+                >
+                  {meta.tableName ?? "Kaneo link"}
+                </span>
+                <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              </>
+            );
+            return isTableRoute ? (
+              <Link
+                className={rowClassName}
+                data-testid="table-row-resource-link"
+                key={link.id}
+                params={{
+                  organizationSlug: segments[5],
+                  tableId: segments[7],
+                }}
+                to="/dashboard/organization/$organizationSlug/table/$tableId"
+              >
+                {row}
+              </Link>
+            ) : (
+              <a
+                className={rowClassName}
+                data-testid="table-row-resource-link"
+                href={link.url}
+                key={link.id}
+              >
+                {row}
+              </a>
+            );
+          })}
         </div>
       )}
 
@@ -712,37 +785,41 @@ export default function TaskResources({
       */}
       {manualLinks.length > 0 && (
         <div className="flex flex-col">
-          {manualLinks.map((link) => (
-            <div
-              className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
-              key={link.id}
-            >
-              <a
-                className="flex min-w-0 flex-1 items-center gap-2"
-                data-testid="manual-resource-link"
-                href={link.url}
-                rel="noreferrer"
-                target="_blank"
+          {manualLinks.map((link) => {
+            // A pasted Kaneo URL's id must not surface: title, else a
+            // readable fallback for internal links, else the URL as before.
+            const label =
+              link.title || (isInternalUrl(link.url) ? "Kaneo link" : link.url);
+            return (
+              <div
+                className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent/60"
+                key={link.id}
               >
-                <Link2 className="size-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate">
-                  {link.title || link.url}
-                </span>
-                <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
-              </a>
-              {canEdit && (
-                <Button
-                  aria-label={`Remove ${link.title || link.url}`}
-                  disabled={removeLink.isPending}
-                  onClick={() => removeLink.mutate({ id: link.id, taskId })}
-                  size="icon-xs"
-                  variant="ghost"
+                <a
+                  className="flex min-w-0 flex-1 items-center gap-2"
+                  data-testid="manual-resource-link"
+                  href={link.url}
+                  rel="noreferrer"
+                  target="_blank"
                 >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              )}
-            </div>
-          ))}
+                  <Link2 className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
+                  <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                </a>
+                {canEdit && (
+                  <Button
+                    aria-label={`Remove ${label}`}
+                    disabled={removeLink.isPending}
+                    onClick={() => removeLink.mutate({ id: link.id, taskId })}
+                    size="icon-xs"
+                    variant="ghost"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

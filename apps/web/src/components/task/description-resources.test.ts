@@ -79,6 +79,14 @@ describe("extractDescriptionResources", () => {
     expect(result[0]?.title).toBe("report final.pdf");
   });
 
+  it("never shows the id a bare Kaneo URL ends with", () => {
+    const result = extractDescriptionResources(
+      `${window.location.origin}/dashboard/organization/acme/table/fskd8b8dl0gpntdx74m27rjh`,
+    );
+
+    expect(result[0]?.title).toBe(window.location.host);
+  });
+
   it("ignores non-http(s) URLs", () => {
     // Rendered as clickable anchors, so javascript:/data: would be an XSS vector.
     const result = extractDescriptionResources(

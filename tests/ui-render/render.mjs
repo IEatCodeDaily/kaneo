@@ -110,6 +110,7 @@ async function seed(api) {
       `/data-table/organization/${org.id}/${tbl.id}/fields`,
       options ? { name, type, options } : { name, type },
     );
+  let firstRowId = "";
   for (const [i, [batch, stage, cost]] of [
     ["PB-1042 Filter test A", "Mixing", 3180000],
     ["PB-1043 Hardener batch D", "Curing", 2450000],
@@ -135,7 +136,16 @@ async function seed(api) {
               ? [tasks[i].id]
               : [],
       },
+    }).then((row) => {
+      if (i === 0) firstRowId = row.id;
     });
+  // Explicit row ↔ ticket link: the Resources list must render it as the
+  // row's primary value + table name — its stored externalId is the row's
+  // raw id, which must never surface (#fskd8… regression).
+  await post(
+    `/data-table/organization/${org.id}/${tbl.id}/rows/${firstRowId}/tickets?taskId=${tasks[0].id}`,
+    {},
+  );
   return { org, board, tbl };
 }
 
@@ -241,6 +251,100 @@ for (const [theme, tag, viewport, scale] of [
       !(text.includes("Included in") && text.includes("PB-1042"))
     )
       fails.push("ticket page shows no Included in row (PB-1042)");
+    // Raw ids are storage keys: a cuid/UUID must never appear in the drawer's
+    // visible text (a table-row resource used to print `#<row id>`).
+    if (name === "ticket") {
+      const idLeak = text.match(
+        /\b[a-z0-9]{20,}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
+      );
+      if (idLeak) fails.push(`raw id visible in drawer: ${idLeak[0]}`);
+      const rowResource = await page
+        .getByTestId("table-row-resource-link")
+        .first()
+        .innerText()
+        .catch(() => "");
+      if (
+        !rowResource.includes("PB-1042") ||
+        !rowResource.includes("Pilot batch log")
+      )
+        fails.push(
+          `table-row resource not rendered as row value + table name: ${JSON.stringify(rowResource)}`,
+        );
+      if (tag === "desktop") {
+        // Included-in labels must top-align with their value's first line
+        // (they used to center against stacked chips / rich text). The
+        // section mounts progressively — wait for its LAST field value.
+        let mounted = true;
+        try {
+          await page
+            .getByText("Record the result")
+            .first()
+            .waitFor({ timeout: 8000 });
+        } catch {
+          mounted = false;
+        }
+        await page.waitForTimeout(300);
+        const probeFn = () => {
+          const rows = [
+            ...document.querySelectorAll('[data-slot="included-in-row"]'),
+          ];
+          const out = [];
+          const heights = [];
+          for (const row of rows) {
+            // One wrapper holds breadcrumb + every field row; measure each
+            // field row, not the wrapper's first match.
+            for (const child of row.children) {
+              const label = child.querySelector("[data-included-label]");
+              const value = child.querySelector("[data-included-value]");
+              if (!label || !value) continue; // breadcrumb row
+              const lv = label.getBoundingClientRect();
+              const vv = value.getBoundingClientRect();
+              heights.push(
+                `${label.textContent?.trim()}:${Math.round(vv.height)}`,
+              );
+              // Only multi-line values expose the centering drift.
+              if (vv.height > 28)
+                out.push(Math.round((vv.top - lv.top) * 10) / 10);
+            }
+          }
+          return { rows: rows.length, heights, deltas: out };
+        };
+        // The section settles progressively; measure once it stops changing.
+        let probe = await page.evaluate(probeFn);
+        for (
+          let attempt = 0;
+          attempt < 10 && probe.deltas.length === 0;
+          attempt++
+        ) {
+          await page.waitForTimeout(400);
+          probe = await page.evaluate(probeFn);
+        }
+        if (probe.deltas.length === 0) {
+          const detail = await page.evaluate(() => {
+            const rows = [
+              ...document.querySelectorAll('[data-slot="included-in-row"]'),
+            ];
+            return rows.map((row) => ({
+              fieldRows: [...row.children].map((child) => ({
+                label:
+                  child
+                    .querySelector("[data-included-label]")
+                    ?.textContent?.trim() ?? null,
+                hasValue: !!child.querySelector("[data-included-value]"),
+                h: Math.round(child.getBoundingClientRect().height),
+                cls: (child.className || "").slice(0, 60),
+              })),
+            }));
+          });
+          fails.push(
+            `no multi-line included-in value (mounted=${mounted}, probe=${JSON.stringify(probe)}, detail=${JSON.stringify(detail)})`,
+          );
+        }
+        for (const d of probe.deltas)
+          if (Math.abs(d) > 2)
+            fails.push(`included-in label/value tops off by ${d}px`);
+      }
+    }
     const shot = `${name}--${tag}-${theme}.png`;
     await page.screenshot({ path: join(OUT, shot) });
     checks[shot] = { fails, ...m, url: page.url() };
