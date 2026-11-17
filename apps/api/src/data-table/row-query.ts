@@ -262,7 +262,8 @@ function filterSql(
   if (op === "isEmpty") return emptySql(f, lookups);
   if (op === "isNotEmpty") return sql`NOT (${emptySql(f, lookups)})`;
   if (op === "isChecked") return sql`${col} IS TRUE`;
-  if (op === "isNotChecked") return sql`${col} IS FALSE`;
+  // Negative operators include empty cells (NocoDB): unset is "not checked".
+  if (op === "isNotChecked") return sql`${col} IS NOT TRUE`;
   if (op === "isMe") {
     if (!lookups.userId) bad("Current user required");
     return sql`${col} = ${lookups.userId}`;
@@ -299,7 +300,7 @@ function filterSql(
       raw.map((v) => sql`${v}`),
       sql`, `,
     )})`;
-    return op === "notIn" ? sql`NOT (${inside})` : inside;
+    return op === "notIn" ? sql`(NOT (${inside}) OR ${col} IS NULL)` : inside;
   }
   if (op === "pastDays" || op === "nextDays") {
     if (
@@ -319,7 +320,7 @@ function filterSql(
       case "eq":
         return sql`${left} = ${right}`;
       case "neq":
-        return sql`${left} <> ${right}`;
+        return sql`(${left} <> ${right} OR ${left} IS NULL)`;
       case "lt":
         return sql`${left} < ${right}`;
       case "lte":
@@ -361,7 +362,7 @@ function filterSql(
   }
   if (typeof raw !== "string") bad("Text filter required");
   if (op === "contains" || op === "notContains") {
-    const match = sql`strpos(lower(${col}::text), ${raw.toLowerCase()}) > 0`;
+    const match = sql`strpos(lower(COALESCE(${col}::text, '')), ${raw.toLowerCase()}) > 0`;
     return op === "notContains" ? sql`NOT (${match})` : match;
   }
   return compare(f.type === "json" ? sql`${col}::text` : col, sql`${raw}`);

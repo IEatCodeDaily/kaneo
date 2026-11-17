@@ -177,9 +177,9 @@ export function FilterBuilder({
           <div
             data-filter-condition
             key={child.id ?? index}
-            className="grid min-w-0 grid-cols-2 items-center gap-1 rounded-md border p-2"
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-1 rounded-md border p-2"
           >
-            <div className="flex min-w-0 items-center gap-1 [&>div]:min-w-0 [&>div]:flex-1">
+            <div className="flex min-w-0 items-center [&>div]:min-w-0 [&>div]:flex-1">
               <FieldSelect
                 className="min-w-0 flex-1"
                 fields={fields}
@@ -191,14 +191,6 @@ export function FilterBuilder({
                     update({ ...newFilterCondition(next), id: child.id });
                 }}
               />
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t("navigation:tables.removeFilter")}
-                onClick={drop}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
             </div>
             {field && (
               <>
@@ -230,8 +222,21 @@ export function FilterBuilder({
                     ))}
                   </SelectContent>
                 </Select>
+              </>
+            )}
+            {!field && <span />}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("navigation:tables.removeFilter")}
+              onClick={drop}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+            {field && (
+              <>
                 {!valuelessOperator(child.op) && (
-                  <div className="col-span-2 min-w-0">
+                  <div className="col-span-3 min-w-0">
                     <ConditionValue
                       condition={child}
                       field={field}

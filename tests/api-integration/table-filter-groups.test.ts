@@ -138,8 +138,10 @@ describe("typed nested table filters (real PostgreSQL)", () => {
     expect(await ids(group(condition(fields.Name, "isEmpty")))).toEqual([
       "r0002",
     ]);
+    // Negative operators include empty cells: NULL is "not checked".
     expect(await ids(group(condition(fields.Done, "isNotChecked")))).toEqual([
       "r0001",
+      "r0002",
     ]);
     expect(
       (await query(group(condition(fields.Name, "isNotEmpty")))).total,
@@ -149,7 +151,10 @@ describe("typed nested table filters (real PostgreSQL)", () => {
     ).toBe(1003);
     expect(
       await ids(group(condition(fields.Name, "notContains", "Batch"))),
-    ).toEqual(["r0001"]);
+    ).toEqual(["r0001", "r0002"]);
+    expect(
+      (await query(group(condition(fields.Amount, "neq", 100)))).total,
+    ).toBe(7); // 0, NULL and the five 200s
     expect(
       await ids(group(condition(fields.Name, "eq", "' OR TRUE; --"))),
     ).toEqual([]);

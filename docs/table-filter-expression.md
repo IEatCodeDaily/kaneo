@@ -33,7 +33,7 @@ Legacy flat arrays (`contains`, `min/max`, `from/to`, `choiceId`, `checked`) are
 
 Choice/member/Ticket/link values are stored identifiers, selected using readable labels; the builder never displays raw identifiers. List operators require a nonempty string array. Invalid/deleted/foreign fields, unavailable link targets, unknown references, and type-incompatible operators return 400. The table endpoint's existing organization/resource authorization remains in force.
 
-Scalar empty means SQL NULL only: `""`, `0`, and `false` remain distinct stored values. Collection empty means NULL or an empty array. Negative scalar comparisons do not match NULL; use an explicit OR `isEmpty` condition when needed. Text contains is case-insensitive and literal, not a SQL wildcard pattern; equality is exact.
+Scalar empty means SQL NULL only: `""`, `0`, and `false` remain distinct stored values. Collection empty means NULL or an empty array. Negative operators (`neq`, `notContains`, `notIn`, `hasNone`, `isNotChecked`) also match empty cells, as in NocoDB: "Status is not Closed" includes rows with no status. Text contains is case-insensitive and literal, not a SQL wildcard pattern; equality is exact.
 
 Calendar dates use UTC. Datetime values accept an ISO timestamp; timestamps without an offset (the native datetime-local editor) are interpreted as UTC. A date-only datetime comparison uses the entire UTC day: `eq` matches [midnight, next midnight), `gt` starts at next midnight, `lte` ends before next midnight. Relative N-day windows include today: past = [today − N days, tomorrow), next = [today, today + N + 1 days); N is an integer from 0 to 36,500. PostgreSQL's transaction date fixes the boundary for the entire request.
 
