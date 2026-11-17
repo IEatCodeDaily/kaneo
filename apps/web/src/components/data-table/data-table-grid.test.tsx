@@ -468,10 +468,30 @@ describe("spreadsheet keyboard navigation", () => {
       ],
     };
   };
-  const mountKey = (over?: Parameters<typeof keyTable>[0]) =>
-    render(
+  const mountKey = (over?: Parameters<typeof keyTable>[0]) => {
+    const data = keyTable(over);
+    // Rows come from the server row query since KFL-403.
+    rowPages.mockReturnValue({
+      data: {
+        pages: [
+          {
+            rows: data.rows,
+            total: data.rows.length,
+            tableTotal: data.rows.length,
+            summaries: {},
+            groups: [],
+            tickets: {},
+          },
+        ],
+      },
+      hasNextPage: false,
+      isError: false,
+      isPending: false,
+      isFetching: false,
+    });
+    return render(
       <DataTableGrid
-        table={keyTable(over)}
+        table={data}
         organizationId="o"
         organizationSlug="org"
         canEdit
@@ -479,6 +499,7 @@ describe("spreadsheet keyboard navigation", () => {
         onDelete={vi.fn()}
       />,
     );
+  };
   const cell = (index: number) => screen.getAllByRole("gridcell")[index];
   const select = (index: number) => {
     fireEvent.click(cell(index));
