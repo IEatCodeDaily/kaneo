@@ -2301,7 +2301,11 @@ async function csvPreviewState(p) {
     .getByRole("button", { name: "Validate preview", exact: true })
     .click();
   await dialog.getByText(/Line 2 · Cost:/).waitFor();
-  await dialog.getByText("0 rows created", { exact: true }).waitFor();
+  await dialog
+    .getByText("Preview checked. No rows were created.", { exact: true })
+    .waitFor();
+  if (await dialog.getByText("0 rows created", { exact: true }).count())
+    throw new Error("Preview repeats the zero-rows line");
   // Exclusion is reversible; the original positional column must stay put.
   await dialog
     .getByRole("combobox", { name: "Map Unrecognised", exact: true })

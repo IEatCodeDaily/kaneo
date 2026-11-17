@@ -58,6 +58,8 @@ export function CsvImportDialog({
   const [message, setMessage] = useState("");
   const [progress, setProgress] = useState(0);
   const [finished, setFinished] = useState(false);
+  // A preview never creates rows; its own message says so.
+  const [previewRun, setPreviewRun] = useState(false);
   const pending = useRef(false);
   const cancelled = useRef(false);
   const run = async (preview: boolean) => {
@@ -69,6 +71,7 @@ export function CsvImportDialog({
     setProgress(0);
     setResult(null);
     setFinished(false);
+    setPreviewRun(preview);
     let created = 0;
     let offset = 0;
     let total = 0;
@@ -147,7 +150,9 @@ export function CsvImportDialog({
                     t("navigation:tables.csvUnnamed", { number: index + 1 })}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {parsed[1]?.[index] || "—"}
+                  {t("navigation:tables.csvSample", {
+                    value: parsed[1]?.[index] || "—",
+                  })}
                 </span>
               </div>
               <Select
@@ -205,9 +210,11 @@ export function CsvImportDialog({
                     : 100,
                 })}
               </p>
-              <p>
-                {t("navigation:tables.csvCreated", { count: result.created })}
-              </p>
+              {!previewRun ? (
+                <p>
+                  {t("navigation:tables.csvCreated", { count: result.created })}
+                </p>
+              ) : null}
             </>
           )}
         </div>
