@@ -584,6 +584,7 @@ const TABLE_STATES = [
         .getByRole("button", { name: "New row", exact: true })
         .first()
         .click();
+      await p.getByRole("button", { name: "Create row", exact: true }).click();
       const added = await response;
       if (!added.ok())
         throw new Error(`add row ${added.status()} ${await added.text()}`);
@@ -1360,7 +1361,40 @@ const GUTTER = {
 };
 // [shot, theme, viewport, open, want] — every key in `want` must measure equal;
 // a missing measurement (null) fails too.
+const fillNewRowForm = async (p) => {
+  // Toolbar on desktop, under-grid entry point on phone.
+  const entries = p.getByRole("button", { name: "New row", exact: true });
+  await (p.viewportSize().width < 600
+    ? entries.last()
+    : entries.first()
+  ).click();
+  const title = p.getByRole("textbox", { name: "Batch", exact: true });
+  await title.waitFor();
+  if (!(await title.evaluate((el) => el === document.activeElement)))
+    throw new Error("new-row form did not focus the first field");
+  await title.fill("PB-NEW Form sample");
+  await p
+    .getByRole("group", { name: "Stage", exact: true })
+    .getByRole("button")
+    .click();
+  await p.getByRole("option", { name: "Mixing", exact: true }).click();
+  await p.getByRole("spinbutton", { name: "Cost", exact: true }).fill("12500");
+};
 const OVERLAY_STATES = [
+  [
+    "table-new-row-form--desktop-dark",
+    "dark",
+    DESKTOP,
+    fillNewRowForm,
+    { ...GUTTER, footer_inset: 16, width: 560, header_h: 44, footer_h: 52 },
+  ],
+  [
+    "table-new-row-form--phone-dark",
+    "dark",
+    { width: 390, height: 844 },
+    fillNewRowForm,
+    { ...GUTTER, footer_inset: 16, width: 390, header_h: 44, footer_h: 52 },
+  ],
   [
     "dialog-field-options--desktop-dark",
     "dark",
@@ -1548,6 +1582,70 @@ if (pages.table) {
     }
     const shot = `${name}.png`;
     await page.screenshot({ path: join(OUT, shot) });
+    if (name.startsWith("table-new-row-form")) {
+      try {
+        const layout = await page
+          .locator('[data-slot="dialog-popup"]')
+          .evaluate((popup) => {
+            const bounds = popup.getBoundingClientRect();
+            const footer = popup
+              .querySelector('[data-slot="dialog-footer"]')
+              .getBoundingClientRect();
+            return {
+              overflow: [
+                ...popup.querySelectorAll(
+                  'input, textarea, [role="group"], button',
+                ),
+              ].some(
+                (el) => el.getBoundingClientRect().right > bounds.right + 1,
+              ),
+              footerVisible: footer.bottom <= innerHeight && footer.top >= 0,
+            };
+          });
+        if (layout.overflow || !layout.footerVisible)
+          throw new Error(`form layout ${JSON.stringify(layout)}`);
+        const response = page.waitForResponse(
+          (r) => r.request().method() === "POST" && r.url().endsWith("/rows"),
+        );
+        if (viewport.width > 600)
+          await page
+            .getByRole("spinbutton", { name: "Cost", exact: true })
+            .press("Enter");
+        else
+          await page
+            .getByRole("button", { name: "Create row", exact: true })
+            .click();
+        const added = await response;
+        if (!added.ok())
+          throw new Error(`create failed: ${await added.text()}`);
+        const row = await added.json();
+        const data = added.request().postDataJSON();
+        if (
+          !Object.values(data.values).includes(12500) ||
+          !Object.values(data.values).includes("choice-mixing")
+        )
+          throw new Error("create did not send typed form values");
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+        const cell = page
+          .getByRole("gridcell")
+          .filter({ hasText: "PB-NEW Form sample" });
+        await cell.waitFor();
+        const newRow = cell.locator("..");
+        if (
+          !(await newRow.innerText()).includes("Mixing") ||
+          !(await newRow.innerText()).includes("12,500")
+        )
+          throw new Error("new row did not appear with form values");
+        await page.screenshot({ path: join(OUT, `${name}-created.png`) });
+        const removed = await page.request.delete(
+          `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/rows/${row.id}`,
+        );
+        if (!removed.ok())
+          throw new Error("could not clean up form-created row");
+      } catch (error) {
+        fails.push(String(error));
+      }
+    }
     checks[shot] = { fails, ...m };
     console.log(
       `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(m)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
