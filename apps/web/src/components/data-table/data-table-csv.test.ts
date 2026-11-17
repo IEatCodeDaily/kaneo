@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DataTableField } from "@/types/data-table";
 import { csvParse, csvSerialize, rowMatchesSearch } from "./data-table-csv";
+import { systemFields } from "./data-table-format";
 
 const choices = new Map([
   ["c1", { id: "c1", label: "Fermentation", color: "#f59e0b" }],
@@ -52,6 +53,16 @@ const fields: DataTableField[] = [
 ];
 
 describe("csvSerialize", () => {
+  it("does not export virtual system columns as importable data", () => {
+    expect(
+      csvSerialize(
+        [...fields, ...systemFields("t", (key) => key)],
+        [],
+        choices,
+        new Map(),
+      ),
+    ).toBe(csvSerialize(fields, [], choices, new Map()));
+  });
   it("renders a header row and data with choice labels and quoted commas", () => {
     const out = csvSerialize(
       fields,

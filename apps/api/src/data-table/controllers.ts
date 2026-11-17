@@ -433,12 +433,14 @@ export async function revertTableActivity(
       fieldId: field.id,
       from: after.type,
       to: before.type,
+      userId,
     });
     await store.restoreColumn(
       tx,
       tableId,
       { ...field, type: before.type, options: before.options },
       beforeColumn,
+      userId,
     );
     const [restored] = await tx
       .update(dataTableFieldTable)
@@ -991,6 +993,7 @@ export async function updateTableField(
         fieldId,
         from: fromType,
         to: nextType,
+        userId,
       });
     const [updated] = await tx
       .update(dataTableFieldTable)
@@ -1091,7 +1094,13 @@ export async function addTableRow(
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const fields = await listTableFieldRows(tableId, tx);
     await assertTicketValues(organizationId, fields, values ?? {}, {}, tx);
-    const row = await store.insertRow(tx, tableId, fields, values ?? {});
+    const row = await store.insertRow(
+      tx,
+      tableId,
+      fields,
+      values ?? {},
+      userId,
+    );
     await logActivity(tx, {
       tableId,
       userId,
@@ -1144,6 +1153,7 @@ export async function updateTableCell(
       rowId,
       fieldId,
       coerced,
+      userId,
     );
     const from = current.values[fieldId] ?? null;
     const to = row.values[fieldId] ?? null;

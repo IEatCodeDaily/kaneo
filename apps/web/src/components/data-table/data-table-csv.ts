@@ -4,7 +4,7 @@ import type {
   SelectChoice,
   TicketRef,
 } from "@/types/data-table";
-import { asBool, asNumber, asString } from "./data-table-format";
+import { asBool, asNumber, asString, fieldValue } from "./data-table-format";
 
 type MemberNameLookup = Map<string, string>;
 
@@ -74,7 +74,7 @@ export function rowMatchesSearch(
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
   return fields.some((field) =>
-    cellText(field, row.values[field.id], choices, memberNames, tickets)
+    cellText(field, fieldValue(row, field), choices, memberNames, tickets)
       .toLowerCase()
       .includes(needle),
   );
@@ -87,15 +87,16 @@ export function csvSerialize(
   memberNames: MemberNameLookup,
   tickets: Record<string, TicketRef> = {},
 ): string {
-  const lines = [fields.map((field) => csvCell(field.name)).join(",")];
+  const exportFields = fields.filter((field) => !field.system);
+  const lines = [exportFields.map((field) => csvCell(field.name)).join(",")];
   for (const row of rows) {
     lines.push(
-      fields
+      exportFields
         .map((field) =>
           csvCell(
             cellText(
               field,
-              row.values[field.id],
+              fieldValue(row, field),
               choices,
               memberNames,
               tickets,

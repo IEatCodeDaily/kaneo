@@ -1,5 +1,13 @@
 {
 	"tables": {
+		"showSystemFields": "Show system fields",
+		"systemSection": "System",
+		"systemRowId": "Row ID",
+		"systemCreatedAt": "Created at",
+		"systemUpdatedAt": "Updated at",
+		"systemCreatedBy": "Created by",
+		"systemUpdatedBy": "Updated by",
+		"formerMember": "Former member",
 		"title": "Tables",
 		"create": "Create table",
 		"noTables": "No tables yet",

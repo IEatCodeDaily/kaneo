@@ -42,6 +42,8 @@ export type TableRow = {
   position: number;
   createdAt: Date | string;
   updatedAt: Date | string;
+  createdBy: string | null;
+  updatedBy: string | null;
   values: Record<string, unknown>;
   rawValues?: Record<string, string | null>;
   rawCreatedAt?: string;
@@ -161,7 +163,9 @@ export async function createTable(
   id text PRIMARY KEY,
   position double precision NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_by text,
+  updated_by text
 )`;
   await tx.execute(sql.raw(statement));
   await logDdl(tx, tableId, statement);
@@ -219,6 +223,7 @@ export async function changeFieldType(
     fieldId: string;
     from: FieldType;
     to: FieldType;
+    userId?: string;
   },
 ): Promise<void> {
   const toPg = pgTypeFor(change.to);
@@ -245,6 +250,9 @@ export async function changeFieldType(
     await tx.execute(sql.raw(statement));
     await logDdl(tx, change.tableId, statement);
   }
+  await tx.execute(
+    sql`UPDATE ${tableRef(change.tableId)} SET updated_at = now(), updated_by = ${change.userId ?? null}`,
+  );
 }
 
 export async function dropField(
@@ -381,6 +389,8 @@ const rowSelection = (fields: StoreField[]): SQL[] => {
     sql`position`,
     sql`created_at`,
     sql`updated_at`,
+    sql`created_by`,
+    sql`updated_by`,
   ];
   for (const field of fields) {
     const col = colRef(field.id);
@@ -426,6 +436,8 @@ function toRow(
     position: record.position as number,
     createdAt: record.created_at as Date,
     updatedAt: record.updated_at as Date,
+    createdBy: (record.created_by as string | null) ?? null,
+    updatedBy: (record.updated_by as string | null) ?? null,
     values,
     ...(record.raw_created_at !== undefined
       ? {
@@ -501,12 +513,20 @@ export async function insertRow(
   tableId: string,
   fields: StoreField[],
   values: Record<string, unknown> = {},
+  userId: string | null = null,
 ): Promise<TableRow> {
   const coerced = coerceRowValues(fields, values);
-  const columns: SQL[] = [sql`id`, sql`position`];
+  const columns: SQL[] = [
+    sql`id`,
+    sql`position`,
+    sql`created_by`,
+    sql`updated_by`,
+  ];
   const valueChunks: SQL[] = [
     sql`${createId()}`,
     sql`COALESCE((SELECT MAX(position) FROM ${tableRef(tableId)}), -1) + 1`,
+    sql`${userId}`,
+    sql`${userId}`,
   ];
   for (const [fieldId, value] of coerced) {
     columns.push(colRef(fieldId));
@@ -544,12 +564,13 @@ export async function updateCell(
   rowId: string,
   fieldId: string,
   value: unknown,
+  userId: string | null = null,
 ): Promise<TableRow> {
   const field = requireField(fields, fieldId);
   const coerced = coerceValue(field, value);
   const result = await executor.execute(
     sql`UPDATE ${tableRef(tableId)}
-        SET ${colRef(fieldId)} = ${sqlValue(coerced)}, updated_at = now()
+        SET ${colRef(fieldId)} = ${sqlValue(coerced)}, updated_at = now(), updated_by = ${userId}
         WHERE id = ${rowId}
         RETURNING ${sql.join(rowSelection(fields), sql.raw(", "))}`,
   );
@@ -608,6 +629,7 @@ export async function restoreColumn(
   tableId: string,
   field: StoreField,
   snapshot: ColumnSnapshot,
+  userId: string | null = null,
 ): Promise<void> {
   if (snapshot.length === 0) return;
   // Old display-only snapshots cannot establish exact originals. Fail closed.
@@ -618,7 +640,8 @@ export async function restoreColumn(
   const raw = snapshot.map(({ id, rawValue }) => ({ id, rawValue }));
   await tx.execute(
     sql`UPDATE ${tableRef(tableId)} AS target
-        SET ${colRef(field.id)} = backup."rawValue"::${sql.raw(pgTypeFor(field.type))}
+        SET ${colRef(field.id)} = backup."rawValue"::${sql.raw(pgTypeFor(field.type))},
+            updated_at = now(), updated_by = ${userId}
         FROM jsonb_to_recordset(${JSON.stringify(raw)}::jsonb) AS backup(id text, "rawValue" text)
         WHERE target.id = backup.id`,
   );

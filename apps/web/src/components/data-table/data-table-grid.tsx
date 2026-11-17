@@ -7,6 +7,7 @@ import {
   Columns3,
   EyeOff,
   ListFilter,
+  LockKeyhole,
   Maximize2,
   Pencil,
   Plus,
@@ -49,6 +50,7 @@ import {
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
   readHiddenFields,
+  readShowSystemFields,
   rowMatchesFilters,
   type SummaryFn,
   sortedFields,
@@ -56,8 +58,10 @@ import {
   sortRows,
   summarize,
   supportsSummary,
+  systemFields,
   writeDensity,
   writeHiddenFields,
+  writeShowSystemFields,
 } from "@/components/data-table/data-table-format";
 import {
   DataTableToolbar,
@@ -200,7 +204,7 @@ function FieldHeader({
     null,
   );
   const changeType = async (next: DataTableFieldType) => {
-    if (!canEdit || next === field.type) return false;
+    if (!canEdit || field.system || next === field.type) return false;
     const needsEditor =
       ((next === "select" || next === "multiselect") &&
         !field.options?.choices?.length) ||
@@ -249,7 +253,11 @@ function FieldHeader({
         >
           {/* Quantities right-align: icon + name + unit sit together over the digits. */}
           {numeric && <span className="flex-1" />}
-          <FieldTypeIcon type={field.type} />
+          {field.system ? (
+            <LockKeyhole className="size-3.5 shrink-0" />
+          ) : (
+            <FieldTypeIcon type={field.type} />
+          )}
           <span className="min-w-0 truncate font-medium">{field.name}</span>
           {unit && <span className="shrink-0">{unit}</span>}
           {!numeric && <span className="flex-1" />}
@@ -266,7 +274,7 @@ function FieldHeader({
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-52">
-          {canEdit && (
+          {canEdit && !field.system && (
             <>
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => onEditOptions(field, null)}>
@@ -315,7 +323,7 @@ function FieldHeader({
               {t("navigation:tables.filterByField")}
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          {(canHide || canEdit) && <DropdownMenuSeparator />}
+          {(canHide || (canEdit && !field.system)) && <DropdownMenuSeparator />}
           <DropdownMenuGroup>
             {canHide && (
               <DropdownMenuItem onClick={() => onHide(field)}>
@@ -323,7 +331,7 @@ function FieldHeader({
                 {t("navigation:tables.hideField")}
               </DropdownMenuItem>
             )}
-            {canEdit && (
+            {canEdit && !field.system && (
               <DropdownMenuItem
                 className="text-destructive-foreground data-highlighted:text-destructive-foreground"
                 onClick={() => onDeleted(field)}
@@ -384,7 +392,9 @@ function BulkSetField({
 }) {
   const { t } = useTranslation();
   const editable = fields.filter(
-    (field) => !["longtext", "link", "json", "ticket"].includes(field.type),
+    (field) =>
+      !field.system &&
+      !["longtext", "link", "json", "ticket"].includes(field.type),
   );
   const [fieldId, setFieldId] = useState<string | null>(
     editable[0]?.id ?? null,
@@ -535,7 +545,16 @@ export function DataTableGrid({
     [memberRows],
   );
 
-  const allFields = useMemo(() => sortedFields(table.fields), [table.fields]);
+  const [showSystem, setShowSystem] = useState(() =>
+    readShowSystemFields(table.id),
+  );
+  const allFields = useMemo(
+    () => [
+      ...sortedFields(table.fields),
+      ...(showSystem ? systemFields(table.id, t) : []),
+    ],
+    [table.fields, table.id, showSystem, t],
+  );
   const choicesById = useMemo(() => {
     const map = new Map<string, SelectChoice>();
     for (const field of allFields) {
@@ -714,7 +733,11 @@ export function DataTableGrid({
       if (field.type === "select") return choicesById.get(key)?.label ?? key;
       if (field.type === "user") {
         const member = members.get(key);
-        return member?.user.name || member?.user.email || key;
+        return (
+          member?.user.name ||
+          member?.user.email ||
+          t("navigation:tables.formerMember")
+        );
       }
       return key;
     },
@@ -793,7 +816,7 @@ export function DataTableGrid({
     value: unknown,
   ) => {
     const key = `${row.id}:${field.id}`;
-    if (!canEdit || pendingCells.current.has(key)) return false;
+    if (!canEdit || field.system || pendingCells.current.has(key)) return false;
     pendingCells.current.add(key);
     try {
       await upsertCell.mutateAsync({
@@ -870,6 +893,7 @@ export function DataTableGrid({
     if (event.key === "Enter" && canEdit) {
       event.preventDefault();
       const field = fields.find((candidate) => candidate.id === active.fieldId);
+      if (field?.system) return;
       if (
         field &&
         (PICKER_TYPES.includes(field.type) || field.type === "checkbox")
@@ -933,7 +957,7 @@ export function DataTableGrid({
   };
 
   const importCsv = async (file: File) => {
-    const byName = new Map(allFields.map((field) => [field.name, field]));
+    const byName = new Map(table.fields.map((field) => [field.name, field]));
     // Ticket cells export as keys; resolve them back through the lookup.
     // ponytail: only tickets already linked somewhere in this table resolve;
     // a key lookup endpoint if imports need arbitrary tickets.
@@ -942,9 +966,8 @@ export function DataTableGrid({
     );
     const parsed = csvParse(await file.text());
     const header = parsed[0] ?? [];
-    const columns = header
-      .map((name) => byName.get(name.trim()))
-      .filter((field): field is DataTableField => Boolean(field));
+    // Keep original indexes: ignored system/unknown headers must not shift cells.
+    const columns = header.map((name) => byName.get(name.trim()));
     const dataRows = parsed
       .slice(1)
       .filter((cells) => cells.some((cell) => cell.trim() !== ""));
@@ -953,6 +976,7 @@ export function DataTableGrid({
       for (const cells of dataRows) {
         const values: Record<string, unknown> = {};
         columns.forEach((field, index) => {
+          if (!field || field.system) return;
           const text = (cells[index] ?? "").trim();
           if (text === "") return;
           if (
@@ -1138,6 +1162,22 @@ export function DataTableGrid({
           fields={allFields}
           members={members}
           hidden={hidden}
+          showSystemFields={showSystem}
+          onShowSystemFieldsChange={(show) => {
+            setShowSystem(show);
+            writeShowSystemFields(table.id, show);
+            if (!show) {
+              setFilters((current) =>
+                current.filter((filter) => !filter.fieldId.startsWith("__")),
+              );
+              setSort((current) =>
+                current?.fieldId.startsWith("__") ? null : current,
+              );
+              setGroupFieldId((current) =>
+                current?.startsWith("__") ? null : current,
+              );
+            }
+          }}
           onHiddenChange={changeHidden}
           filters={filters}
           onFiltersChange={setFilters}
@@ -1292,7 +1332,7 @@ export function DataTableGrid({
                     sort={sort}
                     onSort={setSort}
                     canEdit={canEdit}
-                    canHide={index > 0}
+                    canHide={index > 0 && !field.system}
                     organizationId={organizationId}
                     tableId={table.id}
                     onEditOptions={(target, presetType) =>
@@ -1545,6 +1585,7 @@ export function DataTableGrid({
                           <div
                             key={field.id}
                             role="gridcell"
+                            aria-readonly={field.system || undefined}
                             aria-selected={
                               (isActiveRow && active?.fieldId === field.id) ||
                               undefined
@@ -1565,7 +1606,8 @@ export function DataTableGrid({
                                 active.fieldId === field.id;
                               setActive({ rowId: row.id, fieldId: field.id });
                               refocusGrid();
-                              if (!canEdit || !isActiveCell) return;
+                              if (!canEdit || field.system || !isActiveCell)
+                                return;
                               if (
                                 PICKER_TYPES.includes(field.type) ||
                                 field.type === "checkbox"
@@ -1637,7 +1679,7 @@ export function DataTableGrid({
                                   active?.rowId === row.id &&
                                   active.fieldId === field.id;
                                 setActive({ rowId: row.id, fieldId: field.id });
-                                if (!isActiveCell) return;
+                                if (field.system || !isActiveCell) return;
                                 setEditing({
                                   rowId: row.id,
                                   fieldId: field.id,
@@ -1901,7 +1943,7 @@ export function DataTableGrid({
         row={allRows.find((row) => row.id === sheetRowId) ?? null}
         rowIndex={visibleRows.findIndex((row) => row.id === sheetRowId)}
         rowCount={visibleRows.length}
-        fields={allFields}
+        fields={sortedFields(table.fields)}
         members={members}
         canEdit={canEdit}
         onCommit={(row, field, value) => commitCell(row, field, value)}

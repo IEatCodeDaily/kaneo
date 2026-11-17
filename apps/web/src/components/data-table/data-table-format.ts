@@ -75,6 +75,68 @@ export function sortedRows(rows: DataTableRow[]) {
   return [...rows].sort((a, b) => a.position - b.position);
 }
 
+/** Virtual fields reuse the normal date/user rendering, sorting and filters. */
+export function systemFields(
+  tableId: string,
+  label: (key: string) => string,
+): DataTableField[] {
+  return (
+    [
+      ["__row_id", "systemRowId", "number"],
+      ["__created_at", "systemCreatedAt", "datetime"],
+      ["__updated_at", "systemUpdatedAt", "datetime"],
+      ["__created_by", "systemCreatedBy", "user"],
+      ["__updated_by", "systemUpdatedBy", "user"],
+    ] as const
+  ).map(([id, key, type], position) => ({
+    id,
+    tableId,
+    name: label(`navigation:tables.${key}`),
+    type,
+    system: true,
+    options: null,
+    position,
+    createdAt: "",
+    updatedAt: "",
+  }));
+}
+
+/** Never project the opaque row id into visible text. Position stays stable on sort. */
+export function fieldValue(row: DataTableRow, field: DataTableField): unknown {
+  if (!field.system) return row.values[field.id];
+  switch (field.id) {
+    case "__row_id":
+      return row.position + 1;
+    case "__created_at":
+      return row.createdAt;
+    case "__updated_at":
+      return row.updatedAt;
+    case "__created_by":
+      return row.createdBy ?? null;
+    case "__updated_by":
+      return row.updatedBy ?? null;
+    default:
+      return null;
+  }
+}
+
+const systemFieldsKey = (tableId: string) =>
+  `kaneo-table-system-fields:${tableId}`;
+export function readShowSystemFields(tableId: string): boolean {
+  try {
+    return window.localStorage.getItem(systemFieldsKey(tableId)) === "true";
+  } catch {
+    return false;
+  }
+}
+export function writeShowSystemFields(tableId: string, show: boolean): void {
+  try {
+    window.localStorage.setItem(systemFieldsKey(tableId), String(show));
+  } catch {
+    /* In-memory state still works when storage is unavailable. */
+  }
+}
+
 // ── options accessors ──────────────────────────────────────────────────────
 
 export function fieldChoices(field: DataTableField): SelectChoice[] {
@@ -287,7 +349,7 @@ function filterMatches(
   field: DataTableField,
   filter: DataTableFilter,
 ): boolean {
-  const raw = row.values[field.id];
+  const raw = fieldValue(row, field);
   switch (field.type) {
     case "number":
     case "percent":
@@ -310,7 +372,7 @@ function filterMatches(
         if (from !== "" && value < from) return false;
         if (to !== "") {
           // Date-only "to" is inclusive through the whole day.
-          const bound = field.type === "date" ? `${to}T23:59:59.999` : to;
+          const bound = to.length === 10 ? `${to}T23:59:59.999` : to;
           if (value > bound) return false;
         }
       }
@@ -364,7 +426,7 @@ export function sortValue(
   field: DataTableField,
   tickets: Record<string, { key: string }> = {},
 ): string | number | null {
-  const raw = row.values[field.id];
+  const raw = fieldValue(row, field);
   switch (field.type) {
     case "ticket": {
       // Arrays fall through asString to "": sort by the first ticket key.
@@ -554,7 +616,7 @@ export function groupRows(
 ): FieldRowGroup[] {
   const buckets = new Map<string, DataTableRow[]>();
   for (const row of rows) {
-    const key = groupKey(field, row.values[field.id]);
+    const key = groupKey(field, fieldValue(row, field));
     const list = buckets.get(key);
     if (list) list.push(row);
     else buckets.set(key, [row]);
@@ -616,7 +678,7 @@ export function summarize(
   const precision = fieldPrecision(field);
   const fmt = (n: number) =>
     n.toLocaleString(undefined, { maximumFractionDigits: precision });
-  const values = rows.map((row) => row.values[field.id]);
+  const values = rows.map((row) => fieldValue(row, field));
   const filled = values.filter(
     (v) => v !== null && v !== undefined && v !== "" && v !== false,
   );
