@@ -38,17 +38,14 @@ import {
 import {
   type ColumnSort,
   currencyUnit,
-  type DataTableFilter,
   DENSITY_ROW_HEIGHT,
   DENSITY_WRAP_LINES,
   type Density,
-  defaultFilterFor,
   defaultSummaryFn,
   EDITABLE_FIELD_TYPES,
   FIELD_TYPE_LABEL_KEYS,
   fieldIsRequired,
   fieldWidth,
-  filterIsActive,
   groupRows,
   groupValue,
   isQueryable,
@@ -70,7 +67,6 @@ import {
 import {
   DataTableToolbar,
   FieldSelect,
-  FilterConditionChip,
 } from "@/components/data-table/data-table-toolbar";
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import { LinkNavigationProvider } from "@/components/data-table/link-cell";
@@ -145,12 +141,20 @@ import type {
   DataTableField,
   DataTableFieldType,
   DataTableRow,
+  FilterGroup,
   SelectChoice,
   TableRowQuery,
   TicketRef,
 } from "@/types/data-table";
 import { ColumnResizeHandle, useColumnWidths } from "./column-resize";
 import { FieldTypeConfirmation } from "./field-type-confirmation";
+import {
+  conditionActive,
+  emptyFilterGroup,
+  filterConditions,
+  newFilterCondition,
+  pruneFilterGroup,
+} from "./filter-builder";
 
 type Props = {
   view?: "grid" | "history";
@@ -370,7 +374,7 @@ function FieldHeader({
                   {t("navigation:tables.sortDescending")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={!isQueryable(field)}
+                  disabled={field.options?.unavailable}
                   onClick={() => onFilter(field)}
                 >
                   <ListFilter className="size-3.5" />
@@ -666,7 +670,8 @@ export function DataTableGrid({
   );
 
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<DataTableFilter[]>([]);
+  const [filters, setFilters] = useState<FilterGroup>(emptyFilterGroup);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [sort, setSort] = useState<ColumnSort | null>(null);
   const [groupFieldId, setGroupFieldId] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<ReadonlySet<string>>(
@@ -720,7 +725,7 @@ export function DataTableGrid({
     null,
   );
   const activeFilters = useMemo(
-    () => filters.filter(filterIsActive),
+    () => pruneFilterGroup(filters, conditionActive),
     [filters],
   );
   const rowQuery = useMemo<TableRowQuery>(
@@ -1171,7 +1176,9 @@ export function DataTableGrid({
         tableId: table.id,
         fieldId: field.id,
       });
-      setFilters((current) => current.filter((f) => f.fieldId !== field.id));
+      setFilters((current) =>
+        pruneFilterGroup(current, (f) => f.fieldId !== field.id),
+      );
       setGroupFieldId((current) => (current === field.id ? null : current));
       setCollapsedGroups(new Set());
       setSummaryFns((current) => {
@@ -1192,7 +1199,8 @@ export function DataTableGrid({
     setDialogOpen(true);
   };
 
-  const filtersActive = search !== "" || activeFilters.length > 0;
+  const filtersActive =
+    search !== "" || filterConditions(activeFilters).length > 0;
   const allLoaded = !rowPages.hasNextPage;
 
   // Grid template: row # · fields · trailing "+" add-field cell (DS §2 Grid).
@@ -1244,7 +1252,10 @@ export function DataTableGrid({
               writeShowSystemFields(table.id, show);
               if (!show) {
                 setFilters((current) =>
-                  current.filter((filter) => !filter.fieldId.startsWith("__")),
+                  pruneFilterGroup(
+                    current,
+                    (filter) => !filter.fieldId.startsWith("__"),
+                  ),
                 );
                 setSort((current) =>
                   current?.fieldId.startsWith("__") ? null : current,
@@ -1255,6 +1266,8 @@ export function DataTableGrid({
               }
             }}
             onHiddenChange={changeHidden}
+            filterOpen={filterOpen}
+            onFilterOpenChange={setFilterOpen}
             filters={filters}
             onFiltersChange={setFilters}
             sort={sort}
@@ -1326,32 +1339,6 @@ export function DataTableGrid({
                 );
           }}
         />
-
-        {activeFilters.length > 0 && (
-          <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b px-3">
-            {activeFilters.map((filter) => {
-              const field = fieldsById.get(filter.fieldId);
-              if (!field) return null;
-              return (
-                <FilterConditionChip
-                  key={filter.id}
-                  filter={filter}
-                  field={field}
-                  members={members}
-                  onRemove={() =>
-                    setFilters((current) =>
-                      current.filter((item) => item.id !== filter.id),
-                    )
-                  }
-                />
-              );
-            })}
-            <span className="flex-1" />
-            <Button variant="ghost" size="xs" onClick={() => setFilters([])}>
-              {t("navigation:tables.clearFilters")}
-            </Button>
-          </div>
-        )}
 
         <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-auto">
           {rowPages.isError ? (
@@ -1457,12 +1444,20 @@ export function DataTableGrid({
                       onEditOptions={(target, presetType) =>
                         openDialog(target, presetType)
                       }
-                      onFilter={(target) =>
-                        setFilters((current) => [
-                          ...current,
-                          defaultFilterFor(target),
-                        ])
-                      }
+                      onFilter={(target) => {
+                        setFilters((current) =>
+                          filterConditions(current).length >= 50
+                            ? current
+                            : {
+                                ...current,
+                                children: [
+                                  ...current.children,
+                                  newFilterCondition(target),
+                                ],
+                              },
+                        );
+                        setFilterOpen(true);
+                      }}
                       onHide={(target) => changeHidden([...hidden, target.id])}
                       onDeleted={setFieldToDelete}
                       width={columnWidth(field)}
@@ -1509,7 +1504,7 @@ export function DataTableGrid({
                         size="sm"
                         onClick={() => {
                           setSearch("");
-                          setFilters([]);
+                          setFilters(emptyFilterGroup());
                         }}
                       >
                         {t("common:actions.clearAllFilters")}

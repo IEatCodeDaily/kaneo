@@ -148,16 +148,26 @@ export type DataTable = DataTableSummary & {
   tickets?: Record<string, TicketRef>;
 };
 
+export type {
+  FilterCondition,
+  FilterGroup,
+  FilterOperator,
+} from "../../../api/src/data-table/filter-expression";
+
+import type { FilterGroup } from "../../../api/src/data-table/filter-expression";
+
 export type TableRowQuery = {
   search?: string;
   includeSystem?: boolean;
-  filters?: ({ fieldId: string } & (
-    | { contains: string }
-    | { min: string; max: string }
-    | { from: string; to: string }
-    | { choiceId: string }
-    | { checked: "any" | "true" | "false" }
-  ))[];
+  filters?:
+    | FilterGroup
+    | ({ fieldId: string } & (
+        | { contains: string }
+        | { min: string; max: string }
+        | { from: string; to: string }
+        | { choiceId: string }
+        | { checked: "any" | "true" | "false" }
+      ))[];
   sort?: { fieldId: string; dir: "asc" | "desc" } | null;
   groupFieldId?: string | null;
   summaries?: Record<

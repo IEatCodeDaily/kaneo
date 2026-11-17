@@ -889,7 +889,7 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       }),
     ),
     organizationAccess.fromParam("organizationId"),
-    tablePrivilege("edit"),
+    tablePrivilege("view"),
     async (c) => {
       const { organizationId, tableId, fieldId } = c.req.valid("param");
       return c.json(

@@ -945,9 +945,91 @@ export async function queryTableRows(
       );
       for (const row of result.rows) ids.add(String(row.id));
     }
+    const filterValues = new Map<string, string[]>();
+    const collectValues = (node: unknown): void => {
+      if (!node || typeof node !== "object") return;
+      if (
+        "fieldId" in node &&
+        typeof node.fieldId === "string" &&
+        "value" in node
+      ) {
+        const values = Array.isArray(node.value) ? node.value : [node.value];
+        filterValues.set(node.fieldId, [
+          ...(filterValues.get(node.fieldId) ?? []),
+          ...values.filter(
+            (value): value is string => typeof value === "string",
+          ),
+        ]);
+      }
+      if ("children" in node && Array.isArray(node.children))
+        node.children.forEach(collectValues);
+    };
+    collectValues(input.filters);
+    for (const field of ticketFields)
+      for (const id of filterValues.get(field.id) ?? []) ids.add(id);
+    const refs = await ticketRefs(organizationId, [...ids], tx);
+    const visibleBoards = userId
+      ? await listAccessibleResourceIds({
+          organizationId,
+          resourceType: "board",
+          userId,
+          resourceIds: [...new Set(refs.map((ticket) => ticket.boardId))],
+        })
+      : [];
     const tickets = Object.fromEntries(
-      (await ticketRefs(organizationId, [...ids], tx)).map((t) => [t.id, t]),
+      refs
+        .filter((ticket) => visibleBoards.includes(ticket.boardId))
+        .map((ticket) => [ticket.id, ticket]),
     );
+    const links: Record<string, ReturnType<typeof sql>> = {};
+    const referenced = new Set<string>();
+    const collect = (node: unknown): void => {
+      if (!node || typeof node !== "object") return;
+      if ("fieldId" in node && typeof node.fieldId === "string")
+        referenced.add(node.fieldId);
+      if ("children" in node && Array.isArray(node.children))
+        node.children.forEach(collect);
+    };
+    if (Array.isArray(input.filters)) input.filters.forEach(collect);
+    else collect(input.filters);
+    for (const field of fields.filter(
+      (f) => f.type === "link" && referenced.has(f.id),
+    )) {
+      try {
+        const relation = await relations.relationFor(
+          tx,
+          organizationId,
+          tableId,
+          field.id,
+        );
+        const side = relations.endpoint(relation, field.id);
+        await relations.authorize(
+          tx,
+          organizationId,
+          [side.targetTableId],
+          userId,
+          "view",
+        );
+        const requested = [...new Set(filterValues.get(field.id) ?? [])];
+        const targets = await relations.labels(
+          tx,
+          side.targetTableId,
+          requested,
+        );
+        if (
+          targets.filter((target) => !target.deleted).length !==
+          requested.length
+        )
+          badRequest("Invalid link filter value");
+        links[field.id] =
+          sql`(SELECT COALESCE(jsonb_agg(edge.${sql.identifier(side.opposite)}), '[]'::jsonb)
+          FROM ${relations.junctionRef(relation.id)} edge
+          JOIN ${store.tableRef(side.targetTableId)} target ON target.id = edge.${sql.identifier(side.opposite)} AND target.deleted_at IS NULL
+          WHERE edge.${sql.identifier(side.local)} = ${sql.identifier(store.physical(tableId))}.id)`;
+      } catch {
+        throw new HTTPException(400, { message: "Inaccessible link field" });
+      }
+    }
     const result = await queryRows(
       tx,
       tableId,
@@ -958,6 +1040,8 @@ export async function queryTableRows(
           members.map((m) => [m.id, m.name || m.email || ""]),
         ),
         tickets,
+        userId,
+        linkFilters: links,
         ...(csv
           ? {
               links: await csvLinkColumns(

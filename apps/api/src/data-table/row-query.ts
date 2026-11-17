@@ -3,6 +3,14 @@ import { HTTPException } from "hono/http-exception";
 import * as v from "valibot";
 import type db from "../database";
 import {
+  type FilterCondition,
+  type FilterGroup,
+  filterOperators,
+  isFilterGroup,
+  listOperator,
+  valuelessOperator,
+} from "./filter-expression";
+import {
   colRef,
   type DataTableTx,
   physical,
@@ -18,18 +26,46 @@ export const rowQuerySchema = v.object({
   search: v.optional(boundedText, ""),
   includeSystem: v.optional(v.boolean(), false),
   filters: v.optional(
-    v.pipe(
-      v.array(
-        v.union([
-          v.object({ fieldId, contains: boundedText }),
-          v.object({ fieldId, min: boundedText, max: boundedText }),
-          v.object({ fieldId, from: boundedText, to: boundedText }),
-          v.object({ fieldId, choiceId: boundedText }),
-          v.object({ fieldId, checked: v.picklist(["any", "true", "false"]) }),
-        ]),
+    v.union([
+      v.custom<FilterGroup>(
+        isFilterGroup,
+        "Invalid filter expression (maximum depth 3, 50 conditions)",
       ),
-      v.maxLength(50),
-    ),
+      v.pipe(
+        v.array(
+          v.union([
+            v.strictObject({
+              id: v.optional(fieldId),
+              fieldId,
+              contains: boundedText,
+            }),
+            v.strictObject({
+              id: v.optional(fieldId),
+              fieldId,
+              min: boundedText,
+              max: boundedText,
+            }),
+            v.strictObject({
+              id: v.optional(fieldId),
+              fieldId,
+              from: boundedText,
+              to: boundedText,
+            }),
+            v.strictObject({
+              id: v.optional(fieldId),
+              fieldId,
+              choiceId: boundedText,
+            }),
+            v.strictObject({
+              id: v.optional(fieldId),
+              fieldId,
+              checked: v.picklist(["any", "true", "false"]),
+            }),
+          ]),
+        ),
+        v.maxLength(50),
+      ),
+    ]),
     [],
   ),
   sort: v.optional(
@@ -73,7 +109,10 @@ type QueryField = StoreField & { name?: string; system?: boolean };
 export type QueryLookups = {
   members: Record<string, string>;
   tickets: Record<string, { key: string }>;
+  userId?: string;
   links?: Record<string, SQL>;
+  /** jsonb array of linked row ids per link field, used by filters. */
+  linkFilters?: Record<string, SQL>;
 };
 const system: QueryField[] = [
   { id: "__row_id", type: "number", system: true },
@@ -152,65 +191,193 @@ export function cellText(f: QueryField, lookups: QueryLookups): SQL {
       return sql`COALESCE(${col}::text, '')`;
   }
 }
-function filterSql(filter: RowQuery["filters"][number], f: QueryField): SQL {
-  const col = value(f);
-  if (!supported(f)) bad("This field type cannot be filtered");
-  if (numeric(f) && "min" in filter) {
-    const bounds: SQL[] = [];
-    for (const [raw, op] of [
-      [filter.min, ">="],
-      [filter.max, "<="],
-    ]) {
-      if (!raw?.trim()) continue;
-      if (!Number.isFinite(Number(raw))) bad("Invalid numeric filter");
-      bounds.push(sql`${col} ${sql.raw(op ?? "")} ${raw}::numeric`);
+type LegacyFilter = Extract<RowQuery["filters"], unknown[]>[number];
+function legacyGroup(
+  filters: LegacyFilter[],
+  find: (id: string) => QueryField,
+): FilterGroup {
+  const children: FilterCondition[] = [];
+  for (const filter of filters) {
+    const field = find(filter.fieldId);
+    const add = (op: FilterCondition["op"], value?: FilterCondition["value"]) =>
+      children.push({ fieldId: field.id, op, value });
+    if (numeric(field) && "min" in filter) {
+      for (const [raw, op] of [
+        [filter.min, "gte"],
+        [filter.max, "lte"],
+      ] as const) {
+        if (!raw.trim()) continue;
+        if (!Number.isFinite(Number(raw))) bad("Invalid numeric filter");
+        add(op, Number(raw));
+      }
+    } else if (["date", "datetime"].includes(field.type) && "from" in filter) {
+      if (filter.from) add("gte", filter.from);
+      if (filter.to) add("lte", filter.to);
+    } else if (field.type === "checkbox" && "checked" in filter) {
+      if (filter.checked !== "any")
+        add(filter.checked === "true" ? "isChecked" : "isNotChecked");
+    } else if (
+      ["select", "user", "multiselect", "ticket"].includes(field.type) &&
+      "choiceId" in filter
+    ) {
+      if (filter.choiceId === "__empty__") add("isEmpty");
+      else if (filter.choiceId)
+        add(
+          ["multiselect", "ticket"].includes(field.type) ? "hasAny" : "eq",
+          ["multiselect", "ticket"].includes(field.type)
+            ? [filter.choiceId]
+            : filter.choiceId,
+        );
+    } else if (
+      ["text", "longtext", "url", "email", "json"].includes(field.type) &&
+      "contains" in filter
+    ) {
+      if (filter.contains.trim()) add("contains", filter.contains.trim());
+    } else bad("Filter does not match field type");
+  }
+  return { conjunction: "and", children };
+}
+/** Empty means NULL, or an empty collection; never '', 0 or false. */
+function emptySql(f: QueryField, lookups: QueryLookups): SQL {
+  const col =
+    f.type === "link"
+      ? (lookups.linkFilters?.[f.id] ?? bad("Inaccessible link field"))
+      : value(f);
+  return ["multiselect", "ticket", "link"].includes(f.type)
+    ? sql`(${col} IS NULL OR ${col} = '[]'::jsonb)`
+    : sql`${col} IS NULL`;
+}
+function filterSql(
+  filter: FilterCondition,
+  f: QueryField,
+  lookups: QueryLookups,
+): SQL {
+  const { op } = filter;
+  if (!filterOperators(f.type).includes(op))
+    bad("Invalid operator for field type");
+  const col =
+    f.type === "link"
+      ? (lookups.linkFilters?.[f.id] ?? bad("Inaccessible link field"))
+      : value(f);
+  if (op === "isEmpty") return emptySql(f, lookups);
+  if (op === "isNotEmpty") return sql`NOT (${emptySql(f, lookups)})`;
+  if (op === "isChecked") return sql`${col} IS TRUE`;
+  if (op === "isNotChecked") return sql`${col} IS FALSE`;
+  if (op === "isMe") {
+    if (!lookups.userId) bad("Current user required");
+    return sql`${col} = ${lookups.userId}`;
+  }
+  const raw = filter.value;
+  if (!valuelessOperator(op) && raw === undefined) bad("Filter value required");
+  const array = ["multiselect", "ticket", "link"].includes(f.type);
+  if (["select", "multiselect", "user", "ticket"].includes(f.type)) {
+    const ids = Array.isArray(raw) ? raw : [raw];
+    const allowed =
+      f.type === "user"
+        ? Object.keys(lookups.members)
+        : f.type === "ticket"
+          ? Object.keys(lookups.tickets)
+          : (Array.isArray(f.options?.choices) ? f.options.choices : []).map(
+              (c: { id: string }) => c.id,
+            );
+    if (ids.some((id) => typeof id !== "string" || !allowed.includes(id)))
+      bad("Invalid or inaccessible filter value");
+  }
+  if (listOperator(op)) {
+    if (!Array.isArray(raw) || raw.length === 0)
+      bad("Nonempty filter list required");
+    if (array) {
+      if (op === "hasAll")
+        return sql`COALESCE(${col}, '[]'::jsonb) @> ${JSON.stringify(raw)}::jsonb`;
+      const any = sql`COALESCE(${col}, '[]'::jsonb) ?| ARRAY[${sql.join(
+        raw.map((v) => sql`${v}`),
+        sql`, `,
+      )}]::text[]`;
+      return op === "hasNone" ? sql`NOT (${any})` : any;
     }
-    return bounds.length ? sql.join(bounds, sql` AND `) : sql`TRUE`;
+    const inside = sql`${col} IN (${sql.join(
+      raw.map((v) => sql`${v}`),
+      sql`, `,
+    )})`;
+    return op === "notIn" ? sql`NOT (${inside})` : inside;
   }
-  if (["date", "datetime"].includes(f.type) && "from" in filter) {
-    const bounds: SQL[] = [];
-    for (const [raw, op] of [
-      [filter.from, ">="],
-      [filter.to, "<="],
-    ]) {
-      if (!raw) continue;
-      if (
-        !/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(raw) ||
-        !Number.isFinite(Date.parse(raw)) ||
-        new Date(`${raw.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) !==
-          raw.slice(0, 10)
-      )
-        bad("Invalid date filter");
-      if (op === "<=" && raw.length === 10)
-        bounds.push(sql`${col} < ${raw}::date + interval '1 day'`);
-      else bounds.push(sql`${col} ${sql.raw(op ?? "")} ${raw}::timestamptz`);
+  if (op === "pastDays" || op === "nextDays") {
+    if (
+      typeof raw !== "number" ||
+      !Number.isInteger(raw) ||
+      raw < 0 ||
+      raw > 36500
+    )
+      bad("Invalid day count");
+    // UTC calendar-day windows, including today, inclusive at start/exclusive at end.
+    return op === "pastDays"
+      ? sql`${col} >= CURRENT_DATE - ${raw}::integer AND ${col} < CURRENT_DATE + 1`
+      : sql`${col} >= CURRENT_DATE AND ${col} < CURRENT_DATE + ${raw}::integer + 1`;
+  }
+  const compare = (left: SQL, right: SQL): SQL => {
+    switch (op) {
+      case "eq":
+        return sql`${left} = ${right}`;
+      case "neq":
+        return sql`${left} <> ${right}`;
+      case "lt":
+        return sql`${left} < ${right}`;
+      case "lte":
+        return sql`${left} <= ${right}`;
+      case "gt":
+        return sql`${left} > ${right}`;
+      case "gte":
+        return sql`${left} >= ${right}`;
+      default:
+        return bad("Invalid comparison");
     }
-    return bounds.length ? sql.join(bounds, sql` AND `) : sql`TRUE`;
+  };
+  if (numeric(f)) {
+    if (typeof raw !== "number" || !Number.isFinite(raw))
+      bad("Finite number required");
+    return compare(col, sql`${raw}::numeric`);
   }
-  if (f.type === "checkbox" && "checked" in filter)
-    return filter.checked === "any"
-      ? sql`TRUE`
-      : sql`COALESCE(${col}, false) = ${filter.checked === "true"}`;
-  if (
-    ["select", "user", "multiselect", "ticket"].includes(f.type) &&
-    "choiceId" in filter
-  ) {
-    if (!filter.choiceId) return sql`TRUE`;
-    const array = ["multiselect", "ticket"].includes(f.type);
-    if (filter.choiceId === "__empty__")
-      return array
-        ? sql`(${col} IS NULL OR ${col} = '[]'::jsonb)`
-        : sql`COALESCE(${col}, '') = ''`;
-    return array
-      ? sql`${col} @> ${JSON.stringify([filter.choiceId])}::jsonb`
-      : sql`${col} = ${filter.choiceId}`;
+  if (["date", "datetime"].includes(f.type)) {
+    if (
+      typeof raw !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})?)?$/.test(
+        raw,
+      ) ||
+      !Number.isFinite(Date.parse(raw)) ||
+      new Date(`${raw.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) !==
+        raw.slice(0, 10)
+    )
+      bad("Invalid date filter");
+    if (f.type === "date" && raw.length !== 10) bad("Calendar date required");
+    if (raw.length === 10) {
+      const start = sql`${raw}::date`;
+      const end = sql`(${start} + 1)`;
+      if (op === "eq") return sql`${col} >= ${start} AND ${col} < ${end}`;
+      if (op === "gt") return sql`${col} >= ${end}`;
+      if (op === "lte") return sql`${col} < ${end}`;
+      return compare(col, start);
+    }
+    return compare(col, sql`${raw}::timestamptz`);
   }
-  if (
-    ["text", "longtext", "url", "email", "json"].includes(f.type) &&
-    "contains" in filter
-  )
-    return sql`strpos(lower(COALESCE(${col}::text, '')), ${filter.contains.trim().toLowerCase()}) > 0`;
-  return bad("Filter does not match field type");
+  if (typeof raw !== "string") bad("Text filter required");
+  if (op === "contains" || op === "notContains") {
+    const match = sql`strpos(lower(${col}::text), ${raw.toLowerCase()}) > 0`;
+    return op === "notContains" ? sql`NOT (${match})` : match;
+  }
+  return compare(f.type === "json" ? sql`${col}::text` : col, sql`${raw}`);
+}
+function groupSql(
+  group: FilterGroup,
+  find: (id: string) => QueryField,
+  lookups: QueryLookups,
+): SQL {
+  const children = group.children.map(
+    (child) =>
+      sql`(${"conjunction" in child ? groupSql(child, find, lookups) : filterSql(child, find(child.fieldId), lookups)})`,
+  );
+  return children.length
+    ? sql`(${sql.join(children, group.conjunction === "or" ? sql` OR ` : sql` AND `)})`
+    : sql`TRUE`;
 }
 export async function queryRows(
   executor: typeof db | DataTableTx,
@@ -223,7 +390,7 @@ export async function queryRows(
   const spec = v.parse(rowQuerySchema, input);
   if (Object.keys(spec.summaries).length > fields.length + system.length)
     bad("Too many summaries");
-  const queryFields = [...fields.filter(supported), ...system];
+  const queryFields = [...fields, ...system];
   const find = (id: string) =>
     queryFields.find((f) => f.id === id) ??
     bad("Unknown or non-queryable field");
@@ -231,9 +398,11 @@ export async function queryRows(
     ...fields.filter(supported),
     ...(spec.includeSystem ? system : []),
   ];
-  const clauses = spec.filters.map(
-    (f) => sql`(${filterSql(f, find(f.fieldId))})`,
-  );
+  // Legacy layouts are one AND group; typed expressions retain their nested logic.
+  const expression = Array.isArray(spec.filters)
+    ? legacyGroup(spec.filters, find)
+    : spec.filters;
+  const clauses: SQL[] = [groupSql(expression, find, lookups)];
   if (spec.search.trim())
     clauses.push(
       searchFields.length
@@ -290,10 +459,7 @@ export async function queryRows(
       if (f.type !== "checkbox") bad("Checked summary requires a checkbox");
       expression = sql`count(*) FILTER (WHERE ${col} IS TRUE)::double precision`;
     } else {
-      const filled =
-        f.type === "checkbox"
-          ? sql`${col} IS TRUE`
-          : sql`${col} IS NOT NULL AND ${col}::text <> ''`;
+      const filled = sql`NOT (${emptySql(f, lookups)})`;
       expression = sql`count(*) FILTER (WHERE ${fn === "empty" ? sql`NOT (${filled})` : filled})::double precision`;
     }
     return sql`${expression} AS ${sql.identifier(id)}`;
