@@ -1756,6 +1756,7 @@ export function DataTableGrid({
                                   : "bg-background group-hover:bg-row-hover",
                               NUMERIC_CELL_TYPES.includes(field.type) &&
                                 "justify-end",
+                              field.system && "text-muted-foreground",
                               // Active cell: an inset accent ring, drawn over
                               // the borders (NocoDB).
                               "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",

@@ -15,7 +15,7 @@
 		"fieldTypeGroup": {
 			"text": "Text",
 			"number": "Number",
-			"date": "Date & time",
+			"date": "Dates",
 			"choice": "Choice",
 			"people": "People & references",
 			"advanced": "Advanced"

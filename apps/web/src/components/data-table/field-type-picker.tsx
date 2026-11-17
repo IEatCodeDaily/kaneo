@@ -69,9 +69,10 @@ export function FieldTypePicker({
         buttons[index]?.focus();
       }}
     >
-      <div className="flex items-center gap-2">
-        <Search className="size-4 shrink-0 text-muted-foreground" />
+      <div className="relative flex items-center">
+        <Search className="pointer-events-none absolute left-2 z-10 size-4 text-muted-foreground" />
         <Input
+          className="[&_input]:pl-8"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           aria-label={t("navigation:tables.searchFieldTypes")}

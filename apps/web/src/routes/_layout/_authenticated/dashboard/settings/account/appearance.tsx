@@ -128,7 +128,7 @@ export function AppearanceSettings() {
                 key={color}
                 variant="outline"
                 size="icon"
-                className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0"
+                className="min-h-11 min-w-11 aria-pressed:ring-2 aria-pressed:ring-ring sm:min-h-0 sm:min-w-0"
                 aria-label={color}
                 aria-pressed={accentColor === color}
                 onClick={() => {
@@ -150,7 +150,7 @@ export function AppearanceSettings() {
               <Input
                 id="accent-hex"
                 className="min-w-0 sm:max-w-64"
-                placeholder="#5e6ad2"
+                placeholder="#rrggbb"
                 value={hex}
                 maxLength={7}
                 autoComplete="off"
