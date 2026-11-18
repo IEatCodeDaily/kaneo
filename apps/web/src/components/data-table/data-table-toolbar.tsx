@@ -69,8 +69,8 @@ type Props = {
   onFilterOpenChange?: (open: boolean) => void;
   filters: FilterGroup;
   onFiltersChange: (filters: FilterGroup) => void;
-  sort: ColumnSort | null;
-  onSortChange: (sort: ColumnSort | null) => void;
+  sort: ColumnSort[];
+  onSortChange: (sorts: ColumnSort[]) => void;
   search: string;
   onSearchChange: (value: string) => void;
   density: Density;
@@ -111,7 +111,26 @@ export function DataTableToolbar(props: Props) {
   ).length;
   // Draft rows without a value don't narrow anything, so they don't count.
   const activeCount = filterConditions(filters).filter(conditionActive).length;
-  const sortField = sort ? fields.find((f) => f.id === sort.fieldId) : null;
+  const moveSort = (index: number, delta: number) => {
+    const to = index + delta;
+    if (to < 0 || to >= sort.length) return;
+    const next = [...sort];
+    [next[index], next[to]] = [next[to], next[index]];
+    props.onSortChange(next);
+  };
+  const addSort = () => {
+    const used = new Set(sort.map((rule) => rule.fieldId));
+    const next = queryableFields.find((field) => !used.has(field.id));
+    if (next) props.onSortChange([...sort, { fieldId: next.id, dir: "asc" }]);
+  };
+  const canAddSort =
+    sort.length < 5 &&
+    queryableFields.some(
+      (field) => !sort.some((rule) => rule.fieldId === field.id),
+    );
+  const sortFieldGone = sort.some(
+    (rule) => !fields.some((field) => field.id === rule.fieldId),
+  );
 
   return (
     <>
@@ -291,8 +310,8 @@ export function DataTableToolbar(props: Props) {
             <ToolbarButton
               icon={<ArrowUpDown className="size-3.5" />}
               label={t("navigation:tables.sort")}
-              applied={sort !== null}
-              badge={sort ? 1 : undefined}
+              applied={sort.length > 0}
+              badge={sort.length > 0 ? sort.length : undefined}
             />
           }
         />
@@ -300,55 +319,110 @@ export function DataTableToolbar(props: Props) {
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.sortBy")}
           </p>
-          <div className="flex items-center gap-1 px-2 pb-2">
-            <FieldSelect
-              fields={queryableFields}
-              value={sort?.fieldId ?? ""}
-              placeholder={t("navigation:tables.pickField")}
-              onChange={(fieldId) =>
-                props.onSortChange({ fieldId, dir: sort?.dir ?? "asc" })
-              }
-            />
-            <Select
-              value={sort?.dir ?? "asc"}
-              disabled={!sort}
-              onValueChange={(dir) =>
-                sort &&
-                props.onSortChange({
-                  fieldId: sort.fieldId,
-                  dir: dir === "desc" ? "desc" : "asc",
-                })
-              }
-            >
-              <SelectTrigger size="sm" className="w-36 min-w-0">
-                <SelectValue>
-                  {t(
-                    sort?.dir === "desc"
-                      ? "navigation:tables.sortDescShort"
-                      : "navigation:tables.sortAscShort",
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">
-                  {t("navigation:tables.sortAscShort")}
-                </SelectItem>
-                <SelectItem value="desc">
-                  {t("navigation:tables.sortDescShort")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          {sort.length === 0 && (
+            <p className="px-3 pb-2 text-xs text-muted-foreground">
+              {t("navigation:tables.noSorts")}
+            </p>
+          )}
+          <div className="flex flex-col gap-1 px-2 pb-2">
+            {sort.map((rule, index) => (
+              <div key={rule.fieldId} className="flex items-center gap-1">
+                <span
+                  aria-hidden
+                  className="w-4 shrink-0 text-center text-xs tabular-nums text-muted-foreground"
+                >
+                  {index + 1}
+                </span>
+                <FieldSelect
+                  fields={queryableFields}
+                  value={rule.fieldId}
+                  placeholder={t("navigation:tables.pickField")}
+                  className="w-36 min-w-0"
+                  onChange={(fieldId) =>
+                    // A field sorts once: picking an already-sorted field swaps the two rules.
+                    props.onSortChange(
+                      sort.map((r, i) => {
+                        if (i === index) return { ...r, fieldId };
+                        if (r.fieldId === fieldId)
+                          return { ...r, fieldId: rule.fieldId };
+                        return r;
+                      }),
+                    )
+                  }
+                />
+                <Select
+                  value={rule.dir}
+                  onValueChange={(dir) =>
+                    props.onSortChange(
+                      sort.map((r, i) =>
+                        i === index
+                          ? { ...r, dir: dir === "desc" ? "desc" : "asc" }
+                          : r,
+                      ),
+                    )
+                  }
+                >
+                  <SelectTrigger size="sm" className="w-28 min-w-0">
+                    <SelectValue>
+                      {t(
+                        rule.dir === "desc"
+                          ? "navigation:tables.sortDescShort"
+                          : "navigation:tables.sortAscShort",
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">
+                      {t("navigation:tables.sortAscShort")}
+                    </SelectItem>
+                    <SelectItem value="desc">
+                      {t("navigation:tables.sortDescShort")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  disabled={index === 0}
+                  aria-label={t("navigation:tables.moveSortUp")}
+                  onClick={() => moveSort(index, -1)}
+                >
+                  ↑
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  disabled={index === sort.length - 1}
+                  aria-label={t("navigation:tables.moveSortDown")}
+                  onClick={() => moveSort(index, 1)}
+                >
+                  ↓
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t("navigation:tables.removeSort")}
+                  onClick={() =>
+                    props.onSortChange(sort.filter((_, i) => i !== index))
+                  }
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between border-t p-1">
             <Button
               variant="ghost"
-              size="icon-sm"
-              disabled={!sort}
-              aria-label={t("navigation:tables.clearSort")}
-              onClick={() => props.onSortChange(null)}
+              size="sm"
+              disabled={!canAddSort}
+              onClick={addSort}
             >
-              <Trash2 className="size-3.5" />
+              <Plus className="size-3.5" />
+              {t("navigation:tables.addSort")}
             </Button>
           </div>
-          {sortField === null && sort !== null && (
+          {sortFieldGone && (
             <p className="px-3 pb-2 text-xs text-muted-foreground">
               {t("navigation:tables.sortFieldGone")}
             </p>

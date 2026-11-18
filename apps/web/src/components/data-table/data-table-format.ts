@@ -309,6 +309,13 @@ export function parseJsonValue(raw: string) {
 export type SortDir = "asc" | "desc";
 export type ColumnSort = { fieldId: string; dir: SortDir };
 
+/** Views store one rule (legacy) or an ordered list; the grid always works on a list. */
+export function normalizeSorts(
+  sort: ColumnSort | ColumnSort[] | null | undefined,
+): ColumnSort[] {
+  return Array.isArray(sort) ? sort : sort ? [sort] : [];
+}
+
 export type DataTableFilter = (
   | { fieldId: string; contains: string }
   | { fieldId: string; min: string; max: string }

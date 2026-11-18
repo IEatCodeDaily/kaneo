@@ -570,6 +570,57 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           (await query({ sort: { fieldId: fields.Date.id, dir }, limit: 2 }))
             .rows[0].id,
         ).toBe("row1005");
+      // Multi-sort: the primary key orders, the secondary key breaks its ties.
+      const multi = [
+        { fieldId: fields.Amount.id, dir: "asc" },
+        { fieldId: "__row_id", dir: "desc" },
+      ];
+      expect(
+        (await query({ sort: multi, limit: 3 })).rows.map((r) => r.id),
+      ).toEqual(["row1004", "row1003", "row1002"]);
+      expect(
+        (await query({ sort: multi, limit: 1, offset: 1004 })).rows[0].id,
+      ).toBe("row1005");
+      // The first rule for a field wins; a later rule for the same key is ignored.
+      expect(
+        (
+          await query({
+            sort: [
+              { fieldId: "__row_id", dir: "desc" },
+              { fieldId: "__row_id", dir: "asc" },
+            ],
+            limit: 1,
+          })
+        ).rows[0].id,
+      ).toBe("row1005");
+      expect(
+        (
+          await post("row-query", {
+            sort: Array.from({ length: 6 }, () => ({
+              fieldId: fields.Amount.id,
+              dir: "asc",
+            })),
+          })
+        ).status,
+      ).toBe(400);
+      const multiView = await (
+        await post("views", {
+          name: "Multi",
+          config: {
+            filters: [],
+            sort: multi,
+            groupFieldId: null,
+            hiddenFields: [],
+            fieldOrder: [],
+            columnWidths: {},
+            rowHeight: "compact",
+            frozenColumns: 0,
+            summaries: {},
+            showSystemFields: false,
+          },
+        })
+      ).json();
+      expect(multiView.config?.sort).toEqual(multi);
       expect(
         (await query({ summaries: { [fields.Amount.id]: "avg" } })).summaries[
           fields.Amount.id

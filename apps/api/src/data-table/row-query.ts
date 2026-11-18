@@ -69,7 +69,15 @@ export const rowQuerySchema = v.object({
     [],
   ),
   sort: v.optional(
-    v.nullable(v.object({ fieldId, dir: v.picklist(["asc", "desc"]) })),
+    v.nullable(
+      v.union([
+        v.object({ fieldId, dir: v.picklist(["asc", "desc"]) }),
+        v.pipe(
+          v.array(v.object({ fieldId, dir: v.picklist(["asc", "desc"]) })),
+          v.maxLength(5),
+        ),
+      ]),
+    ),
     null,
   ),
   groupFieldId: v.optional(v.nullable(fieldId), null),
@@ -417,13 +425,19 @@ export async function queryRows(
         : sql`FALSE`,
     );
   const where = clauses.length ? sql.join(clauses, sql` AND `) : sql`TRUE`;
-  const sortField = spec.sort ? find(spec.sort.fieldId) : null;
-  const sortValue = sortField
-    ? numeric(sortField) ||
-      ["date", "datetime", "checkbox"].includes(sortField.type)
-      ? value(sortField)
-      : sql`NULLIF(${cellText(sortField, lookups)}, '')`
-    : null;
+  // First rule per field wins; duplicate keys would order unpredictably.
+  const sortRules = (
+    Array.isArray(spec.sort) ? spec.sort : spec.sort ? [spec.sort] : []
+  ).filter(
+    (rule, index, all) =>
+      all.findIndex((other) => other.fieldId === rule.fieldId) === index,
+  );
+  const sortValue = (rule: (typeof sortRules)[number]): SQL => {
+    const f = find(rule.fieldId);
+    return numeric(f) || ["date", "datetime", "checkbox"].includes(f.type)
+      ? value(f)
+      : sql`NULLIF(${cellText(f, lookups)}, '')`;
+  };
   const group = spec.groupFieldId ? find(spec.groupFieldId) : null;
   if (
     group &&
@@ -438,10 +452,11 @@ export async function queryRows(
     ...(group
       ? [sql`NULLIF(${groupLabel}, '') ASC NULLS LAST`, sql`${groupKey} ASC`]
       : []),
-    ...(sortValue
-      ? [
-          sql`${sortValue} ${sql.raw(spec.sort?.dir === "desc" ? "DESC" : "ASC")} NULLS LAST`,
-        ]
+    ...(sortRules.length > 0
+      ? sortRules.map(
+          (rule) =>
+            sql`${sortValue(rule)} ${sql.raw(rule.dir === "desc" ? "DESC" : "ASC")} NULLS LAST`,
+        )
       : [sql`position ASC`, sql`created_at ASC`]),
     sql`id ASC`,
   ];

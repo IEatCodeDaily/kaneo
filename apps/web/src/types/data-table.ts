@@ -168,7 +168,10 @@ export type TableRowQuery = {
         | { choiceId: string }
         | { checked: "any" | "true" | "false" }
       ))[];
-  sort?: { fieldId: string; dir: "asc" | "desc" } | null;
+  sort?:
+    | { fieldId: string; dir: "asc" | "desc" }
+    | { fieldId: string; dir: "asc" | "desc" }[]
+    | null;
   groupFieldId?: string | null;
   summaries?: Record<
     string,

@@ -193,36 +193,34 @@ export function FilterBuilder({
               />
             </div>
             {field && (
-              <>
-                <Select
-                  value={child.op}
-                  onValueChange={(op) =>
-                    op &&
-                    update({
-                      id: child.id,
-                      fieldId: child.fieldId,
-                      op: op as FilterOperator,
-                    })
-                  }
+              <Select
+                value={child.op}
+                onValueChange={(op) =>
+                  op &&
+                  update({
+                    id: child.id,
+                    fieldId: child.fieldId,
+                    op: op as FilterOperator,
+                  })
+                }
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="w-full min-w-0"
+                  aria-label={t("navigation:tables.filterOperator")}
                 >
-                  <SelectTrigger
-                    size="sm"
-                    className="w-full min-w-0"
-                    aria-label={t("navigation:tables.filterOperator")}
-                  >
-                    <SelectValue>
-                      {t(operatorKey(child.op, field.type))}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filterOperators(field.type).map((op) => (
-                      <SelectItem key={op} value={op}>
-                        {t(operatorKey(op, field.type))}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
+                  <SelectValue>
+                    {t(operatorKey(child.op, field.type))}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {filterOperators(field.type).map((op) => (
+                    <SelectItem key={op} value={op}>
+                      {t(operatorKey(op, field.type))}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
             {!field && <span />}
             <Button

@@ -1284,6 +1284,27 @@ const TABLE_STATES = [
   ],
   ["table-sort", async (p) => p.getByRole("button", { name: /^Sort/ }).click()],
   [
+    // Multi-sort (NocoDB parity): two ordered rules drive one row-query.
+    "table-multi-sort",
+    async (p) => {
+      const applied = p.waitForResponse((r) => {
+        if (!r.url().includes("/row-query")) return false;
+        try {
+          const body = r.request().postDataJSON();
+          return Array.isArray(body?.sort) && body.sort.length === 2;
+        } catch {
+          return false;
+        }
+      });
+      await p.getByRole("button", { name: /^Sort/ }).click();
+      await p.getByRole("button", { name: "Add sort" }).click();
+      await p.getByRole("button", { name: "Add sort" }).click();
+      const body = await (await applied).request().postDataJSON();
+      if (body.sort[0].fieldId === body.sort[1].fieldId)
+        throw new Error("multi-sort rules are not distinct");
+    },
+  ],
+  [
     // History is a view tab beside Grid, like the board's List/Board tabs.
     "table-history",
     async (p) => {
