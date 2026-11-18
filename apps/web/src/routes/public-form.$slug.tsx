@@ -80,7 +80,7 @@ function PublicFormPage() {
         <PageTitle title={title} />
         <div className="min-h-screen bg-background flex flex-col w-full">
           <header className="border-b border-border sticky top-0 z-10 bg-background">
-            <div className="px-6 py-2.5 flex items-center gap-3">
+            <div className="px-6 py-2 flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                 <Globe className="w-5 h-5 text-muted-foreground" />
               </div>
@@ -88,7 +88,7 @@ function PublicFormPage() {
                 <h1 className="text-sm font-semibold text-foreground truncate">
                   {title}
                 </h1>
-                <span className="px-1.5 py-0.5 text-xs bg-muted text-muted-foreground rounded-sm font-medium shrink-0">
+                <span className="px-1.5 text-xs bg-muted text-muted-foreground rounded-sm font-medium shrink-0">
                   {t("navigation:tables.publicForm")}
                 </span>
               </div>
@@ -155,7 +155,6 @@ function PublicFormPage() {
   return (
     <Shell title={form.data.name}>
       <div className="flex w-full max-w-md flex-col gap-4 mt-8">
-        <h1 className="text-lg font-semibold">{form.data.name}</h1>
         {localError && (
           <p className="text-sm text-destructive-foreground" role="alert">
             {localError}
