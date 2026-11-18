@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, Globe, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,31 +61,41 @@ export default function PublicFormDialog({
     () => table.formFields ?? [],
   );
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const invalidate = () =>
     queryClient.invalidateQueries({
       queryKey: dataTableKeys.detail(organizationId, table.id),
     });
 
-  const publish = useMutation({
-    mutationFn: () =>
-      publishTableForm({ organizationId, tableId: table.id }, selected),
-    onSuccess: invalidate,
-    onError: (error: Error) => toast.error(error.message),
-  });
-  const revoke = useMutation({
-    mutationFn: () => revokeTableForm({ organizationId, tableId: table.id }),
-    onSuccess: () => {
+  const publish = async () => {
+    setBusy(true);
+    try {
+      await publishTableForm({ organizationId, tableId: table.id }, selected);
+      invalidate();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const revoke = async () => {
+    setBusy(true);
+    try {
+      await revokeTableForm({ organizationId, tableId: table.id });
       setSelected([]);
       invalidate();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const link = table.formSlug
     ? `${window.location.origin}/public-form/${table.formSlug}`
     : null;
-  const busy = publish.isPending || revoke.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -161,20 +171,18 @@ export default function PublicFormDialog({
               variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => revoke.mutate()}
+              onClick={() => revoke()}
             >
-              {revoke.isPending && (
-                <Loader2 className="size-3.5 animate-spin" />
-              )}
+              {busy && <Loader2 className="size-3.5 animate-spin" />}
               {t("navigation:tables.publicFormRevoke")}
             </Button>
           )}
           <Button
             size="sm"
             disabled={busy || selected.length === 0}
-            onClick={() => publish.mutate()}
+            onClick={() => publish()}
           >
-            {publish.isPending && <Loader2 className="size-3.5 animate-spin" />}
+            {busy && <Loader2 className="size-3.5 animate-spin" />}
             <Globe className="size-3.5" />
             {table.formSlug
               ? t("navigation:tables.publicFormUpdate")
