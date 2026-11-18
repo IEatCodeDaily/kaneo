@@ -46,6 +46,8 @@ import {
   FIELD_TYPE_LABEL_KEYS,
   fieldIsRequired,
   fieldWidth,
+  formatDateTimeValue,
+  formatDateValue,
   groupRows,
   groupValue,
   isQueryable,
@@ -58,6 +60,7 @@ import {
   type SummaryFn,
   sortedFields,
   summarize,
+  summaryOptions,
   supportsSummary,
   systemFields,
 } from "@/components/data-table/data-table-format";
@@ -489,6 +492,11 @@ const SUMMARY_FNS = [
   "filled",
   "empty",
   "checked",
+  "earliest",
+  "latest",
+  "unique",
+  "filledPct",
+  "emptyPct",
 ] as const;
 
 /** Minimal per-type value editor for bulk set (S3 bulk bar). */
@@ -865,6 +873,12 @@ export function DataTableGrid({
     const fn = summaryFns[field.id] ?? "none";
     const value = values?.[field.id];
     if (fn === "none" || value == null || count === 0) return null;
+    if (fn === "earliest" || fn === "latest")
+      return field.type === "date"
+        ? formatDateValue(value)
+        : formatDateTimeValue(value);
+    if (fn === "filledPct" || fn === "emptyPct")
+      return `${Math.round((Number(value) / count) * 100)}%`;
     return ["filled", "empty", "checked"].includes(fn)
       ? `${value}/${count}`
       : Number(value).toLocaleString(undefined, {
@@ -2034,14 +2048,14 @@ export function DataTableGrid({
                               align="start"
                               className="min-w-40"
                             >
-                              {SUMMARY_FNS.filter(
-                                (option) =>
-                                  option === "none" ||
-                                  ["filled", "empty"].includes(option) ||
-                                  (option === "checked"
-                                    ? field.type === "checkbox"
-                                    : NUMERIC_CELL_TYPES.includes(field.type)),
-                              ).map((option) => (
+                              {SUMMARY_FNS.filter((option) => {
+                                if (option === "none") return true;
+                                const fn = option as SummaryFn;
+                                return (
+                                  fn !== "none" &&
+                                  summaryOptions(field).includes(fn)
+                                );
+                              }).map((option) => (
                                 <DropdownMenuCheckboxItem
                                   key={option}
                                   checked={fn === option}

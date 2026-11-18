@@ -178,7 +178,19 @@ export type TableRowQuery = {
   groupFieldId?: string | null;
   summaries?: Record<
     string,
-    "none" | "sum" | "avg" | "min" | "max" | "filled" | "empty" | "checked"
+    | "none"
+    | "sum"
+    | "avg"
+    | "min"
+    | "max"
+    | "filled"
+    | "empty"
+    | "checked"
+    | "earliest"
+    | "latest"
+    | "unique"
+    | "filledPct"
+    | "emptyPct"
   >;
   limit?: number;
   offset?: number;
@@ -187,7 +199,7 @@ export type TableRowQueryResult = {
   rows: DataTableRow[];
   total: number;
   tableTotal: number;
-  summaries: Record<string, number | null>;
+  summaries: Record<string, string | number | null>;
   groups: {
     key: string;
     label: string;

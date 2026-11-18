@@ -17,6 +17,7 @@ import {
   rowMatchesFilters,
   sortRows,
   summarize,
+  summaryOptions,
   systemFields,
   typeChangeKeepsValues,
   writeDensity,
@@ -326,6 +327,44 @@ describe("summarize", () => {
   it("is null when off or nothing matches", () => {
     expect(summarize("none", field({}), [row("a", {})])).toBeNull();
     expect(summarize("sum", field({ id: "c", type: "number" }), [])).toBeNull();
+  });
+
+  it("supports dates, unique counts and percentages", () => {
+    const rows = [
+      row("a", { d: "2026-03-15", n: "x" }),
+      row("b", { d: "2026-01-02", n: "x" }),
+      row("c", { d: null, n: "" }),
+    ];
+    expect(
+      summarize("earliest", field({ id: "d", type: "date" }), rows),
+    ).not.toBeNull();
+    expect(
+      summarize("latest", field({ id: "d", type: "date" }), rows),
+    ).not.toBeNull();
+    expect(summarize("unique", field({ id: "n", type: "select" }), rows)).toBe(
+      "1",
+    );
+    expect(summarize("filledPct", field({ id: "n", type: "text" }), rows)).toBe(
+      "67%",
+    );
+    expect(summarize("emptyPct", field({ id: "n", type: "text" }), rows)).toBe(
+      "33%",
+    );
+  });
+});
+
+describe("summaryOptions", () => {
+  it("is type-aware", () => {
+    const options = (type: Parameters<typeof field>[0]["type"]) =>
+      summaryOptions(field({ id: "x", type }));
+    expect(options("number")).toContain("sum");
+    expect(options("number")).not.toContain("earliest");
+    expect(options("date")).toContain("earliest");
+    expect(options("date")).not.toContain("sum");
+    expect(options("checkbox")).toEqual(["checked", "filled", "empty"]);
+    expect(options("select")).toContain("unique");
+    expect(options("longtext")).toEqual(["filled", "empty"]);
+    expect(options("datetime")).toContain("latest");
   });
 });
 

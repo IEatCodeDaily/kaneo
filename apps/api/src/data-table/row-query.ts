@@ -93,6 +93,11 @@ export const rowQuerySchema = v.object({
         "filled",
         "empty",
         "checked",
+        "earliest",
+        "latest",
+        "unique",
+        "filledPct",
+        "emptyPct",
       ]),
     ),
     {},
@@ -474,6 +479,17 @@ export async function queryRows(
     } else if (fn === "checked") {
       if (f.type !== "checkbox") bad("Checked summary requires a checkbox");
       expression = sql`count(*) FILTER (WHERE ${col} IS TRUE)::double precision`;
+    } else if (fn === "earliest" || fn === "latest") {
+      if (f.type !== "date" && f.type !== "datetime")
+        bad("Earliest/latest summary requires a date field");
+      expression = sql`(${fn === "earliest" ? sql`min` : sql`max`}(${col}))::text`;
+    } else if (fn === "unique") {
+      if (f.type === "checkbox" || f.type === "longtext")
+        bad("Unique summary requires a value field");
+      expression = sql`count(DISTINCT ${col}) FILTER (WHERE NOT (${emptySql(f, lookups)}))::double precision`;
+    } else if (fn === "filledPct" || fn === "emptyPct") {
+      const filled = sql`NOT (${emptySql(f, lookups)})`;
+      expression = sql`count(*) FILTER (WHERE ${fn === "emptyPct" ? sql`NOT (${filled})` : filled})::double precision`;
     } else {
       const filled = sql`NOT (${emptySql(f, lookups)})`;
       expression = sql`count(*) FILTER (WHERE ${fn === "empty" ? sql`NOT (${filled})` : filled})::double precision`;
@@ -498,7 +514,7 @@ export async function queryRows(
     ${group ? sql`(SELECT COALESCE(jsonb_agg(g ORDER BY NULLIF(g.label, '') ASC NULLS LAST, g.key), '[]'::jsonb) FROM (SELECT __group_key AS key, __group_label AS label, ${sql.join(aggregate, sql`, `)} FROM filtered GROUP BY __group_key, __group_label) g)` : sql`'[]'::jsonb`} AS groups`);
   const record = result.rows[0] as {
     rows: Record<string, unknown>[];
-    summary: Record<string, number | null> & { total: number };
+    summary: Record<string, string | number | null> & { total: number };
     table_total: number;
     groups: (Record<string, number | string | null> & {
       key: string;

@@ -405,7 +405,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           rows: { id: string; values: Record<string, unknown> }[];
           total: number;
           tableTotal: number;
-          summaries: Record<string, number>;
+          summaries: Record<string, number | string>;
           groups: { key: string; total: number; [key: string]: unknown }[];
           tickets: Record<string, unknown>;
         };
@@ -467,6 +467,34 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(r.groups).toMatchObject([
         { key: "needle", total: 1, [fields.Amount.id]: 9000 },
       ]);
+      // Date, unique and percentage summaries agree with the same predicate.
+      const earliest = await query({
+        search: "ferment",
+        summaries: { [fields.Date.id]: "earliest" },
+      });
+      const latest = await query({
+        search: "ferment",
+        summaries: { [fields.Date.id]: "latest" },
+      });
+      expect(String(earliest.summaries[fields.Date.id])).toContain(
+        "2026-03-15",
+      );
+      expect(String(latest.summaries[fields.Date.id])).toContain("2026-03-15");
+      const unique = await query({
+        search: "ferment",
+        summaries: { [fields.Name.id]: "unique" },
+      });
+      expect(unique.summaries[fields.Name.id]).toBe(1);
+      const pct = await query({
+        search: "ferment",
+        summaries: { [fields.Stage.id]: "filledPct" },
+      });
+      expect(pct.summaries[fields.Stage.id]).toBe(1);
+      const wrongType = await post("row-query", {
+        search: "ferment",
+        summaries: { [fields.Amount.id]: "earliest" },
+      });
+      expect(wrongType.status, await wrongType.text()).toBe(400);
       const exported = await post("row-export", { ...spec, offset: 999 });
       expect(exported.status).toBe(200);
       const csv = await exported.text();
