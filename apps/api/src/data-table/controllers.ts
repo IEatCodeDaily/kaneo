@@ -1485,13 +1485,14 @@ export async function deleteTableField(
         [relation.sourceFieldId, relation.sourceTableId],
         [relation.targetFieldId, relation.targetTableId],
       ])
-        await logActivity(tx, {
-          tableId: endpointTable!,
-          fieldId: id,
-          userId,
-          type: "field_deleted",
-          data: { relationId: relation.id },
-        });
+        if (endpointTable)
+          await logActivity(tx, {
+            tableId: endpointTable,
+            fieldId: id,
+            userId,
+            type: "field_deleted",
+            data: { relationId: relation.id },
+          });
       return { success: true as const };
     }
     const column = await store.snapshotColumn(tx, tableId, {
@@ -2230,8 +2231,11 @@ export async function submitPublicForm(
   for (const fieldId of Object.keys(values))
     if (!byId.has(fieldId)) badRequest("Unknown form field");
   const coerced: Record<string, unknown> = {};
-  for (const [fieldId, value] of Object.entries(values))
-    coerced[fieldId] = coerceValue(byId.get(fieldId)!, value);
+  for (const [fieldId, value] of Object.entries(values)) {
+    const field = byId.get(fieldId);
+    if (!field) badRequest("Unknown form field");
+    coerced[fieldId] = coerceValue(field, value);
+  }
   for (const field of fields) {
     if (
       field.options?.required === true &&

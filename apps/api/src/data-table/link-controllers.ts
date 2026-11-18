@@ -158,7 +158,10 @@ export async function getRowLinks(
       row,
     ]),
   );
-  const records = ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  const records = ids.flatMap((id) => {
+    const record = byId.get(id);
+    return record ? [record] : [];
+  });
   return {
     records: records.slice(offset, offset + 50),
     total: records.filter((row) => !row.deleted).length,

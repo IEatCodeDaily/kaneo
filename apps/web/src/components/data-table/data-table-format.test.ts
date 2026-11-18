@@ -197,9 +197,9 @@ describe("virtual system fields", () => {
       "creator",
       "editor",
     ]);
-    expect(
-      fieldValue({ ...row, createdBy: undefined }, byId.get("__created_by")!),
-    ).toBeNull();
+    const field = byId.get("__created_by");
+    if (!field) throw new Error("missing __created_by field config");
+    expect(fieldValue({ ...row, createdBy: undefined }, field)).toBeNull();
   });
   it("reuses date/user filters and date/number sorts", () => {
     const later = {

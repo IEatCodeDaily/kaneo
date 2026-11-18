@@ -89,12 +89,13 @@ it("renders every field in order with its shared editor, focusing the first", as
 
 it("blocks required and invalid values, then creates once with typed values including the focused draft", async () => {
   const { onCreate, onOpenChange } = mount();
-  const submit = () =>
-    fireEvent.submit(
-      screen
-        .getByRole("button", { name: "navigation:tables.createRow" })
-        .closest("form")!,
-    );
+  const submit = () => {
+    const form = screen
+      .getByRole("button", { name: "navigation:tables.createRow" })
+      .closest("form");
+    if (!form) throw new Error("create row form not found");
+    fireEvent.submit(form);
+  };
   submit();
   expect(onCreate).not.toHaveBeenCalled();
   expect(screen.getByRole("alert")).toHaveTextContent(

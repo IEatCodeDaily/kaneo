@@ -76,8 +76,10 @@ export function ViewSwitcher({
         ).id;
       await onRefresh();
       if (nextId) onSelect(nextId);
-      else if (action === "delete")
-        onSelect(views.find((v) => v.id !== current?.id)!.id);
+      else if (action === "delete") {
+        const fallback = views.find((v) => v.id !== current?.id);
+        if (fallback) onSelect(fallback.id);
+      }
       setAction(null);
     } catch {
       toast.error(label("error"));

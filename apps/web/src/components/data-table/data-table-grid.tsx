@@ -850,7 +850,7 @@ export function DataTableGrid({
       tickets: {
         ...table.tickets,
         ...(rowPages.data?.pages.reduce<Record<string, TicketRef>>(
-          (refs, page) => ({ ...refs, ...page.tickets }),
+          (refs, page) => Object.assign(refs, page.tickets),
           {},
         ) ?? {}),
       },
