@@ -36,6 +36,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export const publishTableForm = (target: DataTableTarget, fields: string[]) =>
+  request<DataTableSummary>(`${tablePath(target)}/form`, {
+    method: "PUT",
+    body: JSON.stringify({ fields }),
+  });
+
+export const revokeTableForm = (target: DataTableTarget) =>
+  request<DataTableSummary>(`${tablePath(target)}/form`, { method: "DELETE" });
+
 export const getTableViews = (target: DataTableTarget) =>
   request<import("@/components/data-table/saved-view-layout").SavedTableView[]>(
     `${tablePath(target)}/views`,

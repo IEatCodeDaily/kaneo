@@ -570,6 +570,7 @@ function LinkedDrawer({
   members: Map<string, MemberOption>;
 }) {
   const { t } = useTranslation();
+  // biome-ignore lint/style/noNonNullAssertion: the dialog contract guarantees a non-empty stack
   const current = stack[stack.length - 1]!;
   const [data, setData] = useState<{
     row: DataTableRow;

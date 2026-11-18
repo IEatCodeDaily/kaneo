@@ -2,6 +2,7 @@ import {
   ArrowUpDown,
   Download,
   Eye,
+  Globe,
   ListFilter,
   LockKeyhole,
   MoreHorizontal,
@@ -87,6 +88,7 @@ type Props = {
   onExport: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onPublicForm?: () => void;
 };
 
 export function DataTableToolbar(props: Props) {
@@ -533,6 +535,17 @@ export function DataTableToolbar(props: Props) {
               {t("navigation:tables.fieldSummaries")}
             </DropdownMenuCheckboxItem>
           </DropdownMenuGroup>
+          {canEdit && props.onPublicForm && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={props.onPublicForm}>
+                  <Globe className="size-3.5" />
+                  {t("navigation:tables.publicForm")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </>
+          )}
           {canEdit && (
             <>
               <DropdownMenuSeparator />

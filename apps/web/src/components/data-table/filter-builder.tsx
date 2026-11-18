@@ -231,19 +231,15 @@ export function FilterBuilder({
             >
               <Trash2 className="size-3.5" />
             </Button>
-            {field && (
-              <>
-                {!valuelessOperator(child.op) && (
-                  <div className="col-span-3 min-w-0">
-                    <ConditionValue
-                      condition={child}
-                      field={field}
-                      members={members}
-                      onChange={update}
-                    />
-                  </div>
-                )}
-              </>
+            {field && !valuelessOperator(child.op) && (
+              <div className="col-span-3 min-w-0">
+                <ConditionValue
+                  condition={child}
+                  field={field}
+                  members={members}
+                  onChange={update}
+                />
+              </div>
             )}
           </div>
         );

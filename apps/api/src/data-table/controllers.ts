@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import { createId } from "@paralleldrive/cuid2";
 import {
   and,
   asc,
@@ -40,6 +41,7 @@ import {
   isFieldType,
 } from "./fields";
 import * as relations from "./relations";
+import { assertTablesEnabled } from "./require-tables-enabled";
 import { queryRows, type RowQueryInput } from "./row-query";
 import type { StoreField } from "./store";
 import * as store from "./store";
@@ -1483,13 +1485,14 @@ export async function deleteTableField(
         [relation.sourceFieldId, relation.sourceTableId],
         [relation.targetFieldId, relation.targetTableId],
       ])
-        await logActivity(tx, {
-          tableId: endpointTable!,
-          fieldId: id,
-          userId,
-          type: "field_deleted",
-          data: { relationId: relation.id },
-        });
+        if (endpointTable)
+          await logActivity(tx, {
+            tableId: endpointTable,
+            fieldId: id,
+            userId,
+            type: "field_deleted",
+            data: { relationId: relation.id },
+          });
       return { success: true as const };
     }
     const column = await store.snapshotColumn(tx, tableId, {
@@ -2133,4 +2136,208 @@ export async function listRowsForTask(
     .from(organizationTable)
     .where(eq(organizationTable.id, organizationId));
   return { organizationSlug: org?.slug ?? "", tables };
+}
+
+// ── public form (nocodb-parity #10) ─────────────────────────────────────
+// Anonymous create-only access through an unguessable slug. Revoking clears
+// the slug; republishing after a revoke issues a FRESH slug, so a revoked
+// link can never be resurrected by anyone holding it.
+
+const FORM_FILLABLE_TYPES: ReadonlySet<FieldType> = new Set([
+  "text",
+  "longtext",
+  "number",
+  "percent",
+  "currency",
+  "date",
+  "datetime",
+  "select",
+  "multiselect",
+  "checkbox",
+  "url",
+  "email",
+]);
+// Whole-table submissions per rolling minute; created_at is unindexed on the
+// physical tables, so this is a bounded scan per public POST.
+// ponytail: per-table counter column once any form sees real traffic.
+const FORM_RATE_PER_MINUTE = 30;
+
+async function publicFormTable(slug: string) {
+  const [table] = await db
+    .select()
+    .from(dataTableTable)
+    .where(
+      and(eq(dataTableTable.formSlug, slug), isNull(dataTableTable.deletedAt)),
+    )
+    .limit(1);
+  // 404, never 403/410: a missing, revoked or flag-disabled form must be
+  // indistinguishable so the slug space cannot be probed.
+  return table ?? notFound("Form");
+}
+
+async function publicFormFields(table: typeof dataTableTable.$inferSelect) {
+  const allow = new Set(table.formFields ?? []);
+  const fields = await listTableFieldRows(table.id);
+  return fields.filter(
+    (field) => allow.has(field.id) && FORM_FILLABLE_TYPES.has(field.type),
+  );
+}
+
+export async function getPublicForm(slug: string) {
+  const table = await publicFormTable(slug);
+  await assertTablesEnabled(table.organizationId);
+  const fields = await publicFormFields(table);
+  return {
+    name: table.name,
+    fields: fields.map((field) => {
+      const choices = Array.isArray(field.options?.choices)
+        ? (field.options.choices as {
+            id: string;
+            label: string;
+            color?: string;
+          }[])
+        : undefined;
+      return {
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        required: field.options?.required === true,
+        description:
+          typeof field.options?.description === "string"
+            ? field.options.description
+            : null,
+        ...(choices ? { choices } : {}),
+        ...(field.type === "currency" && typeof field.options?.code === "string"
+          ? { currencyCode: field.options.code }
+          : {}),
+        ...(typeof field.options?.precision === "number"
+          ? { precision: field.options.precision }
+          : {}),
+      };
+    }),
+  };
+}
+
+export async function submitPublicForm(
+  slug: string,
+  values: Record<string, unknown>,
+) {
+  const table = await publicFormTable(slug);
+  await assertTablesEnabled(table.organizationId);
+  const fields = await publicFormFields(table);
+  const byId = new Map(fields.map((field) => [field.id, field]));
+  // Off-form keys fail the same way whether the field is hidden, deleted or
+  // never existed: no allowlist shape leaks through error text.
+  for (const fieldId of Object.keys(values))
+    if (!byId.has(fieldId)) badRequest("Unknown form field");
+  const coerced: Record<string, unknown> = {};
+  for (const [fieldId, value] of Object.entries(values)) {
+    const field = byId.get(fieldId);
+    if (!field) badRequest("Unknown form field");
+    coerced[fieldId] = coerceValue(field, value);
+  }
+  for (const field of fields) {
+    if (
+      field.options?.required === true &&
+      (coerced[field.id] === undefined || coerced[field.id] === null)
+    )
+      badRequest("This field is required");
+  }
+  const recent = await db.execute(
+    sql`SELECT count(*)::int AS n FROM ${store.tableRef(table.id)} WHERE created_at > now() - interval '1 minute'`,
+  );
+  if (Number(recent.rows[0]?.n ?? 0) >= FORM_RATE_PER_MINUTE)
+    throw new HTTPException(429, {
+      message: "Too many submissions; try again shortly",
+    });
+  await db.transaction(async (tx) => {
+    const row = await store.insertRow(
+      tx,
+      table.id,
+      fields.map(toStoreField),
+      coerced,
+      null,
+    );
+    await logActivity(tx, {
+      tableId: table.id,
+      type: "create_row",
+      rowId: row.id,
+      data: { public: true, values: coerced },
+    });
+  });
+  return { ok: true };
+}
+
+export async function publishForm(
+  organizationId: string,
+  tableId: string,
+  fields: string[],
+  userId?: string,
+) {
+  return mutateTable(organizationId, tableId, userId, async (tx, table) => {
+    const live = await tx
+      .select({
+        id: dataTableFieldTable.id,
+        type: dataTableFieldTable.type,
+      })
+      .from(dataTableFieldTable)
+      .where(
+        and(
+          eq(dataTableFieldTable.tableId, tableId),
+          isNull(dataTableFieldTable.deletedAt),
+        ),
+      );
+    const byId = new Map(live.map((field) => [field.id, field]));
+    for (const fieldId of fields) {
+      const field = byId.get(fieldId);
+      if (
+        !field ||
+        !isFieldType(field.type) ||
+        !FORM_FILLABLE_TYPES.has(field.type)
+      )
+        badRequest("Form fields must be live, fillable fields of this table");
+    }
+    if (new Set(fields).size !== fields.length)
+      badRequest("Duplicate form field");
+    // Updating the allowlist keeps the slug; only a revoke + republish
+    // rotates it.
+    const [updated] = await tx
+      .update(dataTableTable)
+      .set({
+        formSlug: table.formSlug ?? createId(),
+        formFields: fields,
+        updatedAt: new Date(),
+      })
+      .where(eq(dataTableTable.id, tableId))
+      .returning();
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "form_published",
+      data: { fields },
+    });
+    return updated ?? notFound("Data table");
+  });
+}
+
+export async function revokeForm(
+  organizationId: string,
+  tableId: string,
+  userId?: string,
+) {
+  return mutateTable(organizationId, tableId, userId, async (tx, table) => {
+    if (!table.formSlug) return table;
+    const [updated] = await tx
+      .update(dataTableTable)
+      .set({ formSlug: null, formFields: null, updatedAt: new Date() })
+      .where(eq(dataTableTable.id, tableId))
+      .returning();
+    await logActivity(tx, {
+      tableId,
+      userId,
+      type: "form_revoked",
+      data: {},
+    });
+    return updated ?? notFound("Data table");
+  });
 }

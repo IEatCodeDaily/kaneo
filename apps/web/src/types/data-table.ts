@@ -98,6 +98,9 @@ export type DataTableSummary = {
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Public form handle; null = no published form (nocodb-parity #10). */
+  formSlug?: string | null;
+  formFields?: string[] | null;
 };
 
 /** Resolved ticket for a ticket cell (the API ships these beside rows). */

@@ -228,7 +228,8 @@ it("toolbar opens the form without creating an empty row", async () => {
 
 it("CSV import ignores system columns without shifting later data", async () => {
   const view = mount();
-  const input = view.container.querySelector('input[type="file"]')!;
+  const input = view.container.querySelector('input[type="file"]');
+  if (!input) throw new Error("file input missing");
   fireEvent.change(input, {
     target: {
       files: [

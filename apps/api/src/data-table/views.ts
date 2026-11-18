@@ -276,16 +276,14 @@ export async function deleteView(
       .where(
         and(scope(organizationId, tableId), eq(dataTableViewTable.id, viewId)),
       );
-    if (target.isDefault)
-      await tx
-        .update(dataTableViewTable)
-        .set({ isDefault: true })
-        .where(
-          eq(
-            dataTableViewTable.id,
-            views.find((view) => view.id !== viewId)!.id,
-          ),
-        );
+    if (target.isDefault) {
+      const next = views.find((view) => view.id !== viewId);
+      if (next)
+        await tx
+          .update(dataTableViewTable)
+          .set({ isDefault: true })
+          .where(eq(dataTableViewTable.id, next.id));
+    }
     return { success: true };
   });
 }

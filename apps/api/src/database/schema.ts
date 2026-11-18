@@ -821,6 +821,10 @@ export const dataTableTable = pgTable(
     }),
     // Soft delete: the physical kaneo_tables table survives until explicit purge.
     deletedAt: timestamp("deleted_at", { mode: "date" }),
+    // Public form (nocodb-parity #10): the slug is the only unauthenticated
+    // handle; NULL on either column = no published form. Revoking clears both.
+    formSlug: text("form_slug"),
+    formFields: jsonb("form_fields").$type<string[]>(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .defaultNow()

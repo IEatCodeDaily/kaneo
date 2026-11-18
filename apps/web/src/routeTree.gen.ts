@@ -23,6 +23,7 @@ import { Route as DeviceIndexRouteImport } from './routes/device/index'
 import { Route as DeviceApproveRouteImport } from './routes/device/approve'
 import { Route as McpAuthorizeRouteImport } from './routes/mcp.authorize'
 import { Route as PublicBoardBoardIdRouteImport } from './routes/public-board.$boardId'
+import { Route as PublicFormSlugRouteImport } from './routes/public-form.$slug'
 import { Route as TeamsIndexRouteImport } from './routes/teams/index'
 import { Route as LayoutAuthenticatedDashboardRouteImport } from './routes/_layout/_authenticated/dashboard'
 import { Route as LayoutAuthenticatedInvitationsRouteImport } from './routes/_layout/_authenticated/invitations'
@@ -164,6 +165,11 @@ const McpAuthorizeRoute = McpAuthorizeRouteImport.update({
 const PublicBoardBoardIdRoute = PublicBoardBoardIdRouteImport.update({
   id: '/public-board/$boardId',
   path: '/public-board/$boardId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicFormSlugRoute = PublicFormSlugRouteImport.update({
+  id: '/public-form/$slug',
+  path: '/public-form/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeamsIndexRoute = TeamsIndexRouteImport.update({
@@ -724,6 +730,7 @@ export interface FileRoutesByFullPath {
   '/device/approve': typeof DeviceApproveRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
+  '/public-form/$slug': typeof PublicFormSlugRoute
   '/device/': typeof DeviceIndexRoute
   '/teams/': typeof TeamsIndexRoute
   '/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
@@ -811,6 +818,7 @@ export interface FileRoutesByTo {
   '/device/approve': typeof DeviceApproveRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
+  '/public-form/$slug': typeof PublicFormSlugRoute
   '/device': typeof DeviceIndexRoute
   '/teams': typeof TeamsIndexRoute
   '/invitations': typeof LayoutAuthenticatedInvitationsRoute
@@ -900,6 +908,7 @@ export interface FileRoutesById {
   '/device/approve': typeof DeviceApproveRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
   '/public-board/$boardId': typeof PublicBoardBoardIdRoute
+  '/public-form/$slug': typeof PublicFormSlugRoute
   '/device/': typeof DeviceIndexRoute
   '/teams/': typeof TeamsIndexRoute
   '/_layout/_authenticated/dashboard': typeof LayoutAuthenticatedDashboardRouteWithChildren
@@ -990,6 +999,7 @@ export interface FileRouteTypes {
     | '/device/approve'
     | '/mcp/authorize'
     | '/public-board/$boardId'
+    | '/public-form/$slug'
     | '/device/'
     | '/teams/'
     | '/dashboard'
@@ -1077,6 +1087,7 @@ export interface FileRouteTypes {
     | '/device/approve'
     | '/mcp/authorize'
     | '/public-board/$boardId'
+    | '/public-form/$slug'
     | '/device'
     | '/teams'
     | '/invitations'
@@ -1165,6 +1176,7 @@ export interface FileRouteTypes {
     | '/device/approve'
     | '/mcp/authorize'
     | '/public-board/$boardId'
+    | '/public-form/$slug'
     | '/device/'
     | '/teams/'
     | '/_layout/_authenticated/dashboard'
@@ -1250,6 +1262,7 @@ export interface RootRouteChildren {
   TestErrorRoute: typeof TestErrorRoute
   McpAuthorizeRoute: typeof McpAuthorizeRoute
   PublicBoardBoardIdRoute: typeof PublicBoardBoardIdRoute
+  PublicFormSlugRoute: typeof PublicFormSlugRoute
   TeamsIndexRoute: typeof TeamsIndexRoute
   InvitationAcceptInviteIdRoute: typeof InvitationAcceptInviteIdRoute
 }
@@ -1352,6 +1365,13 @@ declare module '@tanstack/react-router' {
       path: '/public-board/$boardId'
       fullPath: '/public-board/$boardId'
       preLoaderRoute: typeof PublicBoardBoardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/public-form/$slug': {
+      id: '/public-form/$slug'
+      path: '/public-form/$slug'
+      fullPath: '/public-form/$slug'
+      preLoaderRoute: typeof PublicFormSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/teams/': {
@@ -2253,6 +2273,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestErrorRoute: TestErrorRoute,
   McpAuthorizeRoute: McpAuthorizeRoute,
   PublicBoardBoardIdRoute: PublicBoardBoardIdRoute,
+  PublicFormSlugRoute: PublicFormSlugRoute,
   TeamsIndexRoute: TeamsIndexRoute,
   InvitationAcceptInviteIdRoute: InvitationAcceptInviteIdRoute,
 }
