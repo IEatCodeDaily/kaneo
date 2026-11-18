@@ -717,18 +717,45 @@ export type SummaryFn =
   | "max"
   | "filled"
   | "empty"
-  | "checked";
+  | "checked"
+  | "earliest"
+  | "latest"
+  | "unique"
+  | "filledPct"
+  | "emptyPct";
 
 /** Sensible default once summaries are switched on for a column. */
 export function defaultSummaryFn(field: DataTableField): SummaryFn {
   if (["number", "percent", "currency"].includes(field.type)) return "sum";
   if (field.type === "checkbox") return "checked";
+  if (["date", "datetime"].includes(field.type)) return "earliest";
   return "filled";
+}
+
+/** The summary functions a column's footer menu offers, in order. */
+export function summaryOptions(field: DataTableField): SummaryFn[] {
+  if (!isQueryable(field)) return [];
+  if (field.type === "longtext") return ["filled", "empty"];
+  if (field.type === "checkbox") return ["checked", "filled", "empty"];
+  if (["date", "datetime"].includes(field.type))
+    return ["earliest", "latest", "filled", "empty", "filledPct", "emptyPct"];
+  if (["number", "percent", "currency"].includes(field.type))
+    return [
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "filled",
+      "empty",
+      "filledPct",
+      "emptyPct",
+    ];
+  return ["unique", "filled", "empty", "filledPct", "emptyPct"];
 }
 
 /** Columns a summary makes sense for; others show none. */
 export function supportsSummary(field: DataTableField): boolean {
-  return isQueryable(field) && !["longtext", "datetime"].includes(field.type);
+  return isQueryable(field);
 }
 
 /** Formatted summary over rows, or null when there is nothing to show. */
@@ -765,8 +792,33 @@ export function summarize(
       return `${filled.length}/${rows.length}`;
     case "empty":
       return `${rows.length - filled.length}/${rows.length}`;
+    case "filledPct":
+      return `${Math.round((filled.length / rows.length) * 100)}%`;
+    case "emptyPct":
+      return `${Math.round(((rows.length - filled.length) / rows.length) * 100)}%`;
     case "checked":
       return `${values.filter((v) => v === true).length}/${rows.length}`;
+    case "earliest":
+    case "latest": {
+      const times = filled
+        .map((v) => (typeof v === "string" || typeof v === "number" ? v : null))
+        .filter((v) => v !== null)
+        .map((v) => new Date(v).getTime())
+        .filter((t) => !Number.isNaN(t));
+      if (times.length === 0) return null;
+      const picked =
+        fn === "earliest" ? Math.min(...times) : Math.max(...times);
+      const iso = new Date(picked).toISOString();
+      return field.type === "date"
+        ? formatDateValue(iso)
+        : formatDateTimeValue(iso);
+    }
+    case "unique": {
+      const distinct = new Set(
+        filled.map((v) => (typeof v === "string" ? v : JSON.stringify(v))),
+      );
+      return `${distinct.size}`;
+    }
     default:
       return null;
   }
