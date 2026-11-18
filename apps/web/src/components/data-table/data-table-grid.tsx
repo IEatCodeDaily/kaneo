@@ -49,6 +49,7 @@ import {
   groupRows,
   groupValue,
   isQueryable,
+  normalizeSorts,
   ROW_NUMBER_COLUMN_WIDTH,
   readDensity,
   readFrozenColumns,
@@ -188,6 +189,7 @@ function FieldHeader({
   frozen,
   freezeEdge,
   sort,
+  sortOrder,
   onSort,
   canEdit,
   canHide,
@@ -209,6 +211,8 @@ function FieldHeader({
   /** True for the last frozen column: carries the freeze-edge divider. */
   freezeEdge: boolean;
   sort: ColumnSort | null;
+  /** 1-based position in the sort list, shown when more than one rule is active. */
+  sortOrder: number | null;
   onSort: (sort: ColumnSort) => void;
   canEdit: boolean;
   canHide: boolean;
@@ -318,6 +322,14 @@ function FieldHeader({
                 ) : (
                   <ArrowDown className="size-3.5 shrink-0" />
                 ))}
+              {sorted && sortOrder !== null && (
+                <span
+                  aria-hidden
+                  className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                >
+                  {sortOrder}
+                </span>
+              )}
               {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
                   the name and digits never shift. */}
               <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
@@ -685,8 +697,8 @@ export function DataTableGrid({
     return isFilterGroup(saved) ? saved : emptyFilterGroup();
   });
   const [filterOpen, setFilterOpen] = useState(false);
-  const [sort, setSort] = useState<ColumnSort | null>(
-    initialConfig?.sort ?? null,
+  const [sort, setSort] = useState<ColumnSort[]>(() =>
+    normalizeSorts(initialConfig?.sort),
   );
   const [groupFieldId, setGroupFieldId] = useState<string | null>(
     initialConfig?.groupFieldId ?? null,
@@ -795,7 +807,7 @@ export function DataTableGrid({
       search,
       includeSystem: showSystem,
       filters: activeFilters,
-      sort,
+      sort: sort.length > 0 ? sort : null,
       groupFieldId,
       summaries: summaryFns,
     }),
@@ -1242,7 +1254,7 @@ export function DataTableGrid({
         pruneFilterGroup(current, (f) => f.fieldId !== field.id),
       );
       setGroupFieldId((current) => (current === field.id ? null : current));
-      setSort((current) => (current?.fieldId === field.id ? null : current));
+      setSort((current) => current.filter((rule) => rule.fieldId !== field.id));
       setHidden((current) => current.filter((id) => id !== field.id));
       setFieldOrder((current) => current.filter((id) => id !== field.id));
       setWidth(field.id, null);
@@ -1325,7 +1337,9 @@ export function DataTableGrid({
                   ),
                 );
                 setSort((current) =>
-                  current?.fieldId.startsWith("__") ? null : current,
+                  current.some((rule) => rule.fieldId.startsWith("__"))
+                    ? current.filter((rule) => !rule.fieldId.startsWith("__"))
+                    : current,
                 );
                 setGroupFieldId((current) =>
                   current?.startsWith("__") ? null : current,
@@ -1501,8 +1515,17 @@ export function DataTableGrid({
                       }
                       frozen={index < frozenCount}
                       freezeEdge={index === frozenCount - 1}
-                      sort={sort}
-                      onSort={setSort}
+                      sort={
+                        sort.find((rule) => rule.fieldId === field.id) ?? null
+                      }
+                      sortOrder={
+                        sort.length > 1
+                          ? sort.findIndex(
+                              (rule) => rule.fieldId === field.id,
+                            ) + 1 || null
+                          : null
+                      }
+                      onSort={(rule) => setSort([rule])}
                       canEdit={canEdit}
                       canHide={index > 0 && !field.system}
                       organizationId={organizationId}

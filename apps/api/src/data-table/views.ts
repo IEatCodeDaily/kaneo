@@ -32,7 +32,15 @@ const ids = v.pipe(
 export const viewConfigSchema = v.strictObject({
   filters: jsonDocument,
   sort: v.nullable(
-    v.object({ fieldId: v.string(), dir: v.picklist(["asc", "desc"]) }),
+    v.union([
+      v.object({ fieldId: v.string(), dir: v.picklist(["asc", "desc"]) }),
+      v.pipe(
+        v.array(
+          v.object({ fieldId: v.string(), dir: v.picklist(["asc", "desc"]) }),
+        ),
+        v.maxLength(5),
+      ),
+    ]),
   ),
   groupFieldId: v.nullable(v.string()),
   hiddenFields: ids,
@@ -151,7 +159,11 @@ async function validateFields(
     ...config.fieldOrder,
     ...Object.keys(config.columnWidths),
     ...Object.keys(config.summaries),
-    ...(config.sort ? [config.sort.fieldId] : []),
+    ...(Array.isArray(config.sort)
+      ? config.sort.map((rule) => rule.fieldId)
+      : config.sort
+        ? [config.sort.fieldId]
+        : []),
     ...(config.groupFieldId ? [config.groupFieldId] : []),
   ];
   if (refs.some((id) => !allowed.has(id)))
