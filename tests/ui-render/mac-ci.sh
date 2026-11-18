@@ -16,7 +16,7 @@ until mkdir ~/ci/.lock 2>/dev/null; do sleep 5; done
 PGDATA=~/ci/pgdata; PGPORT=55432
 cleanup() { pkill -f kaneo-ci-api 2>/dev/null; pkill -f "vite preview" 2>/dev/null; pg_ctl -D $PGDATA -m fast stop >/dev/null 2>&1; rmdir ~/ci/.lock; }
 trap cleanup EXIT
-git reset -q --hard && git fetch -q origin "$REF" && git checkout -q --detach FETCH_HEAD && git clean -qfdx -e node_modules -e '**/node_modules'
+git reset -q --hard && { git fetch -q origin "$REF" || { echo "FETCH FAILED for $REF"; exit 1; }; } && git checkout -q --detach FETCH_HEAD && git clean -qfdx -e node_modules -e '**/node_modules'
 # HARNESS=<ref>: overlay tests/ui-render from another ref, to render "before" screens of a ref that predates the harness
 [[ -n ${HARNESS:-} ]] && git fetch -q origin "$HARNESS" && git checkout -q FETCH_HEAD -- tests/ui-render
 SHA=$(git rev-parse --short HEAD)

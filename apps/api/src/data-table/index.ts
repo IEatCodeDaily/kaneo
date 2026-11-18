@@ -29,11 +29,13 @@ import {
   listRowsForTask,
   listTableActivity,
   listTicketOptions,
+  publishForm,
   purgeDataTable,
   queryDataTable,
   queryTableRows,
   restoreDataTable,
   revertTableActivity,
+  revokeForm,
   softDeleteDataTable,
   unlinkRowTask,
   updateDashboard,
@@ -330,6 +332,43 @@ const dataTable = new Hono<{ Variables: { userId: string } }>()
       return c.json(
         await softDeleteDataTable(organizationId, tableId, c.get("userId")),
       );
+    },
+  )
+  .put(
+    "/organization/:organizationId/:tableId/form",
+    validator("param", idParams),
+    validator(
+      "json",
+      v.object({
+        fields: v.pipe(
+          v.array(v.pipe(v.string(), v.minLength(1), v.maxLength(128))),
+          v.minLength(1),
+          v.maxLength(100),
+        ),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("manage"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(
+        await publishForm(
+          organizationId,
+          tableId,
+          c.req.valid("json").fields,
+          c.get("userId"),
+        ),
+      );
+    },
+  )
+  .delete(
+    "/organization/:organizationId/:tableId/form",
+    validator("param", idParams),
+    organizationAccess.fromParam("organizationId"),
+    tablePrivilege("manage"),
+    async (c) => {
+      const { organizationId, tableId } = c.req.valid("param");
+      return c.json(await revokeForm(organizationId, tableId, c.get("userId")));
     },
   )
   .post(

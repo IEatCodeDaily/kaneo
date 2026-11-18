@@ -68,6 +68,7 @@ import {
 import FieldOptionsDialog from "@/components/data-table/field-options-dialog";
 import { LinkNavigationProvider } from "@/components/data-table/link-cell";
 import { NewRowDialog } from "@/components/data-table/new-row-dialog";
+import PublicFormDialog from "@/components/data-table/public-form-dialog";
 import { RowSheet } from "@/components/data-table/row-sheet";
 import { TableActivityList } from "@/components/data-table/table-activity";
 import { TicketLookupContext } from "@/components/data-table/ticket-cell";
@@ -795,6 +796,7 @@ export function DataTableGrid({
   const [dialogField, setDialogField] = useState<DataTableField | null>(null);
   const [dialogType, setDialogType] = useState<DataTableFieldType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [fieldToDelete, setFieldToDelete] = useState<DataTableField | null>(
     null,
   );
@@ -1386,6 +1388,7 @@ export function DataTableGrid({
             onImport={() => fileInputRef.current?.click()}
             onExport={exportCsv}
             onRename={onRename}
+            onPublicForm={() => setFormDialogOpen(true)}
             onDelete={onDelete}
           />
         </Layout.Toolbar>
@@ -2228,6 +2231,14 @@ export function DataTableGrid({
           field={dialogField}
           initialType={dialogType}
           members={members}
+        />
+
+        <PublicFormDialog
+          organizationId={organizationId}
+          table={table}
+          fields={allFields}
+          open={formDialogOpen}
+          onOpenChange={setFormDialogOpen}
         />
 
         <AlertDialog

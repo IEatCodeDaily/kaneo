@@ -30,6 +30,7 @@ import column from "./column";
 import comment from "./comment";
 import config from "./config";
 import dataTable from "./data-table";
+import { getPublicForm, submitPublicForm } from "./data-table/controllers";
 import { reconcile as reconcileDataTables } from "./data-table/store";
 import db, { getDatabase, schema } from "./database";
 import { prepareDatabaseStartup } from "./database/prepare-database-startup";
@@ -308,6 +309,33 @@ export function createApp() {
       return c.json(ticket);
     },
   );
+
+  /*
+    Public data-table forms (nocodb-parity #10): anonymous create-only
+    submissions through an unguessable slug, registered BEFORE the auth
+    middleware like the other public routes. The controller 404s (never
+    403s) for missing/revoked/flag-disabled so the slug space cannot be
+    probed, and never returns stored rows.
+  */
+  api.get("/public-form/:slug", async (c) => {
+    const { slug } = c.req.param();
+    return c.json(await getPublicForm(slug));
+  });
+  api.post("/public-form/:slug", async (c) => {
+    const { slug } = c.req.param();
+    const raw = await c.req.text();
+    // Trust boundary: anonymous endpoint, so the payload gets a hard cap
+    // before any parsing.
+    if (raw.length > 100_000)
+      throw new HTTPException(413, { message: "Payload too large" });
+    const { values } = v.parse(
+      v.object({
+        values: v.record(v.pipe(v.string(), v.maxLength(128)), v.unknown()),
+      }),
+      JSON.parse(raw),
+    );
+    return c.json(await submitPublicForm(slug, values));
+  });
 
   // Teams link unfurling: Bot Framework calls this server-to-server (signed
   // JWT, no cookies), so it sits with the other pre-auth webhooks.

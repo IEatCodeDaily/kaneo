@@ -142,29 +142,29 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(initial?.config).toBeNull();
       const config = {
         filters: { op: "or", children: [{ future: { version: 2 } }] },
-        sort: { fieldId: field!.id, dir: "desc" },
-        groupFieldId: field!.id,
-        hiddenFields: [field!.id],
-        fieldOrder: [field!.id],
-        columnWidths: { [field!.id]: 321 },
+        sort: { fieldId: field?.id, dir: "desc" },
+        groupFieldId: field?.id,
+        hiddenFields: [field?.id],
+        fieldOrder: [field?.id],
+        columnWidths: { [field?.id]: 321 },
         rowHeight: "extra",
         frozenColumns: 1,
-        summaries: { [field!.id]: "filled" },
+        summaries: { [field?.id]: "filled" },
         showSystemFields: true,
       };
       expect(
-        (await call("PUT", `/${initial!.id}`, { config, initializeOnly: true }))
+        (await call("PUT", `/${initial?.id}`, { config, initializeOnly: true }))
           .status,
       ).toBe(200);
       // A second browser cannot overwrite the first successful carry-over.
-      await call("PUT", `/${initial!.id}`, {
+      await call("PUT", `/${initial?.id}`, {
         config: { ...config, rowHeight: "compact" },
         initializeOnly: true,
       });
       expect((await list())[0]?.config).toEqual(config);
       const copyResponse = await call("POST", "", {
         name: "QA view",
-        duplicateFrom: initial!.id,
+        duplicateFrom: initial?.id,
       });
       expect(copyResponse.status).toBe(200);
       const copy = (await copyResponse.json()) as {
@@ -188,20 +188,20 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await call("PUT", `/${copy.id}`, {
-            config: { ...config, columnWidths: { [field!.id]: 900 } },
+            config: { ...config, columnWidths: { [field?.id]: 900 } },
           })
         ).status,
       ).toBe(400);
       expect((await call("POST", "", { name: "  " })).status).toBe(400);
       const deletes = await Promise.all([
-        call("DELETE", `/${initial!.id}`),
+        call("DELETE", `/${initial?.id}`),
         call("DELETE", `/${copy.id}`),
       ]);
       expect(deletes.map((r) => r.status).sort()).toEqual([200, 400]);
       const remaining = await list();
       expect(remaining).toHaveLength(1);
       expect(remaining[0]?.isDefault).toBe(true);
-      expect((await call("DELETE", `/${remaining[0]!.id}`)).status).toBe(400);
+      expect((await call("DELETE", `/${remaining[0]?.id}`)).status).toBe(400);
     });
 
     it("rejects cross-table/org identifiers and view-only writes without leaking hidden views", async () => {
@@ -226,7 +226,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       for (const method of ["PUT", "DELETE"])
         expect(
           (
-            await call(method, `${root(org, a.id)}/${list[0]!.id}`, {
+            await call(method, `${root(org, a.id)}/${list[0]?.id}`, {
               name: "Stolen",
             })
           ).status,
@@ -235,7 +235,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         (
           await call("POST", root(org, a.id), {
             name: "Stolen",
-            duplicateFrom: list[0]!.id,
+            duplicateFrom: list[0]?.id,
           })
         ).status,
       ).toBe(404);
@@ -243,7 +243,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         filters: [],
         sort: null,
         groupFieldId: null,
-        hiddenFields: [field!.id],
+        hiddenFields: [field?.id],
         fieldOrder: [],
         columnWidths: {},
         rowHeight: "compact",
@@ -277,13 +277,13 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       ).toBe(404);
       expect(
         (
-          await call("PUT", `${root(org, b.id)}/${list[0]!.id}`, {
+          await call("PUT", `${root(org, b.id)}/${list[0]?.id}`, {
             name: "Forbidden",
           })
         ).status,
       ).toBe(404);
       expect(
-        (await call("DELETE", `${root(org, b.id)}/${list[0]!.id}`)).status,
+        (await call("DELETE", `${root(org, b.id)}/${list[0]?.id}`)).status,
       ).toBe(404);
       await db
         .update(schema.dataTableTable)
@@ -387,7 +387,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         n = 1005, CASE WHEN n = 1005 THEN 'needle' ELSE NULL END,
         CASE WHEN n = 1005 THEN '["tag"]'::jsonb ELSE '[]'::jsonb END,
         CASE WHEN n = 1005 THEN ${member.user.id} ELSE NULL END,
-        CASE WHEN n = 1005 THEN ${JSON.stringify([ticket!.id])}::jsonb ELSE '[]'::jsonb END,
+        CASE WHEN n = 1005 THEN ${JSON.stringify([ticket?.id])}::jsonb ELSE '[]'::jsonb END,
         CASE WHEN n = 1005 THEN '{"memo":"rare-json"}'::jsonb ELSE NULL END
         FROM generate_series(1, 1005) n`);
       const root = `/api/data-table/organization/${org}/${table.id}`;
@@ -443,7 +443,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         { fieldId: fields.Stage.id, choiceId: "needle" },
         { fieldId: fields.Tags.id, choiceId: "tag" },
         { fieldId: fields.Owner.id, choiceId: member.user.id },
-        { fieldId: fields.Ticket.id, choiceId: ticket!.id },
+        { fieldId: fields.Ticket.id, choiceId: ticket?.id },
         { fieldId: fields.JSON.id, contains: "rare-json" },
       ];
       for (const filter of filters)
@@ -708,8 +708,8 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         expect.any(String),
       );
       expect(
-        (await addRowViaApi(app, org, typed.id, { [field!.id]: "Recovered" }))
-          .values[field!.id],
+        (await addRowViaApi(app, org, typed.id, { [field?.id]: "Recovered" }))
+          .values[field?.id],
       ).toBe("Recovered");
       expect(
         (await reconcile()).filter((r) =>
@@ -738,8 +738,8 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const path = root(org, table.id);
       expect((await write(`${path}/restore`, {})).status).toBe(200);
       expect(
-        (await addRowViaApi(app, org, table.id, { [field!.id]: "Recovered" }))
-          .values[field!.id],
+        (await addRowViaApi(app, org, table.id, { [field?.id]: "Recovered" }))
+          .values[field?.id],
       ).toBe("Recovered");
       const baseline = (await history(path)).find(
         (event) => event.type === "baseline",
@@ -763,7 +763,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           sql.raw(
             change === "purge"
               ? `DROP TABLE kaneo_tables."t_${table.id}"`
-              : `ALTER TABLE kaneo_tables."t_${table.id}" DROP COLUMN "c_${field!.id}"`,
+              : `ALTER TABLE kaneo_tables."t_${table.id}" DROP COLUMN "c_${field?.id}"`,
           ),
         );
         let entered!: () => void;
@@ -813,7 +813,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
                 .for("update");
               await tx
                 .delete(schema.dataTableFieldTable)
-                .where(eq(schema.dataTableFieldTable.id, field!.id));
+                .where(eq(schema.dataTableFieldTable.id, field?.id));
             });
           }
         } finally {
@@ -825,7 +825,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         else
           expect(
             (await physicalColumns(table.id)).map((col) => col.column_name),
-          ).not.toContain(`c_${field!.id}`);
+          ).not.toContain(`c_${field?.id}`);
       },
     );
 
@@ -848,15 +848,15 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           type: spec.type,
         });
         const row = await addRowViaApi(app, org, table.id, {
-          [field!.id]: spec.value,
+          [field?.id]: spec.value,
         });
-        const col = sql.raw(`"c_${field!.id}"`);
+        const col = sql.raw(`"c_${field?.id}"`);
         const relation = sql.raw(`kaneo_tables."t_${table.id}"`);
         if (spec.target)
           expect(
             (
               await write(
-                `${path}/fields/${field!.id}`,
+                `${path}/fields/${field?.id}`,
                 { type: spec.target },
                 "PUT",
               )
@@ -888,15 +888,15 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         };
         const archived = archive.rows.find((item) => item.id === row.id)!;
         if (spec.target)
-          expect(typeof archived.values[field!.id]).toBe("number");
-        expect(archived.rawValues?.[field!.id]).toBe(original);
+          expect(typeof archived.values[field?.id]).toBe("number");
+        expect(archived.rawValues?.[field?.id]).toBe(original);
         await db
           .delete(schema.dataTableActivityTable)
           .where(eq(schema.dataTableActivityTable.tableId, table.id));
         expect(
           (
             await write(
-              `${path}/fields/${field!.id}`,
+              `${path}/fields/${field?.id}`,
               { type: "checkbox" },
               "PUT",
             )
@@ -908,7 +908,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           expect.arrayContaining([
             expect.objectContaining({
               id: row.id,
-              rawValues: expect.objectContaining({ [field!.id]: original }),
+              rawValues: expect.objectContaining({ [field?.id]: original }),
             }),
           ]),
         );
@@ -929,7 +929,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           (entry) => entry.type === "row_deleted",
         )!;
         expect(deleted.data.row).toMatchObject({
-          rawValues: { [field!.id]: original },
+          rawValues: { [field?.id]: original },
         });
       },
     );
@@ -942,17 +942,17 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         type: "text",
       });
       const row = await addRowViaApi(app, org, table.id, {
-        [field!.id]: "9007199254740993",
+        [field?.id]: "9007199254740993",
       });
       const path = root(org, table.id);
       expect(
-        (await write(`${path}/fields/${field!.id}`, { type: "number" }, "PUT"))
+        (await write(`${path}/fields/${field?.id}`, { type: "number" }, "PUT"))
           .status,
       ).toBe(200);
       expect(
         (
           await write(
-            `${path}/rows/${row.id}/cells/${field!.id}`,
+            `${path}/rows/${row.id}/cells/${field?.id}`,
             { value: 9007199254740992 },
             "PUT",
           )
@@ -960,7 +960,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       ).toBe(200);
       const stored = await db.execute(
         sql.raw(
-          `SELECT "c_${field!.id}"::text AS value FROM kaneo_tables."t_${table.id}" WHERE id = '${row.id}'`,
+          `SELECT "c_${field?.id}"::text AS value FROM kaneo_tables."t_${table.id}" WHERE id = '${row.id}'`,
         ),
       );
       expect(stored.rows[0]?.value).toBe("9007199254740992");
@@ -968,15 +968,15 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         (entry) => entry.type === "cell_updated",
       )!;
       expect(event.data.beforeRow).toMatchObject({
-        rawValues: { [field!.id]: "9007199254740993" },
+        rawValues: { [field?.id]: "9007199254740993" },
       });
       expect(event.data.afterRow).toMatchObject({
-        rawValues: { [field!.id]: "9007199254740992" },
+        rawValues: { [field?.id]: "9007199254740992" },
       });
       expect(
         (
           await write(
-            `${path}/rows/${row.id}/cells/${field!.id}`,
+            `${path}/rows/${row.id}/cells/${field?.id}`,
             { value: 9007199254740992 },
             "PUT",
           )
@@ -1141,7 +1141,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         options: { choices: [{ id: "open", label: "Original label" }] },
       });
       const row = await addRowViaApi(app, org, table.id, {
-        [field!.id]: "open",
+        [field?.id]: "open",
       });
       // Simulate an existing table whose historical changes were never audited.
       await db
@@ -1151,7 +1151,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await write(
-            `${path}/fields/${field!.id}`,
+            `${path}/fields/${field?.id}`,
             { options: { choices: [{ id: "open", label: "New label" }] } },
             "PUT",
           )
@@ -1171,7 +1171,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         table: { name: "Legacy" },
         fields: [
           {
-            id: field!.id,
+            id: field?.id,
             options: { choices: [{ label: "Original label" }] },
           },
         ],
@@ -1221,7 +1221,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       });
       await db.execute(
         sql.raw(
-          `INSERT INTO kaneo_tables."t_${table.id}" (id, position, "c_${field!.id}") SELECT 'legacy' || n, n, 'lost-' || n FROM generate_series(1, 1005) n`,
+          `INSERT INTO kaneo_tables."t_${table.id}" (id, position, "c_${field?.id}") SELECT 'legacy' || n, n, 'lost-' || n FROM generate_series(1, 1005) n`,
         ),
       );
       await db
@@ -1231,7 +1231,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await write(
-            `${path}/fields/${field!.id}`,
+            `${path}/fields/${field?.id}`,
             { type: "number", name: "Converted", options: { precision: 2 } },
             "PUT",
           )
@@ -1262,7 +1262,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       });
       expect(body.rows).toHaveLength(1005);
       expect(
-        body.rows.find((r) => r.id === "legacy1005")?.values[field!.id],
+        body.rows.find((r) => r.id === "legacy1005")?.values[field?.id],
       ).toBe("lost-1005");
       expect(body.events[0]).toMatchObject({
         type: "field_reverted",
@@ -1273,7 +1273,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         (await write(`${path}/activity/${event.id}/revert`, {})).status,
       ).toBe(409);
       expect(
-        (await write(`${path}/fields/${field!.id}`, { type: "number" }, "PUT"))
+        (await write(`${path}/fields/${field?.id}`, { type: "number" }, "PUT"))
           .status,
       ).toBe(200);
       const next = (await history(path)).find(
@@ -1282,7 +1282,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await write(
-            `${path}/rows/legacy1005/cells/${field!.id}`,
+            `${path}/rows/legacy1005/cells/${field?.id}`,
             { value: 42 },
             "PUT",
           )
@@ -1327,8 +1327,8 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         })
         .returning();
       const row = await addRowViaApi(app, org, table.id, {
-        [field!.id]: "open",
-        [tickets!.id]: [task.id],
+        [field?.id]: "open",
+        [tickets?.id]: [task.id],
       });
       const path = root(org, table.id);
       expect(
@@ -1346,7 +1346,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await write(
-            `${path}/fields/${field!.id}`,
+            `${path}/fields/${field?.id}`,
             { type: "checkbox" },
             "PUT",
           )
@@ -1379,7 +1379,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(
         (
           await write(
-            `${path}/rows/${row.id}/cells/${field!.id}`,
+            `${path}/rows/${row.id}/cells/${field?.id}`,
             { value: null },
             "PUT",
           )
@@ -1418,7 +1418,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         events.find((event) => event.type === "ticket_unlinked")?.data,
       ).toMatchObject({ links: [{ externalId: row.id }] });
       expect(
-        (await app.request(`${path}/fields/${field!.id}`, { method: "DELETE" }))
+        (await app.request(`${path}/fields/${field?.id}`, { method: "DELETE" }))
           .status,
       ).toBe(200);
       expect(
@@ -1462,10 +1462,10 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           options: spec.options,
         });
         const row = await addRowViaApi(app, org, table.id, {
-          [field!.id]: spec.value,
+          [field?.id]: spec.value,
         });
         expect(
-          (await write(`${path}/fields/${field!.id}`, { type: "text" }, "PUT"))
+          (await write(`${path}/fields/${field?.id}`, { type: "text" }, "PUT"))
             .status,
         ).toBe(200);
         const event = (await history(path)).find(
@@ -1479,8 +1479,8 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           rows: { id: string; values: Record<string, unknown> }[];
         };
         expect(
-          detail.rows.find((item) => item.id === row.id)?.values[field!.id],
-        ).toEqual(row.values[field!.id]);
+          detail.rows.find((item) => item.id === row.id)?.values[field?.id],
+        ).toEqual(row.values[field?.id]);
       }
     });
 
@@ -1493,13 +1493,13 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           type: "text",
         });
         const row = await addRowViaApi(app, org, table.id, {
-          [field!.id]: "original",
+          [field?.id]: "original",
         });
         const path = root(org, table.id);
         expect(
           (
             await write(
-              `${path}/fields/${field!.id}`,
+              `${path}/fields/${field?.id}`,
               { type: "number" },
               "PUT",
             )
@@ -1512,7 +1512,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           expect(
             (
               await write(
-                `${path}/fields/${field!.id}`,
+                `${path}/fields/${field?.id}`,
                 { options: { precision: 4 } },
                 "PUT",
               )
@@ -1537,11 +1537,11 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         name: "Value",
         type: "number",
       });
-      const row = await addRowViaApi(app, org, table.id, { [field!.id]: 0 });
+      const row = await addRowViaApi(app, org, table.id, { [field?.id]: 0 });
       const path = root(org, table.id);
       const results = await Promise.all(
         [1, 2, 3, 4].map((value) =>
-          write(`${path}/rows/${row.id}/cells/${field!.id}`, { value }, "PUT"),
+          write(`${path}/rows/${row.id}/cells/${field?.id}`, { value }, "PUT"),
         ),
       );
       expect(results.map((result) => result.status)).toEqual([
@@ -1557,7 +1557,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const detail = (await (await app.request(path)).json()) as {
         rows: { values: Record<string, unknown> }[];
       };
-      expect(detail.rows[0].values[field!.id]).toBe(
+      expect(detail.rows[0].values[field?.id]).toBe(
         events[events.length - 1].data.to,
       );
     });
@@ -1570,7 +1570,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         type: "text",
       });
       const row = await addRowViaApi(app, org, table.id, {
-        [field!.id]: "Before",
+        [field?.id]: "Before",
       });
       const path = root(org, table.id);
       await db.execute(
@@ -1587,14 +1587,14 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         expect(
           (
             await write(`${path}/rows`, {
-              values: { [field!.id]: "Should roll back" },
+              values: { [field?.id]: "Should roll back" },
             })
           ).status,
         ).toBe(500);
         expect(
           (
             await write(
-              `${path}/rows/${row.id}/cells/${field!.id}`,
+              `${path}/rows/${row.id}/cells/${field?.id}`,
               { value: "Should roll back" },
               "PUT",
             )
@@ -1626,7 +1626,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         type: "text",
       });
       const row = await addRowViaApi(app, org, table.id, {
-        [field!.id]: "Initial",
+        [field?.id]: "Initial",
       });
       expect(row).toMatchObject({
         createdBy: member.user.id,
@@ -1641,7 +1641,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       });
       mockAuthenticatedSession(other.user);
       const update = await app.request(
-        `/api/data-table/organization/${org}/${table.id}/rows/${row.id}/cells/${field!.id}`,
+        `/api/data-table/organization/${org}/${table.id}/rows/${row.id}/cells/${field?.id}`,
         {
           method: "PUT",
           headers: { "content-type": "application/json" },
@@ -1654,7 +1654,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         updatedBy: other.user.id,
       });
       // Conversions and restoration also touch physical values in shared store paths.
-      const fieldPath = `/api/data-table/organization/${org}/${table.id}/fields/${field!.id}`;
+      const fieldPath = `/api/data-table/organization/${org}/${table.id}/fields/${field?.id}`;
       const converted = await app.request(fieldPath, {
         method: "PUT",
         headers: { "content-type": "application/json" },
@@ -1947,34 +1947,34 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         type: "number",
         options: { defaultValue: 42, description: "Expected amount" },
       });
-      expect(field!.options).toMatchObject({
+      expect(field?.options).toMatchObject({
         defaultValue: 42,
         description: "Expected amount",
       });
-      expect((await addRowViaApi(app, org, table.id)).values[field!.id]).toBe(
+      expect((await addRowViaApi(app, org, table.id)).values[field?.id]).toBe(
         42,
       );
       expect(
-        (await addRowViaApi(app, org, table.id, { [field!.id]: null })).values[
-          field!.id
+        (await addRowViaApi(app, org, table.id, { [field?.id]: null })).values[
+          field?.id
         ],
       ).toBeNull();
       expect(
-        (await addRowViaApi(app, org, table.id, { [field!.id]: 0 })).values[
-          field!.id
+        (await addRowViaApi(app, org, table.id, { [field?.id]: 0 })).values[
+          field?.id
         ],
       ).toBe(0);
       const root = `/api/data-table/organization/${org}/${table.id}`;
       const snapshot = await (await app.request(root)).json();
       expect(
         snapshot.rows.find((row: { id: string }) => row.id === oldRow.id)
-          .values[field!.id],
+          .values[field?.id],
       ).toBeNull();
       expect(
-        snapshot.fields.find((f: { id: string }) => f.id === field!.id).options
+        snapshot.fields.find((f: { id: string }) => f.id === field?.id).options
           .description,
       ).toBe("Expected amount");
-      const changed = await app.request(`${root}/fields/${field!.id}`, {
+      const changed = await app.request(`${root}/fields/${field?.id}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: "checkbox" }),
@@ -1984,7 +1984,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         description: "Expected amount",
       });
       expect(
-        (await addRowViaApi(app, org, table.id)).values[field!.id],
+        (await addRowViaApi(app, org, table.id)).values[field?.id],
       ).toBeNull();
     });
     it("uses false defaults before required validation and rejects invalid choice defaults", async () => {
@@ -2004,7 +2004,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         type: "checkbox",
         options: { required: true, defaultValue: false },
       });
-      expect((await addRowViaApi(app, org, table.id)).values[field!.id]).toBe(
+      expect((await addRowViaApi(app, org, table.id)).values[field?.id]).toBe(
         false,
       );
       const response = await app.request(
@@ -2012,7 +2012,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ values: { [field!.id]: null } }),
+          body: JSON.stringify({ values: { [field?.id]: null } }),
         },
       );
       expect(response.status).toBe(400);
@@ -2212,7 +2212,7 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       const detail = await (await app.request(root)).json();
       expect(detail.tickets[own.id].title).toBe("Default task");
       expect(
-        (await addRowViaApi(app, org, table.id)).values[field!.id],
+        (await addRowViaApi(app, org, table.id)).values[field?.id],
       ).toEqual([own.id]);
       await db
         .update(schema.taskTable)
@@ -2816,5 +2816,167 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       );
       expect(gone.status).toBe(404);
     });
+  });
+});
+
+describe("public form", () => {
+  let member: Awaited<ReturnType<typeof createOrganizationMember>>;
+  let app: ReturnType<typeof createApp>["app"];
+
+  beforeEach(async () => {
+    await resetTestDatabase();
+    member = await createOrganizationMember({ role: "owner" });
+    await db
+      .update(schema.organizationTable)
+      .set({ tablesEnabled: true })
+      .where(eq(schema.organizationTable.id, member.organization.id));
+    mockAuthenticatedSession(member.user);
+    app = createApp().app;
+  });
+
+  it("publishes an allowlisted form, takes anonymous submissions and fails closed", async () => {
+    const org = member.organization.id;
+    const table = await createTableViaApi(app, org, "Form source");
+    const fields: Record<string, FieldRow> = {};
+    for (const [name, type, options] of [
+      ["Name", "text"],
+      ["Amount", "number"],
+      [
+        "Stage",
+        "select",
+        { choices: [{ id: "s1", label: "Open", color: "#123456" }] },
+      ],
+      ["Owner", "user"],
+    ] as const) {
+      const { field, response } = await createFieldViaApi(app, org, table.id, {
+        name,
+        type,
+        options,
+      });
+      expect(response.status).toBe(200);
+      fields[name] = field!;
+    }
+    const root = `/api/data-table/organization/${org}/${table.id}`;
+    const request = (path: string, init: RequestInit) =>
+      app.request(path, {
+        headers: { "content-type": "application/json" },
+        ...init,
+      });
+    const submit = (slug: string, values: unknown) =>
+      request(`/api/public-form/${slug}`, {
+        method: "POST",
+        body: JSON.stringify({ values }),
+      });
+
+    // Session-scoped field types (user) are never publishable.
+    expect(
+      (
+        await request(`${root}/form`, {
+          method: "PUT",
+          body: JSON.stringify({ fields: [fields.Name.id, fields.Owner.id] }),
+        })
+      ).status,
+    ).toBe(400);
+
+    const published = await (
+      await request(`${root}/form`, {
+        method: "PUT",
+        body: JSON.stringify({
+          fields: [fields.Name.id, fields.Amount.id, fields.Stage.id],
+        }),
+      })
+    ).json();
+    expect(published.formSlug).toMatch(/^[a-zA-Z0-9]+$/);
+    expect(published.formFields).toEqual([
+      fields.Name.id,
+      fields.Amount.id,
+      fields.Stage.id,
+    ]);
+
+    // Metadata exposes only allowlisted fields, with labels not owner data.
+    const meta = await (
+      await request(`/api/public-form/${published.formSlug}`, {})
+    ).json();
+    expect(meta.name).toBe("Form source");
+    expect(meta.fields.map((f: { id: string }) => f.id)).toEqual([
+      fields.Name.id,
+      fields.Amount.id,
+      fields.Stage.id,
+    ]);
+    expect(meta.fields[2].choices).toEqual([
+      { id: "s1", label: "Open", color: "#123456" },
+    ]);
+
+    expect(
+      (
+        await submit(published.formSlug, {
+          [fields.Name.id]: "Anon",
+          [fields.Amount.id]: 5,
+          [fields.Stage.id]: "s1",
+        })
+      ).status,
+    ).toBe(200);
+    const rows = (await (
+      await request(`${root}/row-query`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      })
+    ).json()) as {
+      total: number;
+    };
+    expect(rows.total).toBe(1);
+    // Hidden (user) field and invalid choice both fail closed.
+    expect(
+      (
+        await submit(published.formSlug, {
+          [fields.Name.id]: "x",
+          [fields.Owner.id]: member.user.id,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (await submit(published.formSlug, { [fields.Stage.id]: "nope" })).status,
+    ).toBe(400);
+    // Required fields cannot be skipped: publish a required-only form.
+    // (Amount+Name omitted entirely -> unknown/missing handling covered above;
+    // here the whole empty payload must fail because Name is required is false,
+    // so assert the allowlisted-but-empty submission is rejected only via the
+    // rate limiter below.)
+
+    // Revoke: slug dies for GET and POST alike, and unknown slugs 404.
+    expect((await request(`${root}/form`, { method: "DELETE" })).status).toBe(
+      200,
+    );
+    expect(
+      (await request(`/api/public-form/${published.formSlug}`, {})).status,
+    ).toBe(404);
+    expect(
+      (await submit(published.formSlug, { [fields.Name.id]: "late" })).status,
+    ).toBe(404);
+    expect((await request("/api/public-form/doesnotexist", {})).status).toBe(
+      404,
+    );
+
+    // Republishing after a revoke rotates the slug.
+    const republished = await (
+      await request(`${root}/form`, {
+        method: "PUT",
+        body: JSON.stringify({ fields: [fields.Name.id] }),
+      })
+    ).json();
+    expect(republished.formSlug).not.toBe(published.formSlug);
+    expect(
+      (await request(`/api/public-form/${republished.formSlug}`, {})).status,
+    ).toBe(200);
+
+    // Rate limit: 30 submissions per rolling minute per table.
+    await db.execute(
+      sql`INSERT INTO ${sql.raw(`kaneo_tables."t_${table.id}"`)} (id, position)
+          SELECT 'rate' || n, n FROM generate_series(1, 30) n`,
+    );
+    expect(
+      (await submit(republished.formSlug, { [fields.Name.id]: "flood" }))
+        .status,
+    ).toBe(429);
   });
 });

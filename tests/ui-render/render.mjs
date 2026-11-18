@@ -1305,6 +1305,47 @@ const TABLE_STATES = [
     },
   ],
   [
+    // Public form builder (nocodb-parity #10): manage-only dialog from the
+    // table options menu.
+    "table-public-form",
+    async (p) => {
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Public form" }).click();
+      await p.getByText("Collect these fields").waitFor();
+    },
+  ],
+  [
+    // Anonymous public form page: published via the API, then visited with
+    // the same context (the page itself needs no session).
+    "public-form-page",
+    async (p) => {
+      // Publish through the real dialog UI: the endpoint contract is covered
+      // by the API integration suite; here we exercise the user workflow.
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Public form" }).click();
+      await p.getByText("Collect these fields").waitFor();
+      await p.getByRole("checkbox", { name: "Batch" }).check();
+      const published = p.waitForResponse(
+        (r) => r.url().includes("/form") && r.request().method() === "PUT",
+      );
+      await p.getByRole("button", { name: /^Publish/ }).click();
+      const response = await published;
+      if (!response.ok())
+        throw new Error(
+          `publish ${response.status()}: ${await response.text()}`,
+        );
+      const link = await p
+        .getByRole("textbox", { name: "Share link" })
+        .inputValue();
+      const slug = link.split("/public-form/")[1];
+      if (!slug) throw new Error("no share link after publish");
+      await p.goto(`${BASE}/public-form/${slug}`, {
+        waitUntil: "networkidle",
+      });
+      await p.getByRole("button", { name: "Submit" }).waitFor();
+    },
+  ],
+  [
     // History is a view tab beside Grid, like the board's List/Board tabs.
     "table-history",
     async (p) => {
@@ -1866,9 +1907,11 @@ if (pages.table) {
         ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
-    if (m.header_h !== 44) fails.push(`header ${m.header_h}px, want 44`);
+    // The anonymous public form page has no app scaffold at all.
+    if (name !== "public-form-page" && m.header_h !== 44)
+      fails.push(`header ${m.header_h}px, want 44`);
     // History replaces the grid, so the grid geometry does not apply to it.
-    if (name !== "table-history") {
+    if (name !== "table-history" && name !== "public-form-page") {
       if (!m.heads.some((x) => x.startsWith("Batch")))
         fails.push("field names missing from header");
       // Board toolbar buttons are 12px; the table matches them.
@@ -1948,7 +1991,7 @@ if (pages.table) {
           .querySelector('[aria-label="Cost, row 1"]')
           ?.textContent?.trim(),
       }));
-      if (!end.active || !end.active.startsWith("Tickets, row"))
+      if (!end.active?.startsWith("Tickets, row"))
         fails.push(`keyboard end active ${JSON.stringify(end)}`);
       if (end.sheet || end.editor)
         fails.push(`keyboard end left UI open ${JSON.stringify(end)}`);
