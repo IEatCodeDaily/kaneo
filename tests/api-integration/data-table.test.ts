@@ -192,6 +192,27 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           })
         ).status,
       ).toBe(400);
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: { ...config, fieldOrder: [field?.id, field?.id] },
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: { ...config, fieldOrder: ["not-a-field"] },
+          })
+        ).status,
+      ).toBe(400);
+      const ordered = await call("PUT", `/${copy.id}`, {
+        config: { ...config, fieldOrder: [field?.id, "__created_at"] },
+      });
+      expect(ordered.status).toBe(200);
+      expect(
+        (await list()).find((v) => v.id === copy.id)?.config.fieldOrder,
+      ).toEqual([field?.id, "__created_at"]);
       expect((await call("POST", "", { name: "  " })).status).toBe(400);
       const deletes = await Promise.all([
         call("DELETE", `/${initial?.id}`),

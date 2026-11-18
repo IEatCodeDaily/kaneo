@@ -874,7 +874,9 @@ for (const [shot, prefs, act] of [
   try {
     await act(page);
   } catch (e) {
-    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    fails.push(
+      `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+    );
   }
   const m = await page.evaluate(() => {
     const b = document.querySelector('[aria-label="Open profile menu"]');
@@ -1866,7 +1868,13 @@ if (pages.table) {
       await act(page);
       await page.waitForTimeout(500);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
+      await page.screenshot({
+        path: join(OUT, `${name}--failure.png`),
+        fullPage: false,
+      });
     }
     // scaffold geometry: 44px header, 40px toolbar, 32px rows (DS §1.4)
     const m = await page.evaluate(() => {
@@ -2104,7 +2112,9 @@ if (pages.table) {
       await act(page);
       await page.waitForTimeout(500);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
     }
     const m = await page.evaluate(() => {
       const row = document.querySelector(
@@ -2225,7 +2235,9 @@ if (pages.table) {
     await page.getByRole("button", { name: "Add filter" }).click();
     await page.waitForTimeout(500);
   } catch (e) {
-    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    fails.push(
+      `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+    );
   }
   const m = await page.evaluate(() => {
     const popup = document.querySelector('[data-slot="popover-popup"]');
@@ -2935,7 +2947,9 @@ if (pages.table) {
       await page.waitForTimeout(700);
       await page.mouse.move(2, 2);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
     }
     if (name.startsWith("dialog-field-options")) {
       const search = page.getByRole("textbox", { name: "Search field types" });
