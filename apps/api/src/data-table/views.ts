@@ -170,6 +170,11 @@ async function validateFields(
     throw new HTTPException(400, {
       message: "View fields must belong to this table",
     });
+  const duplicated = (list: string[]) => new Set(list).size !== list.length;
+  if (duplicated(config.fieldOrder) || duplicated(config.hiddenFields))
+    throw new HTTPException(400, {
+      message: "View field references must be unique",
+    });
   if (Buffer.byteLength(JSON.stringify(config), "utf8") > 131072)
     throw new HTTPException(400, {
       message: "View configuration exceeds 128 KiB",
