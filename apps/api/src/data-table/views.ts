@@ -171,7 +171,16 @@ async function validateFields(
       message: "View fields must belong to this table",
     });
   const duplicated = (list: string[]) => new Set(list).size !== list.length;
-  if (duplicated(config.fieldOrder) || duplicated(config.hiddenFields))
+  const sortIds = Array.isArray(config.sort)
+    ? config.sort.map((rule) => rule.fieldId)
+    : config.sort
+      ? [config.sort.fieldId]
+      : [];
+  if (
+    duplicated(config.fieldOrder) ||
+    duplicated(config.hiddenFields) ||
+    duplicated(sortIds)
+  )
     throw new HTTPException(400, {
       message: "View field references must be unique",
     });
