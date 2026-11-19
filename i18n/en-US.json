@@ -43,6 +43,7 @@
 		"flaggedCount": "{{count}} flagged ticket",
 		"flaggedCount_other": "{{count}} flagged tickets",
 		"flagged": "Flagged",
+		"important": "Important",
 		"count_one": "{{count}} ticket",
 		"loadedCount_one": "{{loaded}} loaded ticket",
 		"loadedCount_other": "{{loaded}} loaded tickets",
