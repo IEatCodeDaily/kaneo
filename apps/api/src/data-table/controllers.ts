@@ -1485,10 +1485,8 @@ export async function deleteTableField(
       for (const [id, endpointTable] of [
         [relation.sourceFieldId, relation.sourceTableId],
         [relation.targetFieldId, relation.targetTableId],
-      ])
-      {
-        if (endpointTable)
-        {
+      ]) {
+        if (endpointTable) {
           await pruneViewsForDeletedFields(tx, endpointTable, [id]);
           await logActivity(tx, {
             tableId: endpointTable,
