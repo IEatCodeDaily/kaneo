@@ -36,4 +36,46 @@ describe("Appearance settings", () => {
     fireEvent.click(screen.getByTestId("preset-mono"));
     expect(useUserPreferencesStore.getState().accentColor).toBeNull();
   });
+
+  it("edits tokens per mode and clears them on preset change", () => {
+    useUserPreferencesStore.setState({
+      theme: "dark",
+      themePreset: "mono",
+      accentColor: null,
+      themeOverrides: {},
+    });
+    render(<AppearanceSettings />);
+    fireEvent.change(
+      screen.getByLabelText("settings:appearance.tokenBackground"),
+      { target: { value: "#123456" } },
+    );
+    expect(
+      useUserPreferencesStore.getState().themeOverrides.background,
+    ).toEqual({ dark: "#123456" });
+    fireEvent.click(screen.getByTestId("customize-tab-light"));
+    fireEvent.change(
+      screen.getByLabelText("settings:appearance.tokenBackground"),
+      { target: { value: "#ABCDEF" } },
+    );
+    expect(
+      useUserPreferencesStore.getState().themeOverrides.background,
+    ).toEqual({ dark: "#123456", light: "#abcdef" });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "settings:appearance.resetToken settings:appearance.tokenBackground",
+      }),
+    );
+    expect(
+      useUserPreferencesStore.getState().themeOverrides.background,
+    ).toBeUndefined();
+    fireEvent.change(
+      screen.getByLabelText("settings:appearance.tokenBackground"),
+      { target: { value: "#123456" } },
+    );
+    expect(
+      useUserPreferencesStore.getState().themeOverrides.background,
+    ).toBeDefined();
+    fireEvent.click(screen.getByTestId("preset-teal"));
+    expect(useUserPreferencesStore.getState().themeOverrides).toEqual({});
+  });
 });

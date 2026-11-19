@@ -3,7 +3,11 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import {
   type Appearance,
   DEFAULT_APPEARANCE,
+  mergeThemeOverrides,
   normalizeAppearance,
+  normalizeThemeOverrides,
+  type ThemeOverrideMode,
+  type ThemeOverrides,
 } from "@/lib/appearance";
 import type { BoardView, RepoView } from "@/lib/board-view";
 import type { MyTasksGroup, MyTasksSort } from "@/lib/my-tasks-view";
@@ -47,6 +51,15 @@ type UserPreferencesStore = {
     theme: "light" | "dark" | "system",
     coordinates?: { x: number; y: number },
   ) => void;
+
+  /** Granular theme-editor overrides, keyed by CSS token then mode. */
+  themeOverrides: ThemeOverrides;
+  setThemeOverride: (
+    token: string,
+    mode: ThemeOverrideMode,
+    value: string | null,
+  ) => void;
+  resetThemeOverrides: () => void;
 
   viewMode: "board" | "list";
   setViewMode: (mode: "board" | "list") => void;
@@ -160,6 +173,12 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
           const appearance = normalizeAppearance({ ...state, ...value });
           return {
             ...appearance,
+            // Picking a preset discards granular overrides: they are tuned
+            // against the preset they were chosen with.
+            themeOverrides:
+              value.themePreset && value.themePreset !== state.themePreset
+                ? {}
+                : state.themeOverrides,
             userAppearance: state.appearanceUserId
               ? {
                   ...state.userAppearance,
@@ -168,6 +187,17 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
               : state.userAppearance,
           };
         }),
+      themeOverrides: {},
+      setThemeOverride: (token, mode, value) =>
+        set((state) => ({
+          themeOverrides: mergeThemeOverrides(
+            state.themeOverrides,
+            token,
+            mode,
+            value,
+          ),
+        })),
+      resetThemeOverrides: () => set({ themeOverrides: {} }),
       setTheme: (
         theme: "light" | "dark" | "system",
         coordinates?: { x: number; y: number },
@@ -324,6 +354,7 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
           ...currentState,
           ...persisted,
           ...normalizeAppearance(persisted),
+          themeOverrides: normalizeThemeOverrides(persisted?.themeOverrides),
           userAppearance: Object.fromEntries(
             Object.entries(persisted?.userAppearance ?? {}).map(
               ([id, appearance]) => [id, normalizeAppearance(appearance)],

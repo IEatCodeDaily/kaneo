@@ -7,7 +7,9 @@ import {
   applyAppearance,
   contrastRatio,
   DEFAULT_APPEARANCE,
+  mergeThemeOverrides,
   normalizeAppearance,
+  normalizeThemeOverrides,
   THEME_PRESETS,
 } from "./appearance";
 
@@ -43,6 +45,94 @@ afterEach(() => {
   document.documentElement.removeAttribute("class");
   document.documentElement.removeAttribute("data-theme");
   localStorage.clear();
+});
+
+describe("theme overrides", () => {
+  it("normalizes persisted overrides, dropping unknown tokens and invalid hex", () => {
+    expect(normalizeThemeOverrides(null)).toEqual({});
+    expect(normalizeThemeOverrides("nope")).toEqual({});
+    expect(
+      normalizeThemeOverrides({
+        junkToken: { light: "#123456" },
+        background: { light: "#ABCDEF", dark: "not-hex", junk: true },
+        card: { light: "" },
+        primary: { dark: "#112233" },
+      }),
+    ).toEqual({
+      background: { light: "#abcdef" },
+      primary: { dark: "#112233" },
+    });
+  });
+
+  it("merges and clears per side, dropping tokens with no sides left", () => {
+    let overrides = mergeThemeOverrides({}, "background", "dark", "#123456");
+    expect(overrides).toEqual({ background: { dark: "#123456" } });
+    overrides = mergeThemeOverrides(
+      overrides,
+      "background",
+      "light",
+      "#ABCDEF",
+    );
+    expect(overrides.background).toEqual({
+      light: "#abcdef",
+      dark: "#123456",
+    });
+    overrides = mergeThemeOverrides(overrides, "background", "light", null);
+    expect(overrides.background).toEqual({ dark: "#123456" });
+    overrides = mergeThemeOverrides(overrides, "background", "dark", null);
+    expect(overrides).toEqual({});
+    expect(mergeThemeOverrides(overrides, "ring", "light", "bad")).toEqual({});
+    expect(
+      mergeThemeOverrides(
+        { ring: { light: "#010203" } },
+        "ring",
+        "light",
+        "bad",
+      ),
+    ).toEqual({ ring: { light: "#010203" } });
+  });
+
+  it("applies the active mode's override live and clears stale inline tokens", () => {
+    const overrides = {
+      background: { light: "#abcdef", dark: "#112233" },
+      primary: { dark: "#010203" },
+    };
+    applyAppearance(
+      { theme: "light", themePreset: "mono", accentColor: "#5e6ad2" },
+      false,
+      overrides,
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--background"),
+    ).toBe("#abcdef");
+    // The light side has no primary override: the accent stays inline.
+    expect(document.documentElement.style.getPropertyValue("--primary")).toBe(
+      "#5e6ad2",
+    );
+    applyAppearance(
+      { theme: "dark", themePreset: "mono", accentColor: "#5e6ad2" },
+      true,
+      overrides,
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--background"),
+    ).toBe("#112233");
+    // Overrides beat the derived accent inline value.
+    expect(document.documentElement.style.getPropertyValue("--primary")).toBe(
+      "#010203",
+    );
+    applyAppearance(
+      { theme: "dark", themePreset: "mono", accentColor: "#5e6ad2" },
+      true,
+      {},
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--background"),
+    ).toBe("");
+    expect(document.documentElement.style.getPropertyValue("--primary")).toBe(
+      "#5e6ad2",
+    );
+  });
 });
 
 describe("appearance palettes", () => {

@@ -3491,7 +3491,10 @@ for (const [preset, mode, tag, appearance] of [
           const right = el.getBoundingClientRect().right;
           return [...el.querySelectorAll("button,input,p,h1")]
             .filter((node) => node.getBoundingClientRect().right > right + 1)
-            .map((node) => node.textContent);
+            .map(
+              (node) =>
+                `${node.tagName.toLowerCase()}[class=${node.className}]`,
+            );
         });
       if (overflow.length)
         throw new Error(`appearance overflow: ${overflow.join(",")}`);
