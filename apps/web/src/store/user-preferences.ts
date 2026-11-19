@@ -16,7 +16,7 @@ export type RecentPage = {
   label: string;
   openedAt: number;
   /** What kind of resource the entry points at; tickets carry a key badge. */
-  kind?: "board" | "repo" | "project" | "ticket";
+  kind?: "board" | "repo" | "project" | "ticket" | "dashboard" | "table";
   /** Short secondary text, e.g. the ticket key "NEXUS-23". */
   detail?: string;
 };
