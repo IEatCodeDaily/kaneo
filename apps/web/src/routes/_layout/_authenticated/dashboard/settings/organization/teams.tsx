@@ -10,6 +10,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import BoardIconPicker from "@/components/common/board-icon-picker";
+import EntityIcon from "@/components/common/entity-icon";
 import PermissionDenied from "@/components/permission-denied";
 import {
   type PrincipalOption,
@@ -77,13 +79,15 @@ export function TeamsManagement({
   const queryClient = useQueryClient();
   const { organization, isAdmin } = useOrganizationPermission();
   const organizationId = organization?.id ?? "";
-  const [editor, setEditor] = useState<{ team?: Team; name: string } | null>(
-    null,
-  );
+  const [editor, setEditor] = useState<{
+    team?: Team;
+    name: string;
+    icon: string;
+  } | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   useEffect(() => {
-    if (createTeamSignal > 0) setEditor({ name: "" });
+    if (createTeamSignal > 0) setEditor({ name: "", icon: "" });
   }, [createTeamSignal]);
 
   const teamsQuery = useQuery({
@@ -131,13 +135,26 @@ export function TeamsManagement({
   });
 
   const saveTeam = useMutation({
-    mutationFn: async ({ team, name }: { team?: Team; name: string }) => {
+    mutationFn: async ({
+      team,
+      name,
+      icon,
+    }: {
+      team?: Team;
+      name: string;
+      icon: string;
+    }) => {
+      const iconValue = icon.trim();
       const result = team
         ? await authClient.organization.updateTeam({
             teamId: team.id,
-            data: { name },
+            data: { name, icon: iconValue },
           })
-        : await authClient.organization.createTeam({ name, organizationId });
+        : await authClient.organization.createTeam({
+            name,
+            organizationId,
+            icon: iconValue,
+          });
       if (result.error)
         throw new Error(result.error.message || "Failed to save team");
       return result.data;
@@ -219,7 +236,7 @@ export function TeamsManagement({
             {/* Direct CTA: the header's "+ New team" is far from this message. */}
             <Button
               className="gap-1"
-              onClick={() => setEditor({ name: "" })}
+              onClick={() => setEditor({ name: "", icon: "" })}
               size="sm"
               variant="outline"
             >
@@ -236,7 +253,9 @@ export function TeamsManagement({
                 parentByTeamId={parentByTeamId}
                 organizationId={organizationId}
                 organizationMembers={membersQuery.data ?? []}
-                onRename={() => setEditor({ team, name: team.name })}
+                onRename={() =>
+                  setEditor({ team, name: team.name, icon: team.icon ?? "" })
+                }
                 onDelete={() => setTeamToDelete(team)}
               />
             ))}
@@ -273,10 +292,38 @@ export function TeamsManagement({
                   saveTeam.mutate({
                     team: editor.team,
                     name: editor.name.trim(),
+                    icon: editor.icon,
                   });
                 }
               }}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="team-icon">Icon</Label>
+            <div className="flex items-center gap-2">
+              <BoardIconPicker
+                value={editor?.icon ?? ""}
+                onValueChange={(value) =>
+                  setEditor((value0) => value0 && { ...value0, icon: value })
+                }
+                searchPlaceholder="Search icons or type an emoji"
+                triggerLabel="Pick an icon"
+              />
+              {editor?.icon ? (
+                <Button
+                  onClick={() =>
+                    setEditor((value) => value && { ...value, icon: "" })
+                  }
+                  size="sm"
+                  variant="ghost"
+                >
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Shown next to the team name. Defaults to initials.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditor(null)}>
@@ -286,7 +333,11 @@ export function TeamsManagement({
               disabled={!editor?.name.trim() || saveTeam.isPending}
               onClick={() =>
                 editor &&
-                saveTeam.mutate({ team: editor.team, name: editor.name.trim() })
+                saveTeam.mutate({
+                  team: editor.team,
+                  name: editor.name.trim(),
+                  icon: editor.icon,
+                })
               }
             >
               {saveTeam.isPending ? "Saving…" : "Save"}
@@ -482,6 +533,9 @@ function TeamCard({
                 aria-hidden
                 className="size-3.5 shrink-0 text-muted-foreground"
               />
+            ) : null}
+            {team.icon ? (
+              <EntityIcon value={team.icon} className="size-4 shrink-0" />
             ) : null}
             <span className="truncate">{team.name}</span>
           </h2>
