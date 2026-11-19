@@ -758,7 +758,16 @@ export function DataTableGrid({
       columnWidths: widths,
       rowHeight: density,
       frozenColumns: frozenCount,
-      summaries: summaryFns,
+      summaries: Object.fromEntries(
+        Object.entries(summaryFns).filter(([id, fn]) => {
+          const field = table.fields.find((f) => f.id === id);
+          return (
+            fn !== "none" &&
+            field !== undefined &&
+            summaryOptions(field).includes(fn as SummaryFn)
+          );
+        }),
+      ),
       showSystemFields: showSystem,
     }),
     [
@@ -772,6 +781,7 @@ export function DataTableGrid({
       frozenCount,
       summaryFns,
       showSystem,
+      table.fields,
     ],
   );
   const lastConfig = useRef(JSON.stringify(config));
@@ -819,9 +829,26 @@ export function DataTableGrid({
       filters: activeFilters,
       sort: sort.length > 0 ? sort : null,
       groupFieldId,
-      summaries: summaryFns,
+      summaries: Object.fromEntries(
+        Object.entries(summaryFns).filter(([id, fn]) => {
+          const field = table.fields.find((f) => f.id === id);
+          return (
+            fn !== "none" &&
+            field !== undefined &&
+            summaryOptions(field).includes(fn as SummaryFn)
+          );
+        }),
+      ),
     }),
-    [search, showSystem, activeFilters, sort, groupFieldId, summaryFns],
+    [
+      search,
+      showSystem,
+      activeFilters,
+      sort,
+      groupFieldId,
+      summaryFns,
+      table.fields,
+    ],
   );
   const rowPages = useInfiniteQuery({
     queryKey: [

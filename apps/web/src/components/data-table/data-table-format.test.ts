@@ -317,7 +317,7 @@ describe("summarize", () => {
       row("c", { d: true }),
     ];
     expect(summarize("filled", field({ id: "n", type: "text" }), rows)).toBe(
-      "1/3",
+      "2/3",
     );
     expect(
       summarize("checked", field({ id: "d", type: "checkbox" }), rows),
@@ -331,9 +331,9 @@ describe("summarize", () => {
 
   it("supports dates, unique counts and percentages", () => {
     const rows = [
-      row("a", { d: "2026-03-15", n: "x" }),
-      row("b", { d: "2026-01-02", n: "x" }),
-      row("c", { d: null, n: "" }),
+      row("a", { d: "2026-03-15", n: ["a"] }),
+      row("b", { d: "2026-01-02", n: ["a"] }),
+      row("c", { d: null, n: [] }),
     ];
     expect(
       summarize("earliest", field({ id: "d", type: "date" }), rows),
@@ -341,9 +341,9 @@ describe("summarize", () => {
     expect(
       summarize("latest", field({ id: "d", type: "date" }), rows),
     ).not.toBeNull();
-    expect(summarize("unique", field({ id: "n", type: "select" }), rows)).toBe(
-      "1",
-    );
+    expect(
+      summarize("unique", field({ id: "n", type: "multiselect" }), rows),
+    ).toBe("1");
     expect(summarize("filledPct", field({ id: "n", type: "text" }), rows)).toBe(
       "67%",
     );

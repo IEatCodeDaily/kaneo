@@ -237,6 +237,16 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           }
         )?.fieldOrder,
       ).toEqual([field?.id, "__created_at"]);
+      const withSummary = await call("PUT", `/${copy.id}`, {
+        config: {
+          ...config,
+          summaries: { [field?.id]: "earliest" },
+        },
+      });
+      expect(withSummary.status, await withSummary.text()).toBe(200);
+      expect(
+        (await list()).find((v) => v.id === copy.id)?.config.summaries,
+      ).toEqual({ [field?.id]: "earliest" });
       expect((await call("POST", "", { name: "  " })).status).toBe(400);
       const deletes = await Promise.all([
         call("DELETE", `/${initial?.id}`),
@@ -512,6 +522,17 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect(r.groups).toMatchObject([
         { key: "needle", total: 1, [fields.Amount.id]: 9000 },
       ]);
+      // Whole table: earliest < latest proves min/max over many rows.
+      const allDates = await query({
+        summaries: { [fields.Date.id]: "earliest" },
+      });
+      const allDatesLatest = await query({
+        summaries: { [fields.Date.id]: "latest" },
+      });
+      const earliestAll = String(allDates.summaries[fields.Date.id]);
+      const latestAll = String(allDatesLatest.summaries[fields.Date.id]);
+      expect(earliestAll).toMatch(/^\d{4}-\d{2}-\d{2}/);
+      expect(earliestAll <= latestAll).toBe(true);
       // Date, unique and percentage summaries agree with the same predicate.
       const earliest = await query({
         search: "ferment",
@@ -540,6 +561,10 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
         summaries: { [fields.Amount.id]: "earliest" },
       });
       expect(wrongType.status, await wrongType.text()).toBe(400);
+      const uniqueCheckbox = await post("row-query", {
+        summaries: { [fields.Done.id]: "unique" },
+      });
+      expect(uniqueCheckbox.status, await uniqueCheckbox.text()).toBe(400);
       const exported = await post("row-export", { ...spec, offset: 999 });
       expect(exported.status).toBe(200);
       const csv = await exported.text();
