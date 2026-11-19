@@ -88,6 +88,27 @@ export function ticketDueState(
   return days < 0 ? "overdue" : days <= 7 ? "soon" : null;
 }
 
+/*
+  One aggregate "Important" signal for the My Tickets list: flagged, high
+  priority, or due within 7 days / overdue. Single source of truth so the
+  filter toggle and the row accent always agree.
+*/
+export function isImportantTask(
+  task: {
+    flagged?: boolean | null;
+    priority?: string | null;
+    dueDate?: string | null;
+    isFinal?: boolean | null;
+  },
+  now = new Date(),
+): boolean {
+  if (task.flagged) return true;
+  if (task.priority === "urgent" || task.priority === "high") return true;
+  return (
+    ticketDueState(task.dueDate ?? null, task.isFinal ?? false, now) !== null
+  );
+}
+
 export function groupMyTasks<T extends MyTaskViewItem>(
   tasks: T[],
   group: MyTasksGroup,

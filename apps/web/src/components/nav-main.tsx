@@ -82,7 +82,7 @@ export function NavMain() {
           {primary.map(({ label, icon: Icon, url, badge }) => (
             <SidebarMenuItem key={url}>
               <SidebarMenuButton
-                className="h-6 text-xs data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-sidebar-border"
+                className="h-6 text-xs data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground"
                 isActive={pathname === url}
                 onClick={() => navigate({ to: url })}
                 tooltip={label}

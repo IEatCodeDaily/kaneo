@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Flag,
+  Flame,
   Loader2,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
@@ -30,6 +31,7 @@ import {
 import { getColumnIcon } from "@/lib/column";
 import {
   groupMyTasks,
+  isImportantTask,
   localDateKey,
   type MyTasksGroup,
   type MyTasksSort,
@@ -81,6 +83,7 @@ export function MyTasksComponent() {
   const [relation, setRelation] = useState<MyTasksRelation>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(false);
+  const [importantOnly, setImportantOnly] = useState(false);
   const [search, setSearch] = useState("");
   const { user } = useAuth();
   const displayKey = `${user?.id ?? ""}:${organizationId}`;
@@ -163,6 +166,7 @@ export function MyTasksComponent() {
   const tasks = sortMyTasks(
     relationFiltered.filter(
       (task) =>
+        (!importantOnly || isImportantTask(task, new Date(day))) &&
         (!dueFilter ||
           ticketDueState(task.dueDate, task.isFinal ?? false, new Date(day)) ===
             dueFilter) &&
@@ -174,7 +178,11 @@ export function MyTasksComponent() {
   );
   const groupedTasks = groupMyTasks(tasks, group, new Date(day));
   const locallyFiltered =
-    hasActiveFilters || flaggedOnly || dueFilter !== null || search !== "";
+    hasActiveFilters ||
+    flaggedOnly ||
+    importantOnly ||
+    dueFilter !== null ||
+    search !== "";
   // Say what the number counts: shown of loaded, with "+" while more pages
   // exist (the API is paginated, so loaded is not a total).
   const loadedLabel = `${allTasks.length}${hasNextPage ? "+" : ""}`;
@@ -184,6 +192,7 @@ export function MyTasksComponent() {
   const clearLocalFilters = () => {
     clearFilters();
     setFlaggedOnly(false);
+    setImportantOnly(false);
     setDueFilter(null);
     setSearch("");
   };
@@ -309,6 +318,16 @@ export function MyTasksComponent() {
                 icon={<Flag className="size-3.5" />}
                 label={t("myTasks:flagged")}
                 applied={flaggedOnly}
+              />
+              <ToolbarButton
+                type="button"
+                aria-pressed={importantOnly}
+                onClick={() => setImportantOnly((previous) => !previous)}
+                icon={<Flame className="size-3.5" />}
+                label={t("myTasks:important", {
+                  defaultValue: "Important",
+                })}
+                applied={importantOnly}
               />
               {(["overdue", "soon"] as const).map((value) => (
                 <ToolbarButton
@@ -473,6 +492,16 @@ export function MyTasksComponent() {
                           const flagLabel =
                             task.flagName ?? t("myTasks:flagged");
                           /*
+                            Important = flagged, urgent/high priority, or due
+                            within 7 days. Important-but-unflagged rows get an
+                            orange accent so importance reads without a flag;
+                            flagged rows keep their (red-fallback) flag colour.
+                          */
+                          const important = isImportantTask(
+                            task,
+                            new Date(day),
+                          );
+                          /*
                             Same rule as `archiveBadgeParts` (#226): archival is
                             orthogonal to status, so the status icon keeps
                             rendering and the Archive glyph layers on top. The
@@ -503,7 +532,13 @@ export function MyTasksComponent() {
                                         backgroundColor: flagTint,
                                         borderLeftColor: flagColor,
                                       }
-                                    : undefined
+                                    : important
+                                      ? {
+                                          backgroundColor:
+                                            "color-mix(in srgb, var(--warning) 12%, transparent)",
+                                          borderLeftColor: "var(--warning)",
+                                        }
+                                      : undefined
                                 }
                               >
                                 {/* Board-scoped ids can be long (slug + number), so
