@@ -482,12 +482,14 @@ export async function queryRows(
     } else if (fn === "earliest" || fn === "latest") {
       if (f.type !== "date" && f.type !== "datetime")
         bad("Earliest/latest summary requires a date field");
-      expression = sql`(${fn === "earliest" ? sql`min` : sql`max`}(${col}))::text`;
+      // No ::text cast: jsonb emits proper ISO strings; ::text yields a space-separated form Safari cannot parse.
+      expression = sql`${fn === "earliest" ? sql`min` : sql`max`}(${col})`;
     } else if (fn === "unique") {
-      if (f.type === "checkbox" || f.type === "longtext")
+      if (f.type === "checkbox" || f.type === "longtext" || f.type === "link")
         bad("Unique summary requires a value field");
       expression = sql`count(DISTINCT ${col}) FILTER (WHERE NOT (${emptySql(f, lookups)}))::double precision`;
     } else if (fn === "filledPct" || fn === "emptyPct") {
+      // Returns the filled/empty COUNT; the client divides by the total.
       const filled = sql`NOT (${emptySql(f, lookups)})`;
       expression = sql`count(*) FILTER (WHERE ${fn === "emptyPct" ? sql`NOT (${filled})` : filled})::double precision`;
     } else {
