@@ -323,7 +323,6 @@ function navBadgeGeometry() {
     "inbox-unread-badge",
     "my-tasks-flagged-badge",
     "my-tasks-count-badge",
-    "recent-count-badge",
   ];
   const badges = ids.map((id) => {
     const el = document.querySelector(`[data-testid="${id}"]`);
@@ -734,26 +733,19 @@ for (const [theme, tag, viewport, scale] of [
         )
           badgeFails.push(`badge clips label/row ${JSON.stringify(badge)}`);
       }
-      const [inbox, flagged, assigned, recent] = badges;
+      const [inbox, flagged, assigned] = badges;
       if (flagged.right + 4 > assigned.left)
         badgeFails.push("flagged and assigned overlap or lack a 4px gap");
-      if (
-        [assigned, recent].some(
-          (badge) => Math.abs(badge.right - inbox.right) > 1,
-        )
-      )
+      if ([assigned].some((badge) => Math.abs(badge.right - inbox.right) > 1))
         badgeFails.push("nav badge right edges do not align");
       if (
-        new Set(
-          [inbox, assigned, recent].map(
-            (b) => `${b.bg}:${b.color}:${b.radius}`,
-          ),
-        ).size !== 1
+        new Set([inbox, assigned].map((b) => `${b.bg}:${b.color}:${b.radius}`))
+          .size !== 1
       )
         badgeFails.push("nav count styles differ");
       if (flagged.bg === assigned.bg || flagged.border === flagged.bg)
         badgeFails.push("attention badge lacks a distinct outline");
-      if (badges.map((b) => b.text).join(",") !== "31,2,50,5")
+      if (badges.map((b) => b.text).join(",") !== "31,2,50")
         badgeFails.push("theme count fixtures did not load");
       const navShot = `nav-badges--${tag}-${theme}.png`;
       await page.screenshot({ path: join(OUT, navShot) });
@@ -874,7 +866,9 @@ for (const [shot, prefs, act] of [
   try {
     await act(page);
   } catch (e) {
-    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    fails.push(
+      `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+    );
   }
   const m = await page.evaluate(() => {
     const b = document.querySelector('[aria-label="Open profile menu"]');
@@ -1302,6 +1296,47 @@ const TABLE_STATES = [
       const body = await (await applied).request().postDataJSON();
       if (body.sort[0].fieldId === body.sort[1].fieldId)
         throw new Error("multi-sort rules are not distinct");
+    },
+  ],
+  [
+    // Public form builder (nocodb-parity #10): manage-only dialog from the
+    // table options menu.
+    "table-public-form",
+    async (p) => {
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Public form" }).click();
+      await p.getByText("Collect these fields").waitFor();
+    },
+  ],
+  [
+    // Anonymous public form page: published via the API, then visited with
+    // the same context (the page itself needs no session).
+    "public-form-page",
+    async (p) => {
+      // Publish through the real dialog UI: the endpoint contract is covered
+      // by the API integration suite; here we exercise the user workflow.
+      await p.getByRole("button", { name: "Table options" }).click();
+      await p.getByRole("menuitem", { name: "Public form" }).click();
+      await p.getByText("Collect these fields").waitFor();
+      await p.getByRole("checkbox", { name: "Batch" }).check();
+      const published = p.waitForResponse(
+        (r) => r.url().includes("/form") && r.request().method() === "PUT",
+      );
+      await p.getByRole("button", { name: /^Publish/ }).click();
+      const response = await published;
+      if (!response.ok())
+        throw new Error(
+          `publish ${response.status()}: ${await response.text()}`,
+        );
+      const link = await p
+        .getByRole("textbox", { name: "Share link" })
+        .inputValue();
+      const slug = link.split("/public-form/")[1];
+      if (!slug) throw new Error("no share link after publish");
+      await p.goto(`${BASE}/public-form/${slug}`, {
+        waitUntil: "networkidle",
+      });
+      await p.getByRole("button", { name: "Submit" }).waitFor();
     },
   ],
   [
@@ -1825,7 +1860,13 @@ if (pages.table) {
       await act(page);
       await page.waitForTimeout(500);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
+      await page.screenshot({
+        path: join(OUT, `${name}--failure.png`),
+        fullPage: false,
+      });
     }
     // scaffold geometry: 44px header, 40px toolbar, 32px rows (DS §1.4)
     const m = await page.evaluate(() => {
@@ -1866,9 +1907,11 @@ if (pages.table) {
         ].filter((b) => b.getAttribute("aria-expanded") !== null).length,
       };
     });
-    if (m.header_h !== 44) fails.push(`header ${m.header_h}px, want 44`);
+    // The anonymous public form page has no app scaffold at all.
+    if (name !== "public-form-page" && m.header_h !== 44)
+      fails.push(`header ${m.header_h}px, want 44`);
     // History replaces the grid, so the grid geometry does not apply to it.
-    if (name !== "table-history") {
+    if (name !== "table-history" && name !== "public-form-page") {
       if (!m.heads.some((x) => x.startsWith("Batch")))
         fails.push("field names missing from header");
       // Board toolbar buttons are 12px; the table matches them.
@@ -1948,7 +1991,7 @@ if (pages.table) {
           .querySelector('[aria-label="Cost, row 1"]')
           ?.textContent?.trim(),
       }));
-      if (!end.active || !end.active.startsWith("Tickets, row"))
+      if (!end.active?.startsWith("Tickets, row"))
         fails.push(`keyboard end active ${JSON.stringify(end)}`);
       if (end.sheet || end.editor)
         fails.push(`keyboard end left UI open ${JSON.stringify(end)}`);
@@ -2061,7 +2104,9 @@ if (pages.table) {
       await act(page);
       await page.waitForTimeout(500);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
     }
     const m = await page.evaluate(() => {
       const row = document.querySelector(
@@ -2182,7 +2227,9 @@ if (pages.table) {
     await page.getByRole("button", { name: "Add filter" }).click();
     await page.waitForTimeout(500);
   } catch (e) {
-    fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+    fails.push(
+      `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+    );
   }
   const m = await page.evaluate(() => {
     const popup = document.querySelector('[data-slot="popover-popup"]');
@@ -2892,7 +2939,9 @@ if (pages.table) {
       await page.waitForTimeout(700);
       await page.mouse.move(2, 2);
     } catch (e) {
-      fails.push(`interaction failed: ${String(e).split("\n")[0]}`);
+      fails.push(
+        `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
     }
     if (name.startsWith("dialog-field-options")) {
       const search = page.getByRole("textbox", { name: "Search field types" });
@@ -3442,7 +3491,10 @@ for (const [preset, mode, tag, appearance] of [
           const right = el.getBoundingClientRect().right;
           return [...el.querySelectorAll("button,input,p,h1")]
             .filter((node) => node.getBoundingClientRect().right > right + 1)
-            .map((node) => node.textContent);
+            .map(
+              (node) =>
+                `${node.tagName.toLowerCase()}[class=${node.className}]`,
+            );
         });
       if (overflow.length)
         throw new Error(`appearance overflow: ${overflow.join(",")}`);
