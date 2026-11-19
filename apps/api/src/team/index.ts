@@ -5,10 +5,19 @@ import { describeRoute, resolver, validator } from "hono-openapi";
 import * as v from "valibot";
 import db, { schema } from "../database";
 import { organizationAccess } from "../utils/organization-access-middleware";
+import { deleteTeamAvatar, MAX_AVATAR_BYTES, saveTeamAvatar } from "./avatar";
 import {
   getEffectiveTeamMembers,
   wouldCreateTeamCycle,
 } from "./effective-membership";
+
+const httpErrorSchema = v.object({ message: v.string() });
+
+const avatarResponseSchema = v.object({
+  id: v.string(),
+  url: v.string(),
+  size: v.number(),
+});
 
 /**
  * Sub-team endpoints. Team CRUD itself lives in Better Auth's organization
@@ -186,6 +195,79 @@ const team = new Hono<{
         .limit(1);
       if (!target) throw new HTTPException(404, { message: "Team not found" });
       return c.json(await getEffectiveTeamMembers(teamId));
+    },
+  )
+  .put(
+    "/:teamId/avatar",
+    describeRoute({
+      operationId: "uploadTeamAvatar",
+      tags: ["Teams"],
+      description: `Store a base64 encoded avatar (PNG, JPEG, or WebP, up to ${Math.floor(MAX_AVATAR_BYTES / 1024)}KB) for a team and return its public URL. Also sets the team's image field.`,
+      responses: {
+        200: {
+          description: "Avatar stored",
+          content: {
+            "application/json": { schema: resolver(avatarResponseSchema) },
+          },
+        },
+        400: {
+          description: "Validation error",
+          content: {
+            "application/json": { schema: resolver(httpErrorSchema) },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ teamId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        contentType: v.string(),
+        data: v.string(),
+      }),
+    ),
+    async (c) => {
+      const { teamId } = c.req.valid("param");
+      const { contentType, data } = c.req.valid("json");
+
+      try {
+        return c.json(await saveTeamAvatar({ teamId, contentType, data }));
+      } catch (error) {
+        throw new HTTPException(400, {
+          message:
+            error instanceof Error ? error.message : "Invalid avatar upload",
+        });
+      }
+    },
+  )
+  .delete(
+    "/:teamId/avatar",
+    describeRoute({
+      operationId: "deleteTeamAvatar",
+      tags: ["Teams"],
+      description: "Remove a team's uploaded avatar and clear its image field",
+      responses: {
+        200: {
+          description: "Avatar removed",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ deleted: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ teamId: v.string() })),
+    async (c) => {
+      const { teamId } = c.req.valid("param");
+      const [team] = await db
+        .select({ image: schema.teamTable.image })
+        .from(schema.teamTable)
+        .where(eq(schema.teamTable.id, teamId))
+        .limit(1);
+      const avatarId = team?.image?.split("/").pop();
+      if (!avatarId) return c.json({ deleted: false });
+      return c.json(await deleteTeamAvatar(avatarId));
     },
   );
 

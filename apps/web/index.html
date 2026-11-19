@@ -12,37 +12,30 @@
       const dark = prefs.theme === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : prefs.theme !== 'light';
       root.classList.add(dark ? 'dark' : 'light');
       root.dataset.theme = ['mono', 'indigo', 'slate', 'graphite', 'teal'].includes(prefs.themePreset) ? prefs.themePreset : 'mono';
-      if (/^#[\da-f]{6}$/i.test(prefs.accentColor || '')) {
-        const accent = prefs.accentColor.toLowerCase();
-        const luminance = hex => {
-          const [r, g, b] = [1, 3, 5].map(i => {
-            const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-          });
-          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        };
-        const contrast = (a, b) => {
-          const [x, y] = [luminance(a), luminance(b)];
-          return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-        };
-        const light = contrast(accent, '#ffffff') >= contrast(accent, '#000000');
-        const near = light ? '#fafafa' : '#111111';
-        const foreground = contrast(accent, near) >= 4.5 ? near : light ? '#ffffff' : '#000000';
-        const values = {
-          primary: accent, 'primary-foreground': foreground, ring: accent,
-          'sidebar-primary': accent, 'sidebar-primary-foreground': foreground, 'sidebar-ring': accent,
-          'primary-soft': `color-mix(in srgb, ${accent} 16%, var(--background))`,
-          'primary-soft-foreground': 'var(--foreground)',
-          'row-selected': `color-mix(in srgb, ${accent} 16%, var(--background))`,
-        };
-        for (const [token, value] of Object.entries(values)) root.style.setProperty(`--${token}`, value);
-      }
-      // Granular theme-editor overrides, scoped to the active mode (after the
-      // accent so explicit per-token edits win).
-      for (const [token, sides] of Object.entries(prefs.themeOverrides || {})) {
-        const value = dark ? sides && sides.dark : sides && sides.light;
-        if (/^#[\da-f]{6}$/i.test(value || '')) root.style.setProperty(`--${token}`, value.toLowerCase());
-      }
+      if (!/^#[\da-f]{6}$/i.test(prefs.accentColor || '')) return;
+      const accent = prefs.accentColor.toLowerCase();
+      const luminance = hex => {
+        const [r, g, b] = [1, 3, 5].map(i => {
+          const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const contrast = (a, b) => {
+        const [x, y] = [luminance(a), luminance(b)];
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+      const light = contrast(accent, '#ffffff') >= contrast(accent, '#000000');
+      const near = light ? '#fafafa' : '#111111';
+      const foreground = contrast(accent, near) >= 4.5 ? near : light ? '#ffffff' : '#000000';
+      const values = {
+        primary: accent, 'primary-foreground': foreground, ring: accent,
+        'sidebar-primary': accent, 'sidebar-primary-foreground': foreground, 'sidebar-ring': accent,
+        'primary-soft': `color-mix(in srgb, ${accent} 16%, var(--background))`,
+        'primary-soft-foreground': 'var(--foreground)',
+        'row-selected': `color-mix(in srgb, ${accent} 16%, var(--background))`,
+      };
+      for (const [token, value] of Object.entries(values)) root.style.setProperty(`--${token}`, value);
     })();
   </script>
 

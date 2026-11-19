@@ -297,6 +297,7 @@ export const teamTable = pgTable(
       for boards and repos.
     */
     icon: text("icon"),
+    image: text("image"),
     /*
       Sub-teams: a team may nest under another team in the same organization.
       Membership resolves TRANSITIVELY at query time — a member of a sub-team
@@ -2462,6 +2463,31 @@ export const userAvatarTable = pgTable(
       .notNull(),
   },
   (table) => [index("user_avatar_userId_idx").on(table.userId)],
+);
+
+export const teamAvatarTable = pgTable(
+  "team_avatar",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .unique("team_avatar_team_id_unique")
+      .references(() => teamTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("team_avatar_teamId_idx").on(table.teamId)],
 );
 
 export const trialGrantTable = pgTable("trial_grant", {

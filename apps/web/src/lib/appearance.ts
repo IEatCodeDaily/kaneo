@@ -75,83 +75,7 @@ export const ACCENT_TOKENS = [
   "row-selected",
 ] as const;
 
-/** Granular theme-editor tokens, grouped for the settings UI. */
-export const THEME_TOKEN_GROUPS = [
-  {
-    id: "surfaces",
-    tokens: ["background", "card", "popover", "muted", "accent"],
-  },
-  { id: "sidebar", tokens: ["sidebar", "sidebar-accent", "sidebar-border"] },
-  { id: "brand", tokens: ["primary", "ring"] },
-  { id: "status", tokens: ["destructive", "success", "warning", "info"] },
-  {
-    id: "foregrounds",
-    tokens: [
-      "foreground",
-      "card-foreground",
-      "muted-foreground",
-      "accent-foreground",
-      "sidebar-foreground",
-      "sidebar-accent-foreground",
-    ],
-  },
-] as const;
-
-export type ThemeOverrideMode = "light" | "dark";
-export type ThemeOverrides = Record<string, { light?: string; dark?: string }>;
-
-export const THEME_TOKENS: string[] = THEME_TOKEN_GROUPS.flatMap((group) => [
-  ...group.tokens,
-]);
-
-export function normalizeThemeOverrides(value: unknown): ThemeOverrides {
-  if (!value || typeof value !== "object") return {};
-  const out: ThemeOverrides = {};
-  for (const [token, sides] of Object.entries(
-    value as Record<string, unknown>,
-  )) {
-    if (!THEME_TOKENS.includes(token)) continue;
-    const entry: ThemeOverrides[string] = {};
-    const light = normalizeAccent(
-      (sides as ThemeOverrides[string] | null)?.light,
-    );
-    const dark = normalizeAccent(
-      (sides as ThemeOverrides[string] | null)?.dark,
-    );
-    if (light) entry.light = light;
-    if (dark) entry.dark = dark;
-    if (light || dark) out[token] = entry;
-  }
-  return out;
-}
-
-/** Set one side of one token; null clears that side, empty tokens drop out. */
-export function mergeThemeOverrides(
-  overrides: ThemeOverrides,
-  token: string,
-  mode: ThemeOverrideMode,
-  value: string | null,
-): ThemeOverrides {
-  const sides = { ...overrides[token] };
-  if (value) {
-    const accent = normalizeAccent(value);
-    if (!accent) return overrides;
-    sides[mode] = accent;
-  } else {
-    delete sides[mode];
-  }
-  if (!sides.light && !sides.dark) {
-    const { [token]: _drop, ...rest } = overrides;
-    return rest;
-  }
-  return { ...overrides, [token]: sides };
-}
-
-export function applyAppearance(
-  appearance: Appearance,
-  systemDark: boolean,
-  themeOverrides?: ThemeOverrides | null,
-) {
+export function applyAppearance(appearance: Appearance, systemDark: boolean) {
   const root = document.documentElement;
   const dark =
     appearance.theme === "system" ? systemDark : appearance.theme === "dark";
@@ -159,30 +83,20 @@ export function applyAppearance(
   root.classList.toggle("light", !dark);
   root.dataset.theme = appearance.themePreset;
   for (const token of ACCENT_TOKENS) root.style.removeProperty(`--${token}`);
-  for (const token of THEME_TOKENS) root.style.removeProperty(`--${token}`);
   const accent = normalizeAccent(appearance.accentColor);
-  if (accent) {
-    const foreground = accentForeground(accent);
-    const values: Record<(typeof ACCENT_TOKENS)[number], string> = {
-      primary: accent,
-      "primary-foreground": foreground,
-      ring: accent,
-      "sidebar-primary": accent,
-      "sidebar-primary-foreground": foreground,
-      "sidebar-ring": accent,
-      "primary-soft": `color-mix(in srgb, ${accent} 16%, var(--background))`,
-      "primary-soft-foreground": "var(--foreground)",
-      "row-selected": `color-mix(in srgb, ${accent} 16%, var(--background))`,
-    };
-    for (const token of ACCENT_TOKENS)
-      root.style.setProperty(`--${token}`, values[token]);
-  }
-  // Granular overrides come last: explicit per-token edits beat both the
-  // preset and the derived accent inline values; overridden tokens without
-  // a value in this mode simply stay on the accent/preset above.
-  const overrides = normalizeThemeOverrides(themeOverrides);
-  for (const [token, sides] of Object.entries(overrides)) {
-    const value = sides?.[dark ? "dark" : "light"];
-    if (value) root.style.setProperty(`--${token}`, value);
-  }
+  if (!accent) return;
+  const foreground = accentForeground(accent);
+  const values: Record<(typeof ACCENT_TOKENS)[number], string> = {
+    primary: accent,
+    "primary-foreground": foreground,
+    ring: accent,
+    "sidebar-primary": accent,
+    "sidebar-primary-foreground": foreground,
+    "sidebar-ring": accent,
+    "primary-soft": `color-mix(in srgb, ${accent} 16%, var(--background))`,
+    "primary-soft-foreground": "var(--foreground)",
+    "row-selected": `color-mix(in srgb, ${accent} 16%, var(--background))`,
+  };
+  for (const token of ACCENT_TOKENS)
+    root.style.setProperty(`--${token}`, values[token]);
 }

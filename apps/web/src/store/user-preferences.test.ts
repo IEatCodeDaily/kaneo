@@ -37,27 +37,6 @@ describe("user preferences persistence", () => {
     store().setAppearance({ accentColor: "invalid" });
     expect(store().accentColor).toBeNull();
   });
-  it("persists theme overrides and clears them when the preset changes", () => {
-    const store = () => useUserPreferencesStore.getState();
-    useUserPreferencesStore.setState({
-      themePreset: "mono",
-      accentColor: null,
-      themeOverrides: {},
-    });
-    store().setThemeOverride("background", "dark", "#123456");
-    expect(store().themeOverrides.background).toEqual({ dark: "#123456" });
-    store().setAppearance({ theme: "light" });
-    expect(store().themeOverrides.background).toBeDefined();
-    store().setAppearance({ themePreset: "teal" });
-    expect(store().themeOverrides).toEqual({});
-    store().setThemeOverride("primary", "light", "#abcdef");
-    store().resetThemeOverrides();
-    expect(store().themeOverrides).toEqual({});
-    const persisted = JSON.parse(
-      localStorage.getItem(STORAGE_NAME) ?? "{}",
-    ) as { state?: { themeOverrides?: unknown } };
-    expect(persisted.state?.themeOverrides).toEqual({});
-  });
   beforeEach(() => {
     localStorage.clear();
     useUserPreferencesStore.setState({ recentPages: [] });
