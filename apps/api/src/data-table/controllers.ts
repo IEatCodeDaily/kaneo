@@ -45,6 +45,7 @@ import { assertTablesEnabled } from "./require-tables-enabled";
 import { queryRows, type RowQueryInput } from "./row-query";
 import type { StoreField } from "./store";
 import * as store from "./store";
+import { pruneViewsForDeletedFields } from "./views";
 
 // Function declarations, not const arrows: TS only narrows flow after
 // never-returning calls to declared functions (the guards below rely on it).
@@ -1484,8 +1485,9 @@ export async function deleteTableField(
       for (const [id, endpointTable] of [
         [relation.sourceFieldId, relation.sourceTableId],
         [relation.targetFieldId, relation.targetTableId],
-      ])
-        if (endpointTable)
+      ]) {
+        if (endpointTable) {
+          await pruneViewsForDeletedFields(tx, endpointTable, [id]);
           await logActivity(tx, {
             tableId: endpointTable,
             fieldId: id,
@@ -1493,6 +1495,8 @@ export async function deleteTableField(
             type: "field_deleted",
             data: { relationId: relation.id },
           });
+        }
+      }
       return { success: true as const };
     }
     const column = await store.snapshotColumn(tx, tableId, {
@@ -1509,6 +1513,7 @@ export async function deleteTableField(
       .update(dataTableFieldTable)
       .set({ deletedAt: new Date() })
       .where(eq(dataTableFieldTable.id, fieldId));
+    await pruneViewsForDeletedFields(tx, tableId, [fieldId]);
     await logActivity(tx, {
       tableId,
       userId,
