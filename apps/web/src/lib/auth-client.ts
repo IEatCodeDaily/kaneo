@@ -56,6 +56,7 @@ export const authClient = createAuthClient({
         team: {
           additionalFields: {
             icon: { type: "string", required: false },
+            image: { type: "string", required: false },
             parentTeamId: { type: "string", required: false, input: false },
           },
         },

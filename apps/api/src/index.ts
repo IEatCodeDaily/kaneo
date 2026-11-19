@@ -74,6 +74,7 @@ import getPublicTicketEmbed from "./task/controllers/get-public-ticket-embed";
 import taskRelation from "./task-relation";
 import taskTemplate from "./task-template";
 import team from "./team";
+import getTeamAvatar from "./team/controllers/get-team-avatar";
 import telegramIntegration from "./telegram-integration";
 import timeEntry from "./time-entry";
 import user from "./user";
@@ -517,6 +518,52 @@ export function createApp() {
     async (c) => {
       const { id } = c.req.valid("param");
       const avatar = await getAvatar(id);
+
+      if (!avatar) {
+        throw new HTTPException(404, { message: "Avatar not found" });
+      }
+
+      const etag = `"${avatar.id}"`;
+      if (c.req.header("If-None-Match") === etag) {
+        return new Response(null, { status: 304, headers: { ETag: etag } });
+      }
+
+      return new Response(new Uint8Array(avatar.data) as BodyInit, {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Content-Length": avatar.size.toString(),
+          "Content-Type": avatar.mimeType,
+          "X-Content-Type-Options": "nosniff",
+          ETag: etag,
+          "Last-Modified": avatar.updatedAt.toUTCString(),
+        },
+      });
+    },
+  );
+
+  api.get(
+    "/team/avatar/:id",
+    describeRoute({
+      operationId: "getTeamAvatar",
+      tags: ["Teams"],
+      description: "Download a team avatar by its avatar ID",
+      security: [],
+      responses: {
+        200: {
+          description: "The avatar image",
+          content: {
+            "image/*": { schema: { type: "string", format: "binary" } },
+          },
+        },
+        404: {
+          description: "Avatar not found",
+        },
+      },
+    }),
+    validator("param", v.object({ id: v.string() })),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const avatar = await getTeamAvatar(id);
 
       if (!avatar) {
         throw new HTTPException(404, { message: "Avatar not found" });
