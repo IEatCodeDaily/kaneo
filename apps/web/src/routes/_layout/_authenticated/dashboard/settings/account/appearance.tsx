@@ -245,7 +245,7 @@ export function AppearanceSettings() {
               <h3 className="text-sm font-medium">
                 {t(`settings:appearance.group${pascal(group.id)}`)}
               </h3>
-              <div className="grid gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {group.tokens.map((token) => {
                   const label = t(`settings:appearance.token${pascal(token)}`);
                   const value = drafts[`${mode}:${token}`] ?? "";
@@ -255,7 +255,7 @@ export function AppearanceSettings() {
                   return (
                     <div
                       key={token}
-                      className="flex items-center gap-2"
+                      className="flex min-w-0 flex-wrap items-center gap-2"
                       data-testid={`token-${token}`}
                     >
                       <Label
