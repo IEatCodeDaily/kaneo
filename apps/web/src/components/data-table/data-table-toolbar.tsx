@@ -110,24 +110,28 @@ export function DataTableToolbar(props: Props) {
   const groupableFields = fields.filter(isGroupable);
   // Field reorder (S5): drag or Move left/right; focus follows the moved field.
   const dragId = useRef<string | null>(null);
-  const [focusFieldId, setFocusFieldId] = useState<string | null>(null);
+  const [focusField, setFocusField] = useState<string | null>(null);
   const orderable = fields.filter((field) => !field.system);
-  const reorder = (from: number, to: number) => {
+  const reorder = (from: number, to: number, dir: "left" | "right") => {
     if (!props.onFieldOrderChange || to < 0 || to >= orderable.length) return;
     const ids = orderable.map((f) => f.id);
     const [moved] = ids.splice(from, 1);
     ids.splice(to, 0, moved);
-    setFocusFieldId(moved);
+    setFocusField(`${moved}:${dir}`);
     props.onFieldOrderChange(ids);
   };
   useLayoutEffect(() => {
-    if (!focusFieldId) return;
-    const button = document.querySelector<HTMLButtonElement>(
-      `[data-field-move="${focusFieldId}"]`,
+    if (!focusField) return;
+    const [id, dir] = focusField.split(":");
+    const primary = document.querySelector<HTMLButtonElement>(
+      `[data-field-move="${id}:${dir}"]`,
     );
-    button?.focus();
-    setFocusFieldId(null);
-  }, [focusFieldId]);
+    const fallback = document.querySelector<HTMLButtonElement>(
+      `[data-field-move="${id}:${dir === "left" ? "right" : "left"}"]`,
+    );
+    (primary && !primary.disabled ? primary : fallback)?.focus();
+    setFocusField(null);
+  }, [focusField]);
   // The primary field is always visible, so it never counts as hidden.
   const hiddenCount = fields.filter(
     (f, i) => i > 0 && hidden.includes(f.id),
@@ -176,9 +180,8 @@ export function DataTableToolbar(props: Props) {
         <PopoverContent align="start" className="w-70">
           <p className="px-3 pt-2.5 pb-1 text-xs text-muted-foreground">
             {t("navigation:tables.fieldsShown", {
-              shown:
-                fields.filter((field) => !field.system).length - hiddenCount,
-              total: fields.filter((field) => !field.system).length,
+              shown: orderable.length - hiddenCount,
+              total: orderable.length,
             })}
           </p>
           <ul className="flex max-h-72 list-none flex-col overflow-y-auto p-1">
@@ -190,8 +193,10 @@ export function DataTableToolbar(props: Props) {
                 <li
                   key={field.id}
                   draggable={props.onFieldOrderChange !== undefined}
-                  onDragStart={() => {
+                  onDragStart={(event) => {
                     dragId.current = field.id;
+                    event.dataTransfer.setData("text/plain", field.id);
+                    event.dataTransfer.effectAllowed = "move";
                   }}
                   onDragOver={(event) => {
                     if (dragId.current) event.preventDefault();
@@ -201,10 +206,14 @@ export function DataTableToolbar(props: Props) {
                     const from = orderable.findIndex(
                       (f) => f.id === dragId.current,
                     );
-                    if (from >= 0) reorder(from, index);
+                    if (from >= 0 && from !== index)
+                      reorder(from, index, "left");
                     dragId.current = null;
                   }}
-                  className="flex h-7 items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
+                  onDragEnd={() => {
+                    dragId.current = null;
+                  }}
+                  className="flex h-7 cursor-grab items-center gap-2 rounded-md px-2 text-ui hover:bg-accent"
                 >
                   <FieldTypeIcon
                     type={field.type}
@@ -216,24 +225,25 @@ export function DataTableToolbar(props: Props) {
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        data-field-move={field.id}
+                        data-field-move={`${field.id}:left`}
                         aria-label={t("navigation:tables.savedViews.moveLeft", {
                           name: field.name,
                         })}
                         disabled={index === 0}
-                        onClick={() => reorder(index, index - 1)}
+                        onClick={() => reorder(index, index - 1, "left")}
                       >
                         ←
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon-xs"
+                        data-field-move={`${field.id}:right`}
                         aria-label={t(
                           "navigation:tables.savedViews.moveRight",
                           { name: field.name },
                         )}
                         disabled={index === orderable.length - 1}
-                        onClick={() => reorder(index, index + 1)}
+                        onClick={() => reorder(index, index + 1, "right")}
                       >
                         →
                       </Button>

@@ -206,12 +206,36 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
           })
         ).status,
       ).toBe(400);
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: { ...config, hiddenFields: [field?.id, field?.id] },
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await call("PUT", `/${copy.id}`, {
+            config: {
+              ...config,
+              sort: [
+                { fieldId: field?.id ?? "", dir: "asc" },
+                { fieldId: field?.id ?? "", dir: "desc" },
+              ],
+            },
+          })
+        ).status,
+      ).toBe(400);
       const ordered = await call("PUT", `/${copy.id}`, {
         config: { ...config, fieldOrder: [field?.id, "__created_at"] },
       });
       expect(ordered.status).toBe(200);
       expect(
-        (await list()).find((v) => v.id === copy.id)?.config.fieldOrder,
+        (
+          (await list()).find((v) => v.id === copy.id)?.config as {
+            fieldOrder: string[];
+          }
+        )?.fieldOrder,
       ).toEqual([field?.id, "__created_at"]);
       const withSummary = await call("PUT", `/${copy.id}`, {
         config: {
