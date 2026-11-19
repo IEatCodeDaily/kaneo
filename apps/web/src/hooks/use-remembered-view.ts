@@ -1,9 +1,12 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useDashboards } from "@/hooks/dashboards/use-dashboards";
+import { useDataTables } from "@/hooks/data-table/use-data-tables";
 import useGetBoards from "@/hooks/queries/board/use-get-boards";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetProjectSidebar from "@/hooks/queries/project/use-get-project-sidebar";
 import useGetRepos from "@/hooks/queries/repo/use-get-repos";
+import { useDashboardsEnabled } from "@/hooks/use-dashboards-enabled";
 import {
   type BoardView,
   boardViewFromPathname,
@@ -37,6 +40,22 @@ export function useRememberCurrentView() {
     teamId,
   });
   const { data: projects = [] } = useGetProjectSidebar(organization?.id ?? "");
+  const dashboardsEnabled = useDashboardsEnabled();
+  const { data: dashboards = [] } = useDashboards(
+    organization?.id ?? "",
+    dashboardsEnabled,
+  );
+  const tablesEnabled = Boolean(
+    (
+      organization as
+        | (typeof organization & { tablesEnabled?: boolean })
+        | undefined
+    )?.tablesEnabled,
+  );
+  const { data: tables = [] } = useDataTables(
+    organization?.id ?? "",
+    tablesEnabled,
+  );
 
   useEffect(() => {
     const boardView = boardViewFromPathname(pathname);
@@ -62,10 +81,13 @@ export function useRememberCurrentView() {
       boards,
       repos,
       projects,
+      dashboards,
+      tables,
     });
     if (page) rememberRecentPage({ ...page, openedAt: Date.now() });
   }, [
     boards,
+    dashboards,
     organization,
     pathname,
     projects,
@@ -73,6 +95,7 @@ export function useRememberCurrentView() {
     repos,
     setLastBoardView,
     setLastRepoView,
+    tables,
   ]);
 }
 
