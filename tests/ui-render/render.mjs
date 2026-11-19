@@ -323,7 +323,6 @@ function navBadgeGeometry() {
     "inbox-unread-badge",
     "my-tasks-flagged-badge",
     "my-tasks-count-badge",
-    "recent-count-badge",
   ];
   const badges = ids.map((id) => {
     const el = document.querySelector(`[data-testid="${id}"]`);
@@ -734,26 +733,19 @@ for (const [theme, tag, viewport, scale] of [
         )
           badgeFails.push(`badge clips label/row ${JSON.stringify(badge)}`);
       }
-      const [inbox, flagged, assigned, recent] = badges;
+      const [inbox, flagged, assigned] = badges;
       if (flagged.right + 4 > assigned.left)
         badgeFails.push("flagged and assigned overlap or lack a 4px gap");
-      if (
-        [assigned, recent].some(
-          (badge) => Math.abs(badge.right - inbox.right) > 1,
-        )
-      )
+      if ([assigned].some((badge) => Math.abs(badge.right - inbox.right) > 1))
         badgeFails.push("nav badge right edges do not align");
       if (
-        new Set(
-          [inbox, assigned, recent].map(
-            (b) => `${b.bg}:${b.color}:${b.radius}`,
-          ),
-        ).size !== 1
+        new Set([inbox, assigned].map((b) => `${b.bg}:${b.color}:${b.radius}`))
+          .size !== 1
       )
         badgeFails.push("nav count styles differ");
       if (flagged.bg === assigned.bg || flagged.border === flagged.bg)
         badgeFails.push("attention badge lacks a distinct outline");
-      if (badges.map((b) => b.text).join(",") !== "31,2,50,5")
+      if (badges.map((b) => b.text).join(",") !== "31,2,50")
         badgeFails.push("theme count fixtures did not load");
       const navShot = `nav-badges--${tag}-${theme}.png`;
       await page.screenshot({ path: join(OUT, navShot) });

@@ -359,15 +359,20 @@ export function MyTasksComponent() {
             {statuses.map(({ slug, name, count, percent }) => (
               <span
                 key={slug}
-                className="inline-flex shrink-0 items-center gap-1.5 tabular-nums"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-1 tabular-nums"
               >
                 {getColumnIcon(
                   slug,
                   tasks.find((task) => task.status === slug)?.isFinal ?? false,
                   tasks.find((task) => task.status === slug)?.columnIcon,
                 )}
-                {name || t("myTasks:noStatus")} <strong>{count}</strong>
-                <span className="text-muted-foreground">{percent}%</span>
+                <span className="font-medium">
+                  {name || t("myTasks:noStatus")}
+                </span>
+                <span className="font-semibold">{count}</span>
+                <span className="text-muted-foreground text-xs">
+                  {percent}%
+                </span>
               </span>
             ))}
           </section>
@@ -454,7 +459,17 @@ export function MyTasksComponent() {
                     {collapsed ? null : (
                       <ul className="flex flex-col divide-y divide-border/60 border-t border-border/80">
                         {boardTasks.map((task) => {
-                          const flagColor = task.flagColor ?? undefined;
+                          /*
+                            Uncoloured flag types fall back to red so "important"
+                            always reads as a warning; per-type colours win.
+                            color-mix for the tint: var(--destructive) is a var,
+                            so the `${hex}alpha` trick does not apply.
+                          */
+                          const flagColor =
+                            task.flagColor ?? "var(--destructive)";
+                          const flagTint = task.flagColor
+                            ? `${task.flagColor}1f`
+                            : "color-mix(in srgb, var(--destructive) 14%, transparent)";
                           const flagLabel =
                             task.flagName ?? t("myTasks:flagged");
                           /*
@@ -483,9 +498,9 @@ export function MyTasksComponent() {
                                 // colour (faint bg + a matching left accent),
                                 // so the flag reads at a glance.
                                 style={
-                                  task.flagged && flagColor
+                                  task.flagged
                                     ? {
-                                        backgroundColor: `${flagColor}14`,
+                                        backgroundColor: flagTint,
                                         borderLeftColor: flagColor,
                                       }
                                     : undefined
@@ -611,9 +626,9 @@ export function MyTasksComponent() {
                                     title={flagLabel}
                                     style={{
                                       color: flagColor,
-                                      backgroundColor: flagColor
-                                        ? `${flagColor}22`
-                                        : undefined,
+                                      backgroundColor: task.flagColor
+                                        ? `${task.flagColor}33`
+                                        : "color-mix(in srgb, var(--destructive) 20%, transparent)",
                                     }}
                                   >
                                     <Flag className="size-3" aria-hidden />

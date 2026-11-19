@@ -243,29 +243,29 @@ input:-webkit-autofill:active {
 
 .dark[data-theme="mono"],
 .dark {
-  --accent: #252a32;
+  --accent: #1d222a;
   --accent-foreground: #e7eaf0;
-  --background: #111418;
-  --border: #292e36;
-  --card: #181c21;
+  --background: #0b0d10;
+  --border: #232830;
+  --card: #101317;
   --card-foreground: #e7eaf0;
   --destructive: #e9b1b2;
   --destructive-foreground: #e1a0a2;
   --foreground: #e7eaf0;
   --info: #799bbd;
   --info-foreground: #a0bbd4;
-  --input: #3b424d;
-  --muted: #20252c;
+  --input: #313842;
+  --muted: #171b21;
   --muted-foreground: #a0a8b5;
   --faint-foreground: #87919f;
-  --popover: #1e232a;
+  --popover: #141820;
   --popover-foreground: #e7eaf0;
   --primary: #e7eaf0;
   --primary-foreground: #161b22;
-  --primary-soft: #2e3540;
+  --primary-soft: #262d37;
   --primary-soft-foreground: #d1d8e2;
   --ring: #8993a1;
-  --secondary: #2a3039;
+  --secondary: #21272f;
   --secondary-foreground: #e7eaf0;
   --success: #a7cfb6;
   --success-foreground: #a7cfb6;
@@ -276,11 +276,11 @@ input:-webkit-autofill:active {
   --chart-3: #bc9e65;
   --chart-4: #a196bc;
   --chart-5: #bf8b96;
-  --sidebar: #0c0f13;
+  --sidebar: #07090c;
   --sidebar-foreground: #a0a8b5;
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: #252b34;
+  --sidebar-accent: #1e242c;
   --sidebar-accent-foreground: #e7eaf0;
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
@@ -294,7 +294,7 @@ input:-webkit-autofill:active {
   --tone-green: #59bf88;
   --tone-red: #eb826d;
   --row-hover: color-mix(in srgb, var(--foreground) 4%, var(--background));
-  --row-selected: #2e3540;
+  --row-selected: #262d37;
 
   /*
    * Required for third-party components that theme via `light-dark()`.
