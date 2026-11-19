@@ -259,6 +259,77 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       expect((await call("DELETE", `/${remaining[0]?.id}`)).status).toBe(400);
     });
 
+    it("prunes a deleted field from every saved view so untouched views still save", async () => {
+      const org = member.organization.id;
+      const table = await createTableViaApi(app, org, "Prune");
+      const { field } = await createFieldViaApi(app, org, table.id, {
+        name: "Doomed",
+        type: "text",
+      });
+      const { field: keeper } = await createFieldViaApi(app, org, table.id, {
+        name: "Keeper",
+        type: "number",
+      });
+      const doomed = field?.id;
+      const kept = keeper?.id;
+      const root = `/api/data-table/organization/${org}/${table.id}/views`;
+      const call = (method: string, path = "", body?: unknown) =>
+        app.request(root + path, {
+          method,
+          headers: { "content-type": "application/json" },
+          ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
+      const list = async () =>
+        (await (await call("GET")).json()) as {
+          id: string;
+          config: {
+            fieldOrder: string[];
+            hiddenFields: string[];
+            sort: { fieldId: string } | { fieldId: string }[] | null;
+            groupFieldId: string | null;
+            columnWidths: Record<string, number>;
+            summaries: Record<string, string>;
+          } | null;
+        }[];
+      const [initial] = await list();
+      const config = {
+        filters: null,
+        sort: { fieldId: doomed, dir: "asc" },
+        groupFieldId: doomed,
+        hiddenFields: [doomed],
+        fieldOrder: [doomed, kept],
+        columnWidths: { [doomed]: 200, [kept]: 300 },
+        rowHeight: "compact",
+        frozenColumns: 0,
+        summaries: { [doomed]: "filled" },
+        showSystemFields: true,
+      };
+      const saved = await call("PUT", `/${initial?.id}`, {
+        config,
+        initializeOnly: true,
+      });
+      expect(saved.status, await saved.text()).toBe(200);
+
+      const deleted = await app.request(
+        `/api/data-table/organization/${org}/${table.id}/fields/${doomed}`,
+        { method: "DELETE" },
+      );
+      expect(deleted.status).toBe(200);
+
+      const pruned = (await list()).find((v) => v.id === initial?.id)?.config;
+      expect(pruned?.fieldOrder).toEqual([kept]);
+      expect(pruned?.hiddenFields).toEqual([]);
+      expect(pruned?.sort).toBeNull();
+      expect(pruned?.groupFieldId).toBeNull();
+      expect(pruned?.summaries).toEqual({});
+      expect(pruned?.columnWidths).toEqual({ [kept]: 300 });
+
+      // The pruned config validates against live fields and still saves.
+      expect(
+        (await call("PUT", `/${initial?.id}`, { config: pruned })).status,
+      ).toBe(200);
+    });
+
     it("rejects cross-table/org identifiers and view-only writes without leaking hidden views", async () => {
       const org = member.organization.id;
       const a = await createTableViaApi(app, org, "A");

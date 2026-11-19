@@ -306,3 +306,50 @@ export async function deleteView(
     return { success: true };
   });
 }
+
+function pruneConfig(config: ViewConfig, dead: Set<string>): ViewConfig {
+  const next: ViewConfig = { ...config };
+  next.fieldOrder = config.fieldOrder.filter((id) => !dead.has(id));
+  next.hiddenFields = config.hiddenFields.filter((id) => !dead.has(id));
+  next.columnWidths = Object.fromEntries(
+    Object.entries(config.columnWidths).filter(([id]) => !dead.has(id)),
+  );
+  next.summaries = Object.fromEntries(
+    Object.entries(config.summaries).filter(([id]) => !dead.has(id)),
+  );
+  next.sort =
+    config.sort === null
+      ? null
+      : Array.isArray(config.sort)
+        ? config.sort.filter((rule) => !dead.has(rule.fieldId))
+        : dead.has(config.sort.fieldId)
+          ? null
+          : config.sort;
+  if (config.groupFieldId && dead.has(config.groupFieldId))
+    next.groupFieldId = null;
+  return next;
+}
+
+// Field deletes must strip every saved reference in the same transaction,
+// or the next autosave of any untouched view fails view-field validation.
+export async function pruneViewsForDeletedFields(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tableId: string,
+  fieldIds: string[],
+) {
+  if (fieldIds.length === 0) return;
+  const views = await tx
+    .select()
+    .from(dataTableViewTable)
+    .where(eq(dataTableViewTable.tableId, tableId));
+  const dead = new Set(fieldIds);
+  for (const view of views) {
+    if (!view.config) continue;
+    const next = pruneConfig(view.config, dead);
+    if (JSON.stringify(next) === JSON.stringify(view.config)) continue;
+    await tx
+      .update(dataTableViewTable)
+      .set({ config: next })
+      .where(eq(dataTableViewTable.id, view.id));
+  }
+}
