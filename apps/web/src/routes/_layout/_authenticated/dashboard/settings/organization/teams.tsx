@@ -9,7 +9,7 @@ import {
   UserPlus,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BoardIconPicker from "@/components/common/board-icon-picker";
 import EntityIcon from "@/components/common/entity-icon";
 import PermissionDenied from "@/components/permission-denied";
@@ -17,6 +17,7 @@ import {
   type PrincipalOption,
   PrincipalSelector,
 } from "@/components/principal-selector";
+import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import { resolveTeamMembersResult } from "@/components/team/resolve-team-members-result";
 import TeamMemberCount from "@/components/team/team-member-count";
 import {
@@ -46,15 +47,21 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import deleteTeamAvatar from "@/fetchers/team/delete-team-avatar";
 import {
   getEffectiveTeamMembers,
   getTeamHierarchy,
   setTeamParent,
 } from "@/fetchers/team/team-hierarchy";
+import uploadTeamAvatar from "@/fetchers/team/upload-team-avatar";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { getInitials } from "@/lib/get-initials";
+import {
+  ACCEPTED_AVATAR_TYPES,
+  prepareAvatarImage,
+} from "@/lib/prepare-avatar-image";
 import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
@@ -85,6 +92,8 @@ export function TeamsManagement({
     icon: string;
   } | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (createTeamSignal > 0) setEditor({ name: "", icon: "" });
@@ -186,6 +195,33 @@ export function TeamsManagement({
     },
     onError: (error) =>
       toast.error(errorMessage(error, "Failed to delete team")),
+  });
+
+  const uploadTeamAvatarMutation = useMutation({
+    mutationFn: async ({ team, file }: { team: Team; file: File }) => {
+      const { contentType, data } = await prepareAvatarImage(file);
+      return uploadTeamAvatar({ teamId: team.id, contentType, data });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organization-teams", organizationId],
+      });
+      toast.success("Team avatar updated");
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Failed to update team avatar")),
+  });
+
+  const removeTeamAvatar = useMutation({
+    mutationFn: async (teamId: string) => deleteTeamAvatar(teamId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["organization-teams", organizationId],
+      });
+      toast.success("Team avatar removed");
+    },
+    onError: (error) =>
+      toast.error(errorMessage(error, "Failed to remove team avatar")),
   });
 
   if (!isAdmin) {
@@ -298,6 +334,55 @@ export function TeamsManagement({
               }}
             />
           </div>
+          {editor?.team ? (
+            <div className="space-y-2">
+              <Label>Avatar</Label>
+              <div className="flex items-center gap-3">
+                <Avatar className="size-12">
+                  <AvatarImage src={editor.team.image ?? ""} />
+                  <AvatarFallback className="text-sm">
+                    {editor.team.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Input
+                  ref={fileInputRef}
+                  accept={ACCEPTED_AVATAR_TYPES}
+                  className="hidden"
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) setCropFile(file);
+                    event.target.value = "";
+                  }}
+                />
+                <Button
+                  disabled={uploadTeamAvatarMutation.isPending}
+                  onClick={() => fileInputRef.current?.click()}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Upload
+                </Button>
+                {editor.team.image ? (
+                  <Button
+                    disabled={removeTeamAvatar.isPending}
+                    onClick={() =>
+                      editor.team && removeTeamAvatar.mutate(editor.team.id)
+                    }
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Square images look best (256×256).
+              </p>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="team-icon">Icon</Label>
             <div className="flex items-center gap-2">
@@ -345,6 +430,18 @@ export function TeamsManagement({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AvatarCropDialog
+        file={cropFile}
+        onCancel={() => setCropFile(null)}
+        onCropped={(file) => {
+          setCropFile(null);
+          if (editor?.team) {
+            uploadTeamAvatarMutation.mutate({ team: editor.team, file });
+          }
+        }}
+        open={Boolean(cropFile)}
+      />
 
       <AlertDialog
         open={Boolean(teamToDelete)}
@@ -536,6 +633,13 @@ function TeamCard({
             ) : null}
             {team.icon ? (
               <EntityIcon value={team.icon} className="size-4 shrink-0" />
+            ) : team.image ? (
+              <Avatar className="size-5 shrink-0">
+                <AvatarImage src={team.image} alt={team.name} />
+                <AvatarFallback className="bg-transparent text-xs">
+                  {team.name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
             ) : null}
             <span className="truncate">{team.name}</span>
           </h2>

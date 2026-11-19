@@ -414,6 +414,16 @@ export const auth = betterAuth({
               required: false,
             },
             /*
+              Uploaded team avatar: a URL to the stored image
+              (/api/team/avatar/:id). Written by the avatar upload endpoint
+              and the organization plugin's updateTeam.
+            */
+            image: {
+              type: "string",
+              input: true,
+              required: false,
+            },
+            /*
               Sub-teams: parent link surfaced through listTeams so the UI can
               render nesting. NOT writable through Better Auth (`input: false`)
               — parent changes must go through PUT /api/team/:id/parent, which
