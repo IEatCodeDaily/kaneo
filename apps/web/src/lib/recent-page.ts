@@ -13,9 +13,17 @@ type RecentResources = {
   boards: NamedResource[];
   repos: NamedResource[];
   projects: NamedResource[];
+  dashboards: NamedResource[];
+  tables: NamedResource[];
 };
 
-export type RecentKind = "board" | "repo" | "project" | "ticket";
+export type RecentKind =
+  | "board"
+  | "repo"
+  | "project"
+  | "ticket"
+  | "dashboard"
+  | "table";
 
 type ResolvedRecentPage = {
   pathname: string;
@@ -42,7 +50,11 @@ export function resolveRecentPage(
         ? "repo"
         : resourceType === "projects"
           ? "project"
-          : null;
+          : resourceType === "dashboards"
+            ? "dashboard"
+            : resourceType === "table"
+              ? "table"
+              : null;
   if (!kind) return null;
   // The template literal needs the explicit key annotation: without it the
   // index into RecentResources widens to string and the find param goes any.

@@ -7,6 +7,8 @@ const resources = {
   boards: [{ id: "board-uuid", slug: "delivery", name: "Delivery" }],
   repos: [{ id: "repo-uuid", name: "kaneo" }],
   projects: [{ id: "project-uuid", slug: "launch", name: "Launch" }],
+  dashboards: [{ id: "dash-uuid", name: "Ops overview" }],
+  tables: [{ id: "table-uuid", name: "Shipments" }],
 };
 
 describe("resolveRecentPage", () => {
@@ -49,6 +51,34 @@ describe("resolveRecentPage", () => {
       pathname: "/dashboard/organization/acme/projects/launch/tickets",
       label: "Launch",
       kind: "project",
+    });
+  });
+
+  it("remembers dashboard pages under their name", () => {
+    expect(
+      resolveRecentPage(
+        "/dashboard/organization/org-uuid/dashboards/dash-uuid",
+        organization,
+        resources,
+      ),
+    ).toEqual({
+      pathname: "/dashboard/organization/acme/dashboards/dash-uuid",
+      label: "Ops overview",
+      kind: "dashboard",
+    });
+  });
+
+  it("remembers table pages under their name", () => {
+    expect(
+      resolveRecentPage(
+        "/dashboard/organization/org-uuid/table/table-uuid",
+        organization,
+        resources,
+      ),
+    ).toEqual({
+      pathname: "/dashboard/organization/acme/table/table-uuid",
+      label: "Shipments",
+      kind: "table",
     });
   });
 
