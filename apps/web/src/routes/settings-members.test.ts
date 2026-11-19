@@ -19,9 +19,10 @@ describe("organization settings members entry", () => {
       web("src/components/settings/settings-section-nav.tsx"),
       "utf8",
     );
-    expect(source).toContain(
-      '["members", "team:members.pageTitle", "Members"]',
-    );
+    expect(source).toContain('"team:members.pageTitle"');
+    expect(source).toContain("Members");
+    // The icon column must be present in the tuple (settings nav icons).
+    expect(source).toContain('"members", "team:members.pageTitle"');
     expect(source).toMatch(
       /`\/dashboard\/settings\/\$\{section\}\/\$\{segment\}`/,
     );

@@ -212,15 +212,14 @@ describe("NavMain compact personal group", () => {
     expect(screen.getByTestId("inbox-count-column").className).toContain(
       "shrink-0",
     );
-    const recent = screen.getByTestId("recent-count-badge");
-    const inbox = screen.getByTestId("inbox-unread-badge");
-    expect(recent.className).toBe(inbox.className);
-    expect(recent.parentElement?.className).toBe(
-      inbox.parentElement?.className,
-    );
+    expect(screen.getByTestId("inbox-unread-badge")).toBeInTheDocument();
     expect(screen.getByTestId("recent-chevron-column").className).toContain(
       "w-4",
     );
+    // The Recent count bubble was deliberately removed: the chevron plus the
+    // expandable list already communicate content, and the number competed
+    // with the Inbox unread count for attention.
+    expect(screen.queryByTestId("recent-count-badge")).not.toBeInTheDocument();
   });
   it("renders compact Recent rows with relative open times", () => {
     const view = render(<NavMain />);

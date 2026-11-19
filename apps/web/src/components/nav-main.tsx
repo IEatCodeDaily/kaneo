@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import InboxUnreadBadge from "@/components/inbox-unread-badge";
 import MyTasksCountBadge from "@/components/my-tasks-count-badge";
 import { RecentPagesDialog } from "@/components/recent-pages-dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -83,7 +82,7 @@ export function NavMain() {
           {primary.map(({ label, icon: Icon, url, badge }) => (
             <SidebarMenuItem key={url}>
               <SidebarMenuButton
-                className="h-6 text-xs"
+                className="h-6 text-xs data-[active=true]:font-semibold data-[active=true]:ring-1 data-[active=true]:ring-sidebar-border"
                 isActive={pathname === url}
                 onClick={() => navigate({ to: url })}
                 tooltip={label}
@@ -120,15 +119,6 @@ export function NavMain() {
                     className="ml-auto flex shrink-0 items-center justify-end gap-2"
                     data-slot="nav-trailing"
                   >
-                    {recentPages.length > 0 && (
-                      <Badge
-                        size="count"
-                        variant="count"
-                        data-testid="recent-count-badge"
-                      >
-                        {Math.min(recentPages.length, recentPageLimit)}
-                      </Badge>
-                    )}
                     <span
                       className="flex w-4 shrink-0 justify-center [&>svg]:size-4"
                       data-testid="recent-chevron-column"
@@ -158,6 +148,7 @@ export function NavMain() {
                           >
                             <SidebarMenuSubButton
                               className="h-6 text-xs"
+                              isActive={pathname === page.pathname}
                               onClick={() => navigate({ to: page.pathname })}
                             >
                               <span className="min-w-0 flex-1 truncate">

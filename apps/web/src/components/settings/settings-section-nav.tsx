@@ -1,3 +1,22 @@
+import {
+  Bell,
+  Building2,
+  Eye,
+  GitBranch,
+  KeyRound,
+  LayoutTemplate,
+  type LucideIcon,
+  Palette,
+  Plug,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  SquareKanban,
+  Tag,
+  UserRound,
+  Users,
+  UsersRound,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,25 +44,43 @@ type SectionDefinition = {
   to: string;
 };
 
-const ACCOUNT_PAGES = [
-  ["information", "settings:information", "Profile"],
-  ["notifications", "settings:notifications", "Notifications"],
-  ["preferences", "settings:preferences", "Preferences"],
-  ["appearance", "settings:appearance.title", "Appearance"],
-  ["authentication", "settings:navigation.authentication", "Authentication"],
-  ["developer", "settings:apiKeys", "API keys"],
+type SettingsPage = [
+  segment: string,
+  key: string,
+  label: string,
+  icon: LucideIcon,
 ];
-const ORGANIZATION_PAGES = [
-  ["general", "settings:organizationGeneral.title", "General"],
-  ["members", "team:members.pageTitle", "Members"],
-  ["teams", "settings:navigation.teams", "Teams"],
-  ["roles", "settings:organizationRoles.title", "Roles"],
-  ["visibility", "settings:navigation.visibility", "Visibility"],
-  ["labels", "settings:organizationLabels.title", "Labels"],
-  ["templates", "settings:navigation.templates", "Templates"],
-  ["integrations", "settings:navigation.integrations", "Integrations"],
-  ["features", "settings:navigation.features", "Features"],
+
+const ACCOUNT_PAGES: SettingsPage[] = [
+  ["information", "settings:information", "Profile", UserRound],
+  ["notifications", "settings:notifications", "Notifications", Bell],
+  ["preferences", "settings:preferences", "Preferences", SlidersHorizontal],
+  ["appearance", "settings:appearance.title", "Appearance", Palette],
+  [
+    "authentication",
+    "settings:navigation.authentication",
+    "Authentication",
+    KeyRound,
+  ],
+  ["developer", "settings:apiKeys", "API keys", ShieldCheck],
 ];
+const ORGANIZATION_PAGES: SettingsPage[] = [
+  ["general", "settings:organizationGeneral.title", "General", Building2],
+  ["members", "team:members.pageTitle", "Members", Users],
+  ["teams", "settings:navigation.teams", "Teams", UsersRound],
+  ["roles", "settings:organizationRoles.title", "Roles", ShieldCheck],
+  ["visibility", "settings:navigation.visibility", "Visibility", Eye],
+  ["labels", "settings:organizationLabels.title", "Labels", Tag],
+  ["templates", "settings:navigation.templates", "Templates", LayoutTemplate],
+  ["integrations", "settings:navigation.integrations", "Integrations", Plug],
+  ["features", "settings:navigation.features", "Features", Sparkles],
+];
+const SECTION_ICONS: Record<SettingsSection, LucideIcon> = {
+  account: UserRound,
+  organization: Building2,
+  boards: SquareKanban,
+  repos: GitBranch,
+};
 const SECTIONS: SectionDefinition[] = [
   {
     id: "account",
@@ -142,6 +179,7 @@ export default function SettingsSectionNav({
         ).map((section) => {
           const disabled = isDisabled(section.id);
           const active = activeSection === section.id;
+          const SectionIcon = SECTION_ICONS[section.id];
 
           return (
             <button
@@ -164,6 +202,7 @@ export default function SettingsSectionNav({
               }}
               type="button"
             >
+              <SectionIcon className="mr-2 size-3.5 shrink-0" />
               <span className="truncate">
                 {t(section.labelKey, { defaultValue: section.fallbackLabel })}
               </span>
@@ -180,7 +219,7 @@ export default function SettingsSectionNav({
               )}
             </SectionHeader>
             {(section === "account" ? ACCOUNT_PAGES : ORGANIZATION_PAGES).map(
-              ([segment, key, label]) => {
+              ([segment, key, label, PageIcon]) => {
                 const to = `/dashboard/settings/${section}/${segment}`;
                 return (
                   <button
@@ -197,12 +236,13 @@ export default function SettingsSectionNav({
                     data-active={activeSection === section ? "true" : undefined}
                     onClick={() => onNavigate(to)}
                     className={cn(
-                      "flex min-h-11 w-full items-center rounded-md px-2 text-left text-ui hover:bg-accent hover:text-foreground sm:min-h-7",
+                      "flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-ui hover:bg-accent hover:text-foreground sm:min-h-7",
                       pathname === to
                         ? "bg-secondary font-medium text-foreground"
                         : "text-muted-foreground",
                     )}
                   >
+                    <PageIcon className="size-3.5 shrink-0" />
                     {t(key, { defaultValue: label })}
                   </button>
                 );

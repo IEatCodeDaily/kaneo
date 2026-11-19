@@ -19,9 +19,9 @@ function luminance(hex: string) {
 // inverts its sidebar rule: the sidebar is now the darkest surface in both themes.
 describe("Cold monochrome palette", () => {
   it("uses cold dark tokens and keeps the sidebar darker than the viewport", () => {
-    expect(value(dark, "background")).toBe("#111418");
-    expect(value(dark, "sidebar")).toBe("#0c0f13");
-    expect(value(dark, "border")).toBe("#292e36");
+    expect(value(dark, "background")).toBe("#0b0d10");
+    expect(value(dark, "sidebar")).toBe("#07090c");
+    expect(value(dark, "border")).toBe("#232830");
     expect(value(dark, "foreground")).toBe("#e7eaf0");
     expect(value(dark, "muted-foreground")).toBe("#a0a8b5");
     const background = value(dark, "background");
