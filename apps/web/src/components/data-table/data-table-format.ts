@@ -769,9 +769,10 @@ export function summarize(
   const fmt = (n: number) =>
     n.toLocaleString(undefined, { maximumFractionDigits: precision });
   const values = rows.map((row) => fieldValue(row, field));
-  const filled = values.filter(
-    (v) => v !== null && v !== undefined && v !== "" && v !== false,
-  );
+  // Mirrors the server's emptySql: NULL, or an empty collection — never '', 0 or false.
+  const isEmptyCell = (v: unknown) =>
+    v === null || v === undefined || (Array.isArray(v) && v.length === 0);
+  const filled = values.filter((v) => !isEmptyCell(v));
   switch (fn) {
     case "sum":
     case "avg":
