@@ -229,7 +229,7 @@ export function AppearanceSettings() {
             <span className="flex min-w-0 flex-1 flex-col gap-2">
               <span className="h-2 w-full rounded-sm bg-muted" />
               <span className="h-2 w-3/4 rounded-sm bg-card" />
-              <span className="flex items-center gap-2">
+              <span className="flex min-w-0 flex-wrap items-center gap-2">
                 <span className="rounded-sm bg-primary px-2 py-1 text-xs text-primary-foreground">
                   Aa
                 </span>
@@ -271,7 +271,7 @@ export function AppearanceSettings() {
                       />
                       <Input
                         id={`token-${token}`}
-                        className="w-28 shrink-0"
+                        className="w-28 max-w-28 shrink"
                         placeholder="#rrggbb"
                         value={
                           drafts[`${mode}:${token}`] ??
