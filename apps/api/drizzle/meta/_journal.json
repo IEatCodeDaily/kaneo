@@ -673,6 +673,13 @@
 			"when": 1794881064000,
 			"tag": "0092_team_avatar",
 			"breakpoints": true
+		},
+		{
+			"idx": 93,
+			"version": "7",
+			"when": 1795170049312,
+			"tag": "0093_resource_slugs",
+			"breakpoints": true
 		}
 	]
 }

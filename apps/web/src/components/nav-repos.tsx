@@ -46,6 +46,7 @@ import {
 } from "@/lib/navigation-prefetch";
 import { useTeamViewStore } from "@/store/team-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type { Repo } from "@/types/repo";
 import { NavHiddenItems } from "./nav-hidden-items";
 import {
   reconcileSidebarOrder,
@@ -95,13 +96,15 @@ export function NavRepos() {
   );
 
   const orgParams = { organizationSlug: organization?.slug ?? "" };
-  const isCurrentRepo = (repoId: string) =>
-    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId });
+  // URLs carry the repo slug (#resource-slugs); legacy id URLs stay active too.
+  const isCurrentRepo = (repo: Pick<Repo, "id" | "slug">) =>
+    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId: repo.slug }) ||
+    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId: repo.id });
   // Section fallback: the route belongs to Repos but no visible repo claims
   // it (hidden repo, filtered/not-yet-loaded list) — the header lights up.
   const reposSectionActive =
     isActive(SIDEBAR_ROUTES.repos, orgParams) &&
-    !visibleRepos.some((repo) => isCurrentRepo(repo.id));
+    !visibleRepos.some((repo) => isCurrentRepo(repo));
 
   // Switching repos keeps the current repo view; arriving fresh uses the last
   // repo view this user was in (persisted in localStorage).
@@ -109,12 +112,12 @@ export function NavRepos() {
 
   if (!organization || !reposEnabled) return null;
 
-  const openRepo = (repoId: string) =>
+  const openRepo = (repo: Pick<Repo, "id" | "slug">) =>
     navigate({
       to: `/dashboard/organization/$organizationSlug/repo/$repoId/${targetRepoView}`,
       params: {
         organizationSlug: organization.slug,
-        repoId,
+        repoId: repo.slug ?? repo.id,
       },
     });
 
@@ -153,9 +156,9 @@ export function NavRepos() {
             <SidebarMenuItem key={repo.id}>
               <SidebarMenuButton
                 data-testid={`sidebar-repo-collapsed-${repo.id}`}
-                isActive={isCurrentRepo(repo.id)}
+                isActive={isCurrentRepo(repo)}
                 className={SIDEBAR_ACTIVE_PILL}
-                onClick={() => openRepo(repo.id)}
+                onClick={() => openRepo(repo)}
                 tooltip={`${repo.owner}/${repo.name}`}
               >
                 <RepoAvatar repo={repo} />
@@ -233,8 +236,8 @@ export function NavRepos() {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           className={`h-7 gap-0 ps-3.5 pe-8 text-sm ${SIDEBAR_ACTIVE_PILL}`}
-                          isActive={isCurrentRepo(repo.id)}
-                          onClick={() => openRepo(repo.id)}
+                          isActive={isCurrentRepo(repo)}
+                          onClick={() => openRepo(repo)}
                           {...intentPrefetchHandlers(() =>
                             prefetchRepoNavigation(queryClient, repo.id),
                           )}
@@ -350,14 +353,20 @@ export function NavRepos() {
               ))}
             </SidebarSortableList>
             <NavHiddenItems
-              isActive={(repoId) => isCurrentRepo(repoId)}
+              isActive={(repoId) => {
+                const repo = repos.find((r) => r.id === repoId);
+                return repo ? isCurrentRepo(repo) : false;
+              }}
               items={hiddenRepos.map((repo) => ({
                 id: repo.id,
                 name: repo.name,
               }))}
               label={t("navigation:sidebar.moreRepos")}
               onIntent={(repoId) => prefetchRepoNavigation(queryClient, repoId)}
-              onSelect={(repoId) => openRepo(repoId)}
+              onSelect={(repoId) => {
+                const repo = repos.find((r) => r.id === repoId);
+                if (repo) openRepo(repo);
+              }}
               testIdPrefix="repos"
             />
           </SidebarMenu>

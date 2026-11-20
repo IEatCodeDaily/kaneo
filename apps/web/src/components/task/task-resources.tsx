@@ -84,7 +84,10 @@ type ResourceItem = {
   id: string;
   number: number;
   title: string;
+  /** Canonical repo id — mutations look the repo up by it. */
   repoId: string;
+  /** Slug where known (#resource-slugs) — the repo route param value. */
+  repoRef: string;
   repoLabel: string;
   state: string;
   isDraft: boolean | null;
@@ -486,6 +489,7 @@ export default function TaskResources({
             number: resource.number,
             title: resource.title,
             repoId: repo.id,
+            repoRef: repo.slug ?? repo.id,
             repoLabel,
             state: resource.state,
             isDraft: resource.isDraft ?? null,
@@ -567,9 +571,10 @@ export default function TaskResources({
               */}
               <Link
                 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm hover:text-primary-soft-foreground hover:underline"
+                // No organizationSlug here: same-org navigation, the router
+                // merges the current URL's slug.
                 params={{
-                  organizationId,
-                  repoId: item.repoId,
+                  repoId: item.repoRef,
                   number: String(item.number),
                 }}
                 to={
@@ -646,7 +651,6 @@ export default function TaskResources({
                 : getRepoIssueRelationTarget(
                     { number: Number(link.externalId), html_url: link.url },
                     repos,
-                    organizationId,
                   );
             const internal =
               internalTarget?.internal === true ? internalTarget : null;

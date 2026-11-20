@@ -38,6 +38,7 @@ export const repoSafeSummary = (repo: typeof repoTable.$inferSelect) => ({
   id: repo.id,
   owner: repo.owner,
   name: repo.name,
+  slug: repo.slug,
   provider: repo.provider,
   url: repo.url,
   description: repo.description,
@@ -49,6 +50,7 @@ export const tableSafeSummary = (
 ) => ({
   id: table.id,
   name: table.name,
+  slug: table.slug,
   icon: table.icon,
 });
 
@@ -109,6 +111,7 @@ export const projectResourceLinkSchema = v.object({
       id: v.string(),
       owner: v.string(),
       name: v.string(),
+      slug: v.string(),
       provider: v.string(),
       url: v.string(),
       description: v.nullable(v.string()),
@@ -117,6 +120,7 @@ export const projectResourceLinkSchema = v.object({
     v.object({
       id: v.string(),
       name: v.string(),
+      slug: v.string(),
       icon: v.nullable(v.string()),
     }),
   ]),

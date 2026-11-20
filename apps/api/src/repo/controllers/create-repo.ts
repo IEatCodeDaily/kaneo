@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { repoTable } from "../../database/schema";
+import { uniqueResourceSlug } from "../../utils/slug";
 
 type CreateRepoOptions = {
   organizationId: string;
@@ -41,6 +42,12 @@ async function createRepo(options: CreateRepoOptions) {
         provider: options.provider,
         owner: options.owner,
         name: options.name,
+        slug: await uniqueResourceSlug(
+          db,
+          repoTable,
+          options.organizationId,
+          options.name,
+        ),
         url: options.url,
         externalId: options.externalId,
         description: options.description,

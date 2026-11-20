@@ -21,6 +21,7 @@ const repositorySchema = v.object({
   provider: v.string(),
   owner: v.string(),
   name: v.string(),
+  slug: v.string(),
   description: v.nullable(v.string()),
   url: v.string(),
   createdAt: v.date(),

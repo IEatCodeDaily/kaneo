@@ -3,6 +3,7 @@ type SearchRouteItem = {
   id: string;
   boardSlug?: string;
   repoId?: string;
+  repoSlug?: string;
 };
 
 export function getSearchResultRoute(
@@ -18,7 +19,7 @@ export function getSearchResultRoute(
   if (item.type === "repository" && item.repoId) {
     return {
       to: "/dashboard/organization/$organizationSlug/repo/$repoId/code" as const,
-      params: { organizationSlug, repoId: item.repoId },
+      params: { organizationSlug, repoId: item.repoSlug ?? item.repoId },
       search: { path: "" },
     };
   }

@@ -13,6 +13,7 @@ import RepoStateBadge from "@/components/repo/repo-state-badge";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssue from "@/hooks/queries/repo/use-get-repo-issue";
+import { useRepoRefParam } from "@/hooks/use-resource-ref";
 import { formatDateMedium } from "@/lib/format";
 
 export const Route = createFileRoute(
@@ -21,8 +22,9 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { organizationSlug, repoId, number: numberParam } = Route.useParams();
+  const { organizationSlug, number: numberParam } = Route.useParams();
   const { data: activeOrganization } = useActiveOrganization();
+  const { ref: repoRef, id: repoId } = useRepoRefParam();
   const organizationId = activeOrganization?.id ?? "";
   const number = Number(numberParam);
   const { data: repo } = useGetRepo({ id: repoId });
@@ -35,7 +37,7 @@ function RouteComponent() {
   const back = () =>
     navigate({
       to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues",
-      params: { organizationSlug, repoId },
+      params: { organizationSlug, repoId: repoRef },
     });
 
   return (
@@ -59,6 +61,7 @@ function RouteComponent() {
               github={issue.github}
               number={issue.number}
               organizationId={organizationId}
+              organizationSlug={organizationSlug}
               repoId={repoId}
             />
           }

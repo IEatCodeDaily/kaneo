@@ -156,7 +156,7 @@ function DashboardsIndexRoute() {
                         to: "/dashboard/organization/$organizationSlug/dashboards/$dashboardId",
                         params: {
                           organizationSlug,
-                          dashboardId: dashboard.id,
+                          dashboardId: dashboard.slug ?? dashboard.id,
                         },
                       })
                     }
@@ -204,6 +204,7 @@ function DashboardsIndexRoute() {
           open={createOpen}
           onClose={() => setCreateOpen(false)}
           organizationId={organizationId}
+          organizationSlug={organizationSlug}
         />
         <DeleteDashboardDialog
           open={deleteTarget !== null}

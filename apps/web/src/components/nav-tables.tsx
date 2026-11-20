@@ -13,6 +13,7 @@ import {
 } from "@/hooks/use-sidebar-active";
 import { cn } from "@/lib/cn";
 import { ensureTablesStrings } from "@/lib/i18n";
+import type { DataTableSummary } from "@/types/data-table";
 
 // Pull the lazy tables/dashboards strings as early as possible.
 void ensureTablesStrings();
@@ -54,21 +55,29 @@ export function NavTables() {
   if (!organization || !tablesEnabled) return null;
 
   const orgParams = { organizationSlug: organization.slug };
+  const isCurrentTable = (table: Pick<DataTableSummary, "id" | "slug">) =>
+    isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.slug }) ||
+    isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.id });
   // Section fallback: on a table route whose table is not in the visible
   // list (still loading, error, or hidden), the header lights up.
   const tablesSectionActive =
     isActive(SIDEBAR_ROUTES.tables, orgParams) &&
-    !tables.some((table) =>
-      isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.id }),
-    );
+    !tables.some((table) => isCurrentTable(table));
 
   return (
     <>
       <SidebarGroup className="group/tables gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className={`h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground ${tablesSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
             data-active={tablesSectionActive}
+            render={<button type="button" />}
+            onClick={() =>
+              navigate({
+                to: "/dashboard/organization/$organizationSlug/table",
+                params: { organizationSlug: organization.slug },
+              })
+            }
           >
             <span>{t("navigation:tables.title")}</span>
             <FeatureStageBadge stage="Alpha" />
@@ -115,10 +124,7 @@ export function NavTables() {
             {tables.map((table) => (
               <SidebarMenuItem key={table.id}>
                 <SidebarMenuButton
-                  isActive={isActive(SIDEBAR_ROUTES.table, {
-                    ...orgParams,
-                    tableId: table.id,
-                  })}
+                  isActive={isCurrentTable(table)}
                   className={`h-8 gap-2 ps-3.5 text-sm ${SIDEBAR_ACTIVE_PILL}`}
                   tooltip={table.name}
                   onClick={() =>
@@ -126,7 +132,7 @@ export function NavTables() {
                       to: "/dashboard/organization/$organizationSlug/table/$tableId",
                       params: {
                         organizationSlug: organization.slug,
-                        tableId: table.id,
+                        tableId: table.slug ?? table.id,
                       },
                     })
                   }

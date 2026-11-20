@@ -92,7 +92,6 @@ export default function TaskSyncedIssueProperty({
   const target = getRepoIssueRelationTarget(
     { number: Number(issue.number), html_url: issue.url },
     repos,
-    organizationId ?? "",
   );
 
   const link =

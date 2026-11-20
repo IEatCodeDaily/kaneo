@@ -125,6 +125,102 @@ describe("sidebarEntryIsActive — route families", () => {
     }
   });
 
+  it("repo active state resolves identically with slug params and legacy cuids (#resource-slugs)", () => {
+    const slug = "api-2";
+    const cuid = "y34w06ysli9a1lqk7jxths20";
+    // Slug URLs keep the repo pill lit through every child segment.
+    for (const path of [
+      `/dashboard/organization/acme/repo/${slug}`,
+      `/dashboard/organization/acme/repo/${slug}/issues`,
+      `/dashboard/organization/acme/repo/${slug}/pulls`,
+      `/dashboard/organization/acme/repo/${slug}/code`,
+      `/dashboard/organization/acme/repo/${slug}/packages`,
+      `/dashboard/organization/acme/repo/${slug}/releases`,
+      `/dashboard/organization/acme/repo/${slug}/issues/42`,
+    ]) {
+      expect(
+        sidebarEntryIsActive(SIDEBAR_ROUTES.repo, path, {
+          ...ORG,
+          repoId: slug,
+        }),
+        path,
+      ).toBe(true);
+      // A slug that merely CONTAINS the expected slug never matches.
+      expect(
+        sidebarEntryIsActive(SIDEBAR_ROUTES.repo, path, {
+          ...ORG,
+          repoId: "api",
+        }),
+        path,
+      ).toBe(false);
+    }
+    // Legacy cuid URLs light the pill when the item is matched by id.
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.repo,
+        `/dashboard/organization/acme/repo/${cuid}/issues`,
+        {
+          ...ORG,
+          repoId: cuid,
+        },
+      ),
+    ).toBe(true);
+    // Wrong org fails closed, slug or cuid.
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.repo,
+        `/dashboard/organization/other/repo/${slug}/issues`,
+        {
+          ...ORG,
+          repoId: slug,
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it("tables and dashboards stay active with slug params, and a sibling slug never leaks in", () => {
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.table,
+        "/dashboard/organization/acme/table/invoices/rows",
+        {
+          ...ORG,
+          tableId: "invoices",
+        },
+      ),
+    ).toBe(true);
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.table,
+        "/dashboard/organization/acme/table/invoice-2",
+        {
+          ...ORG,
+          tableId: "invoices",
+        },
+      ),
+    ).toBe(false);
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.dashboard,
+        "/dashboard/organization/acme/dashboards/revenue/panels",
+        {
+          ...ORG,
+          dashboardId: "revenue",
+        },
+      ),
+    ).toBe(true);
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.dashboard,
+        "/dashboard/organization/other/dashboards/revenue",
+        {
+          ...ORG,
+          dashboardId: "revenue",
+        },
+      ),
+    ).toBe(false);
+  });
+
   it("project view stays active on the project item across its child routes", () => {
     for (const path of [
       "/dashboard/organization/acme/projects/launch",

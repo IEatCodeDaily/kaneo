@@ -6,6 +6,7 @@ export type Repo = {
   provider: RepoProvider;
   owner: string;
   name: string;
+  slug: string;
   url: string;
   description: string | null;
   defaultBranch: string | null;

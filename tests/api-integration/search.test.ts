@@ -146,6 +146,7 @@ describe("ranked global search on Postgres", () => {
         provider: "github",
         owner: "acme",
         name: "pressure",
+        slug: "pressure",
         url: "https://github.com/acme/pressure",
       })
       .returning();

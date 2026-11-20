@@ -33,6 +33,7 @@ import {
   listAccessibleResourceIds,
   privilegeAllows,
 } from "../resource-access";
+import { uniqueResourceSlug } from "../utils/slug";
 import { csvLinkColumns } from "./csv";
 import {
   coerceValue,
@@ -867,7 +868,17 @@ export async function createDataTable(
   return db.transaction(async (tx) => {
     const [created] = await tx
       .insert(dataTableTable)
-      .values({ organizationId, name: values.name, icon: values.icon ?? null })
+      .values({
+        organizationId,
+        name: values.name,
+        slug: await uniqueResourceSlug(
+          tx,
+          dataTableTable,
+          organizationId,
+          values.name,
+        ),
+        icon: values.icon ?? null,
+      })
       .returning();
     if (!created) notFound("Created data table");
     await store.createTable(tx, created.id);
@@ -1809,7 +1820,16 @@ export async function createDashboard(
 ) {
   const [created] = await db
     .insert(dataTableDashboardTable)
-    .values({ organizationId, name: values.name })
+    .values({
+      organizationId,
+      name: values.name,
+      slug: await uniqueResourceSlug(
+        db,
+        dataTableDashboardTable,
+        organizationId,
+        values.name,
+      ),
+    })
     .returning();
   return created ?? notFound("Created dashboard");
 }
@@ -2100,7 +2120,11 @@ export async function listRowsForTask(
     });
     if (!privilegeAllows(privilege, "view")) continue;
     const [table] = await db
-      .select({ name: dataTableTable.name, icon: dataTableTable.icon })
+      .select({
+        name: dataTableTable.name,
+        slug: dataTableTable.slug,
+        icon: dataTableTable.icon,
+      })
       .from(dataTableTable)
       .where(
         and(
@@ -2129,6 +2153,7 @@ export async function listRowsForTask(
     tables.push({
       tableId,
       tableName: table.name,
+      tableSlug: table.slug,
       icon: table.icon,
       canEdit: privilegeAllows(privilege, "edit"),
       fields: fieldRows,

@@ -81,6 +81,7 @@ const repoSchema = v.object({
   provider: v.string(),
   owner: v.string(),
   name: v.string(),
+  slug: v.string(),
   externalId: v.nullable(v.string()),
   url: v.string(),
   description: v.nullable(v.string()),

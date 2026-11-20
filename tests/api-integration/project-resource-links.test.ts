@@ -40,6 +40,7 @@ async function createRepoFixture(
       provider: "github",
       owner,
       name,
+      slug: name.toLowerCase(),
       url: `https://github.com/${owner}/${name}`,
     })
     .returning();
@@ -54,7 +55,11 @@ async function createTableFixture(organizationId: string) {
     .where(eq(schema.organizationTable.id, organizationId));
   const [table] = await db
     .insert(schema.dataTableTable)
-    .values({ organizationId, name: `table-${randomUUID()}` })
+    .values({
+      organizationId,
+      name: `table-${randomUUID()}`,
+      slug: `table-${randomUUID()}`,
+    })
     .returning();
   if (!table) throw new Error("Failed to seed table fixture");
   return table;

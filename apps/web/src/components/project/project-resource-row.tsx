@@ -63,7 +63,7 @@ export function ProjectResourceRow({
       : {
           organizationSlug,
           [link.resourceType === "repo" ? "repoId" : "tableId"]:
-            link.resourceId,
+            link.resource.slug ?? link.resourceId,
         };
 
   return (

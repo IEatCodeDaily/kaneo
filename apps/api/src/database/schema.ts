@@ -815,6 +815,8 @@ export const dataTableTable = pgTable(
       .notNull()
       .references(() => organizationTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    // URL handle for table routes (slug navigation, #resource-slugs).
+    slug: text("slug").notNull(),
     icon: text("icon"),
     // Per-resource org baseline; NULL = follow the organization default.
     orgPrivilege: text("org_privilege", {
@@ -834,6 +836,11 @@ export const dataTableTable = pgTable(
   },
   (table) => [
     index("data_table_organization_idx").on(table.organizationId),
+    // Slug URLs resolve within one organization (lower-case, like boards).
+    uniqueIndex("data_table_organization_slug_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
     // KFL-368: composite identity for type-safe association-table FKs.
     unique("data_table_organization_id_id_unique").on(
       table.organizationId,
@@ -976,6 +983,8 @@ export const dataTableDashboardTable = pgTable(
       .notNull()
       .references(() => organizationTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    // URL handle for dashboard routes (slug navigation, #resource-slugs).
+    slug: text("slug").notNull(),
     panels: jsonb("panels").$type<DashboardPanelSpec[]>().notNull().default([]),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" })
@@ -985,6 +994,11 @@ export const dataTableDashboardTable = pgTable(
   },
   (table) => [
     index("data_table_dashboard_organization_idx").on(table.organizationId),
+    // Slug URLs resolve within one organization (lower-case, like boards).
+    uniqueIndex("data_table_dashboard_organization_slug_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
   ],
 );
 
@@ -2086,6 +2100,8 @@ export const repoTable = pgTable(
     provider: text("provider").notNull(),
     owner: text("owner").notNull(),
     name: text("name").notNull(),
+    // URL handle for repo routes (slug navigation, #resource-slugs).
+    slug: text("slug").notNull(),
     // Provider-side identifier (GitHub repo id / Gitea repo id).
     externalId: text("external_id"),
     url: text("url").notNull(),
@@ -2108,6 +2124,11 @@ export const repoTable = pgTable(
   },
   (table) => [
     index("repo_organizationId_idx").on(table.organizationId),
+    // Slug URLs resolve within one organization (lower-case, like boards).
+    uniqueIndex("repo_organization_slug_lower_unique").on(
+      table.organizationId,
+      sql`lower(${table.slug})`,
+    ),
     // One connection per repo per organization.
     unique("repo_org_provider_owner_name_unique").on(
       table.organizationId,

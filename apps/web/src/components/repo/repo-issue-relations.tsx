@@ -18,11 +18,14 @@ export default function RepoIssueRelations({
   github,
   number,
   organizationId,
+  organizationSlug,
   repoId,
 }: {
   github?: RepoIssueGithub;
   number: number;
   organizationId: string;
+  /** Optional: same-org links let the router merge the URL's slug. */
+  organizationSlug?: string;
   repoId: string;
 }) {
   const queryClient = useQueryClient();
@@ -79,7 +82,7 @@ export default function RepoIssueRelations({
         .includes(search.trim().toLowerCase()),
   );
   const row = (item: Relation, label: string, removable = false) => {
-    const target = getRepoIssueRelationTarget(item, repos, organizationId);
+    const target = getRepoIssueRelationTarget(item, repos, organizationSlug);
 
     return (
       <div className="flex items-center gap-2" key={`${label}-${item.number}`}>

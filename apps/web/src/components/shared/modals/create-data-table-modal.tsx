@@ -49,7 +49,7 @@ export default function CreateDataTableModal({
       close();
       navigate({
         to: "/dashboard/organization/$organizationSlug/table/$tableId",
-        params: { organizationSlug, tableId: table.id },
+        params: { organizationSlug, tableId: table.slug ?? table.id },
       });
     } catch (error) {
       toast.error(

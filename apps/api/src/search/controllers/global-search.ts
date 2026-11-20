@@ -525,6 +525,7 @@ async function globalSearch(params: SearchParams): Promise<{
         id: repoTable.id,
         owner: repoTable.owner,
         name: repoTable.name,
+        slug: repoTable.slug,
         provider: repoTable.provider,
         description: repoTable.description,
         url: repoTable.url,
@@ -555,6 +556,7 @@ async function globalSearch(params: SearchParams): Promise<{
         repoId: repo.id,
         repoOwner: repo.owner,
         repoName: repo.name,
+        repoSlug: repo.slug,
         repoProvider: repo.provider,
         url: repo.url,
       });

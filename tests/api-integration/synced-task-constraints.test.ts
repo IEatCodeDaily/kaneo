@@ -50,6 +50,7 @@ async function seedRepoWithIssues() {
       provider: "github",
       owner: "kaneo-test",
       name: `repo-${randomUUID()}`,
+      slug: `repo-${randomUUID()}`,
       url: "https://github.com/kaneo-test/repo",
     })
     .returning();

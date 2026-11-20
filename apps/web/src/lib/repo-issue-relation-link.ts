@@ -28,7 +28,7 @@ function repositoryPath(url?: string | null) {
  */
 export function getRepoIssueRelationLink(
   relation: GitHubIssueRelation,
-  repos: Array<Pick<Repo, "id" | "owner" | "name">>,
+  repos: Array<Pick<Repo, "id" | "slug" | "owner" | "name">>,
 ) {
   if (!relation.number) return null;
 
@@ -43,7 +43,11 @@ export function getRepoIssueRelationLink(
       relationRepository,
   );
 
-  return repo ? { number: relation.number, repoId: repo.id } : null;
+  // Links carry the URL slug (#resource-slugs); legacy rows without one fall
+  // back to the id, which every route still resolves.
+  return repo
+    ? { number: relation.number, repoId: repo.slug ?? repo.id }
+    : null;
 }
 
 export const REPO_ISSUE_ROUTE =
@@ -52,9 +56,13 @@ export const REPO_ISSUE_ROUTE =
 export type RepoIssueRelationTarget =
   | {
       internal: true;
-      href: string;
+      href: string | null;
       to: typeof REPO_ISSUE_ROUTE;
-      params: { organizationSlug: string; repoId: string; number: string };
+      params: {
+        organizationSlug?: string;
+        repoId: string;
+        number: string;
+      };
     }
   | { internal: false; href: string | null };
 
@@ -64,26 +72,29 @@ export type RepoIssueRelationTarget =
  * When the related repository is synced into this Kaneo organization the link
  * must stay in-app (#30); otherwise it falls back to the GitHub URL. Returning
  * a concrete `href` for both branches keeps the decision testable without a
- * router.
+ * router. `organizationSlug` is optional: same-organization links can omit it
+ * and let the router merge the current URL's slug.
  */
 export function getRepoIssueRelationTarget(
   relation: GitHubIssueRelation,
-  repos: Array<Pick<Repo, "id" | "owner" | "name">>,
-  organizationId: string,
+  repos: Array<Pick<Repo, "id" | "slug" | "owner" | "name">>,
+  organizationSlug?: string,
 ): RepoIssueRelationTarget {
   const link = getRepoIssueRelationLink(relation, repos);
 
   if (!link) return { internal: false, href: relation.html_url ?? null };
 
   const params = {
-    organizationSlug: organizationId,
+    ...(organizationSlug ? { organizationSlug } : {}),
     repoId: link.repoId,
     number: String(link.number),
   };
 
   return {
     internal: true,
-    href: `/dashboard/organization/${organizationId}/repo/${link.repoId}/issues/${link.number}`,
+    href: organizationSlug
+      ? `/dashboard/organization/${organizationSlug}/repo/${link.repoId}/issues/${link.number}`
+      : null,
     to: REPO_ISSUE_ROUTE,
     params,
   };
