@@ -12,7 +12,6 @@ import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -22,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
