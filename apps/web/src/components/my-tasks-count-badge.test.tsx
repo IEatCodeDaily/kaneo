@@ -70,7 +70,7 @@ describe("MyTasksCountBadge", () => {
     expect(screen.getByTestId("my-tasks-flagged-badge").textContent).toBe("2");
   });
 
-  it("gives the flagged badge a monochrome outline, distinct from assigned", () => {
+  it("gives the flagged badge a solid amber fill, distinct from assigned", () => {
     withTasks([{ id: "a" }]);
     withFlags([{ taskId: "f-1", resolvedAt: null }]);
 
@@ -78,8 +78,12 @@ describe("MyTasksCountBadge", () => {
 
     const flagged = screen.getByTestId("my-tasks-flagged-badge");
     const assigned = screen.getByTestId("my-tasks-count-badge");
-    expect(flagged.classList.contains("border-input")).toBe(true);
-    expect(flagged.classList.contains("bg-transparent")).toBe(true);
+    // Solid warning fill with a fixed dark label: the flagged pill must stay
+    // readable on the dark sidebar AND on the white active nav pill (the old
+    // transparent outline vanished the moment My Tickets was selected).
+    expect(flagged.classList.contains("bg-warning")).toBe(true);
+    expect(flagged.classList.contains("bg-transparent")).toBe(false);
+    expect(flagged.classList.contains("text-[#1c1508]")).toBe(true);
     expect(assigned.classList.contains("bg-secondary")).toBe(true);
     for (const badge of [flagged, assigned]) {
       expect(badge.classList.contains("h-4")).toBe(true);
