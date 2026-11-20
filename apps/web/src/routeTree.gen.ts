@@ -74,6 +74,7 @@ import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashbo
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsDashboardIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/dashboards/$dashboardId'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/index'
+import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/table/index'
 import { Route as LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRouteImport } from './routes/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/general'
 import { Route as LayoutAuthenticatedDashboardSettingsBoardsBoardIdIntegrationsRouteImport } from './routes/_layout/_authenticated/dashboard/settings/boards/$boardId/integrations'
@@ -512,6 +513,15 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute =
         LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
     } as any,
   )
+const LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute =
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRouteImport.update(
+    {
+      id: '/table/',
+      path: '/table/',
+      getParentRoute: () =>
+        LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute,
+    } as any,
+  )
 const LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRoute =
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableTableIdRouteImport.update(
     {
@@ -788,6 +798,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/organization/$organizationSlug/dashboards/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsIndexRoute
   '/dashboard/organization/$organizationSlug/projects/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute
   '/dashboard/organization/$organizationSlug/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/dashboard/organization/$organizationSlug/table/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
@@ -874,6 +885,7 @@ export interface FileRoutesByTo {
   '/dashboard/organization/$organizationSlug/dashboards': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsIndexRoute
   '/dashboard/organization/$organizationSlug/projects': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute
   '/dashboard/organization/$organizationSlug/repo': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/dashboard/organization/$organizationSlug/table': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
   '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
@@ -966,6 +978,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/dashboards/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsIndexRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
   '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar': typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
@@ -1057,6 +1070,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/dashboards/'
     | '/dashboard/organization/$organizationSlug/projects/'
     | '/dashboard/organization/$organizationSlug/repo/'
+    | '/dashboard/organization/$organizationSlug/table/'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/board'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
@@ -1143,6 +1157,7 @@ export interface FileRouteTypes {
     | '/dashboard/organization/$organizationSlug/dashboards'
     | '/dashboard/organization/$organizationSlug/projects'
     | '/dashboard/organization/$organizationSlug/repo'
+    | '/dashboard/organization/$organizationSlug/table'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/board'
     | '/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
@@ -1234,6 +1249,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/dashboards/'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/projects/'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/'
+    | '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/backlog'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/board'
     | '/_layout/_authenticated/dashboard/organization/$organizationSlug/board/$boardSlug/calendar'
@@ -1724,6 +1740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
     }
+    '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/': {
+      id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/'
+      path: '/table'
+      fullPath: '/dashboard/organization/$organizationSlug/table/'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRoute
+    }
     '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId': {
       id: '/_layout/_authenticated/dashboard/organization/$organizationSlug/table/$tableId'
       path: '/table/$tableId'
@@ -2091,6 +2114,7 @@ interface LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren 
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugDashboardsIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute
+  LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute
   LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute: typeof LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugCalendarRoute
@@ -2135,6 +2159,8 @@ const LayoutAuthenticatedDashboardOrganizationOrganizationSlugRouteChildren: Lay
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugProjectsIndexRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugRepoIndexRoute,
+    LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute:
+      LayoutAuthenticatedDashboardOrganizationOrganizationSlugTableIndexRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute:
       LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBacklogRoute,
     LayoutAuthenticatedDashboardOrganizationOrganizationSlugBoardBoardSlugBoardRoute:
