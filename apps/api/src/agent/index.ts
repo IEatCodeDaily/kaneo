@@ -4,6 +4,9 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
+import { MAX_AVATAR_BYTES } from "../user/avatar";
+import deleteAvatar from "../user/controllers/delete-avatar";
+import saveAvatar from "../user/controllers/save-avatar";
 
 /*
  * Agents are first-class members: a human user and an agent user are treated
@@ -172,6 +175,7 @@ agent.get("/", async (c) => {
       id: schema.userTable.id,
       name: schema.userTable.name,
       createdAt: schema.userTable.createdAt,
+      image: schema.userTable.image,
     })
     .from(schema.userTable)
     .innerJoin(
@@ -206,6 +210,7 @@ agent.get("/", async (c) => {
         id: a.id,
         name: a.name,
         createdAt: a.createdAt,
+        image: a.image,
         type: "agent" as const,
         token: key
           ? {
@@ -296,6 +301,58 @@ agent.delete("/:id", async (c) => {
       .where(eq(schema.apikeyTable.referenceId, found.id));
     await tx.delete(schema.userTable).where(eq(schema.userTable.id, found.id));
   });
+  return c.json({ success: true });
+});
+
+/**
+ * Store the agent's avatar (base64 PNG/JPEG/WebP, up to 512KB). The agent is a
+ * non-interactive user, so an organization admin sets its picture on its
+ * behalf; `user.image` is updated in the same request so every principal view
+ * (assignee pickers, comments, member lists) picks it up.
+ */
+agent.put("/:id/avatar", async (c) => {
+  const found = await findAgent(c.req.param("id"));
+  await requireAdmin(c.get("userId"), found.organizationId);
+  const body = await c.req.json<Record<string, unknown>>();
+  const contentType =
+    typeof body.contentType === "string" ? body.contentType : "";
+  const data = typeof body.data === "string" ? body.data : "";
+  if (!contentType || !data) {
+    throw new HTTPException(400, {
+      message: "contentType and data are required",
+    });
+  }
+  if (data.length > Math.ceil((MAX_AVATAR_BYTES * 4) / 3) + 8) {
+    throw new HTTPException(400, {
+      message: `Avatar must be at most ${Math.floor(MAX_AVATAR_BYTES / 1024)}KB`,
+    });
+  }
+  try {
+    const avatar = await saveAvatar({
+      userId: found.id,
+      contentType,
+      data,
+    });
+    await db
+      .update(schema.userTable)
+      .set({ image: avatar.url })
+      .where(eq(schema.userTable.id, found.id));
+    return c.json(avatar);
+  } catch (error) {
+    throw new HTTPException(400, {
+      message: error instanceof Error ? error.message : "Invalid avatar upload",
+    });
+  }
+});
+
+agent.delete("/:id/avatar", async (c) => {
+  const found = await findAgent(c.req.param("id"));
+  await requireAdmin(c.get("userId"), found.organizationId);
+  await deleteAvatar(found.id);
+  await db
+    .update(schema.userTable)
+    .set({ image: null })
+    .where(eq(schema.userTable.id, found.id));
   return c.json({ success: true });
 });
 

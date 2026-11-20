@@ -3307,7 +3307,11 @@
 			"noToken": "No active token",
 			"issue": "Issue token",
 			"reissue": "Reissue token",
-			"reissueError": "Could not reissue token"
+			"reissueError": "Could not reissue token",
+			"avatarUpload": "Set avatar",
+			"avatarRemove": "Remove avatar",
+			"avatarError": "Could not set agent avatar",
+			"avatarRemoveError": "Could not remove agent avatar"
 		},
 		"membersTable": {
 			"removeMember": "Remove Member",
