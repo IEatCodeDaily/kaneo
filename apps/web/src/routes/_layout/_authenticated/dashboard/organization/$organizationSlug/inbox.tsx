@@ -1,5 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {, AtSign, CheckCheck, Filter, Flag, Inbox, Inbox as InboxIcon, Layers, ListX, Trash2} from "lucide-react";
+import {
+  AtSign,
+  CheckCheck,
+  Filter,
+  Flag,
+  Inbox,
+  Inbox as InboxIcon,
+  Layers,
+  ListX,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
