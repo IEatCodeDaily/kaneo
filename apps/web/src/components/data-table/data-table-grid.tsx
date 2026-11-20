@@ -430,22 +430,22 @@ function FieldHeader({
           </DropdownMenu>
           {field.options?.description && (
             <TooltipProvider delay={0}>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={field.options.description}
-                    className="shrink-0 text-muted-foreground"
-                  />
-                }
-              >
-                <Info className="size-3" />
-              </TooltipTrigger>
-              <TooltipContent>{field.options.description}</TooltipContent>
-            </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={field.options.description}
+                      className="shrink-0 text-muted-foreground"
+                    />
+                  }
+                >
+                  <Info className="size-3" />
+                </TooltipTrigger>
+                <TooltipContent>{field.options.description}</TooltipContent>
+              </Tooltip>
             </TooltipProvider>
           )}
           <ColumnResizeHandle
