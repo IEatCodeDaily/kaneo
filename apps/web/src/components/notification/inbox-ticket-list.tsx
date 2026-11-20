@@ -93,7 +93,7 @@ export default function InboxTicketList({
                       });
                     onSelect(head);
                   }}
-                  className="flex min-h-16 min-w-0 flex-1 items-start gap-2 py-3 pr-1 pl-3 text-left hover:bg-muted/40 sm:gap-3 sm:px-3"
+                  className="flex min-h-16 min-w-0 flex-1 items-start gap-2 py-3 pr-1 pl-3 text-left hover:bg-accent sm:gap-3 sm:px-3"
                   onKeyDown={(event) => {
                     if (event.key.toLowerCase() === "u" && !flag) {
                       event.preventDefault();

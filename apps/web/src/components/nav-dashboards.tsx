@@ -13,6 +13,7 @@ import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import {
   SIDEBAR_ACTIVE_PILL,
   SIDEBAR_ROUTES,
+  SIDEBAR_SECTION_HEADER,
   useSidebarActive,
 } from "@/hooks/use-sidebar-active";
 import { ensureTablesStrings } from "@/lib/i18n";
@@ -80,7 +81,7 @@ export function NavDashboards() {
       <SidebarGroup className="group/dashboards gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 ${SIDEBAR_SECTION_HEADER}`}
             data-active={dashboardsSectionActive}
             render={<button type="button" />}
             onClick={() =>
@@ -97,7 +98,7 @@ export function NavDashboards() {
             <button
               type="button"
               aria-label={t("navigation:dashboards.create")}
-              className="absolute right-0 flex size-6 items-center justify-center rounded-md text-sidebar-foreground opacity-0 hover:bg-sidebar-accent focus-visible:opacity-100 group-focus-within/dashboards:opacity-100 group-hover/dashboards:opacity-100"
+              className="absolute right-0 flex size-6 items-center justify-center rounded-md text-sidebar-foreground opacity-0 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-sidebar-ring group-focus-within/dashboards:opacity-100 group-hover/dashboards:opacity-100"
               onClick={() => setCreateOpen(true)}
             >
               <Plus className="size-4" />

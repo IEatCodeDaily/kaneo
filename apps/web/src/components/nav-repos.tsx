@@ -38,6 +38,7 @@ import { useTargetRepoView } from "@/hooks/use-remembered-view";
 import {
   SIDEBAR_ACTIVE_PILL,
   SIDEBAR_ROUTES,
+  SIDEBAR_SECTION_HEADER,
   useSidebarActive,
 } from "@/hooks/use-sidebar-active";
 import {
@@ -174,7 +175,7 @@ export function NavRepos() {
       <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-0.5 p-2 pt-1">
         <div className="flex h-7 items-center">
           <SidebarGroupLabel
-            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 ${SIDEBAR_SECTION_HEADER}`}
             data-active={reposSectionActive}
             render={<button type="button" />}
             onClick={() =>
@@ -190,7 +191,7 @@ export function NavRepos() {
           {canCreateRepo && (
             <button
               aria-label="Add repository"
-              className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-hover/repos:opacity-100"
+              className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 opacity-0 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-sidebar-ring group-hover/repos:opacity-100"
               onClick={() => setAddRepoOpen(true)}
               type="button"
             >
@@ -203,7 +204,7 @@ export function NavRepos() {
                 render={
                   <button
                     aria-label="Repository sidebar options"
-                    className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground/60 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     type="button"
                   />
                 }

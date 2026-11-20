@@ -145,7 +145,7 @@ export default function PersonalHome() {
                             key={task.id}
                             to={`${base}/board/${tasks.find((item) => item.id === task.id)?.boardSlug ?? task.boardId}/board`}
                             search={{ taskId: task.id }}
-                            className="flex min-w-0 items-center gap-2 px-3 py-3 text-sm hover:bg-muted/40"
+                            className="flex min-w-0 items-center gap-2 px-3 py-3 text-sm hover:bg-accent"
                           >
                             <CalendarDays className="size-3.5 shrink-0 text-muted-foreground" />
                             <span className="min-w-0 flex-1 truncate">
@@ -184,7 +184,7 @@ export default function PersonalHome() {
                         <Link
                           key={board.id}
                           to={`${base}/board/${board.slug}/board`}
-                          className="min-w-0 rounded-lg border border-border p-3 hover:bg-muted/30"
+                          className="min-w-0 rounded-lg border border-border p-3 hover:bg-accent"
                         >
                           <p className="truncate text-sm font-medium">
                             {board.name}

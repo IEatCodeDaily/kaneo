@@ -87,7 +87,7 @@ export function UserAvatar({
             type="button"
             aria-label="Open profile menu"
             className={cn(
-              "flex w-full min-w-0 cursor-pointer items-center rounded-md text-left outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-popup-open:bg-sidebar-accent",
+              "flex w-full min-w-0 cursor-pointer items-center rounded-lg text-left outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-popup-open:bg-sidebar-accent",
               collapsed
                 ? "size-7 justify-center"
                 : "min-h-11 w-full gap-1.5 px-1 sm:min-h-8",
@@ -127,7 +127,7 @@ export function UserAvatar({
             aria-label="Open profile menu"
             variant="ghost"
             size="icon"
-            className="size-11 rounded-full p-0 hover:bg-sidebar-accent/70 sm:size-8"
+            className="size-11 rounded-full p-0 hover:bg-sidebar-accent sm:size-8"
           >
             {/* The tone tints initials only; behind a real picture it leaked
                 through transparent avatars as a halo (dark mode report). */}

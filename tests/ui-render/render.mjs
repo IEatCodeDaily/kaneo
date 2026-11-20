@@ -912,6 +912,246 @@ for (const [shot, prefs, act] of [
   await ctx.close();
 }
 
+// Sidebar hover/active contract states (dark + light desktop): the section
+// header is ink-only chrome (rest fainter than items, hover steps to item
+// ink, active steps to full ink + semibold — never a fill), items keep the
+// sidebar-accent pill, and the header carries the section fallback when the
+// active item is hidden ("Hide from sidebar" driven through the real menu).
+// Computed-style asserts so a dead class fails the gate instead of shipping.
+for (const [tag, scheme] of [
+  ["dark", "dark"],
+  ["light", "light"],
+]) {
+  const headerInfo = `(() => {
+    const pick = (label) =>
+      [...document.querySelectorAll('[data-sidebar="group-label"]')].find(
+        (el) => el.textContent?.trim() === label,
+      );
+    const el = pick("Boards");
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    return {
+      color: cs.color,
+      opaque: cs.color.startsWith("rgb("),
+      bg: cs.backgroundColor,
+      bgTransparent: cs.backgroundColor === "rgba(0, 0, 0, 0)",
+      weight: cs.fontWeight,
+      active: el.getAttribute("data-active"),
+    };
+  })()`;
+  for (const [shot, run] of [
+    [
+      `sidebar-header-hover--desktop-${tag}.png`,
+      async (page) => {
+        const fails = [];
+        await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
+        await page.waitForTimeout(1200);
+        const rest = await page.evaluate(headerInfo);
+        if (!rest) fails.push("Boards section header not found");
+        const header = page
+          .locator('[data-sidebar="group-label"]', { hasText: "Boards" })
+          .first();
+        await header.hover();
+        await page.waitForTimeout(350);
+        const hovered = await page.evaluate(headerInfo);
+        if (rest && hovered) {
+          if (hovered.color === rest.color)
+            fails.push(
+              `header hover did not step ink up: rest=${rest.color} hover=${hovered.color}`,
+            );
+          if (!hovered.bgTransparent)
+            fails.push(
+              `header hover painted a fill (${hovered.bg}) — headers are ink-only`,
+            );
+        }
+        return { fails, rest, hovered };
+      },
+    ],
+    [
+      `sidebar-item-hover--desktop-${tag}.png`,
+      async (page) => {
+        const fails = [];
+        await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
+        await page.waitForTimeout(1200);
+        const row = page
+          .locator('[data-slot="sidebar-menu-button"]:visible', {
+            hasText: "Inbox",
+          })
+          .first();
+        if ((await row.count()) === 0) fails.push("Inbox nav row not visible");
+        await row.hover();
+        await page.waitForTimeout(350);
+        const bg = await row.evaluate(
+          (el) => getComputedStyle(el).backgroundColor,
+        );
+        if (bg === "rgba(0, 0, 0, 0)")
+          fails.push(`item hover painted no pill fill (bg=${bg})`);
+        return { fails, item_hover_bg: bg };
+      },
+    ],
+    [
+      `sidebar-section-active--desktop-${tag}.png`,
+      async (page) => {
+        const fails = [];
+        await page.goto(BASE + `/dashboard/organization/${slug}`, {
+          waitUntil: "networkidle",
+        });
+        await page.waitForTimeout(1200);
+        const m = await page.evaluate(headerInfo);
+        if (!m) fails.push("Boards section header not found");
+        else {
+          if (m.active !== "true")
+            fails.push(
+              `boards overview should carry the section fallback, data-active=${m.active}`,
+            );
+          if (m.weight !== "600")
+            fails.push(`active header weight ${m.weight}, want 600`);
+          if (!m.opaque) fails.push(`active header ink not full: ${m.color}`);
+          if (!m.bgTransparent)
+            fails.push(`active header painted a fill (${m.bg})`);
+        }
+        const rows = await page.evaluate(
+          `(() => {
+            const rows = [...document.querySelectorAll('[data-slot="sidebar-menu-button"]')]
+              .filter((el) => el.offsetParent !== null && el.textContent?.trim().includes(${JSON.stringify(board.name)}));
+            return rows.length;
+          })()`,
+        );
+        if (rows < 1)
+          fails.push(
+            "active-with-children: no visible board row under the active header",
+          );
+        return { fails, header: m, visible_board_rows: rows };
+      },
+    ],
+    [
+      `sidebar-section-fallback--desktop-${tag}.png`,
+      async (page) => {
+        const fails = [];
+        await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
+        await page.waitForTimeout(1200);
+        const row = page
+          .locator('[data-slot="sidebar-menu-button"]:visible', {
+            hasText: board.name,
+          })
+          .first();
+        await row.hover();
+        // SidebarSortableItem wraps the row in a plain div, and Base UI's
+        // trigger merge clobbers SidebarMenuAction's data-slot — anchor on the
+        // accessible name inside the wrapper instead (t("navigation:sidebar.more")).
+        const action = row
+          .locator("xpath=ancestor::div[1]")
+          .getByRole("button", { name: "More", exact: true });
+        const actionCount = await action.count();
+        if (actionCount !== 1) {
+          fails.push(`row action count ${actionCount}, want 1`);
+        } else {
+          await action.click();
+        }
+        // Post-click diagnostics: did Base UI mount the popup, and does the
+        // trigger know it is open? If not, try the keyboard path before
+        // failing — the dump names the layer that ate the press.
+        const probe = await page.evaluate(() => {
+          const menus = [...document.querySelectorAll('[role="menu"]')];
+          const el = document.querySelector(
+            '[data-slot="sidebar-menu-action"]',
+          );
+          return {
+            menus: menus.length,
+            firstMenuText: menus[0]?.textContent?.slice(0, 80) ?? null,
+            trigger: el
+              ? {
+                  popupOpen: el.getAttribute("data-popup-open"),
+                  expanded: el.getAttribute("aria-expanded"),
+                }
+              : null,
+          };
+        });
+        // The pointer press is unreliable on this control (sortable-wrapper
+        // interplay, pre-existing); keyboard Enter opens the menu reliably,
+        // so either path counts and only both failing is a state failure.
+        // Poll for the popup instead of sleeping past its mount.
+        const waitMenu = async (timeout) => {
+          try {
+            await page.waitForSelector('[role="menu"]', {
+              state: "visible",
+              timeout,
+            });
+            return true;
+          } catch {
+            return false;
+          }
+        };
+        let opened = await waitMenu(1200);
+        if (!opened) {
+          await action.focus();
+          await page.keyboard.press("Enter");
+          opened = await waitMenu(5000);
+          if (!opened)
+            fails.push(
+              `menu did not open on click or Enter (probe ${JSON.stringify(probe)})`,
+            );
+        }
+        if (opened) {
+          await page
+            .getByRole("menuitem", { name: "Hide from sidebar" })
+            .click({ timeout: 8000 });
+        }
+        await page.waitForTimeout(600);
+        const m = await page.evaluate(headerInfo);
+        if (!m) fails.push("Boards section header not found after hide");
+        else if (m.active !== "true")
+          fails.push(
+            `section fallback did not light the header after hiding the active item, data-active=${m.active}`,
+          );
+        const rows = await page.evaluate(
+          `(() => {
+            const rows = [...document.querySelectorAll('[data-slot="sidebar-menu-button"]')]
+              .filter((el) => el.offsetParent !== null && el.textContent?.trim().includes(${JSON.stringify(board.name)}));
+            return rows.length;
+          })()`,
+        );
+        if (rows !== 0)
+          fails.push(`hidden board row still rendered (${rows} visible)`);
+        return { fails, header: m, visible_board_rows: rows };
+      },
+    ],
+  ]) {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      storageState: state,
+      reducedMotion: "reduce",
+      colorScheme: scheme,
+    });
+    await ctx.addInitScript((t) => {
+      const k = "user-preferences";
+      const cur = JSON.parse(
+        localStorage.getItem(k) ?? '{"state":{},"version":0}',
+      );
+      cur.state = { ...cur.state, theme: t };
+      localStorage.setItem(k, JSON.stringify(cur));
+    }, scheme);
+    const page = await ctx.newPage();
+    const fails = [];
+    page.on("pageerror", (e) => fails.push(String(e)));
+    let measured = {};
+    try {
+      measured = await run(page);
+      fails.push(...(measured.fails ?? []));
+    } catch (e) {
+      fails.push(
+        `state failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
+      );
+    }
+    await page.screenshot({ path: join(OUT, shot) });
+    checks[shot] = { fails, ...measured };
+    console.log(
+      `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(measured)}${fails.length ? `\n      ${fails.join("\n      ")}` : ""}`,
+    );
+    await ctx.close();
+  }
+}
+
 async function showSystemFields(page) {
   await page.getByRole("button", { name: /^Fields/ }).click();
   await page

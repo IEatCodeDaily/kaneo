@@ -298,7 +298,7 @@ export default function CreateTaskTopbar({
                     "flex h-9 shrink-0 items-center rounded-md px-3 text-left text-sm sm:w-full",
                     parentBoardId === board.id
                       ? "bg-accent font-medium"
-                      : "hover:bg-accent/60",
+                      : "hover:bg-accent",
                   )}
                   key={board.id}
                   onClick={() => setParentBoardId(board.id)}

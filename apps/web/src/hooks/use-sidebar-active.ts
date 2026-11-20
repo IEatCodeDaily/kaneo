@@ -45,6 +45,17 @@ export const SIDEBAR_ROUTES = {
 export const SIDEBAR_ACTIVE_PILL =
   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-primary-soft data-[active=true]:font-semibold data-[active=true]:text-primary-soft-foreground";
 
+/**
+ * The treatment for clickable SECTION HEADERS (Boards/Repos/Tables/Dashboards
+ * labels), which are chrome, not items: a full pill surface on a tiny
+ * micro-text label reads as a mis-scaled nav row (#106 fallout). The header
+ * class is ink-only — resting fainter than the items below it, hover steps up
+ * to item ink, active steps to full foreground ink + semibold — no fill, no
+ * radius change, so the label keeps its hierarchy at every state.
+ */
+export const SIDEBAR_SECTION_HEADER =
+  "text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:text-foreground data-[active=true]:font-semibold";
+
 export type SidebarPatternOptions = {
   /** Match the whole pathname, not just the prefix (child routes excluded). */
   exact?: boolean;

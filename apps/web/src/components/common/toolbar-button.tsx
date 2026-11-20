@@ -33,7 +33,7 @@ export function ToolbarButton({
       className={cn(
         "h-7 gap-1.5 px-2 text-xs sm:h-7 pointer-coarse:text-xs",
         variant === "ghost" &&
-          "border-border bg-background hover:bg-accent/60 data-popup-open:bg-secondary",
+          "border-border bg-background hover:bg-accent data-popup-open:bg-secondary",
         applied &&
           "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft data-popup-open:bg-primary-soft data-popup-open:ring-1 data-popup-open:ring-input",
         className,
