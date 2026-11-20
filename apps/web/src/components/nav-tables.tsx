@@ -56,8 +56,10 @@ export function NavTables() {
 
   const orgParams = { organizationSlug: organization.slug };
   const isCurrentTable = (table: Pick<DataTableSummary, "id" | "slug">) =>
-    isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.slug }) ||
-    isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.id });
+    isActive(SIDEBAR_ROUTES.table, {
+      ...orgParams,
+      tableId: table.slug ?? table.id,
+    }) || isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.id });
   // Section fallback: on a table route whose table is not in the visible
   // list (still loading, error, or hidden), the header lights up.
   const tablesSectionActive =

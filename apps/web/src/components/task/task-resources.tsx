@@ -462,6 +462,11 @@ export default function TaskResources({
     () => new Map(repos.map((repo) => [repo.id, `${repo.owner}/${repo.name}`])),
     [repos],
   );
+  /** repoId -> URL slug (#resource-slugs); linked rows navigate by slug. */
+  const repoRefById = useMemo(
+    () => new Map(repos.map((repo) => [repo.id, repo.slug ?? repo.id])),
+    [repos],
+  );
 
   // One group per repository, matching how Relations groups tasks by board.
   // Repos with no matching items are omitted so the palette does not show

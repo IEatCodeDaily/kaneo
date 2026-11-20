@@ -63,7 +63,7 @@ export function NavDashboards() {
   ) =>
     isActive(SIDEBAR_ROUTES.dashboard, {
       ...orgParams,
-      dashboardId: dashboard.slug,
+      dashboardId: dashboard.slug ?? dashboard.id,
     }) ||
     isActive(SIDEBAR_ROUTES.dashboard, {
       ...orgParams,

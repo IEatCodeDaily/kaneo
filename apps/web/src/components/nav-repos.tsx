@@ -98,8 +98,10 @@ export function NavRepos() {
   const orgParams = { organizationSlug: organization?.slug ?? "" };
   // URLs carry the repo slug (#resource-slugs); legacy id URLs stay active too.
   const isCurrentRepo = (repo: Pick<Repo, "id" | "slug">) =>
-    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId: repo.slug }) ||
-    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId: repo.id });
+    isActive(SIDEBAR_ROUTES.repo, {
+      ...orgParams,
+      repoId: repo.slug ?? repo.id,
+    }) || isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId: repo.id });
   // Section fallback: the route belongs to Repos but no visible repo claims
   // it (hidden repo, filtered/not-yet-loaded list) — the header lights up.
   const reposSectionActive =

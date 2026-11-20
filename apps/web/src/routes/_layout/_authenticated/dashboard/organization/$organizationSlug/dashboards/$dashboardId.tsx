@@ -199,7 +199,7 @@ function DashboardDetailRoute() {
     }
   };
 
-  if (!activeOrganization) return null;
+  if (!organizationId) return null;
   if (!dashboardsEnabled) return <PermissionDenied />;
 
   const header = (
