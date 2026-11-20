@@ -55,11 +55,11 @@ vi.mock("@/hooks/mutations/agent/use-reissue-agent-token", () => ({
 }));
 
 vi.mock("@/hooks/mutations/agent/use-upload-agent-avatar", () => ({
-  useUploadAgentAvatar: () => ({ mutate: vi.fn(), isPending: false }),
+  default: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/hooks/mutations/agent/use-remove-agent-avatar", () => ({
-  useRemoveAgentAvatar: () => ({ mutate: vi.fn(), isPending: false }),
+  default: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/toast", () => ({
