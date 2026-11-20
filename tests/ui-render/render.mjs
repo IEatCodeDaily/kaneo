@@ -1800,6 +1800,10 @@ const TABLE_STATES = [
       const cost = p.getByRole("spinbutton", { name: "Cost", exact: true });
       await cost.fill("3180000");
       await cost.press("Enter");
+      // The commit is async: the editor must be gone (editing cleared) before
+      // the next keys, or the Space below lands while the grid still holds an
+      // open editor and is swallowed.
+      await cost.waitFor({ state: "detached" });
       await p.waitForFunction(
         () =>
           document
@@ -2102,24 +2106,6 @@ if (pages.table) {
     page.on("pageerror", (e) => fails.push(String(e)));
     await page.goto(await freshGridUrl(), { waitUntil: "networkidle" });
     await page.waitForTimeout(1200);
-    // Keyboard diagnostics: capture-phase keydown log for the phone state.
-    if (name === "table-keyboard") {
-      await page.evaluate(() => {
-        window.__kb = [];
-        document.addEventListener(
-          "keydown",
-          (e) => {
-            const t = e.target;
-            const role =
-              t?.getAttribute?.("role") ?? t?.tagName ?? String(t);
-            window.__kb.push(
-              `${e.key}@${role}${t?.getAttribute?.("aria-label") ? `(${t.getAttribute("aria-label")})` : ""} dp=${e.defaultPrevented}`,
-            );
-          },
-          true,
-        );
-      });
-    }
     try {
       await act(page);
       await page.waitForTimeout(500);
@@ -2127,22 +2113,6 @@ if (pages.table) {
       fails.push(
         `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
       );
-    }
-    if (name === "table-keyboard") {
-      const kb = await page.evaluate(() => ({
-        log: (window.__kb ?? []).slice(-14),
-        activeEl: `${
-          document.activeElement?.getAttribute?.("role") ??
-          document.activeElement?.tagName
-        }`,
-        gridFocused:
-          document.activeElement === document.querySelector('[role="grid"]'),
-        sheet: !!document.querySelector('[data-slot="sheet-popup"]'),
-        textboxes: document.querySelectorAll(
-          '[role="grid"] [role="textbox"], [role="grid"] input',
-        ).length,
-      }));
-      fails.push(`KBDIAG ${JSON.stringify(kb)}`);
     }
     const m = await page.evaluate(() => {
       const row = document.querySelector(
