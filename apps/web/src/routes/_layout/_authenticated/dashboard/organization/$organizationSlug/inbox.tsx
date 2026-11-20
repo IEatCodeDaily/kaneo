@@ -3,6 +3,7 @@ import {, AtSign, CheckCheck, Filter, Flag, Inbox, Inbox as InboxIcon, Layers, L
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import InboxTicketList from "@/components/notification/inbox-ticket-list";
 import PageTitle from "@/components/page-title";
 import TaskDetailsSheet, {
@@ -18,7 +19,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ToolbarButton } from "@/components/common/toolbar-button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -254,13 +254,14 @@ export function InboxComponent() {
                   mentions: AtSign,
                   flagged: Flag,
                 } as const;
+                const TabIcon = icons[value];
                 return (
                   <ToolbarButton
                     key={value}
                     type="button"
                     aria-pressed={filter === value}
                     onClick={() => setFilter(value)}
-                    icon={<icons[value] className="size-3.5" />}
+                    icon={<TabIcon className="size-3.5" />}
                     label={t(`inbox:filter.${value}`)}
                     applied={filter === value}
                   />
