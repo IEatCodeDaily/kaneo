@@ -1031,12 +1031,22 @@ for (const [tag, scheme] of [
         await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
         await page.waitForTimeout(1200);
         const row = page
-          .locator('[data-slot="sidebar-menu-item"]:visible', {
+          .locator('[data-slot="sidebar-menu-button"]:visible', {
             hasText: board.name,
           })
           .first();
         await row.hover();
-        await row.locator('[data-slot="sidebar-menu-action"]').click();
+        // SidebarSortableItem wraps the row in a plain div; the action button
+        // is the button's sibling inside it (not a descendant of the button).
+        const action = row
+          .locator("xpath=ancestor::div[1]")
+          .locator('[data-slot="sidebar-menu-action"]');
+        const actionCount = await action.count();
+        if (actionCount !== 1) {
+          fails.push(`row action count ${actionCount}, want 1`);
+        } else {
+          await action.click();
+        }
         await page.getByText("Hide from sidebar").click();
         await page.waitForTimeout(600);
         const m = await page.evaluate(headerInfo);
