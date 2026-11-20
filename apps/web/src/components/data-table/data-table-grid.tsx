@@ -123,6 +123,7 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
@@ -428,22 +429,24 @@ function FieldHeader({
             </DropdownMenuContent>
           </DropdownMenu>
           {field.options?.description && (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={field.options.description}
-                    className="shrink-0 text-muted-foreground"
-                  />
-                }
-              >
-                <Info className="size-3" />
-              </TooltipTrigger>
-              <TooltipContent>{field.options.description}</TooltipContent>
-            </Tooltip>
+            <TooltipProvider delay={0}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={field.options.description}
+                      className="shrink-0 text-muted-foreground"
+                    />
+                  }
+                >
+                  <Info className="size-3" />
+                </TooltipTrigger>
+                <TooltipContent>{field.options.description}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           <ColumnResizeHandle
             name={field.name}

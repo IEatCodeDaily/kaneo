@@ -21,7 +21,11 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
   const { t } = useTranslation();
   const { data: tasks } = useGetMyTasks({
     organizationId,
-    relation: "assigned",
+    // Mirror the My Tickets page's default "All" tab so the sidebar badge
+    // reconciles with the list the user actually sees (assigned + team +
+    // created + participated, non-final). The fetcher used to count only
+    // "assigned", which read as 56 while the page showed 101.
+    relation: "all",
     includeCompleted: false,
     // The API caps at 100; combined with the "99+" render cap below, the
     // badge never silently understates a large queue (it would otherwise
