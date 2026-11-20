@@ -5,6 +5,7 @@ export type Agent = {
   id: string;
   name: string;
   createdAt: string;
+  image: string | null;
   token: { id: string; start: string | null; createdAt: string } | null;
 };
 
