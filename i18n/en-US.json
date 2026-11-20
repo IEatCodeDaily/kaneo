@@ -3068,7 +3068,8 @@
 		"filter": {
 			"all": "All",
 			"unread": "Unread",
-			"mentions": "Mentions"
+			"mentions": "Mentions",
+			"flagged": "Flagged"
 		},
 		"clearRead": "Clear read",
 		"markUnread": "Mark unread",
