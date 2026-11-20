@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronRight,
@@ -34,6 +34,11 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
 import { recentRelativeTime } from "@/lib/recent-page";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
@@ -41,7 +46,7 @@ export function NavMain() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { isActive } = useSidebarActive();
   const recentOpen = useUserPreferencesStore((state) => state.recentOpen);
   const setRecentOpen = useUserPreferencesStore((state) => state.setRecentOpen);
   const [viewAllOpen, setViewAllOpen] = useState(false);
@@ -53,6 +58,7 @@ export function NavMain() {
     (state) => state.setRecentPageLimit,
   );
   if (!organization) return null;
+  const orgParams = { organizationSlug: organization.slug };
   const inboxUrl = `/dashboard/organization/${organization.slug}/inbox`;
   const ticketsUrl = `/dashboard/organization/${organization.slug}/my-tasks`;
   const primary = [
@@ -60,18 +66,21 @@ export function NavMain() {
       label: t("home:title"),
       icon: House,
       url: `/dashboard/organization/${organization.slug}/home`,
+      pattern: SIDEBAR_ROUTES.home,
       badge: null,
     },
     {
       label: t("navigation:sidebar.inbox"),
       icon: Inbox,
       url: inboxUrl,
+      pattern: SIDEBAR_ROUTES.inbox,
       badge: <InboxUnreadBadge />,
     },
     {
       label: t("navigation:sidebar.myTasks"),
       icon: ListChecks,
       url: ticketsUrl,
+      pattern: SIDEBAR_ROUTES.myTasks,
       badge: <MyTasksCountBadge organizationId={organization.id} />,
     },
   ];
@@ -79,11 +88,11 @@ export function NavMain() {
     <SidebarGroup className="px-2">
       <SidebarGroupContent>
         <SidebarMenu className="gap-0">
-          {primary.map(({ label, icon: Icon, url, badge }) => (
+          {primary.map(({ label, icon: Icon, url, pattern, badge }) => (
             <SidebarMenuItem key={url}>
               <SidebarMenuButton
-                className="h-6 text-xs data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground"
-                isActive={pathname === url || pathname.startsWith(`${url}/`)}
+                className={`h-6 text-xs ${SIDEBAR_ACTIVE_PILL}`}
+                isActive={isActive(pattern, orgParams)}
                 onClick={() => navigate({ to: url })}
                 tooltip={label}
               >
@@ -147,8 +156,10 @@ export function NavMain() {
                             key={page.pathname}
                           >
                             <SidebarMenuSubButton
-                              className="h-6 text-xs"
-                              isActive={pathname === page.pathname}
+                              className={`h-6 text-xs ${SIDEBAR_ACTIVE_PILL}`}
+                              isActive={isActive(page.pathname, undefined, {
+                                exact: true,
+                              })}
                               onClick={() => navigate({ to: page.pathname })}
                             >
                               <span className="min-w-0 flex-1 truncate">

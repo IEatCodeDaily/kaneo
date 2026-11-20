@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Plus, Table2 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,11 @@ import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import { useDataTables } from "@/hooks/data-table/use-data-tables";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
 import { cn } from "@/lib/cn";
 import { ensureTablesStrings } from "@/lib/i18n";
 
@@ -28,7 +33,7 @@ import {
 export function NavTables() {
   const { t } = useTranslation();
   const { data: organization } = useActiveOrganization();
-  const { tableId: currentTableId } = useParams({ strict: false });
+  const { isActive } = useSidebarActive();
   const navigate = useNavigate();
   const { canCreateBoards } = useOrganizationPermission();
   const [createOpen, setCreateOpen] = useState(false);
@@ -48,11 +53,23 @@ export function NavTables() {
 
   if (!organization || !tablesEnabled) return null;
 
+  const orgParams = { organizationSlug: organization.slug };
+  // Section fallback: on a table route whose table is not in the visible
+  // list (still loading, error, or hidden), the header lights up.
+  const tablesSectionActive =
+    isActive(SIDEBAR_ROUTES.tables, orgParams) &&
+    !tables.some((table) =>
+      isActive(SIDEBAR_ROUTES.table, { ...orgParams, tableId: table.id }),
+    );
+
   return (
     <>
       <SidebarGroup className="group/tables gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
-          <SidebarGroupLabel className="h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground">
+          <SidebarGroupLabel
+            className={`h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground ${tablesSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            data-active={tablesSectionActive}
+          >
             <span>{t("navigation:tables.title")}</span>
             <FeatureStageBadge stage="Alpha" />
           </SidebarGroupLabel>
@@ -98,8 +115,11 @@ export function NavTables() {
             {tables.map((table) => (
               <SidebarMenuItem key={table.id}>
                 <SidebarMenuButton
-                  isActive={currentTableId === table.id}
-                  className="h-8 gap-2 ps-3.5 text-sm data-[active=true]:bg-sidebar-accent"
+                  isActive={isActive(SIDEBAR_ROUTES.table, {
+                    ...orgParams,
+                    tableId: table.id,
+                  })}
+                  className={`h-8 gap-2 ps-3.5 text-sm ${SIDEBAR_ACTIVE_PILL}`}
                   tooltip={table.name}
                   onClick={() =>
                     navigate({

@@ -45,6 +45,11 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { useTargetBoardView } from "@/hooks/use-remembered-view";
 import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
+import {
   intentPrefetchHandlers,
   prefetchBoardNavigation,
 } from "@/lib/navigation-prefetch";
@@ -97,10 +102,8 @@ export function NavBoards() {
     setBoardSidebarOrder,
   } = useUserPreferencesStore();
   const navigate = useNavigate();
-  const {
-    organizationSlug: currentOrganizationSlug,
-    boardSlug: currentBoardSlug,
-  } = useParams({
+  const { isActive } = useSidebarActive();
+  const { boardSlug: currentBoardSlug } = useParams({
     strict: false,
   });
 
@@ -123,12 +126,17 @@ export function NavBoards() {
   // moment a switch is clicked.
   const pendingBoardId = useNavigationStore((s) => s.pendingBoardId);
   const setPendingBoardId = useNavigationStore((s) => s.setPendingBoardId);
+  const landedBoard = boards?.find((board) => board.slug === currentBoardSlug);
 
   useEffect(() => {
-    if (pendingBoardId && currentBoardSlug === pendingBoardId) {
+    // The $boardSlug route param carries the board's SLUG, not its id —
+    // resolving the landed board through the list is what lets the optimistic
+    // value retire (comparing the id against the slug never fired, so the
+    // highlight used to die with the 5s timeout even on the right board).
+    if (pendingBoardId && landedBoard?.id === pendingBoardId) {
       setPendingBoardId(null);
     }
-  }, [currentBoardSlug, pendingBoardId, setPendingBoardId]);
+  }, [landedBoard?.id, pendingBoardId, setPendingBoardId]);
 
   // Don't strand the highlight if the navigation never lands.
   useEffect(() => {
@@ -137,17 +145,22 @@ export function NavBoards() {
     return () => clearTimeout(timer);
   }, [pendingBoardId, setPendingBoardId]);
 
-  const selectedBoardId = pendingBoardId ?? currentBoardSlug;
-
+  // URL-derived match by slug, with the optimistic id override kept so the
+  // clicked board lights up before the route commits.
   const isCurrentBoard = (boardId: string) => {
+    if (pendingBoardId === boardId) return true;
+    const board = boards?.find((candidate) => candidate.id === boardId);
     return (
-      selectedBoardId === boardId &&
-      currentOrganizationSlug === organization?.slug
+      !!board &&
+      isActive(SIDEBAR_ROUTES.board, {
+        organizationSlug: organization?.slug ?? "",
+        boardSlug: board.slug,
+      })
     );
   };
 
   const handleBoardClick = (board: BoardWithTasks) => {
-    if (board.id === selectedBoardId) return;
+    if (board.slug === currentBoardSlug) return;
     setPendingBoardId(board.id);
     navigate({
       to: `/dashboard/organization/$organizationSlug/board/$boardSlug/${currentBoardView}`,
@@ -166,7 +179,7 @@ export function NavBoards() {
     const boardIds = boards
       .filter(
         (board) =>
-          board.id !== currentBoardSlug &&
+          board.slug !== currentBoardSlug &&
           !hiddenBoardIds.includes(`${user?.id}:${board.id}`) &&
           !queryClient.getQueryData(["tasks", board.id]),
       )
@@ -232,6 +245,15 @@ export function NavBoards() {
     unsortedVisibleBoards,
     boardSidebarOrders[user?.id ?? ""] ?? [],
   );
+  // Section fallback (#sidebar-active-redesign): when the route belongs to the
+  // boards section but no visible board item claims it (hidden board, filtered
+  // list, or the section's own index route), the header carries the highlight
+  // so the sidebar is never completely dead.
+  const orgParams = { organizationSlug: organization.slug };
+  const boardsSectionActive =
+    (isActive(SIDEBAR_ROUTES.boards, orgParams) ||
+      isActive(SIDEBAR_ROUTES.orgIndex, orgParams, { exact: true })) &&
+    !visibleBoards.some((board) => isCurrentBoard(board.id));
 
   return (
     <>
@@ -246,10 +268,16 @@ export function NavBoards() {
           <SidebarMenuItem>
             <SidebarMenuButton
               data-testid="sidebar-boards-collapsed"
+              isActive={isActive(
+                SIDEBAR_ROUTES.orgIndex,
+                { organizationSlug: organization.slug },
+                { exact: true },
+              )}
+              className={SIDEBAR_ACTIVE_PILL}
               onClick={() =>
                 navigate({
                   to: "/dashboard/organization/$organizationSlug",
-                  params: { organizationSlug: organization.id },
+                  params: { organizationSlug: organization.slug },
                 })
               }
               tooltip={t("navigation:sidebar.boards")}
@@ -263,11 +291,13 @@ export function NavBoards() {
               <SidebarMenuItem key={board.id}>
                 <SidebarMenuButton
                   data-testid={`sidebar-board-collapsed-${board.id}`}
+                  isActive={isCurrentBoard(board.id)}
+                  className={SIDEBAR_ACTIVE_PILL}
                   onClick={() =>
                     navigate({
                       to: "/dashboard/organization/$organizationSlug/board/$boardSlug",
                       params: {
-                        organizationSlug: organization.id,
+                        organizationSlug: organization.slug,
                         boardSlug: board.slug,
                       },
                     })
@@ -286,12 +316,13 @@ export function NavBoards() {
       <SidebarGroup className="group/boards group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className="h-7 flex-1 cursor-pointer px-0 pr-12 text-sidebar-accent-foreground hover:text-sidebar-accent-foreground/80"
+            className={`h-7 flex-1 cursor-pointer px-0 pr-12 text-sidebar-accent-foreground hover:text-sidebar-accent-foreground/80 ${boardsSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            data-active={boardsSectionActive}
             render={<button type="button" />}
             onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationSlug",
-                params: { organizationSlug: organization.id },
+                params: { organizationSlug: organization.slug },
               })
             }
           >
@@ -362,7 +393,7 @@ export function NavBoards() {
                           <SidebarMenuButton
                             isActive={isCurrentBoard(board.id)}
                             size="default"
-                            className="h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
+                            className={`h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
                             onClick={() => handleBoardClick(board)}
                             {...intentPrefetchHandlers(() =>
                               prefetchBoard(board.id),
@@ -557,10 +588,10 @@ export function NavBoards() {
           await archiveBoard({ id: board.id });
           toast.success("Board archived");
           setBoardToArchive(null);
-          if (currentBoardSlug === board.id)
+          if (currentBoardSlug === board.slug)
             navigate({
               to: "/dashboard/organization/$organizationSlug",
-              params: { organizationSlug: organization.id },
+              params: { organizationSlug: organization.slug },
             });
         }}
       />
