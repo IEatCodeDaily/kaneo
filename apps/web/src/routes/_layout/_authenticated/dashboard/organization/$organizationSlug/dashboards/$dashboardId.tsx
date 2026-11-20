@@ -47,9 +47,9 @@ import {
   useDashboardMutations,
   useDashboards,
 } from "@/hooks/dashboards/use-dashboards";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useDashboardsEnabled } from "@/hooks/use-dashboards-enabled";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { useDashboardRefParam } from "@/hooks/use-resource-ref";
 import { toast } from "@/lib/toast";
 import type { DashboardPanelSpec } from "@/types/dashboards";
 
@@ -97,7 +97,7 @@ function DashboardCrumbSelect({
                   to: "/dashboard/organization/$organizationSlug/dashboards/$dashboardId",
                   params: {
                     organizationSlug,
-                    dashboardId: candidate.id,
+                    dashboardId: candidate.slug ?? candidate.id,
                   },
                 })
               }
@@ -121,9 +121,10 @@ export const Route = createFileRoute(
 function DashboardDetailRoute() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { organizationSlug, dashboardId } = Route.useParams();
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationId = activeOrganization?.id ?? "";
+  const { organizationSlug } = Route.useParams();
+  // The URL param is a slug (legacy ids still resolve); `dashboardId` below is
+  // the canonical id every fetcher and mutation already expects.
+  const { id: dashboardId, organizationId } = useDashboardRefParam();
   const dashboardsEnabled = useDashboardsEnabled();
   const canEdit = useOrganizationPermission().canUpdateBoards();
   const {
@@ -198,7 +199,7 @@ function DashboardDetailRoute() {
     }
   };
 
-  if (!activeOrganization) return null;
+  if (!organizationId) return null;
   if (!dashboardsEnabled) return <PermissionDenied />;
 
   const header = (

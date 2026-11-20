@@ -12,8 +12,11 @@ import { ViewTabs } from "@/components/common/view-tabs";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 
 type RepoLayoutProps = {
+  /** Canonical repo id — drives the repo query and its cache key. */
   repoId: string;
-  organizationId: string;
+  /** Raw URL param (slug or legacy id) — tab links keep the URL shape. */
+  repoRef: string;
+  organizationSlug: string;
   children: ReactNode;
   headerActions?: ReactNode;
 };
@@ -53,13 +56,14 @@ const VIEWS = [
 
 export default function RepoLayout({
   repoId,
-  organizationId,
+  repoRef,
+  organizationSlug,
   children,
   headerActions,
 }: RepoLayoutProps) {
   const location = useLocation();
   const { data: repo } = useGetRepo({ id: repoId });
-  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
+  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoRef;
   const activeView =
     VIEWS.find((view) => location.pathname.includes(`/${view.key}`))?.key ??
     "issues";
@@ -96,7 +100,7 @@ export default function RepoLayout({
                   label: view.label,
                   icon: <Icon className="size-3.5" />,
                   to: view.to,
-                  params: { organizationSlug: organizationId, repoId },
+                  params: { organizationSlug, repoId: repoRef },
                 };
               })}
               value={activeView}

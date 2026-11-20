@@ -86,6 +86,7 @@ export type TableRowGroup = {
   tables: {
     tableId: string;
     tableName: string;
+    tableSlug: string;
     icon: string | null;
     canEdit: boolean;
     fields: DataTableField[];

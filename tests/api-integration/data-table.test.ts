@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -809,7 +810,11 @@ describe("API integration: data tables (kaneo_tables engine)", () => {
       ).toBe(400);
       const foreignTable = await db
         .insert(schema.dataTableTable)
-        .values({ organizationId: foreign.organization.id, name: "Private" })
+        .values({
+          organizationId: foreign.organization.id,
+          name: "Private",
+          slug: `private-${randomUUID()}`,
+        })
         .returning();
       expect(
         (

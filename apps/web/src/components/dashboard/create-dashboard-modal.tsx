@@ -18,12 +18,15 @@ type Props = {
   open: boolean;
   onClose: () => void;
   organizationId: string;
+  /** The URL slug to land on after creating (#resource-slugs). */
+  organizationSlug?: string;
 };
 
 export default function CreateDashboardModal({
   open,
   onClose,
   organizationId,
+  organizationSlug,
 }: Props) {
   const [name, setName] = useState("");
   const { t } = useTranslation();
@@ -48,8 +51,8 @@ export default function CreateDashboardModal({
       navigate({
         to: "/dashboard/organization/$organizationSlug/dashboards/$dashboardId",
         params: {
-          organizationSlug: organizationId,
-          dashboardId: dashboard.id,
+          organizationSlug: organizationSlug ?? organizationId,
+          dashboardId: dashboard.slug ?? dashboard.id,
         },
       });
     } catch (error) {

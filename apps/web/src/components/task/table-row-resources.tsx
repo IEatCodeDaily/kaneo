@@ -298,7 +298,10 @@ export function TableRowResources({
                   <span className="text-xs text-faint-foreground">/</span>
                   <Link
                     className="min-w-0 flex-1 truncate text-ui font-medium hover:underline"
-                    params={{ organizationSlug, tableId: group.tableId }}
+                    params={{
+                      organizationSlug,
+                      tableId: group.tableSlug ?? group.tableId,
+                    }}
                     to="/dashboard/organization/$organizationSlug/table/$tableId"
                   >
                     {title || t("navigation:tables.untitledRow")}

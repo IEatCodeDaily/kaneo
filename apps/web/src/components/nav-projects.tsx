@@ -127,7 +127,7 @@ export function NavProjects() {
         to: "/dashboard/organization/$organizationSlug/repo/$repoId/code",
         params: {
           organizationSlug: organization.slug,
-          repoId: resource.resourceId,
+          repoId: resource.resource.slug ?? resource.resourceId,
         },
         search: { path: "" },
       });
@@ -136,7 +136,7 @@ export function NavProjects() {
         to: "/dashboard/organization/$organizationSlug/table/$tableId",
         params: {
           organizationSlug: organization.slug,
-          tableId: resource.resourceId,
+          tableId: resource.resource.slug ?? resource.resourceId,
         },
       });
   };

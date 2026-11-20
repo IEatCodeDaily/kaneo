@@ -16,6 +16,7 @@ import {
   useSidebarActive,
 } from "@/hooks/use-sidebar-active";
 import { ensureTablesStrings } from "@/lib/i18n";
+import type { DashboardSummary } from "@/types/dashboards";
 
 // Pull the lazy tables/dashboards strings as early as possible.
 void ensureTablesStrings();
@@ -57,24 +58,37 @@ export function NavDashboards() {
   if (!organization || !dashboardsEnabled) return null;
 
   const orgParams = { organizationSlug: organization.slug };
+  const isCurrentDashboard = (
+    dashboard: Pick<DashboardSummary, "id" | "slug">,
+  ) =>
+    isActive(SIDEBAR_ROUTES.dashboard, {
+      ...orgParams,
+      dashboardId: dashboard.slug ?? dashboard.id,
+    }) ||
+    isActive(SIDEBAR_ROUTES.dashboard, {
+      ...orgParams,
+      dashboardId: dashboard.id,
+    });
   // Section fallback: on a dashboard route whose dashboard is not in the
   // visible list (still loading, error, or hidden), the header lights up.
   const dashboardsSectionActive =
     isActive(SIDEBAR_ROUTES.dashboards, orgParams) &&
-    !dashboards.some((dashboard) =>
-      isActive(SIDEBAR_ROUTES.dashboard, {
-        ...orgParams,
-        dashboardId: dashboard.id,
-      }),
-    );
+    !dashboards.some((dashboard) => isCurrentDashboard(dashboard));
 
   return (
     <>
       <SidebarGroup className="group/dashboards gap-1 p-2 pt-1 group-data-[collapsible=icon]:hidden">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className={`h-7 flex-1 gap-2 px-0 text-sidebar-accent-foreground ${dashboardsSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
             data-active={dashboardsSectionActive}
+            render={<button type="button" />}
+            onClick={() =>
+              navigate({
+                to: "/dashboard/organization/$organizationSlug/dashboards",
+                params: { organizationSlug: organization.slug },
+              })
+            }
           >
             <span>{t("navigation:dashboards.title")}</span>
             <FeatureStageBadge stage="Alpha" />
@@ -120,19 +134,15 @@ export function NavDashboards() {
               return (
                 <SidebarMenuItem key={dashboard.id}>
                   <SidebarMenuButton
-                    isActive={isActive(SIDEBAR_ROUTES.dashboard, {
-                      ...orgParams,
-                      dashboardId: dashboard.id,
-                    })}
+                    isActive={isCurrentDashboard(dashboard)}
                     className={`h-8 gap-2 ps-3.5 text-sm ${SIDEBAR_ACTIVE_PILL}`}
                     tooltip={dashboard.name}
                     onClick={() =>
                       navigate({
                         to: "/dashboard/organization/$organizationSlug/dashboards/$dashboardId",
                         params: {
-                          organizationSlug:
-                            organization.slug ?? organization.id,
-                          dashboardId: dashboard.id,
+                          organizationSlug: organization.slug,
+                          dashboardId: dashboard.slug ?? dashboard.id,
                         },
                       })
                     }
@@ -158,6 +168,7 @@ export function NavDashboards() {
           open={createOpen}
           onClose={() => setCreateOpen(false)}
           organizationId={organization.id}
+          organizationSlug={organization.slug}
         />
       </Suspense>
     </>

@@ -22,10 +22,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoContents from "@/hooks/queries/repo/use-get-repo-contents";
 import useGetRepoTree from "@/hooks/queries/repo/use-get-repo-tree";
+import { useRepoRefParam } from "@/hooks/use-resource-ref";
 import type { RepoContentEntry } from "@/types/repo";
 
 export const Route = createFileRoute(
@@ -163,9 +163,7 @@ function FileContent({
 }
 
 function RouteComponent() {
-  const { repoId } = Route.useParams();
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationId = activeOrganization?.id ?? "";
+  const { ref: repoRef, id: repoId, organization } = useRepoRefParam();
   const { path, ref } = Route.useSearch();
   const { data: repo } = useGetRepo({ id: repoId });
   const tree = useGetRepoTree({ repoId, ref });
@@ -178,7 +176,7 @@ function RouteComponent() {
   });
   const [view, setView] = useState<"source" | "render">("source");
 
-  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
+  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoRef;
   const file = current.data?.type === "file" ? current.data.file : null;
   const richAvailable = Boolean(file && isRichFile(file.path));
 
@@ -188,7 +186,11 @@ function RouteComponent() {
   return (
     <>
       <PageTitle title={`${repoTitle} · Code`} />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
+      <RepoLayout
+        organizationSlug={organization?.slug ?? ""}
+        repoId={repoId}
+        repoRef={repoRef}
+      >
         <div className="flex h-[calc(100vh-8rem)] w-full flex-col">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
             <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">

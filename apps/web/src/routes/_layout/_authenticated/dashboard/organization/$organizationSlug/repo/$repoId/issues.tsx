@@ -22,9 +22,9 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetRepo from "@/hooks/queries/repo/use-get-repo";
 import useGetRepoIssues from "@/hooks/queries/repo/use-get-repo-issues";
+import { useRepoRefParam } from "@/hooks/use-resource-ref";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { formatDateMedium } from "@/lib/format";
 import type { RepoIssueStateFilter } from "@/types/repo";
@@ -47,23 +47,25 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const { t } = useTranslation();
   const location = useLocation();
-  const { repoId } = Route.useParams();
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationId = activeOrganization?.id ?? "";
+  const { ref: repoRef, id: repoId, organization } = useRepoRefParam();
   const { state } = Route.useSearch();
   const navigate = useNavigate();
   const { data: repo } = useGetRepo({ id: repoId });
   const { data, isLoading } = useGetRepoIssues({ repoId, state });
   const isDetailRoute = /\/issues\/[^/]+$/.test(location.pathname);
 
-  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoId;
+  const repoTitle = repo ? `${repo.owner}/${repo.name}` : repoRef;
 
   return (
     <>
       <PageTitle
         title={`${repoTitle} · ${t("organization:repos.issues.pageTitle")}`}
       />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
+      <RepoLayout
+        organizationSlug={organization?.slug ?? ""}
+        repoId={repoId}
+        repoRef={repoRef}
+      >
         <RepoMasterDetail
           hasDetail={isDetailRoute}
           id="issues"
@@ -150,8 +152,8 @@ function RouteComponent() {
                       }
                       number={issue.number}
                       params={{
-                        organizationId,
-                        repoId,
+                        organizationSlug: organization?.slug ?? "",
+                        repoId: repoRef,
                         number: String(issue.number),
                       }}
                       state={issue.state}

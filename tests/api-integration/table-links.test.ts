@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { migrateLegacyLinks } from "../../apps/api/src/data-table/migrate-links";
@@ -194,7 +195,11 @@ describe("table links: real PostgreSQL graph", () => {
     const foreign = await createOrganizationMember({ role: "owner" });
     const [other] = await db
       .insert(schema.dataTableTable)
-      .values({ organizationId: foreign.organization.id, name: "Foreign" })
+      .values({
+        organizationId: foreign.organization.id,
+        name: "Foreign",
+        slug: `foreign-${randomUUID()}`,
+      })
       .returning();
     expect(
       (

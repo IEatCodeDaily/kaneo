@@ -286,10 +286,10 @@
 		"apps/web/src/components/list-view/index.tsx": 4,
 		"apps/web/src/components/list-view/task-row.tsx": 3,
 		"apps/web/src/components/nav-boards.tsx": 4,
-		"apps/web/src/components/nav-dashboards.tsx": 2,
+		"apps/web/src/components/nav-dashboards.tsx": 3,
 		"apps/web/src/components/nav-projects.tsx": 1,
 		"apps/web/src/components/nav-repos.tsx": 3,
-		"apps/web/src/components/nav-tables.tsx": 2,
+		"apps/web/src/components/nav-tables.tsx": 3,
 		"apps/web/src/components/notification/inbox-ticket-list.tsx": 1,
 		"apps/web/src/components/notification/notification-dropdown.tsx": 2,
 		"apps/web/src/components/presence/board-access-avatars.tsx": 1,
@@ -335,6 +335,7 @@
 		"apps/web/src/routes/_layout/_authenticated/dashboard/organization/$organizationSlug/search.tsx": 1,
 		"apps/web/src/routes/_layout/_authenticated/dashboard/settings/account/information.tsx": 2,
 		"apps/web/src/routes/_layout/_authenticated/dashboard/settings/organization/labels.tsx": 2,
-		"apps/web/src/routes/_layout/_authenticated/dashboard/settings/organization/templates.tsx": 3
+		"apps/web/src/routes/_layout/_authenticated/dashboard/settings/organization/templates.tsx": 3,
+		"apps/web/src/routes/_layout/_authenticated/dashboard/organization/$organizationSlug/table/index.tsx": 1
 	}
 }

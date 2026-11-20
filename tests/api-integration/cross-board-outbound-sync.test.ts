@@ -110,6 +110,7 @@ async function seedFollowerOnOtherBoard() {
       provider: "github",
       owner,
       name,
+      slug: name.toLowerCase(),
       url: `https://github.com/${owner}/${name}`,
     })
     .returning();

@@ -105,6 +105,7 @@ describe("RepoIssueRelations rendered navigation (#30)", () => {
         github={github}
         number={13}
         organizationId="org-1"
+        organizationSlug="org-1"
         repoId="repo-synced"
       />,
       { wrapper },
@@ -128,6 +129,7 @@ describe("RepoIssueRelations rendered navigation (#30)", () => {
         github={github}
         number={13}
         organizationId="org-1"
+        organizationSlug="org-1"
         repoId="repo-synced"
       />,
       { wrapper },
@@ -145,6 +147,7 @@ describe("RepoIssueRelations rendered navigation (#30)", () => {
         github={github}
         number={13}
         organizationId="org-1"
+        organizationSlug="org-1"
         repoId="repo-synced"
       />,
       { wrapper },

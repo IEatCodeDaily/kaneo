@@ -59,8 +59,8 @@ import {
   useDataTableMutations,
   useDataTables,
 } from "@/hooks/data-table/use-data-tables";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import { useTableRefParam } from "@/hooks/use-resource-ref";
 import { toast } from "@/lib/toast";
 
 const SKELETON_ROWS = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -122,7 +122,10 @@ function TableCrumbSelect({
                 onClick={() =>
                   navigate({
                     to: "/dashboard/organization/$organizationSlug/table/$tableId",
-                    params: { organizationSlug, tableId: table.id },
+                    params: {
+                      organizationSlug,
+                      tableId: table.slug ?? table.id,
+                    },
                   })
                 }
               >
@@ -139,10 +142,11 @@ function TableCrumbSelect({
 function DataTableRoute() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { organizationSlug, tableId } = Route.useParams();
+  const { organizationSlug } = Route.useParams();
   const { view = "grid", v: viewId } = Route.useSearch();
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationId = activeOrganization?.id ?? "";
+  // The URL param is a slug (legacy ids still resolve); `tableId` below is the
+  // canonical id every fetcher and mutation already expects.
+  const { id: tableId, organizationId } = useTableRefParam();
   const {
     data: table,
     isLoading,

@@ -47,6 +47,7 @@ export type SearchResultItem = {
   priority?: string;
   status?: string;
   repoId?: string;
+  repoSlug?: string;
   repoOwner?: string;
   repoName?: string;
   itemNumber?: number;
@@ -142,7 +143,7 @@ export function useSearchResults(query: string) {
               to: "/dashboard/organization/$organizationSlug/repo/$repoId/issues/$number",
               params: {
                 organizationSlug: organization.slug,
-                repoId: item.repoId,
+                repoId: item.repoSlug ?? item.repoId,
                 number: String(item.itemNumber),
               },
             });
@@ -154,7 +155,7 @@ export function useSearchResults(query: string) {
               to: "/dashboard/organization/$organizationSlug/repo/$repoId/pulls/$number",
               params: {
                 organizationSlug: organization.slug,
-                repoId: item.repoId,
+                repoId: item.repoSlug ?? item.repoId,
                 number: String(item.itemNumber),
               },
             });

@@ -11,7 +11,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { getApiUrl } from "@/fetchers/get-api-url";
-import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+
+import { useRepoRefParam } from "@/hooks/use-resource-ref";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/organization/$organizationSlug/repo/$repoId/packages",
@@ -37,9 +38,7 @@ async function getPackages(repoId: string) {
 }
 
 function RouteComponent() {
-  const { repoId } = Route.useParams();
-  const { data: activeOrganization } = useActiveOrganization();
-  const organizationId = activeOrganization?.id ?? "";
+  const { ref: repoRef, id: repoId, organization } = useRepoRefParam();
   const { data, error, isLoading } = useQuery({
     queryKey: ["repo-packages", repoId],
     queryFn: () => getPackages(repoId),
@@ -47,7 +46,11 @@ function RouteComponent() {
   return (
     <>
       <PageTitle title="Packages" />
-      <RepoLayout organizationId={organizationId} repoId={repoId}>
+      <RepoLayout
+        organizationSlug={organization?.slug ?? ""}
+        repoId={repoId}
+        repoRef={repoRef}
+      >
         <main className="mx-auto w-full max-w-5xl space-y-4 p-4 sm:p-6">
           <div>
             <h1 className="text-xl font-semibold">Packages</h1>
