@@ -1,16 +1,29 @@
-import { Bot, Copy, KeyRound, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import {
+  Bot,
+  Copy,
+  ImagePlus,
+  KeyRound,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
+import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
 import useDeleteAgent from "@/hooks/mutations/agent/use-delete-agent";
 import useReissueAgentToken from "@/hooks/mutations/agent/use-reissue-agent-token";
+import useRemoveAgentAvatar from "@/hooks/mutations/agent/use-remove-agent-avatar";
+import useUploadAgentAvatar from "@/hooks/mutations/agent/use-upload-agent-avatar";
 import useGetAgents from "@/hooks/queries/agent/use-get-agents";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 /** Matches the API's minimum name length so the button can't submit a 400. */
@@ -23,6 +36,12 @@ export function AgentManager() {
   const nameInputId = useId();
   const [name, setName] = useState("");
   const [secret, setSecret] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarAgentId, setAvatarAgentId] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
+  const uploadAvatar = useUploadAgentAvatar(organizationId);
+  const removeAvatar = useRemoveAgentAvatar(organizationId);
 
   const { data: agents = [] } = useGetAgents(organizationId);
   const createAgent = useCreateAgent(organizationId);
@@ -155,27 +174,80 @@ export function AgentManager() {
           key={agent.id}
           className="flex flex-col gap-3 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="min-w-0 space-y-1">
-            <span className="inline-flex items-center gap-2 text-sm font-medium">
-              <Bot className="size-4 text-muted-foreground" />
-              {agent.name}
-              <Badge variant="secondary" size="sm">
-                {t("team:agentManager.agentBadge")}
-              </Badge>
-            </span>
-            {/* The token is separate from the agent: it never expires and
-                can be reissued without losing the agent's role or history. */}
-            <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <KeyRound className="size-3" aria-hidden />
-              {agent.token
-                ? t("team:agentManager.tokenMeta", {
-                    start: agent.token.start ?? "",
-                    date: new Date(agent.token.createdAt).toLocaleDateString(),
-                  })
-                : t("team:agentManager.noToken")}
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="size-9 shrink-0">
+              {agent.image ? (
+                <AvatarImage src={agent.image} alt={agent.name} />
+              ) : null}
+              <AvatarFallback className="bg-transparent">
+                <Bot className="size-4 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 space-y-1">
+              <span className="inline-flex items-center gap-2 text-sm font-medium">
+                {agent.name}
+                <Badge variant="secondary" size="sm">
+                  {t("team:agentManager.agentBadge")}
+                </Badge>
+              </span>
+              {/* The token is separate from the agent: it never expires and
+                  can be reissued without losing the agent's role or history. */}
+              <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <KeyRound className="size-3" aria-hidden />
+                {agent.token
+                  ? t("team:agentManager.tokenMeta", {
+                      start: agent.token.start ?? "",
+                      date: new Date(
+                        agent.token.createdAt,
+                      ).toLocaleDateString(),
+                    })
+                  : t("team:agentManager.noToken")}
+              </p>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <Input
+              ref={avatarInputRef}
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              type="file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) setCropFile(file);
+                event.target.value = "";
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("team:agentManager.avatarUpload")}
+              onClick={() => {
+                setAvatarAgentId(agent.id);
+                avatarInputRef.current?.click();
+              }}
+              disabled={uploadAvatar.isPending}
+            >
+              <ImagePlus className="size-4" />
+            </Button>
+            {agent.image && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("team:agentManager.avatarRemove")}
+                onClick={() =>
+                  removeAvatar.mutate(agent.id, {
+                    onError: (error: Error) =>
+                      toast.error(
+                        error.message ||
+                          t("team:agentManager.avatarRemoveError"),
+                      ),
+                  })
+                }
+                disabled={removeAvatar.isPending}
+              >
+                <X className="size-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -202,6 +274,27 @@ export function AgentManager() {
           </div>
         </div>
       ))}
+
+      <AvatarCropDialog
+        file={cropFile}
+        open={Boolean(cropFile)}
+        onCancel={() => setCropFile(null)}
+        onCropped={(file) => {
+          setCropFile(null);
+          if (avatarAgentId) {
+            uploadAvatar.mutate(
+              { agentId: avatarAgentId, file },
+              {
+                onSuccess: () => setAvatarAgentId(null),
+                onError: (error: Error) =>
+                  toast.error(
+                    error.message || t("team:agentManager.avatarError"),
+                  ),
+              },
+            );
+          }
+        }}
+      />
     </div>
   );
 }

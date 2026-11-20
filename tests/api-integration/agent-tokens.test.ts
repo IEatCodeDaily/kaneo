@@ -71,6 +71,99 @@ describe("API integration: agent tokens", () => {
     expect(await verifyApiKey(secondKey)).toBeNull();
   });
 
+  it("sets, lists and clears an agent avatar (admin only)", async () => {
+    const owner = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(owner.user);
+    const { app } = createApp();
+
+    const created = await app.request("/api/agent", {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        organizationId: owner.organization.id,
+        name: "Avatar bot",
+        permissions: { board: ["read"] },
+      }),
+    });
+    const { id: agentId } = (await created.json()) as { id: string };
+
+    // 1x1 PNG (passes the magic-byte check)
+    const data =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    const put = await app.request(`/api/agent/${agentId}/avatar`, {
+      method: "PUT",
+      headers: json,
+      body: JSON.stringify({ contentType: "image/png", data }),
+    });
+    expect(put.status).toBe(200);
+    const { url } = (await put.json()) as { url: string };
+
+    const listed = await app.request(
+      `/api/agent?organizationId=${owner.organization.id}`,
+    );
+    const [agent] = (await listed.json()) as Array<{ image: string | null }>;
+    expect(agent.image).toBe(url);
+
+    const [user] = await db
+      .select({ image: schema.userTable.image })
+      .from(schema.userTable)
+      .where(eq(schema.userTable.id, agentId));
+    expect(user.image).toBe(url);
+
+    const cleared = await app.request(`/api/agent/${agentId}/avatar`, {
+      method: "DELETE",
+    });
+    expect(cleared.status).toBe(200);
+    const [after] = await db
+      .select({ image: schema.userTable.image })
+      .from(schema.userTable)
+      .where(eq(schema.userTable.id, agentId));
+    expect(after.image).toBeNull();
+  });
+
+  it("refuses agent avatar changes to a non-admin member", async () => {
+    const owner = await createOrganizationMember({ role: "owner" });
+    mockAuthenticatedSession(owner.user);
+    const { app } = createApp();
+    const created = await app.request("/api/agent", {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        organizationId: owner.organization.id,
+        name: "Release bot 2",
+        permissions: { board: ["read"] },
+      }),
+    });
+    const { id: agentId } = (await created.json()) as { id: string };
+
+    const [member] = await db
+      .insert(schema.userTable)
+      .values({
+        id: "plain-member-2",
+        email: "plain-member-2@example.com",
+        emailVerified: true,
+        name: "Member 2",
+      })
+      .returning();
+    await db.insert(schema.organizationMemberTable).values({
+      organizationId: owner.organization.id,
+      userId: member.id,
+      role: "member",
+      joinedAt: new Date(),
+    });
+    mockAuthenticatedSession(member);
+
+    const response = await app.request(`/api/agent/${agentId}/avatar`, {
+      method: "PUT",
+      headers: json,
+      body: JSON.stringify({
+        contentType: "image/png",
+        data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      }),
+    });
+    expect(response.status).toBe(403);
+  });
+
   it("refuses token reissue to a non-admin member", async () => {
     const owner = await createOrganizationMember({ role: "owner" });
     mockAuthenticatedSession(owner.user);
