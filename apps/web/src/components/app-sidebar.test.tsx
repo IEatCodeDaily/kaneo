@@ -15,12 +15,14 @@ let organization = {
   logo: null,
   workEnabled: true,
 };
+// Mutable so the pinned-entry tests can move the active route.
+let pathname = "/dashboard/organization/acme";
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
-  useLocation: () => ({ pathname: "/dashboard/organization/acme" }),
+  useLocation: () => ({ pathname }),
 }));
 vi.mock("@/hooks/use-remembered-view", () => ({
   useRememberCurrentView: () => undefined,
@@ -114,6 +116,7 @@ import { AppSidebar } from "./app-sidebar";
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  pathname = "/dashboard/organization/acme";
   organization = {
     id: "org-1",
     slug: "acme",
@@ -215,6 +218,47 @@ describe("AppSidebar work and footer structure", () => {
     expect(
       screen.getByRole("button", { name: "Settings" }).className,
     ).toContain("hover:bg-sidebar-accent");
+  });
+  it("gives the pinned entries the shared active pill", () => {
+    render(<AppSidebar />);
+    for (const name of ["Members", "Settings"]) {
+      const cls = screen.getByRole("button", { name }).className;
+      expect(cls).toContain("data-[active=true]:bg-primary-soft");
+      expect(cls).toContain("hover:bg-sidebar-accent");
+    }
+  });
+  it("lights the pinned Members entry through the shared active mechanism", () => {
+    pathname = "/dashboard/organization/acme/members";
+    render(<AppSidebar />);
+    expect(screen.getByRole("button", { name: "Members" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Settings" })).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+  });
+  it("lights the pinned Settings entry on the settings section routes", () => {
+    pathname = "/dashboard/settings/account/information";
+    render(<AppSidebar />);
+    expect(screen.getByRole("button", { name: "Settings" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Members" })).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+  });
+  it("keeps the pinned entries dark away from their routes", () => {
+    render(<AppSidebar />);
+    for (const name of ["Members", "Settings"]) {
+      expect(screen.getByRole("button", { name })).toHaveAttribute(
+        "data-active",
+        "false",
+      );
+    }
   });
   /**
    * better-accessibility: the row was a raw <button>, so it never picked up

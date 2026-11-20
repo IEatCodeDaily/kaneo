@@ -12,6 +12,15 @@ import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -36,6 +45,9 @@ export function AgentManager() {
   const nameInputId = useId();
   const [name, setName] = useState("");
   const [secret, setSecret] = useState<string | null>(null);
+  // Reissue is destructive for the agent's current token, so it waits for a
+  // confirmation naming the agent before the mutation fires.
+  const [reissueAgentId, setReissueAgentId] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarAgentId, setAvatarAgentId] = useState<string | null>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
@@ -252,7 +264,7 @@ export function AgentManager() {
               variant="outline"
               size="sm"
               className="min-h-11 sm:min-h-8"
-              onClick={() => reissue(agent.id)}
+              onClick={() => setReissueAgentId(agent.id)}
               disabled={reissueToken.isPending}
             >
               <RefreshCw className="size-4" />
@@ -274,6 +286,50 @@ export function AgentManager() {
           </div>
         </div>
       ))}
+
+      <AlertDialog
+        open={reissueAgentId !== null}
+        onOpenChange={(open) => !open && setReissueAgentId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("team:agentManager.reissueConfirmTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("team:agentManager.reissueConfirmBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reissueToken.isPending}
+                />
+              }
+            >
+              {t("common:actions.cancel")}
+            </AlertDialogClose>
+            <AlertDialogClose
+              render={
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={reissueToken.isPending}
+                  onClick={() => {
+                    if (reissueAgentId) reissue(reissueAgentId);
+                    setReissueAgentId(null);
+                  }}
+                />
+              }
+            >
+              {t("team:agentManager.reissueConfirm")}
+            </AlertDialogClose>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AvatarCropDialog
         file={cropFile}

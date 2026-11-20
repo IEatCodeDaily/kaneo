@@ -456,8 +456,11 @@ for (const [theme, tag, viewport, scale] of [
             : '[data-testid="board-toolbar"]',
         );
         if (!root) return null;
-        const controls = [...root.querySelectorAll("button, input")].map(
-          (el) => {
+        // Hidden controls (responsive collapse) have zero rects; they are not
+        // toolbar chrome at this width and would break top-alignment probes.
+        const controls = [...root.querySelectorAll("button, input")]
+          .filter((el) => el.getBoundingClientRect().width > 0)
+          .map((el) => {
             const r = el.getBoundingClientRect();
             const style = getComputedStyle(el);
             return {
@@ -478,8 +481,7 @@ for (const [theme, tag, viewport, scale] of [
                 style.paddingLeft,
               ],
             };
-          },
-        );
+          });
         const buttons = [...root.querySelectorAll("[data-toolbar-button]")];
         const labels = [...root.querySelectorAll("[data-toolbar-label]")].map(
           (el) => getComputedStyle(el).display,
@@ -1798,6 +1800,10 @@ const TABLE_STATES = [
       const cost = p.getByRole("spinbutton", { name: "Cost", exact: true });
       await cost.fill("3180000");
       await cost.press("Enter");
+      // The commit is async: the editor must be gone (editing cleared) before
+      // the next keys, or the Space below lands while the grid still holds an
+      // open editor and is swallowed.
+      await cost.waitFor({ state: "detached" });
       await p.waitForFunction(
         () =>
           document

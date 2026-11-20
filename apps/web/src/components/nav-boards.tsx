@@ -316,7 +316,7 @@ export function NavBoards() {
       <SidebarGroup className="group/boards group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className={`h-7 flex-1 cursor-pointer px-0 pr-12 text-sidebar-accent-foreground hover:text-sidebar-accent-foreground/80 ${boardsSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            className={`h-7 flex-1 cursor-pointer px-0 pr-12 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
             data-active={boardsSectionActive}
             render={<button type="button" />}
             onClick={() =>
@@ -393,7 +393,7 @@ export function NavBoards() {
                           <SidebarMenuButton
                             isActive={isCurrentBoard(board.id)}
                             size="default"
-                            className={`h-8 gap-0 ps-3.5 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
+                            className={`h-8 gap-0 ps-3.5 text-sm ${SIDEBAR_ACTIVE_PILL}`}
                             onClick={() => handleBoardClick(board)}
                             {...intentPrefetchHandlers(() =>
                               prefetchBoard(board.id),

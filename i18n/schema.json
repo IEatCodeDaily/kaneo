@@ -13324,6 +13324,15 @@
             "reissue": {
               "type": "string"
             },
+            "reissueConfirmTitle": {
+              "type": "string"
+            },
+            "reissueConfirmBody": {
+              "type": "string"
+            },
+            "reissueConfirm": {
+              "type": "string"
+            },
             "reissueError": {
               "type": "string"
             }
@@ -13346,6 +13355,9 @@
             "noToken",
             "issue",
             "reissue",
+            "reissueConfirmTitle",
+            "reissueConfirmBody",
+            "reissueConfirm",
             "reissueError"
           ]
         },

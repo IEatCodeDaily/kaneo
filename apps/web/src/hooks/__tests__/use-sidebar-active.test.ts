@@ -271,10 +271,62 @@ describe("sidebarEntryIsActive — route families", () => {
   });
 });
 
+describe("pinned entries", () => {
+  it("members matches the organization members page and its children", () => {
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.members,
+        "/dashboard/organization/acme/members",
+        ORG,
+      ),
+    ).toBe(true);
+    // A sibling resource page does not leak in.
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.members,
+        "/dashboard/organization/acme/home",
+        ORG,
+      ),
+    ).toBe(false);
+    // A different organization's members page fails the param expectation.
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.members,
+        "/dashboard/organization/other/members",
+        ORG,
+      ),
+    ).toBe(false);
+  });
+
+  it("settings matches the whole settings section, only there", () => {
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.settings,
+        "/dashboard/settings/account/information",
+      ),
+    ).toBe(true);
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.settings,
+        "/dashboard/settings/organization/members",
+      ),
+    ).toBe(true);
+    expect(
+      sidebarEntryIsActive(SIDEBAR_ROUTES.settings, "/dashboard/settings"),
+    ).toBe(true);
+    expect(
+      sidebarEntryIsActive(
+        SIDEBAR_ROUTES.settings,
+        "/dashboard/organization/acme/home",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("shared selected treatment", () => {
   it("is a single pill constant every depth reuses", () => {
     expect(SIDEBAR_ACTIVE_PILL).toBe(
-      "data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground",
+      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-primary-soft data-[active=true]:font-semibold data-[active=true]:text-primary-soft-foreground",
     );
   });
 });

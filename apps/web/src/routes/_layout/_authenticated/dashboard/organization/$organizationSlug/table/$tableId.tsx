@@ -226,18 +226,6 @@ function DataTableRoute() {
             },
           ]}
         />
-        {table && (
-          <ViewSwitcher
-            views={saved.data ?? []}
-            current={currentView}
-            target={{ organizationId, tableId }}
-            canEdit={canEdit && table.deletedAt === null}
-            onSelect={(id) => navigate({ to: ".", search: { v: id } })}
-            onRefresh={saved.refetch}
-            flush={saved.flush}
-            saveError={saved.saveError}
-          />
-        )}
       </div>
     </Layout.Header>
   );
@@ -359,6 +347,20 @@ function DataTableRoute() {
                 setRenameOpen(true);
               }}
               onDelete={() => setDeleteOpen(true)}
+              // The view configuration lives in the toolbar row now, left of
+              // Fields (it used to sit in the page header).
+              toolbarLeading={
+                <ViewSwitcher
+                  views={saved.data ?? []}
+                  current={currentView}
+                  target={{ organizationId, tableId }}
+                  canEdit={canEdit && table.deletedAt === null}
+                  onSelect={(id) => navigate({ to: ".", search: { v: id } })}
+                  onRefresh={saved.refetch}
+                  flush={saved.flush}
+                  saveError={saved.saveError}
+                />
+              }
             />
           ) : (
             <div role="status" className="p-4 text-sm">

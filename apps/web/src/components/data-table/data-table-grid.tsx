@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   type KeyboardEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -170,6 +171,8 @@ type Props = {
   canEdit: boolean;
   onRename: () => void;
   onDelete: () => void;
+  /** Mounted at the toolbar's left edge, before the Fields control. */
+  toolbarLeading?: ReactNode;
 };
 
 // Cells whose editor is a popover picker: they open from the active cell.
@@ -294,53 +297,68 @@ function FieldHeader({
           style={stickyLeft !== null ? { left: stickyLeft } : undefined}
         >
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label={t("navigation:tables.fieldMenu", {
-                    name: field.name,
-                  })}
-                  className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
-                />
-              }
-            >
-              {/* Quantities right-align: icon + name + unit sit together over the digits. */}
-              {numeric && <span className="flex-1" />}
-              {field.system ? (
-                <LockKeyhole className="size-3.5 shrink-0" />
-              ) : (
-                <FieldTypeIcon type={field.type} />
-              )}
-              <span className="min-w-0 truncate font-medium">{field.name}</span>
-              {unit && <span className="shrink-0">{unit}</span>}
-              {!numeric && <span className="flex-1" />}
-              {frozen && (
-                <Pin
-                  aria-hidden
-                  className="size-3.5 shrink-0 text-muted-foreground"
-                />
-              )}
-              {sorted &&
-                (sort.dir === "asc" ? (
-                  <ArrowUp className="size-3.5 shrink-0" />
-                ) : (
-                  <ArrowDown className="size-3.5 shrink-0" />
-                ))}
-              {sorted && sortOrder !== null && (
-                <span
-                  aria-hidden
-                  className="shrink-0 text-xs tabular-nums text-muted-foreground"
+            {/* The field description also opens instantly from the header
+                name itself, not only the (i) icon: same scoped delay={0}. */}
+            <TooltipProvider delay={0}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <DropdownMenuTrigger
+                      render={
+                        <button
+                          type="button"
+                          aria-label={t("navigation:tables.fieldMenu", {
+                            name: field.name,
+                          })}
+                          className="group/head relative flex h-8 min-w-0 flex-1 items-center gap-1.5 pl-2 pr-3 text-left text-xs text-muted-foreground outline-none hover:bg-row-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-popup-open:bg-secondary data-popup-open:text-foreground"
+                        />
+                      }
+                    />
+                  }
                 >
-                  {sortOrder}
-                </span>
-              )}
-              {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
-                  the name and digits never shift. */}
-              <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
-                <ChevronDown className="size-3.5" />
-              </span>
-            </DropdownMenuTrigger>
+                  {/* Quantities right-align: icon + name + unit sit together over the digits. */}
+                  {numeric && <span className="flex-1" />}
+                  {field.system ? (
+                    <LockKeyhole className="size-3.5 shrink-0" />
+                  ) : (
+                    <FieldTypeIcon type={field.type} />
+                  )}
+                  <span className="min-w-0 truncate font-medium">
+                    {field.name}
+                  </span>
+                  {unit && <span className="shrink-0">{unit}</span>}
+                  {!numeric && <span className="flex-1" />}
+                  {frozen && (
+                    <Pin
+                      aria-hidden
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                    />
+                  )}
+                  {sorted &&
+                    (sort.dir === "asc" ? (
+                      <ArrowUp className="size-3.5 shrink-0" />
+                    ) : (
+                      <ArrowDown className="size-3.5 shrink-0" />
+                    ))}
+                  {sorted && sortOrder !== null && (
+                    <span
+                      aria-hidden
+                      className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                    >
+                      {sortOrder}
+                    </span>
+                  )}
+                  {/* Hover swaps meta, never data: the chevron overlays the unit/sort end, so
+                      the name and digits never shift. */}
+                  <span className="absolute inset-y-0 right-0 hidden items-center bg-row-hover px-1.5 group-hover/head:flex group-data-popup-open/head:flex group-data-popup-open/head:bg-secondary">
+                    <ChevronDown className="size-3.5" />
+                  </span>
+                </TooltipTrigger>
+                {field.options?.description && (
+                  <TooltipContent>{field.options.description}</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
             <DropdownMenuContent align="start" className="min-w-52">
               {canEdit && !field.system && (
                 <>
@@ -648,6 +666,7 @@ export function DataTableGrid({
   canEdit,
   onRename,
   onDelete,
+  toolbarLeading,
 }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -1366,6 +1385,7 @@ export function DataTableGrid({
     <LinkNavigationProvider organizationId={organizationId} members={members}>
       <TicketLookupContext.Provider value={ticketLookup}>
         <Layout.Toolbar>
+          {toolbarLeading}
           <DataTableToolbar
             fields={allFields}
             onFieldOrderChange={setFieldOrder}
