@@ -147,7 +147,8 @@ describe("MyTasksCountBadge", () => {
 
     expect(mockUseGetMyTasks).toHaveBeenCalledWith({
       organizationId: "org-1",
-      relation: "assigned",
+      // The badge mirrors the My Tickets page's default "All" tab.
+      relation: "all",
       includeCompleted: false,
       // 100 + the "99+" render cap: the badge must never show the fetch
       // page size (50) as a total when the queue is longer.
