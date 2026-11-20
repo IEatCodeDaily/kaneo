@@ -975,10 +975,10 @@ for (const [tag, scheme] of [
         await page.waitForTimeout(1200);
         const row = page
           .locator('[data-slot="sidebar-menu-button"]:visible', {
-            hasText: board.name,
+            hasText: "Inbox",
           })
           .first();
-        if ((await row.count()) === 0) fails.push("board row not visible");
+        if ((await row.count()) === 0) fails.push("Inbox nav row not visible");
         await row.hover();
         await page.waitForTimeout(350);
         const bg = await row.evaluate(
@@ -1030,15 +1030,13 @@ for (const [tag, scheme] of [
         const fails = [];
         await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
         await page.waitForTimeout(1200);
-        await page
+        const row = page
           .locator('[data-slot="sidebar-menu-button"]:visible', {
             hasText: board.name,
           })
-          .first()
-          .hover();
-        await page
-          .getByRole("button", { name: "Board sidebar options" })
-          .click();
+          .first();
+        await row.hover();
+        await row.locator('[data-slot="sidebar-menu-action"]').click();
         await page.getByText("Hide from sidebar").click();
         await page.waitForTimeout(600);
         const m = await page.evaluate(headerInfo);
