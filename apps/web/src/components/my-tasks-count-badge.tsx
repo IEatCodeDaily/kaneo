@@ -23,10 +23,6 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
     organizationId,
     relation: "assigned",
     includeCompleted: false,
-    // The API caps at 100; combined with the "99+" render cap below, the
-    // badge never silently understates a large queue (it would otherwise
-    // show the fetcher's 50-row page size as a "real" total).
-    limit: 100,
   });
   const { data: flags } = useGetMyFlags(organizationId);
 
@@ -43,7 +39,6 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
           size="count"
           variant="attention"
           aria-label={t("myTasks:flaggedCount", { count: flaggedCount })}
-          title={t("myTasks:flaggedCount", { count: flaggedCount })}
           role="status"
           data-testid="my-tasks-flagged-badge"
         >
@@ -55,7 +50,6 @@ function MyTasksCountBadge({ organizationId }: { organizationId?: string }) {
           size="count"
           variant="count"
           aria-label={t("myTasks:count", { count: assignedCount })}
-          title={t("myTasks:count", { count: assignedCount })}
           role="status"
           data-testid="my-tasks-count-badge"
         >

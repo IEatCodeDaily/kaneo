@@ -69,9 +69,7 @@ export function NavRepos() {
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // The org layout routes expose $organizationSlug (not organizationId);
-  // comparing the slug is what makes the active repo highlight resolve.
-  const { organizationSlug: currentOrganizationSlug, repoId: currentRepoId } =
+  const { organizationId: currentOrganizationId, repoId: currentRepoId } =
     useParams({
       strict: false,
     });
@@ -95,7 +93,7 @@ export function NavRepos() {
   );
 
   const isCurrentRepo = (repoId: string) =>
-    currentRepoId === repoId && currentOrganizationSlug === organization?.slug;
+    currentRepoId === repoId && currentOrganizationId === organization?.slug;
 
   // Switching repos keeps the current repo view; arriving fresh uses the last
   // repo view this user was in (persisted in localStorage).

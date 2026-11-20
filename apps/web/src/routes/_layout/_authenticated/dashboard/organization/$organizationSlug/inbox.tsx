@@ -104,9 +104,7 @@ export function InboxComponent() {
     organizationId: targetOrganizationId,
   } = Route.useSearch();
   const { data, isLoading, isError, refetch } = useGetNotifications();
-  const [filter, setFilter] = useState<
-    "all" | "unread" | "mentions" | "flagged"
-  >("all");
+  const [filter, setFilter] = useState<"all" | "unread" | "mentions">("all");
   const [showClearDialog, setShowClearDialog] = useState(false);
   // Facets over the loaded updates: event kind and board, any-of within each.
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
@@ -141,15 +139,12 @@ export function InboxComponent() {
       (!typeFilter.length || typeFilter.includes(n.type)) &&
       (!boardFilter.length || boardFilter.includes(boardOf(n))),
   );
-  const visible = faceted.filter((n) => {
-    if (filter === "flagged") return isFlaggedNotification(n);
-    // Flagged updates are standing alerts: never hidden, whatever the tab.
-    return (
+  const visible = faceted.filter(
+    (n) =>
       isFlaggedNotification(n) ||
       filter === "all" ||
-      (filter === "unread" ? !n.isRead : n.type === "task_mention")
-    );
-  });
+      (filter === "unread" ? !n.isRead : n.type === "task_mention"),
+  );
 
   // Every count and bulk action works on the SHOWN updates (tab + facets), so
   // a filtered view never touches updates the user cannot see. Flagged items
@@ -252,7 +247,7 @@ export function InboxComponent() {
             </span>
           ) : null}
           <div className="flex flex-wrap items-center gap-1">
-            {(["all", "unread", "mentions", "flagged"] as const).map((value) => (
+            {(["all", "unread", "mentions"] as const).map((value) => (
               <Button
                 key={value}
                 size="xs"
