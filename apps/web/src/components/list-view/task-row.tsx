@@ -191,7 +191,7 @@ export const TaskRowContent = memo(function TaskRowContent({
             onKeyDown={handleKeyDown}
             className={cn(
               "group relative flex items-center gap-3 px-4 py-1.5 transition-colors cursor-pointer",
-              isTaskSelected ? "bg-accent/45" : "hover:bg-accent/60",
+              isTaskSelected ? "bg-primary-soft" : "hover:bg-accent",
             )}
           >
             {showPriority && (
@@ -325,7 +325,7 @@ export const TaskRowContent = memo(function TaskRowContent({
                                     onClick={() =>
                                       window.open(pr.url, "_blank")
                                     }
-                                    className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded-sm transition-colors"
+                                    className="w-full px-2 py-1.5 text-left hover:bg-accent rounded-sm transition-colors"
                                   >
                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                       {prInfo.icon}

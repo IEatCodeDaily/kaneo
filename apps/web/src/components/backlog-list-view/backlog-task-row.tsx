@@ -144,7 +144,7 @@ const BacklogTaskRowContent = memo(function BacklogTaskRowContent({
             onKeyDown={handleKeyDown}
             className={cn(
               "group relative flex items-center gap-3 px-4 py-1.5 transition-colors cursor-pointer",
-              isTaskSelected ? "bg-accent/45" : "hover:bg-accent/60",
+              isTaskSelected ? "bg-primary-soft" : "hover:bg-accent",
             )}
           >
             {isSelectMode && (

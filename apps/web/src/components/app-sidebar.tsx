@@ -171,7 +171,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           type="button"
           aria-label="Members"
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
+            "flex cursor-pointer items-center gap-2 rounded-lg text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
             SIDEBAR_ACTIVE_PILL,
             isCollapsed
               ? "size-7 justify-center"
@@ -192,7 +192,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           type="button"
           aria-label="Settings"
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
+            "flex cursor-pointer items-center gap-2 rounded-lg text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
             SIDEBAR_ACTIVE_PILL,
             isCollapsed
               ? "size-7 justify-center"

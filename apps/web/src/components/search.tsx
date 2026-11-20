@@ -51,7 +51,7 @@ export default function Search() {
                 render={
                   <button
                     aria-label={t("navigation:commandPalette.search")}
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     data-testid="sidebar-search-collapsed"
                     onClick={() => openPalette(true)}
                     type="button"
@@ -69,7 +69,7 @@ export default function Search() {
                 render={
                   <button
                     aria-label={t("navigation:commandPalette.createTask")}
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     onClick={() => setCreateOpen(true)}
                     type="button"
                   >

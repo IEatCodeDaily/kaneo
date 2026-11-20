@@ -378,7 +378,7 @@ export const TaskCardContent = memo(function TaskCardContent({
                                 <button
                                   type="button"
                                   onClick={() => window.open(pr.url, "_blank")}
-                                  className="w-full px-2 py-1.5 text-left hover:bg-muted/50 rounded-sm transition-colors"
+                                  className="w-full px-2 py-1.5 text-left hover:bg-accent rounded-sm transition-colors"
                                 >
                                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                     {prInfo.icon}

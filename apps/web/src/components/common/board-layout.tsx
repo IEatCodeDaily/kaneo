@@ -256,7 +256,7 @@ export default function BoardLayout({
                 aria-controls="board-properties-panel"
                 title={t("organization:boards.properties.title")}
                 data-testid="board-properties-toggle"
-                className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-accent/60 hover:text-foreground ${
+                className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-accent hover:text-foreground ${
                   isPropertiesPanelOpen
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground"

@@ -34,6 +34,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -47,6 +48,7 @@ import { useTargetBoardView } from "@/hooks/use-remembered-view";
 import {
   SIDEBAR_ACTIVE_PILL,
   SIDEBAR_ROUTES,
+  SIDEBAR_SECTION_HEADER,
   useSidebarActive,
 } from "@/hooks/use-sidebar-active";
 import {
@@ -316,7 +318,7 @@ export function NavBoards() {
       <SidebarGroup className="group/boards group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
         <div className="relative flex items-center">
           <SidebarGroupLabel
-            className={`h-7 flex-1 cursor-pointer px-0 pr-12 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
+            className={`h-7 flex-1 cursor-pointer px-0 pr-12 ${SIDEBAR_SECTION_HEADER}`}
             data-active={boardsSectionActive}
             render={<button type="button" />}
             onClick={() =>
@@ -332,7 +334,7 @@ export function NavBoards() {
             {canCreate && (
               <button
                 type="button"
-                className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground opacity-0 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 group-focus-within/boards:opacity-100 group-hover/boards:opacity-100"
+                className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground opacity-0 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-sidebar-ring group-focus-within/boards:opacity-100 group-hover/boards:opacity-100"
                 onClick={() => setIsCreateBoardModalOpen(true)}
               >
                 <Plus className="size-4" />
@@ -348,7 +350,7 @@ export function NavBoards() {
                     <button
                       aria-label="Board sidebar options"
                       type="button"
-                      className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+                      className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     />
                   }
                 >
@@ -411,16 +413,13 @@ export function NavBoards() {
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               render={
-                                <button
-                                  type="button"
-                                  className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
+                                <SidebarMenuAction
+                                  aria-label={t("navigation:sidebar.more")}
+                                  showOnHover
                                 />
                               }
                             >
                               <MoreHorizontal />
-                              <span className="sr-only">
-                                {t("navigation:sidebar.more")}
-                              </span>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               className="w-44 rounded-lg"

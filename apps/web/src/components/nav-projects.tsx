@@ -222,7 +222,7 @@ export function NavProjects() {
                         type="button"
                         aria-expanded={open}
                         aria-label={`${open ? "Collapse" : "Expand"} ${project.name}`}
-                        className="size-7 shrink-0"
+                        className="size-7 shrink-0 cursor-pointer rounded-md text-sidebar-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                         onClick={() => toggle(project.id)}
                       >
                         {open ? (

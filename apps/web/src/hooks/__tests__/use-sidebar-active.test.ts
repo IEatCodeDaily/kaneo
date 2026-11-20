@@ -3,6 +3,7 @@ import {
   matchSidebarPattern,
   SIDEBAR_ACTIVE_PILL,
   SIDEBAR_ROUTES,
+  SIDEBAR_SECTION_HEADER,
   sidebarEntryIsActive,
 } from "../use-sidebar-active";
 
@@ -424,5 +425,15 @@ describe("shared selected treatment", () => {
     expect(SIDEBAR_ACTIVE_PILL).toBe(
       "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-primary-soft data-[active=true]:font-semibold data-[active=true]:text-primary-soft-foreground",
     );
+  });
+
+  it("gives section headers an ink-only treatment, never a fill", () => {
+    // Headers are chrome, not items: no surface colour at any state — the
+    // pill's bg classes must not appear, and the steps are rest < hover <
+    // active ink.
+    expect(SIDEBAR_SECTION_HEADER).toBe(
+      "text-sidebar-foreground/70 hover:text-sidebar-foreground data-[active=true]:text-foreground data-[active=true]:font-semibold",
+    );
+    expect(SIDEBAR_SECTION_HEADER).not.toContain("bg-");
   });
 });
