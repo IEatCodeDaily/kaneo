@@ -98,7 +98,7 @@ describe("AgentManager", () => {
     expect(payload).not.toHaveProperty("expiresAt");
   });
 
-  it("reissues an existing agent's token and reveals the new secret once", async () => {
+  it("reissues only after the confirm dialog, then reveals the new secret once", async () => {
     agents.push({
       id: "agent-1",
       name: "Release bot",
@@ -112,12 +112,49 @@ describe("AgentManager", () => {
     render(<AgentManager />);
 
     fireEvent.click(
-      screen.getByRole("button", { name: /team:agentManager.reissue/ }),
+      screen.getByRole("button", { name: "team:agentManager.reissue" }),
+    );
+    // The dialog is up and nothing has been invalidated yet.
+    expect(
+      screen.getByText("team:agentManager.reissueConfirmTitle"),
+    ).toBeInTheDocument();
+    expect(reissueMutate).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "team:agentManager.reissueConfirm" }),
     );
     await vi.waitFor(() =>
       expect(reissueMutate).toHaveBeenCalledWith("agent-1"),
     );
     await screen.findByText("kaneo_agent_rotated");
+    expect(
+      screen.queryByText("team:agentManager.reissueConfirmTitle"),
+    ).toBeNull();
+  });
+
+  it("keeps the current token when the operator cancels the reissue dialog", async () => {
+    agents.push({
+      id: "agent-3",
+      name: "Idle bot",
+      createdAt: new Date().toISOString(),
+      token: {
+        id: "k2",
+        start: "kaneo_agent_beef",
+        createdAt: new Date().toISOString(),
+      },
+    });
+    render(<AgentManager />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "team:agentManager.reissue" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    );
+    expect(reissueMutate).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText("team:agentManager.reissueConfirmTitle"),
+    ).toBeNull();
   });
 
   it("offers to issue a token for an agent whose token was removed", () => {

@@ -43,7 +43,7 @@ export function NavHiddenItems({
       <SidebarMenuItem data-testid={`${testIdPrefix}-more-item`}>
         <SidebarMenuButton
           aria-expanded={expanded}
-          className="h-8 gap-1 ps-3.5 text-sidebar-foreground/70 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent"
+          className="h-8 gap-1 ps-3.5 text-sidebar-foreground/70 text-sm"
           data-testid={`${testIdPrefix}-more-toggle`}
           onClick={() => setExpanded((open) => !open)}
           size="default"
@@ -61,7 +61,7 @@ export function NavHiddenItems({
         items.map((item) => (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton
-              className={`h-8 gap-0 ps-7 text-sidebar-foreground/80 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
+              className={`h-8 gap-0 ps-7 text-sidebar-foreground/80 text-sm ${SIDEBAR_ACTIVE_PILL}`}
               data-testid={`${testIdPrefix}-more-entry-${item.id}`}
               isActive={isActive?.(item.id) ?? false}
               onClick={() => onSelect(item.id)}

@@ -29,15 +29,21 @@ export const SIDEBAR_ROUTES = {
     "/dashboard/organization/$organizationSlug/dashboards/$dashboardId",
   projects: "/dashboard/organization/$organizationSlug/projects",
   project: "/dashboard/organization/$organizationSlug/projects/$projectSlug",
+  members: "/dashboard/organization/$organizationSlug/members",
+  settings: "/dashboard/settings",
 } as const;
 
 /**
  * The one selected treatment for every active sidebar entry at every depth
- * (established on nav-main by #96/#102, now shared): a solid primary pill so
- * count badges stay visible on both theme modes (#102's amber badge contract).
+ * (established on nav-main by #96/#102, shared since #104): a soft primary
+ * surface instead of the inverse fill — `bg-primary` painted near-white in
+ * dark mode and read as glare — plus the ONE hover surface every nav item
+ * shares (`bg-sidebar-accent`, the same token the primitives hover with), so
+ * hover no longer varies per component. Count badges stay visible on both
+ * theme modes (#102's amber badge contract).
  */
 export const SIDEBAR_ACTIVE_PILL =
-  "data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground";
+  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-primary-soft data-[active=true]:font-semibold data-[active=true]:text-primary-soft-foreground";
 
 export type SidebarPatternOptions = {
   /** Match the whole pathname, not just the prefix (child routes excluded). */

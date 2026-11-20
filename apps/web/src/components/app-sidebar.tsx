@@ -24,6 +24,11 @@ import { shortcuts } from "@/constants/shortcuts";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useRememberCurrentView } from "@/hooks/use-remembered-view";
+import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
 import { useUserWebSocket } from "@/hooks/use-user-websocket";
 import { cn } from "@/lib/cn";
 import Search from "./search";
@@ -42,9 +47,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { toggleSidebar, state, isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
+  const { isActive } = useSidebarActive();
   const [mode, setMode] = useState<"work" | "resources">("work");
   const [createOpen, setCreateOpen] = useState(false);
   const [organizationMenuOpen, setOrganizationMenuOpen] = useState(false);
+  // Pinned footer entries light up through the same mechanism as every nav
+  // section; Settings' surface replaces the sidebar entirely, so its pill is
+  // wired for the mechanism even though that page never shows it.
+  const membersActive = organization
+    ? isActive(SIDEBAR_ROUTES.members, { organizationSlug: organization.slug })
+    : false;
+  const settingsActive = isActive(SIDEBAR_ROUTES.settings);
   // On mobile the sheet is always expanded; `state` tracks the desktop preference.
   const isCollapsed = state === "collapsed" && !isMobile;
   const workEnabled = Boolean(
@@ -158,11 +171,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           type="button"
           aria-label="Members"
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
+            SIDEBAR_ACTIVE_PILL,
             isCollapsed
               ? "size-7 justify-center"
               : "min-h-11 w-full px-2 sm:min-h-8",
           )}
+          data-active={membersActive}
           onClick={() =>
             organization &&
             navigate({
@@ -177,11 +192,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           type="button"
           aria-label="Settings"
           className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+            "flex cursor-pointer items-center gap-2 rounded-md text-xs outline-hidden ring-sidebar-ring transition-colors duration-150 focus-visible:ring-2",
+            SIDEBAR_ACTIVE_PILL,
             isCollapsed
               ? "size-7 justify-center"
               : "min-h-11 w-full px-2 sm:min-h-8",
           )}
+          data-active={settingsActive}
           onClick={() =>
             navigate({ to: "/dashboard/settings/account/information" })
           }

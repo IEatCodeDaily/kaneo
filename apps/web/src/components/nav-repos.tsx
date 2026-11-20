@@ -169,7 +169,7 @@ export function NavRepos() {
       <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-0.5 p-2 pt-1">
         <div className="flex h-7 items-center">
           <SidebarGroupLabel
-            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground ${reposSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground ${SIDEBAR_ACTIVE_PILL}`}
             data-active={reposSectionActive}
             render={<button type="button" />}
             onClick={() =>
@@ -232,7 +232,7 @@ export function NavRepos() {
                     <ContextMenuTrigger asChild>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          className={`h-7 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
+                          className={`h-7 gap-0 ps-3.5 pe-8 text-sm ${SIDEBAR_ACTIVE_PILL}`}
                           isActive={isCurrentRepo(repo.id)}
                           onClick={() => openRepo(repo.id)}
                           {...intentPrefetchHandlers(() =>

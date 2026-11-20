@@ -88,7 +88,9 @@ export function ViewSwitcher({
     }
   };
   return (
-    <div className="flex min-w-0 shrink-0 items-center gap-1">
+    <div className="hidden min-w-0 shrink-0 items-center gap-1 @3xl/toolbar:flex">
+      {/* Toolbar-resident control: collapses together with the toolbar
+          labels (@3xl/toolbar), so narrow toolbars never clip. */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
