@@ -88,21 +88,27 @@ export function ViewSwitcher({
     }
   };
   return (
-    <div className="hidden min-w-0 shrink-0 items-center gap-1 @3xl/toolbar:flex">
-      {/* Toolbar-resident control: collapses together with the toolbar
-          labels (@3xl/toolbar), so narrow toolbars never clip. */}
+    <div className="flex min-w-0 shrink-0 items-center gap-1">
+      {/* Toolbar-resident control: the label collapses with the toolbar's
+          other labels (@3xl/toolbar, ToolbarButton contract), so narrow
+          toolbars keep the switcher as its icon without clipping. */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <Button
               variant="outline"
               size="sm"
-              className="h-7 max-w-32 px-2 text-xs"
+              className="h-7 min-w-0 max-w-32 px-2 text-xs"
               aria-label={label("switch")}
             />
           }
         >
-          <span className="truncate">{current?.name ?? label("title")}</span>
+          <span
+            data-toolbar-label=""
+            className="hidden min-w-0 truncate @3xl/toolbar:inline"
+          >
+            {current?.name ?? label("title")}
+          </span>
           <ChevronDown className="size-3 shrink-0" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
