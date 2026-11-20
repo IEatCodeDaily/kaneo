@@ -145,6 +145,9 @@ describe("MyTasksCountBadge", () => {
       organizationId: "org-1",
       relation: "assigned",
       includeCompleted: false,
+      // 100 + the "99+" render cap: the badge must never show the fetch
+      // page size (50) as a total when the queue is longer.
+      limit: 100,
     });
     expect(mockUseGetMyFlags).toHaveBeenCalledWith("org-1");
   });
