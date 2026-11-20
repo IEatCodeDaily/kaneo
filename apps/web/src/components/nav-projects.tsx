@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronRight,
@@ -30,6 +30,11 @@ import {
 } from "@/components/ui/sidebar";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
 import useGetProjectSidebar from "@/hooks/queries/project/use-get-project-sidebar";
+import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type Resource = {
@@ -58,7 +63,7 @@ export function NavProjects() {
   const { user } = useAuth();
   const { data: organization } = useActiveOrganization();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { isActive } = useSidebarActive();
   const { data = [] } = useGetProjectSidebar(organization?.id ?? "");
   const { hiddenProjectIds, setProjectSidebarVisibility } =
     useUserPreferencesStore();
@@ -86,15 +91,16 @@ export function NavProjects() {
 
   useEffect(() => {
     const active = (data as Project[]).find((project) =>
-      pathname.startsWith(
-        `/dashboard/organization/${organization?.slug}/projects/${project.slug}`,
-      ),
+      isActive(SIDEBAR_ROUTES.project, {
+        organizationSlug: organization?.slug ?? "",
+        projectSlug: project.slug,
+      }),
     );
     if (active)
       setExpanded((current) =>
         current.includes(active.id) ? current : [...current, active.id],
       );
-  }, [data, organization?.slug, pathname]);
+  }, [data, organization?.slug, isActive]);
   useEffect(() => {
     if (storageKey && hydratedStorageKey === storageKey) {
       localStorage.setItem(storageKey, JSON.stringify(expanded));
@@ -140,6 +146,43 @@ export function NavProjects() {
   const visibleProjects = (data as Project[]).filter(
     (project) => !hiddenProjectIds.includes(`${user?.id}:${project.id}`),
   );
+  const orgParams = { organizationSlug: organization.slug };
+  const isProjectActive = (project: Pick<Project, "slug">) =>
+    isActive(SIDEBAR_ROUTES.project, {
+      ...orgParams,
+      projectSlug: project.slug,
+    });
+  // Resource rows point at board/repo/table routes; match those routes with
+  // the same patterns the resource sections use (pathname.includes() produced
+  // phantom highlights for slugs like "api" inside "/rapid/…").
+  const isResourceActive = (item: Resource) => {
+    if (item.resourceType === "board")
+      return isActive(SIDEBAR_ROUTES.board, {
+        ...orgParams,
+        boardSlug: item.resource.slug ?? item.resourceId,
+      });
+    if (item.resourceType === "repo")
+      return isActive(SIDEBAR_ROUTES.repo, {
+        ...orgParams,
+        repoId: item.resourceId,
+      });
+    return isActive(SIDEBAR_ROUTES.table, {
+      ...orgParams,
+      tableId: item.resourceId,
+    });
+  };
+  const projectsSectionActive = isActive(SIDEBAR_ROUTES.projects, orgParams);
+  // The Projects overview row doubles as the section header: exact on
+  // /projects itself, plus the fallback when the route belongs to a project
+  // (or one of its resources) that is hidden, collapsed, or not yet loaded.
+  const projectsHeaderActive =
+    isActive(SIDEBAR_ROUTES.projects, orgParams, { exact: true }) ||
+    (projectsSectionActive &&
+      !visibleProjects.some(
+        (project) =>
+          isProjectActive(project) ||
+          project.resources.some((item) => isResourceActive(item)),
+      ));
   const resourceGroups = [
     { type: "board", label: "Boards", icon: LayoutDashboard },
     { type: "repo", label: "Repos", icon: Github },
@@ -151,11 +194,8 @@ export function NavProjects() {
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="h-7 gap-2 text-xs"
-              isActive={
-                pathname ===
-                `/dashboard/organization/${organization.slug}/projects`
-              }
+              className={`h-7 gap-2 text-xs ${SIDEBAR_ACTIVE_PILL}`}
+              isActive={projectsHeaderActive}
               onClick={() =>
                 navigate({
                   to: "/dashboard/organization/$organizationSlug/projects",
@@ -192,7 +232,8 @@ export function NavProjects() {
                         )}
                       </button>
                       <SidebarMenuButton
-                        className="h-7 text-xs"
+                        className={`h-7 text-xs ${SIDEBAR_ACTIVE_PILL}`}
+                        isActive={isProjectActive(project)}
                         tooltip={project.name}
                         onClick={() =>
                           navigate({
@@ -223,6 +264,12 @@ export function NavProjects() {
                       <SidebarMenuSub>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
+                            className={SIDEBAR_ACTIVE_PILL}
+                            isActive={isActive(
+                              SIDEBAR_ROUTES.project,
+                              { ...orgParams, projectSlug: project.slug },
+                              { exact: true },
+                            )}
                             onClick={() =>
                               navigate({
                                 to: "/dashboard/organization/$organizationSlug/projects/$projectSlug",
@@ -302,13 +349,8 @@ export function NavProjects() {
                                   resources.map((item) => (
                                     <SidebarMenuSubItem key={item.id}>
                                       <SidebarMenuSubButton
-                                        isActive={
-                                          pathname.includes(item.resourceId) ||
-                                          (!!item.resource.slug &&
-                                            pathname.includes(
-                                              item.resource.slug,
-                                            ))
-                                        }
+                                        className={SIDEBAR_ACTIVE_PILL}
+                                        isActive={isResourceActive(item)}
                                         onClick={() => go(item)}
                                       >
                                         <span>{item.resource.name}</span>

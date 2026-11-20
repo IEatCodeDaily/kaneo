@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SIDEBAR_ACTIVE_PILL } from "@/hooks/use-sidebar-active";
 
 export type HiddenSidebarEntry = {
   id: string;
@@ -60,7 +61,7 @@ export function NavHiddenItems({
         items.map((item) => (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton
-              className="h-8 gap-0 ps-7 text-sidebar-foreground/80 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent"
+              className={`h-8 gap-0 ps-7 text-sidebar-foreground/80 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
               data-testid={`${testIdPrefix}-more-entry-${item.id}`}
               isActive={isActive?.(item.id) ?? false}
               onClick={() => onSelect(item.id)}

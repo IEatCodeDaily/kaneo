@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   CircleDot,
   ExternalLink,
@@ -36,6 +36,11 @@ import useGetRepos from "@/hooks/queries/repo/use-get-repos";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { useTargetRepoView } from "@/hooks/use-remembered-view";
 import {
+  SIDEBAR_ACTIVE_PILL,
+  SIDEBAR_ROUTES,
+  useSidebarActive,
+} from "@/hooks/use-sidebar-active";
+import {
   intentPrefetchHandlers,
   prefetchRepoNavigation,
 } from "@/lib/navigation-prefetch";
@@ -69,12 +74,7 @@ export function NavRepos() {
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // The org layout routes expose $organizationSlug (not organizationId);
-  // comparing the slug is what makes the active repo highlight resolve.
-  const { organizationSlug: currentOrganizationSlug, repoId: currentRepoId } =
-    useParams({
-      strict: false,
-    });
+  const { isActive } = useSidebarActive();
   const [addRepoOpen, setAddRepoOpen] = useState(false);
   const hiddenRepoIds = useUserPreferencesStore((state) => state.hiddenRepoIds);
   const setRepoSidebarVisibility = useUserPreferencesStore(
@@ -94,8 +94,14 @@ export function NavRepos() {
     hiddenRepoIds.includes(`${user?.id}:${repo.id}`),
   );
 
+  const orgParams = { organizationSlug: organization?.slug ?? "" };
   const isCurrentRepo = (repoId: string) =>
-    currentRepoId === repoId && currentOrganizationSlug === organization?.slug;
+    isActive(SIDEBAR_ROUTES.repo, { ...orgParams, repoId });
+  // Section fallback: the route belongs to Repos but no visible repo claims
+  // it (hidden repo, filtered/not-yet-loaded list) — the header lights up.
+  const reposSectionActive =
+    isActive(SIDEBAR_ROUTES.repos, orgParams) &&
+    !visibleRepos.some((repo) => isCurrentRepo(repo.id));
 
   // Switching repos keeps the current repo view; arriving fresh uses the last
   // repo view this user was in (persisted in localStorage).
@@ -125,6 +131,12 @@ export function NavRepos() {
           <SidebarMenuItem>
             <SidebarMenuButton
               data-testid="sidebar-repos-collapsed"
+              isActive={isActive(
+                SIDEBAR_ROUTES.repos,
+                { organizationSlug: organization.slug },
+                { exact: true },
+              )}
+              className={SIDEBAR_ACTIVE_PILL}
               onClick={() =>
                 navigate({
                   to: "/dashboard/organization/$organizationSlug/repo",
@@ -141,6 +153,8 @@ export function NavRepos() {
             <SidebarMenuItem key={repo.id}>
               <SidebarMenuButton
                 data-testid={`sidebar-repo-collapsed-${repo.id}`}
+                isActive={isCurrentRepo(repo.id)}
+                className={SIDEBAR_ACTIVE_PILL}
                 onClick={() => openRepo(repo.id)}
                 tooltip={`${repo.owner}/${repo.name}`}
               >
@@ -155,12 +169,13 @@ export function NavRepos() {
       <SidebarGroup className="group/repos group-data-[collapsible=icon]:hidden gap-0.5 p-2 pt-1">
         <div className="flex h-7 items-center">
           <SidebarGroupLabel
-            className="h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground"
+            className={`h-7 min-w-0 flex-1 cursor-pointer gap-2 px-0 text-sidebar-accent-foreground hover:text-sidebar-foreground ${reposSectionActive ? SIDEBAR_ACTIVE_PILL : ""}`}
+            data-active={reposSectionActive}
             render={<button type="button" />}
             onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationSlug/repo",
-                params: { organizationSlug: organization.id },
+                params: { organizationSlug: organization.slug },
               })
             }
           >
@@ -217,7 +232,7 @@ export function NavRepos() {
                     <ContextMenuTrigger asChild>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          className="h-7 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:shadow-sm/5"
+                          className={`h-7 gap-0 ps-3.5 pe-8 text-sm hover:bg-transparent hover:text-sidebar-accent-foreground active:bg-transparent ${SIDEBAR_ACTIVE_PILL}`}
                           isActive={isCurrentRepo(repo.id)}
                           onClick={() => openRepo(repo.id)}
                           {...intentPrefetchHandlers(() =>
