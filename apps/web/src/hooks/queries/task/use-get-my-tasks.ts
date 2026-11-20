@@ -10,10 +10,20 @@ function useGetMyTasks({
   organizationId,
   relation = "all",
   includeCompleted = false,
+  limit = 50,
+  offset = 0,
 }: MyTasksParams = {}) {
   return useQuery({
-    queryKey: ["my-tasks", organizationId, relation, includeCompleted],
-    queryFn: () => getMyTasks({ organizationId, relation, includeCompleted }),
+    queryKey: [
+      "my-tasks",
+      organizationId,
+      relation,
+      includeCompleted,
+      limit,
+      offset,
+    ],
+    queryFn: () =>
+      getMyTasks({ organizationId, relation, includeCompleted, limit, offset }),
     enabled: !!organizationId,
     staleTime: 10_000,
   });
