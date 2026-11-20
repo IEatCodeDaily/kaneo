@@ -97,7 +97,7 @@ export function ViewSwitcher({
             <Button
               variant="outline"
               size="sm"
-              className="max-w-32"
+              className="h-7 max-w-32 px-2 text-xs"
               aria-label={label("switch")}
             />
           }
