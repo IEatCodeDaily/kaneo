@@ -3,9 +3,12 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { validator } from "hono-openapi";
 import * as v from "valibot";
+import { panelSchema } from "../data-table";
+import { listTableFieldRows } from "../data-table/controllers";
 import db from "../database";
 import {
   boardTable,
+  dataTableTable,
   labelTable,
   organizationMemberTable,
   organizationTable,
@@ -181,6 +184,33 @@ async function callProvider(
   tokenLimit: number,
   provider: ProviderConfig,
 ) {
+  const parsed = await chatJson(provider, tokenLimit, [
+    {
+      role: "system",
+      content:
+        "You are Kaneo's organization assistant. Return JSON only: {message:string,actions:array}. Allowed actions: assign_task(taskId,assigneeId|null), add_label(taskId,labelName,color), create_task(boardId,title,description,status,priority,assigneeId|null). Use only IDs/names in CONTEXT. Never invent IDs. Only propose actions explicitly requested by the user.",
+    },
+    { role: "system", content: `CONTEXT=${JSON.stringify(context)}` },
+    { role: "user", content: message },
+  ]);
+  try {
+    return v.parse(commandSchema, parsed);
+  } catch {
+    throw new HTTPException(502, { message: "AI returned invalid commands" });
+  }
+}
+
+/**
+ * One OpenAI-compatible chat completion constrained to JSON, using the exact
+ * provider config the AI settings surface resolves. Shared by the task-action
+ * assistant and the dashboard generator so both ride the same model, limits
+ * and response parsing.
+ */
+async function chatJson(
+  provider: ProviderConfig,
+  tokenLimit: number,
+  messages: Array<{ role: "system" | "user"; content: string }>,
+): Promise<unknown> {
   const response = await fetch(`${provider.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -192,15 +222,7 @@ async function callProvider(
       temperature: 0,
       max_tokens: tokenLimit,
       response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Kaneo's organization assistant. Return JSON only: {message:string,actions:array}. Allowed actions: assign_task(taskId,assigneeId|null), add_label(taskId,labelName,color), create_task(boardId,title,description,status,priority,assigneeId|null). Use only IDs/names in CONTEXT. Never invent IDs. Only propose actions explicitly requested by the user.",
-        },
-        { role: "system", content: `CONTEXT=${JSON.stringify(context)}` },
-        { role: "user", content: message },
-      ],
+      messages,
     }),
   });
   if (!response.ok) {
@@ -238,10 +260,104 @@ async function callProvider(
   if (!raw)
     throw new HTTPException(502, { message: "AI returned no response" });
   try {
-    return v.parse(commandSchema, JSON.parse(raw));
+    return JSON.parse(raw);
   } catch {
-    throw new HTTPException(502, { message: "AI returned invalid commands" });
+    throw new HTTPException(502, { message: "AI returned invalid JSON" });
   }
+}
+
+// ── Dashboard generation ───────────────────────────────────────────────────
+// The chat2plot pattern (github.com/nyanp/chat2plot): the LLM emits a
+// declarative chart spec in JSON — never code, never HTML — which is schema
+// validated, semantically checked against the table's real fields, and then
+// rendered by the engine that already exists (kaneo's dashboard panels).
+// Same port shape as W&B OpenUI minus everything HTML: prompt → constrained
+// JSON → validate → store.
+
+const dashboardSpecSchema = v.object({
+  name: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(200))),
+  panels: v.pipe(v.array(panelSchema), v.minLength(1), v.maxLength(100)),
+});
+
+const DASHBOARD_SYSTEM_PROMPT = `You are Kaneo's dashboard generator. Return JSON only: {"name": string, "panels": array}.
+Each panel: {"id": unique short string, "title": short human label, "type": "stat"|"bar"|"line"|"area"|"pie"|"table", "span": 6|8|9|12|15|16|24, "query": {"tableId": the CONTEXT TABLE_ID, "metric": {"agg": "count"|"sum"|"avg"|"min"|"max", "fieldId": required for sum/avg/min/max, omit for count}, "groupBy": optional {"fieldId": string, "bucket": "day"|"week"|"month" only for date/datetime fields}, "filters": optional [{"fieldId": string, "op": "eq"|"neq"|"in"|"lt"|"lte"|"gt"|"gte"|"isEmpty", "value": any}], "limit": optional number}}.
+Rules: use ONLY field ids listed in CONTEXT FIELDS — never invent ids. Use sum/avg/min/max only on number, percent or currency fields. Group bar/line/area charts with groupBy; use pie for select-like fields; stats for single KPIs. Add filters only when the request implies them. Prefer 3-6 panels: a stat row, one or two grouped charts, span 6 for stats and 12 or more for charts.`;
+
+async function generateDashboardSpec(
+  organizationId: string,
+  tableId: string,
+  description: string,
+  tokenLimit: number,
+  provider: ProviderConfig,
+) {
+  const [table] = await db
+    .select({ id: dataTableTable.id, name: dataTableTable.name })
+    .from(dataTableTable)
+    .where(
+      and(
+        eq(dataTableTable.id, tableId),
+        eq(dataTableTable.organizationId, organizationId),
+        isNull(dataTableTable.deletedAt),
+      ),
+    )
+    .limit(1);
+  if (!table) throw new HTTPException(404, { message: "Data table not found" });
+  const fields = await listTableFieldRows(tableId);
+
+  const context = {
+    TABLE_ID: tableId,
+    TABLE_NAME: table.name,
+    FIELDS: fields.map((field) => {
+      const choices = (
+        field.options as {
+          choices?: Array<{ id: string; label: string }>;
+        } | null
+      )?.choices;
+      return {
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        ...(Array.isArray(choices)
+          ? {
+              choices: choices.map(({ id, label }) => ({
+                id,
+                label,
+              })),
+            }
+          : {}),
+      };
+    }),
+  };
+
+  const parsed = await chatJson(provider, tokenLimit, [
+    { role: "system", content: DASHBOARD_SYSTEM_PROMPT },
+    { role: "system", content: `CONTEXT=${JSON.stringify(context)}` },
+    { role: "user", content: description },
+  ]);
+
+  let spec: v.InferOutput<typeof dashboardSpecSchema>;
+  try {
+    spec = v.parse(dashboardSpecSchema, parsed);
+  } catch {
+    throw new HTTPException(502, { message: "AI returned invalid panels" });
+  }
+  // Semantic validation on top of the schema: pin every query to the
+  // requested table and reject hallucinated field references — the REST
+  // panel validator checks table ids only, so a wrong fieldId would land
+  // in stored panels and silently render empty charts.
+  const fieldIds = new Set(fields.map((field) => field.id));
+  for (const panel of spec.panels) {
+    panel.query.tableId = tableId;
+    const references = [
+      panel.query.metric.fieldId,
+      panel.query.groupBy?.fieldId,
+      ...(panel.query.filters ?? []).map((filter) => filter.fieldId),
+    ];
+    if (references.some((id) => id !== undefined && !fieldIds.has(id))) {
+      throw new HTTPException(502, { message: "AI returned invalid panels" });
+    }
+  }
+  return spec;
 }
 
 const ai = new Hono<{ Variables: Variables }>()
@@ -501,6 +617,41 @@ const ai = new Hono<{ Variables: Variables }>()
           characterLimit: limits.effectiveCharacterLimit,
         },
       });
+    },
+  )
+  .post(
+    "/organization/:organizationId/generate-dashboard",
+    validator("param", v.object({ organizationId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        tableId: v.pipe(v.string(), v.minLength(1)),
+        description: v.pipe(
+          v.string(),
+          v.trim(),
+          v.minLength(1),
+          v.maxLength(4000),
+        ),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    async (c) => {
+      const organizationId = c.req.valid("param").organizationId;
+      const { tableId, description } = c.req.valid("json");
+      const limits = await settings(organizationId, c.get("userId"));
+      if (!limits.enabled)
+        throw new HTTPException(503, { message: "AI is disabled" });
+      const provider = await resolveProviderConfig(organizationId);
+      if (!provider)
+        throw new HTTPException(503, { message: "AI is not configured" });
+      const spec = await generateDashboardSpec(
+        organizationId,
+        tableId,
+        description,
+        limits.effectiveTokenLimit,
+        provider,
+      );
+      return c.json({ name: spec.name ?? null, panels: spec.panels });
     },
   );
 

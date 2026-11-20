@@ -83,7 +83,11 @@ const querySpecSchema = v.object({
   ),
 });
 
-const panelSchema = v.object({
+/**
+ * One panel of a dashboard config. Exported so the AI dashboard generator
+ * validates LLM output against the exact schema the dashboard routes accept.
+ */
+export const panelSchema = v.object({
   id: v.pipe(v.string(), v.minLength(1)),
   title: v.pipe(v.string(), v.minLength(1)),
   type: v.picklist(["stat", "bar", "line", "area", "pie", "table"]),

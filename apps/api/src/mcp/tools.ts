@@ -1,8 +1,11 @@
+import { randomUUID } from "node:crypto";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
   assertBoardPermission,
+  assertMcpPermission,
+  assertTablePermission,
   assertTaskPermission,
   type McpPermissionMap,
 } from "./permissions";
@@ -177,6 +180,64 @@ const hexColorSchema = z
     /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/,
     "Expected a hex color like #FF6600",
   );
+
+/**
+ * Mirror of the dashboard `panelSchema` valibot validator enforced by
+ * PUT /api/data-table/organization/:organizationId/dashboards/:dashboardId
+ * (apps/api/src/data-table/index.ts). Kept in sync by hand: the MCP layer
+ * validates early so an agent gets a readable error instead of an HTTP 400
+ * dump, and the REST route remains authoritative.
+ */
+const PANEL_TYPES = ["stat", "bar", "line", "area", "pie", "table"] as const;
+const PANEL_SPANS = [6, 8, 9, 12, 15, 16, 24] as const;
+const AGGREGATIONS = ["count", "sum", "avg", "min", "max"] as const;
+const FILTER_OPS = [
+  "eq",
+  "neq",
+  "in",
+  "lt",
+  "lte",
+  "gt",
+  "gte",
+  "isEmpty",
+] as const;
+const panelQuerySchema = z.object({
+  tableId: nonEmptyString,
+  metric: z.object({
+    agg: z.enum(AGGREGATIONS),
+    fieldId: optionalNonEmptyString,
+  }),
+  groupBy: z
+    .object({
+      fieldId: nonEmptyString,
+      bucket: z.enum(["day", "week", "month"]).optional(),
+    })
+    .optional(),
+  filters: z
+    .array(
+      z.object({
+        fieldId: nonEmptyString,
+        op: z.enum(FILTER_OPS),
+        value: z.unknown().optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  limit: z.number().int().min(1).max(500).optional(),
+});
+const dashboardPanelSchema = z.object({
+  id: optionalNonEmptyString,
+  title: nonEmptyString,
+  type: z.enum(PANEL_TYPES),
+  span: z
+    .number()
+    .int()
+    .refine((v): v is (typeof PANEL_SPANS)[number] =>
+      (PANEL_SPANS as readonly number[]).includes(v),
+    ),
+  query: panelQuerySchema,
+});
+const dashboardPanelsSchema = z.array(dashboardPanelSchema).max(100);
 
 export function registerMcpTools(
   server: McpServer,
@@ -911,5 +972,350 @@ export function registerMcpTools(
           { method: "GET" },
         ),
       ),
+  );
+
+  /*
+   * Tables and dashboards (data-table feature). Thin shims over
+   * /api/data-table/* like every tool above; the REST routes remain the
+   * authority for org membership, the tables/dashboards feature flags and
+   * the per-table privilege lattice. The guards below only pre-check with
+   * the same rules (#38 pattern) so an agent gets a readable tool error
+   * instead of a wrapped HTTP status.
+   */
+  const dataTableBase = "/api/data-table/organization";
+  const guardTable = (
+    organizationId: string,
+    tableId: string,
+    required: "view" | "edit" | "manage",
+  ) =>
+    userId
+      ? assertTablePermission(userId, organizationId, tableId, required)
+      : Promise.resolve();
+  const guardOrganizationWrite = (organizationId: string) =>
+    userId
+      ? assertMcpPermission(userId, organizationId, {
+          organization: ["update"],
+        })
+      : Promise.resolve();
+
+  server.registerTool(
+    "list_tables",
+    {
+      description:
+        "List data tables in an organization (id, name, slug, icon). Requires the tables feature to be enabled for the organization. Use a returned `id` with the other table tools; `slug` is for building web URLs.",
+      inputSchema: z.object({ organizationId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "get_table",
+    {
+      description:
+        "Get a data table's schema: its fields (id, name, type, options, position) plus the first page of rows. Use the field ids every row value, filter and dashboard panel metric refers to.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTable(args.organizationId, args.tableId, "view");
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/${encodeURIComponent(args.tableId)}`,
+          { method: "GET" },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "list_table_rows",
+    {
+      description:
+        "List rows of a data table, paged (max 1000 per call). Optional `search` narrows by text across fields; `sortFieldId`/`sortDir` order the result; the response carries `total` so you can page with `offset`.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+        search: z.string().max(1000).optional(),
+        sortFieldId: optionalNonEmptyString,
+        sortDir: z.enum(["asc", "desc"]).optional(),
+        limit: z.number().int().min(1).max(1000).optional(),
+        offset: z.number().int().min(0).optional(),
+      }),
+    },
+    async (args) => {
+      const { organizationId, tableId, sortFieldId, sortDir, ...rest } = args;
+      const body: Record<string, unknown> = { ...rest };
+      if (sortFieldId) {
+        body.sort = [{ fieldId: sortFieldId, dir: sortDir ?? "asc" }];
+      }
+      return run(async () => {
+        await guardTable(organizationId, tableId, "view");
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(organizationId)}/${encodeURIComponent(tableId)}/row-query`,
+          { method: "POST", body: JSON.stringify(body) },
+        );
+      });
+    },
+  );
+
+  server.registerTool(
+    "create_table_row",
+    {
+      description:
+        "Create a row in a data table. `values` maps fieldId to the field-typed value (get_table lists fields; select fields take a choice id, dates take ISO strings). Omitted fields stay empty.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+        values: z.record(z.string(), z.unknown()),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTable(args.organizationId, args.tableId, "edit");
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/${encodeURIComponent(args.tableId)}/rows`,
+          {
+            method: "POST",
+            body: JSON.stringify({ values: args.values }),
+          },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "update_table_row",
+    {
+      description:
+        "Update one row's cells. `values` maps fieldId to the new value; every provided field is written in order (one cell PUT per field, exactly like the web UI).",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+        rowId: nonEmptyString,
+        values: z.record(z.string(), z.unknown()).describe("fieldId → value"),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTable(args.organizationId, args.tableId, "edit");
+        const cellsBase = `${dataTableBase}/${encodeURIComponent(args.organizationId)}/${encodeURIComponent(args.tableId)}/rows/${encodeURIComponent(args.rowId)}/cells`;
+        let last: unknown = null;
+        for (const [fieldId, value] of Object.entries(args.values)) {
+          // Sequential on purpose: a row write is versioned and parallel
+          // cell PUTs would race each other.
+          last = await client.json(
+            `${cellsBase}/${encodeURIComponent(fieldId)}`,
+            { method: "PUT", body: JSON.stringify({ value }) },
+          );
+        }
+        return last;
+      }),
+  );
+
+  server.registerTool(
+    "delete_table_row",
+    {
+      description: "Delete a row from a data table.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+        rowId: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTable(args.organizationId, args.tableId, "edit");
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/${encodeURIComponent(args.tableId)}/rows/${encodeURIComponent(args.rowId)}`,
+          { method: "DELETE" },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "create_table",
+    {
+      description:
+        "Create an empty data table in an organization. Requires organization update permission (same as the web UI). Add fields with the web UI or get_table afterwards to read generated field ids.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        name: nonEmptyString,
+        icon: z.string().optional(),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardOrganizationWrite(args.organizationId);
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: args.name,
+              ...(args.icon !== undefined ? { icon: args.icon } : {}),
+            }),
+          },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "list_dashboards",
+    {
+      description:
+        "List dashboards in an organization (id, name, slug, panel count). Requires the dashboards feature to be enabled.",
+      inputSchema: z.object({ organizationId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "get_dashboard",
+    {
+      description:
+        "Get one dashboard including its full panel config (each panel: id, title, type stat|bar|line|area|pie|table, 24-col-grid span, and its metric/groupBy/filters query against a table).",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        dashboardId: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards/${encodeURIComponent(args.dashboardId)}`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    "create_dashboard",
+    {
+      description:
+        "Create an empty dashboard in an organization. Add panels afterwards with update_dashboard (or use generate_dashboard to fill one automatically). Requires organization update permission.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        name: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardOrganizationWrite(args.organizationId);
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards`,
+          {
+            method: "POST",
+            body: JSON.stringify({ name: args.name }),
+          },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "update_dashboard",
+    {
+      description:
+        "Update a dashboard's name and/or replace its panels. Each panel needs title, type (stat|bar|line|area|pie|table), span (6|8|9|12|15|16|24 of a 24-col grid) and a query: {tableId, metric:{agg: count|sum|avg|min|max, fieldId?}, groupBy?:{fieldId, bucket?: day|week|month}, filters?:[{fieldId, op, value}], limit?}. Omitted panel ids are generated. Panels must reference real table ids (validated server-side). Requires organization update permission.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        dashboardId: nonEmptyString,
+        name: optionalNonEmptyString,
+        panels: dashboardPanelsSchema.optional(),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardOrganizationWrite(args.organizationId);
+        const body: Record<string, unknown> = {};
+        if (args.name !== undefined) body.name = args.name;
+        if (args.panels !== undefined) {
+          body.panels = args.panels.map((panel) => ({
+            ...panel,
+            id: panel.id ?? randomUUID(),
+          }));
+        }
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards/${encodeURIComponent(args.dashboardId)}`,
+          { method: "PUT", body: JSON.stringify(body) },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "delete_dashboard",
+    {
+      description:
+        "Delete a dashboard and its panel config. Requires organization update permission.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        dashboardId: nonEmptyString,
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardOrganizationWrite(args.organizationId);
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards/${encodeURIComponent(args.dashboardId)}`,
+          { method: "DELETE" },
+        );
+      }),
+  );
+
+  server.registerTool(
+    "generate_dashboard",
+    {
+      description:
+        "Generate a dashboard from a data table using Kaneo's configured AI provider. Pass a tableId and a natural-language description of the wanted overview; returns the created dashboard with panels (metric/stat/grouped charts) whose queries reference the table's real field ids. Requires the AI feature enabled and organization update permission.",
+      inputSchema: z.object({
+        organizationId: nonEmptyString,
+        tableId: nonEmptyString,
+        description: nonEmptyString.describe(
+          "What the dashboard should show, e.g. 'revenue by month and top customers'",
+        ),
+        name: optionalNonEmptyString.describe(
+          "Optional dashboard name; defaults to the AI's suggestion",
+        ),
+      }),
+    },
+    async (args) =>
+      run(async () => {
+        await guardTable(args.organizationId, args.tableId, "view");
+        await guardOrganizationWrite(args.organizationId);
+        const generated = (await client.json(
+          `/api/ai/organization/${encodeURIComponent(args.organizationId)}/generate-dashboard`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              tableId: args.tableId,
+              description: args.description,
+            }),
+          },
+        )) as { name?: string; panels: unknown[] };
+        const created = (await client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: args.name ?? generated.name ?? "Generated dashboard",
+            }),
+          },
+        )) as { id: string };
+        return client.json(
+          `${dataTableBase}/${encodeURIComponent(args.organizationId)}/dashboards/${encodeURIComponent(created.id)}`,
+          { method: "PUT", body: JSON.stringify({ panels: generated.panels }) },
+        );
+      }),
   );
 }
