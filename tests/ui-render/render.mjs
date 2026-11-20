@@ -1031,7 +1031,7 @@ for (const [tag, scheme] of [
         await page.goto(BASE + pages.board, { waitUntil: "networkidle" });
         await page.waitForTimeout(1200);
         const row = page
-          .locator('[data-slot="sidebar-menu-button"]:visible', {
+          .locator('[data-slot="sidebar-menu-item"]:visible', {
             hasText: board.name,
           })
           .first();
