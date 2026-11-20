@@ -428,7 +428,8 @@ function FieldHeader({
             </DropdownMenuContent>
           </DropdownMenu>
           {field.options?.description && (
-            <Tooltip delay={0}>
+            <TooltipProvider delay={0}>
+            <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
@@ -444,6 +445,7 @@ function FieldHeader({
               </TooltipTrigger>
               <TooltipContent>{field.options.description}</TooltipContent>
             </Tooltip>
+            </TooltipProvider>
           )}
           <ColumnResizeHandle
             name={field.name}
