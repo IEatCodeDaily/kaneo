@@ -274,6 +274,8 @@ export function InboxComponent() {
                     icon={<TabIcon className="size-3.5" />}
                     label={t(`inbox:filter.${value}`)}
                     applied={filter === value}
+                    // The 44px mobile touch target the inbox tests pin.
+                    className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-0"
                   />
                 );
               },
