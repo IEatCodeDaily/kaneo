@@ -1070,15 +1070,23 @@ for (const [tag, scheme] of [
         // The pointer press is unreliable on this control (sortable-wrapper
         // interplay, pre-existing); keyboard Enter opens the menu reliably,
         // so either path counts and only both failing is a state failure.
-        let opened = probe.menus.length > 0;
+        // Poll for the popup instead of sleeping past its mount.
+        const waitMenu = async (timeout) => {
+          try {
+            await page.waitForSelector('[role="menu"]', {
+              state: "visible",
+              timeout,
+            });
+            return true;
+          } catch {
+            return false;
+          }
+        };
+        let opened = await waitMenu(1200);
         if (!opened) {
           await action.focus();
           await page.keyboard.press("Enter");
-          await page.waitForTimeout(400);
-          opened =
-            (await page.evaluate(
-              () => document.querySelectorAll('[role="menu"]').length,
-            )) > 0;
+          opened = await waitMenu(5000);
           if (!opened)
             fails.push(
               `menu did not open on click or Enter (probe ${JSON.stringify(probe)})`,
