@@ -1036,11 +1036,12 @@ for (const [tag, scheme] of [
           })
           .first();
         await row.hover();
-        // SidebarSortableItem wraps the row in a plain div; the action button
-        // is the button's sibling inside it (not a descendant of the button).
+        // SidebarSortableItem wraps the row in a plain div, and Base UI's
+        // trigger merge clobbers SidebarMenuAction's data-slot — anchor on the
+        // accessible name inside the wrapper instead (t("navigation:sidebar.more")).
         const action = row
           .locator("xpath=ancestor::div[1]")
-          .locator('[data-slot="sidebar-menu-action"]');
+          .getByRole("button", { name: "More", exact: true });
         const actionCount = await action.count();
         if (actionCount !== 1) {
           fails.push(`row action count ${actionCount}, want 1`);
