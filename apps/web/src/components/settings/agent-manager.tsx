@@ -1,10 +1,19 @@
-import { Bot, Copy, ImagePlus, KeyRound, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import {
+  Bot,
+  Copy,
+  ImagePlus,
+  KeyRound,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
-import { Badge } from "@/components/ui/badge";
+import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
 import useDeleteAgent from "@/hooks/mutations/agent/use-delete-agent";
@@ -188,7 +197,9 @@ export function AgentManager() {
                 {agent.token
                   ? t("team:agentManager.tokenMeta", {
                       start: agent.token.start ?? "",
-                      date: new Date(agent.token.createdAt).toLocaleDateString(),
+                      date: new Date(
+                        agent.token.createdAt,
+                      ).toLocaleDateString(),
                     })
                   : t("team:agentManager.noToken")}
               </p>
@@ -227,7 +238,8 @@ export function AgentManager() {
                   removeAvatar.mutate(agent.id, {
                     onError: (error: Error) =>
                       toast.error(
-                        error.message || t("team:agentManager.avatarRemoveError"),
+                        error.message ||
+                          t("team:agentManager.avatarRemoveError"),
                       ),
                   })
                 }

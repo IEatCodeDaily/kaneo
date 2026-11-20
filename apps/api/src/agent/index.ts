@@ -4,9 +4,9 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
+import { MAX_AVATAR_BYTES } from "../user/avatar";
 import deleteAvatar from "../user/controllers/delete-avatar";
 import saveAvatar from "../user/controllers/save-avatar";
-import { MAX_AVATAR_BYTES } from "../user/avatar";
 
 /*
  * Agents are first-class members: a human user and an agent user are treated
@@ -314,7 +314,8 @@ agent.put("/:id/avatar", async (c) => {
   const found = await findAgent(c.req.param("id"));
   await requireAdmin(c.get("userId"), found.organizationId);
   const body = await c.req.json<Record<string, unknown>>();
-  const contentType = typeof body.contentType === "string" ? body.contentType : "";
+  const contentType =
+    typeof body.contentType === "string" ? body.contentType : "";
   const data = typeof body.data === "string" ? body.data : "";
   if (!contentType || !data) {
     throw new HTTPException(400, {
@@ -339,8 +340,7 @@ agent.put("/:id/avatar", async (c) => {
     return c.json(avatar);
   } catch (error) {
     throw new HTTPException(400, {
-      message:
-        error instanceof Error ? error.message : "Invalid avatar upload",
+      message: error instanceof Error ? error.message : "Invalid avatar upload",
     });
   }
 });

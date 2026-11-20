@@ -11,13 +11,7 @@ import { invalidateAgentMembershipQueries } from "./invalidate-agent-membership-
 export function useUploadAgentAvatar(organizationId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      agentId,
-      file,
-    }: {
-      agentId: string;
-      file: File;
-    }) => {
+    mutationFn: async ({ agentId, file }: { agentId: string; file: File }) => {
       const { contentType, data } = await prepareAvatarImage(file);
       return uploadAgentAvatar({ agentId, contentType, data });
     },
