@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 import db, { schema } from "../database";
+import { requireResourcePrivilege } from "../resource-access";
 import { hasOrganizationPermission } from "../utils/require-organization-permission";
 
 /**
@@ -112,4 +113,53 @@ export async function assertBoardPermission(
   const organizationId = await getOrganizationIdForBoard(boardId);
   await assertMcpPermission(userId, organizationId, permissions);
   return organizationId as string;
+}
+
+/** Resolve the organization owning a data table. */
+export async function getOrganizationIdForTable(
+  tableId: string,
+): Promise<string | null> {
+  const [table] = await db
+    .select({ organizationId: schema.dataTableTable.organizationId })
+    .from(schema.dataTableTable)
+    .where(eq(schema.dataTableTable.id, tableId))
+    .limit(1);
+  return table?.organizationId ?? null;
+}
+
+/**
+ * Guard for tools addressed by a data table. Mirrors the REST data-table
+ * routes exactly: the table must live in `organizationId` and the caller's
+ * resource privilege must rank at or above `required` (view < edit < manage),
+ * the same lattice `tablePrivilege()` enforces on the HTTP side.
+ */
+export async function assertTablePermission(
+  userId: string,
+  organizationId: string,
+  tableId: string,
+  required: "view" | "edit" | "manage",
+): Promise<void> {
+  if (!userId) {
+    throw new McpPermissionError("Unauthorized: no user for this MCP session.");
+  }
+  const tableOrganizationId = await getOrganizationIdForTable(tableId);
+  if (!tableOrganizationId || tableOrganizationId !== organizationId) {
+    // Same non-leaking semantics as the REST route's 404: a hidden or
+    // foreign table must not confirm its existence.
+    throw new McpPermissionError(
+      "Resource not found or not accessible to this user.",
+    );
+  }
+  const allowed = await requireResourcePrivilege({
+    organizationId,
+    resourceType: "table",
+    resourceId: tableId,
+    userId,
+    required,
+  });
+  if (!allowed) {
+    throw new McpPermissionError(
+      `Forbidden: table requires ${required} privilege.`,
+    );
+  }
 }

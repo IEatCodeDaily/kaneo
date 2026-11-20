@@ -581,7 +581,10 @@ async function requireField(
 }
 
 /** Full field metadata rows (name, position, timestamps), known types only. */
-async function listTableFieldRows(tableId: string, executor: Executor = db) {
+export async function listTableFieldRows(
+  tableId: string,
+  executor: Executor = db,
+) {
   const fields = await executor
     .select()
     .from(dataTableFieldTable)
