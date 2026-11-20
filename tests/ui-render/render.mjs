@@ -1047,7 +1047,39 @@ for (const [tag, scheme] of [
         } else {
           await action.click();
         }
-        await page.getByText("Hide from sidebar").click();
+        // Post-click diagnostics: did Base UI mount the popup, and does the
+        // trigger know it is open? If not, try the keyboard path before
+        // failing — the dump names the layer that ate the press.
+        const probe = await page.evaluate(() => {
+          const menus = [...document.querySelectorAll('[role="menu"]')];
+          const el = document.querySelector(
+            '[data-slot="sidebar-menu-action"]',
+          );
+          return {
+            menus: menus.length,
+            firstMenuText: menus[0]?.textContent?.slice(0, 80) ?? null,
+            trigger: el
+              ? {
+                  popupOpen: el.getAttribute("data-popup-open"),
+                  expanded: el.getAttribute("aria-expanded"),
+                }
+              : null,
+          };
+        });
+        if (!probe.menus.length) {
+          await action.focus();
+          await page.keyboard.press("Enter");
+          await page.waitForTimeout(400);
+          const retry = await page.evaluate(
+            () => document.querySelectorAll('[role="menu"]').length,
+          );
+          fails.push(
+            `no menu after click (probe ${JSON.stringify(probe)}); Enter retry menus=${retry}`,
+          );
+        }
+        await page
+          .getByRole("menuitem", { name: "Hide from sidebar" })
+          .click({ timeout: 8000 });
         await page.waitForTimeout(600);
         const m = await page.evaluate(headerInfo);
         if (!m) fails.push("Boards section header not found after hide");
