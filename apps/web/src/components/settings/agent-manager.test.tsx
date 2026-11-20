@@ -11,6 +11,8 @@ afterEach(() => {
 });
 
 vi.mock("react-i18next", () => ({
+  // AvatarCropDialog initializes i18n at import time; the mock must satisfy it.
+  initReactI18next: { type: "3rd-party", init: () => {} },
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
@@ -50,6 +52,14 @@ vi.mock("@/hooks/mutations/agent/use-delete-agent", () => ({
 
 vi.mock("@/hooks/mutations/agent/use-reissue-agent-token", () => ({
   default: () => ({ mutateAsync: reissueMutate, isPending: false }),
+}));
+
+vi.mock("@/hooks/mutations/agent/use-upload-agent-avatar", () => ({
+  useUploadAgentAvatar: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/hooks/mutations/agent/use-remove-agent-avatar", () => ({
+  useRemoveAgentAvatar: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/toast", () => ({

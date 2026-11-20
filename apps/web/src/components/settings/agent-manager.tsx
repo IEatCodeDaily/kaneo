@@ -1,6 +1,5 @@
 import { Bot, Copy, ImagePlus, KeyRound, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
@@ -10,11 +9,10 @@ import { Input } from "@/components/ui/input";
 import useCreateAgent from "@/hooks/mutations/agent/use-create-agent";
 import useDeleteAgent from "@/hooks/mutations/agent/use-delete-agent";
 import useReissueAgentToken from "@/hooks/mutations/agent/use-reissue-agent-token";
+import useRemoveAgentAvatar from "@/hooks/mutations/agent/use-remove-agent-avatar";
+import useUploadAgentAvatar from "@/hooks/mutations/agent/use-upload-agent-avatar";
 import useGetAgents from "@/hooks/queries/agent/use-get-agents";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
-import deleteAgentAvatar from "@/fetchers/agent/delete-agent-avatar";
-import uploadAgentAvatar from "@/fetchers/agent/upload-agent-avatar";
-import { prepareAvatarImage } from "@/lib/prepare-avatar-image";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -32,33 +30,9 @@ export function AgentManager() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarAgentId, setAvatarAgentId] = useState<string | null>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
-  const queryClient = useQueryClient();
 
-  const uploadAvatar = useMutation({
-    mutationFn: async ({ agentId, file }: { agentId: string; file: File }) => {
-      const { contentType, data } = await prepareAvatarImage(file);
-      return uploadAgentAvatar({ agentId, contentType, data });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["agents", organizationId],
-      });
-      setAvatarAgentId(null);
-    },
-    onError: (error: Error) => toast.error(error.message || t("team:agentManager.avatarError")),
-  });
-
-  const removeAvatar = useMutation({
-    mutationFn: (agentId: string) => deleteAgentAvatar(agentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["agents", organizationId],
-      });
-      setAvatarAgentId(null);
-    },
-    onError: (error: Error) =>
-      toast.error(error.message || t("team:agentManager.avatarRemoveError")),
-  });
+  const uploadAvatar = useUploadAgentAvatar(organizationId);
+  const removeAvatar = useRemoveAgentAvatar(organizationId);
 
   const { data: agents = [] } = useGetAgents(organizationId);
   const createAgent = useCreateAgent(organizationId);
@@ -249,7 +223,14 @@ export function AgentManager() {
                 variant="ghost"
                 size="icon"
                 aria-label={t("team:agentManager.avatarRemove")}
-                onClick={() => removeAvatar.mutate(agent.id)}
+                onClick={() =>
+                  removeAvatar.mutate(agent.id, {
+                    onError: (error: Error) =>
+                      toast.error(
+                        error.message || t("team:agentManager.avatarRemoveError"),
+                      ),
+                  })
+                }
                 disabled={removeAvatar.isPending}
               >
                 <X className="size-4" />
@@ -289,7 +270,16 @@ export function AgentManager() {
         onCropped={(file) => {
           setCropFile(null);
           if (avatarAgentId) {
-            uploadAvatar.mutate({ agentId: avatarAgentId, file });
+            uploadAvatar.mutate(
+              { agentId: avatarAgentId, file },
+              {
+                onSuccess: () => setAvatarAgentId(null),
+                onError: (error: Error) =>
+                  toast.error(
+                    error.message || t("team:agentManager.avatarError"),
+                  ),
+              },
+            );
           }
         }}
       />
