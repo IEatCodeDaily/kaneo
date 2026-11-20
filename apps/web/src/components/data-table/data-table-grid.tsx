@@ -428,7 +428,7 @@ function FieldHeader({
             </DropdownMenuContent>
           </DropdownMenu>
           {field.options?.description && (
-            <Tooltip>
+            <Tooltip delay={0}>
               <TooltipTrigger
                 render={
                   <Button

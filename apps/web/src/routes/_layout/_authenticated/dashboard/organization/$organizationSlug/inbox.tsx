@@ -1,12 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  CheckCheck,
-  Filter,
-  Flag,
-  Inbox as InboxIcon,
-  ListX,
-  Trash2,
-} from "lucide-react";
+import {, AtSign, CheckCheck, Filter, Flag, Inbox, Inbox as InboxIcon, Layers, ListX, Trash2} from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OrganizationLayout from "@/components/common/organization-layout";
@@ -25,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ToolbarButton } from "@/components/common/toolbar-button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -253,18 +247,25 @@ export function InboxComponent() {
           ) : null}
           <div className="flex flex-wrap items-center gap-1">
             {(["all", "unread", "mentions", "flagged"] as const).map(
-              (value) => (
-                <Button
-                  key={value}
-                  size="xs"
-                  variant={filter === value ? "secondary" : "ghost"}
-                  className="min-h-11 min-w-11 aria-pressed:shadow-[inset_0_0_0_1px_var(--border)] sm:min-h-8"
-                  aria-pressed={filter === value}
-                  onClick={() => setFilter(value)}
-                >
-                  {t(`inbox:filter.${value}`)}
-                </Button>
-              ),
+              (value) => {
+                const icons = {
+                  all: Layers,
+                  unread: Inbox,
+                  mentions: AtSign,
+                  flagged: Flag,
+                } as const;
+                return (
+                  <ToolbarButton
+                    key={value}
+                    type="button"
+                    aria-pressed={filter === value}
+                    onClick={() => setFilter(value)}
+                    icon={<icons[value] className="size-3.5" />}
+                    label={t(`inbox:filter.${value}`)}
+                    applied={filter === value}
+                  />
+                );
+              },
             )}
             <DropdownMenu>
               <DropdownMenuTrigger
