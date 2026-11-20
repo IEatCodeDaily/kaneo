@@ -48,7 +48,7 @@ export type DashboardSummary = {
   id: string;
   organizationId: string;
   name: string;
-  slug: string;
+  slug?: string;
   createdAt?: string;
   updatedAt?: string;
 };

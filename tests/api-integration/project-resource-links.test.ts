@@ -195,6 +195,7 @@ describe("API integration: project resource links", () => {
     expect(link.resource).toEqual({
       id: table.id,
       name: table.name,
+      slug: table.slug,
       icon: table.icon,
     });
   });

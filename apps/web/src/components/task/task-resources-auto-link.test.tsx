@@ -109,7 +109,13 @@ describe("#265 generic link resources", () => {
       title: "Design doc",
       metadata: null,
     });
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
     expect(screen.getByTestId("manual-resource-link")).toHaveAttribute(
       "href",
       "https://example.com/design",
@@ -132,7 +138,13 @@ describe("#265 generic link resources", () => {
       metadata: null,
     });
 
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
 
     const link = screen.getByTestId("manual-resource-link");
     expect(link).toHaveAttribute("href", "https://example.com/design");
@@ -147,6 +159,7 @@ describe("#265 generic link resources", () => {
           '[spec](https://example.com/spec)\n<img src="https://example.com/shot.png" alt="screenshot">'
         }
         organizationId="org-1"
+        organizationSlug="org-1"
         taskId="task-1"
       />,
     );
@@ -159,7 +172,13 @@ describe("#265 generic link resources", () => {
   });
 
   it("keeps the existing issue/PR linker beside the generic Add link action", () => {
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
 
     expect(screen.getByTestId("add-resource-link")).toHaveTextContent(
       "Add link",
@@ -175,6 +194,7 @@ describe("#265 generic link resources", () => {
       <TaskResources
         description="plain description"
         organizationId="org-1"
+        organizationSlug="org-1"
         taskId="task-1"
       />,
     );
@@ -188,7 +208,13 @@ describe("auto-linked resource routing", () => {
     autoLinkedIssue();
     repos.push({ id: "repo-9", owner: "acme", name: "widgets" });
 
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
 
     const link = row();
     // The reported bug: this opened github.com in a new tab.
@@ -205,7 +231,13 @@ describe("auto-linked resource routing", () => {
     autoLinkedIssue();
     repos.push({ id: "other", owner: "acme", name: "unrelated" });
 
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
 
     const link = row();
     expect(link).toHaveAttribute(
@@ -227,7 +259,13 @@ describe("auto-linked resource routing", () => {
     });
     repos.push({ id: "repo-9", owner: "acme", name: "widgets" });
 
-    render(<TaskResources organizationId="org-1" taskId="task-1" />);
+    render(
+      <TaskResources
+        organizationId="org-1"
+        organizationSlug="org-1"
+        taskId="task-1"
+      />,
+    );
 
     const link = screen.getByText("feat/x").closest("a");
     expect(link).toHaveAttribute("target", "_blank");

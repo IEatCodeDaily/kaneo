@@ -73,6 +73,8 @@ type ResourceType = "issues" | "pull-requests";
 type TaskResourcesProps = {
   taskId: string;
   organizationId: string;
+  /** Optional: lets repo links carry the URL slug instead of router merge. */
+  organizationSlug?: string;
   /**
    * #265: links/attachments in the description surface as resources. Optional so
    * the section still renders for callers that do not have it to hand.
@@ -86,8 +88,6 @@ type ResourceItem = {
   title: string;
   /** Canonical repo id — mutations look the repo up by it. */
   repoId: string;
-  /** Slug where known (#resource-slugs) — the repo route param value. */
-  repoRef: string;
   repoLabel: string;
   state: string;
   isDraft: boolean | null;
@@ -194,6 +194,7 @@ async function createSyncedIssue({
 export default function TaskResources({
   taskId,
   organizationId,
+  organizationSlug,
   description,
 }: TaskResourcesProps) {
   const { canManageTasks } = useOrganizationPermission();
@@ -489,7 +490,6 @@ export default function TaskResources({
             number: resource.number,
             title: resource.title,
             repoId: repo.id,
-            repoRef: repo.slug ?? repo.id,
             repoLabel,
             state: resource.state,
             isDraft: resource.isDraft ?? null,
@@ -574,7 +574,7 @@ export default function TaskResources({
                 // No organizationSlug here: same-org navigation, the router
                 // merges the current URL's slug.
                 params={{
-                  repoId: item.repoRef,
+                  repoId: repoRefById.get(item.repoId) ?? item.repoId,
                   number: String(item.number),
                 }}
                 to={
@@ -651,6 +651,7 @@ export default function TaskResources({
                 : getRepoIssueRelationTarget(
                     { number: Number(link.externalId), html_url: link.url },
                     repos,
+                    organizationSlug,
                   );
             const internal =
               internalTarget?.internal === true ? internalTarget : null;

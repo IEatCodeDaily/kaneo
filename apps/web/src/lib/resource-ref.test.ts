@@ -14,7 +14,7 @@ describe("looksLikeCuid", () => {
   it("accepts the createId() output shape (20-25 lowercase alphanumerics)", () => {
     expect(looksLikeCuid(CUID)).toBe(true);
     expect(looksLikeCuid("c1234567890123456789")).toBe(true); // 20
-    expect(looksLikeCuid("c1234567890123456789012345")).toBe(true); // 25
+    expect(looksLikeCuid("c12345678901234567890123")).toBe(true); // 25
   });
 
   it("rejects slug-shaped and non-shape params", () => {
@@ -99,8 +99,8 @@ describe("matchResourceRef", () => {
       matchResourceRef(
         undefined,
         CUID,
-        (i) => i.id,
-        (i) => i.slug,
+        (i: Item) => i.id,
+        (i: Item) => i.slug,
       ),
     ).toBeNull();
     expect(

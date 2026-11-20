@@ -63,6 +63,7 @@ type SearchResult = {
   repoId?: string;
   repoOwner?: string;
   repoName?: string;
+  repoSlug?: string;
   repoProvider?: string;
   itemNumber?: number;
   state?: string;

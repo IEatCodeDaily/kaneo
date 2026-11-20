@@ -94,7 +94,7 @@ export type DataTableSummary = {
   id: string;
   organizationId: string;
   name: string;
-  slug: string;
+  slug?: string;
   icon: string | null;
   deletedAt: string | null;
   createdAt: string;

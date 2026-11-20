@@ -174,6 +174,7 @@ describe("#30 synced issues open inside Kaneo when the repo is connected", () =>
       <TaskSyncedIssueProperty
         compact
         organizationId="org-1"
+        organizationSlug="org-1"
         taskId="task-1"
       />,
     );
@@ -199,6 +200,7 @@ describe("#30 synced issues open inside Kaneo when the repo is connected", () =>
       <TaskSyncedIssueProperty
         compact
         organizationId="org-1"
+        organizationSlug="org-1"
         taskId="task-1"
       />,
     );

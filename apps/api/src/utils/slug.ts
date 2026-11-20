@@ -5,7 +5,7 @@ import type {
   NodePgTransaction,
 } from "drizzle-orm/node-postgres";
 import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
-import type * as schema from "../database/schema";
+import type { schema } from "../database";
 
 type Schema = typeof schema;
 

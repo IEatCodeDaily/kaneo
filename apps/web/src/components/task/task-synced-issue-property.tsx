@@ -35,11 +35,14 @@ function repositoryLabel(url: string) {
 export default function TaskSyncedIssueProperty({
   taskId,
   organizationId,
+  organizationSlug,
   compact = false,
   showLabel = false,
 }: {
   taskId: string;
   organizationId?: string;
+  /** Optional: lets the synced-issue link carry the URL slug. */
+  organizationSlug?: string;
   compact?: boolean;
   showLabel?: boolean;
 }) {
@@ -92,6 +95,7 @@ export default function TaskSyncedIssueProperty({
   const target = getRepoIssueRelationTarget(
     { number: Number(issue.number), html_url: issue.url },
     repos,
+    organizationSlug,
   );
 
   const link =
