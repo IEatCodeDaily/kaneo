@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockSelect = vi.fn();
 const mockHasOrganizationPermission = vi.fn();
@@ -83,6 +83,13 @@ beforeEach(() => {
   mockFetch.mockResolvedValue(
     new Response(JSON.stringify({}), { status: 200 }),
   );
+  // The ApiClient uses global fetch; stubbing it keeps tool calls off the
+  // network (a stray dev server on :1337 would otherwise answer them).
+  vi.stubGlobal("fetch", mockFetch);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("table and dashboard MCP tool registration", () => {
