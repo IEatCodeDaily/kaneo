@@ -83,7 +83,7 @@ export function NavMain() {
             <SidebarMenuItem key={url}>
               <SidebarMenuButton
                 className="h-6 text-xs data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground"
-                isActive={pathname === url}
+                isActive={pathname === url || pathname.startsWith(`${url}/`)}
                 onClick={() => navigate({ to: url })}
                 tooltip={label}
               >

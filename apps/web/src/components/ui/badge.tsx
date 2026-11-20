@@ -24,7 +24,7 @@ const badgeVariants = cva(
       },
       variant: {
         count: "bg-secondary text-secondary-foreground",
-        attention: "border-input bg-transparent text-foreground",
+        attention: "border-transparent bg-warning text-[#1c1508]",
         default:
           "bg-primary text-primary-foreground [button&,a&]:hover:bg-primary/90",
         destructive:
