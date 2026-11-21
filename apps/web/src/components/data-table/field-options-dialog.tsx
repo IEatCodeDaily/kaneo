@@ -22,6 +22,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   useDataTableMutations,
   useDataTables,
 } from "@/hooks/data-table/use-data-tables";
@@ -66,6 +72,52 @@ type Props = {
   initialType?: DataTableFieldType | null;
   members?: Map<string, MemberOption>;
 };
+
+type LinkCardinality = NonNullable<DataTableFieldOptions["cardinality"]>;
+
+// Display order; the values are the stored cardinality — the submit payload
+// is unchanged from the old radio rows.
+const LINK_CARDINALITIES: LinkCardinality[] = [
+  "many-to-one",
+  "one-to-many",
+  "one-to-one",
+  "many-to-many",
+];
+
+/** Mini relation diagram: N bars → connector → M bars (1 tall bar = one,
+ *  3 short ticks = many; ticks sit 4 units apart so they never merge). */
+const RELATION_GLYPHS: Record<LinkCardinality, string[]> = {
+  "many-to-one": ["M2 10v4", "M6 10v4", "M10 10v4", "M6 12h14", "M20 8v8"],
+  "one-to-many": ["M4 8v8", "M4 12h14", "M14 10v4", "M18 10v4", "M22 10v4"],
+  "one-to-one": ["M4 8v8", "M4 12h16", "M20 8v8"],
+  "many-to-many": [
+    "M2 10v4",
+    "M6 10v4",
+    "M10 10v4",
+    "M6 12h12",
+    "M14 10v4",
+    "M18 10v4",
+    "M22 10v4",
+  ],
+};
+
+function RelationGlyph({ kind }: { kind: LinkCardinality }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      className="size-5 shrink-0"
+    >
+      {RELATION_GLYPHS[kind].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
 
 const palette = (index: number) =>
   CHOICE_PALETTE[index % CHOICE_PALETTE.length];
@@ -344,29 +396,47 @@ export default function FieldOptionsDialog({
                       role="radiogroup"
                       aria-label={t("navigation:tables.linkRelationship")}
                     >
-                      {(
-                        [
-                          "many-to-one",
-                          "one-to-many",
-                          "many-to-many",
-                          "one-to-one",
-                        ] as const
-                      ).map((kind) => (
-                        <Button
-                          key={kind}
-                          type="button"
-                          variant="outline"
-                          role="radio"
-                          aria-checked={cardinality === kind}
-                          className="h-auto w-full justify-start whitespace-normal py-2 text-left text-ui aria-checked:border-ring aria-checked:bg-accent"
-                          onClick={() => setCardinality(kind)}
-                        >
-                          {t(`navigation:tables.linkSentence.${kind}`, {
-                            source: localName,
-                            target: targetName,
-                          })}
-                        </Button>
-                      ))}
+                      <TooltipProvider delay={0}>
+                        <div className="grid grid-cols-2 gap-1">
+                          {LINK_CARDINALITIES.map((kind) => (
+                            <Tooltip key={kind}>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    role="radio"
+                                    aria-checked={cardinality === kind}
+                                    className="h-auto justify-start gap-2 px-2 py-2 text-left aria-checked:border-ring aria-checked:bg-accent"
+                                    onClick={() => setCardinality(kind)}
+                                  />
+                                }
+                              >
+                                <RelationGlyph kind={kind} />
+                                <span className="min-w-0 truncate text-xs font-semibold">
+                                  {t(
+                                    `navigation:tables.linkCardinality.${kind}`,
+                                  )}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-64">
+                                {t(`navigation:tables.linkSentence.${kind}`, {
+                                  source: localName,
+                                  target: targetName,
+                                })}
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
+                      {/* Tooltips don't open on touch, so the selected
+                        relation's sentence stays visible under the selector. */}
+                      <p className="px-1 text-xs text-muted-foreground">
+                        {t(`navigation:tables.linkSentence.${cardinality}`, {
+                          source: localName,
+                          target: targetName,
+                        })}
+                      </p>
                     </div>
                     <label
                       htmlFor="link-inverse-name"

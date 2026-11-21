@@ -56,6 +56,12 @@
 		"linkSettings": "Relationship settings",
 		"linkThisTable": "This table",
 		"linkRelationship": "Relationship",
+		"linkCardinality": {
+			"many-to-one": "Many to one",
+			"one-to-many": "One to many",
+			"one-to-one": "One to one",
+			"many-to-many": "Many to many"
+		},
 		"linkInverseName": "Reciprocal field name",
 		"linkReciprocalSummary": "Also creates “{{name}}” on {{target}}, linking back to {{source}}.",
 		"linkSentence": {
