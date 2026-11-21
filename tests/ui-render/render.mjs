@@ -3806,9 +3806,9 @@ if (pages["org-general"]) {
           }, selector),
         );
     const nodes = {
-      org: await harvest(pages["org-general"], 'svg[data-kind="org"]'),
-      agent: await harvest(pages["org-agents"], 'svg[data-kind="agent"]'),
-      team: await harvest(pages["org-teams"], 'svg[data-kind="team"]'),
+      org: await harvest(pages["org-general"], '[data-kind="org"]'),
+      agent: await harvest(pages["org-agents"], '[data-kind="agent"]'),
+      team: await harvest(pages["org-teams"], '[data-kind="team"]'),
       // member keeps the initials fallback: grab a live one off Account.
       member: await harvest(
         "/dashboard/settings/account/information",
