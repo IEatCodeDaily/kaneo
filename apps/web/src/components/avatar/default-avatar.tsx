@@ -1,6 +1,4 @@
-import * as bottts from "@dicebear/bottts";
-import * as croodlesNeutral from "@dicebear/croodles-neutral";
-import { createAvatar } from "@dicebear/core";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 
@@ -20,14 +18,31 @@ export type DefaultAvatarKind = "member" | "agent" | "team" | "org";
 
   An uploaded avatar always wins — this only renders inside AvatarFallback,
   which the Avatar primitive hides the moment an AvatarImage resolves.
+
+  The DiceBear packages load through a dynamic import: static imports pulled
+  ~90 KB into the entry chunk and tripped the KFL-86 budget. While the chunk
+  loads (once per session) avatars show initials, then swap to the generated
+  image. Rendering stays deterministic — the seed is the id.
 */
 
-function agentAvatar(seed: string) {
-  return createAvatar(bottts, { seed }).toDataUri();
-}
+type DicebearLib = {
+  agentUri(seed: string): string;
+  teamUri(seed: string): string;
+};
 
-function teamAvatar(seed: string) {
-  return createAvatar(croodlesNeutral, { seed }).toDataUri();
+let libPromise: Promise<DicebearLib> | null = null;
+
+function loadDicebear(): Promise<DicebearLib> {
+  libPromise ??= Promise.all([
+    import("@dicebear/bottts"),
+    import("@dicebear/croodles-neutral"),
+    import("@dicebear/core"),
+  ]).then(([bottts, croodlesNeutral, core]) => ({
+    agentUri: (seed: string) => core.createAvatar(bottts, { seed }).toDataUri(),
+    teamUri: (seed: string) =>
+      core.createAvatar(croodlesNeutral, { seed }).toDataUri(),
+  }));
+  return libPromise;
 }
 
 function OrgBadge({ name }: { name: string }) {
@@ -71,6 +86,47 @@ function OrgBadge({ name }: { name: string }) {
   );
 }
 
+function GeneratedAvatar({
+  id,
+  kind,
+  name,
+  className,
+}: {
+  id: string;
+  kind: "agent" | "team";
+  name: string | null | undefined;
+  className?: string;
+}) {
+  const [uri, setUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    loadDicebear().then((lib) => {
+      if (!alive) {
+        return;
+      }
+      setUri(kind === "agent" ? lib.agentUri(id) : lib.teamUri(id));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id, kind]);
+
+  if (uri === null) {
+    return <span className={className}>{getInitials(name)}</span>;
+  }
+
+  return (
+    <img
+      alt=""
+      aria-hidden="true"
+      className={cn("size-full", className)}
+      data-kind={kind}
+      src={uri}
+    />
+  );
+}
+
 export function DefaultAvatar({
   id,
   kind,
@@ -94,16 +150,8 @@ export function DefaultAvatar({
     );
   }
 
-  const uri = kind === "agent" ? agentAvatar(id) : teamAvatar(id);
-
   return (
-    <img
-      alt=""
-      aria-hidden="true"
-      className={cn("size-full", className)}
-      data-kind={kind}
-      src={uri}
-    />
+    <GeneratedAvatar className={className} id={id} kind={kind} name={name} />
   );
 }
 

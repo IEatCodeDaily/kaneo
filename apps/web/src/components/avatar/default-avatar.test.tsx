@@ -1,15 +1,25 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import DefaultAvatar from "./default-avatar";
 
 describe("DefaultAvatar", () => {
-  it("renders the same markup for the same id and kind", () => {
+  it("renders the same markup for the same id and kind", async () => {
     const first = render(
       <DefaultAvatar id="agent-123" kind="agent" name="Release bot" />,
     );
     const second = render(
       <DefaultAvatar id="agent-123" kind="agent" name="Release bot" />,
     );
+    await waitFor(() => {
+      expect(
+        first.container.querySelector("img[data-kind='agent']"),
+      ).not.toBeNull();
+    });
+    await waitFor(() => {
+      expect(
+        second.container.querySelector("img[data-kind='agent']"),
+      ).not.toBeNull();
+    });
     expect(first.container.innerHTML).toBe(second.container.innerHTML);
   });
 
@@ -27,9 +37,17 @@ describe("DefaultAvatar", () => {
     }
   });
 
-  it("differs between two ids of the same kind", () => {
+  it("differs between two ids of the same kind", async () => {
     const first = render(<DefaultAvatar id="team-a" kind="team" name="Core" />);
     const second = render(<DefaultAvatar id="team-b" kind="team" name="Ops" />);
+    await waitFor(() => {
+      expect(
+        first.container.querySelector("img[data-kind='team']"),
+      ).not.toBeNull();
+      expect(
+        second.container.querySelector("img[data-kind='team']"),
+      ).not.toBeNull();
+    });
     expect(first.container.innerHTML).not.toBe(second.container.innerHTML);
     const firstAgent = render(
       <DefaultAvatar id="agent-a" kind="agent" name="One" />,
@@ -37,6 +55,14 @@ describe("DefaultAvatar", () => {
     const secondAgent = render(
       <DefaultAvatar id="agent-b" kind="agent" name="Two" />,
     );
+    await waitFor(() => {
+      expect(
+        firstAgent.container.querySelector("img[data-kind='agent']"),
+      ).not.toBeNull();
+      expect(
+        secondAgent.container.querySelector("img[data-kind='agent']"),
+      ).not.toBeNull();
+    });
     expect(firstAgent.container.innerHTML).not.toBe(
       secondAgent.container.innerHTML,
     );
@@ -61,7 +87,7 @@ describe("DefaultAvatar", () => {
     }
   });
 
-  it("member keeps initials, agent carries no text", () => {
+  it("member keeps initials, agent swaps to a text-free image", async () => {
     const member = render(
       <DefaultAvatar id="user-1" kind="member" name="Ayu Saraswati" />,
     );
@@ -70,28 +96,42 @@ describe("DefaultAvatar", () => {
     const agent = render(
       <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
+    await waitFor(() => {
+      expect(
+        agent.container.querySelector("img[data-kind='agent']"),
+      ).not.toBeNull();
+    });
     expect(agent.container.textContent).toBe("");
   });
 
-  it("agent and team render library avatars as images seeded by id", () => {
+  it("agent and team avatars are deterministic images seeded by id", async () => {
     const agent = render(
       <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
-    const img = agent.container.querySelector("img[data-kind='agent']");
-    expect(img).not.toBeNull();
-    const src = img?.getAttribute("src") ?? "";
-    expect(src).toMatch(/^data:image\/svg\+xml/);
+    let src = "";
+    await waitFor(() => {
+      const img = agent.container.querySelector("img[data-kind='agent']");
+      expect(img).not.toBeNull();
+      src = img?.getAttribute("src") ?? "";
+      expect(src).toMatch(/^data:image\/svg\+xml/);
+    });
     // Deterministic: same id → same data URI.
     const again = render(
       <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
-    expect(again.container.querySelector("img")?.getAttribute("src")).toBe(src);
+    await waitFor(() => {
+      expect(again.container.querySelector("img")?.getAttribute("src")).toBe(
+        src,
+      );
+    });
 
     const team = render(
       <DefaultAvatar id="team-1" kind="team" name="Platform" />,
     );
-    expect(
-      team.container.querySelector("img[data-kind='team']"),
-    ).not.toBeNull();
+    await waitFor(() => {
+      expect(
+        team.container.querySelector("img[data-kind='team']"),
+      ).not.toBeNull();
+    });
   });
 });
