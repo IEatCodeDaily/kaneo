@@ -1,5 +1,6 @@
-import { Bot, Check, Search, Users } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -226,12 +227,30 @@ export function PrincipalPickerList({
                     variant="ghost"
                   >
                     {option.type === "team" ? (
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                        <Users className="h-4 w-4" />
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                          getAvatarTone(option.value),
+                        )}
+                      >
+                        <DefaultAvatar
+                          id={option.value}
+                          kind="team"
+                          name={option.label}
+                        />
                       </span>
                     ) : option.type === "agent" ? (
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                        <Bot className="h-4 w-4" />
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                          getAvatarTone(option.value),
+                        )}
+                      >
+                        <DefaultAvatar
+                          id={option.value}
+                          kind="agent"
+                          name={option.label}
+                        />
                       </span>
                     ) : (
                       <Avatar

@@ -10,6 +10,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import BoardIconPicker from "@/components/common/board-icon-picker";
 import EntityIcon from "@/components/common/entity-icon";
 import PermissionDenied from "@/components/permission-denied";
@@ -57,6 +58,7 @@ import uploadTeamAvatar from "@/fetchers/team/upload-team-avatar";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarTone } from "@/lib/avatar-tone";
+import { cn } from "@/lib/cn";
 import { getInitials } from "@/lib/get-initials";
 import {
   ACCEPTED_AVATAR_TYPES,
@@ -640,7 +642,16 @@ function TeamCard({
                   {team.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            ) : null}
+            ) : (
+              <span
+                className={cn(
+                  "flex size-5 shrink-0 items-center justify-center rounded-full",
+                  getAvatarTone(team.id),
+                )}
+              >
+                <DefaultAvatar id={team.id} kind="team" name={team.name} />
+              </span>
+            )}
             <span className="truncate">{team.name}</span>
           </h2>
           <p className="text-xs text-muted-foreground">

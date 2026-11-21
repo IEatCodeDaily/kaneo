@@ -1,12 +1,14 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import PageTitle from "@/components/page-title";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
+import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -16,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -26,6 +29,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -34,6 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import deleteOrganizationAvatar from "@/fetchers/organization/delete-organization-avatar";
+import uploadOrganizationAvatar from "@/fetchers/organization/upload-organization-avatar";
 import useDeleteOrganization from "@/hooks/mutations/organization/use-delete-organization";
 import useTransferOrganizationOwnership from "@/hooks/mutations/organization/use-transfer-organization-ownership";
 import useUpdateOrganization from "@/hooks/mutations/organization/use-update-organization";
@@ -42,6 +48,10 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import useIdentityAliases from "@/hooks/queries/organization/use-identity-aliases";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import {
+  ACCEPTED_AVATAR_TYPES,
+  prepareAvatarImage,
+} from "@/lib/prepare-avatar-image";
 import { toast } from "@/lib/toast";
 
 export const Route = createFileRoute(
@@ -114,8 +124,11 @@ function RouteComponent() {
   const lastSavedRef = useRef<NormalizedOrganizationValues | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
-  const [selectedNewOwnerId, setSelectedNewOwnerId] = useState<string>("");
+  const [selectedNewOwnerId, setSelectedNewOwnerId] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("");
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [isRemoveAvatarOpen, setIsRemoveAvatarOpen] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const { user: currentUser } = useAuth();
   const { data: organization } = useActiveOrganization();
@@ -133,6 +146,41 @@ function RouteComponent() {
   const { canManageOrganization, canDeleteOrganization, isOwner } =
     useOrganizationPermission();
   const canEdit = canManageOrganization();
+
+  const uploadAvatar = useMutation({
+    mutationFn: async ({ file }: { file: File }) => {
+      if (!organization?.id) throw new Error("No active organization");
+      const { contentType, data } = await prepareAvatarImage(file);
+      return uploadOrganizationAvatar({
+        organizationId: organization.id,
+        contentType,
+        data,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["active-organization"],
+      });
+      toast.success(t("settings:organizationAvatar.updated"));
+    },
+    onError: () => toast.error(t("settings:organizationAvatar.uploadFailed")),
+  });
+
+  const removeAvatar = useMutation({
+    mutationFn: async () => {
+      if (!organization?.id) throw new Error("No active organization");
+      return deleteOrganizationAvatar(organization.id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["active-organization"],
+      });
+      setIsRemoveAvatarOpen(false);
+      toast.success(t("settings:organizationAvatar.removed"));
+    },
+    onError: () => toast.error(t("settings:organizationAvatar.removeFailed")),
+  });
+
   const canDelete = canDeleteOrganization();
   const organizationDescription = getOrganizationDescription(organization);
   const isInstanceAdmin = currentUser?.role === "admin";
@@ -384,6 +432,73 @@ function RouteComponent() {
           </div>
 
           <div className="space-y-4 border border-border rounded-md p-4 bg-sidebar">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="size-16">
+                  {organization?.logo ? (
+                    <AvatarImage
+                      alt={organization?.name ?? ""}
+                      src={organization.logo}
+                    />
+                  ) : null}
+                  <AvatarFallback className="bg-transparent">
+                    <DefaultAvatar
+                      id={organization?.id ?? "unknown"}
+                      kind="org"
+                      name={organization?.name}
+                    />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">
+                    {t("settings:organizationAvatar.label")}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings:organizationAvatar.hint")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={avatarInputRef}
+                  accept={ACCEPTED_AVATAR_TYPES}
+                  className="hidden"
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) setCropFile(file);
+                    event.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canEdit || uploadAvatar.isPending}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {uploadAvatar.isPending
+                    ? t("settings:organizationAvatar.uploading")
+                    : t("settings:organizationAvatar.upload")}
+                </Button>
+                {organization?.logo ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={!canEdit || removeAvatar.isPending}
+                    onClick={() => setIsRemoveAvatarOpen(true)}
+                  >
+                    {removeAvatar.isPending
+                      ? t("settings:organizationAvatar.removing")
+                      : t("settings:organizationAvatar.remove")}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <Separator />
+
             <Form {...organizationForm}>
               <form className="space-y-4">
                 <FormField
@@ -790,6 +905,51 @@ function RouteComponent() {
                   {isDeleting
                     ? t("common:actions.deleting")
                     : t("settings:organizationGeneral.deleteModalConfirm")}
+                </Button>
+              </AlertDialogClose>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AvatarCropDialog
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onCropped={(file) => {
+            setCropFile(null);
+            uploadAvatar.mutate({ file });
+          }}
+          open={Boolean(cropFile)}
+        />
+
+        <AlertDialog
+          open={isRemoveAvatarOpen}
+          onOpenChange={setIsRemoveAvatarOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("settings:organizationAvatar.removeTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("settings:organizationAvatar.removeDescription")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose>
+                <Button variant="outline" size="sm">
+                  {t("common:actions.cancel")}
+                </Button>
+              </AlertDialogClose>
+              <AlertDialogClose>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={removeAvatar.isPending}
+                  onClick={() => removeAvatar.mutate()}
+                >
+                  {removeAvatar.isPending
+                    ? t("settings:organizationAvatar.removing")
+                    : t("settings:organizationAvatar.removeConfirm")}
                 </Button>
               </AlertDialogClose>
             </AlertDialogFooter>

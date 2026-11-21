@@ -58,6 +58,7 @@ import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
 import oidcTeamSync from "./oidc-team-sync";
 import organization from "./organization";
+import { getOrganizationAvatar } from "./organization/avatar";
 import organizationGithub from "./organization-github";
 import { handleOrganizationGithubInstallCallback } from "./organization-github/install-callback";
 import { initializePlugins } from "./plugins";
@@ -582,6 +583,54 @@ export function createApp() {
           "X-Content-Type-Options": "nosniff",
           ETag: etag,
           "Last-Modified": avatar.updatedAt.toUTCString(),
+        },
+      });
+    },
+  );
+
+  api.get(
+    "/organization/avatar/:organizationId",
+    describeRoute({
+      operationId: "getOrganizationAvatar",
+      tags: ["Organizations"],
+      description:
+        "Download an organization's logo by its organization ID (public, cacheable by content ETag)",
+      security: [],
+      responses: {
+        200: {
+          description: "The logo image",
+          content: {
+            "image/*": { schema: { type: "string", format: "binary" } },
+          },
+        },
+        404: {
+          description: "Organization or logo not found",
+        },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      const avatar = await getOrganizationAvatar(organizationId);
+
+      if (!avatar) {
+        throw new HTTPException(404, { message: "Avatar not found" });
+      }
+
+      if (c.req.header("If-None-Match") === avatar.etag) {
+        return new Response(null, {
+          status: 304,
+          headers: { ETag: avatar.etag },
+        });
+      }
+
+      return new Response(new Uint8Array(avatar.bytes) as BodyInit, {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Content-Length": avatar.bytes.length.toString(),
+          "Content-Type": avatar.mimeType,
+          "X-Content-Type-Options": "nosniff",
+          ETag: avatar.etag,
         },
       });
     },

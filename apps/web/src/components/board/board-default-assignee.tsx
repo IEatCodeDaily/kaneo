@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Users } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import PrincipalPickerList, {
   type PrincipalPickerOption,
 } from "@/components/principal-picker-list";
@@ -117,8 +117,12 @@ export function BoardDefaultAssignee({
           className="justify-start h-7 gap-1.5 rounded-md border border-border bg-transparent px-2.5 hover:bg-accent/50"
         >
           {isTeam ? (
-            <div className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center rounded-full border border-border/30 bg-muted">
-              <Users className="h-2.5 w-2.5" />
+            <div className="flex h-[16px] w-[16px] flex-shrink-0 items-center justify-center rounded-full bg-muted">
+              <DefaultAvatar
+                id={board.defaultAssigneeTeamId ?? ""}
+                kind="team"
+                name={selectedTeam?.name}
+              />
             </div>
           ) : isUser ? (
             <Avatar className={`h-[16px] w-[16px] ${tone}`}>
