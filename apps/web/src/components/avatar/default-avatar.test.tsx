@@ -31,6 +31,15 @@ describe("DefaultAvatar", () => {
     const first = render(<DefaultAvatar id="team-a" kind="team" name="Core" />);
     const second = render(<DefaultAvatar id="team-b" kind="team" name="Ops" />);
     expect(first.container.innerHTML).not.toBe(second.container.innerHTML);
+    const firstAgent = render(
+      <DefaultAvatar id="agent-a" kind="agent" name="One" />,
+    );
+    const secondAgent = render(
+      <DefaultAvatar id="agent-b" kind="agent" name="Two" />,
+    );
+    expect(firstAgent.container.innerHTML).not.toBe(
+      secondAgent.container.innerHTML,
+    );
   });
 
   it("produces distinct structures for the four kinds", () => {
@@ -62,18 +71,27 @@ describe("DefaultAvatar", () => {
       <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
     expect(agent.container.textContent).toBe("");
-    expect(agent.container.querySelectorAll("rect").length).toBeGreaterThan(0);
   });
 
-  it("agent identicon is vertically mirrored (symmetric)", () => {
-    const { container } = render(
+  it("agent and team render library avatars as images seeded by id", () => {
+    const agent = render(
       <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
-    const rects = [...container.querySelectorAll("rect")].map((rect) =>
-      rect.getAttribute("x"),
+    const img = agent.container.querySelector("img[data-kind='agent']");
+    expect(img).not.toBeNull();
+    const src = img?.getAttribute("src") ?? "";
+    expect(src).toMatch(/^data:image\/svg\+xml/);
+    // Deterministic: same id → same data URI.
+    const again = render(
+      <DefaultAvatar id="agent-1" kind="agent" name="Release bot" />,
     );
-    for (const x of rects) {
-      expect(rects).toContain(String(4 - Number(x)));
-    }
+    expect(again.container.querySelector("img")?.getAttribute("src")).toBe(src);
+
+    const team = render(
+      <DefaultAvatar id="team-1" kind="team" name="Platform" />,
+    );
+    expect(
+      team.container.querySelector("img[data-kind='team']"),
+    ).not.toBeNull();
   });
 });
