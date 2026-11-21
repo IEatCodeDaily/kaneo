@@ -74,14 +74,21 @@ function mainShape(shape: Shape, rotate: number) {
 
 function AgentIdenticon({ seed }: { seed: number }) {
   const random = mulberry32(seed);
-  // Left half + middle column generated; the right half mirrors the left so
-  // the pattern reads as a face-like identicon, not noise.
-  const cells: Array<{ x: number; y: number }> = [];
+  // Left half + middle column of a 5×5 grid; the right half mirrors the left.
+  // Exactly 10 of 15 cells are filled (Fisher–Yates with the seeded PRNG), so
+  // the glyph stays dense and readable at 16px instead of collapsing into a
+  // sparse blob.
+  const positions: Array<{ x: number; y: number }> = [];
   for (let x = 0; x <= 2; x += 1) {
     for (let y = 0; y < 5; y += 1) {
-      if (random() > 0.5) cells.push({ x, y });
+      positions.push({ x, y });
     }
   }
+  for (let i = positions.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+  const cells = positions.slice(0, 10);
 
   return (
     <svg
@@ -97,7 +104,7 @@ function AgentIdenticon({ seed }: { seed: number }) {
           fill="currentColor"
           height={1}
           key={`${cell.x}-${cell.y}`}
-          rx={0.2}
+          rx={0.08}
           width={1}
           x={cell.x}
           y={cell.y}
@@ -108,7 +115,7 @@ function AgentIdenticon({ seed }: { seed: number }) {
           fill="currentColor"
           height={1}
           key={`mirror-${cell.x}-${cell.y}`}
-          rx={0.2}
+          rx={0.08}
           width={1}
           x={4 - cell.x}
           y={cell.y}
@@ -165,16 +172,17 @@ function OrgBadge({ name }: { name: string }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Theme-independent badge: a fixed dark tile keeps the org distinct
-          from tone-tinted people/teams in both colour schemes. */}
+          from tone-tinted people/teams in both colour schemes. The bold inner
+          ring survives 16px, where a decorative ring disappears. */}
       <rect fill="#18181b" height={100} rx={14} width={100} />
       <circle
         cx={50}
         cy={50}
         fill="none"
-        r={44}
+        r={43}
         stroke="#ffffff"
-        strokeOpacity={0.28}
-        strokeWidth={3}
+        strokeOpacity={0.45}
+        strokeWidth={6}
       />
       <text
         dominantBaseline="central"
