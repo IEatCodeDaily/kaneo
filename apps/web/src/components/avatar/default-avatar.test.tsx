@@ -1,3 +1,5 @@
+import { createAvatar } from "@dicebear/core";
+import * as funEmoji from "@dicebear/fun-emoji";
 import { render, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import DefaultAvatar from "./default-avatar";
@@ -102,6 +104,24 @@ describe("DefaultAvatar", () => {
       ).not.toBeNull();
     });
     expect(agent.container.textContent).toBe("");
+  });
+
+  it("team avatars use the fun-emoji style, seeded by id", async () => {
+    const team = render(
+      <DefaultAvatar id="team-1" kind="team" name="Platform" />,
+    );
+    await waitFor(() => {
+      expect(
+        team.container.querySelector("img[data-kind='team']"),
+      ).not.toBeNull();
+    });
+    // Pin the style: the URI must be exactly what @dicebear/fun-emoji
+    // produces for this seed — a style regression or swap breaks this.
+    expect(
+      team.container
+        .querySelector("img[data-kind='team']")
+        ?.getAttribute("src"),
+    ).toBe(createAvatar(funEmoji, { seed: "team-1" }).toDataUri());
   });
 
   it("agent and team avatars are deterministic images seeded by id", async () => {
