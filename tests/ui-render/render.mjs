@@ -184,7 +184,18 @@ async function seed(api) {
       [relation.id]: [customer.id],
     },
   });
-  return { org, board, tbl, tasks, invoices, customers };
+  // One team + one agent so the default-avatar surfaces render their seeded
+  // glyphs (team card header, agent manager rows).
+  const team = await post("/auth/organization/create-team", {
+    name: "Platform",
+    organizationId: org.id,
+  });
+  await post("/agent", {
+    organizationId: org.id,
+    name: "Release bot",
+    permissions: { board: ["read"] },
+  });
+  return { org, board, tbl, tasks, invoices, customers, team };
 }
 
 await healthy();
@@ -208,6 +219,11 @@ let pages = {
   backlog: `/dashboard/organization/${slug}/board/${board.slug ?? "KFL"}/backlog`,
   // Feature flags: every rollout stage uses one badge; Dashboards has its own switch.
   features: "/dashboard/settings/organization/features",
+  // Default-avatar surfaces: org badge on General, team glyph on Teams,
+  // agent identicon on Agents.
+  "org-general": "/dashboard/settings/organization/general",
+  "org-teams": "/dashboard/settings/organization/teams",
+  "org-agents": "/dashboard/settings/organization/agents",
 };
 if (PAGES.length)
   pages = Object.fromEntries(
@@ -3753,6 +3769,105 @@ for (const [preset, mode, tag, appearance] of [
     `${fails.length ? "FAIL" : "ok  "} ${shot} ${JSON.stringify(checks[shot])}`,
   );
   await ctx.close();
+}
+
+// Default-avatar acceptance: clone each kind's live-rendered node at
+// 16/24/64px in both colour schemes — the four styles must stay distinct and
+// legible at chip size and header size, without overflowing.
+if (pages["org-general"]) {
+  for (const scheme of ["dark", "light"]) {
+    const ctx = await browser.newContext({
+      viewport: { width: 1200, height: 700 },
+      storageState: state,
+      colorScheme: scheme,
+      reducedMotion: "reduce",
+    });
+    await ctx.addInitScript((theme) => {
+      localStorage.setItem(
+        "user-preferences",
+        JSON.stringify({ state: { theme }, version: 0 }),
+      );
+    }, scheme);
+    const page = await ctx.newPage();
+    const fails = [];
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(String(error)));
+    const harvest = (path, selector) =>
+      page.goto(BASE + path, { waitUntil: "networkidle" }).then(() =>
+        page.evaluate((query) => {
+          const node = document.querySelector(query);
+          return node ? node.outerHTML : null;
+        }, selector),
+      );
+    const nodes = {
+      org: await harvest(pages["org-general"], 'svg[data-kind="org"]'),
+      agent: await harvest(pages["org-agents"], 'svg[data-kind="agent"]'),
+      team: await harvest(pages["org-teams"], 'svg[data-kind="team"]'),
+      // member keeps the initials fallback: grab a live one off Account.
+      member: await harvest(
+        "/dashboard/settings/account/information",
+        '[data-slot="avatar-fallback"]',
+      ),
+    };
+    for (const [kind, html] of Object.entries(nodes)) {
+      if (!html) fails.push(`no live node for kind ${kind}`);
+    }
+    if (errors.length) fails.push(`pageerror: ${errors.join("; ")}`);
+    if (!fails.length) {
+      await page.goto(BASE + pages["org-general"], {
+        waitUntil: "networkidle",
+      });
+      await page.evaluate((kinds) => {
+        const strip = document.createElement("div");
+        strip.setAttribute("data-testid", "default-avatar-strip");
+        strip.style.cssText =
+          "position:fixed;inset:16px;z-index:9999;display:flex;flex-direction:column;gap:16px;padding:16px;background:var(--card,#fff);border:1px solid var(--border,#ccc);border-radius:8px";
+        for (const [kind, html] of Object.entries(kinds)) {
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;align-items:center;gap:16px";
+          const label = document.createElement("span");
+          label.style.cssText = "width:56px;font-size:12px";
+          label.textContent = kind;
+          row.appendChild(label);
+          for (const size of [16, 24, 64]) {
+            const box = document.createElement("div");
+            box.style.cssText = `width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;display:inline-flex;flex:none`;
+            box.innerHTML = html;
+            const inner = box.firstElementChild;
+            if (inner) {
+              inner.style.width = `${size}px`;
+              inner.style.height = `${size}px`;
+            }
+            row.appendChild(box);
+          }
+          strip.appendChild(row);
+        }
+        document.body.appendChild(strip);
+      }, nodes);
+      const shot = `default-avatars-${scheme}.png`;
+      const overflow = await page.evaluate(() => {
+        const strip = document.querySelector(
+          '[data-testid="default-avatar-strip"]',
+        );
+        const rect = strip?.getBoundingClientRect();
+        return {
+          overRight: rect ? rect.right > window.innerWidth : true,
+          overBottom: rect ? rect.bottom > window.innerHeight : true,
+        };
+      });
+      if (overflow.overRight || overflow.overBottom)
+        fails.push(`strip overflows viewport ${JSON.stringify(overflow)}`);
+      await page
+        .getByTestId("default-avatar-strip")
+        .screenshot({ path: join(OUT, shot) });
+      checks[shot] = { fails };
+      console.log(`${fails.length ? "FAIL" : "ok  "} ${shot}`);
+    } else {
+      checks[`default-avatars-${scheme}.png`] = { fails };
+      console.log(`FAIL default-avatars-${scheme}.png ${fails.join("; ")}`);
+    }
+    await ctx.close();
+  }
 }
 
 await browser.close();
