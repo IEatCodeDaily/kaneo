@@ -73,6 +73,7 @@ function TeamBadge({ className }: { className?: string }) {
         "absolute -bottom-0.5 -right-0.5 flex items-center justify-center overflow-hidden rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar",
         className,
       )}
+      data-testid="org-avatar-team-badge"
     >
       {teamId ? (
         <DefaultAvatar

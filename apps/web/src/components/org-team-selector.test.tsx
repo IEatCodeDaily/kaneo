@@ -154,17 +154,25 @@ describe("OrgTeamSelector", () => {
       />,
     );
     // "All" scope: the badge is the generic people glyph, no team avatar.
-    expect(container.querySelector("button img[data-kind='team']")).toBeNull();
+    expect(
+      container.querySelector(
+        "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+      ),
+    ).toBeNull();
 
     useTeamViewStore.getState().setTeamView("team-1", "Engineering");
     await waitFor(() => {
       expect(
-        container.querySelector("button img[data-kind='team']"),
+        container.querySelector(
+          "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+        ),
       ).not.toBeNull();
     });
     expect(
       container
-        .querySelector("button img[data-kind='team']")
+        .querySelector(
+          "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+        )
         ?.getAttribute("src"),
     ).toBe(createAvatar(funEmoji, { seed: "team-1" }).toDataUri());
 
@@ -174,7 +182,9 @@ describe("OrgTeamSelector", () => {
     await waitFor(() => {
       expect(
         container
-          .querySelector("button img[data-kind='team']")
+          .querySelector(
+            "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+          )
           ?.getAttribute("src"),
       ).toBe(createAvatar(funEmoji, { seed: "team-2" }).toDataUri());
     });
