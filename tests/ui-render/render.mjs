@@ -3285,7 +3285,10 @@ if (pages.table) {
             el.getAttribute("aria-checked") !== "true" &&
             !el.matches(":hover"),
         );
-        return { hovered: hovered ? bg(hovered) : null, rest: rest ? bg(rest) : null };
+        return {
+          hovered: hovered ? bg(hovered) : null,
+          rest: rest ? bg(rest) : null,
+        };
       });
       if (!fills.hovered || fills.hovered === fills.rest)
         fails.push(`hovered tile has no hover fill: ${JSON.stringify(fills)}`);
