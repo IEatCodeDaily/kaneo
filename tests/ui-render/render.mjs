@@ -3053,9 +3053,13 @@ const OVERLAY_STATES = [
           .getAttribute("aria-checked")) !== "true"
       )
         throw new Error("Many-to-one is not the default");
-      // The detailed sentence survives as exactly ONE line describing the
-      // selected relation (radios carry only icon + short label).
-      const sentences = await p.getByText(/^Each /).count();
+      // The detailed sentence survives as exactly ONE line inside the
+      // selector (radios carry only icon + short label). Tooltip portals
+      // render outside the group, so an open tooltip cannot inflate this.
+      const sentences = await p
+        .getByRole("radiogroup")
+        .getByText(/^Each /)
+        .count();
       if (sentences !== 1)
         throw new Error(
           `Expected 1 visible relation sentence, got ${sentences}`,
@@ -3238,17 +3242,25 @@ if (pages.table) {
     }
     if (name.startsWith("table-link-settings-hover")) {
       // The harness parked the pointer at (2,2) above; re-hover so the
-      // instant tooltip with the relation sentence is in the shot.
+      // instant tooltip with the relation sentence is in the shot. Match the
+      // sentence INSIDE a tooltip popup: the under-selector line shares the
+      // wording, and a closing tooltip lingers through its exit transition.
       await page
         .getByRole("radio", { name: "One to many", exact: true })
         .hover();
       await page
-        .getByText(/Each .* has many .* records/)
+        .locator('[data-slot="tooltip-popup"]', {
+          hasText: /has many Customer records/,
+        })
         .waitFor({ timeout: 2000 });
-      if ((await page.getByText(/^Each /).count()) !== 2)
-        fails.push("hover tooltip did not add the relation sentence");
-      // ~600ms settle so the popover transition finishes before the shot.
+      // ~600ms settle: exit-animating tooltips leave the DOM, popover
+      // transitions finish before the shot.
       await page.waitForTimeout(600);
+      const openTooltips = await page
+        .locator('[data-slot="tooltip-popup"]')
+        .count();
+      if (openTooltips !== 1)
+        fails.push(`expected 1 tooltip open, got ${openTooltips}`);
     }
     if (name.startsWith("dialog-field-options")) {
       const search = page.getByRole("textbox", { name: "Search field types" });
