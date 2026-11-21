@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -449,9 +450,9 @@ function RouteComponent() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  <FormLabel className="text-sm font-medium">
+                  <Label className="text-sm font-medium">
                     {t("settings:organizationAvatar.label")}
-                  </FormLabel>
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     {t("settings:organizationAvatar.hint")}
                   </p>

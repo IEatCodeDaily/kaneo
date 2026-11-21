@@ -3793,12 +3793,18 @@ if (pages["org-general"]) {
     const errors = [];
     page.on("pageerror", (error) => errors.push(String(error)));
     const harvest = (path, selector) =>
-      page.goto(BASE + path, { waitUntil: "networkidle" }).then(() =>
-        page.evaluate((query) => {
-          const node = document.querySelector(query);
-          return node ? node.outerHTML : null;
-        }, selector),
-      );
+      page
+        .goto(BASE + path, { waitUntil: "networkidle" })
+        // The queried avatar renders only after its data query resolves.
+        .then(() =>
+          page.waitForSelector(selector, { timeout: 10_000 }).catch(() => null),
+        )
+        .then(() =>
+          page.evaluate((query) => {
+            const node = document.querySelector(query);
+            return node ? node.outerHTML : null;
+          }, selector),
+        );
     const nodes = {
       org: await harvest(pages["org-general"], 'svg[data-kind="org"]'),
       agent: await harvest(pages["org-agents"], 'svg[data-kind="agent"]'),
