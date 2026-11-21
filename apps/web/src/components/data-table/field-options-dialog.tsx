@@ -84,19 +84,20 @@ const LINK_CARDINALITIES: LinkCardinality[] = [
   "many-to-many",
 ];
 
-/** Mini relation diagram: N bars → connector → M bars (1 bar = one, 3 = many). */
+/** Mini relation diagram: N bars → connector → M bars (1 tall bar = one,
+ *  3 short ticks = many; ticks sit 4 units apart so they never merge). */
 const RELATION_GLYPHS: Record<LinkCardinality, string[]> = {
-  "many-to-one": ["M3 10v4", "M6 10v4", "M9 10v4", "M6 12h14", "M20 9v6"],
-  "one-to-many": ["M4 9v6", "M4 12h14", "M15 10v4", "M18 10v4", "M21 10v4"],
-  "one-to-one": ["M4 9v6", "M4 12h16", "M20 9v6"],
+  "many-to-one": ["M2 10v4", "M6 10v4", "M10 10v4", "M6 12h14", "M20 8v8"],
+  "one-to-many": ["M4 8v8", "M4 12h14", "M14 10v4", "M18 10v4", "M22 10v4"],
+  "one-to-one": ["M4 8v8", "M4 12h16", "M20 8v8"],
   "many-to-many": [
-    "M3 10v4",
+    "M2 10v4",
     "M6 10v4",
-    "M9 10v4",
+    "M10 10v4",
     "M6 12h12",
-    "M15 10v4",
+    "M14 10v4",
     "M18 10v4",
-    "M21 10v4",
+    "M22 10v4",
   ],
 };
 

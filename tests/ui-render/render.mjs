@@ -3240,6 +3240,16 @@ if (pages.table) {
         `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
       );
     }
+    if (name.startsWith("table-link-settings--")) {
+      // The pointer can land on a relation tile when the target-table popup
+      // closes, opening a stray tooltip over the select; park the pointer and
+      // let the tooltip exit before the shot.
+      await page.mouse.move(2, 2);
+      await page
+        .locator('[data-slot="tooltip-popup"]')
+        .waitFor({ state: "detached", timeout: 2000 })
+        .catch(() => {});
+    }
     if (name.startsWith("table-link-settings-hover")) {
       // The harness parked the pointer at (2,2) above; re-hover so the
       // instant tooltip with the relation sentence is in the shot. Match the
@@ -3261,6 +3271,24 @@ if (pages.table) {
         .count();
       if (openTooltips !== 1)
         fails.push(`expected 1 tooltip open, got ${openTooltips}`);
+      // The tooltip must not be the only hover feedback: the tile itself
+      // paints the outline variant's hover fill.
+      const fills = await page.evaluate(() => {
+        const bg = (el) => getComputedStyle(el).backgroundColor;
+        const radios = [
+          ...document.querySelectorAll('[role="radiogroup"] [role="radio"]'),
+        ];
+        const hovered = radios.find((el) => el.matches(":hover"));
+        const rest = radios.find(
+          (el) =>
+            el !== hovered &&
+            el.getAttribute("aria-checked") !== "true" &&
+            !el.matches(":hover"),
+        );
+        return { hovered: hovered ? bg(hovered) : null, rest: rest ? bg(rest) : null };
+      });
+      if (!fills.hovered || fills.hovered === fills.rest)
+        fails.push(`hovered tile has no hover fill: ${JSON.stringify(fills)}`);
     }
     if (name.startsWith("dialog-field-options")) {
       const search = page.getByRole("textbox", { name: "Search field types" });
