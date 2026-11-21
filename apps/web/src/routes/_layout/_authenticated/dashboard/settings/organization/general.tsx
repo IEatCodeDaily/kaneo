@@ -48,6 +48,7 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import useGetFullOrganization from "@/hooks/queries/organization/use-get-full-organization";
 import useIdentityAliases from "@/hooks/queries/organization/use-identity-aliases";
 import { useOrganizationPermission } from "@/hooks/use-organization-permission";
+import invalidateOrganizationQueries from "@/lib/invalidate-organization";
 import {
   ACCEPTED_AVATAR_TYPES,
   prepareAvatarImage,
@@ -158,9 +159,7 @@ function RouteComponent() {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["active-organization"],
-      });
+      await invalidateOrganizationQueries(queryClient);
       toast.success(t("settings:organizationAvatar.updated"));
     },
     onError: () => toast.error(t("settings:organizationAvatar.uploadFailed")),
@@ -172,9 +171,7 @@ function RouteComponent() {
       return deleteOrganizationAvatar(organization.id);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["active-organization"],
-      });
+      await invalidateOrganizationQueries(queryClient);
       setIsRemoveAvatarOpen(false);
       toast.success(t("settings:organizationAvatar.removed"));
     },
