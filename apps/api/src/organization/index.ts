@@ -10,6 +10,11 @@ import { isInstanceAdmin } from "../utils/is-instance-admin";
 import { organizationAccess } from "../utils/organization-access-middleware";
 import { requireOrganizationPermission } from "../utils/require-organization-permission";
 import { validateOrganizationAccess } from "../utils/validate-organization-access";
+import {
+  deleteOrganizationAvatar,
+  MAX_AVATAR_BYTES,
+  saveOrganizationAvatar,
+} from "./avatar";
 import getOrganizationMembersCtrl from "./controllers/get-organization-members";
 import getOrganizationPrincipalsCtrl from "./controllers/get-organization-principals";
 import listOrganizationsCtrl from "./controllers/list-organizations";
@@ -18,6 +23,14 @@ import {
   updateVisibilityDefaults,
   visibilityDefaultsBodySchema,
 } from "./controllers/visibility-defaults";
+
+const httpErrorSchema = v.object({ message: v.string() });
+
+const avatarResponseSchema = v.object({
+  id: v.string(),
+  url: v.string(),
+  size: v.number(),
+});
 
 const organization = new Hono<{
   Variables: {
@@ -235,6 +248,87 @@ const organization = new Hono<{
           c.get("organizationId"),
           c.req.valid("json"),
         ),
+      ),
+  )
+  .put(
+    "/:organizationId/avatar",
+    describeRoute({
+      operationId: "uploadOrganizationAvatar",
+      tags: ["Organizations"],
+      description: `Store a base64 encoded organization logo (PNG, JPEG, or WebP, up to ${Math.floor(MAX_AVATAR_BYTES / 1024)}KB) and return its public URL. Requires organization manage_settings (owner/admin).`,
+      responses: {
+        200: {
+          description: "Avatar stored",
+          content: {
+            "application/json": { schema: resolver(avatarResponseSchema) },
+          },
+        },
+        400: {
+          description: "Validation error",
+          content: {
+            "application/json": { schema: resolver(httpErrorSchema) },
+          },
+        },
+        404: { description: "Organization not found" },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    validator(
+      "json",
+      v.object({
+        contentType: v.string(),
+        data: v.string(),
+      }),
+    ),
+    organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
+    async (c) => {
+      const { organizationId } = c.req.valid("param");
+      const { contentType, data } = c.req.valid("json");
+
+      try {
+        const saved = await saveOrganizationAvatar({
+          organizationId,
+          contentType,
+          data,
+        });
+        if (!saved) {
+          throw new HTTPException(404, { message: "Organization not found" });
+        }
+        return c.json(saved);
+      } catch (error) {
+        if (error instanceof HTTPException) throw error;
+        throw new HTTPException(400, {
+          message:
+            error instanceof Error ? error.message : "Invalid avatar upload",
+        });
+      }
+    },
+  )
+  .delete(
+    "/:organizationId/avatar",
+    describeRoute({
+      operationId: "deleteOrganizationAvatar",
+      tags: ["Organizations"],
+      description:
+        "Remove the organization's uploaded logo. Requires organization manage_settings (owner/admin).",
+      responses: {
+        200: {
+          description: "Avatar removed",
+          content: {
+            "application/json": {
+              schema: resolver(v.object({ deleted: v.boolean() })),
+            },
+          },
+        },
+      },
+    }),
+    validator("param", v.object({ organizationId: v.string() })),
+    organizationAccess.fromParam("organizationId"),
+    requireOrganizationPermission({ organization: ["manage_settings"] }),
+    async (c) =>
+      c.json(
+        await deleteOrganizationAvatar(c.req.valid("param").organizationId),
       ),
   );
 

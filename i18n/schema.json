@@ -11771,6 +11771,51 @@
             "teamsSetupHint",
             "updateError"
           ]
+        },
+        "organizationAvatar": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "hint": {
+              "type": "string"
+            },
+            "upload": {
+              "type": "string"
+            },
+            "uploading": {
+              "type": "string"
+            },
+            "remove": {
+              "type": "string"
+            },
+            "removing": {
+              "type": "string"
+            },
+            "removeTitle": {
+              "type": "string"
+            },
+            "removeDescription": {
+              "type": "string"
+            },
+            "removeConfirm": {
+              "type": "string"
+            },
+            "uploadFailed": {
+              "type": "string"
+            },
+            "removeFailed": {
+              "type": "string"
+            },
+            "updated": {
+              "type": "string"
+            },
+            "removed": {
+              "type": "string"
+            }
+          }
         }
       },
       "required": [

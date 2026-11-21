@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Check, Loader2, UsersRound } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ import useActiveOrganization from "@/hooks/queries/organization/use-active-organ
 import useGetOrganizations from "@/hooks/queries/organization/use-get-organizations";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { authClient } from "@/lib/auth-client";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import { useTeamViewStore } from "@/store/team-view";
@@ -38,21 +40,20 @@ function OrgAvatar({
   organization?: Organization | null;
   className?: string;
 }) {
-  const initials =
-    organization?.name
-      ?.split(/\s+/)
-      .slice(0, 2)
-      .map((part: string) => part[0])
-      .join("")
-      .toUpperCase() || "OR";
   return (
     <Avatar className={cn("rounded-full bg-sidebar-accent", className)}>
       {/* An empty src renders a broken-image blob in dark mode; fall straight
-          to initials when no logo is set. */}
+          to the generated badge when no logo is set. */}
       {organization?.logo ? (
         <AvatarImage src={organization.logo} alt={organization?.name ?? ""} />
       ) : null}
-      <AvatarFallback>{initials}</AvatarFallback>
+      <AvatarFallback className="bg-transparent">
+        <DefaultAvatar
+          id={organization?.id ?? "unknown"}
+          kind="org"
+          name={organization?.name}
+        />
+      </AvatarFallback>
     </Avatar>
   );
 }
@@ -247,8 +248,13 @@ export function OrgTeamSelector({
               key={team.id}
               onClick={() => setTeamView(team.id, team.name)}
             >
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium uppercase">
-                {team.name.slice(0, 2)}
+              <span
+                className={cn(
+                  "flex size-4 shrink-0 items-center justify-center rounded-full",
+                  getAvatarTone(team.id),
+                )}
+              >
+                <DefaultAvatar id={team.id} kind="team" name={team.name} />
               </span>
               <span className="flex-1">{team.name}</span>
               <Check

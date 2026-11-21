@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/get-initials";
 
 type SettingsOrgHeaderProps = {
+  organizationId?: string | null;
   organizationName?: string | null;
   organizationLogo?: string | null;
   membershipRole?: string | null;
@@ -16,6 +18,7 @@ type SettingsOrgHeaderProps = {
  * sections drift — which is exactly how repos ended up without one.
  */
 export default function SettingsOrgHeader({
+  organizationId,
   organizationName,
   organizationLogo,
   membershipRole,
@@ -37,7 +40,15 @@ export default function SettingsOrgHeader({
           className="border border-sidebar-border/70 bg-sidebar-accent/70 text-xs font-medium text-sidebar-accent-foreground"
           data-testid="settings-org-avatar-fallback"
         >
-          {initials}
+          {organizationId ? (
+            <DefaultAvatar
+              id={organizationId}
+              kind="org"
+              name={organizationName}
+            />
+          ) : (
+            initials
+          )}
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col">

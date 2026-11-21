@@ -2931,6 +2931,21 @@
 			"notConfigured": "Not configured on this instance",
 			"teamsSetupHint": "An instance administrator must register the Kaneo Teams app first (TEAMS_SSO_* and TEAMS_BOT_APP_ID).",
 			"updateError": "Could not update the integration"
+		},
+		"organizationAvatar": {
+			"label": "Avatar",
+			"hint": "Square images look best (256×256).",
+			"upload": "Upload",
+			"uploading": "Uploading…",
+			"remove": "Remove",
+			"removing": "Removing…",
+			"removeTitle": "Remove organization avatar?",
+			"removeDescription": "The current logo will be deleted and the organization falls back to its generated badge.",
+			"removeConfirm": "Remove avatar",
+			"uploadFailed": "Failed to update organization avatar",
+			"removeFailed": "Failed to remove organization avatar",
+			"updated": "Organization avatar updated",
+			"removed": "Organization avatar removed"
 		}
 	},
 	"invitations": {

@@ -1,5 +1,5 @@
-import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarTone } from "@/lib/avatar-tone";
 import { cn } from "@/lib/cn";
@@ -40,17 +40,15 @@ export function TaskAssigneeAvatar({
     return (
       <div
         className={cn(
-          "flex items-center justify-center rounded-full border border-border bg-muted",
+          "flex items-center justify-center rounded-full",
           box,
+          getAvatarTone(task.teamId),
           className,
         )}
         title={label}
         data-testid="task-assignee-team"
       >
-        <Users
-          className={size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3"}
-          aria-hidden="true"
-        />
+        <DefaultAvatar id={task.teamId ?? ""} kind="team" name={teamName} />
         <span className="sr-only">{label}</span>
       </div>
     );

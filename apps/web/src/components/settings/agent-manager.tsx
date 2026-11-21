@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import DefaultAvatar from "@/components/avatar/default-avatar";
 import { FeatureStageBadge } from "@/components/feature-stage-badge";
 import AvatarCropDialog from "@/components/settings/avatar-crop-dialog";
 import {
@@ -31,6 +32,7 @@ import useRemoveAgentAvatar from "@/hooks/mutations/agent/use-remove-agent-avata
 import useUploadAgentAvatar from "@/hooks/mutations/agent/use-upload-agent-avatar";
 import useGetAgents from "@/hooks/queries/agent/use-get-agents";
 import useActiveOrganization from "@/hooks/queries/organization/use-active-organization";
+import { getAvatarTone } from "@/lib/avatar-tone";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -187,12 +189,14 @@ export function AgentManager() {
           className="flex flex-col gap-3 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <Avatar className="size-9 shrink-0">
+            <Avatar
+              className={`size-9 shrink-0 ${agent.image ? "" : getAvatarTone(agent.id)}`}
+            >
               {agent.image ? (
                 <AvatarImage src={agent.image} alt={agent.name} />
               ) : null}
               <AvatarFallback className="bg-transparent">
-                <Bot className="size-4 text-muted-foreground" />
+                <DefaultAvatar id={agent.id} kind="agent" name={agent.name} />
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 space-y-1">
