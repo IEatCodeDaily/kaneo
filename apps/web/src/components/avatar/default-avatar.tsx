@@ -13,7 +13,8 @@ export type DefaultAvatarKind = "member" | "agent" | "team" | "org";
 
   - member: initials in the caller's tone (unchanged legacy behaviour)
   - agent:  DiceBear `bottts` — a robot reads as non-human instantly
-  - team:   DiceBear `croodles-neutral` — playful glyph, distinct from people
+  - team:   DiceBear `fun-emoji` — a colourful emoji face reads as a team at
+            a glance, unmistakable next to robots (agents) and initials (people)
   - org:    theme-independent dark badge, white monogram, bold inner ring
 
   An uploaded avatar always wins — this only renders inside AvatarFallback,
@@ -35,12 +36,12 @@ let libPromise: Promise<DicebearLib> | null = null;
 function loadDicebear(): Promise<DicebearLib> {
   libPromise ??= Promise.all([
     import("@dicebear/bottts"),
-    import("@dicebear/croodles-neutral"),
+    import("@dicebear/fun-emoji"),
     import("@dicebear/core"),
-  ]).then(([bottts, croodlesNeutral, core]) => ({
+  ]).then(([bottts, funEmoji, core]) => ({
     agentUri: (seed: string) => core.createAvatar(bottts, { seed }).toDataUri(),
     teamUri: (seed: string) =>
-      core.createAvatar(croodlesNeutral, { seed }).toDataUri(),
+      core.createAvatar(funEmoji, { seed }).toDataUri(),
   }));
   return libPromise;
 }

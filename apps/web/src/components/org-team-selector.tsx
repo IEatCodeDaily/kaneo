@@ -59,6 +59,37 @@ function OrgAvatar({
 }
 
 /**
+ * The badge overlapping the org avatar's lower-right edge shows the ACTIVE
+ * team's avatar, derived from the same team-view store the popup's check
+ * marks read — switching teams swaps the badge on the next render, no
+ * refresh. With no team active ("All" scope) it falls back to the generic
+ * people glyph.
+ */
+function TeamBadge({ className }: { className?: string }) {
+  const { teamId, teamName } = useTeamViewStore();
+  return (
+    <span
+      className={cn(
+        "absolute -bottom-0.5 -right-0.5 flex items-center justify-center overflow-hidden rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar",
+        className,
+      )}
+      data-testid="org-avatar-team-badge"
+    >
+      {teamId ? (
+        <DefaultAvatar
+          id={teamId}
+          kind="team"
+          name={teamName}
+          className="size-full"
+        />
+      ) : (
+        <UsersRound aria-hidden="true" className="size-2.5" />
+      )}
+    </span>
+  );
+}
+
+/**
  * The merged sidebar identity selector: one trigger showing the organization
  * and the active team scope, one menu that lists the current organization's
  * teams first, then the other organizations. Members/Settings live in the
@@ -193,9 +224,7 @@ export function OrgTeamSelector({
           <span className="flex min-w-0 flex-1 items-center gap-2">
             <span className="relative shrink-0 self-start">
               <OrgAvatar organization={organization} className="size-8" />
-              <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar">
-                <UsersRound aria-hidden="true" className="size-2.5" />
-              </span>
+              <TeamBadge className="size-4" />
             </span>
             <span className="flex min-w-0 flex-1 flex-col items-start">
               <span
@@ -214,9 +243,7 @@ export function OrgTeamSelector({
           // ([&>*:not(svg)]:hidden); `block!` keeps the org avatar visible there.
           <span className="relative block! size-7 shrink-0">
             <OrgAvatar organization={organization} className="size-7" />
-            <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar">
-              <UsersRound aria-hidden="true" className="size-2.5" />
-            </span>
+            <TeamBadge className="size-3.5" />
           </span>
         )}
       </DropdownMenuTrigger>

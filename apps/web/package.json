@@ -27,7 +27,7 @@
 		"@radix-ui/react-alert-dialog": "^1.1.19",
 		"@dicebear/bottts": "^9.4.2",
 		"@dicebear/core": "^9.4.3",
-		"@dicebear/croodles-neutral": "^9.4.2",
+		"@dicebear/fun-emoji": "^9.4.2",
 		"@radix-ui/react-avatar": "^1.2.2",
 		"@radix-ui/react-collapsible": "^1.1.16",
 		"@radix-ui/react-context-menu": "^2.3.3",

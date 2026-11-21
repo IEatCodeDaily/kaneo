@@ -1,5 +1,8 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { createAvatar } from "@dicebear/core";
+import * as funEmoji from "@dicebear/fun-emoji";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import useTeamViewStore from "@/store/team-view";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -139,5 +142,53 @@ describe("OrgTeamSelector", () => {
     expect(engIndex).toBeLessThan(globexIndex);
     expect(items.join(" ")).not.toContain("Members");
     expect(items.join(" ")).not.toContain("Settings");
+  });
+
+  it("swaps the lockup badge to the active team instantly", async () => {
+    useTeamViewStore.getState().setTeamView(null, null);
+    const { container } = render(
+      <OrgTeamSelector
+        open={false}
+        onOpenChange={vi.fn()}
+        onAddOrganization={vi.fn()}
+      />,
+    );
+    // "All" scope: the badge is the generic people glyph, no team avatar.
+    expect(
+      container.querySelector(
+        "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+      ),
+    ).toBeNull();
+
+    useTeamViewStore.getState().setTeamView("team-1", "Engineering");
+    await waitFor(() => {
+      expect(
+        container.querySelector(
+          "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+        ),
+      ).not.toBeNull();
+    });
+    expect(
+      container
+        .querySelector(
+          "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+        )
+        ?.getAttribute("src"),
+    ).toBe(createAvatar(funEmoji, { seed: "team-1" }).toDataUri());
+
+    // Switching teams re-derives the badge from the same store the popup's
+    // check marks read — the swap happens on the next render, no refresh.
+    useTeamViewStore.getState().setTeamView("team-2", "Ops");
+    await waitFor(() => {
+      expect(
+        container
+          .querySelector(
+            "[data-testid='org-avatar-team-badge'] img[data-kind='team']",
+          )
+          ?.getAttribute("src"),
+      ).toBe(createAvatar(funEmoji, { seed: "team-2" }).toDataUri());
+    });
+
+    useTeamViewStore.getState().setTeamView(null, null);
   });
 });
