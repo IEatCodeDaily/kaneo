@@ -2746,6 +2746,28 @@ const overlayGeometry = () => {
 const DESKTOP = { width: 1440, height: 900 };
 const openFieldOptions = (p) =>
   p.getByRole("button", { name: "Add field" }).first().click();
+// Shared steps for the link-relation states: name, Link type, target table.
+const openLinkSettings = async (p) => {
+  await openFieldOptions(p);
+  await p
+    .getByRole("textbox", { name: "New field name", exact: true })
+    .fill("Customer relationship");
+  await p.getByRole("textbox", { name: "Search field types" }).fill("link");
+  await p
+    .getByRole("button", { name: "Link to another table", exact: true })
+    .click();
+  await p.getByRole("combobox", { name: "Target table", exact: true }).click();
+  await p.getByRole("option", { name: "Customer", exact: true }).click();
+  await p.waitForTimeout(600);
+  if (
+    !(
+      await p
+        .getByRole("combobox", { name: "Target table", exact: true })
+        .innerText()
+    ).includes("Customer")
+  )
+    throw new Error("Target table displays an opaque ID instead of Customer");
+};
 const GUTTER = {
   bars_opaque: true,
   header_inset: 16,
@@ -3005,47 +3027,25 @@ const OVERLAY_STATES = [
     theme,
     viewport,
     async (p) => {
-      await openFieldOptions(p);
-      await p
-        .getByRole("textbox", { name: "New field name", exact: true })
-        .fill("Customer relationship");
-      await p.getByRole("textbox", { name: "Search field types" }).fill("link");
-      await p
-        .getByRole("button", { name: "Link to another table", exact: true })
-        .click();
-      await p
-        .getByRole("combobox", { name: "Target table", exact: true })
-        .click();
-      await p.getByRole("option", { name: "Customer", exact: true }).click();
-      await p.waitForTimeout(600);
-      if (
-        !(
-          await p
-            .getByRole("combobox", { name: "Target table", exact: true })
-            .innerText()
-        ).includes("Customer")
-      )
-        throw new Error(
-          "Target table displays an opaque ID instead of Customer",
-        );
+      await openLinkSettings(p);
       const choices = p.getByRole("radiogroup", {
         name: "Relationship",
         exact: true,
       });
       if ((await choices.getByRole("radio").count()) !== 4)
         throw new Error("Missing relationship cardinality");
-      for (const sentence of [
-        "belongs to one Customer",
-        "has many Customer",
-        "links to many Customer",
-        "has at most one Customer",
+      for (const label of [
+        "Many to one",
+        "One to many",
+        "One to one",
+        "Many to many",
       ])
         if (
           !(await choices
-            .getByRole("radio", { name: new RegExp(sentence) })
+            .getByRole("radio", { name: label, exact: true })
             .count())
         )
-          throw new Error(`Missing plain-language cardinality: ${sentence}`);
+          throw new Error(`Missing compact cardinality label: ${label}`);
       if (
         (await choices
           .getByRole("radio")
@@ -3053,6 +3053,15 @@ const OVERLAY_STATES = [
           .getAttribute("aria-checked")) !== "true"
       )
         throw new Error("Many-to-one is not the default");
+      // The detailed sentence survives as exactly ONE line describing the
+      // selected relation (radios carry only icon + short label).
+      const sentences = await p.getByText(/^Each /).count();
+      if (sentences !== 1)
+        throw new Error(
+          `Expected 1 visible relation sentence, got ${sentences}`,
+        );
+      if (!(await p.getByText(/belongs to one Customer/).count()))
+        throw new Error("Sentence does not describe the selected relation");
       await p
         .getByRole("textbox", { name: "Reciprocal field name", exact: true })
         .fill("Invoices");
@@ -3063,6 +3072,28 @@ const OVERLAY_STATES = [
       ...GUTTER,
       footer_inset: 16,
       width: viewport.width === 390 ? 390 : 768,
+      header_h: 44,
+      footer_h: 52,
+    },
+  ]),
+  // Hover a relation option: the instant tooltip carries the detail sentence.
+  ...[
+    ["desktop-dark", "dark", DESKTOP],
+    ["desktop-light", "light", DESKTOP],
+  ].map(([suffix, theme, viewport]) => [
+    `table-link-settings-hover--${suffix}`,
+    theme,
+    viewport,
+    async (p) => {
+      await openLinkSettings(p);
+      await p
+        .getByRole("textbox", { name: "Reciprocal field name", exact: true })
+        .fill("Invoices");
+    },
+    {
+      ...GUTTER,
+      footer_inset: 16,
+      width: 768,
       header_h: 44,
       footer_h: 52,
     },
@@ -3204,6 +3235,20 @@ if (pages.table) {
       fails.push(
         `interaction failed: ${String(e).split("\n").slice(0, 3).join(" | ")}`,
       );
+    }
+    if (name.startsWith("table-link-settings-hover")) {
+      // The harness parked the pointer at (2,2) above; re-hover so the
+      // instant tooltip with the relation sentence is in the shot.
+      await page
+        .getByRole("radio", { name: "One to many", exact: true })
+        .hover();
+      await page
+        .getByText(/Each .* has many .* records/)
+        .waitFor({ timeout: 2000 });
+      if ((await page.getByText(/^Each /).count()) !== 2)
+        fails.push("hover tooltip did not add the relation sentence");
+      // ~600ms settle so the popover transition finishes before the shot.
+      await page.waitForTimeout(600);
     }
     if (name.startsWith("dialog-field-options")) {
       const search = page.getByRole("textbox", { name: "Search field types" });
