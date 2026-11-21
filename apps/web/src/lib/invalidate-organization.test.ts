@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  notify: vi.fn(),
-  invalidate: vi.fn(async () => {}),
+  notify: vi.fn<(signal: string) => void>(),
+  invalidate: vi.fn<(query: { queryKey: string[] }) => Promise<void>>(
+    async () => {},
+  ),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -22,10 +24,8 @@ describe("invalidateOrganizationQueries", () => {
     // nothing refetches the org rows and the logo stays stale everywhere.
     expect(mocks.notify).toHaveBeenCalledWith("$listOrg");
     expect(mocks.notify).toHaveBeenCalledWith("$activeOrgSignal");
-    expect(
-      mocks.invalidate.mock.calls.map(
-        (call) => (call[0] as { queryKey: string[] }).queryKey,
-      ),
-    ).toEqual([["organizations"], ["active-organization"]]);
+    expect(mocks.invalidate.mock.calls.map((call) => call[0].queryKey)).toEqual(
+      [["organizations"], ["active-organization"]],
+    );
   });
 });
