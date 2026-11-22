@@ -9,7 +9,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import {
@@ -44,7 +44,50 @@ import type {
   LinkedRecord,
   LinkValue,
 } from "@/types/data-table";
-import { LinkNavigationContext, linkValue } from "./link-cell";
+import {
+  LinkNavigationContext,
+  LinkOverflowContext,
+  linkValue,
+} from "./link-cell";
+
+/** Server link previews carry 3 records; the drawer flows the whole row. */
+const LINK_AUTO_EXPAND_CAP = 50;
+// ponytail: Show all renders up to 200 records; virtualize the drawer list if longer link rows become common.
+const LINK_SHOW_ALL_CAP = 200;
+
+/** Walk a link field's pages up to cap into one merged cell value. */
+async function loadLinkRecords(
+  organizationId: string,
+  tableId: string,
+  rowId: string,
+  fieldId: string,
+  cap: number,
+): Promise<LinkValue> {
+  const records: LinkedRecord[] = [];
+  let page: LinkPage | null = null;
+  let cursor = 0;
+  while (records.length < cap) {
+    page = await getLinkedRecords(
+      organizationId,
+      tableId,
+      rowId,
+      fieldId,
+      cursor,
+    );
+    records.push(...page.records);
+    if (!page.hasMore || !page.nextCursor) break;
+    cursor = page.nextCursor;
+  }
+  const total = page?.total ?? records.length;
+  return {
+    kind: "link",
+    status: "ok",
+    records,
+    total,
+    hasMore: total > records.length,
+    version: page?.version ?? null,
+  };
+}
 
 /**
  * Drawer sections below the fold (linked tickets, activity) defer their
@@ -144,6 +187,9 @@ export function RowSheet({
     values: Record<string, LinkValue>;
   }>({ rowId: "", values: {} });
   const [linkBusy, setLinkBusy] = useState(false);
+  // Auto-expand fetches in flight (row:field keys) so a re-render cannot
+  // start a second walk for the same field.
+  const pendingLinksRef = useRef<Set<string>>(new Set());
   const { width, startResize } = useDrawerWidth(
     "kaneo:row-drawer-width",
     // Half the viewport until the user drags (clamped by the shared min/max);
@@ -164,6 +210,53 @@ export function RowSheet({
         rowId: row?.id ?? "",
       }),
   });
+
+  // Link previews auto-expand so chips flow and fill the row (issue: the
+  // drawer froze at the server's 3-record preview). Beyond the cap the
+  // inline "+N" chip paginates on demand. Scoped by row id so prev/next
+  // cannot leak one row's list into the next.
+  useEffect(() => {
+    if (!open || !row) return;
+    for (const field of fields) {
+      if (field.type !== "link") continue;
+      const cell = linkValue(row.values[field.id]);
+      if (cell?.status !== "ok") continue;
+      if ((cell.total ?? 0) <= cell.records.length) continue;
+      const key = `${row.id}:${field.id}`;
+      if (
+        pendingLinksRef.current.has(key) ||
+        (fullLinks.rowId === row.id && fullLinks.values[field.id])
+      )
+        continue;
+      pendingLinksRef.current.add(key);
+      loadLinkRecords(
+        table.organizationId,
+        table.id,
+        row.id,
+        field.id,
+        LINK_AUTO_EXPAND_CAP,
+      )
+        .then((value) => {
+          setFullLinks((current) => {
+            if (current.rowId !== row.id)
+              return { rowId: row.id, values: { [field.id]: value } };
+            // A manual fetch (or an earlier walk) already owns this field.
+            if (current.values[field.id]) return current;
+            return {
+              rowId: row.id,
+              values: { ...current.values, [field.id]: value },
+            };
+          });
+        })
+        .catch(() => {
+          // Keep the preview + its inline "+N" control; the pick flow and
+          // Show all still work, so a failed prefetch is not an error state.
+        })
+        .finally(() => {
+          pendingLinksRef.current.delete(key);
+        });
+    }
+  }, [open, row, fields, fullLinks, table.organizationId, table.id]);
 
   if (!row) return null;
   // The primary field need not be text: resolve it with the same renderer as
@@ -205,42 +298,21 @@ export function RowSheet({
     }
   };
 
-  /** Expand one link field to its full record list (server previews 3). */
+  /** Expand one link field to its full record list (beyond the auto cap). */
   const showAllLinks = async (field: DataTableField) => {
     if (linkBusy) return;
     setLinkBusy(true);
     try {
-      const records: LinkedRecord[] = [];
-      let page: LinkPage | null = null;
-      let cursor = 0;
-      // ponytail: cap at 200 rendered records; longer lists stay paginated in
-      // the cell picker (upgrade: virtualize the drawer list).
-      while (records.length < 200) {
-        page = await getLinkedRecords(
-          table.organizationId,
-          table.id,
-          row.id,
-          field.id,
-          cursor,
-        );
-        records.push(...page.records);
-        if (!page.hasMore || !page.nextCursor) break;
-        cursor = page.nextCursor;
-      }
-      const truncated = (page?.total ?? records.length) > records.length;
+      const value = await loadLinkRecords(
+        table.organizationId,
+        table.id,
+        row.id,
+        field.id,
+        LINK_SHOW_ALL_CAP,
+      );
       setFullLinks({
         rowId: row.id,
-        values: {
-          ...fullLinks.values,
-          [field.id]: {
-            kind: "link",
-            status: "ok",
-            records,
-            total: page?.total ?? records.length,
-            hasMore: truncated,
-            version: page?.version ?? null,
-          },
-        },
+        values: { ...expandedLinks, [field.id]: value },
       });
     } finally {
       setLinkBusy(false);
@@ -376,64 +448,57 @@ export function RowSheet({
                   </span>
                 </span>
                 {/* Key/value list: every value starts on one column, numbers too. */}
-                <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
-                  <DataTableCellContent
-                    expanded
-                    row={displayRow}
-                    field={field}
-                    members={members}
-                    canEdit={canEdit}
-                    isEditing={
-                      editing?.rowId === row.id && editing.fieldId === field.id
-                    }
-                    onEditStart={() =>
-                      setEditing({ rowId: row.id, fieldId: field.id })
-                    }
-                    onEditEnd={() => setEditing(null)}
-                    onCommit={async (value) => {
-                      if (await onCommit(row, field, value)) {
-                        setEditing((current) =>
-                          current?.rowId === row.id &&
-                          current.fieldId === field.id
-                            ? null
-                            : current,
-                        );
+                <LinkOverflowContext.Provider
+                  value={
+                    field.type === "link" &&
+                    (truncated ||
+                      (full?.hasMore &&
+                        full.records.length < LINK_SHOW_ALL_CAP))
+                      ? () => void showAllLinks(field)
+                      : null
+                  }
+                >
+                  <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
+                    <DataTableCellContent
+                      expanded
+                      row={displayRow}
+                      field={field}
+                      members={members}
+                      canEdit={canEdit}
+                      isEditing={
+                        editing?.rowId === row.id &&
+                        editing.fieldId === field.id
                       }
-                    }}
-                  />
-                </div>
-                {(truncated || (full && field.type === "link")) && (
-                  <div className="flex flex-col items-start gap-1 py-2">
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      disabled={linkBusy}
-                      onClick={() => {
-                        if (full)
-                          setFullLinks((current) => {
-                            const values = { ...current.values };
-                            delete values[field.id];
-                            return { rowId: row.id, values };
-                          });
-                        else void showAllLinks(field);
+                      onEditStart={() =>
+                        setEditing({ rowId: row.id, fieldId: field.id })
+                      }
+                      onEditEnd={() => setEditing(null)}
+                      onCommit={async (value) => {
+                        if (await onCommit(row, field, value)) {
+                          setEditing((current) =>
+                            current?.rowId === row.id &&
+                            current.fieldId === field.id
+                              ? null
+                              : current,
+                          );
+                        }
                       }}
-                    >
-                      {full
-                        ? t("navigation:tables.showLessRecords")
-                        : t("navigation:tables.showAllRecords", {
-                            total: cell?.total ?? 0,
-                          })}
-                    </Button>
-                    {full && (full.total ?? 0) > full.records.length && (
-                      <p className="px-2 text-xs text-muted-foreground">
-                        {t("navigation:tables.linkedCapped", {
-                          count: full.records.length,
-                          total: full.total ?? 0,
-                        })}
-                      </p>
-                    )}
+                    />
                   </div>
-                )}
+                </LinkOverflowContext.Provider>
+                {/* Beyond-cap lists were expanded deliberately (the "+N" chip
+                    fetches the full paginated list); only the cap note remains —
+                    there is no way back to a truncated preview. */}
+                {full &&
+                  field.type === "link" &&
+                  (full.total ?? 0) > full.records.length && (
+                    <p className="w-full px-2 text-xs text-muted-foreground">
+                      {t("navigation:tables.linkedCapped", {
+                        count: full.records.length,
+                        total: full.total ?? 0,
+                      })}
+                    </p>
+                  )}
               </div>
             );
           })}

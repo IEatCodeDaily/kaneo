@@ -612,7 +612,14 @@ export function DataTableCellContent({
     return <MultiSelectCellPicker {...pickerProps} />;
   if (field.type === "ticket") return <TicketCellPicker {...pickerProps} />;
   if (field.type === "link")
-    return <LinkCellPicker {...pickerProps} rowId={row.id} members={members} />;
+    return (
+      <LinkCellPicker
+        {...pickerProps}
+        rowId={row.id}
+        members={members}
+        expanded={expanded}
+      />
+    );
   if (field.type === "user")
     return <UserCellPicker {...pickerProps} members={members} />;
   // Markdown and URL/email projections contain links: never nest them in a button.

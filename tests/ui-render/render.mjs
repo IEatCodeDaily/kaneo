@@ -284,6 +284,10 @@ let pages = {
   "table-link-pick": `/dashboard/organization/${slug}/table/${invoices.id}`,
   "table-lookup": `/dashboard/organization/${slug}/table/${invoices.id}`,
   "table-drawer-links": `/dashboard/organization/${slug}/table/${invoices.id}`,
+  // Chip-fit: widening a link column must immediately rewrap its chips.
+  "table-chip-fit": `/dashboard/organization/${slug}/table/${invoices.id}`,
+  // Row chrome: checkbox-column geometry + the right-click row menu.
+  "table-row-chrome": `/dashboard/organization/${slug}/table/${tbl.id}`,
   "table-link-reciprocal": `/dashboard/organization/${slug}/table/${customers.id}`,
   // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
   ticket: `/dashboard/${slug}/tickets/KFL-1`,
@@ -503,20 +507,15 @@ for (const [theme, tag, viewport, scale] of [
       }
     } else if (name === "table-drawer-links") {
       try {
-        // Drawer Show all: the link field previews 3 of 5; expand to the full list.
+        // Auto-expand: the drawer fetches the truncated preview (3 of 5) on
+        // open, so the chips FLOW and fill the row — no Show-all control at
+        // all for lists within the cap.
         await page.locator("[data-link-chip]").first().waitFor();
         await page
           .getByRole("button", { name: /Expand row 1/ })
           .first()
           .click();
         const sheet = page.locator('[data-slot="row-fields"]');
-        await sheet.getByText("VND-001 · Acme").first().waitFor();
-        if (await page.getByText("VND-004 · Umbrella").count())
-          fails.push("drawer listed all records without Show all");
-        await sheet
-          .getByRole("button", { name: /Show all \(5\)/ })
-          .first()
-          .click();
         await sheet.getByText("VND-005 · Stark").first().waitFor();
         for (const vendor of [
           "VND-001 · Acme",
@@ -526,18 +525,287 @@ for (const [theme, tag, viewport, scale] of [
           "VND-005 · Stark",
         ]) {
           if (!(await sheet.getByText(vendor).count()))
-            fails.push(`expanded drawer missing ${vendor}`);
+            fails.push(`auto-expanded drawer missing ${vendor}`);
         }
-        await sheet
-          .getByRole("button", { name: /Show less/ })
-          .first()
-          .click();
-        await sheet.getByText("VND-005 · Stark").waitFor({ state: "hidden" });
+        if (await sheet.getByRole("button", { name: /Show all/ }).count())
+          fails.push("Show all rendered within the auto cap");
+        // Flow geometry: the chip wrap spans the value row (not a fixed
+        // preview column), and at phone width the chips wrap to >1 line.
+        const flow = await page.evaluate(() => {
+          const rows = [
+            ...document.querySelectorAll('[data-slot="row-fields"] > div'),
+          ];
+          const row = rows.find((r) => r.textContent.includes("VND-001"));
+          if (!row) return null;
+          const value = row.children[1];
+          const wrap = value.querySelector(".flex-wrap") ?? value;
+          const chips = [...wrap.querySelectorAll("[data-link-chip]")];
+          const rowBox = value.getBoundingClientRect();
+          const wrapBox = wrap.getBoundingClientRect();
+          const tops = [
+            ...new Set(
+              chips.map((c) => Math.round(c.getBoundingClientRect().top)),
+            ),
+          ];
+          return {
+            chips: chips.length,
+            lines: tops.length,
+            fill: wrapBox.width / rowBox.width,
+            valueW: Math.round(rowBox.width),
+          };
+        });
+        if (!flow) fails.push(`drawer chip flow ${JSON.stringify(flow)}`);
+        else if (flow.chips !== 5)
+          fails.push(`drawer chip flow ${JSON.stringify(flow)}`);
+        else if (flow.fill < 0.6)
+          fails.push(
+            `chip wrap fills ${(flow.fill * 100).toFixed(0)}% of the ${flow.valueW}px value row`,
+          );
+        else if (tag === "phone" && flow.lines < 2)
+          fails.push(`phone drawer chips do not wrap (${flow.lines} lines)`);
       } catch (error) {
         fails.push(`drawer-links state error: ${error}`);
         await page
           .screenshot({ path: `${OUT}/drawer-links-debug.png` })
           .catch(() => {});
+      }
+    } else if (name === "table-chip-fit") {
+      try {
+        // teams.37 regression: widening a link column live did not render
+        // more chips — the fit pass froze at the initial width.
+        await page.locator("[data-link-chip]").first().waitFor();
+        const header = page
+          .getByRole("columnheader", { name: /Also bought from/ })
+          .first();
+        await header.waitFor();
+        const measure = () =>
+          page.evaluate(() => {
+            const cell = [
+              ...document.querySelectorAll('[role="gridcell"]'),
+            ].find((c) =>
+              (c.getAttribute("aria-label") ?? "").startsWith(
+                "Also bought from, row 1",
+              ),
+            );
+            if (!cell) return null;
+            const chips = [...cell.querySelectorAll("[data-link-chip]")];
+            const box = cell.getBoundingClientRect();
+            return {
+              visible: chips.length,
+              labels: chips.map((c) => c.textContent),
+              height: Math.round(box.height),
+              width: Math.round(box.width),
+              overflow: cell.querySelector(".overflow-hidden") ? true : false,
+            };
+          });
+        // Keyboard resize: works at every viewport (a pointer drag on a wide
+        // column misses on phones) and Home resets, so an earlier run's
+        // autosaved width cannot leak into this run's baseline.
+        const handle = header.getByRole("separator").first();
+        await handle.focus();
+        await handle.press("Home");
+        await page.waitForTimeout(400);
+        const before = await measure();
+        if (!before || before.visible < 1)
+          fails.push(`chip-fit baseline ${JSON.stringify(before)}`);
+        else {
+          // +260px in ten steps: the fit pass must re-render more chips
+          // within the SAME row height.
+          for (let i = 0; i < 26; i += 1) await handle.press("ArrowRight");
+          await page.waitForTimeout(600);
+          const after = await measure();
+          if (!after) fails.push("chip-fit cell missing after resize");
+          else {
+            if (after.width < before.width + 200)
+              fails.push(
+                `column did not widen (${before.width} -> ${after.width})`,
+              );
+            if (after.visible <= before.visible) {
+              const span = await page.evaluate(() => {
+                const cell = [
+                  ...document.querySelectorAll('[role="gridcell"]'),
+                ].find((c) =>
+                  (c.getAttribute("aria-label") ?? "").startsWith(
+                    "Also bought from, row 1",
+                  ),
+                );
+                const el = cell?.querySelector(".flex-wrap");
+                const box = el?.getBoundingClientRect();
+                return {
+                  spanW: Math.round(box?.width ?? -1),
+                  spanH: Math.round(box?.height ?? -1),
+                  spanClientH: el?.clientHeight ?? -1,
+                  spanClientW: el?.clientWidth ?? -1,
+                  items: el
+                    ? el.querySelectorAll("[data-link-item]").length
+                    : -1,
+                };
+              });
+              fails.push(
+                `widening did not rewrap chips: ${JSON.stringify({ before, after, span })}`,
+              );
+            }
+            if (after.height !== before.height)
+              fails.push(
+                `cell height changed on rewrap (${before.height} -> ${after.height})`,
+              );
+          }
+          // Leave the saved view at the default width for later states.
+          await handle.press("Home");
+        }
+      } catch (error) {
+        fails.push(`chip-fit state error: ${error}`);
+        await page
+          .screenshot({ path: `${OUT}/chip-fit-debug.png` })
+          .catch(() => {});
+      }
+    } else if (name === "table-row-chrome") {
+      // Values of the row the delete flow removes, so `finally` can restore
+      // it even when the try block failed midway.
+      let lastRowValues = {};
+      try {
+        await page.locator('[role="row"][aria-rowindex="2"]').waitFor();
+        // Select-column geometry: the header select-all checkbox and the row
+        // checkbox share one column line; the row checkbox sits inside its
+        // row band, and hovering the row never shifts it.
+        const boxes = await page.evaluate(() => {
+          const grab = (root) => {
+            const cb = root.querySelector('[role="checkbox"]');
+            if (!cb) return null;
+            const r = cb.getBoundingClientRect();
+            return { x: r.x, y: r.y, w: r.width, h: r.height };
+          };
+          const header = document.querySelector(
+            '[role="columnheader"][aria-label="Row number"]',
+          );
+          const row = document.querySelector('[role="row"][aria-rowindex="2"]');
+          const gutter = row?.querySelector('[role="rowheader"]');
+          const rowBox = row?.getBoundingClientRect();
+          return {
+            header: header ? grab(header) : null,
+            row: gutter ? grab(gutter) : null,
+            rowTop: rowBox?.top ?? null,
+            rowBottom: rowBox?.bottom ?? null,
+          };
+        });
+        if (!boxes.header || !boxes.row)
+          fails.push(`checkbox probe ${JSON.stringify(boxes)}`);
+        else {
+          if (Math.abs(boxes.header.x - boxes.row.x) > 1)
+            fails.push(
+              `select-all checkbox x ${boxes.header.x.toFixed(1)} vs row checkbox x ${boxes.row.x.toFixed(1)}`,
+            );
+          const center = boxes.row.y + boxes.row.h / 2;
+          if (center < boxes.rowTop || center > boxes.rowBottom)
+            fails.push(
+              `row checkbox center ${center.toFixed(1)} outside row band ${boxes.rowTop?.toFixed(1)}..${boxes.rowBottom?.toFixed(1)}`,
+            );
+          // Hover the row: the reveal is opacity-only; the box must not move.
+          const row = page.locator('[role="row"][aria-rowindex="2"]');
+          await row.hover();
+          await page.waitForTimeout(300);
+          const hovered = await page.evaluate(() => {
+            const gutter = document
+              .querySelector('[role="row"][aria-rowindex="2"]')
+              ?.querySelector('[role="rowheader"]');
+            const cb = gutter?.querySelector('[role="checkbox"]');
+            return cb ? cb.getBoundingClientRect().x : null;
+          });
+          if (hovered === null || Math.abs(hovered - boxes.row.x) > 1)
+            fails.push(
+              `hover shifted the row checkbox (${boxes.row.x?.toFixed(1)} -> ${hovered?.toFixed(1)})`,
+            );
+          await page.mouse.move(2, 2);
+        }
+        // Right-click a visible data row → Open row + Delete row → destructive
+        // confirm → row deleted. Restore it (with its values) through the API
+        // so later states keep their row numbers and cell contents.
+        const countRows = () =>
+          page.evaluate(
+            () =>
+              [...document.querySelectorAll('[role="row"]')].filter(
+                (r) => r.getAttribute("aria-rowindex") !== "1",
+              ).length,
+          );
+        const beforeCount = await countRows();
+        const rowQuery = () =>
+          api
+            .post(
+              `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/row-query`,
+              { data: {}, headers: { Origin: BASE } },
+            )
+            .then((r) => r.json());
+        const beforeRows = await rowQuery();
+        lastRowValues =
+          beforeRows?.rows?.[beforeRows.rows.length - 1]?.values ?? {};
+        const rowBox = await page.evaluate(() => {
+          const rows = [...document.querySelectorAll('[role="row"]')].filter(
+            (r) => r.getAttribute("aria-rowindex") !== "1",
+          );
+          const b = rows[rows.length - 1]?.getBoundingClientRect();
+          return b ? { x: b.x, y: b.y, w: b.width, h: b.height } : null;
+        });
+        if (!rowBox) fails.push("no data row to right-click");
+        else {
+          // Keep the click inside the viewport (the row extends past narrow
+          // phones) and off the frozen gutter.
+          const clickX = Math.min(
+            rowBox.x + 200,
+            page.viewportSize().width - 10,
+          );
+          await page.mouse.click(clickX, rowBox.y + rowBox.h / 2, {
+            button: "right",
+          });
+          const menu = page.locator('[data-slot="context-menu-content"]');
+          await menu.waitFor();
+          const items = await menu.getByRole("menuitem").allInnerTexts();
+          if (!items.some((t) => t.includes("Open row")))
+            fails.push(`row menu lacks Open row: ${JSON.stringify(items)}`);
+          if (!items.some((t) => t.includes("Delete row")))
+            fails.push(`row menu lacks Delete row: ${JSON.stringify(items)}`);
+          await menu.getByRole("menuitem", { name: /Delete row/ }).click();
+          const dialog = page.getByRole("alertdialog");
+          await dialog.waitFor();
+          const [response] = await Promise.all([
+            page.waitForResponse(
+              (r) =>
+                r.request().method() === "DELETE" && r.url().includes("/rows/"),
+            ),
+            dialog.getByRole("button", { name: /Delete row/ }).click(),
+          ]);
+          if (response.status() !== 200)
+            fails.push(`row DELETE status ${response.status()}`);
+          await page.waitForTimeout(800);
+          const afterCount = await countRows();
+          if (afterCount !== beforeCount - 1)
+            fails.push(`delete flow row count ${beforeCount} -> ${afterCount}`);
+        }
+      } catch (error) {
+        fails.push(`row-chrome state error: ${error}`);
+        await page
+          .screenshot({ path: `${OUT}/row-chrome-debug.png` })
+          .catch(() => {});
+      } finally {
+        // Restore the deleted row (with its values) so sibling states keep
+        // their row numbers and cell contents.
+        try {
+          const rows = await api
+            .post(
+              `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/row-query`,
+              { data: {}, headers: { Origin: BASE } },
+            )
+            .then((r) => r.json());
+          if ((rows?.total ?? 0) < 4)
+            await api.post(
+              `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/rows`,
+              {
+                data: { values: lastRowValues },
+                headers: { Origin: BASE },
+              },
+            );
+        } catch (error) {
+          fails.push(`row restore failed: ${error}`);
+        }
       }
     } else if (name === "table-link-pick") {
       try {
@@ -568,6 +836,11 @@ for (const [theme, tag, viewport, scale] of [
           .first();
         await option.waitFor();
         const picked = await option.textContent();
+        // teams.37 regression: picking re-anchored the popup (the trigger's
+        // content swap moved its box). Top-left must not move.
+        const popupBefore = await page
+          .locator('[data-slot="popover-popup"]')
+          .boundingBox();
         const [response] = await Promise.all([
           page.waitForResponse(
             (r) =>
@@ -577,6 +850,21 @@ for (const [theme, tag, viewport, scale] of [
         ]);
         if (response.status() !== 200)
           fails.push(`link pick POST status ${response.status()}`);
+        await page.waitForTimeout(600);
+        const popupAfter = await page
+          .locator('[data-slot="popover-popup"]')
+          .boundingBox();
+        if (!popupBefore || !popupAfter)
+          fails.push(
+            `picker popup missing: ${JSON.stringify({ popupBefore, popupAfter })}`,
+          );
+        else if (
+          Math.abs(popupAfter.x - popupBefore.x) > 1 ||
+          Math.abs(popupAfter.y - popupBefore.y) > 1
+        )
+          fails.push(
+            `picker popup jumped on pick: ${JSON.stringify({ popupBefore, popupAfter })}`,
+          );
         // Optimistic chip, then server truth: the swap must stick either way.
         await page.waitForTimeout(1200);
         const chips = await cellChips();
