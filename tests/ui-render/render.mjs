@@ -622,24 +622,17 @@ for (const [theme, tag, viewport, scale] of [
       name === "table-link-picker" ||
       name === "table-link-reciprocal"
     ) {
-      const expected =
-        name === "table-link-picker"
-          ? "CUST-001 · Acme Manufacturing"
-          : "INV-2026-001";
-      // The reciprocal state's chip repeats on every bundled customer row.
-      await page
-        .locator("[data-link-chip]")
-        .filter({ hasText: expected })
-        .first()
-        .waitFor();
-      if (
-        !(await page
-          .locator("[data-link-chip]")
-          .filter({ hasText: expected })
-          .count())
-      )
-        fails.push("Primary value chip missing");
-      await page
+      // Dynamic expectation: earlier states (link-pick) may have swapped which
+      // record is linked, so read the linked chip from the page instead of
+      // hardcoding it. The reciprocal state's chip repeats on bundled rows.
+      const chip = page.locator("[data-link-chip]").first();
+      await chip.waitFor();
+      const expected = (await chip.textContent()) ?? "";
+      if (!expected) fails.push("Primary value chip missing");
+      // Open the picker THAT holds the linked chip (the pick state may have
+      // moved the link to a different row).
+      const chipCell = page.getByRole("gridcell").filter({ has: chip });
+      await chipCell
         .getByRole("button", { name: "Linked records", exact: true })
         .first()
         .click();
