@@ -13,6 +13,8 @@ const sidebarKeys = [
   "repos",
   "moreBoards",
   "moreRepos",
+  "moreTables",
+  "showItem",
 ] as const;
 
 describe("sidebar locale contract", () => {

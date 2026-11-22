@@ -5773,6 +5773,12 @@
             "moreRepos": {
               "type": "string"
             },
+            "moreTables": {
+              "type": "string"
+            },
+            "showItem": {
+              "type": "string"
+            },
             "recent": {
               "type": "string"
             },
@@ -5836,6 +5842,8 @@
             "overview",
             "inbox",
             "moreRepos",
+            "moreTables",
+            "showItem",
             "recent",
             "recentEmpty",
             "recentShowLatest",
