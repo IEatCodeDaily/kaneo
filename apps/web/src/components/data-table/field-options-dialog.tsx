@@ -28,6 +28,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  useDataTable,
   useDataTableMutations,
   useDataTables,
 } from "@/hooks/data-table/use-data-tables";
@@ -71,6 +72,8 @@ type Props = {
   /** Type preselected by "change type" before opening this dialog. */
   initialType?: DataTableFieldType | null;
   members?: Map<string, MemberOption>;
+  /** This table's fields: the lookup picker reads the link fields from here. */
+  tableFields?: DataTableField[];
 };
 
 type LinkCardinality = NonNullable<DataTableFieldOptions["cardinality"]>;
@@ -130,6 +133,7 @@ export default function FieldOptionsDialog({
   field,
   initialType,
   members = new Map(),
+  tableFields = [],
 }: Props) {
   const { t } = useTranslation();
   const { createField, updateField } = useDataTableMutations(
@@ -156,9 +160,19 @@ export default function FieldOptionsDialog({
   const [cardinality, setCardinality] =
     useState<NonNullable<DataTableFieldOptions["cardinality"]>>("many-to-one");
   const [inverseName, setInverseName] = useState("");
+  const [linkFieldId, setLinkFieldId] = useState("");
+  const [lookupFieldId, setLookupFieldId] = useState("");
   const { data: tables = [] } = useDataTables(
     organizationId,
-    open && type === "link",
+    open && (type === "link" || type === "lookup"),
+  );
+  const lookupLinkField = tableFields.find(
+    (candidate) => candidate.id === linkFieldId && candidate.type === "link",
+  );
+  const lookupTargetTableId = lookupLinkField?.options?.targetTableId ?? "";
+  const { data: lookupTargetTable } = useDataTable(
+    organizationId,
+    open && type === "lookup" ? lookupTargetTableId : "",
   );
   const localName =
     tables.find((table) => table.id === tableId)?.name ??
@@ -196,7 +210,10 @@ export default function FieldOptionsDialog({
     setMultiple(options.multiple !== false);
     setTargetTableId(options.targetTableId ?? "");
     setInverseName("");
-    setCardinality("many-to-one");
+    setLinkFieldId(options.linkFieldId ?? "");
+    setLookupFieldId(options.targetFieldId ?? "");
+    // Edit shows the stored relation; the API rejects cardinality changes.
+    setCardinality(options.cardinality ?? "many-to-one");
     setConfirmType(false);
   }, [open, field, initialType]);
 
@@ -208,6 +225,13 @@ export default function FieldOptionsDialog({
             targetTableId,
             cardinality,
             ...(inverseName.trim() ? { inverseName: inverseName.trim() } : {}),
+          };
+    if (type === "lookup")
+      return field?.type === "lookup"
+        ? (field.options ?? undefined)
+        : {
+            linkFieldId,
+            targetFieldId: lookupFieldId,
           };
     const draft: DataTableFieldOptions = optionsForType(type, field?.options);
     if (type === "select" || type === "multiselect") {
@@ -244,7 +268,14 @@ export default function FieldOptionsDialog({
 
   const optionsValid =
     (type !== "link" || Boolean(targetTableId)) &&
-    (!field || (type === "link") === (field.type === "link")) &&
+    (type !== "lookup" || (Boolean(linkFieldId) && Boolean(lookupFieldId))) &&
+    // Link/lookup identity is fixed at creation; the API rejects conversions.
+    (!field ||
+      type === field.type ||
+      (type !== "link" &&
+        type !== "lookup" &&
+        field.type !== "link" &&
+        field.type !== "lookup")) &&
     (type !== "currency" || code.trim() !== "") &&
     (type !== "select" && type !== "multiselect"
       ? true
@@ -390,71 +421,72 @@ export default function FieldOptionsDialog({
                   </Select>
                 </label>
                 {!field && (
-                  <>
-                    <div
-                      className="space-y-1"
-                      role="radiogroup"
-                      aria-label={t("navigation:tables.linkRelationship")}
-                    >
-                      <TooltipProvider delay={0}>
-                        <div className="grid grid-cols-2 gap-1">
-                          {LINK_CARDINALITIES.map((kind) => (
-                            <Tooltip key={kind}>
-                              <TooltipTrigger
-                                render={
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    role="radio"
-                                    aria-checked={cardinality === kind}
-                                    className="h-auto justify-start gap-2 px-2 py-2 text-left aria-checked:border-ring aria-checked:bg-accent"
-                                    onClick={() => setCardinality(kind)}
-                                  />
-                                }
-                              >
-                                <RelationGlyph kind={kind} />
-                                <span className="min-w-0 truncate text-xs font-semibold">
-                                  {t(
-                                    `navigation:tables.linkCardinality.${kind}`,
-                                  )}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-64">
-                                {t(`navigation:tables.linkSentence.${kind}`, {
-                                  source: localName,
-                                  target: targetName,
-                                })}
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </TooltipProvider>
-                      {/* Tooltips don't open on touch, so the selected
-                        relation's sentence stays visible under the selector. */}
-                      <p className="px-1 text-xs text-muted-foreground">
-                        {t(`navigation:tables.linkSentence.${cardinality}`, {
-                          source: localName,
-                          target: targetName,
-                        })}
-                      </p>
-                    </div>
-                    <label
-                      htmlFor="link-inverse-name"
-                      className="block space-y-2"
-                    >
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {t("navigation:tables.linkInverseName")}
-                      </span>
-                      <Input
-                        id="link-inverse-name"
-                        value={inverseName}
-                        onChange={(event) => setInverseName(event.target.value)}
-                        placeholder={localName}
-                        aria-label={t("navigation:tables.linkInverseName")}
-                      />
-                    </label>
-                  </>
+                  <label
+                    htmlFor="link-inverse-name"
+                    className="block space-y-2"
+                  >
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("navigation:tables.linkInverseName")}
+                    </span>
+                    <Input
+                      id="link-inverse-name"
+                      value={inverseName}
+                      onChange={(event) => setInverseName(event.target.value)}
+                      placeholder={localName}
+                      aria-label={t("navigation:tables.linkInverseName")}
+                    />
+                  </label>
                 )}
+                {/* The stored cardinality is visible on edit (read-only: the
+                  API rejects relation changes); create picks it. */}
+                <div
+                  className="space-y-1"
+                  role="radiogroup"
+                  aria-label={t("navigation:tables.linkRelationship")}
+                  aria-disabled={Boolean(field) || undefined}
+                  data-disabled={Boolean(field) || undefined}
+                >
+                  <TooltipProvider delay={0}>
+                    <div className="grid grid-cols-2 gap-1">
+                      {LINK_CARDINALITIES.map((kind) => (
+                        <Tooltip key={kind}>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="outline"
+                                role="radio"
+                                aria-checked={cardinality === kind}
+                                disabled={Boolean(field)}
+                                className="h-auto justify-start gap-2 px-2 py-2 text-left aria-checked:border-ring aria-checked:bg-accent"
+                                onClick={() => setCardinality(kind)}
+                              />
+                            }
+                          >
+                            <RelationGlyph kind={kind} />
+                            <span className="min-w-0 truncate text-xs font-semibold">
+                              {t(`navigation:tables.linkCardinality.${kind}`)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-64">
+                            {t(`navigation:tables.linkSentence.${kind}`, {
+                              source: localName,
+                              target: targetName,
+                            })}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </TooltipProvider>
+                  {/* Tooltips don't open on touch, so the selected
+                    relation's sentence stays visible under the selector. */}
+                  <p className="px-1 text-xs text-muted-foreground">
+                    {t(`navigation:tables.linkSentence.${cardinality}`, {
+                      source: localName,
+                      target: targetName,
+                    })}
+                  </p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {t("navigation:tables.linkReciprocalSummary", {
                     source: localName,
@@ -464,6 +496,104 @@ export default function FieldOptionsDialog({
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {t("navigation:tables.linkMutualEdit")}
+                </p>
+              </section>
+            )}
+            {type === "lookup" && (
+              <section
+                className="space-y-3"
+                aria-label={t("navigation:tables.lookupSettings")}
+              >
+                <label htmlFor="lookup-link-field" className="block space-y-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.lookupLinkField")}
+                  </span>
+                  <Select
+                    items={tableFields
+                      .filter((candidate) => candidate.type === "link")
+                      .map((candidate) => ({
+                        value: candidate.id,
+                        label: candidate.name,
+                      }))}
+                    value={linkFieldId || null}
+                    onValueChange={(value) => {
+                      setLinkFieldId(value ?? "");
+                      setLookupFieldId("");
+                    }}
+                    disabled={Boolean(field)}
+                  >
+                    <SelectTrigger
+                      id="lookup-link-field"
+                      className="w-full"
+                      aria-label={t("navigation:tables.lookupLinkField")}
+                    >
+                      <SelectValue
+                        placeholder={t("navigation:tables.lookupLinkField")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tableFields
+                        .filter((candidate) => candidate.type === "link")
+                        .map((candidate) => (
+                          <SelectItem key={candidate.id} value={candidate.id}>
+                            {candidate.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label
+                  htmlFor="lookup-target-field"
+                  className="block space-y-2"
+                >
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("navigation:tables.lookupTargetField")}
+                  </span>
+                  <Select
+                    items={(lookupTargetTable?.fields ?? [])
+                      .filter(
+                        (candidate) =>
+                          candidate.type !== "link" &&
+                          candidate.id !== field?.id,
+                      )
+                      .map((candidate) => ({
+                        value: candidate.id,
+                        label: candidate.name,
+                      }))}
+                    value={lookupFieldId || null}
+                    onValueChange={(value) => setLookupFieldId(value ?? "")}
+                    disabled={Boolean(field) || !lookupTargetTableId}
+                  >
+                    <SelectTrigger
+                      id="lookup-target-field"
+                      className="w-full"
+                      aria-label={t("navigation:tables.lookupTargetField")}
+                    >
+                      <SelectValue
+                        placeholder={
+                          lookupTargetTableId
+                            ? t("navigation:tables.lookupTargetField")
+                            : t("navigation:tables.lookupPickLinkFirst")
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(lookupTargetTable?.fields ?? [])
+                        .filter(
+                          (candidate) =>
+                            candidate.type !== "link" &&
+                            candidate.id !== field?.id,
+                        )
+                        .map((candidate) => (
+                          <SelectItem key={candidate.id} value={candidate.id}>
+                            {candidate.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {t("navigation:tables.lookupSummary")}
                 </p>
               </section>
             )}

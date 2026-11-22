@@ -13,7 +13,7 @@ const GROUPS: { key: string; types: DataTableFieldType[] }[] = [
   { key: "number", types: ["number", "percent", "currency"] },
   { key: "date", types: ["date", "datetime"] },
   { key: "choice", types: ["select", "multiselect", "checkbox"] },
-  { key: "people", types: ["user", "ticket", "link"] },
+  { key: "people", types: ["user", "ticket", "link", "lookup"] },
   { key: "advanced", types: ["json"] },
 ];
 

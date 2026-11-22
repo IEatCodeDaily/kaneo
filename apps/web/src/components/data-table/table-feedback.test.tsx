@@ -43,6 +43,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/fetchers/data-table/data-table", () => ({ getTicketOptions }));
 vi.mock("@/hooks/data-table/use-data-tables", () => ({
   useDataTables: () => ({ data: [] }),
+  useDataTable: () => ({ data: undefined }),
   dataTableKeys: {
     detail: () => [],
     activity: () => [],

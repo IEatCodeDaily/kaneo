@@ -688,6 +688,22 @@ export async function project(
     }
     if (!accessible) field.options = { unavailable: true };
   }
+  // Lookup fields resolve through their link field's relation: without view
+  // access to the TARGET table the resolved values must not ship.
+  for (const field of fields.filter((f) => f.type === "lookup")) {
+    const linkField = fields.find((f) => f.id === field.options?.linkFieldId);
+    const targetTableId = linkField?.options?.targetTableId;
+    const accessible =
+      linkField?.type === "link" &&
+      typeof targetTableId === "string" &&
+      (await allowed(organizationId, targetTableId, userId, "view"));
+    if (accessible) continue;
+    for (const row of rows) {
+      row.values[field.id] = { kind: "lookup", status: "unavailable" };
+      if (row.rawValues) delete row.rawValues[field.id];
+    }
+    field.options = { unavailable: true };
+  }
   return rows;
 }
 /** Recursively redact exact archives at delivery; unresolved historical dependencies fail closed. */

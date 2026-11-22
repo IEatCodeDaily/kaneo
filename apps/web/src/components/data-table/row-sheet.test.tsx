@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type {
@@ -25,6 +26,11 @@ vi.mock("@/components/data-table/table-activity", () => ({
 const ticketsFetcher = vi.fn(async () => []);
 vi.mock("@/fetchers/data-table/row-links", () => ({
   getRowTickets: (...args: unknown[]) => ticketsFetcher(...(args as [])),
+}));
+const linkedFetcher = vi.fn();
+vi.mock("@/fetchers/data-table/links", async (original) => ({
+  ...(await original<typeof import("@/fetchers/data-table/links")>()),
+  getLinkedRecords: (...args: unknown[]) => linkedFetcher(...(args as [])),
 }));
 
 import { RowSheet } from "./row-sheet";
@@ -183,4 +189,98 @@ it("defers the activity + tickets queries until the lower drawer scrolls into vi
   );
   expect(activityRender).toHaveBeenCalled();
   expect(ticketsFetcher).toHaveBeenCalled();
+});
+
+it("expands a truncated link field to the full record list on Show all", async () => {
+  // The server previews 3 records per link cell; the drawer truncates until
+  // the owner asks for the complete list.
+  const linkField: DataTableField = {
+    id: "lf",
+    tableId: "t",
+    name: "Related",
+    type: "link",
+    options: { relationId: "rel", targetTableId: "t2", localMax: "many" },
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+  };
+  const records = ["One", "Two", "Three", "Four", "Five"].map((label, i) => ({
+    id: `r${i}`,
+    label,
+  }));
+  const linkRow: DataTableRow = {
+    id: "r",
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+    values: {
+      lf: {
+        kind: "link",
+        status: "ok",
+        records: records.slice(0, 3),
+        total: 5,
+        hasMore: true,
+        version: "v1",
+      },
+    },
+  };
+  linkedFetcher
+    .mockResolvedValueOnce({
+      records: records.slice(0, 3),
+      total: 5,
+      hasMore: true,
+      nextCursor: 3,
+      version: "v1",
+    })
+    .mockResolvedValueOnce({
+      records: records.slice(3),
+      total: 5,
+      hasMore: false,
+      nextCursor: null,
+      version: "v2",
+    });
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <RowSheet
+        open
+        onOpenChange={vi.fn()}
+        table={table}
+        row={linkRow}
+        rowIndex={0}
+        rowCount={1}
+        fields={[linkField]}
+        members={new Map()}
+        canEdit
+        onCommit={vi.fn().mockResolvedValue(true)}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        hasPrev={false}
+        hasNext={false}
+      />
+    </QueryClientProvider>,
+  );
+  // Scope to the property list: the drawer title also renders the link chips
+  // (primary field), so global text queries would match twice.
+  const sheet = within(
+    document.querySelector('[data-slot="row-fields"]') as HTMLElement,
+  );
+  expect(sheet.getAllByText("One").length).toBeGreaterThan(0);
+  expect(sheet.queryByText("Four")).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "navigation:tables.showAllRecords" }),
+  );
+  await waitFor(() => expect(sheet.getByText("Five")).toBeInTheDocument());
+  // All five render (jsdom lays everything out; the cap note only shows >200).
+  expect(sheet.getByText("Four")).toBeInTheDocument();
+  expect(linkedFetcher).toHaveBeenCalledTimes(2);
+  fireEvent.click(
+    screen.getByRole("button", { name: "navigation:tables.showLessRecords" }),
+  );
+  await waitFor(() =>
+    expect(sheet.queryByText("Four")).not.toBeInTheDocument(),
+  );
 });

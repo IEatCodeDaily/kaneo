@@ -32,6 +32,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getLinkedRecords, type LinkPage } from "@/fetchers/data-table/links";
 import { getRowTickets } from "@/fetchers/data-table/row-links";
 import { useDrawerWidth } from "@/hooks/use-drawer-width";
 import { getColumnIcon } from "@/lib/column";
@@ -40,8 +41,10 @@ import type {
   DataTable,
   DataTableField,
   DataTableRow,
+  LinkedRecord,
+  LinkValue,
 } from "@/types/data-table";
-import { LinkNavigationContext } from "./link-cell";
+import { LinkNavigationContext, linkValue } from "./link-cell";
 
 /**
  * Drawer sections below the fold (linked tickets, activity) defer their
@@ -133,6 +136,14 @@ export function RowSheet({
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const lower = useInViewOnce<HTMLDivElement>();
+  // Per-field expanded link lists (issue: the drawer truncated linked records
+  // at the server's 3-record preview). Scoped by row id so prev/next cannot
+  // leak one row's list into the next.
+  const [fullLinks, setFullLinks] = useState<{
+    rowId: string;
+    values: Record<string, LinkValue>;
+  }>({ rowId: "", values: {} });
+  const [linkBusy, setLinkBusy] = useState(false);
   const { width, startResize } = useDrawerWidth(
     "kaneo:row-drawer-width",
     // Half the viewport until the user drags (clamped by the shared min/max);
@@ -193,6 +204,50 @@ export function RowSheet({
       // Clipboard can be unavailable (permissions); nothing to recover.
     }
   };
+
+  /** Expand one link field to its full record list (server previews 3). */
+  const showAllLinks = async (field: DataTableField) => {
+    if (linkBusy) return;
+    setLinkBusy(true);
+    try {
+      const records: LinkedRecord[] = [];
+      let page: LinkPage | null = null;
+      let cursor = 0;
+      // ponytail: cap at 200 rendered records; longer lists stay paginated in
+      // the cell picker (upgrade: virtualize the drawer list).
+      while (records.length < 200) {
+        page = await getLinkedRecords(
+          table.organizationId,
+          table.id,
+          row.id,
+          field.id,
+          cursor,
+        );
+        records.push(...page.records);
+        if (!page.hasMore || !page.nextCursor) break;
+        cursor = page.nextCursor;
+      }
+      const truncated = (page?.total ?? records.length) > records.length;
+      setFullLinks({
+        rowId: row.id,
+        values: {
+          ...fullLinks.values,
+          [field.id]: {
+            kind: "link",
+            status: "ok",
+            records,
+            total: page?.total ?? records.length,
+            hasMore: truncated,
+            version: page?.version ?? null,
+          },
+        },
+      });
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+  const expandedLinks: Record<string, LinkValue> =
+    fullLinks.rowId === row.id ? fullLinks.values : {};
 
   return (
     <Sheet
@@ -295,48 +350,93 @@ export function RowSheet({
         </SheetTitle>
 
         <section className="flex flex-col gap-0.5" data-slot="row-fields">
-          {fields.map((field) => (
-            <div key={field.id} className="flex min-h-8 items-start gap-2">
-              <span className="flex min-h-8 w-36 shrink-0 items-start gap-1.5 py-2 text-xs text-muted-foreground">
-                <FieldTypeIcon type={field.type} />
-                <span className="min-w-0">
-                  <span className="block truncate">{field.name}</span>
-                  {field.options?.description && (
-                    <span className="block whitespace-normal text-xs font-normal">
-                      {field.options.description}
-                    </span>
-                  )}
+          {fields.map((field) => {
+            const cell = linkValue(row.values[field.id]);
+            const full = expandedLinks[field.id];
+            const truncated =
+              !full &&
+              field.type === "link" &&
+              cell?.status === "ok" &&
+              ((cell.total ?? 0) > cell.records.length || cell.hasMore);
+            const displayRow =
+              full && field.type === "link"
+                ? { ...row, values: { ...row.values, [field.id]: full } }
+                : row;
+            return (
+              <div key={field.id} className="flex min-h-8 items-start gap-2">
+                <span className="flex min-h-8 w-36 shrink-0 items-start gap-1.5 py-2 text-xs text-muted-foreground">
+                  <FieldTypeIcon type={field.type} />
+                  <span className="min-w-0">
+                    <span className="block truncate">{field.name}</span>
+                    {field.options?.description && (
+                      <span className="block whitespace-normal text-xs font-normal">
+                        {field.options.description}
+                      </span>
+                    )}
+                  </span>
                 </span>
-              </span>
-              {/* Key/value list: every value starts on one column, numbers too. */}
-              <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
-                <DataTableCellContent
-                  expanded
-                  row={row}
-                  field={field}
-                  members={members}
-                  canEdit={canEdit}
-                  isEditing={
-                    editing?.rowId === row.id && editing.fieldId === field.id
-                  }
-                  onEditStart={() =>
-                    setEditing({ rowId: row.id, fieldId: field.id })
-                  }
-                  onEditEnd={() => setEditing(null)}
-                  onCommit={async (value) => {
-                    if (await onCommit(row, field, value)) {
-                      setEditing((current) =>
-                        current?.rowId === row.id &&
-                        current.fieldId === field.id
-                          ? null
-                          : current,
-                      );
+                {/* Key/value list: every value starts on one column, numbers too. */}
+                <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
+                  <DataTableCellContent
+                    expanded
+                    row={displayRow}
+                    field={field}
+                    members={members}
+                    canEdit={canEdit}
+                    isEditing={
+                      editing?.rowId === row.id && editing.fieldId === field.id
                     }
-                  }}
-                />
+                    onEditStart={() =>
+                      setEditing({ rowId: row.id, fieldId: field.id })
+                    }
+                    onEditEnd={() => setEditing(null)}
+                    onCommit={async (value) => {
+                      if (await onCommit(row, field, value)) {
+                        setEditing((current) =>
+                          current?.rowId === row.id &&
+                          current.fieldId === field.id
+                            ? null
+                            : current,
+                        );
+                      }
+                    }}
+                  />
+                </div>
+                {(truncated || (full && field.type === "link")) && (
+                  <div className="flex flex-col items-start gap-1 py-2">
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      disabled={linkBusy}
+                      onClick={() => {
+                        if (full)
+                          setFullLinks((current) => {
+                            const values = { ...current.values };
+                            delete values[field.id];
+                            return { rowId: row.id, values };
+                          });
+                        else void showAllLinks(field);
+                      }}
+                    >
+                      {full
+                        ? t("navigation:tables.showLessRecords")
+                        : t("navigation:tables.showAllRecords", {
+                            total: cell?.total ?? 0,
+                          })}
+                    </Button>
+                    {full && (full.total ?? 0) > full.records.length && (
+                      <p className="px-2 text-xs text-muted-foreground">
+                        {t("navigation:tables.linkedCapped", {
+                          count: full.records.length,
+                          total: full.total ?? 0,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
 
         <details

@@ -18,6 +18,7 @@ export const FIELD_TYPES = [
   "json",
   "link",
   "ticket",
+  "lookup",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
@@ -45,6 +46,9 @@ const PG_TYPES = {
   // Task ids; ownership is checked against the org in the controller, which
   // has the org context coerceValue lacks.
   ticket: "jsonb",
+  // Lookup resolves through a link relation at read time; there is no
+  // physical column. jsonb = the resolved value shape (array of target values).
+  lookup: "jsonb",
 } as const satisfies Record<FieldType, string>;
 
 export type PgType = (typeof PG_TYPES)[FieldType];
@@ -126,6 +130,10 @@ const FIELD_OPTIONS: Partial<Record<FieldType, v.GenericSchema>> = {
     ),
     multiple: v.optional(v.boolean()),
   }),
+  lookup: v.object({
+    linkFieldId: v.pipe(v.string(), v.minLength(1)),
+    targetFieldId: v.pipe(v.string(), v.minLength(1)),
+  }),
 };
 
 export function fieldOptionsSchema(type: FieldType): v.GenericSchema {
@@ -176,6 +184,11 @@ function choiceIds(field: CoercibleField): Set<string> | null {
  * cannot be stored in the field's column type. null clears the cell.
  */
 export function coerceValue(field: CoercibleField, value: unknown): unknown {
+  // Computed at read time through the link relation — every write rejects,
+  // including null (the physical column does not exist to clear).
+  if (field.type === "lookup") {
+    badRequest("Lookup fields are computed from links and cannot be written");
+  }
   if (value === null || value === undefined) {
     if (field.options?.required === true) {
       badRequest("This field is required");

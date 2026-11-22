@@ -1,6 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +70,37 @@ export function LinkCellView({
   const { t } = useTranslation();
   const open = useContext(OpenRecordContext);
   const cell = linkValue(value);
+  const wrapRef = useRef<HTMLSpanElement | null>(null);
+  // Non-expanded cells fit chips to the measured width: the visible count
+  // reacts to column resizes (ResizeObserver) instead of freezing at the
+  // initial width. jsdom has no ResizeObserver — render everything there.
+  const [visible, setVisible] = useState<number>(Number.POSITIVE_INFINITY);
+  const records = cell?.records ?? [];
+  const rewrap = useCallback(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const items = [...el.querySelectorAll<HTMLElement>("[data-link-item]")];
+    let count = records.length;
+    const fits = (item: HTMLElement) =>
+      item.offsetTop + item.offsetHeight <= el.clientHeight + 1 &&
+      item.offsetLeft + item.offsetWidth <= el.clientWidth + 1;
+    while (count > 1) {
+      const item = items[count - 1];
+      if (!item || fits(item)) break;
+      count -= 1;
+    }
+    setVisible(count);
+  }, [records]);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      setVisible(Number.POSITIVE_INFINITY),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  useLayoutEffect(rewrap, [rewrap]);
   if (cell?.status === "unavailable")
     return (
       <span className="text-muted-foreground">
@@ -70,12 +109,14 @@ export function LinkCellView({
     );
   if (!cell?.records.length)
     return <span className="text-faint-foreground">—</span>;
-  const shown = expanded ? cell.records : cell.records.slice(0, 1);
+  const shown = expanded ? cell.records : cell.records.slice(0, visible);
+  const overflow = (cell.total ?? 0) - shown.length;
   return (
     <span
+      ref={expanded ? undefined : wrapRef}
       className={cn(
-        "flex w-full min-w-0 items-center gap-1",
-        expanded ? "flex-wrap" : "overflow-hidden",
+        "flex w-full min-w-0 items-start gap-1",
+        expanded ? "flex-wrap" : "flex-wrap content-start overflow-hidden",
       )}
     >
       {shown.map((record) => (
@@ -85,6 +126,7 @@ export function LinkCellView({
           variant="outline"
           size="xs"
           data-link-chip
+          {...(expanded ? {} : { "data-link-item": true })}
           className="min-w-0 max-w-full justify-start font-normal"
           onClick={(event) => {
             event.stopPropagation();
@@ -94,9 +136,12 @@ export function LinkCellView({
           <span className="truncate">{record.label}</span>
         </Button>
       ))}
-      {(cell.total ?? 0) > shown.length && (
-        <span className="shrink-0 text-xs text-muted-foreground">
-          +{(cell.total ?? 0) - shown.length}
+      {overflow > 0 && (
+        <span
+          data-link-item={!expanded || undefined}
+          className="shrink-0 self-center text-xs text-muted-foreground"
+        >
+          +{overflow}
         </span>
       )}
     </span>
