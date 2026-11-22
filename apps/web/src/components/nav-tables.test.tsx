@@ -43,7 +43,9 @@ vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "u-1" } }),
 }));
 vi.mock("@/hooks/queries/organization/use-active-organization", () => ({
-  default: () => ({ data: { id: "org-1", slug: "acme" } }),
+  default: () => ({
+    data: { id: "org-1", slug: "acme", tablesEnabled: true },
+  }),
 }));
 vi.mock("@/hooks/use-organization-permission", () => ({
   useOrganizationPermission: () => ({ canCreateBoards: () => true }),
@@ -60,6 +62,7 @@ vi.mock("@/components/shared/modals/create-data-table-modal", () => ({
 vi.mock("@/components/ui/sidebar", async () => {
   const { cloneElement } = await import("react");
   return {
+    useSidebar: () => ({ isMobile: false }),
     SidebarGroup: ({
       children,
       className,
@@ -104,6 +107,11 @@ vi.mock("@/components/ui/sidebar", async () => {
         data-active={isActive ? "true" : "false"}
         {...props}
       >
+        {children}
+      </button>
+    ),
+    SidebarMenuAction: ({ children, ...props }: { children?: ReactNode }) => (
+      <button type="button" {...props}>
         {children}
       </button>
     ),
@@ -269,9 +277,12 @@ describe("NavTables (generic resource section)", () => {
 
     // The header ⋯ trigger carries the accessible name; its menu is the only
     // one listing a Show action for Beta.
-    const headerTrigger = container
-      .querySelector("div.absolute")
-      ?.querySelector("button");
+    const headerTrigger = Array.from(
+      container.querySelectorAll("div.absolute button"),
+    ).find(
+      (button) =>
+        button.getAttribute("aria-label") === "navigation:sidebar.more",
+    );
     expect(headerTrigger?.getAttribute("aria-label")).toBe(
       "navigation:sidebar.more",
     );

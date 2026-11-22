@@ -212,9 +212,9 @@ describe("ResourceSection", () => {
       ],
     });
 
-    const trigger = screen.getByRole("button", { name: "Row actions" });
-    expect(trigger).toBeTruthy();
     // One dropdown + one context menu per item, both from the same list.
+    const triggers = screen.getAllByRole("button", { name: "Row actions" });
+    expect(triggers.length).toBe(2);
     const hides = screen.getAllByRole("menuitem", {
       name: /Hide from sidebar/,
     });

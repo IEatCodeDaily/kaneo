@@ -99,6 +99,7 @@ vi.mock("@/components/shared/modals/create-data-table-modal", () => ({
 vi.mock("@/components/ui/sidebar", async () => {
   const { cloneElement } = await import("react");
   return {
+    useSidebar: () => ({ isMobile: false }),
     SidebarGroup: ({
       children,
       className,
