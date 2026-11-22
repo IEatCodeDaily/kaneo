@@ -759,6 +759,10 @@ const GridRow = memo(function GridRow({
             // the row box and break horizontal stick.
             top,
             gridTemplateColumns: gridTemplate,
+            // Pin the row track: an auto track grows with a tall cell, and
+            // the link-chip fit pass (max-h-full) then measures the content
+            // height instead of the visible row — chips never clamp.
+            gridTemplateRows: `${rowHeight}px`,
             width: totalWidth,
           }}
         >

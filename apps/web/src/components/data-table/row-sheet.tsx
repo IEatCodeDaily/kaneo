@@ -237,14 +237,16 @@ export function RowSheet({
         LINK_AUTO_EXPAND_CAP,
       )
         .then((value) => {
-          setFullLinks((current) =>
-            current.rowId !== row.id || current.values[field.id]
-              ? current
-              : {
-                  rowId: row.id,
-                  values: { ...current.values, [field.id]: value },
-                },
-          );
+          setFullLinks((current) => {
+            if (current.rowId !== row.id)
+              return { rowId: row.id, values: { [field.id]: value } };
+            // A manual fetch (or an earlier walk) already owns this field.
+            if (current.values[field.id]) return current;
+            return {
+              rowId: row.id,
+              values: { ...current.values, [field.id]: value },
+            };
+          });
         })
         .catch(() => {
           // Keep the preview + its inline "+N" control; the pick flow and

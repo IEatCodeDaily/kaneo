@@ -598,25 +598,20 @@ for (const [theme, tag, viewport, scale] of [
               overflow: cell.querySelector(".overflow-hidden") ? true : false,
             };
           });
+        // Keyboard resize: works at every viewport (a pointer drag on a wide
+        // column misses on phones) and Home resets, so an earlier run's
+        // autosaved width cannot leak into this run's baseline.
+        const handle = header.getByRole("separator").first();
+        await handle.focus();
+        await handle.press("Home");
+        await page.waitForTimeout(400);
         const before = await measure();
         if (!before || before.visible < 1)
           fails.push(`chip-fit baseline ${JSON.stringify(before)}`);
-        // Drag the column's resize handle 260px right: the fit pass must
-        // re-render more chips within the SAME row height.
-        const handle = header.getByRole("separator").first();
-        const hb = await handle.boundingBox();
-        if (!hb) fails.push("no column resize handle");
         else {
-          await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
-          await page.mouse.down();
-          await page.mouse.move(
-            hb.x + hb.width / 2 + 260,
-            hb.y + hb.height / 2,
-            {
-              steps: 8,
-            },
-          );
-          await page.mouse.up();
+          // +260px in ten steps: the fit pass must re-render more chips
+          // within the SAME row height.
+          for (let i = 0; i < 26; i += 1) await handle.press("ArrowRight");
           await page.waitForTimeout(600);
           const after = await measure();
           if (!after) fails.push("chip-fit cell missing after resize");
@@ -634,6 +629,8 @@ for (const [theme, tag, viewport, scale] of [
                 `cell height changed on rewrap (${before.height} -> ${after.height})`,
               );
           }
+          // Leave the saved view at the default width for later states.
+          await handle.press("Home");
         }
       } catch (error) {
         fails.push(`chip-fit state error: ${error}`);
@@ -642,6 +639,9 @@ for (const [theme, tag, viewport, scale] of [
           .catch(() => {});
       }
     } else if (name === "table-row-chrome") {
+      // Values of the row the delete flow removes, so `finally` can restore
+      // it even when the try block failed midway.
+      let lastRowValues = {};
       try {
         await page.locator('[role="row"][aria-rowindex="2"]').waitFor();
         // Select-column geometry: the header select-all checkbox and the row
@@ -696,8 +696,9 @@ for (const [theme, tag, viewport, scale] of [
             );
           await page.mouse.move(2, 2);
         }
-        // Right-click the LAST data row → Open row + Delete row → destructive
-        // confirm → row deleted; restore it through the API for later states.
+        // Right-click a visible data row → Open row + Delete row → destructive
+        // confirm → row deleted. Restore it (with its values) through the API
+        // so later states keep their row numbers and cell contents.
         const countRows = () =>
           page.evaluate(
             () =>
@@ -706,6 +707,16 @@ for (const [theme, tag, viewport, scale] of [
               ).length,
           );
         const beforeCount = await countRows();
+        const rowQuery = () =>
+          api
+            .post(
+              `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/row-query`,
+              { data: {}, headers: { Origin: BASE } },
+            )
+            .then((r) => r.json());
+        const beforeRows = await rowQuery();
+        lastRowValues =
+          beforeRows?.rows?.[beforeRows.rows.length - 1]?.values ?? {};
         const rowBox = await page.evaluate(() => {
           const rows = [...document.querySelectorAll('[role="row"]')].filter(
             (r) => r.getAttribute("aria-rowindex") !== "1",
@@ -715,11 +726,15 @@ for (const [theme, tag, viewport, scale] of [
         });
         if (!rowBox) fails.push("no data row to right-click");
         else {
-          await page.mouse.click(
-            rowBox.x + Math.min(400, rowBox.w / 2),
-            rowBox.y + rowBox.h / 2,
-            { button: "right" },
+          // Keep the click inside the viewport (the row extends past narrow
+          // phones) and off the frozen gutter.
+          const clickX = Math.min(
+            rowBox.x + 200,
+            page.viewportSize().width - 10,
           );
+          await page.mouse.click(clickX, rowBox.y + rowBox.h / 2, {
+            button: "right",
+          });
           const menu = page.locator('[data-slot="context-menu-content"]');
           await menu.waitFor();
           const items = await menu.getByRole("menuitem").allInnerTexts();
@@ -750,20 +765,26 @@ for (const [theme, tag, viewport, scale] of [
           .screenshot({ path: `${OUT}/row-chrome-debug.png` })
           .catch(() => {});
       } finally {
-        // Restore the deleted row so sibling states keep their row numbers.
+        // Restore the deleted row (with its values) so sibling states keep
+        // their row numbers and cell contents.
         try {
           const rows = await api
-            .get(
+            .post(
               `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/row-query`,
-              { headers: { Origin: BASE } },
+              { data: {}, headers: { Origin: BASE } },
             )
             .then((r) => r.json());
           if ((rows?.total ?? 0) < 4)
             await api.post(
               `${BASE}/api/data-table/organization/${org.id}/${tbl.id}/rows`,
-              { data: { values: {} }, headers: { Origin: BASE } },
+              {
+                data: { values: lastRowValues },
+                headers: { Origin: BASE },
+              },
             );
-        } catch {}
+        } catch (error) {
+          fails.push(`row restore failed: ${error}`);
+        }
       }
     } else if (name === "table-link-pick") {
       try {
