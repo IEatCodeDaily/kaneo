@@ -398,9 +398,12 @@ export function DataTableCellView({
       if (!values.length) return <EmptyValue />;
       return (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {values.map((item, index) => (
+          {values.map((item) => (
+            // Read-only scalars from a linked row: value + position is the
+            // only identity a raw cell value has.
+            // biome-ignore lint/suspicious/noArrayIndexKey: arbitrary scalar list
             <span
-              key={`${index}:${typeof item}:${String(item)}`}
+              key={`${values.indexOf(item)}:${String(item)}`}
               className="min-w-0 max-w-full truncate"
             >
               <DataTableCellView
