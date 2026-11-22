@@ -55,9 +55,13 @@ afterEach(cleanup);
 
 it("renders every field in order with its shared editor, focusing the first", async () => {
   mount();
+  // Lookup values resolve server-side: the form never renders an editor for it.
   expect(
     screen.getAllByRole("group").map((node) => node.getAttribute("aria-label")),
-  ).toEqual(fields.map((field) => field.name));
+  ).toEqual(
+    fields.filter((field) => field.type !== "lookup").map((field) => field.name),
+  );
+  expect(screen.queryByRole("group", { name: "lookup" })).toBeNull();
   for (const type of [
     "text",
     "longtext",

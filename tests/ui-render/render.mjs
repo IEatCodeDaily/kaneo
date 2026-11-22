@@ -188,6 +188,69 @@ async function seed(api) {
       [relation.id]: [customer.id],
     },
   });
+  // Lookup surface: the invoice's Customer field resolving the customer's
+  // credit limit (read-only value through the link).
+  const put = (path, data) =>
+    api.put(`${BASE}/api${path}`, {
+      data,
+      headers: { "content-type": "application/json", Origin: BASE },
+    });
+  const creditLimit = await post(
+    `/data-table/organization/${org.id}/${customers.id}/fields`,
+    { name: "Credit limit", type: "currency", options: { code: "USD" } },
+  );
+  const putRes = await put(
+    `/data-table/organization/${org.id}/${customers.id}/rows/${customer.id}/cells/${creditLimit.id}`,
+    { value: 1200 },
+  );
+  if (!putRes.ok())
+    throw new Error(`seed cell PUT -> ${putRes.status()} ${await putRes.text()}`);
+  const lookupField = await post(
+    `/data-table/organization/${org.id}/${invoices.id}/fields`,
+    {
+      name: "Customer limit",
+      type: "lookup",
+      options: { linkFieldId: relation.id, targetFieldId: creditLimit.id },
+    },
+  );
+  // Drawer show-all: five linked vendors on the invoice (server previews 3).
+  const alsoBought = await post(
+    `/data-table/organization/${org.id}/${invoices.id}/fields`,
+    {
+      name: "Also bought from",
+      type: "link",
+      options: {
+        targetTableId: customers.id,
+        inverseName: "Invoice bundles",
+        cardinality: "many-to-many",
+      },
+    },
+  );
+  const vendorRows = [];
+  for (const name of [
+    "VND-001 · Acme",
+    "VND-002 · Globex",
+    "VND-003 · Initech",
+    "VND-004 · Umbrella",
+    "VND-005 · Stark",
+  ]) {
+    vendorRows.push(
+      (
+        await post(`/data-table/organization/${org.id}/${customers.id}/rows`, {
+          values: { [customerNumber.id]: name },
+        })
+      ).id,
+    );
+  }
+  const invoicePage = await post(
+    `/data-table/organization/${org.id}/${invoices.id}/row-query`,
+    {},
+  );
+  const firstInvoice = invoicePage.rows[0];
+  await post(
+    `/data-table/organization/${org.id}/${invoices.id}/rows/${firstInvoice.id}/links/${alsoBought.id}`,
+    { add: vendorRows },
+  );
   // One team + one agent so the default-avatar surfaces render their seeded
   // glyphs (team card header, agent manager rows).
   const team = await post("/auth/organization/create-team", {
@@ -204,7 +267,8 @@ async function seed(api) {
 
 await healthy();
 const api = await request.newContext();
-const { org, board, tbl, tasks, invoices, customers } = await seed(api);
+const { org, board, tbl, tasks, invoices, customers, lookupField } =
+  await seed(api);
 const state = await api.storageState();
 const slug = org.slug;
 let pages = {
@@ -214,6 +278,8 @@ let pages = {
   table: `/dashboard/organization/${slug}/table/${tbl.id}`,
   "table-link-picker": `/dashboard/organization/${slug}/table/${invoices.id}`,
   "table-link-pick": `/dashboard/organization/${slug}/table/${invoices.id}`,
+  "table-lookup": `/dashboard/organization/${slug}/table/${invoices.id}`,
+  "table-drawer-links": `/dashboard/organization/${slug}/table/${invoices.id}`,
   "table-link-reciprocal": `/dashboard/organization/${slug}/table/${customers.id}`,
   // Ticket page: "Included in" lists the row whose ticket cell holds KFL-1.
   ticket: `/dashboard/${slug}/tickets/KFL-1`,
@@ -413,7 +479,61 @@ for (const [theme, tag, viewport, scale] of [
       ...BAD.filter((b) => text.includes(b)).map((b) => `error text: ${b}`),
     ];
     if (text.trim().length < 40) fails.push("page rendered no content");
-    if (name === "table-link-pick") {
+    if (name === "table-lookup") {
+      try {
+        // Lookup cell: resolves the linked customer's credit limit (read-only).
+        const cell = page
+          .locator('[role="gridcell"]')
+          .filter({ hasText: /1,200|1200/ })
+          .first();
+        await cell.waitFor();
+        const header = page
+          .getByRole("columnheader", { name: /Customer limit/ })
+          .first();
+        await header.waitFor();
+      } catch (error) {
+        fails.push(`lookup state error: ${error}`);
+        await page.screenshot({ path: `${OUT}/lookup-debug.png` }).catch(() => {});
+      }
+    } else if (name === "table-drawer-links") {
+      try {
+        // Drawer Show all: the link field previews 3 of 5; expand to the full list.
+        await page.locator("[data-link-chip]").first().waitFor();
+        await page
+          .getByRole("button", { name: /Expand row 1/ })
+          .first()
+          .click();
+        const sheet = page.locator('[data-slot="row-fields"]');
+        await sheet.getByText("VND-001 · Acme").first().waitFor();
+        if (await page.getByText("VND-004 · Umbrella").count())
+          fails.push("drawer listed all records without Show all");
+        await sheet
+          .getByRole("button", { name: /Show all \(5\)/ })
+          .first()
+          .click();
+        await sheet.getByText("VND-005 · Stark").first().waitFor();
+        for (const vendor of [
+          "VND-001 · Acme",
+          "VND-002 · Globex",
+          "VND-003 · Initech",
+          "VND-004 · Umbrella",
+          "VND-005 · Stark",
+        ]) {
+          if (!(await sheet.getByText(vendor).count()))
+            fails.push(`expanded drawer missing ${vendor}`);
+        }
+        await sheet
+          .getByRole("button", { name: /Show less/ })
+          .first()
+          .click();
+        await sheet.getByText("VND-005 · Stark").waitFor({ state: "hidden" });
+      } catch (error) {
+        fails.push(`drawer-links state error: ${error}`);
+        await page
+          .screenshot({ path: `${OUT}/drawer-links-debug.png` })
+          .catch(() => {});
+      }
+    } else if (name === "table-link-pick") {
       try {
         // teams.36 regression: picking a record flashed the optimistic chip,
         // then reverted. Drive the real picker end to end and assert the swap

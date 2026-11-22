@@ -304,8 +304,9 @@ it("edit modal shows the stored relation: cardinality pre-selected, target table
       name: "navigation:tables.linkCardinality.many-to-one",
     }),
   ).toBeDisabled();
-  // The target table selector names the linked table while closed.
-  const trigger = screen.getByRole("button", {
+  // The target table selector names the linked table while closed (Base UI
+  // Select trigger = combobox role).
+  const trigger = screen.getByRole("combobox", {
     name: "navigation:tables.linkTargetTable",
   });
   expect(trigger).toHaveTextContent("Customers");

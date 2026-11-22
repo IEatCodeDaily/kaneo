@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type {
@@ -262,19 +263,24 @@ it("expands a truncated link field to the full record list on Show all", async (
       />
     </QueryClientProvider>,
   );
-  expect(screen.getByText("One")).toBeInTheDocument();
-  expect(screen.queryByText("Four")).not.toBeInTheDocument();
+  // Scope to the property list: the drawer title also renders the link chips
+  // (primary field), so global text queries would match twice.
+  const sheet = within(
+    document.querySelector('[data-slot="row-fields"]') as HTMLElement,
+  );
+  expect(sheet.getAllByText("One").length).toBeGreaterThan(0);
+  expect(sheet.queryByText("Four")).not.toBeInTheDocument();
   fireEvent.click(
     screen.getByRole("button", { name: "navigation:tables.showAllRecords" }),
   );
-  await waitFor(() => expect(screen.getByText("Five")).toBeInTheDocument());
+  await waitFor(() => expect(sheet.getByText("Five")).toBeInTheDocument());
   // All five render (jsdom lays everything out; the cap note only shows >200).
-  expect(screen.getByText("Four")).toBeInTheDocument();
+  expect(sheet.getByText("Four")).toBeInTheDocument();
   expect(linkedFetcher).toHaveBeenCalledTimes(2);
   fireEvent.click(
     screen.getByRole("button", { name: "navigation:tables.showLessRecords" }),
   );
   await waitFor(() =>
-    expect(screen.queryByText("Four")).not.toBeInTheDocument(),
+    expect(sheet.queryByText("Four")).not.toBeInTheDocument(),
   );
 });

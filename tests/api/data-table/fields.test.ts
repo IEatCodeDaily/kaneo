@@ -62,7 +62,17 @@ describe("field registry", () => {
         required: true,
       }).success,
     ).toBe(true);
-    expect(FIELD_TYPES).toHaveLength(16);
+    expect(FIELD_TYPES).toHaveLength(17);
+    // Lookup resolves at read time: its config is the link + target field ids.
+    const lookup = fieldOptionsSchema("lookup");
+    expect(v.safeParse(lookup, {}).success).toBe(false);
+    expect(
+      v.safeParse(lookup, { linkFieldId: "l", targetFieldId: "f" }).success,
+    ).toBe(true);
+    expect(
+      v.safeParse(lookup, { linkFieldId: "l", targetFieldId: "f", other: 1 })
+        .success,
+    ).toBe(false);
   });
 });
 

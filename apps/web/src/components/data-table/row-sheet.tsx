@@ -402,7 +402,7 @@ export function RowSheet({
                   />
                 </div>
                 {(truncated || (full && field.type === "link")) && (
-                  <div className="flex flex-col items-start gap-0.5 py-2">
+                  <div className="flex flex-col items-start gap-1 py-2">
                     <Button
                       variant="ghost"
                       size="xs"
