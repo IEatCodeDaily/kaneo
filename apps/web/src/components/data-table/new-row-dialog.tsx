@@ -31,6 +31,8 @@ export function NewRowDialog({
 }) {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
+  // Lookup values resolve server-side; there is nothing to enter.
+  const writableFields = fields.filter((field) => field.type !== "lookup");
   const [values, setValues] = useState<Record<string, unknown>>(() => ({
     ...Object.fromEntries(
       fields
@@ -53,7 +55,7 @@ export function NewRowDialog({
   const pending = useRef(false);
   const submit = async () => {
     if (pending.current) return;
-    const missing = fields.find((field) => {
+    const missing = writableFields.find((field) => {
       const value = values[field.id];
       return (
         fieldIsRequired(field) &&
@@ -122,7 +124,7 @@ export function NewRowDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
-            {fields.map((field) => {
+            {writableFields.map((field) => {
               return (
                 <fieldset
                   key={field.id}

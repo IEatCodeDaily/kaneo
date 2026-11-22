@@ -322,7 +322,12 @@ export function DataTableToolbar(props: Props) {
         <PopoverContent align="start" inset="panel" className="w-120">
           <FilterBuilder
             {...props}
-            fields={fields.filter((field) => !field.options?.unavailable)}
+            fields={fields.filter(
+              (field) =>
+                !field.options?.unavailable &&
+                // Lookup resolves only on reads; the query API rejects filters.
+                field.type !== "lookup",
+            )}
           />
         </PopoverContent>
       </Popover>

@@ -15,11 +15,13 @@ vi.mock("react-i18next", async (original) => ({
 }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("@tanstack/react-router", () => ({ Link: () => null }));
-const { createField } = vi.hoisted(() => ({
+const { createField, tablesData } = vi.hoisted(() => ({
   createField: vi.fn().mockResolvedValue({}),
+  tablesData: { data: [] as Array<{ id: string; name: string }> },
 }));
 vi.mock("@/hooks/data-table/use-data-tables", () => ({
-  useDataTables: () => ({ data: [] }),
+  useDataTables: () => tablesData,
+  useDataTable: () => ({ data: undefined }),
   useDataTableMutations: () => ({
     createField: { mutateAsync: createField, isPending: false },
     updateField: { isPending: false },
@@ -255,4 +257,56 @@ it("prefills defaults and help, while clearing stays explicit null", async () =>
     screen.getByRole("button", { name: "navigation:tables.createRow" }),
   );
   await waitFor(() => expect(create).toHaveBeenCalledWith({ f: null }));
+});
+
+it("edit modal shows the stored relation: cardinality pre-selected, target table named", () => {
+  // teams follow-up: opening the edit modal for an EXISTING link field left
+  // the 2x2 cardinality selector unselected (only create pre-filled it).
+  tablesData.data = [{ id: "t2", name: "Customers" }];
+  const linkField: DataTableField = {
+    id: "lf",
+    tableId: "t",
+    name: "Customer",
+    type: "link",
+    options: {
+      relationId: "rel",
+      targetTableId: "t2",
+      cardinality: "one-to-many",
+      side: "source",
+      localMax: "many",
+    },
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+  };
+  render(
+    <FieldOptionsDialog
+      organizationId="o"
+      tableId="t"
+      field={linkField}
+      open
+      onOpenChange={vi.fn()}
+      tableFields={[linkField]}
+    />,
+  );
+  const group = screen.getByRole("radiogroup", {
+    name: "navigation:tables.linkRelationship",
+  });
+  expect(
+    screen
+      .getByRole("radio", { name: "navigation:tables.linkCardinality.one-to-many" })
+      .getAttribute("aria-checked"),
+  ).toBe("true");
+  expect(
+    screen.getByRole("radio", {
+      name: "navigation:tables.linkCardinality.many-to-one",
+    }),
+  ).toBeDisabled();
+  // The target table selector names the linked table while closed.
+  const trigger = screen.getByRole("button", {
+    name: "navigation:tables.linkTargetTable",
+  });
+  expect(trigger).toHaveTextContent("Customers");
+  expect(group).toHaveAttribute("data-disabled", "true");
+  tablesData.data = [];
 });

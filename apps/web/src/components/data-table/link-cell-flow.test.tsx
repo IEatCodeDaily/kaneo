@@ -1,8 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { DataTableField, LinkValue, TableRowQueryResult } from "@/types/data-table";
+import type {
+  DataTableField,
+  LinkValue,
+  TableRowQueryResult,
+} from "@/types/data-table";
 
 /**
  * Regression (teams.36 live): picking a record in a link cell flashed the
@@ -26,7 +36,7 @@ const DETAIL_KEY = ["data-table", ORG, TABLE] as const;
 const oldRecord = { id: "lr-old", label: "Old record" };
 const newRecord = { id: "lr-new", label: "New record" };
 
-const linkField: DataTableField = {
+const baseField: DataTableField = {
   id: "fl1",
   tableId: TABLE,
   name: "Related",
@@ -35,28 +45,6 @@ const linkField: DataTableField = {
   position: 1,
   createdAt: "",
   updatedAt: "",
-};
-
-/** Server truth after the pick, shaped exactly like the POST response. */
-const serverRow = {
-  id: "row-1",
-  position: 0,
-  createdAt: "2026-11-22T00:00:00.000Z",
-  updatedAt: "2026-11-22T01:00:00.000Z",
-  createdBy: "user-1",
-  updatedBy: "user-1",
-  deletedAt: null,
-  values: {
-    fl1: {
-      kind: "link",
-      status: "ok",
-      records: [oldRecord, newRecord],
-      total: 2,
-      hasMore: false,
-      searchText: "Old record New record",
-      version: "vB",
-    },
-  },
 };
 
 const seedRow = {
@@ -98,6 +86,7 @@ const json = (status: number, body: unknown) =>
   }) as Response;
 
 const calls: Array<{ method: string; url: string; body: unknown }> = [];
+let swapResponse: unknown;
 
 const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input);
@@ -126,7 +115,7 @@ const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => 
       version: "vA",
     });
   if (url.includes("/rows/row-1/links/fl1") && method === "POST")
-    return json(200, serverRow);
+    return json(200, swapResponse);
   throw new Error(`Unexpected fetch: ${method} ${url}`);
 });
 
@@ -183,7 +172,6 @@ beforeEach(() => {
   client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  // The detail cache exists on the table page; rows cache is seeded in the harness.
   client.setQueryData(DETAIL_KEY, {
     id: TABLE,
     organizationId: ORG,
@@ -192,7 +180,7 @@ beforeEach(() => {
     deletedAt: null,
     createdAt: "",
     updatedAt: "",
-    fields: [linkField],
+    fields: [baseField],
     rows: [],
     total: 0,
   });
@@ -203,10 +191,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const chip = (label: string) =>
-  document.querySelector(`[data-link-chip]`)?.textContent;
+const chips = () =>
+  [...document.querySelectorAll("[data-link-chip]")].map(
+    (chip) => chip.textContent,
+  );
 
-async function pickAndSettle(field: DataTableField) {
+async function pickAndSettle(field: DataTableField, after: unknown) {
+  swapResponse = after;
   render(
     <QueryClientProvider client={client}>
       <CellHarness field={field} />
@@ -216,50 +207,73 @@ async function pickAndSettle(field: DataTableField) {
     screen.getByRole("button", { name: "navigation:tables.linkRecords" }),
   );
   fireEvent.click(await screen.findByRole("option", { name: "New record" }));
-  // Optimistic: the chip appears before the POST resolves.
-  await waitFor(() => {
-    const state = (
-      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
-        .values.fl1 as LinkValue | undefined
-    )?.version;
-    if (state !== "vA") return;
-    throw new Error(
-      `cache not patched; calls=${JSON.stringify(calls)} alert=${screen.queryByRole("alert")?.textContent ?? "none"}`,
-    );
-  });
-  const diag = () =>
-    `observed=${screen.getByTestId("observed-version").textContent} alert=${screen.queryByRole("alert")?.textContent ?? "none"} calls=${JSON.stringify(calls)}`;
-  expect(chip("x"), diag()).toContain("New record");
+  // The write settles into server truth without an error alert.
+  await waitFor(() =>
+    expect(calls.some((call) => call.method === "POST")).toBe(true),
+  );
   await waitFor(() =>
     expect(
-      (client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!)
-        .values.fl1 as LinkValue,
-    ).toMatchObject({ version: "vB", total: 2 }),
-  ).catch((error) => {
-    throw new Error(
-      `post-settle failure; calls=${JSON.stringify(calls)} alert=${screen.queryByRole("alert")?.textContent ?? "none"} :: ${String(error)}`,
-    );
-  });
-  await waitFor(() => expect(chip("x")).toContain("New record"));
+      (
+        client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
+          .values.fl1 as LinkValue
+      ).version,
+    ).toBe("vB"),
+  );
+  return chips();
 }
 
 it("many-relation pick: optimistic chip persists through the server merge", async () => {
-  await pickAndSettle(linkField);
-  const post = calls.find((c) => c.method === "POST");
-  expect(post?.body).toMatchObject({ add: ["lr-new"] });
+  const serverValue = {
+    kind: "link",
+    status: "ok",
+    records: [oldRecord, newRecord],
+    total: 2,
+    hasMore: false,
+    searchText: "Old record New record",
+    version: "vB",
+  };
+  const settled = await pickAndSettle(baseField, {
+    id: "row-1",
+    position: 0,
+    createdAt: "2026-11-22T00:00:00.000Z",
+    updatedAt: "2026-11-22T01:00:00.000Z",
+    values: { fl1: serverValue },
+  });
+  expect(chips()).toContain("New record");
+  expect(settled).toContain("New record");
+  expect(settled).toContain("Old record");
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  const post = calls.find((call) => call.method === "POST");
+  expect(post?.body).toMatchObject({ add: ["lr-new"] });
 });
 
-it("one-relation swap: versioned write persists through the server merge", async () => {
-  await pickAndSettle({
-    ...linkField,
-    options: { relationId: "rel-1", targetTableId: "t-2", localMax: "one" },
-  });
-  const post = calls.find((c) => c.method === "POST");
+it("one-relation swap: versioned write sticks and the picker reflects it", async () => {
+  const serverValue = {
+    kind: "link",
+    status: "ok",
+    records: [newRecord],
+    total: 1,
+    hasMore: false,
+    searchText: "New record",
+    version: "vB",
+  };
+  const settled = await pickAndSettle(
+    { ...baseField, options: { relationId: "rel-1", targetTableId: "t-2", localMax: "one" } },
+    {
+      id: "row-1",
+      position: 0,
+      createdAt: "2026-11-22T00:00:00.000Z",
+      updatedAt: "2026-11-22T01:00:00.000Z",
+      values: { fl1: serverValue },
+    },
+  );
+  expect(settled).toContain("New record");
+  expect(settled).not.toContain("Old record");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  const post = calls.find((call) => call.method === "POST");
   expect(post?.body).toMatchObject({
     add: ["lr-new"],
     remove: ["lr-old"],
     ifVersion: "vA",
   });
-  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });

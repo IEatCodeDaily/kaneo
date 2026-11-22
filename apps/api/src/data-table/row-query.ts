@@ -169,6 +169,10 @@ const ref = (f: QueryField) =>
     ? sql`${sql.identifier(systemColumns[f.id] ?? bad("Unknown system field"))}`
     : colRef(f.id);
 function value(f: QueryField): SQL {
+  // Lookup resolves only on row reads; filtering/sorting/summaries are the
+  // aggregation follow-up.
+  if (f.type === "lookup")
+    bad("Lookup fields cannot be used in filters, sort or summaries yet");
   return f.id === "__row_id" ? sql`(${ref(f)} + 1)` : ref(f);
 }
 const textMap = (map: Record<string, string>, key: SQL) =>

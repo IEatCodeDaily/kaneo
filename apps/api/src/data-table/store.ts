@@ -177,6 +177,8 @@ export async function addField(
   tx: DataTableTx,
   field: { tableId: string; fieldId: string; type: FieldType },
 ): Promise<void> {
+  // Lookup resolves through a link relation at read time — no physical column.
+  if (field.type === "lookup") return;
   const statements = [
     `ALTER TABLE ${TABLES_SCHEMA}.${q(physical(field.tableId))} ADD COLUMN IF NOT EXISTS ${q(column(field.fieldId))} ${pgTypeFor(field.type)}`,
   ];
@@ -437,6 +439,41 @@ export const rowSelection = (fields: StoreField[], tableId: string): SQL[] => {
       );
       chunks.push(
         sql`(SELECT COALESCE(jsonb_agg(${opposite} ORDER BY position, ${opposite}), '[]'::jsonb) FROM ${sql.raw(`${TABLES_SCHEMA}."l_${id}"`)} WHERE ${local} = ${sql.identifier(physical(tableId))}.id) AS ${col}`,
+      );
+      continue;
+    }
+    if (field.type === "lookup") {
+      // Resolve through the configured link field's junction into the target
+      // table's field column. The link field may be gone (deleted relation):
+      // resolve to an empty array rather than failing the whole read.
+      const linkField = fields.find(
+        (candidate) => candidate.id === field.options?.linkFieldId,
+      );
+      const relationId = linkField?.options?.relationId;
+      const targetTableId = linkField?.options?.targetTableId;
+      if (
+        linkField?.type !== "link" ||
+        typeof relationId !== "string" ||
+        typeof targetTableId !== "string"
+      ) {
+        chunks.push(sql`'[]'::jsonb AS ${col}`);
+        continue;
+      }
+      const junctionId = assertSafeId(relationId, "relationship");
+      const source = linkField.options?.side === "source";
+      const local = sql.identifier(source ? "source_row_id" : "target_row_id");
+      const opposite = sql.identifier(
+        source ? "target_row_id" : "source_row_id",
+      );
+      const targetCol = sql.identifier(
+        column(
+          typeof field.options?.targetFieldId === "string"
+            ? field.options.targetFieldId
+            : "",
+        ),
+      );
+      chunks.push(
+        sql`(SELECT COALESCE(jsonb_agg(${targetCol} ORDER BY j.position, ${opposite}), '[]'::jsonb) FROM ${sql.raw(`${TABLES_SCHEMA}."l_${junctionId}"`)} AS j JOIN ${sql.raw(`${TABLES_SCHEMA}.${q(physical(targetTableId))}`)} AS t ON t.id = j.${opposite} WHERE j.${local} = ${sql.identifier(physical(tableId))}.id AND t.deleted_at IS NULL AND ${targetCol} IS NOT NULL) AS ${col}`,
       );
       continue;
     }

@@ -2366,6 +2366,7 @@ export function DataTableGrid({
           field={dialogField}
           initialType={dialogType}
           members={members}
+          tableFields={table.fields}
         />
 
         <PublicFormDialog

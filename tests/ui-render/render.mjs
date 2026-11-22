@@ -417,7 +417,8 @@ for (const [theme, tag, viewport, scale] of [
       try {
         // teams.36 regression: picking a record flashed the optimistic chip,
         // then reverted. Drive the real picker end to end and assert the swap
-        // persists (chip, reopened picker, response status 200).
+        // persists. Order-independent: always swap in the first unlinked
+        // record (earlier states may have consumed earlier customers).
         const chipText = () =>
           page.evaluate(() =>
             [...document.querySelectorAll("[data-link-chip]")]
@@ -426,43 +427,50 @@ for (const [theme, tag, viewport, scale] of [
           );
         // The grid renders the linked row before the picker exists.
         await page.locator("[data-link-chip]").first().waitFor();
+        const before = await chipText();
         await page
           .getByRole("button", { name: "Linked records", exact: true })
           .first()
           .click();
         const picker = page.locator("[data-link-picker]");
-        await picker
-          .getByRole("option", { name: /CUST-002/ })
-          .first()
-          .waitFor();
+        const option = picker
+          .locator('[role="option"][aria-selected="false"]')
+          .first();
+        await option.waitFor();
+        const picked = await option.textContent();
         const [response] = await Promise.all([
           page.waitForResponse(
             (r) =>
               r.request().method() === "POST" && r.url().includes("/links/"),
           ),
-          picker.getByRole("option", { name: /CUST-002/ }).first().click(),
+          option.click(),
         ]);
         if (response.status() !== 200)
           fails.push(`link pick POST status ${response.status()}`);
         // Optimistic chip, then server truth: the swap must stick either way.
         await page.waitForTimeout(1200);
         const chips = await chipText();
-        if (!chips.includes("CUST-002"))
+        if (!chips.includes(picked ?? ""))
           fails.push(`picked chip missing after settle: ${chips}`);
-        if (chips.includes("CUST-001"))
-          fails.push(`swap reverted to the previous record: ${chips}`);
+        const escaped = (before ?? "")
+          .split("|")
+          .filter((chip) => chip && chip !== picked)
+          .map((chip) => chip.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+        if (escaped.some((chip) => chips.includes(chip)))
+          fails.push(`swap kept the previous record: ${chips}`);
         // Reopen: the picker's selected list must show the new record only.
         await page
           .getByRole("button", { name: "Linked records", exact: true })
           .first()
           .click();
         await picker
-          .getByRole("button", { name: /Unlink.*CUST-002/ })
+          .getByRole("button", { name: new RegExp(`Unlink.*${picked}`) })
+          .first()
           .waitFor();
-        if (
-          await picker.getByRole("button", { name: /Unlink.*CUST-001/ }).count()
-        )
-          fails.push("previous record still linked in picker after swap");
+        for (const chip of escaped) {
+          if (await picker.getByRole("button", { name: new RegExp(`Unlink.*${chip}`) }).count())
+            fails.push(`previous record still linked in picker: ${chip}`);
+        }
         await page.waitForTimeout(600);
       } catch (error) {
         fails.push(`pick state error: ${error}`);

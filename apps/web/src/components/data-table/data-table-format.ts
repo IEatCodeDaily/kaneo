@@ -42,6 +42,7 @@ export const FIELD_TYPE_LABEL_KEYS: Record<DataTableFieldType, string> = {
   json: "navigation:tables.typeJson",
   link: "navigation:tables.typeLink",
   ticket: "navigation:tables.typeTicket",
+  lookup: "navigation:tables.typeLookup",
 };
 
 export const ROW_NUMBER_COLUMN_WIDTH = 44;
@@ -63,6 +64,7 @@ const FIELD_WIDTHS: Record<DataTableFieldType, number> = {
   json: 220,
   link: 240,
   ticket: 260,
+  lookup: 220,
 };
 
 export const fieldWidth = (type: DataTableFieldType) => FIELD_WIDTHS[type];
@@ -844,6 +846,8 @@ const STORAGE: Record<DataTableFieldType, string> = {
   json: "jsonb",
   link: "jsonb",
   ticket: "ticket",
+  // Lookup has no physical storage (resolved at read time).
+  lookup: "none",
 };
 
 export function typeChangeKeepsValues(

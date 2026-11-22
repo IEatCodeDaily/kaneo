@@ -15,6 +15,7 @@ export const DATA_TABLE_FIELD_TYPES = [
   "json",
   "link",
   "ticket",
+  "lookup",
 ] as const;
 
 export type DataTableFieldType = (typeof DATA_TABLE_FIELD_TYPES)[number];
@@ -50,6 +51,16 @@ export type DataTableFieldOptions = {
   boardIds?: string[];
   /** ticket: false = one ticket per cell (absent = many). */
   multiple?: boolean;
+  /** lookup: display a field from the linked table through this link field. */
+  linkFieldId?: string;
+  targetFieldId?: string;
+  /** lookup: creation-time snapshot of the target field for cheap formatting. */
+  targetField?: {
+    id: string;
+    name: string;
+    type: DataTableFieldType;
+    options?: Pick<DataTableFieldOptions, "choices" | "code" | "precision"> | null;
+  };
   required?: boolean;
   defaultValue?: unknown;
   description?: string;

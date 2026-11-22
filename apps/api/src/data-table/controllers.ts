@@ -1282,6 +1282,67 @@ export async function addFieldToTable(
   }
   return mutateTable(organizationId, tableId, userId, async (tx) => {
     const options = parseFieldOptions(values.type, values.options);
+    if (values.type === "lookup") {
+      // Resolve the config against live metadata and snapshot the target
+      // field so the web can format values without fetching the linked table.
+      const linkFieldId = options?.linkFieldId;
+      const targetFieldId = options?.targetFieldId;
+      if (typeof linkFieldId !== "string" || typeof targetFieldId !== "string")
+        badRequest("Pick a relationship field and a field to look up");
+      const [linkField] = await tx
+        .select()
+        .from(dataTableFieldTable)
+        .where(
+          and(
+            eq(dataTableFieldTable.id, linkFieldId),
+            eq(dataTableFieldTable.tableId, tableId),
+            isNull(dataTableFieldTable.deletedAt),
+          ),
+        );
+      if (!linkField || linkField.type !== "link")
+        badRequest("Pick a relationship field on this table");
+      const relation = await relations.relationFor(
+        tx,
+        organizationId,
+        tableId,
+        linkFieldId,
+      );
+      const side = relations.endpoint(relation, linkFieldId);
+      await relations.authorize(
+        tx,
+        organizationId,
+        [side.targetTableId],
+        userId,
+        "view",
+      );
+      const [targetField] = await tx
+        .select()
+        .from(dataTableFieldTable)
+        .where(
+          and(
+            eq(dataTableFieldTable.id, targetFieldId),
+            eq(dataTableFieldTable.tableId, side.targetTableId),
+            isNull(dataTableFieldTable.deletedAt),
+          ),
+        );
+      if (!targetField || !isFieldType(targetField.type))
+        badRequest("Pick a field on the linked table");
+      if (targetField.type === "link")
+        badRequest("Lookup cannot target another relationship");
+      if (options?.required === true)
+        badRequest("Lookup fields are computed and cannot be required");
+      options.targetField = {
+        id: targetField.id,
+        name: targetField.name,
+        type: targetField.type,
+        options:
+          targetField.type === "select" || targetField.type === "multiselect"
+            ? { choices: targetField.options?.choices ?? [] }
+            : targetField.type === "currency"
+              ? { code: targetField.options?.code }
+              : null,
+      };
+    }
     await assertTicketBoards(organizationId, values.type, options, tx);
     await assertTicketValues(
       organizationId,
@@ -1343,6 +1404,10 @@ export async function updateTableField(
       badRequest("Field has an unknown type and cannot be migrated");
     const fromType = field.type;
     const nextType = values.type ?? fromType;
+    if ((fromType === "lookup" || nextType === "lookup") && nextType !== fromType)
+      badRequest(
+        "Lookup fields cannot be converted; create a new field instead",
+      );
     if (fromType === "link" || nextType === "link") {
       if (
         nextType !== fromType ||
@@ -1376,14 +1441,22 @@ export async function updateTableField(
       return updated;
     }
     // A type conversion without options must not carry incompatible old options.
+    // Lookup keeps its stored config verbatim (the snapshot survives renames);
+    // any other payload would strip the target-field snapshot.
     const options =
-      values.options !== undefined || nextType !== fromType
-        ? values.options === undefined && nextType !== fromType
-          ? field.options?.description
-            ? { description: field.options.description }
-            : null
-          : parseFieldOptions(nextType, values.options)
-        : field.options;
+      fromType === "lookup" && values.options !== undefined
+        ? sameJson(values.options, field.options)
+          ? field.options
+          : badRequest(
+              "Lookup configuration cannot be changed; create a new field",
+            )
+        : values.options !== undefined || nextType !== fromType
+          ? values.options === undefined && nextType !== fromType
+            ? field.options?.description
+              ? { description: field.options.description }
+              : null
+            : parseFieldOptions(nextType, values.options)
+          : field.options;
     await assertTicketBoards(organizationId, nextType, options, tx);
     await assertTicketValues(
       organizationId,

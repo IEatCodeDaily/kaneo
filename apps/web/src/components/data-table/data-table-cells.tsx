@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   AlignLeft,
+  ArrowLeftRight,
   Banknote,
   Braces,
   Calendar,
@@ -71,6 +72,7 @@ const FIELD_TYPE_ICONS: Record<string, LucideIcon> = {
   json: Braces,
   link: Link2,
   ticket: Ticket,
+  lookup: ArrowLeftRight,
 };
 
 export function FieldTypeIcon({
@@ -357,6 +359,57 @@ export function DataTableCellView({
       );
     case "link":
       return <LinkCellView value={value} expanded={expanded} />;
+    case "lookup": {
+      // Read-only: resolved through the link relation at read time. Values
+      // render with the target field's formatting where cheap.
+      if (
+        value &&
+        typeof value === "object" &&
+        "status" in (value as Record<string, unknown>)
+      )
+        return (
+          <span className="text-muted-foreground">
+            {t("navigation:tables.linkUnavailable")}
+          </span>
+        );
+      const values = Array.isArray(value) ? value : [];
+      const target = field.options?.targetField;
+      if (!target) {
+        const text = values
+          .map((item) =>
+            typeof item === "string" || typeof item === "number"
+              ? String(item)
+              : "",
+          )
+          .filter(Boolean)
+          .join(", ");
+        return text ? (
+          <span className="truncate text-muted-foreground">{text}</span>
+        ) : (
+          <EmptyValue />
+        );
+      }
+      const targetField: DataTableField = {
+        ...field,
+        name: target.name,
+        type: target.type,
+        options: (target.options ?? null) as DataTableField["options"],
+      };
+      if (!values.length) return <EmptyValue />;
+      return (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {values.map((item, index) => (
+            <span key={index} className="min-w-0 max-w-full truncate">
+              <DataTableCellView
+                field={targetField}
+                value={item}
+                members={members}
+              />
+            </span>
+          ))}
+        </div>
+      );
+    }
     default: {
       const text = asString(value);
       if (!text) return <EmptyValue />;
