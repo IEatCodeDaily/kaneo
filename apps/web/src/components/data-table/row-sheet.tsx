@@ -57,8 +57,7 @@ function useInViewOnce<T extends HTMLElement>() {
   );
   const [node, setNode] = useState<T | null>(null);
   useEffect(() => {
-    if (inView || !node || typeof IntersectionObserver === "undefined")
-      return;
+    if (inView || !node || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
