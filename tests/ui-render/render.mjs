@@ -423,6 +423,8 @@ for (const [theme, tag, viewport, scale] of [
             .map((chip) => chip.textContent)
             .join("|"),
         );
+      // The grid renders the linked row before the picker exists.
+      await page.locator("[data-link-chip]").first().waitFor();
       await page
         .getByRole("button", { name: "Linked records", exact: true })
         .first()
