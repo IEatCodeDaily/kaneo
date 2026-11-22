@@ -191,9 +191,9 @@ it("defers the activity + tickets queries until the lower drawer scrolls into vi
   expect(ticketsFetcher).toHaveBeenCalled();
 });
 
-it("expands a truncated link field to the full record list on Show all", async () => {
-  // The server previews 3 records per link cell; the drawer truncates until
-  // the owner asks for the complete list.
+it("auto-expands a truncated link field so chips flow without any control", async () => {
+  // The server previews 3 records per link cell; within the cap the drawer
+  // fetches the rest on open — chips flow and fill, no Show-all button.
   const linkField: DataTableField = {
     id: "lf",
     tableId: "t",
@@ -237,7 +237,7 @@ it("expands a truncated link field to the full record list on Show all", async (
       total: 5,
       hasMore: false,
       nextCursor: null,
-      version: "v2",
+      version: "v1",
     });
   render(
     <QueryClientProvider
@@ -268,19 +268,100 @@ it("expands a truncated link field to the full record list on Show all", async (
   const sheet = within(
     document.querySelector('[data-slot="row-fields"]') as HTMLElement,
   );
-  expect(sheet.getAllByText("One").length).toBeGreaterThan(0);
-  expect(sheet.queryByText("Four")).not.toBeInTheDocument();
+  await waitFor(() => expect(sheet.getByText("Five")).toBeInTheDocument());
+  expect(sheet.getByText("Four")).toBeInTheDocument();
+  expect(linkedFetcher).toHaveBeenCalledTimes(2);
+  // Within the cap there is no manual control at all.
+  expect(
+    screen.queryByRole("button", { name: /showAllRecords/ }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText(/linkedCapped/)).not.toBeInTheDocument();
+});
+
+it("beyond the auto cap the +N chip paginates the full list on demand", async () => {
+  const linkField: DataTableField = {
+    id: "lf",
+    tableId: "t",
+    name: "Related",
+    type: "link",
+    options: { relationId: "rel", targetTableId: "t2", localMax: "many" },
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+  };
+  const records = Array.from({ length: 201 }, (_, i) => ({
+    id: `r${i}`,
+    label: `Rec ${String(i + 1).padStart(3, "0")}`,
+  }));
+  const linkRow: DataTableRow = {
+    id: "r",
+    position: 0,
+    createdAt: "",
+    updatedAt: "",
+    values: {
+      lf: {
+        kind: "link",
+        status: "ok",
+        records: records.slice(0, 3),
+        total: 201,
+        hasMore: true,
+        version: "v1",
+      },
+    },
+  };
+  // One full page per cursor (50), like the real endpoint.
+  linkedFetcher.mockImplementation(
+    (_org: unknown, _t: unknown, _r: unknown, _f: unknown, cursor?: number) => {
+      const start = cursor ?? 0;
+      const slice = records.slice(start, start + 50);
+      return Promise.resolve({
+        records: slice,
+        total: 201,
+        hasMore: start + slice.length < 201,
+        nextCursor: start + slice.length < 201 ? start + slice.length : null,
+        version: "v1",
+      });
+    },
+  );
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <RowSheet
+        open
+        onOpenChange={vi.fn()}
+        table={table}
+        row={linkRow}
+        rowIndex={0}
+        rowCount={1}
+        fields={[linkField]}
+        members={new Map()}
+        canEdit
+        onCommit={vi.fn().mockResolvedValue(true)}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        hasPrev={false}
+        hasNext={false}
+      />
+    </QueryClientProvider>,
+  );
+  const sheet = within(
+    document.querySelector('[data-slot="row-fields"]') as HTMLElement,
+  );
+  // Auto-expand stops at the cap: 50 chips + the inline "+151" Show-all chip.
+  await waitFor(() => expect(sheet.getByText("Rec 050")).toBeInTheDocument());
+  expect(sheet.queryByText("Rec 201")).not.toBeInTheDocument();
   fireEvent.click(
     screen.getByRole("button", { name: "navigation:tables.showAllRecords" }),
   );
-  await waitFor(() => expect(sheet.getByText("Five")).toBeInTheDocument());
-  // All five render (jsdom lays everything out; the cap note only shows >200).
-  expect(sheet.getByText("Four")).toBeInTheDocument();
-  expect(linkedFetcher).toHaveBeenCalledTimes(2);
-  fireEvent.click(
-    screen.getByRole("button", { name: "navigation:tables.showLessRecords" }),
-  );
-  await waitFor(() =>
-    expect(sheet.queryByText("Four")).not.toBeInTheDocument(),
-  );
+  // The walk stops at the 200-render cap: Rec 200 renders, 201 stays linked
+  // in the count, and the cap note replaces any collapse control.
+  await waitFor(() => expect(sheet.getByText("Rec 200")).toBeInTheDocument());
+  expect(sheet.queryByText("Rec 201")).not.toBeInTheDocument();
+  expect(screen.getByText(/linkedCapped/)).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /showLessRecords/ }),
+  ).not.toBeInTheDocument();
 });

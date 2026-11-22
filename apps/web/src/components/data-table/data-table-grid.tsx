@@ -95,6 +95,7 @@ import {
   ContextMenuContent,
   ContextMenuGroup,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -661,6 +662,14 @@ function BulkSetField({
 
 type CellActive = { rowId: string; fieldId: string } | null;
 
+/**
+ * Select-column geometry shared by the header gutter and every row gutter:
+ * one sticky box, one left padding, so the select-all checkbox and the row
+ * checkboxes sit on ONE column line at every density and on every surface.
+ */
+const GUTTER_GEOMETRY =
+  "sticky left-0 z-10 flex items-center justify-start gap-1 border-r border-b pl-1";
+
 type GridRowProps = {
   row: DataTableRow;
   fields: DataTableField[];
@@ -683,6 +692,8 @@ type GridRowProps = {
   editingSeed?: string;
   setSelected: Dispatch<SetStateAction<ReadonlySet<string>>>;
   onExpand: (rowId: string) => void;
+  /** Opens the destructive delete confirm for this row (editors only). */
+  onDeleteRow: (row: DataTableRow) => void;
   setActive: Dispatch<SetStateAction<CellActive>>;
   setEditing: Dispatch<
     SetStateAction<{ rowId: string; fieldId: string; seed?: string } | null>
@@ -722,6 +733,7 @@ const GridRow = memo(function GridRow({
   editingSeed,
   setSelected,
   onExpand,
+  onDeleteRow,
   setActive,
   setEditing,
   commitCell,
@@ -730,169 +742,195 @@ const GridRow = memo(function GridRow({
   const { t } = useTranslation();
   const isActiveRow = activeFieldId !== null;
   return (
-    <div
-      role="row"
-      aria-rowindex={ariaRowIndex}
-      aria-selected={isSelected || undefined}
-      data-active={isActiveRow || undefined}
-      className={cn(
-        "group absolute left-0 grid bg-background hover:bg-row-hover",
-        isSelected && "bg-row-selected hover:bg-row-selected",
-      )}
-      style={{
-        height: rowHeight,
-        // top, not transform: transform would trap the sticky cells inside
-        // the row box and break horizontal stick.
-        top,
-        gridTemplateColumns: gridTemplate,
-        width: totalWidth,
-      }}
-    >
-      <div
-        role="rowheader"
-        className={cn(
-          "sticky left-0 z-10 flex items-center justify-center gap-1 border-r border-b text-xs tabular-nums text-muted-foreground",
-          isSelected
-            ? "bg-row-selected group-hover:bg-row-selected"
-            : "bg-background group-hover:bg-row-hover",
-        )}
-      >
-        {/* NocoDB gutter: the row number at rest; hover swaps in select + expand. */}
-        <span
-          aria-hidden
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          role="row"
+          aria-rowindex={ariaRowIndex}
+          aria-selected={isSelected || undefined}
+          data-active={isActiveRow || undefined}
           className={cn(
-            "pointer-events-none absolute inset-0 flex items-center justify-center group-focus-within:opacity-0 group-hover:opacity-0",
-            isSelected && "opacity-0",
+            "group absolute left-0 grid bg-background hover:bg-row-hover",
+            isSelected && "bg-row-selected hover:bg-row-selected",
           )}
+          style={{
+            height: rowHeight,
+            // top, not transform: transform would trap the sticky cells inside
+            // the row box and break horizontal stick.
+            top,
+            gridTemplateColumns: gridTemplate,
+            width: totalWidth,
+          }}
         >
-          {rowNumber}
-        </span>
-        <Checkbox
-          checked={isSelected}
-          aria-label={t("navigation:tables.selectRow", { row: rowNumber })}
-          className={cn(
-            "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-            isSelected && "opacity-100",
-          )}
-          onCheckedChange={(next) =>
-            setSelected((current) => {
-              const next2 = new Set(current);
-              if (next) next2.add(row.id);
-              else next2.delete(row.id);
-              return next2;
-            })
-          }
-        />
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t("navigation:tables.expandRow", { row: rowNumber })}
-          className="size-5! opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-          onClick={() => onExpand(row.id)}
-        >
-          <Maximize2 className="size-3" />
-        </Button>
-      </div>
-      {fields.map((field, fieldIndex) => {
-        const isActiveCell = activeFieldId === field.id;
-        const isEditingCell = editingFieldId === field.id;
-        return (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled once, by the grid (onGridKeyDown)
           <div
-            key={field.id}
-            role="gridcell"
-            aria-readonly={field.system || undefined}
-            aria-selected={(isActiveCell && isActiveRow) || undefined}
-            aria-label={t("navigation:tables.cellAria", {
-              field: field.name,
-              row: rowNumber,
-            })}
-            onClick={(event) => {
-              if ((event.target as HTMLElement).closest("input, textarea, a"))
-                return;
-              setActive({ rowId: row.id, fieldId: field.id });
-              refocusGrid();
-              if (!canEdit || field.system || !isActiveCell) return;
-              if (
-                PICKER_TYPES.includes(field.type) ||
-                field.type === "checkbox"
-              ) {
-                // Whitespace on an active picker cell opens the same control.
-                if (
-                  !(event.target as HTMLElement).closest(
-                    "button, [role='button'], [role='checkbox']",
-                  )
-                ) {
-                  event.currentTarget
-                    .querySelector<HTMLElement>(
-                      "button, [role='button'], [role='checkbox']",
-                    )
-                    ?.click();
-                }
-              } else if (field.type !== "link")
-                setEditing({ rowId: row.id, fieldId: field.id });
-            }}
+            role="rowheader"
             className={cn(
-              "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
-              fieldIndex === frozenCount - 1 ? "border-r-2" : "border-r",
-              fieldIndex < frozenCount ? "sticky z-10" : "relative z-0",
-              isEditingCell &&
-                (fieldIndex < frozenCount
-                  ? "z-20 bg-background"
-                  : "z-[1] bg-background"),
+              GUTTER_GEOMETRY,
+              "text-xs tabular-nums text-muted-foreground",
               isSelected
                 ? "bg-row-selected group-hover:bg-row-selected"
-                : isActiveRow
-                  ? "bg-row-hover"
-                  : "bg-background group-hover:bg-row-hover",
-              NUMERIC_CELL_TYPES.includes(field.type) && "justify-end",
-              // Wrapped cells clip at the fixed row height — except while
-              // their editor is open.
-              wrapLines && !isEditingCell && "overflow-hidden",
-              field.system && "text-muted-foreground",
-              // Active cell: an inset accent ring, drawn over the borders
-              // (NocoDB).
-              "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
+                : "bg-background group-hover:bg-row-hover",
             )}
-            style={
-              fieldIndex < frozenCount
-                ? { left: frozenLefts[fieldIndex] }
-                : undefined
-            }
           >
-            <DataTableCellContent
-              row={row}
-              field={field}
-              members={members}
-              wrapLines={wrapLines}
-              seed={isEditingCell ? editingSeed : undefined}
-              // Pickers and checkboxes activate only after selection.
-              canEdit={
-                canEdit &&
-                (!(
-                  PICKER_TYPES.includes(field.type) || field.type === "checkbox"
-                ) ||
-                  isActiveCell)
+            {/* NocoDB gutter: the row number at rest; hover swaps in select + expand. */}
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-0 flex items-center justify-center group-focus-within:opacity-0 group-hover:opacity-0",
+                isSelected && "opacity-0",
+              )}
+            >
+              {rowNumber}
+            </span>
+            <Checkbox
+              checked={isSelected}
+              aria-label={t("navigation:tables.selectRow", { row: rowNumber })}
+              className={cn(
+                "size-3.5 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                isSelected && "opacity-100",
+              )}
+              onCheckedChange={(next) =>
+                setSelected((current) => {
+                  const next2 = new Set(current);
+                  if (next) next2.add(row.id);
+                  else next2.delete(row.id);
+                  return next2;
+                })
               }
-              isEditing={isEditingCell}
-              onEditStart={() => {
-                // First click selects; a click on the already-active cell
-                // (or a double-click) edits.
-                setActive({ rowId: row.id, fieldId: field.id });
-                if (field.system || !isActiveCell) return;
-                setEditing({ rowId: row.id, fieldId: field.id });
-              }}
-              onEditEnd={() => {
-                setEditing(null);
-                refocusGrid();
-              }}
-              onCommit={(value) => commitCell(row, field, value)}
             />
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={t("navigation:tables.expandRow", { row: rowNumber })}
+              className="size-5! opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+              onClick={() => onExpand(row.id)}
+            >
+              <Maximize2 className="size-3" />
+            </Button>
           </div>
-        );
-      })}
-      {canEdit && <div className="border-b" />}
-    </div>
+          {fields.map((field, fieldIndex) => {
+            const isActiveCell = activeFieldId === field.id;
+            const isEditingCell = editingFieldId === field.id;
+            return (
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keys are handled once, by the grid (onGridKeyDown)
+              <div
+                key={field.id}
+                role="gridcell"
+                aria-readonly={field.system || undefined}
+                aria-selected={(isActiveCell && isActiveRow) || undefined}
+                aria-label={t("navigation:tables.cellAria", {
+                  field: field.name,
+                  row: rowNumber,
+                })}
+                onClick={(event) => {
+                  if (
+                    (event.target as HTMLElement).closest("input, textarea, a")
+                  )
+                    return;
+                  setActive({ rowId: row.id, fieldId: field.id });
+                  refocusGrid();
+                  if (!canEdit || field.system || !isActiveCell) return;
+                  if (
+                    PICKER_TYPES.includes(field.type) ||
+                    field.type === "checkbox"
+                  ) {
+                    // Whitespace on an active picker cell opens the same control.
+                    if (
+                      !(event.target as HTMLElement).closest(
+                        "button, [role='button'], [role='checkbox']",
+                      )
+                    ) {
+                      event.currentTarget
+                        .querySelector<HTMLElement>(
+                          "button, [role='button'], [role='checkbox']",
+                        )
+                        ?.click();
+                    }
+                  } else if (field.type !== "link")
+                    setEditing({ rowId: row.id, fieldId: field.id });
+                }}
+                className={cn(
+                  "flex min-w-0 items-center gap-1.5 border-b px-2 text-ui",
+                  fieldIndex === frozenCount - 1 ? "border-r-2" : "border-r",
+                  fieldIndex < frozenCount ? "sticky z-10" : "relative z-0",
+                  isEditingCell &&
+                    (fieldIndex < frozenCount
+                      ? "z-20 bg-background"
+                      : "z-[1] bg-background"),
+                  isSelected
+                    ? "bg-row-selected group-hover:bg-row-selected"
+                    : isActiveRow
+                      ? "bg-row-hover"
+                      : "bg-background group-hover:bg-row-hover",
+                  NUMERIC_CELL_TYPES.includes(field.type) && "justify-end",
+                  // Wrapped cells clip at the fixed row height — except while
+                  // their editor is open.
+                  wrapLines && !isEditingCell && "overflow-hidden",
+                  field.system && "text-muted-foreground",
+                  // Active cell: an inset accent ring, drawn over the borders
+                  // (NocoDB).
+                  "aria-selected:shadow-[inset_0_0_0_2px_var(--primary)]",
+                )}
+                style={
+                  fieldIndex < frozenCount
+                    ? { left: frozenLefts[fieldIndex] }
+                    : undefined
+                }
+              >
+                <DataTableCellContent
+                  row={row}
+                  field={field}
+                  members={members}
+                  wrapLines={wrapLines}
+                  seed={isEditingCell ? editingSeed : undefined}
+                  // Pickers and checkboxes activate only after selection.
+                  canEdit={
+                    canEdit &&
+                    (!(
+                      PICKER_TYPES.includes(field.type) ||
+                      field.type === "checkbox"
+                    ) ||
+                      isActiveCell)
+                  }
+                  isEditing={isEditingCell}
+                  onEditStart={() => {
+                    // First click selects; a click on the already-active cell
+                    // (or a double-click) edits.
+                    setActive({ rowId: row.id, fieldId: field.id });
+                    if (field.system || !isActiveCell) return;
+                    setEditing({ rowId: row.id, fieldId: field.id });
+                  }}
+                  onEditEnd={() => {
+                    setEditing(null);
+                    refocusGrid();
+                  }}
+                  onCommit={(value) => commitCell(row, field, value)}
+                />
+              </div>
+            );
+          })}
+          {canEdit && <div className="border-b" />}
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => onExpand(row.id)}>
+          <Maximize2 className="size-3.5" />
+          {t("navigation:tables.openRow")}
+        </ContextMenuItem>
+        {canEdit && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onClick={() => onDeleteRow(row)}
+            >
+              <Trash2 className="size-3.5" />
+              {t("navigation:tables.deleteRow")}
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 });
 
@@ -1554,6 +1592,16 @@ export function DataTableGrid({
   };
 
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
+  // Right-click "Delete row": same destructive confirm as the bulk bar.
+  const [rowToDelete, setRowToDelete] = useState<DataTableRow | null>(null);
+  const [rowDeleteBusy, setRowDeleteBusy] = useState(false);
+  const confirmRowDelete = async () => {
+    if (!rowToDelete) return;
+    setRowDeleteBusy(true);
+    await bulkDeleteRows([rowToDelete.id]);
+    setRowDeleteBusy(false);
+    setRowToDelete(null);
+  };
 
   const confirmDeleteField = async () => {
     if (!fieldToDelete) return;
@@ -1800,7 +1848,7 @@ export function DataTableGrid({
               >
                 <div
                   role="row"
-                  className="sticky top-0 z-30 grid bg-background"
+                  className="group sticky top-0 z-30 grid bg-background"
                   style={{
                     gridTemplateColumns: gridTemplate,
                     width: totalWidth,
@@ -1809,7 +1857,7 @@ export function DataTableGrid({
                   <div
                     role="columnheader"
                     aria-label={t("navigation:tables.rowNumber")}
-                    className="sticky left-0 z-10 flex items-center justify-end border-r border-b bg-background pr-1"
+                    className={cn(GUTTER_GEOMETRY, "bg-background")}
                   >
                     <Checkbox
                       checked={
@@ -2070,6 +2118,7 @@ export function DataTableGrid({
                           }
                           setSelected={setSelected}
                           onExpand={setSheetRowId}
+                          onDeleteRow={setRowToDelete}
                           setActive={setActive}
                           setEditing={setEditing}
                           commitCell={commitCell}
@@ -2272,6 +2321,35 @@ export function DataTableGrid({
             </div>
           )}
         </div>
+
+        <AlertDialog
+          open={rowToDelete !== null}
+          onOpenChange={(open) => !open && setRowToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("navigation:tables.deleteRow")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("navigation:tables.deleteRowConfirm")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" size="sm" render={<AlertDialogClose />}>
+                {t("navigation:tables.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={rowDeleteBusy}
+                onClick={() => void confirmRowDelete()}
+              >
+                {t("navigation:tables.deleteRow")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <AlertDialog
           open={bulkDeleteIds.length > 0}

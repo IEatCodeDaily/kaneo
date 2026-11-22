@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DataTable, DataTableFieldType } from "@/types/data-table";
@@ -96,7 +97,10 @@ vi.mock("@/fetchers/data-table/data-table", () => ({
   getTicketOptions: vi.fn().mockResolvedValue([]),
 }));
 
-import { importTableCsv } from "@/fetchers/data-table/data-table";
+import {
+  deleteDataTableRow,
+  importTableCsv,
+} from "@/fetchers/data-table/data-table";
 import { DataTableGrid } from "./data-table-grid";
 
 const table = (type: DataTableFieldType = "text"): DataTable => ({
@@ -661,4 +665,42 @@ describe("spreadsheet keyboard navigation", () => {
     expect(screen.getAllByRole("row")[1].style.height).toBe("80px");
     expect(cell(0).className).toContain("overflow-hidden");
   });
+});
+
+it("right-click opens the row menu; Delete row goes through the destructive confirm", async () => {
+  mount();
+  // rows[0] is the sticky header row; rows[1] is the data row.
+  fireEvent.contextMenu(screen.getAllByRole("row")[1]);
+  expect(
+    screen.getByRole("menuitem", { name: "navigation:tables.openRow" }),
+  ).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("menuitem", { name: "navigation:tables.deleteRow" }),
+  );
+  const dialog = await screen.findByRole("alertdialog");
+  expect(dialog).toHaveTextContent("navigation:tables.deleteRowConfirm");
+  expect(deleteDataTableRow).not.toHaveBeenCalled();
+  fireEvent.click(
+    within(dialog).getByRole("button", {
+      name: "navigation:tables.deleteRow",
+    }),
+  );
+  await waitFor(() =>
+    expect(deleteDataTableRow).toHaveBeenCalledWith({
+      organizationId: "o",
+      tableId: "t",
+      rowId: "r",
+    }),
+  );
+});
+
+it("read-only rows keep Open in the context menu but never Delete", async () => {
+  mount("text", false);
+  fireEvent.contextMenu(screen.getAllByRole("row")[1]);
+  expect(
+    screen.getByRole("menuitem", { name: "navigation:tables.openRow" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("menuitem", { name: "navigation:tables.deleteRow" }),
+  ).toBeNull();
 });

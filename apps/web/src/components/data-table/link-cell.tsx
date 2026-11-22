@@ -52,6 +52,12 @@ import { TicketLookupContext } from "./ticket-cell";
 const OpenRecordContext = createContext<
   ((record: LinkedRecord) => void) | null
 >(null);
+/**
+ * Scoped per link field by the row drawer: a set callback turns the "+N"
+ * chip at the end of the chip flow into the Show-all control. Never set on
+ * the grid — its cells keep the passive "+N" marker.
+ */
+export const LinkOverflowContext = createContext<(() => void) | null>(null);
 export function linkValue(value: unknown): LinkValue | null {
   return value &&
     typeof value === "object" &&
@@ -70,15 +76,21 @@ export function LinkCellView({
   const { t } = useTranslation();
   const open = useContext(OpenRecordContext);
   const cell = linkValue(value);
+  // Drawer fields opt in per row: a set context turns the "+N" chip at the
+  // end of the flow into the Show-all control (grid cells stay passive).
+  const expandOverflow = useContext(LinkOverflowContext);
   const wrapRef = useRef<HTMLSpanElement | null>(null);
-  // Non-expanded cells fit chips to the measured width: the visible count
+  // Non-expanded cells fit chips to the measured box: the visible count
   // reacts to column resizes (ResizeObserver) instead of freezing at the
   // initial width. jsdom has no ResizeObserver — render everything there.
   const [visible, setVisible] = useState<number>(Number.POSITIVE_INFINITY);
   const records = cell?.records ?? [];
+  // Fit pass. Measuring a clamped render is meaningless (hidden chips have
+  // no boxes), so the pass only acts on the unclamped one: the ResizeObserver
+  // resets to "all chips", this measures, and the clamped re-render skips.
   const rewrap = useCallback(() => {
     const el = wrapRef.current;
-    if (!el) return;
+    if (!el || visible !== Number.POSITIVE_INFINITY) return;
     const items = [...el.querySelectorAll<HTMLElement>("[data-link-item]")];
     let count = records.length;
     const fits = (item: HTMLElement) =>
@@ -89,8 +101,10 @@ export function LinkCellView({
       if (!item || fits(item)) break;
       count -= 1;
     }
+    // Keep room for the "+N" chip itself when the list truncates.
+    if (count > 1 && count < records.length) count -= 1;
     setVisible(count);
-  }, [records]);
+  }, [records, visible]);
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -116,7 +130,12 @@ export function LinkCellView({
       ref={expanded ? undefined : wrapRef}
       className={cn(
         "flex w-full min-w-0 items-start gap-1",
-        expanded ? "flex-wrap" : "flex-wrap content-start overflow-hidden",
+        expanded
+          ? "flex-wrap"
+          : // max-h-full clamps the box to the cell (the picker wrapper
+            // resolves it to the row height), so the fit pass measures the
+            // visible box instead of the full content height.
+            "max-h-full flex-wrap content-start overflow-hidden",
       )}
     >
       {shown.map((record) => (
@@ -136,14 +155,32 @@ export function LinkCellView({
           <span className="truncate">{record.label}</span>
         </Button>
       ))}
-      {overflow > 0 && (
-        <span
-          data-link-item={!expanded || undefined}
-          className="shrink-0 self-center text-xs text-muted-foreground"
-        >
-          +{overflow}
-        </span>
-      )}
+      {overflow > 0 &&
+        (expandOverflow ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            data-link-item
+            className="shrink-0 self-center px-1 font-normal text-muted-foreground"
+            aria-label={t("navigation:tables.showAllRecords", {
+              total: cell.total ?? 0,
+            })}
+            onClick={(event) => {
+              event.stopPropagation();
+              expandOverflow();
+            }}
+          >
+            +{overflow}
+          </Button>
+        ) : (
+          <span
+            data-link-item={!expanded || undefined}
+            className="shrink-0 self-center text-xs text-muted-foreground"
+          >
+            +{overflow}
+          </span>
+        ))}
     </span>
   );
 }
@@ -155,6 +192,7 @@ export function LinkCellPicker({
   onCommit,
   children,
   members,
+  expanded = false,
 }: {
   field: DataTableField;
   value: unknown;
@@ -163,6 +201,8 @@ export function LinkCellPicker({
   onCommit: (value: unknown) => void;
   children: React.ReactNode;
   members: Map<string, MemberOption>;
+  /** Drawer rendering: chips may wrap, so the trigger pins to the first line. */
+  expanded?: boolean;
 }) {
   const { t } = useTranslation();
   const context = useContext(TicketLookupContext);
@@ -324,7 +364,17 @@ export function LinkCellPicker({
   };
   return (
     <OpenRecordContext.Provider value={openRecord}>
-      <div className="flex min-w-0 flex-1 items-center gap-1">
+      {/* h-full resolves the wrapper to the cell's row height, so the chips
+          box (max-h-full) measures the visible cell and the trigger button
+          keeps a CONSTANT box across picks — a box that changed with the
+          chips re-anchored the popover and the picker visibly jumped. In the
+          drawer the height is free, so the trigger pins to the first line. */}
+      <div
+        className={cn(
+          "flex h-full min-w-0 flex-1 gap-1",
+          expanded ? "items-start" : "items-center",
+        )}
+      >
         {rowId ? (
           children
         ) : (
