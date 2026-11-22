@@ -9,7 +9,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import {
