@@ -570,6 +570,24 @@ for (const [theme, tag, viewport, scale] of [
           .catch(() => {});
       }
     } else if (name === "table-chip-fit") {
+      // Trace ResizeObserver activity on the chip-fit span (init script).
+      await ctx.addInitScript(() => {
+        window.__ro = { fires: 0, sizes: [] };
+        const Real = window.ResizeObserver;
+        window.ResizeObserver = class extends Real {
+          constructor(cb) {
+            super((entries, observer) => {
+              window.__ro.fires += 1;
+              const r = entries[0]?.contentRect;
+              window.__ro.sizes.push([
+                Math.round(r?.width ?? -1),
+                Math.round(r?.height ?? -1),
+              ]);
+              cb(entries, observer);
+            });
+          }
+        };
+      });
       try {
         // teams.37 regression: widening a link column live did not render
         // more chips — the fit pass froze at the initial width.
@@ -620,10 +638,32 @@ for (const [theme, tag, viewport, scale] of [
               fails.push(
                 `column did not widen (${before.width} -> ${after.width})`,
               );
-            if (after.visible <= before.visible)
+            if (after.visible <= before.visible) {
+              const span = await page.evaluate(() => {
+                const cell = [
+                  ...document.querySelectorAll('[role="gridcell"]'),
+                ].find((c) =>
+                  (c.getAttribute("aria-label") ?? "").startsWith(
+                    "Also bought from, row 1",
+                  ),
+                );
+                const el = cell?.querySelector(".flex-wrap");
+                const box = el?.getBoundingClientRect();
+                return {
+                  spanW: Math.round(box?.width ?? -1),
+                  spanH: Math.round(box?.height ?? -1),
+                  spanClientH: el?.clientHeight ?? -1,
+                  spanClientW: el?.clientWidth ?? -1,
+                  ro: window.__ro,
+                  items: el
+                    ? el.querySelectorAll("[data-link-item]").length
+                    : -1,
+                };
+              });
               fails.push(
-                `widening did not rewrap chips: ${JSON.stringify({ before, after })}`,
+                `widening did not rewrap chips: ${JSON.stringify({ before, after, span })}`,
               );
+            }
             if (after.height !== before.height)
               fails.push(
                 `cell height changed on rewrap (${before.height} -> ${after.height})`,
