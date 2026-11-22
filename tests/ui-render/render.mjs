@@ -471,25 +471,6 @@ for (const [theme, tag, viewport, scale] of [
       localStorage.setItem(k, JSON.stringify(cur));
     }, theme);
     if (name === "inbox") await themeInboxFixtures(ctx);
-    if (name === "table-chip-fit")
-      // Trace ResizeObserver activity on the chip-fit span.
-      await ctx.addInitScript(() => {
-        window.__ro = { fires: 0, sizes: [] };
-        const Real = window.ResizeObserver;
-        window.ResizeObserver = class extends Real {
-          constructor(cb) {
-            super((entries, observer) => {
-              window.__ro.fires += 1;
-              const r = entries[0]?.contentRect;
-              window.__ro.sizes.push([
-                Math.round(r?.width ?? -1),
-                Math.round(r?.height ?? -1),
-              ]);
-              cb(entries, observer);
-            });
-          }
-        };
-      });
     const page = await ctx.newPage();
     const errs = [];
     page.on("pageerror", (e) => errs.push(String(e)));
@@ -655,7 +636,6 @@ for (const [theme, tag, viewport, scale] of [
                   spanH: Math.round(box?.height ?? -1),
                   spanClientH: el?.clientHeight ?? -1,
                   spanClientW: el?.clientWidth ?? -1,
-                  ro: window.__ro,
                   items: el
                     ? el.querySelectorAll("[data-link-item]").length
                     : -1,
