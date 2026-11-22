@@ -498,7 +498,8 @@ function archiveSelection(fields: StoreField[], tableId: string): SQL[] {
     sql`created_at::text AS raw_created_at`,
     sql`updated_at::text AS raw_updated_at`,
     ...fields
-      .filter((field) => !virtualLink(field))
+      // Virtual fields (link, lookup) have no physical column to archive.
+      .filter((field) => !virtualLink(field) && field.type !== "lookup")
       .map(
         (field) =>
           sql`${colRef(field.id)}::text AS ${sql.identifier(`raw_${column(field.id)}`)}`,
