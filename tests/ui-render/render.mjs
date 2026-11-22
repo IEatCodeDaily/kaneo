@@ -199,14 +199,19 @@ async function seed(api) {
     `/data-table/organization/${org.id}/${customers.id}/fields`,
     { name: "Credit limit", type: "currency", options: { code: "USD" } },
   );
-  const putRes = await put(
-    `/data-table/organization/${org.id}/${customers.id}/rows/${customer.id}/cells/${creditLimit.id}`,
-    { value: 1200 },
-  );
-  if (!putRes.ok())
-    throw new Error(
-      `seed cell PUT -> ${putRes.status()} ${await putRes.text()}`,
+  // Every customer carries a limit: the pick state swaps which one is linked,
+  // and the lookup cell must resolve a value in every state.
+  const setLimit = async (rowId) => {
+    const putRes = await put(
+      `/data-table/organization/${org.id}/${customers.id}/rows/${rowId}/cells/${creditLimit.id}`,
+      { value: 1200 },
     );
+    if (!putRes.ok())
+      throw new Error(
+        `seed cell PUT -> ${putRes.status()} ${await putRes.text()}`,
+      );
+  };
+  await setLimit(customer.id);
   const lookupField = await post(
     `/data-table/organization/${org.id}/${invoices.id}/fields`,
     {
@@ -236,13 +241,12 @@ async function seed(api) {
     "VND-004 · Umbrella",
     "VND-005 · Stark",
   ]) {
-    vendorRows.push(
-      (
-        await post(`/data-table/organization/${org.id}/${customers.id}/rows`, {
-          values: { [customerNumber.id]: name },
-        })
-      ).id,
+    const vendor = await post(
+      `/data-table/organization/${org.id}/${customers.id}/rows`,
+      { values: { [customerNumber.id]: name } },
     );
+    vendorRows.push(vendor.id);
+    await setLimit(vendor.id);
   }
   const invoicePage = await post(
     `/data-table/organization/${org.id}/${invoices.id}/row-query`,
@@ -542,15 +546,19 @@ for (const [theme, tag, viewport, scale] of [
         // then reverted. Drive the real picker end to end and assert the swap
         // persists. Order-independent: always swap in the first unlinked
         // record (earlier states may have consumed earlier customers).
-        const chipText = () =>
-          page.evaluate(() =>
-            [...document.querySelectorAll("[data-link-chip]")]
+        // The grid renders the linked row before the picker exists.
+        await page.locator("[data-link-chip]").first().waitFor();
+        // Scope to the Customer cell: other link fields share the page.
+        const customerCell = page.getByRole("gridcell", {
+          name: "Customer, row 1",
+        });
+        const cellChips = () =>
+          customerCell.evaluate((cell) =>
+            [...cell.querySelectorAll("[data-link-chip]")]
               .map((chip) => chip.textContent)
               .join("|"),
           );
-        // The grid renders the linked row before the picker exists.
-        await page.locator("[data-link-chip]").first().waitFor();
-        const before = await chipText();
+        const before = await cellChips();
         await page
           .getByRole("button", { name: "Linked records", exact: true })
           .first()
@@ -572,7 +580,7 @@ for (const [theme, tag, viewport, scale] of [
           fails.push(`link pick POST status ${response.status()}`);
         // Optimistic chip, then server truth: the swap must stick either way.
         await page.waitForTimeout(1200);
-        const chips = await chipText();
+        const chips = await cellChips();
         if (!chips.includes(picked ?? ""))
           fails.push(`picked chip missing after settle: ${chips}`);
         const escaped = (before ?? "")
@@ -616,9 +624,11 @@ for (const [theme, tag, viewport, scale] of [
         name === "table-link-picker"
           ? "CUST-001 · Acme Manufacturing"
           : "INV-2026-001";
+      // The reciprocal state's chip repeats on every bundled customer row.
       await page
         .locator("[data-link-chip]")
         .filter({ hasText: expected })
+        .first()
         .waitFor();
       if (
         !(await page
