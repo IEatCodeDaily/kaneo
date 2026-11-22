@@ -9,7 +9,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import {
@@ -47,15 +47,18 @@ import { LinkNavigationContext } from "./link-cell";
  * Drawer sections below the fold (linked tickets, activity) defer their
  * queries until the reader scrolls near: both fired on the drawer's open
  * path and painted after it. jsdom has no IntersectionObserver — render
- * immediately there.
+ * immediately there. The node arrives AFTER the first paint (the drawer
+ * mounts empty with row=null), so observation starts from the callback ref,
+ * not a mount-time effect.
  */
 function useInViewOnce<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(
     () => typeof IntersectionObserver === "undefined",
   );
+  const [node, setNode] = useState<T | null>(null);
   useEffect(() => {
-    if (inView || typeof IntersectionObserver === "undefined") return;
+    if (inView || !node || typeof IntersectionObserver === "undefined")
+      return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
@@ -66,9 +69,10 @@ function useInViewOnce<T extends HTMLElement>() {
       // Start loading slightly before the section actually scrolls in.
       { rootMargin: "240px 0px" },
     );
-    if (ref.current) observer.observe(ref.current);
+    observer.observe(node);
     return () => observer.disconnect();
-  }, [inView]);
+  }, [inView, node]);
+  const ref = useCallback((next: T | null) => setNode(next), []);
   return { ref, inView };
 }
 
