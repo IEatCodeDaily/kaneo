@@ -227,10 +227,9 @@ async function pickAndSettle(field: DataTableField) {
       `cache not patched; calls=${JSON.stringify(calls)} alert=${screen.queryByRole("alert")?.textContent ?? "none"}`,
     );
   });
-  expect(chip("x")).toContain("New record");
-  throw new Error(
-    `observed=${screen.getByTestId("observed-version").textContent} alert=${screen.queryByRole("alert")?.textContent ?? "none"} calls=${JSON.stringify(calls)}`,
-  );
+  const diag = () =>
+    `observed=${screen.getByTestId("observed-version").textContent} alert=${screen.queryByRole("alert")?.textContent ?? "none"} calls=${JSON.stringify(calls)}`;
+  expect(chip("x"), diag()).toContain("New record");
   await waitFor(() =>
     expect(
       (client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!)
