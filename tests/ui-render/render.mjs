@@ -167,9 +167,10 @@ async function seed(api) {
     { values: { [customerNumber.id]: "CUST-001 · Acme Manufacturing" } },
   );
   // Second customer: the link-pick state swaps this in through the real picker.
-  await post(`/data-table/organization/${org.id}/${customers.id}/rows`, {
-    values: { [customerNumber.id]: "CUST-002 · Globex" },
-  });
+  const globex = await post(
+    `/data-table/organization/${org.id}/${customers.id}/rows`,
+    { values: { [customerNumber.id]: "CUST-002 · Globex" } },
+  );
   const relation = await post(
     `/data-table/organization/${org.id}/${invoices.id}/fields`,
     {
@@ -212,6 +213,7 @@ async function seed(api) {
       );
   };
   await setLimit(customer.id);
+  await setLimit(globex.id);
   const lookupField = await post(
     `/data-table/organization/${org.id}/${invoices.id}/fields`,
     {
