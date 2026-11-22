@@ -121,6 +121,14 @@ type UserPreferencesStore = {
   setBoardSidebarOrder: (userId: string, ids: string[]) => void;
   repoSidebarOrders: Record<string, string[]>;
   setRepoSidebarOrder: (userId: string, ids: string[]) => void;
+  hiddenTableIds: string[];
+  setTableSidebarVisibility: (
+    userId: string,
+    tableId: string,
+    visible: boolean,
+  ) => void;
+  tableSidebarOrders: Record<string, string[]>;
+  setTableSidebarOrder: (userId: string, ids: string[]) => void;
 
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
@@ -309,6 +317,21 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setRepoSidebarOrder: (userId, ids) =>
         set((state) => ({
           repoSidebarOrders: { ...state.repoSidebarOrders, [userId]: ids },
+        })),
+      hiddenTableIds: [],
+      setTableSidebarVisibility: (userId, tableId, visible) =>
+        set((state) => {
+          const key = `${userId}:${tableId}`;
+          return {
+            hiddenTableIds: visible
+              ? state.hiddenTableIds.filter((id) => id !== key)
+              : Array.from(new Set([...state.hiddenTableIds, key])),
+          };
+        }),
+      tableSidebarOrders: {},
+      setTableSidebarOrder: (userId, ids) =>
+        set((state) => ({
+          tableSidebarOrders: { ...state.tableSidebarOrders, [userId]: ids },
         })),
 
       weekStartsOn: 0,

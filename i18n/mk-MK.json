@@ -1150,6 +1150,8 @@
 			"boards": "Проекти",
 			"invitations": "Покани",
 			"moreRepos": "More repos",
+			"moreTables": "More tables",
+			"showItem": "Show {{name}}",
 			"myTasks": "My tasks",
 			"repos": "Repos",
 			"moreBoards": "More boards",

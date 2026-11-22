@@ -1320,7 +1320,9 @@
 			"boards": "Boards",
 			"repos": "Repos",
 			"moreBoards": "More boards",
-			"moreRepos": "More repos"
+			"moreRepos": "More repos",
+			"moreTables": "More tables",
+			"showItem": "Show {{name}}"
 		},
 		"projectList": {
 			"viewProject": "Vedi Progetto",
