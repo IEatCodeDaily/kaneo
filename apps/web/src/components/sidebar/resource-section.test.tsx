@@ -36,7 +36,7 @@ vi.mock("@/components/ui/sidebar", () => ({
     ...props
   }: {
     children?: ReactNode;
-    render?: ReactElement;
+    render?: ReactElement<Record<string, unknown>>;
     onClick?: () => void;
   }) => {
     if (render) {
@@ -75,7 +75,7 @@ vi.mock("@/components/ui/menu", () => ({
     ...props
   }: {
     children?: ReactNode;
-    render?: ReactElement;
+    render?: ReactElement<Record<string, unknown>>;
   }) => {
     if (render) {
       return cloneElement(render, props, children);
