@@ -154,6 +154,9 @@ function CellHarness({ field }: { field: DataTableField }) {
         tickets: {},
       }}
     >
+      <div data-testid="observed-version">
+        {(value as LinkValue | undefined)?.version ?? "none"}
+      </div>
       <LinkCellPicker
         field={field}
         value={value}
@@ -225,7 +228,9 @@ async function pickAndSettle(field: DataTableField) {
     );
   });
   expect(chip("x")).toContain("New record");
-  // The write settles; the cell must show server truth — not roll back.
+  throw new Error(
+    `observed=${screen.getByTestId("observed-version").textContent} alert=${screen.queryByRole("alert")?.textContent ?? "none"} calls=${JSON.stringify(calls)}`,
+  );
   await waitFor(() =>
     expect(
       (client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!)
