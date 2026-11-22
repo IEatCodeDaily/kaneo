@@ -59,7 +59,10 @@ export type DataTableFieldOptions = {
     id: string;
     name: string;
     type: DataTableFieldType;
-    options?: Pick<DataTableFieldOptions, "choices" | "code" | "precision"> | null;
+    options?: Pick<
+      DataTableFieldOptions,
+      "choices" | "code" | "precision"
+    > | null;
   };
   required?: boolean;
   defaultValue?: unknown;

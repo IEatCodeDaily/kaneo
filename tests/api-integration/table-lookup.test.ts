@@ -53,7 +53,7 @@ describe("table lookup columns", () => {
         options: { code: "USD" },
       }),
     );
-    const teamName = await json(
+    const _teamName = await json(
       request(`${root(teams.id)}/fields`, { name: "Name", type: "text" }),
     );
     const link = await json(
@@ -99,10 +99,10 @@ describe("table lookup columns", () => {
     // Row-query read: resolved values in link order.
     const page = await json(
       Promise.resolve(
-        app.request(
-          `${root(teams.id)}/row-query`,
-          { method: "POST", body: JSON.stringify({}) },
-        ),
+        app.request(`${root(teams.id)}/row-query`, {
+          method: "POST",
+          body: JSON.stringify({}),
+        }),
       ),
     );
     expect(page.rows[0].values[lookup.id]).toEqual([1200, 340.5]);
@@ -121,10 +121,10 @@ describe("table lookup columns", () => {
     );
     const after = await json(
       Promise.resolve(
-        app.request(
-          `${root(teams.id)}/row-query`,
-          { method: "POST", body: JSON.stringify({}) },
-        ),
+        app.request(`${root(teams.id)}/row-query`, {
+          method: "POST",
+          body: JSON.stringify({}),
+        }),
       ),
     );
     expect(after.rows[0].values[lookup.id]).toEqual([340.5]);

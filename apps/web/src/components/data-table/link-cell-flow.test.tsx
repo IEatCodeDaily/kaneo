@@ -1,5 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import {
   cleanup,
   fireEvent,
@@ -88,36 +91,38 @@ const json = (status: number, body: unknown) =>
 const calls: Array<{ method: string; url: string; body: unknown }> = [];
 let swapResponse: unknown;
 
-const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = String(input);
-  const method = init?.method ?? "GET";
-  let body: unknown;
-  if (typeof init?.body === "string") body = JSON.parse(init.body);
-  calls.push({ method, url, body });
-  if (url.includes("/fields/fl1/link-options"))
-    return json(200, {
-      records: [newRecord],
-      hasMore: false,
-      nextCursor: null,
-      canLink: true,
-      canCreate: true,
-      primaryField: null,
-      fields: [],
-      targetTableId: "t-2",
-      localMax: "many",
-    });
-  if (url.includes("/rows/row-1/links/fl1?") && method === "GET")
-    return json(200, {
-      records: [oldRecord],
-      total: 1,
-      hasMore: false,
-      nextCursor: null,
-      version: "vA",
-    });
-  if (url.includes("/rows/row-1/links/fl1") && method === "POST")
-    return json(200, swapResponse);
-  throw new Error(`Unexpected fetch: ${method} ${url}`);
-});
+const fetchMock = vi.fn(
+  async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? "GET";
+    let body: unknown;
+    if (typeof init?.body === "string") body = JSON.parse(init.body);
+    calls.push({ method, url, body });
+    if (url.includes("/fields/fl1/link-options"))
+      return json(200, {
+        records: [newRecord],
+        hasMore: false,
+        nextCursor: null,
+        canLink: true,
+        canCreate: true,
+        primaryField: null,
+        fields: [],
+        targetTableId: "t-2",
+        localMax: "many",
+      });
+    if (url.includes("/rows/row-1/links/fl1?") && method === "GET")
+      return json(200, {
+        records: [oldRecord],
+        total: 1,
+        hasMore: false,
+        nextCursor: null,
+        version: "vA",
+      });
+    if (url.includes("/rows/row-1/links/fl1") && method === "POST")
+      return json(200, swapResponse);
+    throw new Error(`Unexpected fetch: ${method} ${url}`);
+  },
+);
 
 function CellHarness({ field }: { field: DataTableField }) {
   const pages = useInfiniteQuery({
@@ -125,8 +130,8 @@ function CellHarness({ field }: { field: DataTableField }) {
     queryFn: () => Promise.resolve(seedPage),
     initialPageParam: 0,
     initialData: { pages: [seedPage], pageParams: [0] },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -214,8 +219,8 @@ async function pickAndSettle(field: DataTableField, after: unknown) {
   await waitFor(() =>
     expect(
       (
-        client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
-          .values.fl1 as LinkValue
+        client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]
+          ?.values.fl1 as LinkValue
       ).version,
     ).toBe("vB"),
   );
@@ -258,7 +263,10 @@ it("one-relation swap: versioned write sticks and the picker reflects it", async
     version: "vB",
   };
   const settled = await pickAndSettle(
-    { ...baseField, options: { relationId: "rel-1", targetTableId: "t-2", localMax: "one" } },
+    {
+      ...baseField,
+      options: { relationId: "rel-1", targetTableId: "t-2", localMax: "one" },
+    },
     {
       id: "row-1",
       position: 0,

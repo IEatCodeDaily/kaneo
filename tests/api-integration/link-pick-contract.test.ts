@@ -80,17 +80,16 @@ describe("link pick web contract", () => {
 
       // 1. The picker opens: link-page GET + the row read the grid rendered.
       const page = await json(
-        Promise.resolve(app.request(`${linksPath}?cursor=0`, { method: "GET" })),
+        Promise.resolve(
+          app.request(`${linksPath}?cursor=0`, { method: "GET" }),
+        ),
       );
       const rowRead = await json(
         Promise.resolve(
-          app.request(
-            `${root(source.id)}/row-query`,
-            {
-              method: "POST",
-              body: JSON.stringify({}),
-            },
-          ),
+          app.request(`${root(source.id)}/row-query`, {
+            method: "POST",
+            body: JSON.stringify({}),
+          }),
         ),
       );
       const cellValue = rowRead.rows[0].values[field.id];
@@ -111,14 +110,16 @@ describe("link pick web contract", () => {
       // 3. The response row's version must match what a fresh link-page GET
       //    and a fresh row read report — otherwise the next swap 409s.
       const page2 = await json(
-        Promise.resolve(app.request(`${linksPath}?cursor=0`, { method: "GET" })),
+        Promise.resolve(
+          app.request(`${linksPath}?cursor=0`, { method: "GET" }),
+        ),
       );
       const rowRead2 = await json(
         Promise.resolve(
-          app.request(
-            `${root(source.id)}/row-query`,
-            { method: "POST", body: JSON.stringify({}) },
-          ),
+          app.request(`${root(source.id)}/row-query`, {
+            method: "POST",
+            body: JSON.stringify({}),
+          }),
         ),
       );
       expect(afterPick.values[field.id].version).toBe(page2.version);
@@ -152,13 +153,15 @@ describe("link pick web contract", () => {
       // 5. And from the row read the grid re-renders from.
       const rowRead3 = await json(
         Promise.resolve(
-          app.request(
-            `${root(source.id)}/row-query`,
-            { method: "POST", body: JSON.stringify({}) },
-          ),
+          app.request(`${root(source.id)}/row-query`, {
+            method: "POST",
+            body: JSON.stringify({}),
+          }),
         ),
       );
-      expect(rowRead3.rows[0].values[field.id].records.map((r) => r.id)).toEqual(
+      expect(
+        rowRead3.rows[0].values[field.id].records.map((r) => r.id),
+      ).toEqual(
         cardinality === "many-to-one" ? [second.id] : [first.id, second.id],
       );
     });

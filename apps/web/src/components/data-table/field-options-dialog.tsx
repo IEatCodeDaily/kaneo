@@ -465,9 +465,7 @@ export default function FieldOptionsDialog({
                           >
                             <RelationGlyph kind={kind} />
                             <span className="min-w-0 truncate text-xs font-semibold">
-                              {t(
-                                `navigation:tables.linkCardinality.${kind}`,
-                              )}
+                              {t(`navigation:tables.linkCardinality.${kind}`)}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-64">

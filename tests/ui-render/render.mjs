@@ -468,7 +468,11 @@ for (const [theme, tag, viewport, scale] of [
           .first()
           .waitFor();
         for (const chip of escaped) {
-          if (await picker.getByRole("button", { name: new RegExp(`Unlink.*${chip}`) }).count())
+          if (
+            await picker
+              .getByRole("button", { name: new RegExp(`Unlink.*${chip}`) })
+              .count()
+          )
             fails.push(`previous record still linked in picker: ${chip}`);
         }
         await page.waitForTimeout(600);
@@ -1085,7 +1089,7 @@ for (const [tag, scheme] of [
       `sidebar-section-active--desktop-${tag}.png`,
       async (page) => {
         const fails = [];
-        await page.goto(BASE + `/dashboard/organization/${slug}`, {
+        await page.goto(`${BASE}/dashboard/organization/${slug}`, {
           waitUntil: "networkidle",
         });
         await page.waitForTimeout(1200);

@@ -1299,7 +1299,7 @@ export async function addFieldToTable(
             isNull(dataTableFieldTable.deletedAt),
           ),
         );
-      if (!linkField || linkField.type !== "link")
+      if (linkField?.type !== "link")
         badRequest("Pick a relationship field on this table");
       const relation = await relations.relationFor(
         tx,
@@ -1404,7 +1404,10 @@ export async function updateTableField(
       badRequest("Field has an unknown type and cannot be migrated");
     const fromType = field.type;
     const nextType = values.type ?? fromType;
-    if ((fromType === "lookup" || nextType === "lookup") && nextType !== fromType)
+    if (
+      (fromType === "lookup" || nextType === "lookup") &&
+      nextType !== fromType
+    )
       badRequest(
         "Lookup fields cannot be converted; create a new field instead",
       );

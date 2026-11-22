@@ -32,11 +32,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getLinkedRecords, type LinkPage } from "@/fetchers/data-table/links";
 import { getRowTickets } from "@/fetchers/data-table/row-links";
-import {
-  getLinkedRecords,
-  type LinkPage,
-} from "@/fetchers/data-table/links";
 import { useDrawerWidth } from "@/hooks/use-drawer-width";
 import { getColumnIcon } from "@/lib/column";
 import { rowDrawerDefaultWidth } from "@/lib/task-drawer-width";
@@ -44,8 +41,8 @@ import type {
   DataTable,
   DataTableField,
   DataTableRow,
-  LinkValue,
   LinkedRecord,
+  LinkValue,
 } from "@/types/data-table";
 import { LinkNavigationContext, linkValue } from "./link-cell";
 
@@ -365,78 +362,78 @@ export function RowSheet({
                 ? { ...row, values: { ...row.values, [field.id]: full } }
                 : row;
             return (
-            <div key={field.id} className="flex min-h-8 items-start gap-2">
-              <span className="flex min-h-8 w-36 shrink-0 items-start gap-1.5 py-2 text-xs text-muted-foreground">
-                <FieldTypeIcon type={field.type} />
-                <span className="min-w-0">
-                  <span className="block truncate">{field.name}</span>
-                  {field.options?.description && (
-                    <span className="block whitespace-normal text-xs font-normal">
-                      {field.options.description}
-                    </span>
-                  )}
+              <div key={field.id} className="flex min-h-8 items-start gap-2">
+                <span className="flex min-h-8 w-36 shrink-0 items-start gap-1.5 py-2 text-xs text-muted-foreground">
+                  <FieldTypeIcon type={field.type} />
+                  <span className="min-w-0">
+                    <span className="block truncate">{field.name}</span>
+                    {field.options?.description && (
+                      <span className="block whitespace-normal text-xs font-normal">
+                        {field.options.description}
+                      </span>
+                    )}
+                  </span>
                 </span>
-              </span>
-              {/* Key/value list: every value starts on one column, numbers too. */}
-              <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
-                <DataTableCellContent
-                  expanded
-                  row={displayRow}
-                  field={field}
-                  members={members}
-                  canEdit={canEdit}
-                  isEditing={
-                    editing?.rowId === row.id && editing.fieldId === field.id
-                  }
-                  onEditStart={() =>
-                    setEditing({ rowId: row.id, fieldId: field.id })
-                  }
-                  onEditEnd={() => setEditing(null)}
-                  onCommit={async (value) => {
-                    if (await onCommit(row, field, value)) {
-                      setEditing((current) =>
-                        current?.rowId === row.id &&
-                        current.fieldId === field.id
-                          ? null
-                          : current,
-                      );
+                {/* Key/value list: every value starts on one column, numbers too. */}
+                <div className="flex min-h-8 min-w-0 flex-1 items-center rounded-md px-2 text-ui hover:bg-row-hover *:text-left!">
+                  <DataTableCellContent
+                    expanded
+                    row={displayRow}
+                    field={field}
+                    members={members}
+                    canEdit={canEdit}
+                    isEditing={
+                      editing?.rowId === row.id && editing.fieldId === field.id
                     }
-                  }}
-                />
-              </div>
-              {(truncated || (full && field.type === "link")) && (
-                <div className="flex flex-col items-start gap-0.5 py-2">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    disabled={linkBusy}
-                    onClick={() => {
-                      if (full)
-                        setFullLinks((current) => {
-                          const values = { ...current.values };
-                          delete values[field.id];
-                          return { rowId: row.id, values };
-                        });
-                      else void showAllLinks(field);
+                    onEditStart={() =>
+                      setEditing({ rowId: row.id, fieldId: field.id })
+                    }
+                    onEditEnd={() => setEditing(null)}
+                    onCommit={async (value) => {
+                      if (await onCommit(row, field, value)) {
+                        setEditing((current) =>
+                          current?.rowId === row.id &&
+                          current.fieldId === field.id
+                            ? null
+                            : current,
+                        );
+                      }
                     }}
-                  >
-                    {full
-                      ? t("navigation:tables.showLessRecords")
-                      : t("navigation:tables.showAllRecords", {
-                          total: full?.total ?? cell?.total ?? 0,
-                        })}
-                  </Button>
-                  {full && (full.total ?? 0) > full.records.length && (
-                    <p className="px-2 text-xs text-muted-foreground">
-                      {t("navigation:tables.linkedCapped", {
-                        count: full.records.length,
-                        total: full.total ?? 0,
-                      })}
-                    </p>
-                  )}
+                  />
                 </div>
-              )}
-            </div>
+                {(truncated || (full && field.type === "link")) && (
+                  <div className="flex flex-col items-start gap-0.5 py-2">
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      disabled={linkBusy}
+                      onClick={() => {
+                        if (full)
+                          setFullLinks((current) => {
+                            const values = { ...current.values };
+                            delete values[field.id];
+                            return { rowId: row.id, values };
+                          });
+                        else void showAllLinks(field);
+                      }}
+                    >
+                      {full
+                        ? t("navigation:tables.showLessRecords")
+                        : t("navigation:tables.showAllRecords", {
+                            total: full?.total ?? cell?.total ?? 0,
+                          })}
+                    </Button>
+                    {full && (full.total ?? 0) > full.records.length && (
+                      <p className="px-2 text-xs text-muted-foreground">
+                        {t("navigation:tables.linkedCapped", {
+                          count: full.records.length,
+                          total: full.total ?? 0,
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </section>

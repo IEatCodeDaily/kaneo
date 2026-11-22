@@ -1,6 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,9 +79,7 @@ export function LinkCellView({
   const rewrap = useCallback(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const items = [
-      ...el.querySelectorAll<HTMLElement>("[data-link-item]"),
-    ];
+    const items = [...el.querySelectorAll<HTMLElement>("[data-link-item]")];
     let count = records.length;
     const fits = (item: HTMLElement) =>
       item.offsetTop + item.offsetHeight <= el.clientHeight + 1 &&
@@ -88,11 +94,13 @@ export function LinkCellView({
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setVisible(Number.POSITIVE_INFINITY));
+    const observer = new ResizeObserver(() =>
+      setVisible(Number.POSITIVE_INFINITY),
+    );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [records.length]);
-  useLayoutEffect(rewrap, [rewrap, visible]);
+  }, []);
+  useLayoutEffect(rewrap, [rewrap]);
   if (cell?.status === "unavailable")
     return (
       <span className="text-muted-foreground">
@@ -108,9 +116,7 @@ export function LinkCellView({
       ref={expanded ? undefined : wrapRef}
       className={cn(
         "flex w-full min-w-0 items-start gap-1",
-        expanded
-          ? "flex-wrap"
-          : "flex-wrap content-start overflow-hidden",
+        expanded ? "flex-wrap" : "flex-wrap content-start overflow-hidden",
       )}
     >
       {shown.map((record) => (

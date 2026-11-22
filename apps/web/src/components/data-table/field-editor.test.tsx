@@ -294,7 +294,9 @@ it("edit modal shows the stored relation: cardinality pre-selected, target table
   });
   expect(
     screen
-      .getByRole("radio", { name: "navigation:tables.linkCardinality.one-to-many" })
+      .getByRole("radio", {
+        name: "navigation:tables.linkCardinality.one-to-many",
+      })
       .getAttribute("aria-checked"),
   ).toBe("true");
   expect(
