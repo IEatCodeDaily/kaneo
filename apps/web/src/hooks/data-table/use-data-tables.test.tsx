@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   DataTable,
   DataTableRow,
+  LinkValue,
   TableRowQueryResult,
 } from "@/types/data-table";
 
@@ -23,6 +24,23 @@ const upsertFetcher = vi.fn(async () => ({
   updatedAt: "",
   values: { f1: "server" } as Record<string, unknown>,
 }));
+const linkWriteResponse = {
+  id: "row-1",
+  position: 0,
+  createdAt: "",
+  updatedAt: "",
+  values: {
+    fl1: {
+      kind: "link",
+      status: "ok",
+      records: [{ id: "lr-1", label: "Server" }],
+      total: 1,
+      hasMore: false,
+      version: "v2",
+    },
+  } as Record<string, unknown>,
+};
+const linkFetcher = vi.fn(async () => linkWriteResponse);
 const updateFieldFetcher = vi.fn(async () => ({
   id: "f1",
   tableId: "t-1",
@@ -49,6 +67,9 @@ vi.mock("@/fetchers/data-table/data-table", () => ({
   updateDataTableField: (...args: unknown[]) =>
     updateFieldFetcher(...(args as [])),
   upsertDataTableCell: (...args: unknown[]) => upsertFetcher(...(args as [])),
+}));
+vi.mock("@/fetchers/data-table/links", () => ({
+  linkRequest: (...args: unknown[]) => linkFetcher(...(args as [])),
 }));
 
 const { useDataTableMutations } = await import("./use-data-tables");
@@ -135,10 +156,10 @@ beforeEach(() => {
   client.setQueryData(otherTableRowsKey, infinite(page([row("row-9", {})])));
 });
 
-/** True when some invalidation targeted the grid's row-query caches. */
+/** True when some invalidation targeted THIS table's row-query caches. */
 function rowsInvalidated() {
   return invalidated.some(
-    (key) => key[0] === "data-table" && key[3] === "rows",
+    (key) => key[0] === "data-table" && key[2] === TABLE && key[3] === "rows",
   );
 }
 
@@ -211,6 +232,119 @@ describe("upsertCell cache patching", () => {
     expect(
       client.getQueryData<DataTable>([...DETAIL_KEY])?.rows[0].values.f1,
     ).toBe("old");
+  });
+});
+
+describe("linkCell cache patching", () => {
+  const optimisticLink: LinkValue = {
+    kind: "link",
+    status: "ok",
+    records: [{ id: "lr-9", label: "Picked" }],
+    total: 1,
+    hasMore: false,
+    version: "v1",
+  };
+
+  it("patches every cached page with the link pick and never invalidates rows", async () => {
+    const { result } = renderHook(() => useDataTableMutations(ORG, TABLE), {
+      wrapper,
+    });
+
+    await result.current.linkCell.mutateAsync({
+      organizationId: ORG,
+      tableId: TABLE,
+      rowId: "row-1",
+      fieldId: "fl1",
+      add: ["lr-9"],
+      optimistic: optimisticLink,
+      targetTableId: "t-2",
+    });
+
+    // Optimistic pick replaced by server truth in every cached page.
+    const unfiltered = client.getQueryData<InfiniteData<TableRowQueryResult>>(
+      rowsKey({ search: "" }),
+    );
+    expect(unfiltered?.pages[0].rows[0].values.fl1).toEqual(
+      linkWriteResponse.values.fl1,
+    );
+    expect(unfiltered?.pages[0].rows[1].values.fl1).toBeUndefined();
+    const filtered = client.getQueryData<InfiniteData<TableRowQueryResult>>(
+      rowsKey({ search: "Amount" }),
+    );
+    expect(filtered?.pages[0].rows[0].values.fl1).toBeDefined();
+    // The linked record's mirrored cell lives in the target table's caches:
+    // marked stale (free refetch on mount), never the current grid's pages.
+    expect(
+      invalidated.some(
+        (key) =>
+          key[0] === "data-table" &&
+          key[1] === ORG &&
+          key[2] === "t-2" &&
+          key[3] === "rows",
+      ),
+    ).toBe(true);
+    expect(rowsInvalidated()).toBe(false);
+    expect(client.getQueryState(rowsKey({ search: "" }))?.isInvalidated).toBe(
+      false,
+    );
+    expect(invalidated.some((key) => key[0] === "data-table-activity")).toBe(
+      true,
+    );
+    // The other table's cached rows are untouched by the patch itself.
+    const other =
+      client.getQueryData<InfiniteData<TableRowQueryResult>>(otherTableRowsKey);
+    expect(other?.pages[0].rows[0].id).toBe("row-9");
+  });
+
+  it("rolls the optimistic link value back when the write fails", async () => {
+    linkFetcher.mockRejectedValueOnce(new Error("conflict"));
+    const { result } = renderHook(() => useDataTableMutations(ORG, TABLE), {
+      wrapper,
+    });
+
+    await expect(
+      result.current.linkCell.mutateAsync({
+        organizationId: ORG,
+        tableId: TABLE,
+        rowId: "row-1",
+        fieldId: "fl1",
+        add: ["lr-9"],
+        optimistic: optimisticLink,
+      }),
+    ).rejects.toThrow("conflict");
+
+    expect(
+      client.getQueryData<InfiniteData<TableRowQueryResult>>(
+        rowsKey({ search: "" }),
+      )?.pages[0].rows[0].values.fl1,
+    ).toBeUndefined();
+  });
+});
+
+describe("mergeRowValues (linked new-row path)", () => {
+  it("patches the field's link value across detail and pages without invalidating", async () => {
+    const { mergeRowValues } = await import("./use-data-tables");
+    mergeRowValues(client, [...DETAIL_KEY], "row-1", {
+      fl1: {
+        kind: "link",
+        status: "ok",
+        records: [{ id: "lr-2", label: "Fresh row" }],
+        total: 1,
+        hasMore: false,
+        version: "v3",
+      },
+    });
+
+    expect(
+      client.getQueryData<InfiniteData<TableRowQueryResult>>(
+        rowsKey({ search: "" }),
+      )?.pages[0].rows[0].values.fl1,
+    ).toMatchObject({ records: [{ id: "lr-2" }] });
+    expect(
+      client.getQueryData<DataTable>([...DETAIL_KEY])?.rows[0].values.fl1,
+    ).toMatchObject({ records: [{ id: "lr-2" }] });
+    expect(rowsInvalidated()).toBe(false);
+    expect(invalidated).toEqual([]);
   });
 });
 

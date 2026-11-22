@@ -18,11 +18,13 @@ vi.mock("react-i18next", async (original) => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@tanstack/react-router", () => ({ Link: () => null }));
+const activityRender = vi.fn(() => null);
 vi.mock("@/components/data-table/table-activity", () => ({
-  TableActivityList: () => null,
+  TableActivityList: () => activityRender(),
 }));
+const ticketsFetcher = vi.fn(async () => []);
 vi.mock("@/fetchers/data-table/row-links", () => ({
-  getRowTickets: async () => [],
+  getRowTickets: (...args: unknown[]) => ticketsFetcher(...(args as [])),
 }));
 
 import { RowSheet } from "./row-sheet";
@@ -56,7 +58,12 @@ const row: DataTableRow = {
   updatedAt: "",
   values: { f: "Original" },
 };
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  activityRender.mockClear();
+  ticketsFetcher.mockClear();
+});
 
 it("keeps the drawer's changed draft after a failed save, closing only after success", async () => {
   const commit = vi
@@ -113,4 +120,67 @@ it("keeps the drawer's changed draft after a failed save, closing only after suc
   await waitFor(() =>
     expect(screen.queryByRole("textbox", { name: "Title" })).toBeNull(),
   );
+});
+
+it("defers the activity + tickets queries until the lower drawer scrolls into view", async () => {
+  // Regression: both queries fired on the drawer's open path — below the
+  // fold. They mount when the sentinel intersects (or instantly for a short
+  // drawer / jsdom, which has no IntersectionObserver).
+  let onIntersect: IntersectionObserverCallback = () => {};
+  class MockIntersectionObserver {
+    constructor(cb: IntersectionObserverCallback) {
+      onIntersect = cb;
+    }
+    observe() {}
+    disconnect() {}
+  }
+  vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <RowSheet
+        open
+        onOpenChange={vi.fn()}
+        table={table}
+        row={row}
+        rowIndex={0}
+        rowCount={1}
+        fields={[field]}
+        members={new Map()}
+        canEdit
+        onCommit={vi.fn().mockResolvedValue(true)}
+        onPrev={vi.fn()}
+        onNext={vi.fn()}
+        hasPrev={false}
+        hasNext={false}
+      />
+    </QueryClientProvider>,
+  );
+
+  // Open path: fields render, the deferred sections do not, no queries fire.
+  expect(
+    screen.getByRole("button", { name: "navigation:tables.copyRowId" }),
+  ).toBeInTheDocument();
+  expect(
+    document.querySelector('[data-testid="row-drawer-deferred"]'),
+  ).not.toBeNull();
+  expect(activityRender).not.toHaveBeenCalled();
+  expect(ticketsFetcher).not.toHaveBeenCalled();
+
+  // Scroll near the bottom: sections mount and the tickets query fires.
+  onIntersect(
+    [{ isIntersecting: true } as IntersectionObserverEntry],
+    {} as IntersectionObserver,
+  );
+  await waitFor(() =>
+    expect(
+      document.querySelector('[data-testid="row-drawer-deferred"]'),
+    ).toBeNull(),
+  );
+  expect(activityRender).toHaveBeenCalled();
+  expect(ticketsFetcher).toHaveBeenCalled();
 });
