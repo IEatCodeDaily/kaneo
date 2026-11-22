@@ -5,8 +5,6 @@ import {
   EyeOff,
   Folder,
   Forward,
-  MoreHorizontal,
-  Plus,
   Settings,
   SquareKanban,
   Trash2,
@@ -15,29 +13,12 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import EntityIcon from "@/components/common/entity-icon";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/menu";
+import { ResourceSection } from "@/components/sidebar/resource-section";
 import {
   SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import useArchiveBoard from "@/hooks/mutations/board/use-archive-board";
 import useDeleteBoard from "@/hooks/mutations/board/use-delete-board";
@@ -48,25 +29,16 @@ import { useTargetBoardView } from "@/hooks/use-remembered-view";
 import {
   SIDEBAR_ACTIVE_PILL,
   SIDEBAR_ROUTES,
-  SIDEBAR_SECTION_HEADER,
   useSidebarActive,
 } from "@/hooks/use-sidebar-active";
-import {
-  intentPrefetchHandlers,
-  prefetchBoardNavigation,
-} from "@/lib/navigation-prefetch";
+import { prefetchBoardNavigation } from "@/lib/navigation-prefetch";
 import { toast } from "@/lib/toast";
 import { useNavigationStore } from "@/store/navigation";
 import { useTeamViewStore } from "@/store/team-view";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { BoardWithTasks } from "@/types/board";
-import { NavHiddenItems } from "./nav-hidden-items";
 import CreateBoardModal from "./shared/modals/create-board-modal";
-import {
-  reconcileSidebarOrder,
-  SidebarSortableItem,
-  SidebarSortableList,
-} from "./sidebar-sort";
+import { reconcileSidebarOrder } from "./sidebar-sort";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -81,7 +53,6 @@ import { Button } from "./ui/button";
 export function NavBoards() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { isMobile } = useSidebar();
   const { data: organization } = useActiveOrganization();
   const teamId = useTeamViewStore((state) => state.teamId);
   const { data: boards } = useGetBoards({
@@ -257,322 +228,167 @@ export function NavBoards() {
       isActive(SIDEBAR_ROUTES.orgIndex, orgParams, { exact: true })) &&
     !visibleBoards.some((board) => isCurrentBoard(board.id));
 
-  return (
-    <>
-      {/*
-        #96: the collapsed rail shows the Boards *overview* entry first, then one
-        entry per board using that board's own configured icon (the same
-        `board.icon` the overview grid and mobile nav render). Names appear on
-        hover.
-      */}
-      <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              data-testid="sidebar-boards-collapsed"
-              isActive={isActive(
-                SIDEBAR_ROUTES.orgIndex,
-                { organizationSlug: organization.slug },
-                { exact: true },
-              )}
-              className={SIDEBAR_ACTIVE_PILL}
-              onClick={() =>
-                navigate({
-                  to: "/dashboard/organization/$organizationSlug",
-                  params: { organizationSlug: organization.slug },
-                })
-              }
-              tooltip={t("navigation:sidebar.boards")}
-            >
-              <SquareKanban aria-hidden="true" />
-              <span>{t("navigation:sidebar.boards")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          {visibleBoards.map((board) => {
-            return (
-              <SidebarMenuItem key={board.id}>
-                <SidebarMenuButton
-                  data-testid={`sidebar-board-collapsed-${board.id}`}
-                  isActive={isCurrentBoard(board.id)}
-                  className={SIDEBAR_ACTIVE_PILL}
-                  onClick={() =>
-                    navigate({
-                      to: "/dashboard/organization/$organizationSlug/board/$boardSlug",
-                      params: {
-                        organizationSlug: organization.slug,
-                        boardSlug: board.slug,
-                      },
-                    })
-                  }
-                  tooltip={board.name}
-                >
-                  <EntityIcon className="size-4" value={board.icon} />
-                  <span>{board.name}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroup>
-
-      <SidebarGroup className="group/boards group-data-[collapsible=icon]:hidden gap-1 p-2 pt-1">
-        <div className="relative flex items-center">
-          <SidebarGroupLabel
-            className={`h-7 flex-1 cursor-pointer px-0 pr-12 ${SIDEBAR_SECTION_HEADER}`}
-            data-active={boardsSectionActive}
-            render={<button type="button" />}
+  // #96: the collapsed rail shows the Boards *overview* entry first, then one
+  // entry per board using that board's own configured icon (the same
+  // `board.icon` the overview grid and mobile nav render). Names appear on
+  // hover.
+  const collapsedRail = (
+    <SidebarGroup className="hidden gap-1 p-2 pt-1 group-data-[collapsible=icon]:block">
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            data-testid="sidebar-boards-collapsed"
+            isActive={isActive(
+              SIDEBAR_ROUTES.orgIndex,
+              { organizationSlug: organization.slug },
+              { exact: true },
+            )}
+            className={SIDEBAR_ACTIVE_PILL}
             onClick={() =>
               navigate({
                 to: "/dashboard/organization/$organizationSlug",
                 params: { organizationSlug: organization.slug },
               })
             }
+            tooltip={t("navigation:sidebar.boards")}
           >
+            <SquareKanban aria-hidden="true" />
             <span>{t("navigation:sidebar.boards")}</span>
-          </SidebarGroupLabel>
-          <div className="absolute right-0 flex items-center">
-            {canCreate && (
-              <button
-                type="button"
-                className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground opacity-0 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-sidebar-ring group-focus-within/boards:opacity-100 group-hover/boards:opacity-100"
-                onClick={() => setIsCreateBoardModalOpen(true)}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        {visibleBoards.map((board) => {
+          return (
+            <SidebarMenuItem key={board.id}>
+              <SidebarMenuButton
+                data-testid={`sidebar-board-collapsed-${board.id}`}
+                isActive={isCurrentBoard(board.id)}
+                className={SIDEBAR_ACTIVE_PILL}
+                onClick={() =>
+                  navigate({
+                    to: "/dashboard/organization/$organizationSlug/board/$boardSlug",
+                    params: {
+                      organizationSlug: organization.slug,
+                      boardSlug: board.slug,
+                    },
+                  })
+                }
+                tooltip={board.name}
               >
-                <Plus className="size-4" />
-                <span className="sr-only">
-                  {t("navigation:boardList.addBoard")}
-                </span>
-              </button>
-            )}
-            {hiddenBoards.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <button
-                      aria-label="Board sidebar options"
-                      type="button"
-                      className="flex size-6 items-center justify-center rounded-md text-sidebar-foreground outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                    />
-                  }
-                >
-                  <MoreHorizontal className="size-4" />
-                  <span className="sr-only">
-                    {t("navigation:sidebar.more")}
-                  </span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 rounded-lg">
-                  {hiddenBoards.map((board) => (
-                    <DropdownMenuItem
-                      className="cursor-pointer text-sm"
-                      key={board.id}
-                      onClick={() =>
-                        setBoardSidebarVisibility(
-                          user?.id ?? "",
-                          board.id,
-                          true,
-                        )
-                      }
-                    >
-                      Show {board.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            <SidebarSortableList
-              ids={visibleBoards.map((board) => board.id)}
-              onReorder={(ids) => setBoardSidebarOrder(user?.id ?? "", ids)}
-            >
-              {visibleBoards.map((board) => {
-                return (
-                  <SidebarSortableItem id={board.id} key={board.id}>
-                    <ContextMenu>
-                      <ContextMenuTrigger asChild>
-                        <SidebarMenuItem>
-                          <SidebarMenuButton
-                            isActive={isCurrentBoard(board.id)}
-                            size="default"
-                            className={`h-8 gap-0 ps-3.5 text-sm ${SIDEBAR_ACTIVE_PILL}`}
-                            onClick={() => handleBoardClick(board)}
-                            {...intentPrefetchHandlers(() =>
-                              prefetchBoard(board.id),
-                            )}
-                          >
-                            {/* #171: the icon is shown in the expanded rail
-                                too, not only when collapsed. */}
-                            <EntityIcon
-                              className="me-2 size-4 text-sidebar-foreground/70"
-                              value={board.icon}
-                            />
-                            <span className="truncate">{board.name}</span>
-                          </SidebarMenuButton>
+                <EntityIcon className="size-4" value={board.icon} />
+                <span>{board.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <SidebarMenuAction
-                                  aria-label={t("navigation:sidebar.more")}
-                                  showOnHover
-                                />
-                              }
-                            >
-                              <MoreHorizontal />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              className="w-44 rounded-lg"
-                              side={isMobile ? "bottom" : "right"}
-                              align={isMobile ? "end" : "start"}
-                            >
-                              <DropdownMenuItem
-                                className="h-7 items-start cursor-pointer text-sm"
-                                onClick={() => handleBoardClick(board)}
-                              >
-                                <Folder className="text-muted-foreground" />
-                                <span>
-                                  {t("navigation:boardList.viewBoard")}
-                                </span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="h-7 items-start cursor-pointer text-sm"
-                                onClick={() => handleShareBoard(board)}
-                              >
-                                <Forward className="text-muted-foreground" />
-                                <span>
-                                  {t("navigation:boardList.shareBoard")}
-                                </span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="h-7 items-start cursor-pointer text-sm"
-                                onClick={() => handleBoardSettings(board)}
-                              >
-                                <Settings className="text-muted-foreground" />
-                                <span>
-                                  {t("navigation:boardList.boardSettings")}
-                                </span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="h-7 items-start cursor-pointer text-sm"
-                                onClick={() =>
-                                  setBoardSidebarVisibility(
-                                    user?.id ?? "",
-                                    board.id,
-                                    false,
-                                  )
-                                }
-                              >
-                                <EyeOff className="text-muted-foreground" />
-                                <span>Hide from sidebar</span>
-                              </DropdownMenuItem>
-                              {canArchiveBoard && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="h-7 items-start cursor-pointer text-sm"
-                                    onClick={() => setBoardToArchive(board)}
-                                  >
-                                    <Archive className="text-muted-foreground" />
-                                    <span>Archive board</span>
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {canDeleteBoard && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="h-7 items-start text-destructive cursor-pointer text-sm"
-                                    onClick={() => handleDeleteBoard(board)}
-                                  >
-                                    <Trash2 className="text-destructive" />
-                                    <span>
-                                      {t("navigation:boardList.deleteBoard")}
-                                    </span>
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </SidebarMenuItem>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-44">
-                        <ContextMenuItem
-                          onClick={() => handleBoardClick(board)}
-                        >
-                          <Folder className="text-muted-foreground" />
-                          {t("navigation:boardList.viewBoard")}
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onClick={() => handleShareBoard(board)}
-                        >
-                          <Forward className="text-muted-foreground" />
-                          {t("navigation:boardList.shareBoard")}
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onClick={() => handleBoardSettings(board)}
-                        >
-                          <Settings className="text-muted-foreground" />
-                          {t("navigation:boardList.boardSettings")}
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onClick={() =>
-                            setBoardSidebarVisibility(
-                              user?.id ?? "",
-                              board.id,
-                              false,
-                            )
-                          }
-                        >
-                          <EyeOff className="text-muted-foreground" />
-                          Hide from sidebar
-                        </ContextMenuItem>
-                        {canArchiveBoard && (
-                          <>
-                            <ContextMenuSeparator />
-                            <ContextMenuItem
-                              onClick={() => setBoardToArchive(board)}
-                            >
-                              <Archive className="text-muted-foreground" />
-                              Archive board
-                            </ContextMenuItem>
-                          </>
-                        )}
-                        {canDeleteBoard && (
-                          <>
-                            <ContextMenuSeparator />
-                            <ContextMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDeleteBoard(board)}
-                            >
-                              <Trash2 className="text-destructive" />
-                              {t("navigation:boardList.deleteBoard")}
-                            </ContextMenuItem>
-                          </>
-                        )}
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  </SidebarSortableItem>
-                );
-              })}
-            </SidebarSortableList>
-            <NavHiddenItems
-              isActive={(boardId) => isCurrentBoard(boardId)}
-              items={hiddenBoards.map((board) => ({
-                id: board.id,
-                name: board.name,
-              }))}
-              label={t("navigation:sidebar.moreBoards")}
-              onIntent={(boardId) => prefetchBoard(boardId)}
-              onSelect={(boardId) => {
-                const board = hiddenBoards.find((item) => item.id === boardId);
-                if (board) handleBoardClick(board);
-              }}
-              testIdPrefix="boards"
+  return (
+    <>
+      <ResourceSection
+        id="boards"
+        label={t("navigation:sidebar.boards")}
+        sectionActive={boardsSectionActive}
+        onHeaderClick={() =>
+          navigate({
+            to: "/dashboard/organization/$organizationSlug",
+            params: { organizationSlug: organization.slug },
+          })
+        }
+        addAction={
+          canCreate
+            ? {
+                label: t("navigation:boardList.addBoard"),
+                onClick: () => setIsCreateBoardModalOpen(true),
+              }
+            : undefined
+        }
+        collapsedRail={collapsedRail}
+        sortable={{
+          ids: visibleBoards.map((board) => board.id),
+          onReorder: (ids) => setBoardSidebarOrder(user?.id ?? "", ids),
+        }}
+        items={visibleBoards.map((board) => ({
+          id: board.id,
+          label: board.name,
+          // #171: the icon is shown in the expanded rail too, not only when
+          // collapsed.
+          icon: (
+            <EntityIcon
+              className="me-2 size-4 text-sidebar-foreground/70"
+              value={board.icon}
             />
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+          ),
+          active: isCurrentBoard(board.id),
+          onSelect: () => handleBoardClick(board),
+          onIntent: () => prefetchBoard(board.id),
+        }))}
+        actions={(item) => {
+          const board = boards?.find((entry) => entry.id === item.id);
+          if (!board) return [];
+          return [
+            {
+              label: t("navigation:boardList.viewBoard"),
+              icon: Folder,
+              onSelect: () => handleBoardClick(board),
+            },
+            {
+              label: t("navigation:boardList.shareBoard"),
+              icon: Forward,
+              onSelect: () => handleShareBoard(board),
+            },
+            {
+              label: t("navigation:boardList.boardSettings"),
+              icon: Settings,
+              onSelect: () => handleBoardSettings(board),
+            },
+            {
+              label: "Hide from sidebar",
+              icon: EyeOff,
+              onSelect: () =>
+                setBoardSidebarVisibility(user?.id ?? "", board.id, false),
+            },
+            ...(canArchiveBoard
+              ? [
+                  {
+                    label: "Archive board",
+                    icon: Archive,
+                    separatorBefore: true,
+                    onSelect: () => setBoardToArchive(board),
+                  },
+                ]
+              : []),
+            ...(canDeleteBoard
+              ? [
+                  {
+                    label: t("navigation:boardList.deleteBoard"),
+                    icon: Trash2,
+                    destructive: true,
+                    separatorBefore: true,
+                    onSelect: () => handleDeleteBoard(board),
+                  },
+                ]
+              : []),
+          ];
+        }}
+        actionTriggerLabel={t("navigation:sidebar.more")}
+        hiddenItems={hiddenBoards.map((board) => ({
+          id: board.id,
+          name: board.name,
+        }))}
+        hiddenMenuLabel="Board sidebar options"
+        onShowHidden={(boardId) =>
+          setBoardSidebarVisibility(user?.id ?? "", boardId, true)
+        }
+        moreHiddenLabel={t("navigation:sidebar.moreBoards")}
+        onHiddenSelect={(boardId) => {
+          const board = hiddenBoards.find((entry) => entry.id === boardId);
+          if (board) handleBoardClick(board);
+        }}
+        onHiddenIntent={(boardId) => prefetchBoard(boardId)}
+        isHiddenActive={(boardId) => isCurrentBoard(boardId)}
+      />
 
       <CreateBoardModal
         open={isCreateBoardModalOpen}

@@ -1406,6 +1406,8 @@
 			"overview": "Overview",
 			"inbox": "Inbox",
 			"moreRepos": "More Repos",
+			"moreTables": "More Tables",
+			"showItem": "Show {{name}}",
 			"recent": "Recent",
 			"recentEmpty": "No recent items yet",
 			"recentShowLatest": "Show latest amount",
