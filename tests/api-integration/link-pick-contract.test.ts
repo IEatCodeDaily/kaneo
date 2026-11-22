@@ -102,8 +102,9 @@ describe("link pick web contract", () => {
           ? { add: [first.id], ifVersion: page.version }
           : { add: [first.id] };
       const pick = await request(linksPath, pickBody);
-      expect(pick.status, await pick.text()).toBe(200);
-      const afterPick = (await pick.json()) as {
+      const pickText = await pick.text();
+      expect(pick.status, pickText).toBe(200);
+      const afterPick = JSON.parse(pickText) as {
         values: Record<string, { version: string }>;
       };
 
@@ -133,8 +134,9 @@ describe("link pick web contract", () => {
             }
           : { add: [second.id] };
       const swap = await request(linksPath, swapBody);
-      expect(swap.status, await swap.text()).toBe(200);
-      const afterSwap = (await swap.json()) as {
+      const swapText = await swap.text();
+      expect(swap.status, swapText).toBe(200);
+      const afterSwap = JSON.parse(swapText) as {
         values: Record<
           string,
           { records: { id: string }[]; total: number; version: string }
