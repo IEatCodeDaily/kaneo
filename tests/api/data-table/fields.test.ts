@@ -69,10 +69,12 @@ describe("field registry", () => {
     expect(
       v.safeParse(lookup, { linkFieldId: "l", targetFieldId: "f" }).success,
     ).toBe(true);
+    // Optioned types intersect with the shared keys, so unknown keys stay
+    // loose (the controller resolves and enriches the config).
     expect(
       v.safeParse(lookup, { linkFieldId: "l", targetFieldId: "f", other: 1 })
         .success,
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 

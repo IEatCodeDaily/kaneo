@@ -399,7 +399,10 @@ export function DataTableCellView({
       return (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {values.map((item, index) => (
-            <span key={index} className="min-w-0 max-w-full truncate">
+            <span
+              key={`${index}:${typeof item}:${String(item)}`}
+              className="min-w-0 max-w-full truncate"
+            >
               <DataTableCellView
                 field={targetField}
                 value={item}

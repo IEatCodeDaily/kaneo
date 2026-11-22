@@ -216,14 +216,13 @@ async function pickAndSettle(field: DataTableField, after: unknown) {
   await waitFor(() =>
     expect(calls.some((call) => call.method === "POST")).toBe(true),
   );
-  await waitFor(() =>
-    expect(
-      (
-        client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]
-          ?.values.fl1 as LinkValue
-      ).version,
-    ).toBe("vB"),
-  );
+  await waitFor(() => {
+    const version = (
+      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
+        .values.fl1 as LinkValue | undefined
+    )?.version;
+    expect(version).toBe("vB");
+  });
   return chips();
 }
 
