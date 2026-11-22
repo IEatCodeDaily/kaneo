@@ -1968,6 +1968,7 @@ const TABLE_STATES = [
       await p
         .getByRole("button", { name: "Expand row 1", exact: true })
         .click();
+      await wakeDrawerActivity(p);
       const editor = p.locator(
         '[data-slot="table-activity"] [contenteditable="true"]',
       );
@@ -1989,6 +1990,7 @@ const TABLE_STATES = [
       await p
         .getByRole("button", { name: "Expand row 1", exact: true })
         .click();
+      await wakeDrawerActivity(p);
       await p
         .locator('[data-slot="table-activity"] ol')
         .getByText("Render comment: pressure verified", { exact: true })
@@ -2968,6 +2970,42 @@ async function csvCancelState(p) {
   if (!response.ok() || (await response.json()).total !== 100)
     throw new Error("Cancel summary disagrees with persisted batches");
 }
+/**
+ * Drawer activity + the comment composer mount lazily once the reader
+ * scrolls near (below-fold sections defer their queries). A state that
+ * asserts history wakes them exactly like a user reading it: scroll the
+ * sheet to the bottom, wait for the composer, scroll back for the shot.
+ */
+async function wakeDrawerActivity(p) {
+  await p.locator('[data-slot="row-fields"]').waitFor();
+  const scrollTo = (bottom) =>
+    p.evaluate((toBottom) => {
+      const popup = document.querySelector('[data-slot="sheet-popup"]');
+      if (!popup) return 0;
+      const found = [popup, ...popup.querySelectorAll("*")].filter(
+        (el) =>
+          el.scrollHeight > el.clientHeight + 10 &&
+          /(auto|scroll)/.test(getComputedStyle(el).overflowY),
+      );
+      for (const el of found) el.scrollTop = toBottom ? el.scrollHeight : 0;
+      return found.length;
+    }, bottom);
+  // The fields render first; history mounts a beat later on the scroll-near
+  // trigger — give it a few rounds before giving up.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if ((await scrollTo(true)) === 0) {
+      await p.waitForTimeout(300);
+      continue;
+    }
+    const mounted = await p
+      .getByRole("button", { name: "Submit comment", exact: true })
+      .waitFor({ timeout: 2500 })
+      .then(() => true)
+      .catch(() => false);
+    if (mounted) break;
+  }
+  await scrollTo(false);
+}
 const OVERLAY_STATES = [
   ...[
     ["desktop-dark", "dark", DESKTOP],
@@ -3322,6 +3360,8 @@ if (pages.table) {
       if (m[key] !== value)
         fails.push(`${key} ${m[key] ?? "not measured"}, want ${value}`);
     if (name.startsWith("sheet-row")) {
+      // History mounts when scrolled near; wake it before asserting it.
+      await wakeDrawerActivity(page);
       // Ticket-drawer layout: one close button, the row's history, row n of N.
       const d = await page.evaluate(() => {
         const popup = document.querySelector('[data-slot="sheet-popup"]');

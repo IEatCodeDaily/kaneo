@@ -43,9 +43,15 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/fetchers/data-table/data-table", () => ({ getTicketOptions }));
 vi.mock("@/hooks/data-table/use-data-tables", () => ({
   useDataTables: () => ({ data: [] }),
+  dataTableKeys: {
+    detail: () => [],
+    activity: () => [],
+  },
+  mergeRowValues: vi.fn(),
   useDataTableMutations: () => ({
     createField: { mutateAsync: vi.fn(), isPending: false },
     updateField: { mutateAsync: updateField, isPending: false },
+    linkCell: { mutateAsync: vi.fn().mockResolvedValue({}) },
   }),
 }));
 vi.mock("@/hooks/queries/board/use-get-boards", () => ({

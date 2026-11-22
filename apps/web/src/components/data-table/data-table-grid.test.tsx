@@ -81,7 +81,9 @@ vi.mock("@/hooks/data-table/use-data-tables", () => ({
     deleteField: {},
     upsertCell: { mutateAsync: upsertCell },
     updateField: {},
+    linkCell: { mutateAsync: vi.fn().mockResolvedValue({}) },
   }),
+  mergeRowValues: vi.fn(),
 }));
 vi.mock("@/fetchers/data-table/data-table", () => ({
   createDataTableRow: vi.fn(),

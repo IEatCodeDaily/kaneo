@@ -9,7 +9,7 @@ import {
   Table2,
   X,
 } from "lucide-react";
-import { useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MemberOption } from "@/components/data-table/data-table-cells";
 import {
@@ -42,6 +42,38 @@ import type {
   DataTableRow,
 } from "@/types/data-table";
 import { LinkNavigationContext } from "./link-cell";
+
+/**
+ * Drawer sections below the fold (linked tickets, activity) defer their
+ * queries until the reader scrolls near: both fired on the drawer's open
+ * path and painted after it. jsdom has no IntersectionObserver — render
+ * immediately there. The node arrives AFTER the first paint (the drawer
+ * mounts empty with row=null), so observation starts from the callback ref,
+ * not a mount-time effect.
+ */
+function useInViewOnce<T extends HTMLElement>() {
+  const [inView, setInView] = useState(
+    () => typeof IntersectionObserver === "undefined",
+  );
+  const [node, setNode] = useState<T | null>(null);
+  useEffect(() => {
+    if (inView || !node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      // Start loading slightly before the section actually scrolls in.
+      { rootMargin: "240px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [inView, node]);
+  const ref = useCallback((next: T | null) => setNode(next), []);
+  return { ref, inView };
+}
 
 /**
  * Row drawer, laid out like the ticket drawer but fields only: a top bar
@@ -100,6 +132,7 @@ export function RowSheet({
     fieldId: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const lower = useInViewOnce<HTMLDivElement>();
   const { width, startResize } = useDrawerWidth(
     "kaneo:row-drawer-width",
     // Half the viewport until the user drags (clamped by the shared min/max);
@@ -109,7 +142,7 @@ export function RowSheet({
 
   const tickets = useQuery({
     queryKey: ["row-tickets", table.organizationId, table.id, row?.id],
-    enabled: open && row !== null,
+    enabled: open && row !== null && lower.inView,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
@@ -333,51 +366,64 @@ export function RowSheet({
           </div>
         </details>
 
-        {/* Explicit row↔ticket links (made from a ticket's "Included in").
-            Ticket cells already show in the fields above, so an empty list
-            would only contradict them: render it when there is something. */}
-        {linkedTickets.size > 0 && (
-          <section className="flex flex-col gap-1 border-t pt-3">
-            <h3 className="text-xs font-medium text-muted-foreground">
-              {t("navigation:tables.linkedTickets")}
-            </h3>
-            <ul className="flex flex-col">
-              {[...linkedTickets.values()].map((ticket) => (
-                <li key={ticket.id}>
-                  <Link
-                    to="/dashboard/$organizationSlug/tickets/$ticketKey"
-                    params={{ organizationSlug, ticketKey: ticket.key }}
-                    className="flex h-8 items-center gap-2 rounded-md px-2 text-ui hover:bg-row-hover"
-                  >
-                    <span className="shrink-0 [&_svg]:size-3.5">
-                      {getColumnIcon(ticket.status)}
-                    </span>
-                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                      {ticket.key}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      {ticket.title}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {lower.inView ? (
+          <>
+            {/* Explicit row↔ticket links (made from a ticket's "Included in").
+                Ticket cells already show in the fields above, so an empty list
+                would only contradict them: render it when there is something. */}
+            {linkedTickets.size > 0 && (
+              <section className="flex flex-col gap-1 border-t pt-3">
+                <h3 className="text-xs font-medium text-muted-foreground">
+                  {t("navigation:tables.linkedTickets")}
+                </h3>
+                <ul className="flex flex-col">
+                  {[...linkedTickets.values()].map((ticket) => (
+                    <li key={ticket.id}>
+                      <Link
+                        to="/dashboard/$organizationSlug/tickets/$ticketKey"
+                        params={{ organizationSlug, ticketKey: ticket.key }}
+                        className="flex h-8 items-center gap-2 rounded-md px-2 text-ui hover:bg-row-hover"
+                      >
+                        <span className="shrink-0 [&_svg]:size-3.5">
+                          {getColumnIcon(ticket.status)}
+                        </span>
+                        <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                          {ticket.key}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {ticket.title}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-        <section className="flex flex-col gap-2 border-t pt-3">
-          <h3 className="text-xs font-medium text-muted-foreground">
-            {t("navigation:tables.activity")}
-          </h3>
-          <TableActivityList
-            key={row.id}
-            canEdit={canEdit}
-            table={table}
-            fields={fields}
-            members={members}
-            rowId={row.id}
+            <section className="flex flex-col gap-2 border-t pt-3">
+              <h3 className="text-xs font-medium text-muted-foreground">
+                {t("navigation:tables.activity")}
+              </h3>
+              <TableActivityList
+                key={row.id}
+                canEdit={canEdit}
+                table={table}
+                fields={fields}
+                members={members}
+                rowId={row.id}
+              />
+            </section>
+          </>
+        ) : (
+          // Sentinel: the tickets + activity queries mount once this
+          // scrolls near (or immediately for a short drawer).
+          <div
+            ref={lower.ref}
+            aria-hidden
+            data-testid="row-drawer-deferred"
+            className="min-h-12"
           />
-        </section>
+        )}
       </SheetContent>
     </Sheet>
   );

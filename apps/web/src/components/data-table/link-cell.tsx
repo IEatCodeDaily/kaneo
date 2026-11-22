@@ -15,7 +15,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { upsertDataTableCell } from "@/fetchers/data-table/data-table";
 import {
   getLinkedRecords,
   getLinkedRow,
@@ -24,6 +23,11 @@ import {
   type LinkPage,
   linkRequest,
 } from "@/fetchers/data-table/links";
+import {
+  dataTableKeys,
+  mergeRowValues,
+  useDataTableMutations,
+} from "@/hooks/data-table/use-data-tables";
 import { cn } from "@/lib/cn";
 import type {
   DataTable,
@@ -118,6 +122,10 @@ export function LinkCellPicker({
   const { t } = useTranslation();
   const context = useContext(TicketLookupContext);
   const queryClient = useQueryClient();
+  const { linkCell } = useDataTableMutations(
+    context.organizationId,
+    field.tableId,
+  );
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<LinkOptions | null>(null);
@@ -134,10 +142,10 @@ export function LinkCellPicker({
   const navigation = useContext(LinkNavigationContext);
   const cell = linkValue(value);
   const targetTable = field.options?.targetTableId;
-  const refresh = () => {
-    void queryClient.invalidateQueries({
-      queryKey: ["data-table", context.organizationId],
-    });
+  // History refreshes + the open linked-record drawer refetches. The old
+  // "invalidate every table query" is gone: the linkCell mutation patches
+  // the caches in place, so the grid never swaps to its loading state.
+  const refreshLinks = () => {
     void queryClient.invalidateQueries({ queryKey: ["data-table-activity"] });
     window.dispatchEvent(new Event("table-links-updated"));
   };
@@ -214,22 +222,39 @@ export function LinkCellPicker({
     setError("");
     try {
       const swap = !remove && field.options?.localMax === "one";
-      const payload = {
+      const next = remove
+        ? linked.filter((item) => item.id !== record.id)
+        : swap
+          ? [record]
+          : [...linked, record];
+      await linkCell.mutateAsync({
+        organizationId: context.organizationId,
+        tableId: field.tableId,
+        rowId,
+        fieldId: field.id,
         add: remove ? [] : [record.id],
         remove: remove
           ? [record.id]
           : swap
             ? linked.map((item) => item.id)
             : [],
-        ...(swap ? { ifVersion: selected?.version ?? cell?.version } : {}),
-      };
-      await linkRequest(
-        context.organizationId,
-        field.tableId,
-        `/rows/${rowId}/links/${field.id}`,
-        payload,
-      );
-      refresh();
+        // null versions never go on the wire (the API validates strings).
+        ...(swap
+          ? { ifVersion: selected?.version ?? cell?.version ?? undefined }
+          : {}),
+        // The cell updates instantly from the picker's own state; the
+        // response row replaces it with server truth (rollback on error).
+        optimistic: {
+          kind: "link",
+          status: "ok",
+          records: next,
+          total: next.length,
+          hasMore: cell?.hasMore ?? false,
+          version: selected?.version ?? cell?.version ?? null,
+        },
+        targetTableId: targetTable,
+      });
+      refreshLinks();
       setRevision((value) => value + 1);
     } catch (error) {
       setError(
@@ -513,7 +538,40 @@ export function LinkCellPicker({
               `/rows/${rowId}/links/${field.id}/new-row`,
               { values, ifVersion: selected?.version ?? cell?.version },
             );
-            refresh();
+            // The response is the new TARGET row; the source cell's link
+            // value comes from one targeted GET of this field's link page,
+            // merged into the caches (no invalidate-everything refetch).
+            try {
+              const page = await getLinkedRecords(
+                context.organizationId,
+                field.tableId,
+                rowId,
+                field.id,
+              );
+              mergeRowValues(
+                queryClient,
+                dataTableKeys.detail(context.organizationId, field.tableId),
+                rowId,
+                {
+                  [field.id]: {
+                    kind: "link",
+                    status: "ok",
+                    records: page.records,
+                    total: page.total,
+                    hasMore: page.hasMore,
+                    version: page.version,
+                  },
+                },
+              );
+            } catch {
+              queryClient.invalidateQueries({
+                queryKey: dataTableKeys.detail(
+                  context.organizationId,
+                  field.tableId,
+                ),
+              });
+            }
+            refreshLinks();
             setRevision((value) => value + 1);
           }}
         />
@@ -572,6 +630,7 @@ function LinkedDrawer({
   const { t } = useTranslation();
   // biome-ignore lint/style/noNonNullAssertion: the dialog contract guarantees a non-empty stack
   const current = stack[stack.length - 1]!;
+  const { upsertCell } = useDataTableMutations(organizationId, current.tableId);
   const [data, setData] = useState<{
     row: DataTableRow;
     fields: DataTableField[];
@@ -658,7 +717,9 @@ function LinkedDrawer({
         onBack={() => setStack(stack.slice(0, -1))}
         onCommit={async (row, field, value) => {
           try {
-            const updated = await upsertDataTableCell({
+            // Through the shared mutation: the write also merges into the
+            // target table's react-query caches instead of only this sheet.
+            const updated = await upsertCell.mutateAsync({
               organizationId,
               tableId: current.tableId,
               rowId: row.id,
