@@ -414,50 +414,65 @@ for (const [theme, tag, viewport, scale] of [
     ];
     if (text.trim().length < 40) fails.push("page rendered no content");
     if (name === "table-link-pick") {
-      // teams.36 regression: picking a record flashed the optimistic chip,
-      // then reverted. Drive the real picker end to end and assert the swap
-      // persists (chip, reopened picker, response status 200).
-      const chipText = () =>
-        page.evaluate(() =>
-          [...document.querySelectorAll("[data-link-chip]")]
-            .map((chip) => chip.textContent)
-            .join("|"),
-        );
-      // The grid renders the linked row before the picker exists.
-      await page.locator("[data-link-chip]").first().waitFor();
-      await page
-        .getByRole("button", { name: "Linked records", exact: true })
-        .first()
-        .click();
-      const picker = page.locator("[data-link-picker]");
-      await picker
-        .getByRole("option", { name: /CUST-002/ })
-        .first()
-        .waitFor();
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          (r) => r.request().method() === "POST" && r.url().includes("/links/"),
-        ),
-        picker.getByRole("option", { name: /CUST-002/ }).first().click(),
-      ]);
-      if (response.status() !== 200)
-        fails.push(`link pick POST status ${response.status()}`);
-      // Optimistic chip, then server truth: the swap must stick either way.
-      await page.waitForTimeout(1200);
-      const chips = await chipText();
-      if (!chips.includes("CUST-002"))
-        fails.push(`picked chip missing after settle: ${chips}`);
-      if (chips.includes("CUST-001"))
-        fails.push(`swap reverted to the previous record: ${chips}`);
-      // Reopen: the picker's selected list must show the new record only.
-      await page
-        .getByRole("button", { name: "Linked records", exact: true })
-        .first()
-        .click();
-      await picker.getByRole("button", { name: /Unlink.*CUST-002/ }).waitFor();
-      if (await picker.getByRole("button", { name: /Unlink.*CUST-001/ }).count())
-        fails.push("previous record still linked in picker after swap");
-      await page.waitForTimeout(600);
+      try {
+        // teams.36 regression: picking a record flashed the optimistic chip,
+        // then reverted. Drive the real picker end to end and assert the swap
+        // persists (chip, reopened picker, response status 200).
+        const chipText = () =>
+          page.evaluate(() =>
+            [...document.querySelectorAll("[data-link-chip]")]
+              .map((chip) => chip.textContent)
+              .join("|"),
+          );
+        // The grid renders the linked row before the picker exists.
+        await page.locator("[data-link-chip]").first().waitFor();
+        await page
+          .getByRole("button", { name: "Linked records", exact: true })
+          .first()
+          .click();
+        const picker = page.locator("[data-link-picker]");
+        await picker
+          .getByRole("option", { name: /CUST-002/ })
+          .first()
+          .waitFor();
+        const [response] = await Promise.all([
+          page.waitForResponse(
+            (r) =>
+              r.request().method() === "POST" && r.url().includes("/links/"),
+          ),
+          picker.getByRole("option", { name: /CUST-002/ }).first().click(),
+        ]);
+        if (response.status() !== 200)
+          fails.push(`link pick POST status ${response.status()}`);
+        // Optimistic chip, then server truth: the swap must stick either way.
+        await page.waitForTimeout(1200);
+        const chips = await chipText();
+        if (!chips.includes("CUST-002"))
+          fails.push(`picked chip missing after settle: ${chips}`);
+        if (chips.includes("CUST-001"))
+          fails.push(`swap reverted to the previous record: ${chips}`);
+        // Reopen: the picker's selected list must show the new record only.
+        await page
+          .getByRole("button", { name: "Linked records", exact: true })
+          .first()
+          .click();
+        await picker
+          .getByRole("button", { name: /Unlink.*CUST-002/ })
+          .waitFor();
+        if (
+          await picker.getByRole("button", { name: /Unlink.*CUST-001/ }).count()
+        )
+          fails.push("previous record still linked in picker after swap");
+        await page.waitForTimeout(600);
+      } catch (error) {
+        fails.push(`pick state error: ${error}`);
+        try {
+          fails.push(
+            await page.evaluate(() => document.body.innerText.slice(0, 300)),
+          );
+          await page.screenshot({ path: `${OUT}/link-pick-debug.png` });
+        } catch {}
+      }
     } else if (
       name === "table-link-picker" ||
       name === "table-link-reciprocal"
