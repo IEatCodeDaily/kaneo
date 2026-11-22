@@ -88,22 +88,42 @@ export function LinkCellView({
   // Fit pass. Measuring a clamped render is meaningless (hidden chips have
   // no boxes), so the pass only acts on the unclamped one: the ResizeObserver
   // resets to "all chips", this measures, and the clamped re-render skips.
+  // Greedy wrap over offsetWidth (element-local, space-independent) instead
+  // of offsetLeft/offsetTop — those are relative to the offset parent, which
+  // silently skewed the line/row arithmetic.
   const rewrap = useCallback(() => {
     const el = wrapRef.current;
     if (!el || visible !== Number.POSITIVE_INFINITY) return;
     const items = [...el.querySelectorAll<HTMLElement>("[data-link-item]")];
-    let count = records.length;
-    const fits = (item: HTMLElement) =>
-      item.offsetTop + item.offsetHeight <= el.clientHeight + 1 &&
-      item.offsetLeft + item.offsetWidth <= el.clientWidth + 1;
-    while (count > 1) {
-      const item = items[count - 1];
-      if (!item || fits(item)) break;
-      count -= 1;
+    const style = getComputedStyle(el);
+    const gap = Number.parseFloat(style.columnGap) || 0;
+    const rowGap = Number.parseFloat(style.rowGap) || gap;
+    const chipHeight = items[0]?.offsetHeight ?? 0;
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    let lineWidth = 0;
+    let lines = 1;
+    let count = 0;
+    for (const item of items) {
+      const w = item.offsetWidth;
+      const nextWidth = lineWidth > 0 ? lineWidth + gap + w : w;
+      const nextLines = nextWidth > width && lineWidth > 0 ? lines + 1 : lines;
+      // The line this chip would land on must sit inside the box.
+      if (nextLines * chipHeight + (nextLines - 1) * rowGap > height) break;
+      if (nextWidth > width) {
+        lines = nextLines;
+        lineWidth = w;
+      } else {
+        lineWidth = nextWidth;
+      }
+      count += 1;
     }
     // Keep room for the "+N" chip itself when the list truncates.
-    if (count > 1 && count < records.length) count -= 1;
-    setVisible(count);
+    if (count > 0 && count < records.length) {
+      const overflowWidth = 28;
+      if (lineWidth > 0 && lineWidth + gap + overflowWidth > width) count -= 1;
+    }
+    setVisible(Math.max(count, 1));
   }, [records, visible]);
   useEffect(() => {
     const el = wrapRef.current;

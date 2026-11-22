@@ -471,6 +471,25 @@ for (const [theme, tag, viewport, scale] of [
       localStorage.setItem(k, JSON.stringify(cur));
     }, theme);
     if (name === "inbox") await themeInboxFixtures(ctx);
+    if (name === "table-chip-fit")
+      // Trace ResizeObserver activity on the chip-fit span.
+      await ctx.addInitScript(() => {
+        window.__ro = { fires: 0, sizes: [] };
+        const Real = window.ResizeObserver;
+        window.ResizeObserver = class extends Real {
+          constructor(cb) {
+            super((entries, observer) => {
+              window.__ro.fires += 1;
+              const r = entries[0]?.contentRect;
+              window.__ro.sizes.push([
+                Math.round(r?.width ?? -1),
+                Math.round(r?.height ?? -1),
+              ]);
+              cb(entries, observer);
+            });
+          }
+        };
+      });
     const page = await ctx.newPage();
     const errs = [];
     page.on("pageerror", (e) => errs.push(String(e)));
@@ -570,24 +589,6 @@ for (const [theme, tag, viewport, scale] of [
           .catch(() => {});
       }
     } else if (name === "table-chip-fit") {
-      // Trace ResizeObserver activity on the chip-fit span (init script).
-      await ctx.addInitScript(() => {
-        window.__ro = { fires: 0, sizes: [] };
-        const Real = window.ResizeObserver;
-        window.ResizeObserver = class extends Real {
-          constructor(cb) {
-            super((entries, observer) => {
-              window.__ro.fires += 1;
-              const r = entries[0]?.contentRect;
-              window.__ro.sizes.push([
-                Math.round(r?.width ?? -1),
-                Math.round(r?.height ?? -1),
-              ]);
-              cb(entries, observer);
-            });
-          }
-        };
-      });
       try {
         // teams.37 regression: widening a link column live did not render
         // more chips — the fit pass froze at the initial width.
