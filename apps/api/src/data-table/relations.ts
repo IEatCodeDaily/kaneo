@@ -696,7 +696,6 @@ export async function project(
     const accessible =
       linkField?.type === "link" &&
       typeof targetTableId === "string" &&
-      !linkField.deletedAt &&
       (await allowed(organizationId, targetTableId, userId, "view"));
     if (accessible) continue;
     for (const row of rows) {

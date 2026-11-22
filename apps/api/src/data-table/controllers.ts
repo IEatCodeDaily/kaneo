@@ -1331,6 +1331,7 @@ export async function addFieldToTable(
         badRequest("Lookup cannot target another relationship");
       if (options?.required === true)
         badRequest("Lookup fields are computed and cannot be required");
+      if (options == null) badRequest("Lookup fields require options");
       options.targetField = {
         id: targetField.id,
         name: targetField.name,

@@ -218,7 +218,9 @@ async function pickAndSettle(field: DataTableField, after: unknown) {
   );
   await waitFor(() => {
     const row =
-      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0]?.rows[0];
+      client.getQueryData<{ pages?: TableRowQueryResult[] }>(
+        ROWS_KEY,
+      )?.pages?.[0]?.rows[0];
     expect((row?.values.fl1 as LinkValue | undefined)?.version).toBe("vB");
   });
   return chips();

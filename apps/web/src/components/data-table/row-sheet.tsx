@@ -246,7 +246,8 @@ export function RowSheet({
       setLinkBusy(false);
     }
   };
-  const expandedLinks = fullLinks.rowId === row.id ? fullLinks.values : {};
+  const expandedLinks: Record<string, LinkValue> =
+    fullLinks.rowId === row.id ? fullLinks.values : {};
 
   return (
     <Sheet
@@ -420,7 +421,7 @@ export function RowSheet({
                       {full
                         ? t("navigation:tables.showLessRecords")
                         : t("navigation:tables.showAllRecords", {
-                            total: full?.total ?? cell?.total ?? 0,
+                            total: cell?.total ?? 0,
                           })}
                     </Button>
                     {full && (full.total ?? 0) > full.records.length && (
