@@ -214,14 +214,11 @@ async function seed(api) {
   };
   await setLimit(customer.id);
   await setLimit(globex.id);
-  const lookupField = await post(
-    `/data-table/organization/${org.id}/${invoices.id}/fields`,
-    {
-      name: "Customer limit",
-      type: "lookup",
-      options: { linkFieldId: relation.id, targetFieldId: creditLimit.id },
-    },
-  );
+  await post(`/data-table/organization/${org.id}/${invoices.id}/fields`, {
+    name: "Customer limit",
+    type: "lookup",
+    options: { linkFieldId: relation.id, targetFieldId: creditLimit.id },
+  });
   // Drawer show-all: five linked vendors on the invoice (server previews 3).
   const alsoBought = await post(
     `/data-table/organization/${org.id}/${invoices.id}/fields`,
