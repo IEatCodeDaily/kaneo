@@ -217,11 +217,9 @@ async function pickAndSettle(field: DataTableField, after: unknown) {
     expect(calls.some((call) => call.method === "POST")).toBe(true),
   );
   await waitFor(() => {
-    const version = (
-      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
-        .values.fl1 as LinkValue | undefined
-    )?.version;
-    expect(version).toBe("vB");
+    const row =
+      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0]?.rows[0];
+    expect((row?.values.fl1 as LinkValue | undefined)?.version).toBe("vB");
   });
   return chips();
 }

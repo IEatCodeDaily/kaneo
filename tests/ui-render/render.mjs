@@ -204,7 +204,9 @@ async function seed(api) {
     { value: 1200 },
   );
   if (!putRes.ok())
-    throw new Error(`seed cell PUT -> ${putRes.status()} ${await putRes.text()}`);
+    throw new Error(
+      `seed cell PUT -> ${putRes.status()} ${await putRes.text()}`,
+    );
   const lookupField = await post(
     `/data-table/organization/${org.id}/${invoices.id}/fields`,
     {
@@ -267,8 +269,7 @@ async function seed(api) {
 
 await healthy();
 const api = await request.newContext();
-const { org, board, tbl, tasks, invoices, customers, lookupField } =
-  await seed(api);
+const { org, board, tbl, tasks, invoices, customers } = await seed(api);
 const state = await api.storageState();
 const slug = org.slug;
 let pages = {
@@ -493,7 +494,9 @@ for (const [theme, tag, viewport, scale] of [
         await header.waitFor();
       } catch (error) {
         fails.push(`lookup state error: ${error}`);
-        await page.screenshot({ path: `${OUT}/lookup-debug.png` }).catch(() => {});
+        await page
+          .screenshot({ path: `${OUT}/lookup-debug.png` })
+          .catch(() => {});
       }
     } else if (name === "table-drawer-links") {
       try {

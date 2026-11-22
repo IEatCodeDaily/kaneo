@@ -59,7 +59,9 @@ it("renders every field in order with its shared editor, focusing the first", as
   expect(
     screen.getAllByRole("group").map((node) => node.getAttribute("aria-label")),
   ).toEqual(
-    fields.filter((field) => field.type !== "lookup").map((field) => field.name),
+    fields
+      .filter((field) => field.type !== "lookup")
+      .map((field) => field.name),
   );
   expect(screen.queryByRole("group", { name: "lookup" })).toBeNull();
   for (const type of [
