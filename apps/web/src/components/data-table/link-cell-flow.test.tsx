@@ -231,7 +231,11 @@ async function pickAndSettle(field: DataTableField) {
       (client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!)
         .values.fl1 as LinkValue,
     ).toMatchObject({ version: "vB", total: 2 }),
-  );
+  ).catch((error) => {
+    throw new Error(
+      `post-settle failure; calls=${JSON.stringify(calls)} alert=${screen.queryByRole("alert")?.textContent ?? "none"} :: ${String(error)}`,
+    );
+  });
   await waitFor(() => expect(chip("x")).toContain("New record"));
 }
 
