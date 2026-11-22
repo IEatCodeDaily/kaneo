@@ -214,7 +214,17 @@ async function pickAndSettle(field: DataTableField) {
   );
   fireEvent.click(await screen.findByRole("option", { name: "New record" }));
   // Optimistic: the chip appears before the POST resolves.
-  await waitFor(() => expect(chip("x")).toContain("New record"));
+  await waitFor(() => {
+    const state = (
+      client.getQueryData<TableRowQueryResult>(ROWS_KEY)?.pages[0].rows[0]!
+        .values.fl1 as LinkValue | undefined
+    )?.version;
+    if (state !== "vA") return;
+    throw new Error(
+      `cache not patched; calls=${JSON.stringify(calls)} alert=${screen.queryByRole("alert")?.textContent ?? "none"}`,
+    );
+  });
+  expect(chip("x")).toContain("New record");
   // The write settles; the cell must show server truth — not roll back.
   await waitFor(() =>
     expect(
